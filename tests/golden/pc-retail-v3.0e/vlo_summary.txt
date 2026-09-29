@@ -1,0 +1,8 @@
+vlo_files=46
+images=3477
+black_is_transparent_images=1423
+transparent_texels=1215459
+nonzero_alpha_bytes=0
+near_black_not_exact_black_texels=0
+in_wads=0
+custom_names=0

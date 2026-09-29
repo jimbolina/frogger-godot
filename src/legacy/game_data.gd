@@ -113,6 +113,34 @@ func read_resource_by_name(file_name: String, problems: PackedStringArray = Pack
 	return read_resource(entry.index, problems)
 
 
+## The resource id of a WAD holding resource [param resource_id], or -1.
+func wad_holding(resource_id: int) -> int:
+	return _wad_of_resource[resource_id] if _find_wad_holding(resource_id) != null else -1
+
+
+## The archive entries of every texture bank (type 1, or a name ending in .VLO),
+## in index order.
+func texture_bank_entries() -> Array[MwiEntry]:
+	var banks: Array[MwiEntry] = []
+	for e: MwiEntry in mwi.entries:
+		if e.type_id == 1 or e.display_name().to_upper().ends_with(".VLO"):
+			banks.append(e)
+	return banks
+
+
+## The texture bank with resource id [param resource_id], decoded; null (with
+## the reason in [param problems]) when it cannot be read.
+func read_texture_bank(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> VloFile:
+	var bytes: PackedByteArray = read_resource(resource_id, problems)
+	if bytes.is_empty():
+		return null
+	var vlo: VloFile = VloFile.parse(bytes)
+	if not vlo.error.is_empty():
+		problems.append("resource %d: %s" % [resource_id, vlo.error])
+		return null
+	return vlo
+
+
 ## The WAD with resource id [param wad_resource_id], parsed (and kept for
 ## later calls), or null when it is not a readable WAD.
 func read_wad(wad_resource_id: int) -> WadFile:

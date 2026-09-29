@@ -6,21 +6,42 @@ extends Control
 ## command line (after [code]--[/code]), the [code]FROGGER_DATA_DIR[/code]
 ## environment variable, or the folder remembered from a previous run. A
 ## folder found on the command line or in the environment is remembered.
+##
+## A menu at the top opens the development tools (the texture viewer).
+
+## The texture viewer's scene.
+const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
 
 var _label: Label
 
 
 func _ready() -> void:
+	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.offset_left = 16
+	layout.offset_top = 16
+	layout.offset_right = -16
+	layout.offset_bottom = -16
+	add_child(layout)
+	var menu := HBoxContainer.new()
+	layout.add_child(menu)
+	var viewer_button := Button.new()
+	viewer_button.text = "Texture viewer"
+	viewer_button.pressed.connect(open_texture_viewer)
+	menu.add_child(viewer_button)
 	_label = Label.new()
-	_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_label.offset_left = 16
-	_label.offset_top = 16
-	_label.offset_right = -16
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(_label)
+	_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	layout.add_child(_label)
 	var report: String = build_report(command_line_data_dir())
 	_label.text = report
 	print(report)
+	viewer_button.grab_focus()
+
+
+## Switches to the texture viewer.
+func open_texture_viewer() -> void:
+	get_tree().change_scene_to_file(TEXTURE_VIEWER_SCENE)
 
 
 ## The folder given as [code]--data-dir=<folder>[/code] after [code]--[/code], or "".

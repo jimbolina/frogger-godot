@@ -12,7 +12,8 @@ This is an early stage: the project can find and identify the game files,
 read every file in their archives (the MWI index, the MWD archive, WAD
 bundles and PowerPacker compression) and decode the game tables held in the
 executable (levels, themes, forms, texture remaps and pointers, entity
-scripts, music, level select, demos, bugs). There is no gameplay yet.
+scripts, music, level select, demos, bugs), and decode every texture. There
+is no gameplay yet.
 
 ## No game data is included
 
@@ -45,6 +46,16 @@ Running the project currently opens a screen saying which files and which
 build were found (with a summary of the archive index and counts of the
 tables read from the executable), or how to set the folder.
 
+### Texture viewer
+
+The start screen's **Texture viewer** button (or
+`godot --path . res://scenes/tools/texture_viewer.tscn`) shows every texture
+bank (VLO file) of the game: pick one on the left to see its images with
+their position, texture id, name, size and flags. Keys: Up/Down choose a
+bank, F switches nearest/linear filtering, C switches the checkerboard
+behind transparent pixels, Page Up/Page Down scroll, Esc returns to the
+start screen.
+
 ## Running the tests
 
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
@@ -72,9 +83,10 @@ with the project's strict typing warnings treated as errors.
 
 | Path | What |
 |---|---|
-| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
-| `src/presentation/` | Screens. |
-| `scenes/` | Godot scenes (`boot.tscn` is the start scene). |
+| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
+| `src/convert/` | Turning decoded game data into Godot resources (textures now). |
+| `src/presentation/` | Screens (`frontend/`) and development tools (`tools/`, the texture viewer). |
+| `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the texture viewer). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |
 | `tools/` | Test runners, a script compile check, and the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`). |
