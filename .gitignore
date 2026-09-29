@@ -1,0 +1,25 @@
+# Godot's generated cache and import data
+.godot/
+*.translation
+
+# Export output and presets that may hold local paths or credentials
+/export/
+/build/
+export_presets.cfg
+*.pck
+*.zip
+
+# Game data must never enter the repository: the player supplies it.
+*.EXE
+*.exe
+*.MWD
+*.mwd
+*.MWI
+*.mwi
+*.RPL
+*.rpl
+
+# Editor and OS clutter
+.DS_Store
+Thumbs.db
+*.tmp
