@@ -49,3 +49,14 @@ func find_by_map(map_resource_id: int) -> MapBookEntry:
 		if e.high_map_id == map_resource_id or e.low_map_id == map_resource_id:
 			return e
 	return null
+
+
+## The first row whose high- or low-poly WAD of models is resource
+## [param wad_resource_id], or null.
+func find_by_wad(wad_resource_id: int) -> MapBookEntry:
+	if wad_resource_id <= 0:
+		return null
+	for e: MapBookEntry in entries:
+		if e.high_wad_id == wad_resource_id or e.low_wad_id == wad_resource_id:
+			return e
+	return null

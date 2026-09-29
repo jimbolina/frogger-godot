@@ -12,8 +12,8 @@ This is an early stage: the project can find and identify the game files,
 read every file in their archives (the MWI index, the MWD archive, WAD
 bundles and PowerPacker compression) and decode the game tables held in the
 executable (levels, themes, forms, texture remaps and pointers, entity
-scripts, music, level select, demos, bugs), and decode every texture. There
-is no gameplay yet.
+scripts, music, level select, demos, bugs), decode every texture, and read
+and show every model in its resting pose. There is no gameplay yet.
 
 ## No game data is included
 
@@ -56,6 +56,27 @@ bank, F switches nearest/linear filtering, C switches the checkerboard
 behind transparent pixels, Page Up/Page Down scroll, Esc returns to the
 start screen.
 
+### Model viewer
+
+The start screen's **Model viewer** button (or
+`godot --path . res://scenes/tools/model_viewer.tscn`) shows the game's
+models (MOF files). Models live in WADs, one for each level plus the GENERAL
+and options ones: pick a WAD in the upper list and a model in the lower one.
+A level's WAD has a slot for every model of its theme, and the slots the
+level does not use hold placeholders.
+
+Keys: Tab moves between the lists and Up/Down choose; A/D and W/S turn the
+model and Q/E move closer and away (or drag with the mouse and use the
+wheel); F switches nearest/linear filtering, B draws both sides of every
+polygon, H shows the parts FrogLord's settings hide, N shows the next model
+inside an animated file, L lists the low-poly WADs too, Esc returns to the
+start screen.
+
+What it does not do yet: models are unlit (the game lights them while it
+runs, from lights stored in each map), and the parts of an animated model
+are shown where the file stores them, not posed. Textures and flipbooks do
+not animate.
+
 ## Running the tests
 
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
@@ -83,13 +104,13 @@ with the project's strict typing warnings treated as errors.
 
 | Path | What |
 |---|---|
-| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
-| `src/convert/` | Turning decoded game data into Godot resources (textures now). |
-| `src/presentation/` | Screens (`frontend/`) and development tools (`tools/`, the texture viewer). |
-| `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the texture viewer). |
+| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
+| `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
+| `src/presentation/` | Screens (`frontend/`) and development tools (`tools/`, the texture and model viewers). |
+| `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |
-| `tools/` | Test runners, a script compile check, and the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`). |
+| `tools/` | Test runners, a script compile check, the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`), and `probe_model_shader.gd`, which measures the colours the model shaders put on screen. |
 | `third_party/` | FrogLord's configuration files, unmodified (see `third_party/README.md`). |
 | `addons/gut/` | The GUT test framework, unmodified. |
 

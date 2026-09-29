@@ -12,8 +12,8 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P1 | MWI index, MWD archive, PP20, WADs | M | SHA-256 of every file and WAD child from an independent Python reader | Done, `37533f2` |
 | P2 | Every table in the executable | M | Independent Python reader; byte and value comparison with the reference engine's extracted tables | Done, `0f03972` |
 | P3 | Texture banks (VLO) and a texture viewer | S | Per-image hashes; screenshots inspected | Done, `bf6d356` |
-| P4 | Static models (MOF) and a model viewer | M | Part, vertex and polygon counts; by eye | Next |
-| P5 | Animated models, flipbooks, texture animation | L | The frog's animations side by side | |
+| P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done |
+| P5 | Animated models, flipbooks, texture animation | L | The frog's animations side by side | Next |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Side by side; the reference engine's per-tick traces within tolerance | |
 | P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
@@ -45,7 +45,7 @@ src/legacy/                 Pure data: readers for the original formats. No node
   config/                   FrogLord config parsers, GameVersionConfig, name lists
   source/                   Where the game files are: retail folder, FrogLord mod folder, locator
   exe/                      The executable and the tables inside it
-  formats/                  MWI, MWD, WAD, VLO; later MOF, MAP, sound banks, demos
+  formats/                  MWI, MWD, WAD, VLO, MOF; later MAP, sound banks, demos
   game_data.gd              One facade over all of the above
 src/convert/                Builds Godot resources from legacy data: textures, meshes, animations, audio
 src/game/                   The game: world, entities, scripts, frog, camera, collision, effects
@@ -67,10 +67,18 @@ Directories are created when a phase puts real files in them.
 - Frog hops last a whole number of ticks and snap to the grid on landing, so recorded demos replay approximately. Demo checks compare completion and end state, not the path.
 - Floats are fine for camera easing, particles, animation blending and interpolation.
 
+## Space
+
+- Fixed in P4: a game position `(x, y, z)` is drawn at Godot `(x, -y, -z) / 256`. One grid square is one Godot unit. The game's y points down; this is a half turn about the x axis, not a mirror image, so polygons keep their stored corner order and Godot's back-face culling works as the original's did. `GameSpace` is the only place that converts.
+- Game logic keeps the original whole units. Only what is drawn is converted.
+
 ## Rendering
 
-- Depth buffer. Cut-out textures use alpha scissor. Semi-transparent polygons go in separate surfaces that do not write depth, in four blend variants: mix, add, subtract, add a quarter.
-- One family of unshaded shaders: texture colour times vertex colour times 2, computed in gamma space, with tone mapping off.
+- Renderer: Compatibility (OpenGL), no environment, no tone mapping, no fog, no MSAA. It was chosen because it mixes translucent polygons on stored colour values, as the original did.
+- Depth buffer. A texture pixel made transparent by the black-is-transparent rule is discarded. Semi-transparent polygons go in separate surfaces that do not write depth, in four blend variants: average, add, subtract, add a quarter.
+- One family of unshaded shaders written out from one template (`ModelShaders`). A textured pixel is texture colour times lit colour times 2, the lit colour stopping at full brightness. An untextured pixel is the lit colour as it is, not doubled. All of it is computed on stored colour values.
+- The lit colour is the polygon's colour lit by the map's lights, which the game works out while it runs. Until maps are read (P6) the polygon's own colour is used.
+- The renderer converts a shader's colour to linear light and back with two approximations that darken dark colours. The shaders undo this beforehand. `tools/probe_model_shader.gd` measures what reaches the screen; run it after changing the Godot version, the renderer or the environment.
 - The black-is-transparent rule is a colour key over a whole 256x256 texture page in the original, not per image.
 - One texture per VLO image, clamped, no mipmaps. Filtering is a user option; the font is always nearest.
 - One mesh per map group, split by material. Polygons with animated textures get their own surfaces.

@@ -7,10 +7,13 @@ extends Control
 ## environment variable, or the folder remembered from a previous run. A
 ## folder found on the command line or in the environment is remembered.
 ##
-## A menu at the top opens the development tools (the texture viewer).
+## A menu at the top opens the development tools (the texture viewer and the
+## model viewer).
 
 ## The texture viewer's scene.
 const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
+## The model viewer's scene.
+const MODEL_VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
 
 var _label: Label
 
@@ -29,6 +32,10 @@ func _ready() -> void:
 	viewer_button.text = "Texture viewer"
 	viewer_button.pressed.connect(open_texture_viewer)
 	menu.add_child(viewer_button)
+	var model_button := Button.new()
+	model_button.text = "Model viewer"
+	model_button.pressed.connect(open_model_viewer)
+	menu.add_child(model_button)
 	_label = Label.new()
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -42,6 +49,11 @@ func _ready() -> void:
 ## Switches to the texture viewer.
 func open_texture_viewer() -> void:
 	get_tree().change_scene_to_file(TEXTURE_VIEWER_SCENE)
+
+
+## Switches to the model viewer.
+func open_model_viewer() -> void:
+	get_tree().change_scene_to_file(MODEL_VIEWER_SCENE)
 
 
 ## The folder given as [code]--data-dir=<folder>[/code] after [code]--[/code], or "".

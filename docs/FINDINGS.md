@@ -8,6 +8,8 @@ What each phase learned that later phases need. Add to this file at the end of e
 |---|---|---|
 | Is the PC game's logic rate 30 or 25 ticks per second? | The reference engine runs 30: the C source defines 30 logic calls per second and the PC build creates a 33 ms timer. FrogLord's editor converts entity delays to seconds using 25 for the PC release. | P7, against the reference engine's traces and the retail game |
 | Does the PC game use the same camera projection distance (256) as the C source sets? | Every reference picture was rendered with 256. Not independently checked against the retail game. | P6 |
+| Do image edges show seams on maps under linear filtering? | A texture coordinate of 255 lands on the edge of the in-game part of the image, next to its padding. On models no seam shows (see Models). Map polygons tile the same image side by side, where a seam would show most. | P6 |
+| Which general WAD do general models use in a multiplayer level? | FrogLord picks the multiplayer general WAD for a multiplayer map, and this project does the same. Not checked against the running game. | P8 |
 
 ## Build detection (P0)
 
@@ -64,6 +66,17 @@ This project follows FrogLord in each case. None of them changes a value on reta
 | Size of the sky-land remap | 76 ids | 154 bytes, counting the terminator |
 | Black-is-transparent test | A pixel is black when the top five bits of each channel are zero | Exact zero |
 | Map book rows 4 and 57, which have remap pointers but no map | Skipped | Used as boundaries |
+| Which model is incomplete | The first part's partcel pointer is 0x40 | The same, and the model has one part |
+| Where a static model inside an animated file ends | At the start of the next one; the last at the model table | At the length the model states |
+| How many matrices a part stores | As many as fit before the next section | The highest matrix number its collision shapes use, plus one |
+| What a hilite is attached to | A number: 1 vertex, 2 polygon | Flag bits with the same values |
+
+Where they differ on how models **behave**, the reference engine is followed:
+
+| Subject | FrogLord | Reference engine, followed here |
+|---|---|---|
+| Semi-transparent model polygons on PC retail | Never shown. `MRMofPolygon.isSemiTransparent` answers no for every build after build 8, while its own comment says the game starts doing this at build 11, so the test reads as the wrong way round. | Shown for textures with the translucent flag |
+| Lighting of models | None: the polygon's colour is shown | Lit while running, from the map's lights |
 
 ## Textures (P3)
 
@@ -84,10 +97,71 @@ This project follows FrogLord in each case. None of them changes a value on reta
 - The theme's texture bank comes from the theme book (`ThemeBookEntry.vlo_id(multiplayer, low_poly)`).
 - A polygon's UV bytes are pixel offsets inside the image's in-game region. The original adds the image's page position when it loads a map. In this project's padded textures, a UV maps to `(left padding + u, top padding + v) / padded size`; `TextureBuilder.pixel_rect()` gives the origin.
 
-## For the model phase (P4)
+## Models (P4)
 
-- Forms in the general theme, and any form whose model id is 128 or more, use model `id - 128` from the general WAD. Other forms use the level's own WAD from the map book.
-- Maps set bit 15 on a form id that refers to the general theme.
+| Fact | Value |
+|---|---|
+| Model files | 434, all inside WADs: 1 placeholder, 355 static, 78 animated |
+| Static models, counting those inside animated files | 433 |
+| Incomplete models | 22 |
+| Parts | 1,009 |
+| Polygons | 15,456, of which 6,425 textured |
+| WAD slots | 2,890: 2,023 placeholders, 731 static, 136 animated |
+| Time to read every model | About 1.5 seconds; to build every mesh, about 1.7 |
+
+- **What a file is shows in its first bytes, never in its name.** The four `.XMU` files are ordinary static models.
+- **A model id is a position in a WAD, and placeholders count.** A level's WAD has a slot for every model of its theme. The slots the level does not use hold the same 4-byte placeholder (resource 188), which fills 2,023 of the 2,890 slots.
+- Forms in the general theme, and any form whose model id is 128 or more, use model `id - 128` from the general WAD. Other forms use the level's own WAD from the map book. A multiplayer level uses the multiplayer general WAD. Maps set bit 15 on a form id that refers to the general theme.
+- Three general forms (`GEN_BONUS_FROG`, `GEN_BONUS_FLY_GRE`, `GEN_LADYFROG`) have model id 0 and so no model, though only the second is flagged as having none.
+- **There are 22 incomplete models, not only the checkpoints.** Checkpoints 2 to 5, multipoints 2 to 5 and the multiplayer frogs 2 to 4, each in a high-poly and a low-poly version. Each takes its shape from the nearest earlier complete model in the index, and differs only in the colours and textures of its polygons.
+- **Every static model inside an animated file states its own length, and it equals the distance to the next one.** FrogLord's rule and the reference engine's give the same result on retail data.
+- Only two models store matrices for their collision shapes: `JUN_PLANT.XAR` and its low-poly version.
+- Only polygon types 0 to 7 occur. There is no environment-mapped polygon and no line.
+- **A quad is stored going round its edge.** Its triangles are corners (0, 1, 3) and (1, 2, 3). Texture coordinate k and normal k belong to corner k. FrogLord swaps the last two entries of each list when loading; this project keeps the stored order.
+- **Polygons keep their stored corner order in Godot.** Seen by eye on closed models with back-face culling on: the car, the kennel and the logs show no holes and no inside faces.
+- **A polygon has one colour whatever its type**, and its normals are only for lighting.
+- A texture coordinate is 0 to 255 across the in-game part of the image, with v counted from the top. The game turns it into a whole pixel, `coordinate * size / 255`.
+- Each level's high-poly models find all their textures in the general bank and the theme's bank, with one exception: the multiplayer jungle WAD carries the eight plinths of the single-player levels, and some of their textures are not in the multiplayer jungle bank. Such polygons are drawn untextured.
+- **No seams at image edges on models**, with nearest or with linear filtering: looked at on the kennel's roof and the turtle's shell, whose polygons meet at image edges.
+- Dark models are often dark on purpose. The lower half of each log has polygon colour (7, 22, 51).
+
+### Colours on screen
+
+Measured with `tools/probe_model_shader.gd` on Godot 4.5.1, Compatibility renderer, no environment (NVIDIA GeForce RTX 4070 Ti SUPER). Background (100, 60, 20).
+
+| Case | Expected | Measured |
+|---|---|---|
+| Texture (200, 120, 40), polygon colour 128 | (200, 120, 40) | (200, 120, 40) |
+| Same texture, polygon colour 64 | (100, 60, 20) | (100, 60, 20) |
+| Same texture, polygon colour 192 | (200, 120, 40) | (200, 120, 40) |
+| Texture (200, 200, 200), polygon colour (32, 64, 128) | (50, 100, 200) | (50, 100, 200) |
+| Untextured, polygon colour (90, 160, 30) | (90, 160, 30) | (90, 160, 30) |
+| Untextured, polygon colour (4, 8, 16) | (4, 8, 16) | (4, 8, 16) |
+| Texture (6, 12, 24), polygon colour 128 | (6, 12, 24) | (6, 12, 24) |
+| Transparent texture pixel | background | (100, 60, 20) |
+| Translucent, average, texture (200, 120, 40) | (150, 90, 30) | (150, 90, 30) |
+| Translucent, add, texture (50, 40, 30) | (150, 100, 50) | (150, 100, 50) |
+| Translucent, subtract, texture (50, 40, 30) | (50, 20, 0) | (50, 20, 0) |
+| Translucent, add a quarter, texture (200, 120, 40) | (150, 90, 30) | (150, 90, 30) |
+
+- **In the Compatibility renderer a shader's `ALBEDO` is a stored colour value, not linear light.** The renderer converts it to linear light and back before writing it (`drivers/gles3/shaders/scene.glsl` and `tonemap_inc.glsl` in Godot's source).
+- **The two conversions are approximations that do not undo each other for dark colours.** Without correction a grey of 8 came out as 1, 20 as 16, 40 as 38; from 64 up the value was unchanged. The shaders now work out beforehand the value that comes out right, and every value from 0 to 255 that was tried comes out exact.
+- Mixing with the background happens after the conversion, on stored values, which is what the original did. A renderer that mixes in linear light would give about 0.73 where the original gives 0.5.
+- Textures are given to the shader without Godot's colour conversion, and vertex colours reach it unchanged.
+
+### Lighting, for the map phase (P6)
+
+Models are lit while the game runs; nothing is baked into the files. From the original's source (`API.SRC/MR_LIGHT.C`, `MR_VIEW.C`, `mr_stat.c`) and the reference engine:
+
+- `lit = clamp((base * clamp0(ambient + colours * clamp0(directions * normal))) / 4096, 0, 255)`, per channel, where `base` is the polygon's colour, `ambient` is the sum of the ambient lights' colours times 16, `colours` holds each light's colour times 16 and `directions` each light's direction. At most three directional or point lights are used.
+- A flat polygon is lit once from its one normal; a gouraud polygon once per corner.
+- A level's lights are stored in its map file. The options screens use an ambient light of (0x60, 0x60, 0x60) and one parallel light of (0xA0, 0xA0, 0xC0).
+- Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
+- Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag.
+
+### Semi-transparency
+
+A textured polygon is drawn semi-transparent when its texture has the translucent flag (bit 0), mixed the way the texture's blend mode says. Retail textures only use modes 0 (average) and 1 (add). Untextured polygons are never semi-transparent.
 
 ## Working in this repository
 
@@ -95,3 +169,7 @@ This project follows FrogLord in each case. None of them changes a value on reta
 - Godot's `--import` compiles nothing.
 - Files with extensions Godot does not treat as resources (`.cfg`, `.tsv`) need an include filter in export presets.
 - Running the boot scene saves the data folder to `user://settings.cfg`. Delete that file to test first-run behaviour.
+- A headless run draws nothing, so anything that reads the screen (`tools/probe_model_shader.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
+- A test script must not name a helper `_compare`: GUT has a member of that name.
+- A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
+- Godot stores mesh normals packed; they come back changed in the fifth decimal place.
