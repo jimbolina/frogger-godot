@@ -57,7 +57,41 @@ static func build_report(explicit_dir: String) -> String:
 	lines.append("Executable CRC-32: %d" % found.exe_crc32)
 	lines.append("")
 	lines.append_array(describe_archive(found.source, found.version))
+	lines.append("")
+	lines.append_array(describe_tables(found.source, found.version))
 	return "\n".join(lines)
+
+
+## A few lines counting the game tables read from the executable: a quick
+## smoke check that the tables decode.
+static func describe_tables(source: GameDataSource, version: GameVersionConfig) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var data: GameData = GameData.open(source, version)
+	if not data.is_valid():
+		lines.append("Game tables: unreadable: %s" % data.error)
+		return lines
+	var tables: ExeTables = data.tables
+	var used_levels: int = 0
+	for e: MapBookEntry in tables.map_book().entries:
+		if e.high_map_id > 0:
+			used_levels += 1
+	var form_counts := PackedStringArray()
+	for t: ThemeBookEntry in tables.theme_book().entries:
+		if not t.forms.is_empty():
+			form_counts.append("%s %d" % [t.theme_name(), t.forms.size()])
+	lines.append("Levels: %d rows, %d with a map" % [tables.map_book().size(), used_levels])
+	lines.append("Themes: %d; forms %d (%s)" % [tables.theme_book().entries.size(), tables.theme_book().form_count(),
+		", ".join(form_counts)])
+	lines.append("Scripts: %d (%d commands); texture remaps: %d; texture ids: %d" % [tables.scripts().size(),
+		tables.scripts().command_count(), tables.remaps().size(), tables.bmp_pointers().size()])
+	lines.append("Music entries: %d; demos: %d; level select: %d arcade + %d race; bug kinds: %d" % [
+		tables.music().size(), tables.demo_table().size(), tables.level_select().arcade.size(),
+		tables.level_select().race.size(), tables.pickups().size()])
+	var problems: PackedStringArray = tables.errors()
+	if not problems.is_empty():
+		lines.append("Table problems: %s" % "; ".join(problems))
+	data.close()
+	return lines
 
 
 ## A few lines summarising the archive index and checking the archive opens:
