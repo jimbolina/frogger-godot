@@ -8,8 +8,9 @@ on the data from the player's own copy of the PC game, and staying compatible
 with levels and changes made in [FrogLord](https://github.com/Kneesnap/FrogLord),
 the community's Frogger editor.
 
-This is an early stage: the project can find and identify the game files.
-There is no gameplay yet.
+This is an early stage: the project can find and identify the game files and
+read every file in their archives (the MWI index, the MWD archive, WAD
+bundles and PowerPacker compression). There is no gameplay yet.
 
 ## No game data is included
 
@@ -39,7 +40,8 @@ information FrogLord writes into a modded executable, or else by the CRC-32
 checksum of the executable, which FrogLord's version files list.
 
 Running the project currently opens a screen saying which files and which
-build were found, or how to set the folder.
+build were found (with a summary of the archive index), or how to set the
+folder.
 
 ## Running the tests
 
@@ -68,12 +70,12 @@ with the project's strict typing warnings treated as errors.
 
 | Path | What |
 |---|---|
-| `src/legacy/` | Readers for the original data formats and executable. Pure data classes (no scene tree), testable headless. |
+| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs), `source/` (finding the game files), `formats/` (MWI, MWD, WAD). Pure data classes with no scene tree, testable headless. |
 | `src/presentation/` | Screens. |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |
-| `tools/` | Test runners and data tools. |
+| `tools/` | Test runners, a script compile check, and `make_golden_manifest.py` (see `tests/golden/README.md`). |
 | `third_party/` | FrogLord's configuration files, unmodified (see `third_party/README.md`). |
 | `addons/gut/` | The GUT test framework, unmodified. |
 

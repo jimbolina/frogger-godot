@@ -55,4 +55,33 @@ static func build_report(explicit_dir: String) -> String:
 	lines.append("Version: %s (%s), recognised by %s" % [found.version.display_name,
 		found.version.internal_name, found.detection_method])
 	lines.append("Executable CRC-32: %d" % found.exe_crc32)
+	lines.append("")
+	lines.append_array(describe_archive(found.source, found.version))
 	return "\n".join(lines)
+
+
+## A few lines summarising the archive index and checking the archive opens:
+## a quick smoke check that the data can be read.
+static func describe_archive(source: GameDataSource, version: GameVersionConfig) -> PackedStringArray:
+	var lines := PackedStringArray()
+	var index: MwiIndex = MwiIndex.from_exe(source.get_exe_bytes(), version)
+	if not index.is_valid():
+		lines.append("Archive index (MWI): unreadable: %s" % index.error)
+		return lines
+	lines.append("Archive index (MWI): %d entries, %d WADs, %d compressed" % [
+		index.size(), index.wad_entries().size(), index.compressed_count()])
+	var counts: Dictionary[int, int] = index.count_by_type()
+	var type_ids: Array[int] = counts.keys()
+	type_ids.sort()
+	var parts := PackedStringArray()
+	for type_id: int in type_ids:
+		parts.append("type %d: %d" % [type_id, counts[type_id]])
+	lines.append("Entries by type: " + ", ".join(parts))
+	var problems := PackedStringArray()
+	var archive: MwdArchive = MwdArchive.open(source.get_mwd_path(), problems)
+	if archive == null:
+		lines.append("Archive (MWD): unreadable: %s" % ", ".join(problems))
+	else:
+		lines.append("Archive (MWD): %d bytes, header OK" % archive.size())
+		archive.close()
+	return lines
