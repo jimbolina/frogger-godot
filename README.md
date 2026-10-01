@@ -13,7 +13,9 @@ read every file in their archives (the MWI index, the MWD archive, WAD
 bundles and PowerPacker compression) and decode the game tables held in the
 executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
-and animate models, flipbooks and polygon textures. There is no gameplay yet.
+and animate models, flipbooks and polygon textures. The map inspection viewer
+renders terrain, water, sky and map animations, including FrogLord-saved edits.
+There is no gameplay yet.
 
 ## No game data is included
 
@@ -81,7 +83,41 @@ Unsafe authored actions remain listed with an explanation.
 
 For a deterministic capture, add `-- --model=GEN_FROG.XAR --action=0
 --tick=60 --smooth=false --screenshot-dir=<absolute folder outside the repository>`.
-Models remain unlit until map lights are implemented.
+The standalone model viewer remains unlit; the map viewer offers a lighted model probe.
+
+### Map viewer
+
+The start screen's **Map viewer** button (or
+`godot --path . res://scenes/tools/map_viewer.tscn`) opens SUB1 in high detail.
+Choose a level and detail, drag to orbit, right-drag to pan and use the wheel
+to zoom. R resets the camera, F changes filtering, Space plays or pauses,
+and Period steps one 30 Hz tick. The tick control seeks deterministically.
+The normal camera uses the map offsets; **Map slice reference** reproduces
+the frozen reference camera, 128-group limit and 2,500-polygon group budget.
+Dragging switches to a custom inspection pose; R restores the preset.
+
+Maps include stored terrain colours, cave illumination, animated textures,
+water and sky-land. This is an inspection tool: frogs, moving entities, HUD
+and gameplay cameras are deferred. The explicit hidden-geometry inspection
+switch includes invisible and unreferenced polygons; ordinary viewing omits them.
+
+For repeatable captures on Windows, set `GODOT` and `FROGGER_DATA_DIR`, then:
+
+```powershell
+tools/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Camera map-slice -Tick 0 -Linear -Benchmark
+```
+
+Captures use a fixed 640×480 viewport and write PNG plus metadata outside the
+repository. Use `-Linear` for frozen-C comparisons; omit it for nearest filtering.
+Add `-LowDetail` to inspect the matching low-detail map and textures. The viewer also accepts
+`-- --level=SUB1 --low-poly=false --camera=map-slice --tick=0 --linear=false
+--screenshot-dir=<absolute external folder>`. An optional `--probe-model=GEN_CHECKPOINT_1.XMR`
+shows a static model with map ambient/parallel lighting. Saved FrogLord files
+use the EXE's embedded index; a supplied standalone MWI is compared and any
+mismatch is reported.
+High- and low-detail maps are separate resources: select the detail variant
+you edited in FrogLord. For fixed-pose comparisons, the capture wrapper accepts
+`-CameraSource 'x,y,z'`, `-CameraTarget 'x,y,z'` (game units) and `-Projection 500`.
 
 ## Running the tests
 

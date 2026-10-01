@@ -7,13 +7,14 @@ extends Control
 ## environment variable, or the folder remembered from a previous run. A
 ## folder found on the command line or in the environment is remembered.
 ##
-## A menu at the top opens the development tools (the texture viewer and the
-## model viewer).
+## A menu at the top opens the texture, model and map inspection tools.
 
 ## The texture viewer's scene.
 const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
 ## The model viewer's scene.
 const MODEL_VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
+## The map inspection tool.
+const MAP_VIEWER_SCENE: String = "res://scenes/tools/map_viewer.tscn"
 
 var _label: Label
 
@@ -36,6 +37,10 @@ func _ready() -> void:
 	model_button.text = "Model viewer"
 	model_button.pressed.connect(open_model_viewer)
 	menu.add_child(model_button)
+	var map_button := Button.new()
+	map_button.text = "Map viewer"
+	map_button.pressed.connect(open_map_viewer)
+	menu.add_child(map_button)
 	_label = Label.new()
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -152,3 +157,8 @@ static func describe_archive(source: GameDataSource, version: GameVersionConfig)
 		lines.append("Archive (MWD): %d bytes, header OK" % archive.size())
 		archive.close()
 	return lines
+
+
+## Switches to the map inspection tool.
+func open_map_viewer() -> void:
+	get_tree().change_scene_to_file(MAP_VIEWER_SCENE)

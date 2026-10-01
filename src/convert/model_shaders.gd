@@ -23,9 +23,8 @@ extends RefCounted
 ## it again after changing the Godot version, the renderer, or adding an
 ## environment.
 ##
-## Nothing here lights a model. The game lights models while it runs, from
-## lights stored in each map; until maps are read the polygon's own colour
-## is used as its lit colour.
+## Lighting is supplied as vertex colours by the optional map-light model
+## converter. Standalone model viewers use the polygon's own colour.
 ##
 ## Shaders are written out from one template, one per combination of
 ## choices, and kept.
@@ -47,6 +46,11 @@ enum Blend {
 const _TEMPLATE: String = """shader_type spatial;
 render_mode unshaded, %s, %s, %s;
 %s
+uniform vec2 projection_scale = vec2(1.0);
+void vertex() {
+	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	POSITION.xy *= projection_scale;
+}
 // The renderer turns ALBEDO into linear light and back with two formulas
 // that do not quite undo each other, which darkens dark colours. This gives
 // the ALBEDO that comes out of that as the colour wanted.

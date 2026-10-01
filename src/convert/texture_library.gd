@@ -34,6 +34,11 @@ func bank_count() -> int:
 	return _banks.size()
 
 
+## Bank in upload order, or null outside the loaded list.
+func bank_at(index: int) -> VloFile:
+	return _banks[index] if index >= 0 and index < _banks.size() else null
+
+
 ## The bank added under [param bank_name], or null.
 func find_bank(bank_name: String) -> VloFile:
 	var at: int = _bank_names.find(bank_name)

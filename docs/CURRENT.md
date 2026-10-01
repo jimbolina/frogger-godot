@@ -1,23 +1,29 @@
 # Current checkpoint
 
-Updated: 2026-10-01. Replace this file when work changes; never append a journal.
+Updated: 2026-10-01. Replace this checkpoint; do not append a journal.
 
-**Next work: plan P6 — map parsing, rendering and camera.**
-The [P6 planning brief](plans/p6-maps.md) contains the survey checklist and
-existing scope. Begin by inventorying retail map formats and tracing
-FrogLord's map reader/writer plus the frozen C camera/rendering code.
-No P6 implementation has started or detailed plan been approved.
+**P6 complete: map parsing, rendering and inspection cameras.**
+The orchestrator integrated `gpt-6.1-sol` agents for readers, rendering,
+viewer/cameras and independent Python/C facts. See the
+[map contracts](reference/maps.md) and
+[validation report](validation/p6.md).
 
-P5 is complete in `957b9a0`; model animation, flipbooks and animated textures
-are available. Maps remain the next phase. The documentation reorganization
-changes no runtime code or golden facts.
+**Next action:** plan P7 against the roadmap, current implementation and
+frozen C per-tick traces: grid, frog movement, gameplay camera, collision
+and deaths. Settle the timing contract before implementing movement.
 
-**Pending input:** an owner-supplied FrogLord-saved folder with all three
-`modded_*` files is needed for the P6 compatibility gate, but does not block
-survey/planning. The project licence is an owner decision before publication.
+Final serial checks: 131 scripts compile strictly; retail 297 passed with
+zero skips; asset-free 246 passed with 51 named retail skips (exit 3).
+All 78 high/low map loads and resource-release switches passed. Seven new
+fact tables passed deliberate-break/restoration checks. All eleven selected
+reference scenes pass the unchanged numeric thresholds. SUB1 repeat captures
+are identical; measured load and playback budgets pass without render-resource
+growth. Evidence and external capture locations are in the report.
 
-**Latest verification, rerun after documentation reorganization:** 99 scripts compiled; 240 retail tests passed;
-198 asset-free tests passed with 42 named retail skips. Full P5 visual,
-reference and timing evidence is in [its validation report](validation/p5.md).
-Use Git for working-tree and commit state; no separate uncommitted handoff
-or external implementation work is pending.
+The owner's FrogLord-saved JUN1 low-detail map loads with an identical
+standalone/embedded index. Same-pose captures confirm raised terrain;
+independent records confirm four removed tree entities. Automatic entity
+placement/rendering remains P8, so tree models are absent from both views.
+The final wrappers passed after this compatibility check.
+
+Never push. The licence remains the owner's decision before publication.

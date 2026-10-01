@@ -24,6 +24,7 @@ commands run from the repository root; generated facts live in
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
+| Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
 
 ## Digest convention
 

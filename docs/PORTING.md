@@ -14,7 +14,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P3 | Texture banks (VLO) and a texture viewer | S | Per-image hashes; screenshots inspected | Done, `bf6d356` |
 | P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done, `b3188cd` |
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
-| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Next |
+| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done; [validation](validation/p6.md) |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Side by side; the reference engine's per-tick traces within tolerance | |
 | P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
 | P9 | The remaining seven themes | XL | A checklist per level | |
@@ -33,20 +33,22 @@ Network play is deferred.
 
 | What | Needed by | Why |
 |---|---|---|
-| A FrogLord-saved mod: the folder holding the three `modded_*` files after any small level edit | P6 | FrogLord has no command line for this, and the round trip is the project's main compatibility claim |
 | A licence for this project's own code | Before the repository is made public | |
 
 ## Planning the next phase
 
-Start with [the current checkpoint](CURRENT.md) and the [P6 planning brief](plans/p6-maps.md).
-The brief still needs a source/data survey and detailed acceptance plan.
-P7 settles retail timing; P8 is the first playable-level milestone.
+Start with [the current checkpoint](CURRENT.md). P6 is complete, including
+the owner's saved JUN1 terrain edit; see the [validation report](validation/p6.md).
+Plan P7 against current code and frozen per-tick traces. P7 settles retail
+timing, grid movement, gameplay camera, collision and deaths; P8 adds entity
+placement and is the first playable-level milestone.
 
 ## Completed-phase evidence
 
 Read these only when checking a historical result or reproducing a comparison:
 [archives (P1)](validation/p1.md), [textures (P3)](validation/p3.md),
-[models (P4)](validation/p4.md), [animation (P5)](validation/p5.md).
+[models (P4)](validation/p4.md), [animation (P5)](validation/p5.md),
+[maps (P6)](validation/p6.md).
 P0/P2 checks and generator cross-checks are documented in the
 [testing guide](reference/testing.md) and [golden specifications](../tests/golden/README.md).
 Current technical contracts are routed from [AGENTS.md](../AGENTS.md).

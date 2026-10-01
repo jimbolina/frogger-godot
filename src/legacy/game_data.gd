@@ -26,6 +26,10 @@ var archive: MwdArchive
 var names: GameNameLists
 ## Why the data cannot be used, or "".
 var error: String = ""
+## Non-fatal source inconsistencies, including a saved standalone index mismatch.
+var warnings := PackedStringArray()
+## True when a FrogLord standalone index was read and compared with the EXE.
+var standalone_index_checked: bool = false
 
 var _wads: Dictionary[int, WadFile] = {}
 var _wad_of_resource: Dictionary[int, int] = {}
@@ -53,6 +57,7 @@ static func open(data_source: GameDataSource, build: GameVersionConfig, library:
 		return data
 	data.names = GameNameLists.load_for(build, library if library != null else FrogLordConfigLibrary.new())
 	data.tables = ExeTables.new(data.exe, data.mwi, data.names)
+	data._check_standalone_index()
 	return data
 
 
@@ -112,6 +117,72 @@ func read_resource_by_name(file_name: String, problems: PackedStringArray = Pack
 		problems.append("no resource called %s" % file_name)
 		return PackedByteArray()
 	return read_resource(entry.index, problems)
+
+
+## Every regular map resource, excluding the separate sky-land tile files.
+func map_entries() -> Array[MwiEntry]:
+	var entries: Array[MwiEntry] = []
+	for entry: MwiEntry in mwi.entries:
+		var file_name: String = entry.display_name().to_upper()
+		if file_name.ends_with(".MAP") and not file_name.begins_with("SKY_LAND"):
+			entries.append(entry)
+	return entries
+
+
+## Decodes a regular map without retaining it after the caller releases it.
+## Sky-land tiles have a separate format and use [method read_sky_land].
+func read_map(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> MapFile:
+	var bytes: PackedByteArray = read_resource(resource_id, problems)
+	if bytes.is_empty():
+		return null
+	var map: MapFile = MapFile.read(bytes)
+	if not map.error.is_empty():
+		problems.append("map resource %d: %s" % [resource_id, map.error])
+		return null
+	return map
+
+
+## Decodes the separately formatted sky-land tiles of the chosen detail.
+func read_sky_land(low_poly: bool = false, problems: PackedStringArray = PackedStringArray()) -> SkyLandFile:
+	var file_name: String = "SKY_LAND_WIN95.MAP" if low_poly else "SKY_LAND.MAP"
+	var bytes: PackedByteArray = read_resource_by_name(file_name, problems)
+	if bytes.is_empty():
+		return null
+	var sky: SkyLandFile = SkyLandFile.read(bytes)
+	if not sky.error.is_empty():
+		problems.append("%s: %s" % [file_name, sky.error])
+		return null
+	return sky
+
+
+## Compares decoded archive entries, ignoring storage padding after their names.
+static func index_difference(embedded: MwiIndex, standalone: MwiIndex) -> String:
+	if not standalone.is_valid():
+		return "standalone MWI is unreadable: %s" % standalone.error
+	if embedded.entries.size() != standalone.entries.size():
+		return "standalone MWI entry count differs from embedded index"
+	for i: int in embedded.entries.size():
+		var a: MwiEntry = embedded.entries[i]
+		var b: MwiEntry = standalone.entries[i]
+		if a.path != b.path or a.flags != b.flags or a.type_id != b.type_id \
+				or a.sector_offset != b.sector_offset or a.packed_size != b.packed_size \
+				or a.unpacked_size != b.unpacked_size or a.safety_margin_words != b.safety_margin_words:
+			return "standalone MWI differs from embedded index at entry %d" % i
+	return ""
+
+
+func _check_standalone_index() -> void:
+	if not source is FrogLordModSource:
+		return
+	var mod_source: FrogLordModSource = source as FrogLordModSource
+	var path: String = mod_source.get_standalone_mwi_path()
+	if path.is_empty():
+		return
+	standalone_index_checked = true
+	var standalone: MwiIndex = MwiIndex.parse(FileAccess.get_file_as_bytes(path))
+	var difference: String = index_difference(mwi, standalone)
+	if not difference.is_empty():
+		warnings.append(difference + "; using the EXE index")
 
 
 ## The resource id of a WAD holding resource [param resource_id], or -1.

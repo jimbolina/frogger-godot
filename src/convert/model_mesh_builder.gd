@@ -21,7 +21,7 @@ extends RefCounted
 ## [code]coordinate * size / 255[/code], and so does this.
 ##
 ## [b]Colour and normals.[/b] A polygon has one colour, given to all its
-## corners. Normals are kept for lighting, which is not done yet: a flat
+## corners. Optional map probe lighting uses stored normals: a flat
 ## polygon gives its one normal to every corner, a gouraud polygon has one
 ## per corner.
 
@@ -32,6 +32,10 @@ const REST_POSE: int = 0
 var linear_filter: bool = false
 ## Draw both sides of every polygon.
 var two_sided: bool = false
+## Optional map lighting for a static model probe; standalone viewers stay unlit.
+var lighting: MapLighting
+## Probe's world orientation when prelighting its normals.
+var lighting_basis: Basis = Basis.IDENTITY
 
 var _library: TextureLibrary
 var _preferred: VloFile
@@ -271,7 +275,10 @@ func _add_polygon(polygon: MofPolygon, cel: MofPart.Partcel, surfaces: Dictionar
 			surface.normals.append(Vector3.UP)
 		else:
 			surface.normals.append(GameSpace.normal(cel.normals[normal_at], cel.normals[normal_at + 1], cel.normals[normal_at + 2]))
-		surface.colors.append(color)
+		var lit: Color = color
+		if lighting != null:
+			lit = lighting.shade(color, surface.normals[surface.normals.size() - 1], lighting_basis)
+		surface.colors.append(lit)
 		if image != null:
 			if target >= 0:
 				surface.uvs.append(Vector2((polygon.uvs[corner * 2] * image.width) / 255,
