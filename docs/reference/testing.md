@@ -1,0 +1,57 @@
+# Testing and visual checks
+
+## Required commit gate
+
+Run both modes before every commit, including documentation changes.
+Use the wrappers: they import, strictly compile every script, then run GUT.
+Stop on a failed stage; fix it before starting subsequent checks.
+
+```powershell
+$env:GODOT = 'C:\Users\janit\Desktop\Godot.exe'
+$env:FROGGER_DATA_DIR = 'C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER'
+& .\tools\run_tests.ps1
+# Continue only after exit 0.
+Remove-Item Env:FROGGER_DATA_DIR
+& .\tools\run_tests.ps1
+# Expect exit 3 only for named retail-dependent skips, with no failures.
+```
+
+For Bash, use `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`,
+then run again with `FROGGER_DATA_DIR` unset. Commands run from the repository root.
+Exit codes: 0 = all passed; 1 = failure/compile error; 2 = missing Godot;
+3 = no failure but skips. A skip is never a pass. Retail mode must have none.
+
+Use isolated writable Godot user data, explicit logs, awaited hidden
+processes and `--disable-crash-handler` for automated runs. The wrappers
+already enforce this and retain log paths in their output. A previous
+unwritable default log directory caused exception windows; do not bypass
+the wrappers with a bare automated Godot launch. A sandbox root-certificate
+warning has been benign; determine success from compilation/tests and exit status.
+
+## Tools and visual verification
+
+- Godot 4.5.1 Compatibility: `C:\Users\janit\Desktop\Godot.exe`.
+  Its windowed executable does not reliably print to a console; use log files.
+- Python: `C:\Python313\python.exe`; MSYS2 tools are also available.
+- GUT 9.5.0 is vendored in `addons/gut/`.
+- Visually inspect visual changes. Store screenshots outside the repository.
+  Hash agreement establishes decoding, not appearance.
+- After changing Godot, renderer or environment, run `tools/probe_model_shader.gd`
+  with a window and inspect the measured colours; see [rendering](rendering.md).
+- Every new golden family needs an independent generator and a deliberate-break
+  check, with the original fact restored. See [golden rules](../../tests/golden/README.md).
+- The owner supplies the first FrogLord-saved mod folder for P6.
+
+## GDScript and runner pitfalls
+
+- GUT's loader does not enforce strict typing. `tools/check_scripts.gd` is the only headless check that every script compiles with warnings as errors.
+- Godot's `--import` compiles nothing.
+- Files with extensions Godot does not treat as resources (`.cfg`, `.tsv`) need an include filter in export presets.
+- Running the boot scene saves the data folder to `user://settings.cfg`. Delete that file to test first-run behaviour.
+- A headless run draws nothing, so anything that reads the screen (`tools/probe_model_shader.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
+- A test script must not name a helper `_compare`: GUT has a member of that name.
+- A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
+- Godot stores mesh normals packed; they come back changed in the fifth decimal place.
+- Assign a `Variant` to a typed local before passing it to a GUT assertion.
+
+Completed runs belong in the owning phase's validation report, not this guide.

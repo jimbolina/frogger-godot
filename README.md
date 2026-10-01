@@ -122,6 +122,12 @@ folder, disable the crash handler and stop at the first failed stage.
 | `third_party/` | FrogLord's configuration files, unmodified (see `third_party/README.md`). |
 | `addons/gut/` | The GUT test framework, unmodified. |
 
+## Contributing and project documentation
+
+Start with [AGENTS.md](AGENTS.md) and the short [current checkpoint](docs/CURRENT.md).
+The [roadmap](docs/PORTING.md) tracks phases; AGENTS links the technical
+references to read for a specific task. Completed validation is kept per phase.
+
 ## Licence
 
 The licence for this project's own code is **to be decided by the project

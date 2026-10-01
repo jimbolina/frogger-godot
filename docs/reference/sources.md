@@ -1,10 +1,6 @@
 # Reference sources
 
-Everything here is outside this repository and is read-only. Paths are relative to this repository's parent folder. Start a session with the reference repository added as a second directory so these paths can be read:
-
-```
-claude --add-dir ../froggy
-```
+External material is read-only. All external paths below are relative to the repository root, not this document. Read only the sources needed for the current task.
 
 ## The reference engine: `../froggy`
 
@@ -20,7 +16,7 @@ A port of the original C game code to modern PCs, matched against the retail PC 
 | Tables transcribed from the retail executable: demos, cheats, languages, options pages | `../froggy/engine/asset_pipeline/include/frogger_*.h` |
 | Measured facts about how the PC game behaves, many of them differences from the PlayStation game | `../froggy/engine/docs/KEY_FACTS.md`; the index at the end of `REFERENCE.md` says which entries matter |
 | Reference pictures: 148 PNGs of maps, the frog and options pages | `../froggy/engine/tests/baselines/` |
-| The original plan for this project | `../froggy/engine/docs/handoffs/handoff-m56-ungraft.md`, "Part 2". `docs/PORTING.md` here supersedes it. |
+| The original plan for this project | `../froggy/engine/docs/handoffs/handoff-m56-ungraft.md`, "Part 2". The [current roadmap](../PORTING.md) supersedes it. |
 
 ### Where to look in the C source
 
