@@ -16,7 +16,7 @@ func before_each() -> void:
 	_viewer.auto_open = false
 	add_child_autofree(_viewer)
 	_data = GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e"))
-	_viewer.open_data(_data)
+	_viewer.open_data(_data, true)
 
 
 # Triangles of the first static model of each file, from the golden polygon counts.

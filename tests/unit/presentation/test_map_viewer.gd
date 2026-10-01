@@ -83,6 +83,52 @@ func test_invalid_game_data_reports_failure_before_table_access() -> void:
 	assert_string_contains(_viewer.facts_text(), "Invalid executable tables")
 	assert_false(_viewer.load_level_by_code("SUB1"))
 
+
+func test_replacement_with_null_or_invalid_data_releases_scene_and_probe_state() -> void:
+	for invalid: GameData in [null, GameData.new()]:
+		var source: MapSceneData = _scene()
+		source.diagnostics.append("Old source warning")
+		assert_true(_viewer.show_scene(source))
+		assert_string_contains(_viewer._status.tooltip_text, "Old source warning")
+		_viewer.seek_tick(17)
+		_viewer.set_playing(true)
+		_viewer.probe_mesh = ModelMesh.new()
+		_viewer._probe = Node3D.new()
+		_viewer._world.add_child(_viewer._probe)
+		var old_map: WeakRef = weakref(_viewer.current_mesh)
+		if invalid != null:
+			invalid.error = "Invalid tables"
+		_viewer.open_data(invalid)
+		await get_tree().process_frame
+		var released_mesh: MapMesh = old_map.get_ref()
+		assert_null(released_mesh)
+		assert_null(_viewer.scene_data)
+		assert_null(_viewer.current_mesh)
+		assert_null(_viewer.map_instance)
+		assert_null(_viewer.probe_mesh)
+		assert_null(_viewer._probe)
+		assert_eq(_viewer._world.get_child_count(), 2, "Only the inspection camera and environment remain")
+		assert_eq(_viewer._levels.item_count, 0)
+		assert_eq(_viewer._status.tooltip_text, "", "Old source diagnostics must not survive replacement")
+		assert_eq(_viewer.tick, 0)
+		assert_false(_viewer.playing)
+
+
+func test_detached_viewer_releases_map_resources() -> void:
+	assert_true(_viewer.show_scene(_scene()))
+	var old_mesh: WeakRef = weakref(_viewer.current_mesh)
+	var old_scene: WeakRef = weakref(_viewer.scene_data)
+	remove_child(_viewer)
+	await get_tree().process_frame
+	var released_mesh: MapMesh = old_mesh.get_ref()
+	var released_scene: MapSceneData = old_scene.get_ref()
+	assert_null(released_mesh)
+	assert_null(released_scene)
+	assert_null(_viewer.map_instance)
+	assert_null(_viewer.current_mesh)
+	assert_null(_viewer.scene_data)
+	assert_false(_viewer.playing)
+
 func test_custom_raw_camera_and_projection_validate_and_reset() -> void:
 	assert_true(_viewer.show_scene(_scene()))
 	assert_true(_viewer.set_camera_pose(Vector3i(512, -2048, -4096), Vector3i(512, 0, 0), 512))

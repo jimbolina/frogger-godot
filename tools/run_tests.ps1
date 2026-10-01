@@ -4,7 +4,7 @@
 #
 # Logs and the named-skip summary are retained in the printed temporary folder.
 # Exit codes: 0 all passed; 1 a failure or a script that does not compile;
-# 2 setup problem; 3 nothing failed but some tests were skipped.
+# 2 setup problem; 3 validated named asset-free skips.
 $ErrorActionPreference = "Stop"
 $gutArguments = @($args)
 $godot = if ($env:GODOT) { $env:GODOT } else { "godot" }
@@ -50,11 +50,13 @@ foreach ($name in @("APPDATA", "TEMP", "TMP")) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
 }
 
+$runPrepared = $false
 try {
     $runDirectory = Join-Path ([IO.Path]::GetTempPath()) ("frogger-tests-" + [Guid]::NewGuid().ToString("N"))
     $profileDirectory = Join-Path $runDirectory "appdata"
     $temporaryDirectory = Join-Path $runDirectory "temp"
     New-Item -ItemType Directory -Path $profileDirectory, $temporaryDirectory -Force | Out-Null
+    $runPrepared = $true
     $env:APPDATA = $profileDirectory
     $env:TEMP = $temporaryDirectory
     $env:TMP = $temporaryDirectory
@@ -76,6 +78,21 @@ try {
         exit 1
     }
 
+    $architecture = Invoke-GodotStage "architecture" @("-s", "res://tools/check_architecture.gd")
+    $architecture.Output -split "`n" | Where-Object { $_ -match "ARCHITECTURE|architecture_check:" }
+    if ($architecture.ExitCode -ne 0 -or $architecture.Output -match $scriptErrorPattern -or $architecture.Output -notmatch "(?m)^architecture_check: \d+ scripts, 0 failed\s*$") {
+        Write-Output $architecture.Output
+        Write-Output "run_tests: architecture check failed; see $($architecture.LogPath)"
+        exit 1
+    }
+
+    $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
+    if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -match $scriptErrorPattern -or $inputCheck.Output -notmatch "(?m)^test_input: valid\s*$") {
+        Write-Output $inputCheck.Output
+        Write-Output "run_tests: invalid test input; see $($inputCheck.LogPath)"
+        exit 1
+    }
+
     $tests = Invoke-GodotStage "tests" (@("-s", "res://addons/gut/gut_cmdln.gd") + $gutArguments)
     Write-Output $tests.Output
     $result = $tests.ExitCode
@@ -83,13 +100,16 @@ try {
         Write-Output "run_tests: script errors found; see $($tests.LogPath)"
         $result = 1
     }
-    if ($tests.Output -notmatch "(?m)^SUMMARY: PASS=\d+ FAIL=\d+ SKIP=\d+ EXIT=[013]\s*$") {
-        Write-Output "run_tests: no complete summary; see $($tests.LogPath)"
+    $validation = Invoke-GodotStage "results" @("-s", "res://tools/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode)
+    $validation.Output -split "`n" | Where-Object { $_ -match "RESULT ERROR|test_results:" }
+    if ($validation.ExitCode -ne 0 -or $validation.Output -match $scriptErrorPattern -or $validation.Output -notmatch "(?m)^test_results: valid, exit [013]\s*$") {
+        Write-Output "run_tests: result validation failed; see $($validation.LogPath)"
         $result = 1
     }
     exit $result
 } catch {
     Write-Output "run_tests: $($_.Exception.Message)"
+    if (-not $runPrepared) { exit 2 }
     exit 1
 } finally {
     foreach ($name in $savedEnvironment.Keys) {

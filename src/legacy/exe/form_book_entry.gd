@@ -14,8 +14,10 @@ extends RefCounted
 ## s32 death type       (how the frog dies, see [FroggerIds])
 ## u32 bonus callback   (address of game code run when it is eaten)
 ## [/codeblock]
-## Callbacks are kept as raw addresses: they point at compiled game code,
-## which a rewrite maps to its own behaviours by address.
+## Callback addresses refer to original compiled game code and are retained
+## for diagnostics. Future setup resolves a verified per-build address
+## to a known name, then selects a supported implementation by that name.
+## These mappings are not implemented; script CallbackNames are a separate list.
 ##
 ## Maps refer to a form by a "form book id": the form's number inside its
 ## theme, with bit 15 ([constant GENERAL_BIT]) set for GENERAL forms.

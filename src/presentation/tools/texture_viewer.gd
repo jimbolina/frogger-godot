@@ -24,6 +24,7 @@ const SCREENSHOT_BANKS: PackedStringArray = ["SUB_VRAM.VLO", "GEN_VRAM.VLO", "SK
 var auto_open: bool = true
 ## The game data being shown, or null.
 var data: GameData
+var _owns_data: bool = false
 ## The bank currently shown, or null.
 var current_bank: VloFile
 ## Texture names by texture id (FrogLord's list), or null.
@@ -44,12 +45,24 @@ func _ready() -> void:
 	_build_ui()
 	if not auto_open:
 		return
-	var found: GameDataLocator.Located = GameDataLocator.new().locate(BootScreen.command_line_data_dir())
+	var screenshot_dir: String = _user_arg("--screenshot-dir=")
+	if not screenshot_dir.is_empty() and not ViewerCapture.external_folder(screenshot_dir):
+		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
+		get_tree().quit(1)
+		return
+	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
 	if not found.is_ok():
 		_status.text = "No Frogger files found (%s). See the start screen for how to set the folder." % found.error
+		if not screenshot_dir.is_empty():
+			push_error(_status.text)
+			get_tree().quit(1)
 		return
-	open_data(GameData.open(found.source, found.version))
-	var screenshot_dir: String = _user_arg("--screenshot-dir=")
+	open_data(GameData.open(found.source, found.version), true)
+	if not data.is_valid():
+		if not screenshot_dir.is_empty():
+			push_error(_status.text)
+			get_tree().quit(1)
+		return
 	if not screenshot_dir.is_empty():
 		_take_screenshots.call_deferred(screenshot_dir)
 	elif not _bank_entries.is_empty():
@@ -58,13 +71,27 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	if data != null:
+	_clear_display(false)
+	if _owns_data and data != null:
 		data.close()
+	data = null
+	_owns_data = false
 
 
-## Shows the banks of [param game_data] in the list.
-func open_data(game_data: GameData) -> void:
+## Shows the banks of [param game_data], borrowed unless [param take_ownership] is true.
+## Replacement/exit closes owned data only; reopening the same object retains ownership.
+func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+	if data != game_data:
+		if _owns_data and data != null:
+			data.close()
+		_owns_data = take_ownership
+	elif take_ownership:
+		_owns_data = true
 	data = game_data
+	if data == null:
+		_owns_data = false
+	_clear_display()
+	_scroll.scroll_vertical = 0
 	_bank_list.clear()
 	_bank_entries.clear()
 	if data == null or not data.is_valid():
@@ -90,10 +117,10 @@ func bank_names() -> PackedStringArray:
 ## game files first if needed. Returns its image count, or -1 if it cannot be shown.
 func load_vlo_by_name(bank_name: String) -> int:
 	if data == null:
-		var found: GameDataLocator.Located = GameDataLocator.new().locate(BootScreen.command_line_data_dir())
+		var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
 		if not found.is_ok():
 			return -1
-		open_data(GameData.open(found.source, found.version))
+		open_data(GameData.open(found.source, found.version), true)
 	var at: int = bank_names().find(bank_name.to_upper())
 	if at < 0:
 		for i: int in _bank_entries.size():
@@ -164,10 +191,18 @@ func _show_vlo(bank_name: String, vlo: VloFile) -> void:
 	_scroll.scroll_vertical = 0
 
 
-func _clear_grid() -> void:
+func _clear_display(detach: bool = true) -> void:
+	current_bank = null
+	image_names = null
+	_bank_entries.clear()
+	_clear_grid(detach)
+
+
+func _clear_grid(detach: bool = true) -> void:
 	_checker_rects.clear()
 	for child: Node in _grid.get_children():
-		_grid.remove_child(child)
+		if detach:
+			_grid.remove_child(child)
 		child.queue_free()
 
 
@@ -276,15 +311,16 @@ static func _checker_image() -> Image:
 
 
 static func _user_arg(prefix: String) -> String:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with(prefix):
-			return arg.substr(prefix.length())
-	return ""
+	return ViewerArguments.value(OS.get_cmdline_user_args(), prefix)
 
 
 func _take_screenshots(folder: String) -> void:
+	var capture_error: String = ViewerCapture.prepare_folder(folder)
+	if not capture_error.is_empty():
+		push_error(capture_error)
+		get_tree().quit(1)
+		return
 	get_window().size = Vector2i(1280, 960)
-	DirAccess.make_dir_recursive_absolute(folder)
 	var shot: int = 0
 	for bank_name: String in SCREENSHOT_BANKS:
 		if load_vlo_by_name(bank_name) < 0:
@@ -295,7 +331,11 @@ func _take_screenshots(folder: String) -> void:
 			await get_tree().process_frame
 		await RenderingServer.frame_post_draw
 		var path: String = folder.path_join("texture_viewer_%d_%s.png" % [shot, bank_name.get_basename().to_lower()])
-		var err: Error = get_viewport().get_texture().get_image().save_png(path)
-		print("screenshot %s: %s" % [path, error_string(err)])
+		capture_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), path)
+		if not capture_error.is_empty():
+			push_error(capture_error)
+			get_tree().quit(1)
+			return
+		print("screenshot %s: OK" % path)
 		shot += 1
 	get_tree().quit()

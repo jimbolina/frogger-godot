@@ -10,7 +10,7 @@ func test_viewer_loads_banks_by_name() -> void:
 	var viewer: TextureViewer = scene.instantiate()
 	viewer.auto_open = false
 	add_child_autofree(viewer)
-	viewer.open_data(GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")))
+	viewer.open_data(GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")), true)
 	var golden: Dictionary[String, int] = {}
 	for row: PackedStringArray in GoldenFiles.rows("vlo_files.tsv"):
 		golden[row[1]] = row[3].to_int()

@@ -37,6 +37,11 @@ Network play is deferred.
 
 ## Planning the next phase
 
+The pre-P7 [domain foundation](reference/architecture.md) adds shared language,
+explicit viewer data ownership and local dependency/result guardrails. Its
+[validation report](validation/domain-foundation.md) records the checks;
+[remaining adoption work](plans/domain-foundation.md) belongs to P7/P8.
+
 Start with [the current checkpoint](CURRENT.md). P6 is complete, including
 the owner's saved JUN1 terrain edit; see the [validation report](validation/p6.md).
 Plan P7 against current code and frozen per-tick traces. P7 settles retail

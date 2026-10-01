@@ -121,6 +121,10 @@ you edited in FrogLord. For fixed-pose comparisons, the capture wrapper accepts
 
 ## Running the tests
 
+Contributors: start with the [domain language](docs/reference/domain.md) and
+[architecture and ownership](docs/reference/architecture.md). These describe
+source identities, viewer lifetimes, and the boundary reserved for P7 gameplay.
+
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
 
 ```
@@ -130,19 +134,25 @@ $env:GODOT="C:\path\to\Godot.exe"; tools\run_tests.ps1   # PowerShell
 
 Set `FROGGER_DATA_DIR` to also run the tests that need the retail files
 (`tests/golden/`); without it those are listed as `SKIPPED` by name. The
-last line is a summary such as `SUMMARY: PASS=70 FAIL=0 SKIP=3 EXIT=3`.
+report includes a summary such as `SUMMARY: PASS=70 FAIL=0 SKIP=3 EXIT=3`,
+followed by the wrapper's result-validation status.
 
 | Exit code | Meaning |
 |---|---|
 | 0 | every test ran and passed |
 | 1 | a test failed, or a script does not compile |
-| 2 | Godot was not found |
-| 3 | nothing failed, but some tests were skipped (a skip is never a pass) |
+| 2 | runner setup failed (for example, Godot was not found) |
+| 3 | only approved asset-free retail skips (a skip is never a pass) |
 
 Every script is compiled before the tests run (`tools/check_scripts.gd`),
-with the project's strict typing warnings treated as errors.
+with the project's strict typing warnings treated as errors. The wrappers also
+check architecture dependencies and validate the complete test report. Only
+reviewed retail tests may skip when `FROGGER_DATA_DIR` is unset; a supplied but
+invalid retail folder, an unexpected skip or an empty selection fails.
 The wrappers isolate writable user data, save explicit logs in a temporary
 folder, disable the crash handler and stop at the first failed stage.
+For a focused iteration, append `-gselect=test_model_viewer` to either wrapper.
+The complete retail and asset-free runs remain required before each commit.
 
 ## Layout
 
@@ -150,7 +160,7 @@ folder, disable the crash handler and stop at the first failed stage.
 |---|---|
 | `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
-| `src/presentation/` | Screens (`frontend/`) and development tools (`tools/`, the texture and model viewers). |
+| `src/presentation/` | Screens (`frontend/`), shared viewer helpers, and development tools (`tools/`, the texture, model and map viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |

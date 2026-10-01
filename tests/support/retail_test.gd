@@ -3,13 +3,11 @@ extends GutTest
 ## Base class for tests that need the player's retail Frogger files.
 ##
 ## Such tests read the folder named by the [code]FROGGER_DATA_DIR[/code]
-## environment variable. When it is unset, or the folder lacks
-## [code]FROGGER.EXE[/code] / [code]FROGPSX.MWD[/code], the whole test script is
-## skipped (and reported as SKIPPED by name) instead of failing, so the
-## asset-free tests still run anywhere.
+## environment variable. Only an unset variable permits a reviewed named skip.
+## A supplied invalid folder is an input failure, checked before GUT runs.
 
 
-## Skips this script when the retail files are not available. (Left without
+## Skips this script only when no retail folder was supplied. (Left without
 ## a return type because GUT declares it that way and overrides must match.)
 @warning_ignore("untyped_declaration")
 func should_skip_script():
@@ -17,14 +15,10 @@ func should_skip_script():
 	return reason if not reason.is_empty() else false
 
 
-## Why the retail files cannot be used, or "" when they can.
+## The allowed asset-free skip reason, or "" when a folder was supplied.
 static func retail_skip_reason() -> String:
-	var dir: String = OS.get_environment(GameDataLocator.ENV_VAR)
-	if dir.is_empty():
+	if not OS.has_environment(GameDataLocator.ENV_VAR):
 		return "SKIP: %s is not set" % GameDataLocator.ENV_VAR
-	if not RetailDirSource.looks_like(dir):
-		return "SKIP: %s (%s) has no %s + %s" % [GameDataLocator.ENV_VAR, dir,
-			RetailDirSource.EXE_NAME, RetailDirSource.MWD_NAME]
 	return ""
 
 

@@ -1,66 +1,81 @@
 extends GutHookScript
-## Runs after all tests: prints a PASS / FAIL / SKIP summary and sets the exit code.
-##
-## Exit codes (documented in README.md):
-## [br]0 - every test ran and passed;
-## [br]1 - at least one test failed;
-## [br]3 - nothing failed, but some tests were skipped (e.g. no retail files).
-## A skipped test is never counted as a pass.
-##
-## The summary is also written to [code]user://test_summary.txt[/code] so a
-## wrapper script can read it even where the console output is unreliable.
+## Saves exact test outcomes and applies the reviewed skip policy after GUT.
 
-## Exit code when all tests passed.
-const EXIT_ALL_PASSED: int = 0
-## Exit code when any test failed.
-const EXIT_FAILED: int = 1
-## Exit code when nothing failed but something was skipped.
-const EXIT_SKIPPED: int = 3
+const Policy := preload("res://tests/support/result_policy.gd")
 
 
-## Collects the results from GUT and reports them.
+## Collects test, fixture and logger failures before choosing the process exit.
 func run() -> void:
 	var runner: Object = gut
 	var collector: Object = runner.call("get_test_collector")
 	var scripts: Array = collector.get("scripts")
-	var passed: int = 0
-	var failed: int = 0
-	var skipped: int = 0
-	var lines := PackedStringArray()
+	var records: Array = []
+	var problems: Array = []
+	var supplied: bool = OS.has_environment(GameDataLocator.ENV_VAR)
+	var input_problem: String = Policy.input_error(supplied,
+		OS.get_environment(GameDataLocator.ENV_VAR))
+	if not input_problem.is_empty():
+		problems.append(input_problem)
+	var test_filter: String = runner.get("unit_test_name")
+	var class_filter: String = runner.get("inner_class_name")
 	for script: Object in scripts:
-		var path: String = script.get("path")
-		var tests: Array = script.get("tests")
-		var script_skipped: bool = script.get("was_skipped")
-		if script_skipped:
-			var reason: String = str(script.get("skip_reason"))
-			for test: Object in tests:
-				skipped += 1
-				lines.append("SKIPPED %s::%s (%s)" % [path, test.get("name"), reason])
+		var skipped: bool = script.get("was_skipped")
+		if not skipped and not script.get("was_run"):
 			continue
+		var inner: String = str(script.get("inner_class_name"))
+		if not class_filter.is_empty() and inner.findn(class_filter) == -1:
+			continue
+		var identity_path: String = script.call("get_full_name")
+		var tests: Array = script.get("tests")
 		for test: Object in tests:
-			var test_name: String = test.get("name")
-			if test.call("is_failing"):
-				failed += 1
-				lines.append("FAILED  %s::%s" % [path, test_name])
+			var name: String = test.get("name")
+			if not test_filter.is_empty() and not name.contains(test_filter):
+				continue
+			var status: String = "not_run"
+			var reason: String = "selected test did not run"
+			if skipped:
+				status = "skip"
+				reason = str(script.get("skip_reason"))
+			elif test.call("is_failing"):
+				status = "fail"
+				reason = ""
 			elif test.call("is_pending"):
-				skipped += 1
+				status = "pending"
 				var texts: Array = test.get("pending_texts")
-				lines.append("SKIPPED %s::%s (%s)" % [path, test_name, ", ".join(PackedStringArray(texts))])
+				reason = ", ".join(PackedStringArray(texts))
 			elif test.call("is_passing"):
-				passed += 1
+				status = "pass"
+				reason = ""
 			elif test.get("was_run"):
-				failed += 1
-				lines.append("FAILED  %s::%s (asserted nothing)" % [path, test_name])
-	var code: int = EXIT_ALL_PASSED
-	if failed > 0:
-		code = EXIT_FAILED
-	elif skipped > 0:
-		code = EXIT_SKIPPED
-	lines.append("SUMMARY: PASS=%d FAIL=%d SKIP=%d EXIT=%d" % [passed, failed, skipped, code])
-	var report: String = "\n".join(lines)
-	print("\n" + report)
-	var file: FileAccess = FileAccess.open("user://test_summary.txt", FileAccess.WRITE)
+				status = "fail"
+				reason = "asserted nothing"
+			records.append({"id": identity_path + "::" + name, "status": status, "reason": reason})
+		var fixtures: Array = script.get("setup_teardown_tests")
+		for fixture: Object in fixtures:
+			if fixture.call("is_failing") or fixture.call("is_pending"):
+				problems.append("fixture failed/pending: %s::%s" % [
+					identity_path, fixture.get("name")])
+	var logger: Object = runner.call("get_logger")
+	var logger_errors: Array = logger.call("get_errors")
+	if not logger_errors.is_empty():
+		problems.append("GUT reported %d runner errors" % logger_errors.size())
+	var report: Dictionary = Policy.make_report(records, supplied, problems)
+	var file: FileAccess = FileAccess.open(Policy.REPORT_PATH, FileAccess.WRITE)
 	if file != null:
-		file.store_string(report + "\n")
+		file.store_string(JSON.stringify(report) + "\n")
 		file.close()
+	else:
+		problems.append("could not save machine report")
+		report = Policy.make_report(records, supplied, problems)
+	var lines := PackedStringArray()
+	for record: Dictionary in records:
+		if record["status"] in ["skip", "pending"]:
+			lines.append("SKIPPED %s (%s)" % [record["id"], record["reason"]])
+		elif record["status"] in ["fail", "not_run"]:
+			lines.append("FAILED  %s (%s)" % [record["id"], record["reason"]])
+	for problem: Variant in report["problems"]:
+		lines.append("RESULT ERROR: " + str(problem))
+	lines.append(Policy.summary(report))
+	print("\n" + "\n".join(lines))
+	var code: int = report["exit"]
 	set_exit_code(code)

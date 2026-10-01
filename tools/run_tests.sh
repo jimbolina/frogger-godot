@@ -10,7 +10,7 @@
 #   0  every test ran and passed
 #   1  a test failed, or a script failed to load / had a script error
 #   2  setup problem (Godot not found)
-#   3  nothing failed, but some tests were skipped (a skip is never a pass)
+#   3  only validated named asset-free skips (a skip is never a pass)
 set -u
 cd "$(dirname "$0")/.." || exit 2
 GODOT="${GODOT:-godot}"
@@ -20,7 +20,7 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
 fi
 
 run_directory="$(mktemp -d "${TMPDIR:-/tmp}/frogger-tests.XXXXXX")" || exit 2
-mkdir -p "$run_directory/appdata" "$run_directory/data" "$run_directory/config" "$run_directory/temp" || exit 2
+mkdir "$run_directory/appdata" "$run_directory/data" "$run_directory/config" "$run_directory/temp" || exit 2
 export APPDATA="$run_directory/appdata"
 export XDG_DATA_HOME="$run_directory/data"
 export XDG_CONFIG_HOME="$run_directory/config"
@@ -65,16 +65,37 @@ if [ "$check_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/check.log"
     exit 1
 fi
 
+run_stage architecture -s res://tools/check_architecture.gd
+architecture_rc=$?
+grep -E 'ARCHITECTURE|architecture_check:' "$run_directory/architecture.log" 2>/dev/null
+if [ "$architecture_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/architecture.log" || ! grep -Eq '^architecture_check: [0-9]+ scripts, 0 failed[[:space:]]*$' "$run_directory/architecture.log"; then
+    cat "$run_directory/architecture.log" "$run_directory/architecture.console.log" 2>/dev/null
+    echo "run_tests: architecture check failed; see $run_directory/architecture.log" >&2
+    exit 1
+fi
+
+run_stage input -s res://tools/check_test_results.gd -- --input
+input_rc=$?
+if [ "$input_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/input.log" || ! grep -Eq '^test_input: valid[[:space:]]*$' "$run_directory/input.log"; then
+    cat "$run_directory/input.log" "$run_directory/input.console.log" 2>/dev/null
+    echo "run_tests: invalid test input; see $run_directory/input.log" >&2
+    exit 1
+fi
+
 run_stage tests -s res://addons/gut/gut_cmdln.gd "$@"
 rc=$?
+tests_rc=$rc
 cat "$run_directory/tests.log" 2>/dev/null
 # GUT keeps going when a script cannot be loaded; treat that as a failure.
 if grep -Eq "$script_errors" "$run_directory/tests.log"; then
     echo "run_tests: script errors found; see $run_directory/tests.log" >&2
     rc=1
 fi
-if ! grep -Eq '^SUMMARY: PASS=[0-9]+ FAIL=[0-9]+ SKIP=[0-9]+ EXIT=[013][[:space:]]*$' "$run_directory/tests.log"; then
-    echo "run_tests: no complete summary; see $run_directory/tests.log" >&2
+run_stage results -s res://tools/check_test_results.gd -- "$run_directory/tests.log" "$tests_rc"
+results_rc=$?
+grep -E 'RESULT ERROR|test_results:' "$run_directory/results.log" 2>/dev/null
+if [ "$results_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/results.log" || ! grep -Eq '^test_results: valid, exit [013][[:space:]]*$' "$run_directory/results.log"; then
+    echo "run_tests: result validation failed; see $run_directory/results.log" >&2
     rc=1
 fi
 exit "$rc"

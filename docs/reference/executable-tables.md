@@ -35,4 +35,10 @@ Follow FrogLord for these format rules; they agree on retail values.
 
 ## Future behavior mapping
 
-Form callbacks are executable addresses. Address-to-name mappings need measurement for each supported build before implementing their behaviors.
+Form callbacks retain executable addresses as source facts. Before implementing
+their behaviors, verify address-to-name mappings for each supported build; setup
+then selects a supported implementation by that name, never executes an address.
+FrogLord's script `CallbackNames` sub-bank names opcode callbacks and does not
+establish these form callback address mappings. Unknown mappings need visible
+diagnostics and a behavior-specific safe fallback in P7/P8. See the
+[domain trace](domain.md#following-a-form).

@@ -11,6 +11,7 @@ const RENDER_SIZE: Vector2i = Vector2i(640, 480)
 ## Tests may provide scene data without locating retail files.
 var auto_open: bool = true
 var data: GameData
+var _owns_data: bool = false
 var scene_data: MapSceneData
 var current_mesh: MapMesh
 var map_instance: MapMesh.Instance
@@ -55,7 +56,8 @@ func _ready() -> void:
 		return
 	var folder: String = _arg("--screenshot-dir=")
 	if not folder.is_empty() and not _external_capture_folder(folder):
-		_status.text = "Capture folder must be an absolute path outside the repository"
+		_status.text = "Capture folder '%s' must be an absolute path outside the repository" % folder
+		push_error(_status.text)
 		get_tree().quit(1)
 		return
 	camera_preset = _arg("--camera=")
@@ -69,15 +71,21 @@ func _ready() -> void:
 	linear_filter = _arg("--linear=").to_lower() == "true"
 	_filter.set_pressed_no_signal(linear_filter)
 	_probe_name = _arg("--probe-model=")
-	if _probe_name.is_empty() and OS.get_cmdline_user_args().has("--probe-model"):
+	if _probe_name.is_empty() and ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--probe-model"):
 		_probe_name = "GEN_CHECKPOINT_1.XMR"
-	var found: GameDataLocator.Located = GameDataLocator.new().locate(BootScreen.command_line_data_dir())
+	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
 	if not found.is_ok():
 		_status.text = "No Frogger files found: %s" % found.error
 		if not folder.is_empty():
+			push_error(_status.text)
 			get_tree().quit(1)
 		return
-	open_data(GameData.open(found.source, found.version))
+	open_data(GameData.open(found.source, found.version), true)
+	if not data.is_valid():
+		if not folder.is_empty():
+			push_error(_status.text)
+			get_tree().quit(1)
+		return
 	var code: String = _arg("--level=").to_upper()
 	if code.is_empty():
 		code = "SUB1"
@@ -94,14 +102,22 @@ func _ready() -> void:
 		_ui.visible = false
 		_capture.call_deferred(folder)
 
-## Populates the supported maps from the supplied executable.
-func open_data(game_data: GameData) -> void:
-	if data != null and data != game_data:
-		data.close()
+## Populates maps from [param game_data], borrowed unless [param take_ownership] is true.
+## Replacement/exit closes owned data only; reopening the same object retains ownership.
+func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+	if data != game_data:
+		if _owns_data and data != null:
+			data.close()
+		_owns_data = take_ownership
+	elif take_ownership:
+		_owns_data = true
 	data = game_data
+	if data == null:
+		_owns_data = false
+	_clear_scene()
 	_levels.clear()
-	if not data.is_valid():
-		_status.text = data.error
+	if data == null or not data.is_valid():
+		_status.text = data.error if data != null else "No game data open"
 		return
 	for level: int in mini(60, FroggerIds.LEVEL_CODES.size()):
 		var row: MapBookEntry = data.map_book_entry(level)
@@ -421,7 +437,11 @@ func _show_probe(name: String) -> void:
 
 func _capture(folder: String) -> void:
 	set_playing(false)
-	DirAccess.make_dir_recursive_absolute(folder)
+	var capture_error: String = ViewerCapture.prepare_folder(folder)
+	if not capture_error.is_empty():
+		push_error(capture_error)
+		get_tree().quit(1)
+		return
 	for _frame: int in 2:
 		await get_tree().process_frame
 		await RenderingServer.frame_post_draw
@@ -432,7 +452,7 @@ func _capture(folder: String) -> void:
 	var original_tick: int = tick
 	var allocations_before: Dictionary = _allocation_snapshot()
 	var allocations_after: Dictionary = allocations_before.duplicate(true)
-	if OS.get_cmdline_user_args().has("--benchmark"):
+	if ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--benchmark"):
 		set_playing(true)
 		var started: int = Time.get_ticks_usec()
 		while benchmark_frames < 120 or Time.get_ticks_usec() - started < 2000000:
@@ -450,7 +470,11 @@ func _capture(folder: String) -> void:
 			await RenderingServer.frame_post_draw
 	var code: String = FroggerIds.LEVEL_CODES[scene_data.level].to_lower()
 	var basename: String = "map_%s_%s_%s_tick%d_%s" % [code, "low" if scene_data.low_poly else "high", camera_preset, tick, "linear" if linear_filter else "nearest"]
-	var result: Error = _viewport.get_texture().get_image().save_png(folder.path_join(basename + ".png"))
+	capture_error = ViewerCapture.save_image(_viewport.get_texture().get_image(), folder.path_join(basename + ".png"))
+	if not capture_error.is_empty():
+		push_error(capture_error)
+		get_tree().quit(1)
+		return
 	var rendered: Dictionary[String, int] = _render_counts()
 	var resource: int = data.map_book_entry(scene_data.level).map_id(scene_data.low_poly)
 	var machine: Dictionary = {"processor_name": OS.get_processor_name(), "processor_count": OS.get_processor_count(), "os": OS.get_name(), "os_version": OS.get_version(), "renderer_device": RenderingServer.get_video_adapter_name()}
@@ -461,24 +485,23 @@ func _capture(folder: String) -> void:
 	var file: FileAccess = FileAccess.open(folder.path_join(basename + ".json"), FileAccess.WRITE)
 	if file != null:
 		file.store_string(JSON.stringify(metadata, "\t") + "\n")
+		file.flush()
+		if file.get_error() != OK:
+			capture_error = "Cannot write capture metadata '%s': %s" % [folder.path_join(basename + ".json"), error_string(file.get_error())]
+		file.close()
 	else:
-		result = ERR_CANT_CREATE
-	print("map capture %s: %s" % [folder.path_join(basename + ".png"), error_string(result)])
-	get_tree().quit(0 if result == OK else 1)
+		capture_error = "Cannot create capture metadata '%s': %s. Check write permissions." % [folder.path_join(basename + ".json"), error_string(FileAccess.get_open_error())]
+	if not capture_error.is_empty():
+		push_error(capture_error)
+	print("map capture %s: %s" % [folder.path_join(basename + ".png"), "OK" if capture_error.is_empty() else capture_error])
+	get_tree().quit(0 if capture_error.is_empty() else 1)
 
 ## Capture outputs must use an absolute folder outside the source checkout.
 static func _external_capture_folder(folder: String) -> bool:
-	if not folder.is_absolute_path():
-		return false
-	var project: String = ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
-	var resolved: String = folder.replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
-	return resolved != project and not resolved.begins_with(project + "/")
+	return ViewerCapture.external_folder(folder)
 
 static func _arg(prefix: String) -> String:
-	for argument: String in OS.get_cmdline_user_args():
-		if argument.begins_with(prefix):
-			return argument.substr(prefix.length())
-	return ""
+	return ViewerArguments.value(OS.get_cmdline_user_args(), prefix)
 
 
 func _render_counts() -> Dictionary[String, int]:
@@ -516,8 +539,50 @@ func set_inspection_visibility(value: bool) -> void:
 	_refresh_status()
 
 func _exit_tree() -> void:
-	if data != null:
+	_release_scene(false)
+	if _owns_data and data != null:
 		data.close()
+	data = null
+	_owns_data = false
+
+
+func _clear_scene() -> void:
+	set_playing(false)
+	_seek.set_value_no_signal(0)
+	_release_scene()
+	_low.set_pressed_no_signal(false)
+	_status.text = ""
+	_status.tooltip_text = ""
+
+
+func _release_scene(detach: bool = true) -> void:
+	playing = false
+	_clock = 0.0
+	tick = 0
+	for instance: Node3D in [map_instance, _probe]:
+		if instance != null:
+			if detach:
+				_world.remove_child(instance)
+			instance.queue_free()
+	map_instance = null
+	_probe = null
+	probe_mesh = null
+	current_mesh = null
+	scene_data = null
+	load_build_ms = 0.0
+	decode_load_ms = 0.0
+	mesh_build_ms = 0.0
+	instance_build_ms = 0.0
+	_custom_camera = false
+	_target = Vector3.ZERO
+	_yaw = 0.0
+	_pitch = 0.0
+	_distance = 30.0
+	_projection_distance = 256
+	_projection_scale = 1
+	_vertical_ratio = 1.0
+
+
 func _vector_array(value: Vector3i) -> Array[int]:
 	return [value.x, value.y, value.z]
 
@@ -599,10 +664,7 @@ static func _parse_vector(value: String) -> Array[int]:
 	return values
 
 static func _has_arg(prefix: String) -> bool:
-	for argument: String in OS.get_cmdline_user_args():
-		if argument.begins_with(prefix):
-			return true
-	return false
+	return ViewerArguments.has_prefix(OS.get_cmdline_user_args(), prefix)
 
 
 func _allocation_snapshot() -> Dictionary:

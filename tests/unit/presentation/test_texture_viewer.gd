@@ -28,3 +28,34 @@ func test_without_game_data_lists_nothing() -> void:
 	var viewer: TextureViewer = _viewer()
 	assert_eq(viewer.bank_names().size(), 0)
 	assert_eq(viewer.cell_count(), 0)
+
+
+func test_replacement_with_null_or_invalid_data_clears_the_grid_and_names() -> void:
+	var viewer: TextureViewer = _viewer()
+	var bank: PackedByteArray = SyntheticVlo.build_vlo([
+		SyntheticVlo.spec(1, 1, 0, 10, 0, SyntheticVlo.abgr([1, 2, 3]))])
+	for invalid: GameData in [null, GameData.new()]:
+		assert_eq(viewer.load_vlo_bytes("TEST.VLO", bank), 1)
+		viewer.image_names = NameBank.new()
+		if invalid != null:
+			invalid.error = "Invalid tables"
+		viewer.open_data(invalid)
+		assert_null(viewer.current_bank)
+		assert_null(viewer.image_names)
+		assert_eq(viewer.cell_count(), 0)
+		assert_eq(viewer.bank_names().size(), 0)
+
+
+func test_detached_viewer_releases_display_resources() -> void:
+	var viewer: TextureViewer = _viewer()
+	var bank: PackedByteArray = SyntheticVlo.build_vlo([
+		SyntheticVlo.spec(1, 1, 0, 10, 0, SyntheticVlo.abgr([1, 2, 3]))])
+	assert_eq(viewer.load_vlo_bytes("TEST.VLO", bank), 1)
+	var old_bank: WeakRef = weakref(viewer.current_bank)
+	remove_child(viewer)
+	await get_tree().process_frame
+	var released_bank: VloFile = old_bank.get_ref()
+	assert_null(released_bank)
+	assert_null(viewer.current_bank)
+	assert_null(viewer.image_names)
+	assert_eq(viewer.cell_count(), 0)

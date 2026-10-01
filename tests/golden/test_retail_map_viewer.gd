@@ -8,7 +8,7 @@ func before_each() -> void:
 	_viewer = packed.instantiate() as MapViewer
 	_viewer.auto_open = false
 	add_child_autofree(_viewer)
-	_viewer.open_data(GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")))
+	_viewer.open_data(GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")), true)
 
 func test_representative_maps_load_and_reuse_resources() -> void:
 	for code: String in ["SUB1", "ORG1", "CAV1", "SKY1"]:

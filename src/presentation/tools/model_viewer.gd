@@ -55,6 +55,7 @@ const MODEL_BOTTOM: float = 390.0
 var auto_open: bool = true
 ## The game data being shown, or null.
 var data: GameData
+var _owns_data: bool = false
 ## The model file being shown, or null.
 var current_model: MofFile
 ## What was built from it, or null.
@@ -103,13 +104,25 @@ func _ready() -> void:
 	_build_scene()
 	if not auto_open:
 		return
-	var found: GameDataLocator.Located = GameDataLocator.new().locate(BootScreen.command_line_data_dir())
-	if not found.is_ok():
-		_status.text = "No Frogger files found (%s). See the start screen for how to set the folder." % found.error
-		return
-	open_data(GameData.open(found.source, found.version))
 	var screenshot_dir: String = _user_arg("--screenshot-dir=")
 	var requested_model: String = _user_arg("--model=")
+	if not screenshot_dir.is_empty() and not _external_capture_folder(screenshot_dir):
+		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
+		get_tree().quit(1)
+		return
+	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
+	if not found.is_ok():
+		_status.text = "No Frogger files found (%s). See the start screen for how to set the folder." % found.error
+		if not screenshot_dir.is_empty():
+			push_error(_status.text)
+			get_tree().quit(1)
+		return
+	open_data(GameData.open(found.source, found.version), true)
+	if not data.is_valid():
+		if not screenshot_dir.is_empty():
+			push_error(_status.text)
+			get_tree().quit(1)
+		return
 	if not requested_model.is_empty():
 		_capture_model.call_deferred(requested_model, screenshot_dir)
 	elif not screenshot_dir.is_empty():
@@ -121,14 +134,27 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	RenderingServer.set_default_clear_color(Color.BLACK)
-	if data != null:
+	_release_model(false)
+	_clear_data_caches()
+	if _owns_data and data != null:
 		data.close()
+	data = null
+	_owns_data = false
 
 
-## Lists the WADs of [param game_data] that hold models.
-func open_data(game_data: GameData) -> void:
+## Lists model WADs of [param game_data], borrowed unless [param take_ownership] is true.
+## Replacement/exit closes owned data only; reopening the same object retains ownership.
+func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+	if data != game_data:
+		if _owns_data and data != null:
+			data.close()
+		_owns_data = take_ownership
+	elif take_ownership:
+		_owns_data = true
 	data = game_data
-	_banks.clear()
+	if data == null:
+		_owns_data = false
+	_clear_data_caches()
 	_refresh_wads()
 
 
@@ -416,6 +442,7 @@ func _refresh_wads() -> void:
 	_model_list.clear()
 	_wad_entries.clear()
 	_clear_model()
+	_refresh_actions()
 	if data == null or not data.is_valid():
 		_status.text = "The game data cannot be read: %s" % (data.error if data != null else "none")
 		return
@@ -560,16 +587,31 @@ func _hidden_parts() -> PackedInt64Array:
 
 
 func _clear_model() -> void:
+	_release_model()
+	_facts.text = ""
+	_refresh_animation_controls()
+
+
+func _release_model(detach: bool = true) -> void:
 	playing = false
 	player = null
 	animated_instance = null
 	current_model = null
 	current_mesh = null
-	_facts.text = ""
 	for child: Node in _holder.get_children():
-		_holder.remove_child(child)
+		if detach:
+			_holder.remove_child(child)
 		child.queue_free()
-	_refresh_animation_controls()
+
+
+func _clear_data_caches() -> void:
+	_banks.clear()
+	_wad_entries.clear()
+	_library = null
+	_preferred = null
+	_current_wad = -1
+	_model_name = ""
+	_static_index = 0
 
 
 func _rebuild() -> void:
@@ -783,7 +825,7 @@ func _capture_model(model_name: String, folder: String) -> void:
 		push_error("capture: screenshot folder must be an absolute path outside the repository")
 		get_tree().quit(1)
 		return
-	_reference_camera = OS.get_cmdline_user_args().has("--reference-camera")
+	_reference_camera = ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--reference-camera")
 	if _reference_camera:
 		get_window().size = Vector2i(640, 480)
 		_ui_layer.visible = false
@@ -816,39 +858,38 @@ func _capture_model(model_name: String, folder: String) -> void:
 	_place_camera()
 	if folder.is_empty():
 		return
-	DirAccess.make_dir_recursive_absolute(folder)
+	var capture_error: String = ViewerCapture.prepare_folder(folder)
+	if not capture_error.is_empty():
+		push_error(capture_error)
+		get_tree().quit(1)
+		return
 	for _frame: int in 3:
 		await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	var path: String = folder.path_join("model_%s_action%d_tick%d_%s%s.png" % [model_name.get_basename().to_lower(), player.action_index, player.tick,
 		"smooth" if animated_instance.smoothing_enabled else "exact", "_fraction" + fraction_arg if not fraction_arg.is_empty() else ""])
-	var result: Error = get_viewport().get_texture().get_image().save_png(path)
-	print("capture %s: %s" % [path, error_string(result)])
-	get_tree().quit(0 if result == OK else 1)
+	capture_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), path)
+	if not capture_error.is_empty():
+		push_error(capture_error)
+	print("capture %s: %s" % [path, "OK" if capture_error.is_empty() else capture_error])
+	get_tree().quit(0 if capture_error.is_empty() else 1)
 
 
 static func _external_capture_folder(folder: String) -> bool:
-	if not folder.is_absolute_path():
-		return false
-	var project: String = ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
-	var resolved: String = folder.replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
-	return resolved != project and not resolved.begins_with(project + "/")
+	return ViewerCapture.external_folder(folder)
 
 
 static func _user_arg(prefix: String) -> String:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with(prefix):
-			return arg.substr(prefix.length())
-	return ""
+	return ViewerArguments.value(OS.get_cmdline_user_args(), prefix)
 
 
 func _take_screenshots(folder: String) -> void:
-	if not _external_capture_folder(folder):
-		push_error("screenshot folder must be an absolute path outside the repository")
+	var capture_error: String = ViewerCapture.prepare_folder(folder)
+	if not capture_error.is_empty():
+		push_error(capture_error)
 		get_tree().quit(1)
 		return
 	get_window().size = Vector2i(1280, 960)
-	DirAccess.make_dir_recursive_absolute(folder)
 	var shot: int = 0
 	for entry: Array in SCREENSHOT_MODELS:
 		var file_name: String = entry[0]
@@ -867,7 +908,11 @@ func _take_screenshots(folder: String) -> void:
 			await get_tree().process_frame
 		await RenderingServer.frame_post_draw
 		var path: String = folder.path_join("model_viewer_%02d_%s.png" % [shot, file_name.get_basename().to_lower()])
-		var err: Error = get_viewport().get_texture().get_image().save_png(path)
-		print("screenshot %s: %s, %d triangles; %s" % [path, error_string(err), triangles, _facts.text.replace("\n", "; ")])
+		capture_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), path)
+		if not capture_error.is_empty():
+			push_error(capture_error)
+			get_tree().quit(1)
+			return
+		print("screenshot %s: OK, %d triangles; %s" % [path, triangles, _facts.text.replace("\n", "; ")])
 		shot += 1
 	get_tree().quit()

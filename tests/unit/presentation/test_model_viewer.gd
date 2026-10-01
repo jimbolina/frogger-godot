@@ -96,6 +96,50 @@ func test_capture_folder_must_stay_outside_the_repository() -> void:
 	assert_true(ModelViewer._external_capture_folder(OS.get_environment("TEMP")))
 
 
+func test_replacement_with_null_or_invalid_data_clears_model_selections_and_caches() -> void:
+	for invalid: GameData in [null, GameData.new()]:
+		_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+		_viewer._banks[1] = VloFile.new()
+		_viewer._current_wad = 12
+		_viewer._actions.add_item("Old action")
+		if invalid != null:
+			invalid.error = "Invalid tables"
+		_viewer.open_data(invalid)
+		assert_null(_viewer.current_model)
+		assert_null(_viewer.current_mesh)
+		assert_null(_viewer.player)
+		assert_null(_viewer.animated_instance)
+		assert_null(_viewer._library)
+		assert_null(_viewer._preferred)
+		assert_eq(_viewer._banks.size(), 0)
+		assert_eq(_viewer._current_wad, -1)
+		assert_eq(_viewer._actions.item_count, 0)
+		assert_eq(_viewer.part_node_count(), 0)
+		assert_eq(_viewer.wad_names().size(), 0)
+		assert_eq(_viewer.facts_text(), "")
+
+
+func test_detached_viewer_releases_model_resources_and_caches() -> void:
+	_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	_viewer._banks[1] = VloFile.new()
+	var old_mesh: WeakRef = weakref(_viewer.current_mesh)
+	var old_bank: WeakRef = weakref(_viewer._banks[1])
+	remove_child(_viewer)
+	await get_tree().process_frame
+	var released_mesh: ModelMesh = old_mesh.get_ref()
+	var released_bank: VloFile = old_bank.get_ref()
+	assert_null(released_mesh)
+	assert_null(released_bank)
+	assert_null(_viewer.current_model)
+	assert_null(_viewer.current_mesh)
+	assert_null(_viewer.player)
+	assert_null(_viewer.animated_instance)
+	assert_null(_viewer._library)
+	assert_null(_viewer._preferred)
+	assert_eq(_viewer._banks.size(), 0)
+	assert_eq(_viewer.part_node_count(), 0)
+
+
 func test_action_changes_and_held_geometry_keep_texture_clocks_independent() -> void:
 	var part: SyntheticMof.Part = SyntheticMof.square(MofPolygonType.FT4, Color8(128, 128, 128), 7)
 	part.poses.append(part.poses[0].duplicate())

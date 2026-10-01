@@ -63,10 +63,7 @@ func open_model_viewer() -> void:
 
 ## The folder given as [code]--data-dir=<folder>[/code] after [code]--[/code], or "".
 static func command_line_data_dir() -> String:
-	for arg: String in OS.get_cmdline_user_args():
-		if arg.begins_with("--data-dir="):
-			return arg.substr("--data-dir=".length())
-	return ""
+	return ViewerArguments.value(OS.get_cmdline_user_args(), "--data-dir=")
 
 
 ## Locates the game files and returns a human-readable report of the result.

@@ -3,7 +3,9 @@
 ## Required commit gate
 
 Run both modes before every commit, including documentation changes.
-Use the wrappers: they import, strictly compile every script, then run GUT.
+Use the wrappers: they import, strictly compile every script, check architecture,
+validate retail input, run GUT, then verify the saved result report against the
+log and process exit.
 Stop on a failed stage; fix it before starting subsequent checks.
 
 ```powershell
@@ -18,8 +20,38 @@ Remove-Item Env:FROGGER_DATA_DIR
 
 For Bash, use `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`,
 then run again with `FROGGER_DATA_DIR` unset. Commands run from the repository root.
-Exit codes: 0 = all passed; 1 = failure/compile error; 2 = missing Godot;
-3 = no failure but skips. A skip is never a pass. Retail mode must have none.
+Exit codes: 0 = all passed; 1 = test, compile, architecture or result failure;
+2 = setup failure; 3 = only approved asset-free skips. A skip is never a pass.
+Retail mode must have none. A supplied but invalid `FROGGER_DATA_DIR` fails;
+unset the variable explicitly for asset-free mode.
+
+## Focused iteration and guardrails
+
+Append `-gselect=test_model_viewer` to either wrapper to select one script.
+GUT arguments are forwarded unchanged; `-gunit_test_name=<substring>` narrows
+test names further. Every focused run still compiles all scripts and checks
+architecture. A selection matching no tests fails. Before committing, always
+run both complete modes without selectors.
+In PowerShell, quote options containing resource paths, for example
+`'-gdir=res://tests/unit/presentation'`.
+
+The [architecture contract](architecture.md#automated-checks) explains the
+scanner and its limits. Its `ARCHITECTURE FAILED` diagnostics identify the
+file, line and dependency rule. New gameplay directories are checked when added;
+no empty gameplay scaffolding is needed now.
+
+`tests/support/retail_skips.json` is the reviewed manifest of exact test
+identities and their sole allowed reason: `FROGGER_DATA_DIR` is unset. Add a
+retail test deliberately to this manifest and its inventory assertion; neither
+inheritance nor residence under `tests/golden/` grants skip permission.
+Pending tests and unexpected script skips fail, as do fixture/runner errors.
+
+The GUT hook saves `user://test_results.json` in the isolated profile and prints
+the named outcomes and summary. The wrapper's independent validation stage
+recounts those records and checks the environment mode, named skips, summary
+and process exit. Missing, duplicate, inconsistent or empty reports fail.
+Retain the printed run folder for diagnosis; never convert arbitrary exit 3
+results to success in an external runner. Hosted CI remains deferred.
 
 Use isolated writable Godot user data, explicit logs, awaited hidden
 processes and `--disable-crash-handler` for automated runs. The wrappers
@@ -36,11 +68,14 @@ warning has been benign; determine success from compilation/tests and exit statu
 - GUT 9.5.0 is vendored in `addons/gut/`.
 - Visually inspect visual changes. Store screenshots outside the repository.
   Hash agreement establishes decoding, not appearance.
+- All viewers require absolute capture folders outside the checkout. Output
+  creation/write failures report the path and exit nonzero. Shared validation
+  normalizes lexical paths; callers must not use filesystem links to redirect
+  an external destination into the checkout.
 - After changing Godot, renderer or environment, run `tools/probe_model_shader.gd`
   with a window and inspect the measured colours; see [rendering](rendering.md).
 - Every new golden family needs an independent generator and a deliberate-break
   check, with the original fact restored. See [golden rules](../../tests/golden/README.md).
-- The owner supplies the first FrogLord-saved mod folder for P6.
 
 ## GDScript and runner pitfalls
 

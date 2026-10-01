@@ -49,6 +49,7 @@ updated technical contracts and a compact validation report.
 | Task | Start here |
 |---|---|
 | Current work / phase planning | [Checkpoint](docs/CURRENT.md), [roadmap](docs/PORTING.md) |
+| Domain / dependencies / ownership | [Domain](docs/reference/domain.md), [architecture](docs/reference/architecture.md) |
 | External source locations | [Sources](docs/reference/sources.md) |
 | Build/config recognition | [Build detection](docs/reference/build-detection.md) |
 | Archives / executable tables | [Archives](docs/reference/archives.md), [tables](docs/reference/executable-tables.md) |
