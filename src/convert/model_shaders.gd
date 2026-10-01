@@ -66,8 +66,8 @@ void fragment() {
 	ALBEDO = through_renderer(clamp(shown, vec3(0.0), vec3(1.0)));
 %s}
 """
-const _TEXTURED_UNIFORM: String = "uniform sampler2D image : %s, repeat_disable;\n"
-const _TEXTURED_BODY: String = """	vec4 texel = texture(image, UV);
+const _TEXTURED_UNIFORM: String = "uniform sampler2D image : %s, repeat_disable;\nuniform vec2 uv_scale = vec2(1.0);\nuniform vec2 uv_offset = vec2(0.0);\n"
+const _TEXTURED_BODY: String = """	vec4 texel = texture(image, UV * uv_scale + uv_offset);
 	if (texel.a < 0.5) {
 		discard;
 	}

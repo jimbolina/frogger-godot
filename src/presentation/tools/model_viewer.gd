@@ -11,14 +11,21 @@ extends Node3D
 ## model, Q/E move closer and away (or drag and use the wheel); F switches
 ## nearest/linear filtering, B draws both sides of every polygon, H shows
 ## the parts FrogLord's settings hide, N shows the next model inside an
-## animated file, L lists low-poly WADs too, Esc goes back.
+## animated file, L lists low-poly WADs too, Esc goes back. Space plays or
+## pauses, Period steps one tick, R restarts, and I switches motion smoothing.
 ##
 ## Models are shown unlit, in the colours their polygons store: the game
-## lights them while it runs, from lights kept in each map. The parts of an
-## animated model are shown where the file stores them, not posed.
+## lights them while it runs, from lights kept in each map. Skeletal parts,
+## flipbook cels and animated textures advance on the 30 Hz reference clock.
+## Motion smoothing is optional and starts disabled; texture changes remain discrete.
 ##
 ## Started with [code]-- --screenshot-dir=<folder>[/code] it saves pictures
-## of a few models there and quits (used to check the models by eye).
+## of a few models there and quits (used to check the models by eye). Add
+## [code]--model=NAME --action=N --tick=N --smooth=true|false[/code] to capture
+## one paused tick. [code]--fraction=0.5[/code] draws between tick N-1 and N
+## when smoothing is enabled. [code]--reference-camera[/code] reproduces the
+## C animation driver's stationary camera and PAL projection. Capture folders
+## must be absolute paths outside the repository.
 
 ## The scene to return to on Esc.
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
@@ -39,6 +46,9 @@ const LIST_WIDTH: float = 190.0
 const VIEW_WIDTH: float = 640.0
 ## Width of the project's screen divided by its height.
 const VIEW_ASPECT: float = 4.0 / 3.0
+## Clear model area between animation controls and the model facts.
+const MODEL_TOP: float = 210.0
+const MODEL_BOTTOM: float = 390.0
 
 ## When false, [method _ready] does not look for the game files (tests set
 ## this to drive the viewer with their own data).
@@ -49,6 +59,12 @@ var data: GameData
 var current_model: MofFile
 ## What was built from it, or null.
 var current_mesh: ModelMesh
+## The current integer animation state, or null for a placeholder.
+var player: ModelAnimationPlayer
+## The reusable rendered instance, including its part nodes.
+var animated_instance: AnimatedModelInstance
+## Whether game ticks advance automatically.
+var playing: bool = false
 
 var _wad_entries: Array[MwiEntry] = []
 var _wad_list: ItemList
@@ -71,6 +87,16 @@ var _turn: float = 30.0
 var _tilt: float = 25.0
 var _distance: float = 4.0
 var _dragging: bool = false
+var _actions: OptionButton
+var _play_button: Button
+var _frame_slider: HSlider
+var _animation_status: Label
+var _loop_toggle: CheckButton
+var _texture_toggle: CheckButton
+var _smooth_toggle: CheckButton
+var _updating_controls: bool = false
+var _ui_layer: CanvasLayer
+var _reference_camera: bool = false
 
 
 func _ready() -> void:
@@ -83,7 +109,10 @@ func _ready() -> void:
 		return
 	open_data(GameData.open(found.source, found.version))
 	var screenshot_dir: String = _user_arg("--screenshot-dir=")
-	if not screenshot_dir.is_empty():
+	var requested_model: String = _user_arg("--model=")
+	if not requested_model.is_empty():
+		_capture_model.call_deferred(requested_model, screenshot_dir)
+	elif not screenshot_dir.is_empty():
 		_take_screenshots.call_deferred(screenshot_dir)
 	elif not _wad_entries.is_empty():
 		_wad_list.select(0)
@@ -172,14 +201,16 @@ func load_model_bytes(model_name: String, bytes: PackedByteArray, bank: VloFile 
 
 ## Number of part meshes on screen.
 func part_node_count() -> int:
-	return _holder.get_child_count()
+	return animated_instance.part_nodes.size() if animated_instance != null else 0
 
 
 ## Number of those that are visible.
 func visible_part_count() -> int:
 	var shown: int = 0
-	for child: Node in _holder.get_children():
-		if (child as MeshInstance3D).visible:
+	if animated_instance == null:
+		return 0
+	for child: MeshInstance3D in animated_instance.part_nodes:
+		if child.visible and animated_instance.visible:
 			shown += 1
 	return shown
 
@@ -187,6 +218,74 @@ func visible_part_count() -> int:
 ## The text under the lists: what the model holds.
 func facts_text() -> String:
 	return _facts.text
+
+
+## Selects an action and shows its first tick without resetting the texture clocks.
+func select_action(index: int) -> bool:
+	if player == null or not player.set_action(index):
+		_refresh_animation_controls()
+		return false
+	player.advance_tick()
+	animated_instance.apply_exact()
+	_fit_camera()
+	_refresh_animation_controls()
+	return true
+
+
+## Pauses and restores an exact integer tick for inspection.
+func seek_tick(tick: int) -> bool:
+	if player == null:
+		return false
+	set_playing(false)
+	var restored: bool = player.seek_tick(tick)
+	animated_instance.apply_exact()
+	_refresh_animation_controls()
+	return restored
+
+
+## Plays or pauses the model and removes interpolation history on either boundary.
+func set_playing(value: bool) -> void:
+	playing = value and player != null and (player.action_index >= 0 or _has_texture_animation())
+	if animated_instance != null:
+		animated_instance.apply_exact()
+	_refresh_animation_controls()
+
+
+## Advances exactly one game tick while paused.
+func step_animation() -> void:
+	if player == null:
+		return
+	set_playing(false)
+	animated_instance.advance_tick()
+	animated_instance.apply_exact()
+	_refresh_animation_controls()
+
+
+## Restarts the current action without changing whether it plays.
+func restart_animation() -> void:
+	if player == null:
+		return
+	player.restart()
+	animated_instance.apply_exact()
+	_refresh_animation_controls()
+
+
+func _physics_process(_delta: float) -> void:
+	if playing and animated_instance != null:
+		animated_instance.advance_tick()
+		_refresh_animation_controls()
+
+
+func _process(_delta: float) -> void:
+	if playing and animated_instance != null:
+		animated_instance.render(Engine.get_physics_interpolation_fraction())
+
+
+func _input(event: InputEvent) -> void:
+	var key := event as InputEventKey
+	if key != null and key.pressed and not key.echo and key.keycode in [KEY_SPACE, KEY_PERIOD, KEY_R, KEY_I]:
+		_toggle_key(key.keycode)
+		get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -227,6 +326,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _toggle_key(keycode: Key) -> bool:
 	match keycode:
+		KEY_SPACE:
+			set_playing(not playing)
+		KEY_PERIOD:
+			step_animation()
+		KEY_R:
+			restart_animation()
+		KEY_I:
+			_smooth_toggle.button_pressed = not _smooth_toggle.button_pressed
 		KEY_F:
 			_filter_toggle.button_pressed = not _filter_toggle.button_pressed
 		KEY_B:
@@ -258,13 +365,50 @@ func _zoom(factor: float) -> void:
 
 
 func _place_camera() -> void:
-	var centre: Vector3 = current_mesh.bounds.get_center() if current_mesh != null else Vector3.ZERO
+	if _reference_camera:
+		_camera.position = GameSpace.position(0, -100, -350)
+		_camera.position.y *= 240.0 / 256.0
+		_camera.rotation = Vector3.ZERO
+		# MR_VIEW's PAL aspect matrix uses 320x256: focal lengths are 2000,1875.
+		_camera.fov = rad_to_deg(2.0 * atan(120.0 / 1000.0))
+		_camera.h_offset = 0.0
+		_camera.v_offset = 0.0
+		_holder.position = GameSpace.position(0, 0, 1000)
+		_holder.scale = Vector3(1.0, 240.0 / 256.0, 1.0)
+		return
+	_camera.fov = FIELD_OF_VIEW
+	_holder.position = Vector3.ZERO
+	_holder.scale = Vector3.ONE
+	var centre: Vector3 = _active_bounds().get_center()
 	var direction: Vector3 = Vector3.BACK.rotated(Vector3.RIGHT, deg_to_rad(-_tilt)).rotated(Vector3.UP, deg_to_rad(_turn))
 	_camera.position = centre + direction * _distance
 	_camera.look_at(centre, Vector3.UP)
 	# Shift the picture to the middle of the space right of the lists.
 	var half_width: float = _distance * tan(deg_to_rad(FIELD_OF_VIEW * 0.5)) * VIEW_ASPECT
 	_camera.h_offset = -half_width * LIST_WIDTH / VIEW_WIDTH
+	var half_height: float = _distance * tan(deg_to_rad(FIELD_OF_VIEW * 0.5))
+	_camera.v_offset = half_height * ((MODEL_TOP + MODEL_BOTTOM) - 480.0) / 480.0
+
+
+func _active_bounds() -> AABB:
+	if current_mesh == null:
+		return AABB()
+	if player != null and player.action_index >= 0 and player.action_index < current_mesh.action_bounds.size():
+		return current_mesh.action_bounds[player.action_index]
+	return current_mesh.bounds
+
+
+func _fit_camera() -> void:
+	var bounds: AABB = _active_bounds()
+	var direction: Vector3 = Vector3.BACK.rotated(Vector3.RIGHT, deg_to_rad(-_tilt)).rotated(Vector3.UP, deg_to_rad(_turn))
+	var view_basis: Basis = Basis.looking_at(-direction, Vector3.UP)
+	var half_vertical: float = tan(deg_to_rad(FIELD_OF_VIEW * 0.5)) * (MODEL_BOTTOM - MODEL_TOP) / 480.0
+	var half_horizontal: float = tan(deg_to_rad(FIELD_OF_VIEW * 0.5)) * VIEW_ASPECT * (VIEW_WIDTH - LIST_WIDTH) / VIEW_WIDTH
+	_distance = 0.05
+	for corner: int in 8:
+		var point: Vector3 = view_basis.inverse() * (bounds.get_endpoint(corner) - bounds.get_center())
+		_distance = maxf(_distance, point.z + 1.2 * maxf(absf(point.x) / half_horizontal, absf(point.y) / half_vertical))
+	_place_camera()
 
 
 func _refresh_wads() -> void:
@@ -344,7 +488,7 @@ func _show_model(position_in_wad: int) -> int:
 	return _show(model)
 
 
-func _show(model: MofFile) -> int:
+func _show(model: MofFile, existing_player: ModelAnimationPlayer = null) -> int:
 	_clear_model()
 	current_model = model
 	if model.static_models.is_empty():
@@ -355,17 +499,22 @@ func _show(model: MofFile) -> int:
 	builder.linear_filter = _filter_toggle.button_pressed
 	builder.two_sided = _sides_toggle.button_pressed
 	var shape: MofStatic = model.static_models[_static_index]
-	current_mesh = builder.build(shape)
+	current_mesh = builder.build_animated(model, _static_index)
+	player = existing_player if existing_player != null else ModelAnimationPlayer.new(model, _static_index)
+	if existing_player == null:
+		player.end_mode = ModelAnimationPlayer.EndMode.LOOP if _loop_toggle.button_pressed else ModelAnimationPlayer.EndMode.HOLD
+		player.texture_animation_enabled = _texture_toggle.button_pressed
+	animated_instance = AnimatedModelInstance.new()
+	_holder.add_child(animated_instance)
+	animated_instance.setup(current_mesh, player)
+	animated_instance.smoothing_enabled = _smooth_toggle.button_pressed
 	var hidden: PackedInt64Array = _hidden_parts()
-	for i: int in current_mesh.part_meshes.size():
-		var node := MeshInstance3D.new()
-		node.name = "Part%d" % i
-		node.mesh = current_mesh.part_meshes[i]
-		node.visible = _hidden_toggle.button_pressed or not hidden.has(i)
-		_holder.add_child(node)
-	var size: float = maxf(current_mesh.bounds.size.length(), 0.05)
-	_distance = size * 0.5 / tan(deg_to_rad(FIELD_OF_VIEW * 0.5)) * 1.3
-	_place_camera()
+	for i: int in animated_instance.part_nodes.size():
+		animated_instance.part_nodes[i].visible = _reference_camera or _hidden_toggle.button_pressed or not hidden.has(i)
+	playing = player.action_index >= 0 or _has_texture_animation()
+	_refresh_actions()
+	_refresh_animation_controls()
+	_fit_camera()
 	_status.text = "%s: %s" % [_model_name, model.kind_name()]
 	if model.static_models.size() > 1:
 		_status.text += ", model %d of %d inside (N)" % [_static_index + 1, model.static_models.size()]
@@ -411,20 +560,27 @@ func _hidden_parts() -> PackedInt64Array:
 
 
 func _clear_model() -> void:
+	playing = false
+	player = null
+	animated_instance = null
 	current_model = null
 	current_mesh = null
 	_facts.text = ""
 	for child: Node in _holder.get_children():
 		_holder.remove_child(child)
 		child.queue_free()
+	_refresh_animation_controls()
 
 
 func _rebuild() -> void:
 	if current_model != null:
+		var existing_player: ModelAnimationPlayer = player
+		var was_playing: bool = playing
 		var turn: float = _turn
 		var tilt: float = _tilt
 		var distance: float = _distance
-		_show(current_model)
+		_show(current_model, existing_player)
+		set_playing(was_playing)
 		_turn = turn
 		_tilt = tilt
 		_distance = distance
@@ -450,6 +606,7 @@ func _build_scene() -> void:
 	_holder.name = "Model"
 	add_child(_holder)
 	var layer := CanvasLayer.new()
+	_ui_layer = layer
 	add_child(layer)
 	var left := VBoxContainer.new()
 	left.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
@@ -477,17 +634,48 @@ func _build_scene() -> void:
 	right.add_child(bar)
 	_filter_toggle = _add_toggle(bar, "Linear (F)", _on_option_toggled)
 	_sides_toggle = _add_toggle(bar, "Both sides (B)", _on_option_toggled)
-	_hidden_toggle = _add_toggle(bar, "Hidden parts (H)", _on_option_toggled)
-	_low_poly_toggle = _add_toggle(bar, "Low-poly (L)", _on_low_poly_toggled)
+	var model_options := HBoxContainer.new()
+	right.add_child(model_options)
+	_hidden_toggle = _add_toggle(model_options, "Hidden parts (H)", _on_option_toggled)
+	_low_poly_toggle = _add_toggle(model_options, "Low-poly (L)", _on_low_poly_toggled)
+	var animation_bar := HBoxContainer.new()
+	right.add_child(animation_bar)
+	_actions = OptionButton.new()
+	_actions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_actions.add_theme_font_size_override("font_size", 11)
+	_actions.item_selected.connect(select_action)
+	animation_bar.add_child(_actions)
+	var playback_bar := HBoxContainer.new()
+	right.add_child(playback_bar)
+	_play_button = _add_button(playback_bar, "Play (Space)", func() -> void: set_playing(not playing))
+	_add_button(playback_bar, "Restart (R)", restart_animation)
+	_add_button(playback_bar, "Step (.)", step_animation)
+	_frame_slider = HSlider.new()
+	_frame_slider.step = 1.0
+	_frame_slider.value_changed.connect(_on_frame_changed)
+	right.add_child(_frame_slider)
+	var animation_options := HBoxContainer.new()
+	right.add_child(animation_options)
+	_loop_toggle = _add_toggle(animation_options, "Loop", _on_animation_option)
+	_loop_toggle.set_pressed_no_signal(true)
+	_texture_toggle = _add_toggle(animation_options, "Texture Animation", _on_animation_option)
+	_texture_toggle.set_pressed_no_signal(true)
+	_smooth_toggle = _add_toggle(animation_options, "Smooth Motion (I)", _on_animation_option)
+	_animation_status = Label.new()
+	_animation_status.add_theme_font_size_override("font_size", 11)
+	_animation_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right.add_child(_animation_status)
 	var gap := Control.new()
 	gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	right.add_child(gap)
 	_facts = Label.new()
 	_facts.add_theme_font_size_override("font_size", 11)
+	_facts.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	right.add_child(_facts)
 	RenderingServer.set_default_clear_color(Color(0.22, 0.24, 0.30))
 	_place_camera()
+	_refresh_animation_controls()
 
 
 func _add_toggle(bar: HBoxContainer, text: String, handler: Callable) -> CheckButton:
@@ -500,6 +688,153 @@ func _add_toggle(bar: HBoxContainer, text: String, handler: Callable) -> CheckBu
 	return toggle
 
 
+func _add_button(bar: HBoxContainer, text: String, handler: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.focus_mode = Control.FOCUS_NONE
+	button.add_theme_font_size_override("font_size", 11)
+	button.pressed.connect(handler)
+	bar.add_child(button)
+	return button
+
+
+func _animation_name_bank() -> NameBank:
+	if data == null or data.names == null or data.names.anims == null:
+		return null
+	var name_key: String = _model_name.get_basename().trim_suffix("_WIN95")
+	var bank: NameBank = data.names.anims.get_sub_bank(name_key)
+	if bank == null and current_model != null and current_model.is_incomplete:
+		var entry: MwiEntry = data.find_resource(_model_name)
+		var counterpart: int = data.counterpart_of(entry.index) if entry != null else -1
+		if counterpart >= 0:
+			name_key = data.mwi.get_entry(counterpart).display_name().get_basename().trim_suffix("_WIN95")
+			bank = data.names.anims.get_sub_bank(name_key)
+	return bank
+
+
+func _has_texture_animation() -> bool:
+	if current_model == null or current_model.static_models.is_empty():
+		return false
+	for part: MofPart in current_model.static_models[_static_index].parts:
+		for target: MofPart.TextureTarget in part.texture_targets:
+			if target.error.is_empty() and target.list_index >= 0 and target.list_index < part.texture_lists.size():
+				return true
+	return false
+
+
+func _refresh_actions() -> void:
+	_actions.clear()
+	if player == null:
+		return
+	var bank: NameBank = _animation_name_bank()
+	for index: int in player.action_count():
+		var title: String = bank.get_name(index) if bank != null and bank.has_name(index) else "Action %d" % index
+		_actions.add_item("%d  %s (%d frames)" % [index, title, player.action_frame_count(index)], index)
+		_actions.set_item_disabled(index, not player.action_error(index).is_empty())
+		_actions.set_item_tooltip(index, player.action_error(index))
+	if player.action_index >= 0:
+		_actions.select(player.action_index)
+
+
+func _refresh_animation_controls() -> void:
+	if _animation_status == null:
+		return
+	_updating_controls = true
+	_actions.disabled = player == null or player.action_count() == 0
+	_play_button.text = "Pause (Space)" if playing else "Play (Space)"
+	_play_button.disabled = player == null
+	_frame_slider.editable = player != null and player.action_index >= 0
+	if player != null:
+		_frame_slider.max_value = maxi(player.action_frame_count(player.action_index) - 1, 0)
+		_frame_slider.value = maxi(player.frame, 0)
+		var mechanism: String = "skeletal" if current_model.animated != null else ("flipbook" if player.action_count() > 0 else "static")
+		if _has_texture_animation():
+			mechanism += " + textures"
+		_animation_status.text = "%s — tick %d / frame %d%s" % [mechanism, player.tick, player.frame,
+			" — " + player.error if not player.error.is_empty() else ""]
+		var diagnostic_count: int = player.diagnostics.size() + current_mesh.diagnostics.size()
+		if diagnostic_count > 0:
+			_animation_status.text += " — %d diagnostics (hover)" % diagnostic_count
+		_animation_status.tooltip_text = "\n".join(player.diagnostics) + "\n" + "\n".join(current_mesh.diagnostics)
+	else:
+		_frame_slider.max_value = 0
+		_animation_status.text = "No animation"
+		_animation_status.tooltip_text = ""
+	_updating_controls = false
+
+
+func _on_frame_changed(value: float) -> void:
+	if not _updating_controls and player != null:
+		seek_tick(int(value) * player.update_period)
+
+
+func _on_animation_option(_value: bool) -> void:
+	if player == null:
+		return
+	player.end_mode = ModelAnimationPlayer.EndMode.LOOP if _loop_toggle.button_pressed else ModelAnimationPlayer.EndMode.HOLD
+	player.texture_animation_enabled = _texture_toggle.button_pressed
+	animated_instance.smoothing_enabled = _smooth_toggle.button_pressed
+	animated_instance.apply_exact()
+	_refresh_animation_controls()
+
+
+func _capture_model(model_name: String, folder: String) -> void:
+	if not folder.is_empty() and not _external_capture_folder(folder):
+		push_error("capture: screenshot folder must be an absolute path outside the repository")
+		get_tree().quit(1)
+		return
+	_reference_camera = OS.get_cmdline_user_args().has("--reference-camera")
+	if _reference_camera:
+		get_window().size = Vector2i(640, 480)
+		_ui_layer.visible = false
+		RenderingServer.set_default_clear_color(Color.BLACK)
+	if load_model_by_name(model_name) < 0:
+		push_error("capture: %s cannot be loaded: %s" % [model_name, _status.text])
+		if not folder.is_empty():
+			get_tree().quit(1)
+		return
+	if player == null:
+		push_error("capture: a placeholder has no animation state")
+		if not folder.is_empty():
+			get_tree().quit(1)
+		return
+	var action_arg: String = _user_arg("--action=")
+	if not action_arg.is_empty() and not select_action(action_arg.to_int()):
+		push_error("capture: %s" % player.error)
+		if not folder.is_empty():
+			get_tree().quit(1)
+		return
+	_smooth_toggle.set_pressed_no_signal(_user_arg("--smooth=").to_lower() == "true")
+	_on_animation_option(false)
+	var target_tick: int = maxi(_user_arg("--tick=").to_int(), 0)
+	var fraction_arg: String = _user_arg("--fraction=")
+	seek_tick(target_tick - 1 if target_tick > 0 and not fraction_arg.is_empty() else target_tick)
+	if target_tick > 0 and not fraction_arg.is_empty():
+		animated_instance.advance_tick()
+		animated_instance.render(clampf(fraction_arg.to_float(), 0.0, 1.0))
+		_refresh_animation_controls()
+	_place_camera()
+	if folder.is_empty():
+		return
+	DirAccess.make_dir_recursive_absolute(folder)
+	for _frame: int in 3:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var path: String = folder.path_join("model_%s_action%d_tick%d_%s%s.png" % [model_name.get_basename().to_lower(), player.action_index, player.tick,
+		"smooth" if animated_instance.smoothing_enabled else "exact", "_fraction" + fraction_arg if not fraction_arg.is_empty() else ""])
+	var result: Error = get_viewport().get_texture().get_image().save_png(path)
+	print("capture %s: %s" % [path, error_string(result)])
+	get_tree().quit(0 if result == OK else 1)
+
+
+static func _external_capture_folder(folder: String) -> bool:
+	if not folder.is_absolute_path():
+		return false
+	var project: String = ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
+	var resolved: String = folder.replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
+	return resolved != project and not resolved.begins_with(project + "/")
+
+
 static func _user_arg(prefix: String) -> String:
 	for arg: String in OS.get_cmdline_user_args():
 		if arg.begins_with(prefix):
@@ -508,6 +843,10 @@ static func _user_arg(prefix: String) -> String:
 
 
 func _take_screenshots(folder: String) -> void:
+	if not _external_capture_folder(folder):
+		push_error("screenshot folder must be an absolute path outside the repository")
+		get_tree().quit(1)
+		return
 	get_window().size = Vector2i(1280, 960)
 	DirAccess.make_dir_recursive_absolute(folder)
 	var shot: int = 0
@@ -520,6 +859,7 @@ func _take_screenshots(folder: String) -> void:
 		if triangles < 0:
 			print("screenshot: %s cannot be shown: %s" % [file_name, _status.text])
 			continue
+		seek_tick(0)
 		_turn = turn
 		_tilt = tilt
 		_place_camera()

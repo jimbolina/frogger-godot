@@ -36,6 +36,35 @@ const ATTACH_VERTEX: int = 1
 const ATTACH_POLYGON: int = 2
 
 
+## An authored consecutive range of partcels to show as a flipbook action.
+class FlipbookAction:
+	extends RefCounted
+	## First partcel and number of consecutive authored frames.
+	var start: int = 0
+	var frame_count: int = 0
+	## An unavailable authored range is preserved with this diagnostic.
+	var error: String = ""
+
+
+## One polygon whose image changes according to a texture animation list.
+class TextureTarget:
+	extends RefCounted
+	var polygon_type: int = 0
+	var polygon_index: int = 0
+	var list_index: int = -1
+	## Invalid semantic references disable this target, leaving geometry usable.
+	var error: String = ""
+
+
+## Authored texture image ids and their game-frame durations.
+class TextureAnimation:
+	extends RefCounted
+	var image_ids := PackedInt32Array()
+	var durations := PackedInt32Array()
+	## Empty lists are retained but unavailable; a duration of zero is legal.
+	var error: String = ""
+
+
 ## One pose of a part.
 class Partcel:
 	extends RefCounted
@@ -111,6 +140,10 @@ var texture_animation_target_count: int = 0
 var texture_animation_count: int = 0
 ## Texture ids the texture animations show, in stored order.
 var texture_animation_image_ids := PackedInt32Array()
+## Effective animation arrays, inherited for incomplete parts.
+var flipbook_actions: Array[FlipbookAction] = []
+var texture_targets: Array[TextureTarget] = []
+var texture_lists: Array[TextureAnimation] = []
 ## The polygons, in stored order.
 var polygons: Array[MofPolygon] = []
 ## Where the part's polygon data ends, from the start of the model.
@@ -167,18 +200,17 @@ func read_body(reader: ByteReader, pool_start: int, pool_end: int, incomplete: b
 		_read_hilites(reader)
 		_read_collprims(reader)
 		_read_matrices(reader)
-	var targets: Array[Vector2i] = []
 	if not incomplete:
-		targets = _read_texture_animations(reader)
+		_read_texture_animations(reader)
 		_read_flipbook(reader)
 	_read_polygons(reader)
 	if reader.has_error():
 		return
-	for target: Vector2i in targets:
-		if target.y < 0 or target.y >= polygons.size():
-			reader.fail("part %d: a texture animation names polygon %d of %d" % [index, target.y, polygons.size()])
-		elif polygons[target.y].type != target.x:
-			reader.fail("part %d: a texture animation expects polygon %d to be of kind %d" % [index, target.y, target.x])
+	for target: TextureTarget in texture_targets:
+		if target.polygon_index < 0 or target.polygon_index >= polygons.size():
+			target.error = "texture target names unavailable polygon %d" % target.polygon_index
+		elif polygons[target.polygon_index].type != target.polygon_type or not polygons[target.polygon_index].is_textured():
+			target.error = "texture target names an incompatible polygon"
 	for hilite: Hilite in hilites:
 		var limit: int = vertex_count if hilite.attach == ATTACH_VERTEX else polygons.size()
 		if hilite.index >= limit:
@@ -196,6 +228,20 @@ func borrow_from(other: MofPart) -> void:
 	partcels = other.partcels
 	hilites = other.hilites
 	collprims = other.collprims
+	flipbook_actions = other.flipbook_actions
+	texture_lists = other.texture_lists
+	texture_targets = []
+	for original: TextureTarget in other.texture_targets:
+		var target := TextureTarget.new()
+		target.polygon_type = original.polygon_type
+		target.polygon_index = original.polygon_index
+		target.list_index = original.list_index
+		target.error = original.error
+		if target.polygon_index < 0 or target.polygon_index >= polygons.size():
+			target.error = "borrowed texture target names unavailable polygon"
+		elif polygons[target.polygon_index].type != target.polygon_type:
+			target.error = "borrowed texture target names an incompatible polygon"
+		texture_targets.append(target)
 
 
 ## Number of polygons of each kind, in the order of [MofPolygonType].
@@ -320,54 +366,87 @@ func _read_matrices(reader: ByteReader) -> void:
 	matrix_count = (end - _matrices_at) / 32
 
 
-# Returns (polygon kind, polygon index) of each animated polygon.
-func _read_texture_animations(reader: ByteReader) -> Array[Vector2i]:
-	var targets: Array[Vector2i] = []
+# Read lists consecutively, retaining raw counts and resolving target pointers.
+func _read_texture_animations(reader: ByteReader) -> void:
 	if _texture_animation_at == 0:
-		return targets
+		return
 	var end: int = _section_after(_texture_animation_at, PackedInt32Array([_flipbook_at, _polygons_at]))
-	if end < 0:
-		reader.fail("part %d: cannot tell where the texture animations at %d end" % [index, _texture_animation_at])
-		return targets
-	reader.seek(_texture_animation_at)
-	var count: int = reader.read_s32()
-	var lists_wanted := PackedInt32Array()
+	if end < 0 or end > reader.size():
+		reader.fail("part %d: cannot bound its texture animations" % index)
+		return
+	var section: ByteReader = reader.sub_reader(_texture_animation_at, end - _texture_animation_at)
+	var count: int = section.read_s32()
+	if count < 0 or count > section.remaining() / 16:
+		reader.fail("part %d: texture target count %d exceeds its section" % [index, count])
+		return
+	var wanted := PackedInt32Array()
 	for i: int in count:
-		var kind: int = reader.read_s32()
-		var polygon_index: int = reader.read_s32()
-		if reader.read_u32() != 0:
-			reader.fail("part %d texture animation %d: the word the game fills in is not zero" % [index, i])
-		lists_wanted.append(reader.read_s32())
-		if reader.has_error():
-			return targets
-		targets.append(Vector2i(kind, polygon_index))
-	var lists_found := PackedInt32Array()
-	while reader.get_position() < end and not reader.has_error():
-		lists_found.append(reader.get_position())
-		var entries: int = reader.read_s32()
+		var target := TextureTarget.new()
+		target.polygon_type = section.read_s32()
+		target.polygon_index = section.read_s32()
+		if section.read_u32() != 0:
+			section.fail("part %d texture animation %d: the game's word is not zero" % [index, i])
+		wanted.append(section.read_s32())
+		texture_targets.append(target)
+	var found: Dictionary[int, int] = {}
+	while section.has_more() and not section.has_error():
+		found[_texture_animation_at + section.get_position()] = texture_lists.size()
+		var animation := TextureAnimation.new()
+		var entries: int = section.read_s32()
+		if entries < 0 or entries > section.remaining() / 4:
+			section.fail("part %d: texture list count %d exceeds its section" % [index, entries])
+			break
 		for _i: int in entries:
-			texture_animation_image_ids.append(reader.read_s16())
-			reader.read_u16() # How many game frames the image stays.
-	if reader.get_position() != end:
-		reader.fail("part %d: texture animations end at %d, the next section starts at %d" % [index, reader.get_position(), end])
-	for wanted: int in lists_wanted:
-		if not lists_found.has(wanted):
-			reader.fail("part %d: no texture animation at %d" % [index, wanted])
-	texture_animation_target_count = targets.size()
-	texture_animation_count = lists_found.size()
-	return targets
+			var image: int = section.read_s16()
+			animation.image_ids.append(image)
+			animation.durations.append(section.read_u16())
+			texture_animation_image_ids.append(image)
+		if entries == 0:
+			animation.error = "texture animation list is empty"
+		texture_lists.append(animation)
+	if section.has_error():
+		reader.fail(section.error)
+		return
+	for i: int in wanted.size():
+		var target: TextureTarget = texture_targets[i]
+		if wanted[i] < _texture_animation_at or wanted[i] >= end:
+			reader.fail("part %d: texture list pointer outside its section" % index)
+			return
+		if not found.has(wanted[i]):
+			target.error = "texture list pointer does not name a list"
+		else:
+			target.list_index = found[wanted[i]]
+			if not texture_lists[target.list_index].error.is_empty():
+				target.error = texture_lists[target.list_index].error
+	texture_animation_target_count = texture_targets.size()
+	texture_animation_count = texture_lists.size()
 
 
 func _read_flipbook(reader: ByteReader) -> void:
 	if _flipbook_at == 0:
 		return
-	reader.seek(_flipbook_at)
-	var flipbook_flags: int = reader.read_u16()
+	var end: int = _section_after(_flipbook_at, PackedInt32Array([_polygons_at]))
+	if end < 0 or end > reader.size():
+		reader.fail("part %d: cannot bound its flipbook" % index)
+		return
+	var section: ByteReader = reader.sub_reader(_flipbook_at, end - _flipbook_at)
+	var flipbook_flags: int = section.read_u16()
 	if flipbook_flags != 0:
-		reader.fail("part %d: flipbook flags %d" % [index, flipbook_flags])
-	flipbook_action_count = reader.read_u16()
-	reader.skip(4 * flipbook_action_count)
-
+		section.fail("part %d: flipbook flags %d" % [index, flipbook_flags])
+	flipbook_action_count = section.read_u16()
+	if flipbook_action_count > section.remaining() / 4:
+		section.fail("part %d: flipbook action count exceeds its section" % index)
+	for _i: int in flipbook_action_count:
+		if section.has_error():
+			break
+		var action := FlipbookAction.new()
+		action.frame_count = section.read_u16()
+		action.start = section.read_u16()
+		if action.frame_count == 0 or action.start + action.frame_count > partcels.size():
+			action.error = "flipbook range %d + %d exceeds %d partcels" % [action.start, action.frame_count, partcels.size()]
+		flipbook_actions.append(action)
+	if section.has_error():
+		reader.fail(section.error)
 
 func _read_polygons(reader: ByteReader) -> void:
 	end_offset = _polygons_at
@@ -378,6 +457,9 @@ func _read_polygons(reader: ByteReader) -> void:
 	while left > 0 and not reader.has_error():
 		var kind: int = reader.read_u16()
 		var count: int = reader.read_u16()
+		if count == 0 or count > left:
+			reader.fail("part %d: polygon block count %d exceeds the %d remaining polygons" % [index, count, left])
+			return
 		if not MofPolygonType.is_valid(kind):
 			reader.fail("part %d: polygons of kind %d" % [index, kind])
 			return

@@ -12,9 +12,9 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P1 | MWI index, MWD archive, PP20, WADs | M | SHA-256 of every file and WAD child from an independent Python reader | Done, `37533f2` |
 | P2 | Every table in the executable | M | Independent Python reader; byte and value comparison with the reference engine's extracted tables | Done, `0f03972` |
 | P3 | Texture banks (VLO) and a texture viewer | S | Per-image hashes; screenshots inspected | Done, `bf6d356` |
-| P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done |
-| P5 | Animated models, flipbooks, texture animation | L | The frog's animations side by side | Next |
-| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | |
+| P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done, `b3188cd` |
+| P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done |
+| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Next |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Side by side; the reference engine's per-tick traces within tolerance | |
 | P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
 | P9 | The remaining seven themes | XL | A checklist per level | |
@@ -28,6 +28,15 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P17 | Export for Windows, Linux and macOS | S | A run on a clean machine | |
 
 Network play is deferred.
+
+P5 closed on 2026-10-01: 99 scripts compiled, 240 retail tests passed,
+and 198 asset-free tests passed with 42 named retail skips. All 187 XAR
+actions and safe flipbook actions were sampled, all texture targets were
+checked through wrap, and the 19 unsafe authored flipbook records remain
+diagnosed and unavailable. The C driver passed 10 checks; visual evidence,
+timing measurements and the six deliberate-break checks are recorded in
+`FINDINGS.md` and `tests/golden/README.md`. Maps, lighting, gameplay-driven
+actions, animation events, particles and sound remain later phases.
 
 ## Needed from the owner
 
@@ -62,6 +71,7 @@ Directories are created when a phase puts real files in them.
 
 - Game logic runs in `_physics_process` at the original tick rate, with at most 3 steps per rendered frame. Rendering is interpolated. Godot's physics engine is not used; collision is the game's own.
 - The tick rate is an open question to settle in P7: the reference engine runs 30 ticks per second, while FrogLord's editor treats the PC release as 25. See `docs/FINDINGS.md`.
+- The model viewer uses that existing 30 Hz clock. Its optional smoothing changes only presentation and defaults off; textures and animation state stay tick-driven.
 - Entities update in the original list order, because random-number use depends on it.
 - These keep integer behaviour: the random number generator, script timers and counters, path distance stepping, grid coordinates and form heights, the game timer, score, entity delay counters, and radius-squared collision tests.
 - Frog hops last a whole number of ticks and snap to the grid on landing, so recorded demos replay approximately. Demo checks compare completion and end state, not the path.

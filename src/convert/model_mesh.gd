@@ -16,8 +16,28 @@ var surface_count: int = 0
 var skipped_polygons: int = 0
 ## Texture ids no loaded bank has, each once. Their polygons are drawn untextured.
 var missing_image_ids := PackedInt32Array()
-## The smallest box holding every vertex drawn.
+## Rendering fallbacks caused by incomplete image data, shown by inspection tools.
+var diagnostics := PackedStringArray()
+## Bounds covering the geometry and every sampled animation action.
 var bounds := AABB()
+## Local bounds of every part, including every flipbook cel.
+var part_bounds: Array[AABB] = []
+## Conservative bounds of each geometry action, for a fixed viewer camera.
+var action_bounds: Array[AABB] = []
+## Texture tracks per part. Their surfaces have their own immutable frame materials.
+var texture_tracks: Array[Array] = []
+
+
+## One animated polygon's materials, precomputed so playback allocates no resources.
+class TextureTrack:
+	extends RefCounted
+	## Surface and target index in its part.
+	var surface: int = 0
+	var target: int = 0
+	## The polygon's original image, used when animation is disabled.
+	var original: ShaderMaterial
+	## A material for every entry of the texture list, including missing-image fallbacks.
+	var frames: Array[ShaderMaterial] = []
 
 
 ## True when there is nothing to draw.

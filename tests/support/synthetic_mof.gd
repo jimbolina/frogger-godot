@@ -30,9 +30,13 @@ class Part:
 	var collprims: int = 0
 	## Number of flipbook animations to write (0 writes no flipbook).
 	var flipbook_actions: int = 0
+	## Optional (start, frame count) records; otherwise all actions use all poses.
+	var flipbook_ranges: Array[Vector2i] = []
 	## Polygon indices with a texture animation showing [member animation_images].
 	var animated_polygons := PackedInt32Array()
 	var animation_images := PackedInt32Array()
+	## Optional per-image durations; absent values use five frames.
+	var animation_durations := PackedInt32Array()
 
 
 ## A polygon of kind [param type] joining [param vertices], lit by [param
@@ -159,19 +163,20 @@ static func build_static(parts: Array[Part], incomplete: bool = false) -> Packed
 					_u32(body, 0)
 					_u32(body, list_at)
 				_u32(body, p.animation_images.size())
-				for image: int in p.animation_images:
-					_u16(body, image)
-					_u16(body, 5)
+				for image_index: int in p.animation_images.size():
+					_u16(body, p.animation_images[image_index])
+					_u16(body, p.animation_durations[image_index] if image_index < p.animation_durations.size() else 5)
 				flags |= MofStatic.FLAG_ANIMATED_TEXTURES
-		if p.flipbook_actions > 0:
+		var action_count: int = p.flipbook_ranges.size() if not p.flipbook_ranges.is_empty() else p.flipbook_actions
+		if action_count > 0:
 			flags |= MofStatic.FLAG_FLIPBOOK
 			if not incomplete:
 				flipbook_at = body_start + body.size()
 				_u16(body, 0)
-				_u16(body, p.flipbook_actions)
-				for _a: int in p.flipbook_actions:
-					_u16(body, p.poses.size())
-					_u16(body, 0)
+				_u16(body, action_count)
+				for action_index: int in action_count:
+					_u16(body, p.flipbook_ranges[action_index].y if not p.flipbook_ranges.is_empty() else p.poses.size())
+					_u16(body, p.flipbook_ranges[action_index].x if not p.flipbook_ranges.is_empty() else 0)
 		var polygons_at: int = body_start + body.size()
 		var kind: int = -1
 		var run := PackedByteArray()
@@ -211,31 +216,9 @@ static func build_static(parts: Array[Part], incomplete: bool = false) -> Packed
 	return out
 
 
-## An animated model file holding [param static_models] (each from
-## [method build_static]), with empty animation data.
+## A valid XAR holding embedded static models and no authored actions.
 static func build_animated(static_models: Array[PackedByteArray]) -> PackedByteArray:
-	var out := "12ax".to_ascii_buffer()
-	var filler: int = 16
-	var models_at: int = MofAnimated.HEADER_SIZE + filler
-	var total: int = models_at
-	for model: PackedByteArray in static_models:
-		total += model.size()
-	_u32(out, total + 4 * static_models.size())
-	_u32(out, MofAnimated.EXPECTED_FLAGS)
-	_u16(out, 1)
-	_u16(out, static_models.size())
-	_u32(out, MofAnimated.HEADER_SIZE)
-	_u32(out, MofAnimated.HEADER_SIZE + 8)
-	_u32(out, total)
-	out.resize(out.size() + filler)
-	var starts := PackedInt32Array()
-	for model: PackedByteArray in static_models:
-		starts.append(out.size())
-		out.append_array(model)
-	for start: int in starts:
-		_u32(out, start)
-	return out
-
+	return SyntheticMofAnimation.build(static_models)
 
 ## A placeholder model file.
 static func build_dummy() -> PackedByteArray:

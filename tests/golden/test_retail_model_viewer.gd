@@ -61,6 +61,40 @@ func test_low_poly_models_can_be_shown() -> void:
 	assert_true(_viewer.wad_names().has("THEME_GEN.WAD"))
 
 
+func test_representative_animations_reuse_render_resources() -> void:
+	for file_name: String in ["GEN_FROG.XAR", "GEN_FROG_WIN95.XAR", "DES_VULTURE.XAR", "OPT_TURTLE.XMR", "GEN_CHECKPOINT_2.XMR"]:
+		var build_started: int = Time.get_ticks_usec()
+		assert_gt(_viewer.load_model_by_name(file_name), 0, file_name)
+		var build_ms: float = float(Time.get_ticks_usec() - build_started) / 1000.0
+		_viewer.set_playing(false)
+		var instance: AnimatedModelInstance = _viewer.animated_instance
+		var mesh_ids := PackedInt64Array()
+		var material_ids := PackedInt64Array()
+		for mesh: ArrayMesh in _viewer.current_mesh.part_meshes:
+			mesh_ids.append(mesh.get_instance_id() if mesh != null else 0)
+			if mesh != null:
+				for surface: int in mesh.get_surface_count():
+					material_ids.append(mesh.surface_get_material(surface).get_instance_id())
+		var started: int = Time.get_ticks_usec()
+		for smoothing: bool in [false, true]:
+			instance.smoothing_enabled = smoothing
+			for _tick: int in 180:
+				instance.advance_tick()
+				instance.render(0.5)
+		var elapsed_ms: float = float(Time.get_ticks_usec() - started) / 1000.0
+		var current_mesh_ids := PackedInt64Array()
+		var current_material_ids := PackedInt64Array()
+		for mesh: ArrayMesh in _viewer.current_mesh.part_meshes:
+			current_mesh_ids.append(mesh.get_instance_id() if mesh != null else 0)
+			if mesh != null:
+				for surface: int in mesh.get_surface_count():
+					current_material_ids.append(mesh.surface_get_material(surface).get_instance_id())
+		assert_eq(current_mesh_ids, mesh_ids, file_name + " meshes stay allocated")
+		assert_eq(current_material_ids, material_ids, file_name + " materials stay allocated")
+		assert_eq(_viewer.player.tick, 360)
+		print("TIMING: %s build %.2f ms; 360 tick/draw pairs %.2f ms (%.2f us each)" % [file_name, build_ms, elapsed_ms, elapsed_ms * 1000.0 / 360.0])
+
+
 func test_every_high_poly_model_builds_with_its_textures() -> void:
 	var problems := PackedStringArray()
 	var missing := PackedStringArray()
@@ -86,8 +120,12 @@ func test_every_high_poly_model_builds_with_its_textures() -> void:
 			var model: MofFile = _data.read_wad_model(wad_entry.index, position, problems)
 			if model == null:
 				continue
-			for shape: MofStatic in model.static_models:
+			for model_index: int in model.static_models.size():
+				var shape: MofStatic = model.static_models[model_index]
 				var mesh: ModelMesh = ModelMeshBuilder.new(library, own).build(shape)
+				var animated_mesh: ModelMesh = ModelMeshBuilder.new(library, own).build_animated(model, model_index)
+				assert_eq(animated_mesh.triangle_count, mesh.triangle_count, "animated construction keeps polygon topology")
+				assert_eq(animated_mesh.missing_image_ids, mesh.missing_image_ids, "animation frames resolve in the model's bank")
 				built += 1
 				triangles += mesh.triangle_count
 				if not mesh.missing_image_ids.is_empty():

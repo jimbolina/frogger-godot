@@ -13,7 +13,7 @@ read every file in their archives (the MWI index, the MWD archive, WAD
 bundles and PowerPacker compression) and decode the game tables held in the
 executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
-and show every model in its resting pose. There is no gameplay yet.
+and animate models, flipbooks and polygon textures. There is no gameplay yet.
 
 ## No game data is included
 
@@ -72,10 +72,16 @@ polygon, H shows the parts FrogLord's settings hide, N shows the next model
 inside an animated file, L lists the low-poly WADs too, Esc returns to the
 start screen.
 
-What it does not do yet: models are unlit (the game lights them while it
-runs, from lights stored in each map), and the parts of an animated model
-are shown where the file stores them, not posed. Textures and flipbooks do
-not animate.
+The animation panel selects actions by number and configured name. Space
+plays or pauses, Period steps one tick, R restarts, and I toggles smooth
+motion. Dragging the frame slider pauses at an exact pose. Looping and
+texture animation have separate switches. Playback uses the project's
+30 Hz clock; smooth motion defaults off and changes only presentation.
+Unsafe authored actions remain listed with an explanation.
+
+For a deterministic capture, add `-- --model=GEN_FROG.XAR --action=0
+--tick=60 --smooth=false --screenshot-dir=<absolute folder outside the repository>`.
+Models remain unlit until map lights are implemented.
 
 ## Running the tests
 
@@ -99,6 +105,8 @@ last line is a summary such as `SUMMARY: PASS=70 FAIL=0 SKIP=3 EXIT=3`.
 
 Every script is compiled before the tests run (`tools/check_scripts.gd`),
 with the project's strict typing warnings treated as errors.
+The wrappers isolate writable user data, save explicit logs in a temporary
+folder, disable the crash handler and stop at the first failed stage.
 
 ## Layout
 

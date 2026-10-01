@@ -1,0 +1,10 @@
+actions=187
+animated=78
+flipbook_actions=174
+models=434
+texture_targets=613
+transform_code_1=41
+transform_code_2=37
+transforms=28447
+unsafe_flipbook_actions=19
+virtual_frames=4016

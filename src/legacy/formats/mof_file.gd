@@ -68,7 +68,7 @@ static func needs_counterpart(bytes: PackedByteArray) -> bool:
 		Kind.STATIC:
 			return MofStatic.is_incomplete_at(bytes)
 		Kind.ANIMATED:
-			var outside: MofAnimated = MofAnimated.parse(bytes)
+			var outside: MofAnimated = MofAnimated.parse_header(bytes)
 			for part: Vector2i in outside.static_ranges:
 				if MofStatic.is_incomplete_at(bytes, part.x):
 					return true
@@ -99,6 +99,7 @@ static func parse(bytes: PackedByteArray, counterpart: MofFile = null) -> MofFil
 			for i: int in file.animated.static_ranges.size():
 				var part: Vector2i = file.animated.static_ranges[i]
 				file._add_static(MofStatic.parse(bytes, part.x, part.y, _static_of(counterpart, i)), i)
+			file.animated.validate_models(file.static_models)
 	return file
 
 

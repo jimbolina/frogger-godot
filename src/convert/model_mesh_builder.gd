@@ -52,14 +52,77 @@ class _Surface:
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 	var uvs := PackedVector2Array()
+	var vertex_indices := PackedInt32Array()
+	var normal_indices := PackedInt32Array()
+	var target: int = -1
+	var list_index: int = -1
 
 
 ## Builds the meshes of [param model].
 func build(model: MofStatic) -> ModelMesh:
+	return _build(model, false)
+
+
+## Builds all flipbook cels and texture frames once, with bounds covering every action.
+func build_animated(file: MofFile, static_index: int = 0) -> ModelMesh:
+	var result: ModelMesh = _build(file.static_models[static_index], true)
+	if file.animated == null:
+		var model: MofStatic = file.static_models[static_index]
+		if model.parts.is_empty():
+			return result
+		for action: MofPart.FlipbookAction in model.parts[0].flipbook_actions:
+			var box := AABB()
+			var first_vertex: bool = true
+			for part: MofPart in model.parts:
+				for cel_index: int in range(maxi(action.start, 0), mini(action.start + action.frame_count, part.partcels.size())):
+					var cel: MofPart.Partcel = part.partcels[cel_index]
+					for at: int in range(0, cel.vertices.size(), 3):
+						var vertex: Vector3 = GameSpace.position(cel.vertices[at], cel.vertices[at + 1], cel.vertices[at + 2])
+						box = AABB(vertex, Vector3.ZERO) if first_vertex else box.expand(vertex)
+						first_vertex = false
+			result.action_bounds.append(box if not first_vertex else result.bounds)
+		return result
+	var first: bool = true
+	for action_index: int in file.animated.actions_for(static_index).size():
+		var action: MofAnimated.Action = file.animated.actions_for(static_index)[action_index]
+		var action_box := AABB()
+		var action_first: bool = true
+		if not action.error.is_empty():
+			result.action_bounds.append(result.bounds)
+			continue
+		for frame: int in action.frame_count:
+			for part_index: int in result.part_bounds.size():
+				var pose: Transform3D = GameSpace.transform(file.animated.sample_matrix(static_index, action_index, frame, part_index))
+				var local: AABB = result.part_bounds[part_index]
+				# A sphere around the part origin also covers rotations between two samples.
+				var radius: float = 0.0
+				for corner: int in 8:
+					radius = maxf(radius, local.get_endpoint(corner).length())
+				var extent: float = radius * _basis_extent(pose.basis)
+				var box := AABB(pose.origin - Vector3.ONE * extent, Vector3.ONE * extent * 2.0)
+				result.bounds = box if first else result.bounds.merge(box)
+				first = false
+				action_box = box if action_first else action_box.merge(box)
+				action_first = false
+		result.action_bounds.append(action_box if not action_first else result.bounds)
+	return result
+
+
+static func _basis_extent(basis: Basis) -> float:
+	# Gershgorin's bound on B^T B covers nonuniform scales and edited shears.
+	var xy: float = absf(basis.x.dot(basis.y))
+	var xz: float = absf(basis.x.dot(basis.z))
+	var yz: float = absf(basis.y.dot(basis.z))
+	return sqrt(maxf(basis.x.length_squared() + xy + xz,
+		maxf(basis.y.length_squared() + xy + yz, basis.z.length_squared() + xz + yz)))
+
+
+func _build(model: MofStatic, animated: bool) -> ModelMesh:
 	var result := ModelMesh.new()
 	var missing: Dictionary[int, bool] = {}
 	var first_vertex: bool = true
 	for part: MofPart in model.parts:
+		var tracks: Array[ModelMesh.TextureTrack] = []
 		var surfaces: Dictionary[String, _Surface] = {}
 		var order: Array[String] = []
 		var cel: MofPart.Partcel = part.partcels[REST_POSE] if part.partcels.size() > REST_POSE else null
@@ -68,7 +131,9 @@ func build(model: MofStatic) -> ModelMesh:
 				if polygon.vertices.size() < 3:
 					result.skipped_polygons += 1
 					continue
-				_add_polygon(polygon, cel, surfaces, order, missing)
+				var target_index: int = _target_for(part, polygon) if animated else -1
+				_add_polygon(polygon, cel, surfaces, order, missing, target_index,
+					part.texture_targets[target_index].list_index if target_index >= 0 else -1)
 		var mesh: ArrayMesh = null
 		order.sort_custom(func(a: String, b: String) -> bool:
 			return surfaces[a].blend < surfaces[b].blend if surfaces[a].blend != surfaces[b].blend else a < b)
@@ -76,6 +141,10 @@ func build(model: MofStatic) -> ModelMesh:
 			var surface: _Surface = surfaces[key]
 			if mesh == null:
 				mesh = ArrayMesh.new()
+				if animated:
+					mesh.blend_shape_mode = Mesh.BLEND_SHAPE_MODE_NORMALIZED
+					for cel_index: int in range(1, part.partcels.size()):
+						mesh.add_blend_shape("Cel%d" % cel_index)
 			var arrays: Array = []
 			arrays.resize(Mesh.ARRAY_MAX)
 			arrays[Mesh.ARRAY_VERTEX] = surface.vertices
@@ -83,10 +152,42 @@ func build(model: MofStatic) -> ModelMesh:
 			arrays[Mesh.ARRAY_COLOR] = surface.colors
 			if surface.image != null:
 				arrays[Mesh.ARRAY_TEX_UV] = surface.uvs
-			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			var blends: Array[Array] = []
+			if animated:
+				for cel_index: int in range(1, part.partcels.size()):
+					var blend_arrays: Array = []
+					blend_arrays.resize(Mesh.ARRAY_MAX)
+					blend_arrays[Mesh.ARRAY_VERTEX] = _cel_vertices(part.partcels[cel_index], surface.vertex_indices)
+					blend_arrays[Mesh.ARRAY_NORMAL] = _cel_normals(part.partcels[cel_index], surface.normal_indices)
+					blends.append(blend_arrays)
+			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, blends)
 			var texture: Texture2D = _library.texture_for(surface.image) if surface.image != null else null
-			mesh.surface_set_material(mesh.get_surface_count() - 1,
-				ModelShaders.material(texture, surface.blend, linear_filter, two_sided))
+			var material: ShaderMaterial = ModelShaders.material(texture, surface.blend, linear_filter, two_sided)
+			if surface.target >= 0:
+				_set_pixel_uv(material, surface.image)
+				var track := ModelMesh.TextureTrack.new()
+				track.surface = mesh.get_surface_count() - 1
+				track.target = surface.target
+				track.original = material
+				if surface.image == null:
+					result.diagnostics.append("part %d texture target %d: original image unavailable; animation stays untextured because its pixel UVs cannot be resolved" % [part.index, surface.target])
+				if surface.list_index >= 0 and surface.list_index < part.texture_lists.size():
+					for image_id: int in part.texture_lists[surface.list_index].image_ids:
+						var image: VloImage = _library.image_for_id(image_id, _preferred) if _library != null else null
+						if image == null:
+							missing[image_id] = true
+						if surface.image == null:
+							track.frames.append(material)
+							continue
+						var frame_blend: ModelShaders.Blend = ModelShaders.Blend.OPAQUE
+						if surface.image != null and surface.image.has_flag(VloImage.FLAG_TRANSLUCENT) and image != null:
+							frame_blend = ModelShaders.blend_for_mode(image.blend_mode())
+						var frame_material: ShaderMaterial = ModelShaders.material(_library.texture_for(image) if image != null else null,
+							frame_blend, linear_filter, two_sided)
+						_set_pixel_uv(frame_material, image)
+						track.frames.append(frame_material)
+				tracks.append(track)
+			mesh.surface_set_material(mesh.get_surface_count() - 1, material)
 			mesh.surface_set_name(mesh.get_surface_count() - 1, key)
 			result.surface_count += 1
 			result.triangle_count += surface.vertices.size() / 3
@@ -97,6 +198,19 @@ func build(model: MofStatic) -> ModelMesh:
 				else:
 					result.bounds = result.bounds.expand(vertex)
 		result.part_meshes.append(mesh)
+		result.texture_tracks.append(tracks)
+		var local := AABB()
+		var local_first: bool = true
+		for partcel: MofPart.Partcel in part.partcels:
+			for at: int in range(0, partcel.vertices.size(), 3):
+				var vertex: Vector3 = GameSpace.position(partcel.vertices[at], partcel.vertices[at + 1], partcel.vertices[at + 2])
+				local = AABB(vertex, Vector3.ZERO) if local_first else local.expand(vertex)
+				local_first = false
+		result.part_bounds.append(local)
+		if animated:
+			result.bounds = result.bounds.merge(local)
+			if mesh != null:
+				mesh.custom_aabb = local
 	result.missing_image_ids = PackedInt32Array(missing.keys())
 	result.missing_image_ids.sort()
 	return result
@@ -121,7 +235,7 @@ static func triangle_corners(corner_count: int) -> PackedInt32Array:
 
 
 func _add_polygon(polygon: MofPolygon, cel: MofPart.Partcel, surfaces: Dictionary[String, _Surface],
-		order: Array[String], missing: Dictionary[int, bool]) -> void:
+		order: Array[String], missing: Dictionary[int, bool], target: int = -1, list_index: int = -1) -> void:
 	var image: VloImage = null
 	if polygon.is_textured():
 		image = _library.image_for_id(polygon.image_id, _preferred) if _library != null else null
@@ -132,25 +246,66 @@ func _add_polygon(polygon: MofPolygon, cel: MofPart.Partcel, surfaces: Dictionar
 		blend = ModelShaders.blend_for_mode(image.blend_mode())
 	var key: String = "plain" if image == null else "texture %d%s" % [image.texture_id,
 		"" if blend == ModelShaders.Blend.OPAQUE else " blend %d" % blend]
+	if target >= 0:
+		key = "animated %d" % target
 	if not surfaces.has(key):
 		var made := _Surface.new()
 		made.image = image
 		made.blend = blend
+		made.target = target
+		made.list_index = list_index
 		surfaces[key] = made
 		order.append(key)
 	var surface: _Surface = surfaces[key]
 	var color := Color(polygon.red / 255.0, polygon.green / 255.0, polygon.blue / 255.0)
 	for corner: int in triangle_corners(polygon.vertices.size()):
 		var at: int = polygon.vertices[corner] * 3
+		surface.vertex_indices.append(at)
 		if at + 2 >= cel.vertices.size():
 			surface.vertices.append(Vector3.ZERO)
 		else:
 			surface.vertices.append(GameSpace.position(cel.vertices[at], cel.vertices[at + 1], cel.vertices[at + 2]))
 		var normal_at: int = polygon.normal_of_corner(corner) * 3
+		surface.normal_indices.append(normal_at)
 		if normal_at < 0 or normal_at + 2 >= cel.normals.size():
 			surface.normals.append(Vector3.UP)
 		else:
 			surface.normals.append(GameSpace.normal(cel.normals[normal_at], cel.normals[normal_at + 1], cel.normals[normal_at + 2]))
 		surface.colors.append(color)
 		if image != null:
-			surface.uvs.append(texture_coordinate(image, polygon.uvs[corner * 2], polygon.uvs[corner * 2 + 1]))
+			if target >= 0:
+				surface.uvs.append(Vector2((polygon.uvs[corner * 2] * image.width) / 255,
+					(polygon.uvs[corner * 2 + 1] * image.height) / 255))
+			else:
+				surface.uvs.append(texture_coordinate(image, polygon.uvs[corner * 2], polygon.uvs[corner * 2 + 1]))
+
+
+static func _set_pixel_uv(material: ShaderMaterial, image: VloImage) -> void:
+	if image == null:
+		return
+	material.set_shader_parameter("uv_scale", Vector2(1.0 / image.padded_width, 1.0 / image.padded_height))
+	material.set_shader_parameter("uv_offset", Vector2(float(image.left_padding()) / image.padded_width,
+		float(image.top_padding()) / image.padded_height))
+
+
+static func _target_for(part: MofPart, polygon: MofPolygon) -> int:
+	var polygon_index: int = part.polygons.find(polygon)
+	for index: int in part.texture_targets.size():
+		if part.texture_targets[index].polygon_type == polygon.type and part.texture_targets[index].polygon_index == polygon_index \
+				and part.texture_targets[index].error.is_empty():
+			return index
+	return -1
+
+
+static func _cel_vertices(cel: MofPart.Partcel, indices: PackedInt32Array) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for at: int in indices:
+		out.append(GameSpace.position(cel.vertices[at], cel.vertices[at + 1], cel.vertices[at + 2]) if at >= 0 and at + 2 < cel.vertices.size() else Vector3.ZERO)
+	return out
+
+
+static func _cel_normals(cel: MofPart.Partcel, indices: PackedInt32Array) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	for at: int in indices:
+		out.append(GameSpace.normal(cel.normals[at], cel.normals[at + 1], cel.normals[at + 2]) if at >= 0 and at + 2 < cel.normals.size() else Vector3.UP)
+	return out

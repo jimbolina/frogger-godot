@@ -163,6 +163,189 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 
 A textured polygon is drawn semi-transparent when its texture has the translucent flag (bit 0), mixed the way the texture's blend mode says. Retail textures only use modes 0 (average) and 1 (add). Untextured polygons are never semi-transparent.
 
+## Model animation (P5)
+
+### Stored data and unsafe records
+
+The retail archive contains 78 XAR files, 28,447 transforms, 187 actions and
+4,016 virtual frames. Every XAR has one model set and one model, and uses
+standard virtual-cel tables: 41 files use byte matrices and 37 byte
+quaternions. The reader also supports short matrices, short quaternions,
+scaled byte/short quaternions, multiple sets and authored interpolation;
+synthetic files exercise the formats absent from retail.
+
+There are 174 stored flipbook actions (230 after incomplete-model
+inheritance). Nineteen readable records point past their partcel arrays:
+
+| Files | Action IDs | Start/count | Available partcels |
+|---|---|---|---|
+| `GEN_GOLD_FROG.XMR`, `GEN_GOLD_FROG_WIN95.XMR` | 5 | 46/21 | 46 |
+| `FOR_SQUIRREL_WIN95.XMR` | 2 | 41/20 | 41 |
+| `SKY_SQUADRON.XMR`, `SKY_SQUADRON_WIN95.XMR` | 4, 5, 6, 7, 8 | 8/249 | 29 |
+| Same squadron files | 9, 13, 14 | 19/238 | 29 |
+
+These actions stay visible but unavailable. Their ranges are never
+repaired. Structural truncation or impossible pointers still reject a
+file. An invalid texture list disables only its target, which keeps its
+original image. Incomplete models share their counterpart's effective
+geometry and animation arrays while retaining their own polygons,
+colours and image IDs. Raw stored counts remain separate; P4 facts did
+not change.
+Undefined scale flag bits are preserved and explicitly reported; as in
+FrogLord and C, only bit zero affects sampling. Unsupported structural
+format modes fail with a diagnostic.
+
+### Clocks and transforms
+
+`ModelAnimationPlayer` owns counters, independently of nodes and other
+instances. It follows `MRAnimUpdateEnvironments`: selection sets cel -1;
+the first update reaches zero regardless of the integer update period.
+Viewer tick zero includes that initial update. Loop, hold and hide modes
+operate on integer ticks. Seeking replays from a full restart; changing
+an action leaves the texture counters independent.
+
+Stored quaternions are converted with the C fixed-point formulas without
+normalizing them. Matrix entries narrow to signed 16 bits, and scale
+left-multiplies the matrix (scales its rows). Old standard virtual-cel
+tables are one-based; authored interpolation endpoints are zero-based.
+`GameSpace` applies `C * basis * C` and `C * translation / 256`, with
+`C = diag(1,-1,-1)`. Part nodes sit beneath the model placement node.
+
+The viewer uses the existing 30 Hz physics clock and three-step catch-up
+limit. This adopts the frozen reference's clock for animation; the
+retail 25/30 Hz timing investigation remains P7 work.
+
+### Textures and smoothing
+
+The 613 texture targets use the C increment-before-comparison rule.
+A duration of one advances on the first update; a zero duration also
+advances once on the next update. Each target has its own counters, even
+when targets share a list. Polygon indices are global within a part,
+not relative to a polygon-type block.
+
+UV pixel offsets come from the original polygon image's dimensions.
+Replacement images apply their own padding and padded dimensions to
+those offsets. The original image's translucency flag remains in force;
+the current image supplies the blend rate. Missing images use the
+untextured fallback and are reported. If the original image is missing,
+all entries for that target stay untextured because its pixel offsets
+cannot be determined, even when a replacement image exists. Animated targets have separate
+surfaces and instance-local overrides, with materials prepared during
+model construction.
+
+Smooth Motion defaults off. It interpolates transforms and normalized
+flipbook blend-shape weights between ticks; images remain discrete.
+Pause, step, seek, restart, action/model changes, loops and toggle changes
+reset interpolation history. Exact endpoints preserve the sampled
+matrices, including their stored scale. Manual interpolation disables
+Godot's automatic interpolation on the render subtree. See Godot's
+[manual interpolation](https://docs.godotengine.org/en/4.5/tutorials/physics/interpolation/advanced_physics_interpolation.html)
+and [ArrayMesh blend-shape](https://docs.godotengine.org/en/4.5/classes/class_arraymesh.html)
+documentation. Decoded resources and playback counters remain unchanged
+by drawing at different fractions.
+Singular transforms (zero scale) use component interpolation between
+exact endpoints so optional smoothing never tries to extract an invalid
+rotation quaternion.
+
+### Reference capture setup
+
+The unchanged `anim_slice.exe` ran with SDL's dummy driver and an external
+`FROGGY_SCREENSHOT_DIR`, passing 10 checks. Its low-poly frog action zero
+matches the required part-zero FNV hashes: `0x9655a8c6` on the first render
+and `0xa933ba38` after 180 updates. The matrix serialization includes two
+zero padding bytes between the nine signed-short basis values and three
+signed-int translations.
+
+The driver's camera is `(0,-100,-350)` and model placement `(0,0,1000)`.
+Its projection constant is 1000, but `MR_VIEW.C` first scales X by
+viewport width/320 and Y by height/256 (the driver's PAL configuration).
+At 640x480 the effective focal lengths are 2000 horizontally and 1875
+vertically. Godot's reference capture uses FOV `2 * atan(240 / 2000)`
+and a reference-only 240/256 scale of model and camera Y. Omitting the
+aspect matrix produced a silhouette half the reference's size; using
+the NTSC height of 240 left a further vertical mismatch. This calibration
+applies to the standalone driver; general map projection remains P6 work.
+
+Authored quaternion interpolation uses analytic trigonometry in place of
+the C lookup tables, while preserving integer translation/scale stepping,
+short narrowing and the byte-quaternion normalization tolerance. The
+synthetic rotation checks allow a few 4.12 units of rounding difference.
+All retail actions use standard virtual cels and their matrix digests
+match exactly.
+
+### Performance and resource lifetime
+
+One Windows/Godot 4.5.1 headless run measured the following. Build time
+includes selecting the model, its textures and conservative action bounds;
+tick/draw time covers 180 stepped and 180 smoothed CPU updates. These are
+CPU measurements, not GPU frame rates.
+
+| Model | Build (ms) | Tick and pose application (microseconds) |
+|---|---:|---:|
+| `GEN_FROG.XAR` | 264 | 176 |
+| `GEN_FROG_WIN95.XAR` | 178 | 195 |
+| `DES_VULTURE.XAR` | 87 | 52 |
+| `OPT_TURTLE.XMR` | 93 | 91 |
+| `GEN_CHECKPOINT_2.XMR` | 34 | 23 |
+
+Mesh and material identities stayed unchanged throughout all five runs.
+The synthetic texture test also kept the total resource count unchanged
+over 300 updates while two instances shared the decoded model and mesh.
+The full high-poly WAD build check constructs both static and animated
+paths (435 model occurrences, 25,774 triangles) in about 3.7 seconds.
+
+### Visual inspection, 2026-10-01
+
+Captures and comparison reports are outside the repository in
+`%TEMP%/frogger-p5-captures`; C driver captures are in
+`%TEMP%/frogger-godot-p5-reference`. The inspected contact sheets cover:
+
+- Low-poly frog action zero at ticks 0, 60, 120 and 179 beside C. Pose,
+  silhouette and orientation agree. Silhouette intersection-over-union
+  is 97.15% for the first three captures and 97.76% at 179; foreground
+  bounds differ by at most two pixels. Lighting and depth-order details
+  differ, as expected for this unlit viewer.
+- High-poly frog at ticks 0, 2 and 5, vulture at 0, 10 and 20, turtle and
+  incomplete checkpoint at 0, 6 and 12. Each has stepped and smoothed
+  captures, with fraction 0.5 for the nonzero smoothed ticks. The low-poly
+  frog also has an intermediate smoothed pose at tick 179. Parts remain
+  connected, wing motion and flipbook poses are coherent, and the turtle's
+  texture animation accompanies its geometry. Inherited checkpoint
+  geometry keeps its own orange appearance.
+- `SKY_SQUADRON` still displays and plays a safe action while reporting
+  its eight unavailable actions. The compact diagnostic count and hover
+  details keep the model area clear.
+
+The animation controls required a smaller dedicated drawing area and
+camera offset so poses do not overlap the panel or facts. Camera bounds
+cover the selected action and remain fixed throughout playback. The
+shader probe on Compatibility/NVIDIA GeForce RTX 4070 Ti SUPER returned
+12/12 expected screen colours, with every measured RGB value exact.
+
+### Final acceptance gate
+
+The updated PowerShell wrapper ran end to end with hidden, awaited Godot
+processes, a fresh writable user profile, explicit logs and the crash
+handler disabled. It stops immediately if import or strict compilation
+fails. Both wrappers retain their logs; Bash syntax was also checked.
+
+| Check | Result |
+|---|---|
+| Strict compilation | 99 scripts, 0 failed |
+| Retail tests | PASS=240 FAIL=0 SKIP=0 EXIT=0 |
+| Asset-free tests | PASS=198 FAIL=0 SKIP=42 EXIT=3; all skips name their retail dependency |
+| Frozen C driver | 10 passed, 0 failed; both canonical matrix hashes match |
+| Shader screen probe | 12/12, exact RGB |
+| Animation golden deliberate breaks | All six families failed as intended, then restored |
+| Independent regeneration | All six animation fact files reproduced unchanged; P4 facts unchanged |
+
+Final wrapper logs are under `%TEMP%/frogger-tests-20d3f2f615754326a862777b165b5e78`
+(retail) and `%TEMP%/frogger-tests-952581db73b74319b7556efc2ee0859b`
+(asset-free). The sandbox's root-certificate-store warning still appears;
+it does not affect parsing, playback or rendering. No retail bytes or
+captures were added to the repository, and the C reference was not edited
+or rebuilt.
+
 ## Working in this repository
 
 - GUT's loader does not enforce strict typing. `tools/check_scripts.gd` is the only headless check that every script compiles with warnings as errors.

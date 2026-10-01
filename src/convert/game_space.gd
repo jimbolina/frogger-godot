@@ -31,3 +31,14 @@ static func normal(x: int, y: int, z: int) -> Vector3:
 ## The game position nearest to Godot position [param at].
 static func to_game(at: Vector3) -> Vector3i:
 	return Vector3i(roundi(at.x * UNITS_PER_SQUARE), roundi(-at.y * UNITS_PER_SQUARE), roundi(-at.z * UNITS_PER_SQUARE))
+
+
+## Converts a row-major game matrix by changing both its input and output axes.
+static func transform(values: PackedInt32Array) -> Transform3D:
+	if values.size() != 12:
+		return Transform3D.IDENTITY
+	var basis := Basis(
+		Vector3(values[0], -values[3], -values[6]) / NORMAL_ONE,
+		Vector3(-values[1], values[4], values[7]) / NORMAL_ONE,
+		Vector3(-values[2], values[5], values[8]) / NORMAL_ONE)
+	return Transform3D(basis, position(values[9], values[10], values[11]))
