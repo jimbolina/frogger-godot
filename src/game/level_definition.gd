@@ -3,6 +3,7 @@ extends RefCounted
 ## Setup-supplied terrain and scalar source identity for a single-player run.
 
 var grid: GridDefinition = null
+var entity_collision: EntityCollisionDefinition = null
 var source_id: String = ""
 var resource_id: int = -1
 ## Source Map_library index (Game_map), distinct from archive resource identity.

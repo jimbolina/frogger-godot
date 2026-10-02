@@ -26,8 +26,8 @@ The terrain inspection driver uses the same rules as the tests:
 Space plays/pauses the command fixture, Period steps, R resets and I changes
 interpolation. Tab switches to live arrow-key input, Shift requests a super hop,
 and Q/E turn the gameplay camera. Pause and reset also reset drawing interpolation.
-This is terrain inspection; entities, moving platforms and progression arrive
-in later phases. Animated lighting remains a
+Optional POP entity reactions are available below; moving platforms and
+progression remain deferred. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
 The game runs in GDScript. C files under `tools/` are offline reference
 validation adapters; playing or loading data does not require C code or a compiler.
@@ -38,6 +38,14 @@ Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
 `--tick-limit <integer>` for overrides, or `--level <name>` to inspect a player's
 selected map. The [inspection contract](docs/reference/testing/terrain-inspection.md)
 defines scenario fields and omitted level systems.
+
+For the bounded entity demonstration, run `python tools/run_terrain.py --godot
+<executable> --data-dir <game-folder> --level DES2 --entity-reactions pop
+--viewer --output-directory <external-folder>`. This starts at an explicit safe
+inspection cell and hops into a cactus. All eligible nearby obstacles are checked;
+the overlay shows FORM contact and death requests. Entity paths and the frog
+advance atomically. Platforms, scripts and visibility-driven entity lifetimes
+remain outside this mode; see the [entity contract](docs/reference/gameplay/entities.md).
 
 ## No game data is included
 
@@ -120,8 +128,9 @@ Dragging switches to a custom inspection pose; R restores the preset.
 
 Maps include stored terrain colours, cave illumination, animated textures,
 water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
-and can inspect one entity's FORM contact against a fixed point. Frog reactions,
-scripts, HUD and complete level play are deferred.
+and can inspect one entity's FORM contact against a fixed point. The separate
+terrain inspector supports bounded POP entity reactions; scripts, HUD and
+complete level play remain deferred.
 The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.
 

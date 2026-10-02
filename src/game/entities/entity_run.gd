@@ -8,6 +8,18 @@ var _runners: Array[PathRunner] = []
 var _state: EntityRunSnapshot = null
 var _ready: bool = false
 
+## Clones definitions, path runners and the current detached aggregate state.
+func copy() -> EntityRun:
+	var result := EntityRun.new()
+	result.error = error
+	result._ready = _ready
+	for definition: EntityDefinition in _definitions:
+		result._definitions.append(definition.copy() if definition != null else null)
+	for runner: PathRunner in _runners:
+		result._runners.append(runner.copy() if runner != null else null)
+	result._state = _state.copy() if _state != null else null
+	return result
+
 ## Validates and copies source-ordered definitions, then creates tick zero.
 static func create(definitions: Array[EntityDefinition]) -> EntityRun:
 	var result := EntityRun.new()

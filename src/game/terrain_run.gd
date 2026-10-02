@@ -28,6 +28,9 @@ var _animation: FrogAnimationController = null
 var _candidate_camera: GameplayCamera = null
 var _candidate_random: SourceRandom = null
 var _candidate_animation: FrogAnimationController = null
+var _entity_collision: EntityCollisionDefinition = null
+var _entities: EntityRun = null
+var _candidate_entities: EntityRun = null
 var _source_id: String = ""
 var _resource_id: int = -1
 var _callback_error: String = ""
@@ -53,6 +56,18 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._theme_name = level.theme_name
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
+	if level.entity_collision != null:
+		if not level.collision_enabled:
+			run.error = "Entity collision requires enabled frog collision"
+			return run
+		run.error = level.entity_collision.validate()
+		if not run.error.is_empty():
+			return run
+		run._entity_collision = level.entity_collision.copy()
+		run._entities = EntityRun.create(run._entity_collision.entities)
+		if not run._entities.error.is_empty():
+			run.error = run._entities.error
+			return run
 	if run._collision_bounds.size.x <= 0 or run._collision_bounds.size.y <= 0 or run._theme < 0 or run._theme > 10 or run._map_index < -1 or run._map_index > 2147483647 or run._death_height < -2147483648 or run._death_height > 2147483647:
 		run.error = "Collision setup requires positive fade bounds, a known theme and signed32 death height"
 		return run
@@ -142,11 +157,18 @@ func reset(initial: RunStart = null) -> String:
 	state.start_timer = initial.start_timer if initial != null else 0
 	if state.start_timer < 0:
 		return "Start timer must be nonnegative"
+	var candidate_entities: EntityRun = _entities.copy() if _entities != null else null
+	if candidate_entities != null:
+		var entity_error: String = candidate_entities.reset()
+		if not entity_error.is_empty():
+			return entity_error
+		state.entities = candidate_entities.snapshot()
 	_state = state
 	_controller_directions = controller_directions
 	_camera = camera
 	_random = random
 	_animation = animation
+	_entities = candidate_entities
 	return ""
 
 ## Returns detached state; changing it has no effect on the run.
@@ -179,7 +201,14 @@ func step(command: TickCommand) -> TickResult:
 	_candidate_random = _random.copy()
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
+	_candidate_entities = _entities.copy() if _entities != null else null
+	if _candidate_entities != null:
+		result.error = _candidate_entities.step(command.tick_index)
+		if not result.error.is_empty():
+			return _failed_tick(result, result.error)
 	var next: RunSnapshot = _state.copy()
+	next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
+	next.entity_hit_indices = PackedInt32Array()
 	if command.start_timer_context >= 0:
 		next.start_timer = command.start_timer_context
 	if command.start_sequence_complete:
@@ -187,26 +216,27 @@ func step(command: TickCommand) -> TickResult:
 	_callback_error = ""
 	var control_error: String = _control(next, command, result.events)
 	if not control_error.is_empty():
-		result.error = control_error
-		result.events.clear()
-		return result
+		return _failed_tick(result, control_error)
 	_sync_systems(next)
 	result.control_snapshot = next.copy()
 	next.old_position_16 = next.position_16
 	_move(next, result.events)
 	if not _callback_error.is_empty():
-		result.error = _callback_error
-		result.events.clear()
-		return result
+		return _failed_tick(result, _callback_error)
 	_sync_systems(next)
 	result.move_snapshot = next.copy()
 	TerrainModifiers.update(next)
+	var continue_entities: bool = true
 	if _collision_enabled:
-		_collision(next, result.events)
+		continue_entities = _collision(next, result.events)
 	if not _callback_error.is_empty():
-		result.error = _callback_error
-		result.events.clear()
-		return result
+		return _failed_tick(result, _callback_error)
+	if continue_entities and _candidate_entities != null:
+		var entity_error: String = _contact_entities(next, result)
+		if not entity_error.is_empty():
+			return _failed_tick(result, entity_error)
+	if not _callback_error.is_empty():
+		return _failed_tick(result, _callback_error)
 	_sync_systems(next)
 	result.collision_snapshot = next.copy()
 	if _candidate_camera != null:
@@ -221,8 +251,7 @@ func step(command: TickCommand) -> TickResult:
 		camera_input.start_timer = next.start_timer
 		result.error = _candidate_camera.step(camera_input)
 		if not result.error.is_empty():
-			result.events.clear()
-			return result
+			return _failed_tick(result, result.error)
 		next.camera = _candidate_camera.snapshot()
 	result.camera_snapshot = next.copy()
 	if _candidate_animation != null:
@@ -230,8 +259,7 @@ func step(command: TickCommand) -> TickResult:
 		_candidate_animation.advance_pose()
 		if not _candidate_animation.error.is_empty():
 			result.error = _candidate_animation.error
-			result.events.clear()
-			return result
+			return _failed_tick(result, result.error)
 		next.animation = _candidate_animation.state.copy()
 		next.animation_condition_counter = _candidate_animation.context.if_counter
 	next.rng_state = _candidate_random.state
@@ -242,6 +270,7 @@ func step(command: TickCommand) -> TickResult:
 	_camera = _candidate_camera
 	_random = _candidate_random
 	_animation = _candidate_animation
+	_entities = _candidate_entities
 	if _camera != null:
 		_controller_directions = next.camera.controller_directions.duplicate()
 	result.final_snapshot = next.copy()
@@ -671,25 +700,69 @@ func _kill(state: RunSnapshot, animation: int, down_velocity: bool, events: Arra
 	events.append("death_animation_%d" % animation)
 	events.append("camera_fixed")
 
-func _collision(state: RunSnapshot, events: Array[String]) -> void:
+func _collision(state: RunSnapshot, events: Array[String]) -> bool:
 	if state.mode == 3 and (_candidate_camera == null or _candidate_camera.snapshot().twist_counter == 0):
-		return
-	if state.mode == 2 or state.flags & 8:
-		return
+		return false
+	if state.mode in [2, 4, 264] or state.flags & 8:
+		return false
 	var p: Vector3i = state.world_position
 	if p.x < _collision_bounds.position.x or p.x > _collision_bounds.end.x or p.z < _collision_bounds.position.y or p.z > _collision_bounds.end.y:
 		_kill(state, 2, false, events)
-		return
+		return false
 	if state.flags & 128 and state.square_index >= 0 and p.y > GridQueries.square_height(_grid.squares[state.square_index]):
 		_land(state, events)
 		_update_world(state)
 		_react(state, _grid.squares[state.square_index].flags & 65535, events)
-		return
+		return false
 	if p.y > _death_height:
 		state.world_position.y = _death_height
 		state.velocity_16 = Vector3i.ZERO
 		_kill(state, 8, true, events)
 		state.sound_requests += 1
+		return false
+	return true
+
+func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
+	if state.entities == null or state.entities.entities.size() != _entity_collision.entities.size():
+		return "Entity collision snapshot does not match validated definitions"
+	for index: int in _entity_collision.entities.size():
+		var expected: EntityDefinition = _entity_collision.entities[index]
+		var actual: EntitySnapshot = state.entities.entities[index]
+		if actual == null or actual.entity_index != expected.entity_index or actual.unique_id != expected.unique_id:
+			return "Entity collision snapshot identity does not match validated definitions"
+	var ordered: PackedInt32Array = EntityContactOrder.indices(_entity_collision, state.entities, state.world_position)
+	for entity_id: int in ordered:
+		var index: int = -1
+		for candidate: int in _entity_collision.entities.size():
+			if _entity_collision.entities[candidate].entity_index == entity_id:
+				index = candidate
+				break
+		if index < 0:
+			return "Entity contact order produced an unknown authored index"
+		var contact: FormContactResult = FormContactQuery.query(_entity_collision.contacts[index], state.entities.entities[index], state.world_position)
+		var reaction: FormReactionResult = FormReaction.evaluate(_entity_collision.contacts[index], contact)
+		if reaction.status == FormReactionResult.INVALID:
+			return reaction.reason
+		result.entity_contacts.append(reaction)
+		if reaction.hit:
+			state.entity_hit_indices.append(entity_id)
+		if reaction.status == FormReactionResult.POP and state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
+			_kill(state, reaction.kill_animation, false, result.events)
+			state.death_entity_index = entity_id
+			result.events.append("entity_pop_explosion_request")
+	return ""
+
+func _failed_tick(result: TickResult, issue: String) -> TickResult:
+	result.error = issue
+	result.control_snapshot = null
+	result.move_snapshot = null
+	result.collision_snapshot = null
+	result.camera_snapshot = null
+	result.final_snapshot = null
+	result.entity_contacts.clear()
+	result.events.clear()
+	result.rng_consumers.clear()
+	return result
 
 func _request_animation(animation_id: int, state: RunSnapshot) -> void:
 	state.last_animation_request = animation_id

@@ -19,6 +19,8 @@ var max_y: int = 0
 var radius_squared: int = 0
 var grid_flags: PackedInt32Array = PackedInt32Array()
 var unsupported_reason: String = ""
+var death_type: int = 0
+var reaction_unsupported_reason: String = ""
 
 ## Returns an independently owned definition, including grid square flags.
 func copy() -> FormContactDefinition:
@@ -40,4 +42,6 @@ func copy() -> FormContactDefinition:
 	result.radius_squared = radius_squared
 	result.grid_flags = grid_flags.duplicate()
 	result.unsupported_reason = unsupported_reason
+	result.death_type = death_type
+	result.reaction_unsupported_reason = reaction_unsupported_reason
 	return result

@@ -13,6 +13,11 @@ var map_scene: MapSceneData = null
 var frog_assets: TerrainFrogAssets = null
 var diagnostics: PackedStringArray = PackedStringArray()
 var level_code: String = ""
+var entity_collision: EntityCollisionDefinition = null
+var entity_reactions: bool = false
+var collision_enabled_authored: bool = false
+var authored_fixture: bool = false
+var tick_limit_override: bool = false
 
 ## Creates authored flat terrain; these inputs contain no expected rule results.
 static func builtin(name: String) -> TerrainScenario:
@@ -95,8 +100,36 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	# mapload.C establishes these limits before any P8 entity boundary markers run.
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
-	diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
+	if entity_reactions:
+		var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number)
+		if not collision_setup.error.is_empty():
+			return collision_setup.error
+		entity_collision = collision_setup.definition
+		level.entity_collision = entity_collision.copy()
+		for diagnostic: EntitySetupDiagnostic in collision_setup.diagnostics:
+			diagnostics.append(diagnostic.to_text())
+		diagnostics.append("Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
+		apply_des2_inspection_defaults()
+	else:
+		diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
 	return ""
+
+## Selects the bounded DES2 hop only for the uncustomized built-in run.
+func apply_des2_inspection_defaults() -> void:
+	if not entity_reactions or level_code.to_upper() != "DES2" or authored_fixture:
+		return
+	initial.spawn_cell = Vector2i(17, 30)
+	initial.spawn_direction = 1
+	initial.controller_directions = PackedInt32Array()
+	initial.camera_startup = false
+	if not tick_limit_override:
+		tick_limit = 80
+	commands.clear()
+	var east := TickCommand.new()
+	east.tick_index = 0
+	east.pressed_mask = TickCommand.EAST
+	east.held_mask = TickCommand.EAST
+	commands[0] = east
 
 ## Reads a scenario JSON object with builtin, tick_limit and optional command overrides.
 static func from_file(path: String) -> TerrainScenario:
@@ -122,6 +155,7 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 	var scenario: TerrainScenario = builtin(builtin_name)
 	if not scenario.error.is_empty():
 		return scenario
+	scenario.authored_fixture = true
 	var limit: Variant = object.get("tick_limit", 16)
 	if not _integer(limit) or _to_int(limit) < 0 or _to_int(limit) > 100000:
 		scenario.error = "Scenario tick_limit must be an integer in 0..100000"
@@ -131,6 +165,17 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 	if not decode_error.is_empty():
 		scenario.error = decode_error
 		return scenario
+	var authored_level: Dictionary = object.get("level", {})
+	scenario.collision_enabled_authored = authored_level.has("collision_enabled")
+	if authored_level.has("entity_collision"):
+		if object.get("name") is String:
+			var case_name: String = object.name
+			scenario.identifier = case_name
+		var errors := PackedStringArray()
+		scenario.entity_collision = EntityCollisionScenarioJson.decode(authored_level.entity_collision, errors)
+		if scenario.entity_collision == null:
+			scenario.error = "; ".join(errors)
+			return scenario
 	if not object.has("commands"):
 		return scenario
 	if not object.commands is Array:
@@ -181,6 +226,15 @@ func command_at(tick: int) -> TickCommand:
 
 ## Applies explicit command-line seed and duration overrides in both driver surfaces.
 func apply_arguments(arguments: PackedStringArray) -> String:
+	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
+	if not reaction.is_empty() and reaction != "pop":
+		return "entity-reactions must be pop"
+	entity_reactions = reaction == "pop"
+	level.entity_collision = entity_collision.copy() if entity_reactions and entity_collision != null else null
+	if entity_reactions and entity_collision != null:
+		if collision_enabled_authored and not level.collision_enabled:
+			return "Entity reaction scenario requires collision_enabled=true"
+		level.collision_enabled = true
 	for key: String in ["seed", "tick-limit"]:
 		var text: String = ViewerArguments.value(arguments, "--" + key + "=")
 		if text.is_empty():
@@ -196,6 +250,7 @@ func apply_arguments(arguments: PackedStringArray) -> String:
 			if number < 0 or number > 100000:
 				return "tick-limit must be in 0..100000"
 			tick_limit = number
+			tick_limit_override = true
 	return ""
 
 static func _integer(value: Variant) -> bool:

@@ -5,16 +5,22 @@ extends RefCounted
 const HEADER: String = "scenario,tick,component,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,animation_requests,sound_requests,score_requests,buffered_keys,buffered_input_count,pad_pressed,pad_held"
 var rows: PackedStringArray = [HEADER]
 var full_rows: PackedStringArray = PackedStringArray()
+var _entity_reactions: bool = false
 
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
-	full_rows = PackedStringArray([JSON.stringify({"schema": "terrain-run-v1", "scenario": scenario.identifier,
+	_entity_reactions = scenario.entity_reactions
+	var metadata: Dictionary = {"schema": "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
 		"camera_definition": facts(scenario.level.camera) if scenario.level.camera != null else null,
 		"action_lengths": Array(scenario.level.frog_action_lengths),
-		"omitted": ["entities", "forms", "zones", "audio", "effects", "game_flow"],
-		"diagnostics": Array(scenario.diagnostics)})])
+		"omitted": ["platforms", "scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle"] if scenario.entity_reactions else ["entities", "forms", "zones", "audio", "effects", "game_flow"],
+		"diagnostics": Array(scenario.diagnostics)}
+	if scenario.entity_reactions:
+		metadata["entity_collision"] = facts(scenario.level.entity_collision) if scenario.level.entity_collision != null else null
+		metadata["entity_lifetime"] = "all_attached"
+	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
 func append_result(scenario: int, command: TickCommand, result: TickResult) -> void:
@@ -23,11 +29,15 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 	for phase: String in ["control", "move", "collision", "camera", "final"]:
 		var snapshot: RunSnapshot = result.get(phase + "_snapshot")
 		if snapshot != null:
-			full_rows.append(JSON.stringify({"tick": command.tick_index, "phase": phase,
+			var record: Dictionary = {"tick": command.tick_index, "phase": phase,
 				"pressed": command.pressed_mask, "held": command.held_mask,
 				"command": facts(command),
-				"state": facts(snapshot), "outcomes": Array(result.events) if phase == "final" else [],
-				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}))
+				"state": facts(snapshot),
+				"outcomes": Array(result.events) if phase == "final" else [],
+				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}
+			if _entity_reactions:
+				record["entity_contacts"] = _value(result.entity_contacts) if phase == "final" else []
+			full_rows.append(JSON.stringify(record))
 
 ## Saves text evidence only to a caller-selected external directory.
 func save(path: String) -> String:

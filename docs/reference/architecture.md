@@ -42,11 +42,16 @@ references before another source is shown. Standalone viewer entry points and
 synthetic injection remain supported.
 
 `TerrainRun` copies setup definitions and owns frog, camera, animation and RNG
-state. Each command operates on private candidate copies and commits only on
-success. Snapshots are detached, including nested camera/animation state.
+state, plus an optional `EntityRun` supplied through `EntityCollisionDefinition`.
+Each command operates on private candidate copies and commits only on success.
+Snapshots are detached, including nested entity/path and camera/animation state.
 Component fixtures explicitly omit unrelated systems; integrated inspection
 supplies camera defaults and copied high-detail frog action lengths. Entity
-simulation must add run-owned state and preserve source-ordered updates before frogs.
+paths/transforms advance before frogs; eligible FORM reactions run after terrain
+collision and before camera/animation. A terrain collision early return suppresses
+the entity phase too. Only the final aggregate commit publishes matching frog and
+entity ticks, per-tick hits and requests. Failed reset or tick preserves every
+owned component and returns no partial phase snapshots or outcomes.
 
 `TerrainGridSetup` copies decoded geometry, flags and scalar source identities
 into grid definitions; those definitions retain no legacy or rendering objects.
@@ -63,13 +68,18 @@ replacement; the common 30 Hz clock drives map animation and the selected
 path. `EntitySetup` resolves supported STATIC/MOVING records into detached
 definitions and source-located diagnostics. `EntityRun` owns copies and a path
 cursor for each moving entity, with aggregate commit on success and detached
-snapshots. Its all-attached transform inspection is separate from `TerrainRun`.
+snapshots. Standalone all-attached transform inspection remains available;
+integrated `TerrainRun` owns its own independent copy.
 `FormContactSetup` copies FORM flags and resolved model bounds into one
 definition per supported base entity, after considering every authored model
 writer in source order. `FormContactQuery` consumes that definition, an entity
 snapshot and one world point without changing run state. The viewer owns the
-selected probe and drawing resources. Contact inspection remains separate from
-the frog simulation.
+selected probe and drawing resources. `EntityCollisionSetup` composes these
+definitions with copied map-group facts and reaction eligibility. Pure
+`EntityContactOrder` and `FormReaction` select traversal and outcomes; the run
+applies those outcomes to its candidates. No legacy object, callback address,
+scene object or subscriber controls rule execution. Fixed-point contact inspection
+remains independently available without affecting the frog.
 See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).
 
 ## Extending behavior

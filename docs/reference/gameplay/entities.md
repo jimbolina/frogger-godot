@@ -37,9 +37,10 @@ fresh map load and reset. This component uses the reset-style tick-0 pose.
 
 The snapshots are source ordered and deeply detached, including matrix arrays
 and nested path cursors. Failed reset or step leaves the full aggregate state
-intact. Transform inspection is independent of `TerrainRun`; no entity affects
-the frog yet. The frozen live-entity traversal also depends on visibility and
-creation lifecycle, which this all-attached component does not reproduce.
+intact. Standalone transform inspection remains available. `TerrainRun` can also
+own an entity run for the bounded reaction sequence below. The frozen live-entity
+traversal depends on visibility and creation lifecycle, which this all-attached
+component does not reproduce.
 
 ## FORM contact inspection
 
@@ -80,5 +81,66 @@ traversal. It never mutates decoded data or `EntityRun`.
 
 `entity-contact-v1` traces use the same fixed-point, post-tick query for
 headless and rendered schedules. ORG1's first small log is an example of a
-supported safe FORM surface. The [testing guide](../testing/README.md) describes
-the viewer controls; full collision and frog integration remain future work.
+supported safe FORM surface. This probe does not execute the reactions below.
+The [testing guide](../testing/README.md) describes both inspection modes.
+
+## Bounded POP reactions
+
+`EntityCollisionSetup` composes base transforms, contact definitions and copied
+map-group bounds. An optional `LevelDefinition.entity_collision` enables the
+integrated run. Nonzero scripts exclude reaction execution because frozen
+`ENTITY.C` runs scripts before frog collision. Geometry remains inspectable.
+Collision callback addresses remain excluded until verified mappings and
+implementations exist. Bonus callbacks belong to tongue collection; they remain
+unexecuted diagnostics without independently blocking a FORM reaction.
+
+The all-attached model assumes every accepted base entity is live. Following
+`mapload.C` and `ENTITY.C/LinkEntities`, statics retain their authored group;
+moving entities use their advanced path position. Group placement truncates
+signed division toward zero and clamps to the map. Moving `HIDDEN` entities
+are unlinked; static `HIDDEN` entities remain linked under this explicit lifetime
+assumption. `NO_DISPLAY` does not disable collision. `COLLIDE.C/CollideFrog`
+visits the frog's bounded 3-by-3 group neighborhood in Z then X order, with
+reverse-authored moving entities before reverse-authored statics in each group.
+Authored indices, not unique IDs or compacted array offsets, identify outcomes.
+
+`ReactFrogWithForm` requires `USABLE` and selects CHECKPOINT, SAFE, POPDEATH,
+DEADLY, SLIPPY, then BOUNCY in that order. This slice implements POPDEATH and
+DEADLY with form-book death type POP. Higher-priority unsupported branches never
+fall through to POP. Other deaths, checkpoint, safe-platform and bounce reactions
+are diagnosed and omitted. Unusable squares do nothing; supported usable no-op
+squares still set the per-tick hit observation. Scanning continues after a
+death request, so later supported usable contacts also record hits. The first
+accepted death wins through `FrogKill`'s pending-death guard.
+
+POP requests animation 23, fixed camera, the existing life-decrement outcome
+and an explosion effect. It clears control and marks pending death without
+immediately entering DYING. Null death velocity preserves an ongoing jump to
+land; otherwise velocity clears. The next control tick enters DYING with timer
+70 and requests the death camera transition. FORM POP adds no sound, shadow
+change or volcano-fire override. Animation request locks still apply. Explosion
+and game-flow outcomes are requests, not effect rendering, lives progression
+or full-engine effect RNG simulation.
+
+`TerrainRun` advances private entity path/transform candidates before frog
+control, movement and collision. Frozen collision early returns also suppress
+entity queries: excluded frog modes, pending death, camera wait without twist,
+fade death, freefall landing even on safe terrain, and theme-height death.
+Entity reactions precede camera and animation. Reset and ticks commit entity,
+frog, camera, animation and RNG state together; failures publish no partial
+snapshots, hits or requests. Hit observations clear on the next successful tick.
+See [architecture](../architecture.md) for ownership.
+
+The retail demonstration uses high-detail DES2 and its primitive-free cactus
+forms. An explicit inspection start at terrain cell `(17,30)` presses EAST at
+command tick zero. Entity 46, `DES_STAT_CACTUS`, is first contacted while airborne
+at command tick four, before the destination terrain's own POPDEATH reaction.
+Its source facts and reproduction belong in the
+[entity golden specification](../../../tests/golden/specs/entities.md).
+Runtime verification is against v3.0e, not an assertion of equivalent runs on
+the other supported builds.
+
+Platform centring, carrying, jumping off, camera attachment, current/forbidden
+entity links, visibility-driven live creation, scripts, zones, primitives,
+callback dispatch and multiplayer remain outside this reaction slice. It does
+not make a complete level playable.

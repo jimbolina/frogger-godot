@@ -80,6 +80,8 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			definition.dimensions = grid.dimensions
 			definition.offsets = grid.offsets
 		var form: FormBookEntry = theme_book.get_form(map.general.theme, span.form_id)
+		if form != null:
+			definition.death_type = form.death_type
 		var reason: String = ""
 		if grid == null:
 			reason = "Entity references an invalid FORM grid"

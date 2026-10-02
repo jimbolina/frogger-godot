@@ -5,7 +5,9 @@ the [grid contract](grid.md). The run owns copied definitions, snapshots and
 ordered command indices. Invalid commands and unsafe authored-storage accesses
 fail without committing a partial tick.
 Source order is control, movement callbacks, local modifier expiry, collision,
-camera, animation scripts and pose. Movement callback actions run as positional
+camera, animation scripts and pose. Optional [entity integration](entities.md#bounded-pop-reactions)
+advances paths/transforms before this sequence and checks FORM reactions within
+collision, after terrain early-return gates. Movement callback actions run as positional
 update, matrix update, terrain reaction, then old-position update. `SetFrogUserMode`
 runs setup before unconditionally assigning the requested user mode. A failed
 slip setup's stationary assignment is therefore overwritten in actual source.

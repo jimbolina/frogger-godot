@@ -103,3 +103,80 @@ geometric contact; the query returns its raw flags without a reaction.
 
 For each new golden family, corrupt one fact, observe its focused test fail,
 restore it and observe the focused test pass.
+
+## Entity FORM reactions and DES2 cactus
+
+`fixtures/entity_reactions.json` contains invented terrain scenarios with a
+detached `level.entity_collision` aggregate: source-ordered STATIC/MOVING entities,
+paired first-GRID FORM contacts, and map-group base, dimensions and cell size.
+Every case runs a stationary frog's first collision tick. The compact
+`synthetic/entity_reactions.tsv` records frozen frog mode, flags, death
+animation, velocity, camera mode, particle/audio requests and linked-order hit
+IDs, followed by the independent bounded contact order, reaction statuses and
+first lethal entity. A geometric contact on an unusable square has status
+`none`. `POPDEATH` takes precedence over `DEADLY`, which uses the EXE death
+type. Hidden and no-display flags do not disable STATIC collision; no-collision
+does. Source group linking prepends static entities, reversing their authored
+order within each group, and the frog visits a clipped 3×3 group area in Z,
+then X order. Later contacts may mark hits after the first lethal contact.
+Static entities link during map setup; moving entities are then prepended, so
+traversal visits moving entities first. Hidden moving entities do not link.
+Cases also pin source integer division for negative group coordinates,
+out-of-bounds group rejection, shared paths and gaps in authored indices with
+duplicate unique IDs. Moving collision poses are authored transport facts in
+this component; path advancement is checked by the integrated trace below.
+The bounded game deliberately reports unsupported non-POP death types and
+omits their effects; only supported reactions are compared to frozen effects.
+
+`entity_reaction_oracle.c` calls unchanged frozen `EntityLinkToMapGroup`,
+`CollideFrog`, `ReactFrogWithForm` and `FrogKill`. Its wrappers count only
+display and sound requests; it does not execute scripts, callbacks, collision
+primitives, safe-platform attachment or checkpoint behavior. For supported
+source-side effects, the independent Python evaluator checks exact C facts
+before writing the synthetic fixture and trace. Safe/checkpoint diagnostic
+cases only assert the bounded game omission.
+Build outside both repositories and regenerate with:
+
+```powershell
+& tools/build_entity_reaction_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-entity-reaction-oracle')
+python -B tools/make_golden_entity_reactions.py --oracle (Join-Path $env:TEMP 'frogger-entity-reaction-oracle/entity_reaction_oracle.exe')
+```
+
+`pc-retail-v3.0e/entity_reactions_retail.tsv` pins all 23 eligible DES2 cactus
+entities, their source identity and STATIC matrices, resolved EXE book fields,
+high-detail WAD/model resource, FORM grid/flags and shared writer indices,
+and runtime model-derived maximum Y and squared radius. It contains decimal
+facts only. The generator reads the owner's EXE, MWI/MWD, MOF and high-detail
+DES2 map independently; every writer of a selected shared grid must use the
+same form-book ID. Regenerate with:
+
+```powershell
+python -B tools/make_golden_entity_reactions.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER
+```
+
+The bounded retail probe starts at DES2 cell (17,30), facing EAST with
+identity controller directions. The independent frozen trajectory first
+contacts entity 46 on command tick 4 at world (-683,-1576,2176), local
+(47,-21,5), squared distance 2675. Its FORM cell flag is 5, and EXE death
+type 5 selects POP animation 23 while preserving the airborne jump velocity.
+The pending kill enters dying mode on the next control tick. The rendered
+schedule probe uses the selected high-detail DES2 level and an explicit 30 Hz
+component start; the C integrated trace below uses invented geometry and forms.
+
+`fixtures/integrated_entities.json` and `synthetic/integrated_entities.tsv`
+exercise three longer invented runs: a POP during a jump, a moving path entity
+updated before frog collision, and two overlapping STATIC entities in reversed
+linked order. The trace records six source phases per tick through the deferred
+70-tick death outcome. It includes frog position/velocity, grid, flags, mode,
+camera, animation script and RNG facts, both entity poses, ordered contacts,
+hit IDs, first killer and intercepted effect/sound request counts. The
+independent Python composition must match `integrated_entity_oracle.c`, which
+calls unchanged frozen path, entity transform, control, move, collision,
+camera and animation functions. The adapter's display/audio wrappers count
+requests without creating render assets. Build and verify outside both
+repositories with:
+
+```powershell
+& tools/build_integrated_entity_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-integrated-entity-oracle')
+python -B tools/make_golden_integrated_entities.py --c-oracle (Join-Path $env:TEMP 'frogger-integrated-entity-oracle/integrated_entity_oracle.exe') --verify
+```

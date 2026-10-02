@@ -5,16 +5,17 @@ implemented against the frozen C port's 30 Hz behavior. Typed scenarios run
 the same rules in tests, headless traces and the terrain viewer. There is no
 playable level yet. See the [domain index](reference/domain.md).
 
-Final-PC PATH and FORM records decode into detached definitions. Source-ordered
-STATIC/MOVING entities attach independently owned paths and produce reset and
-tick transforms. A bounded FORM query checks one selected entity against a
-fixed world point; the map viewer and traces inspect its contact cell and
-flags. It does not change the frog. See [paths](reference/gameplay/paths.md)
-and [entities](reference/gameplay/entities.md).
+Final-PC PATH and FORM records decode into detached definitions. Optional
+entity integration advances owned STATIC/MOVING transforms before the frog,
+queries nearby map groups and applies supported POP FORM reactions. Frog,
+entities, camera, animation and RNG commit atomically. The high-detail DES2
+cactus inspection demonstrates an airborne entity hit. Standalone fixed-point
+contact inspection remains available. See [paths](reference/gameplay/paths.md)
+and [entities](reference/gameplay/entities.md) for support and exclusions.
 
-Next is lethal entity reaction and transactional frog/entity integration, then
-platform riding, scripts, zones and verified callback mappings toward the first
-playable level. The [roadmap](PORTING.md) owns
+Next is platform landing, centring, carrying, jumping off and camera attachment,
+then live-entity lifecycle, scripts, zones and verified callback mappings toward
+the first playable level. The [roadmap](PORTING.md) owns
 remaining work; [architecture](reference/architecture.md) defines ownership.
 
 Animated per-part lighting remains a [renderer limitation](reference/rendering/gameplay-projection.md).

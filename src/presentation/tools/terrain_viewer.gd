@@ -29,6 +29,9 @@ var _map_instance: MapMesh.Instance
 var _frog_pose_tick: int = -1
 var _outcomes: PackedStringArray = PackedStringArray()
 var _projection_size: Vector2i = Vector2i.ZERO
+var _entity_models: Array[AnimatedModelInstance] = []
+var _entity_inspection: EntityInspection
+var _last_contacts: Array[FormReactionResult] = []
 
 func _ready() -> void:
 	_build_scene()
@@ -52,6 +55,7 @@ func _ready() -> void:
 			_capture_scenario.call_deferred(arguments)
 
 func _exit_tree() -> void:
+	_clear_entity_visuals()
 	if _owns_data and data != null:
 		data.close()
 	data = null
@@ -60,6 +64,7 @@ func _exit_tree() -> void:
 ## Loads optional frog presentation; callers retain borrowed data until this viewer detaches.
 func open_data(selected: GameData, take_ownership: bool = false) -> String:
 	_projection_size = Vector2i.ZERO
+	_clear_entity_visuals()
 	if data != selected:
 		if _owns_data and data != null:
 			data.close()
@@ -115,6 +120,7 @@ func open_data(selected: GameData, take_ownership: bool = false) -> String:
 	for index: int in _frog_model.part_nodes.size():
 		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
 	_frog.visible = false
+	_build_entity_visuals()
 	draw_state(1.0)
 	return ""
 
@@ -141,8 +147,10 @@ func open_scenario(selected: TerrainScenario) -> String:
 	_previous = _current
 	_frog_pose_tick = -1
 	_outcomes.clear()
+	_last_contacts.clear()
 	if _ground != null:
 		_build_terrain()
+		_build_entity_visuals()
 		draw_state(1.0)
 	return ""
 
@@ -158,6 +166,12 @@ func step_command(command: TickCommand) -> TickResult:
 		_previous = _current
 		_current = run.snapshot()
 		_outcomes = PackedStringArray(result.events)
+		_last_contacts.clear()
+		for contact: FormReactionResult in result.entity_contacts:
+			_last_contacts.append(contact.copy())
+		for model: AnimatedModelInstance in _entity_models:
+			if model != null:
+				model.advance_tick()
 		if record_trace:
 			trace.append_result(scenario.scenario_index, command, result)
 	else:
@@ -219,11 +233,37 @@ func draw_state(fraction: float) -> void:
 				_map_instance.set_tick(_current.tick_index - 1)
 		_map_instance.set_camera_position(_current.camera.source_world)
 		_map_instance.set_cave_frog(_current.world_position)
+	if _entity_inspection != null and _current.entities != null:
+		_entity_inspection.set_snapshot(_current.entities)
+		var selected_index: int = _selected_contact_index()
+		_entity_inspection.set_selected(selected_index)
+		var hit_contact: FormContactResult = null
+		for reaction: FormReactionResult in _last_contacts:
+			if reaction.contact != null and scenario.level.entity_collision != null and selected_index >= 0 and reaction.contact.entity_index == scenario.level.entity_collision.entities[selected_index].entity_index:
+				hit_contact = reaction.contact
+				break
+		_entity_inspection.set_contact(_current.world_position, hit_contact)
+	if _current.entities != null:
+		for index: int in mini(_entity_models.size(), _current.entities.entities.size()):
+			if _entity_models[index] != null:
+				_entity_models[index].transform = GameSpace.transform(_current.entities.entities[index].matrix12)
 	var camera_facts: String = "none" if _current.camera == null else "%d source %s" % [_current.camera.mode, _current.camera.source_world]
 	var presentation: String = "synthetic marker" if _frog_model == null else "high-detail frog"
 	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.mode, _current.cell, _current.square_index]
 	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.position_16, _current.velocity_16, _current.remaining_ticks, _current.flags, _current.buffered_keys, _current.buffered_input_count]
 	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.destination_cell, _current.square_flags, _current.source_id, camera_facts, _current.death_equate, _current.death_count, str(_current.completed), "; ".join(_outcomes)]
+	if scenario.entity_reactions:
+		var contact_lines := PackedStringArray()
+		var nearby_count: int = _last_contacts.size()
+		for reaction: FormReactionResult in _last_contacts:
+			if reaction.status != FormReactionResult.NONE or (reaction.contact != null and reaction.contact.status == FormContactResult.CONTACT):
+				contact_lines.append("%s #%d %s" % [reaction.status, reaction.contact.entity_index if reaction.contact != null else -1, reaction.reason])
+		var visible: PackedStringArray = contact_lines.slice(0, 2)
+		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.entity_hit_indices, _current.death_entity_index, nearby_count, "; ".join(visible)]
+		if contact_lines.size() > visible.size():
+			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
+		_label.text += "\n"
+		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
 	_label.text += "Space play/pause | . step | R reset | I interpolate\nTab replay/live | arrows hop | Q/E camera\n" + last_error
 
 func _process(delta: float) -> void:
@@ -291,6 +331,8 @@ func _build_scene() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_ground = Node3D.new()
 	add_child(_ground)
+	_entity_inspection = EntityInspection.new()
+	add_child(_entity_inspection)
 	_frog = MeshInstance3D.new()
 	var marker := SphereMesh.new()
 	marker.radius = 0.12
@@ -309,6 +351,8 @@ func _build_scene() -> void:
 	add_child(layer)
 	_label = Label.new()
 	_label.position = Vector2(12, 10)
+	_label.size = Vector2(616, 440)
+	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.add_theme_font_size_override("font_size", 13)
 	layer.add_child(_label)
 
@@ -344,6 +388,76 @@ func _build_terrain() -> void:
 		_ground.add_child(face)
 		layer += 1
 
+func _clear_entity_visuals() -> void:
+	for model: AnimatedModelInstance in _entity_models:
+		if model != null:
+			remove_child(model)
+			model.queue_free()
+	_entity_models.clear()
+	if _entity_inspection != null:
+		var empty: Array[EntityDefinition] = []
+		_entity_inspection.configure(empty)
+
+func _build_entity_visuals() -> void:
+	_clear_entity_visuals()
+	if scenario == null or not scenario.entity_reactions or scenario.level.entity_collision == null:
+		return
+	var definitions: EntityCollisionDefinition = scenario.level.entity_collision
+	_entity_inspection.configure(definitions.entities)
+	_entity_inspection.configure_contacts(definitions.contacts)
+	_entity_inspection.visible = true
+	for _entity: EntityDefinition in definitions.entities:
+		_entity_models.append(null)
+	if data == null or not data.is_valid() or scenario.map_scene == null:
+		return
+	var meshes: Dictionary[int, ModelMesh] = {}
+	var files: Dictionary[int, MofFile] = {}
+	for slot: int in definitions.entities.size():
+		var entity: EntityDefinition = definitions.entities[slot]
+		if entity.flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY):
+			continue
+		var form: FormBookEntry = data.tables.theme_book().get_form(scenario.map_scene.map.general.theme, entity.form_id)
+		if form == null:
+			continue
+		var resource: int = data.model_resource_for(form, scenario.map_scene.level)
+		if resource < 0:
+			continue
+		if not meshes.has(resource):
+			var file: MofFile = data.read_model(resource, scenario.diagnostics)
+			if file == null or not file.error.is_empty() or file.static_models.is_empty():
+				continue
+			files[resource] = file
+			meshes[resource] = ModelMeshBuilder.new(scenario.map_scene.library, scenario.map_scene.preferred).build_animated(file)
+		if not meshes.has(resource):
+			continue
+		var model := AnimatedModelInstance.new()
+		add_child(model)
+		model.setup(meshes[resource], ModelAnimationPlayer.new(files[resource]))
+		_entity_models[slot] = model
+	if _current != null:
+		_projection_size = Vector2i.ZERO
+		draw_state(1.0)
+
+func _selected_contact_index() -> int:
+	if scenario == null or scenario.level.entity_collision == null:
+		return -1
+	for slot: int in scenario.level.entity_collision.entities.size():
+		if scenario.level.entity_collision.entities[slot].entity_index == _current.death_entity_index:
+			return slot
+	var nearest: int = -1
+	var nearest_distance: int = 0x7fffffffffffffff
+	for slot: int in scenario.level.entity_collision.contacts.size():
+		if not scenario.level.entity_collision.contacts[slot].unsupported_reason.is_empty() or _current.entities == null or slot >= _current.entities.entities.size():
+			continue
+		var matrix: PackedInt32Array = _current.entities.entities[slot].matrix12
+		var dx: int = matrix[9] - _current.world_position.x
+		var dz: int = matrix[11] - _current.world_position.z
+		var distance: int = dx * dx + dz * dz
+		if distance < nearest_distance:
+			nearest = slot
+			nearest_distance = distance
+	return nearest
+
 func _material(colour: Color) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://src/presentation/tools/terrain_debug.gdshader")
@@ -364,6 +478,22 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 		get_tree().quit(1)
 		return
 	Engine.max_fps = render_rate
+	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
+	if not folder.is_empty():
+		last_error = ViewerCapture.prepare_folder(folder)
+		if not last_error.is_empty():
+			push_error(last_error)
+			get_tree().quit(1)
+			return
+	var hit_tick: int = -1
+	var captured: Dictionary[String, bool] = {}
+	if scenario.entity_reactions and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
+		await RenderingServer.frame_post_draw
+		last_error = _save_stage(folder, "before-contact", captured)
+		if not last_error.is_empty():
+			push_error(last_error)
+			get_tree().quit(1)
+			return
 	playing = true
 	while _current.tick_index < scenario.tick_limit and not _current.completed:
 		_process(1.0 / render_rate)
@@ -372,6 +502,20 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 			get_tree().quit(1)
 			return
 		await RenderingServer.frame_post_draw
+		if scenario.entity_reactions and not folder.is_empty():
+			if hit_tick < 0 and _current.death_entity_index >= 0:
+				hit_tick = _current.tick_index
+				last_error = _save_stage(folder, "hit", captured)
+			elif hit_tick < 0 and (scenario.level_code.to_upper() != "DES2" or _current.tick_index == 4):
+				last_error = _save_stage(folder, "before-contact", captured)
+			if hit_tick >= 0 and _current.tick_index >= hit_tick + 2 and _current.animation != null and _current.animation.action == FrogAnimationCatalog.POP:
+				last_error = _save_stage(folder, "pop-animation", captured)
+			if hit_tick >= 0 and _current.tick_index >= hit_tick + 8 and _current.camera != null:
+				last_error = _save_stage(folder, "death-camera", captured)
+			if not last_error.is_empty():
+				push_error(last_error)
+				get_tree().quit(1)
+				return
 	playing = false
 	var output: String = ViewerArguments.value(arguments, "--trace-csv=")
 	if not output.is_empty():
@@ -379,38 +523,33 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 	var full_output: String = ViewerArguments.value(arguments, "--trace-jsonl=")
 	if last_error.is_empty() and not full_output.is_empty():
 		last_error = trace.save_full(full_output)
-	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
 	if last_error.is_empty() and not folder.is_empty():
-		last_error = ViewerCapture.prepare_folder(folder)
-		if last_error.is_empty():
-			await RenderingServer.frame_post_draw
-			last_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("terrain-" + scenario.identifier + ".png"))
+		await RenderingServer.frame_post_draw
+		last_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("terrain-" + scenario.identifier + ".png"))
 	if not last_error.is_empty():
 		push_error(last_error)
 	get_tree().quit(0 if last_error.is_empty() else 1)
+
+func _save_stage(folder: String, name: String, captured: Dictionary[String, bool]) -> String:
+	if captured.has(name):
+		return ""
+	captured[name] = true
+	return ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("entity-" + name + ".png"))
 
 func _update_projection() -> void:
 	var size := Vector2i(get_viewport().get_visible_rect().size)
 	if size == _projection_size:
 		return
 	_projection_size = size
+	_label.size = Vector2(maxf(1.0, float(size.x) - 24.0), maxf(1.0, float(size.y) - 40.0))
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
 	if _map_instance != null:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:
-		for mesh: ArrayMesh in frog_assets.mesh.part_meshes:
-			if mesh == null:
-				continue
-			for surface: int in mesh.get_surface_count():
-				var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
-				if material != null:
-					material.set_shader_parameter("projection_scale", scale)
-		for tracks: Array in frog_assets.mesh.texture_tracks:
-			for track: ModelMesh.TextureTrack in tracks:
-				if track.original != null:
-					track.original.set_shader_parameter("projection_scale", scale)
-				for material: ShaderMaterial in track.frames:
-					material.set_shader_parameter("projection_scale", scale)
+		_set_model_projection(frog_assets.mesh, scale)
+	for instance: AnimatedModelInstance in _entity_models:
+		if instance != null and instance.model_mesh != null:
+			_set_model_projection(instance.model_mesh, scale)
 	for child: Node in _ground.get_children():
 		var face: MeshInstance3D = child as MeshInstance3D
 		if face != null:
@@ -420,3 +559,18 @@ func _update_projection() -> void:
 	var marker: ShaderMaterial = _frog.material_override as ShaderMaterial
 	if marker != null:
 		marker.set_shader_parameter("projection_scale", scale)
+
+func _set_model_projection(model_mesh: ModelMesh, scale: Vector2) -> void:
+	for mesh: ArrayMesh in model_mesh.part_meshes:
+		if mesh == null:
+			continue
+		for surface: int in mesh.get_surface_count():
+			var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
+			if material != null:
+				material.set_shader_parameter("projection_scale", scale)
+	for tracks: Array in model_mesh.texture_tracks:
+		for track: ModelMesh.TextureTrack in tracks:
+			if track.original != null:
+				track.original.set_shader_parameter("projection_scale", scale)
+			for material: ShaderMaterial in track.frames:
+				material.set_shader_parameter("projection_scale", scale)

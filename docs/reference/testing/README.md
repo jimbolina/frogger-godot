@@ -47,6 +47,9 @@ unset the variable explicitly for asset-free mode.
   select duration and frame schedule. Use `tools/verify_entity_schedules.py`
   with the same selection arguments to compare headless and rendered
   `entity-contact-v1` traces.
+- [POP entity inspection](terrain-inspection.md#pop-entity-inspection): optional
+  atomic frog/entity advancement and all eligible nearby FORM reactions, with
+  the DES2 cactus demonstration and `entity-pop-v1` schedule comparisons.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 

@@ -1,8 +1,9 @@
 # Simulation contracts
 
-`TerrainRun` implements one ordered terrain tick. `PathRunner` separately
-implements one detached PATH cursor update. Full level/entity simulation is
-not implemented; no map entity consumes a path runner yet. See [paths](paths.md).
+`TerrainRun` implements one ordered frog tick and optional atomic entity
+advancement/reaction. `PathRunner` implements one detached PATH cursor update;
+moving entities own independent cursors. Full level simulation is not
+implemented. See [paths](paths.md) and [entities](entities.md).
 
 - The gameplay host schedules original-rate tick commands; the rules do not read wall time. Optional interpolation affects drawing only. Godot's physics engine is not used; collision is the game's own.
 - The owner selected frozen `froggy` source-port behavior: 30 Hz steady-state logic/presentation pacing. Its actual driver defines `FROGGER_TARGET_FPS=30`, computes `perf_freq / 30`, and its timer backend asserts `LOGIC_CALLS_PER_SEC==30`. This is source evidence independent of the existing viewer clock. See [PC timing evidence](pc-timing.md).
@@ -37,8 +38,8 @@ absent. Scripted scenarios supply both masks explicitly. Direction precedence,
 camera mapping and the one-entry flight buffer remain rule responsibilities;
 the host does not consume or arbitrate them.
 
-`src/game/` owns detached terrain and path definitions and state, grid queries,
-movement/collision, gameplay camera, animation control and source RNG. Entity
-and script systems are not implemented. `src/mod/` remains future work
+`src/game/` owns detached terrain, path and bounded entity definitions/state,
+grid and FORM queries, movement/reactions, gameplay camera, animation control
+and source RNG. Entity scripts remain unimplemented. `src/mod/` remains future work
 for watching files and reporting unmapped behavior. See the
 [README layout](../../../README.md#layout) and [path contract](paths.md).

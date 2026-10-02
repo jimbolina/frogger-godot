@@ -3,6 +3,9 @@ extends RefCounted
 ## Detached authoritative terrain state. Positions and velocities use integer 16.16.
 
 var tick_index: int = 0
+var entities: EntityRunSnapshot = null
+var entity_hit_indices: PackedInt32Array = PackedInt32Array()
+var death_entity_index: int = -1
 var position_16: Vector3i = Vector3i.ZERO
 var velocity_16: Vector3i = Vector3i.ZERO
 var cell: Vector2i = Vector2i.ZERO
@@ -66,6 +69,9 @@ var rng_draw_count: int = 0
 func copy() -> RunSnapshot:
 	var result := RunSnapshot.new()
 	result.tick_index = tick_index
+	result.entities = entities.copy() if entities != null else null
+	result.entity_hit_indices = entity_hit_indices.duplicate()
+	result.death_entity_index = death_entity_index
 	result.position_16 = position_16
 	result.velocity_16 = velocity_16
 	result.cell = cell

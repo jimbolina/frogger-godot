@@ -3,6 +3,8 @@
   "res://tests/golden/test_retail_entities.gd::test_all_entity_identity_base_records_and_setup_census": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_form_contacts.gd::test_every_form_record_matches_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_form_contacts.gd::test_org1_small_log_contact_setup_matches_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_entity_reactions.gd::test_des2_cactus_reaction_setup_matches_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_entity_reactions.gd::test_des2_airborne_pop_precedes_terrain_landing": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_animation_census": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_all_xar_headers_transforms_and_metadata": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_every_frame_of_every_xar_action": "SKIP: FROGGER_DATA_DIR is not set",

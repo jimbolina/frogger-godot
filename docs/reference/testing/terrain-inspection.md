@@ -19,9 +19,9 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. Entities, forms, platforms, zones and authored entity
-boundary markers are explicitly omitted. This is terrain inspection, not a
-complete playable level.
+existing `GameData` APIs. By default entities, forms, platforms, zones and
+authored entity boundary markers are omitted. `--entity-reactions=pop` opts into
+the bounded entity mode below. Neither mode is a complete playable level.
 
 The viewer borrows injected `GameData` unless ownership is transferred.
 Replacement closes an owned source once; reattaching the same source retains
@@ -47,6 +47,39 @@ fixtures against all three render schedules sequentially.
 
 Captures and traces must be outside this checkout and frozen `froggy`.
 Generated resources are released on reset/replacement rather than accumulated.
+
+## POP entity inspection
+
+`--entity-reactions=pop` attaches copied STATIC/MOVING definitions and FORM
+reaction facts to the same `TerrainRun`. Entity paths, frog, camera and animation
+advance through one commit; the viewer consumes its snapshots. Cactus models,
+FORM outlines, contacted cells, authored indices and death requests make the
+reaction visible. Particle effects are requested, not rendered. Support and
+all-attached lifetime assumptions are defined in the
+[entity contract](../gameplay/entities.md#bounded-pop-reactions).
+
+With `--data-dir <game-folder> --level DES2 --entity-reactions pop`, the scenario
+uses an explicit safe inspection start and one east hop into the first cactus.
+This is not the map's normal player spawn. The airborne hit precedes the
+destination terrain's own lethal reaction. Golden inputs and source facts are
+specified [beside the tests](../../../tests/golden/specs/entities.md).
+
+Integrated traces use `entity-pop-v1`, retaining ordered phase snapshots, entity
+transforms/path cursors, contact/reaction outcomes, per-tick hits and the first
+lethal entity identity. Failed ticks publish none of those candidate outcomes.
+The terrain-only `terrain-run-v1` and fixed-probe `entity-contact-v1` modes remain
+available. Render interpolation never changes contact decisions.
+
+```powershell
+python tools/verify_entity_reaction_schedules.py --godot <godot-executable> --data-dir <game-folder> --level DES2 --output-directory <external-output>
+python tools/verify_entity_reaction_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/integrated_entities.json --case-index 0 --output-directory <external-output>
+```
+
+The verifier runs headless and rendered 30/60/144 schedules serially through
+completion. `--case-index` selects an authored case from the grouped synthetic
+fixture; a standalone scenario needs no index. Inspect the pre-contact, hit,
+POP-animation and death-camera images,
+including the full controls at 640x480. All evidence stays outside both repos.
 
 ## Reproducing schedule comparisons
 
