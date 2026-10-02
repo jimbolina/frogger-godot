@@ -39,10 +39,13 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 			var previous_mesh: WeakRef
 			var previous_instance: WeakRef
 			var previous_scene: WeakRef
+			var previous_path: WeakRef
 			if _viewer.current_mesh != null:
 				previous_mesh = weakref(_viewer.current_mesh)
 				previous_instance = weakref(_viewer.map_instance)
 				previous_scene = weakref(_viewer.scene_data)
+				if _viewer._path_inspection != null:
+					previous_path = weakref(_viewer._path_inspection)
 			assert_true(_viewer.load_level_by_code(FroggerIds.LEVEL_CODES[level], low_poly))
 			await get_tree().process_frame
 			await get_tree().process_frame
@@ -53,7 +56,14 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 				assert_null(old_node, "previous node released")
 				assert_null(old_mesh, "previous mesh and materials released")
 				assert_null(old_scene, "previous decoded map and banks released")
-			assert_eq(_viewer._world.get_child_count(), 3, "only camera, environment and active map remain")
+				if previous_path != null:
+					var old_path: PathInspection = previous_path.get_ref()
+					assert_null(old_path, "previous path overlay released")
+			var has_path: bool = _viewer._path_inspection != null
+			assert_eq(_viewer._world.get_child_count(), 4 if has_path else 3, "camera, environment, active map and optional active path remain")
+			assert_same(_viewer._world.get_child(2), _viewer.map_instance)
+			if has_path:
+				assert_same(_viewer._world.get_child(3), _viewer._path_inspection)
 			switched += 1
 	assert_eq(switched, 78)
 

@@ -33,6 +33,9 @@ unset the variable explicitly for asset-free mode.
   separate camera and integrated source comparisons.
 - [Terrain collision oracle](terrain-collision-oracle.md): height, death and
   effect-request boundaries.
+- [Path behavior](../gameplay/paths.md): decoded records, detached runner and
+  map inspection; [path golden specification](../../../tests/golden/specs/paths.md)
+  defines the independent data and trace checks.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 

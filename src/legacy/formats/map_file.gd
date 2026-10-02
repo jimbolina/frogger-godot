@@ -29,6 +29,8 @@ var entities: Array[MapEntitySpan] = []
 ## Ordered collision stacks and layers, without gameplay conversion.
 var grid_stacks: Array[MapGridStack] = []
 var grid_squares: Array[MapGridSquare] = []
+## Source-ordered paths with raw segment data.
+var paths: Array[MapPath] = []
 ## General settings.
 var general: MapGeneral = MapGeneral.new()
 ## Packet bounds and retained gameplay headers.
@@ -125,6 +127,9 @@ func _read() -> void:
 	if not error.is_empty():
 		return
 	_read_retained()
+	if not error.is_empty():
+		return
+	_read_paths()
 
 func _read_general() -> void:
 	var p: MapPacket = packets["GENE"]
@@ -444,3 +449,70 @@ func _read_retained() -> void:
 			return
 		square.polygon_index = _polygon_by_offset[square.polygon_pointer]
 		grid_squares.append(square)
+
+func _read_paths() -> void:
+	var packet: MapPacket = packets["PATH"]
+	var table_end: int = packet.source_offset + 8 + packet.count * 4
+	for i: int in packet.count:
+		var at: int = packet.offsets[i]
+		var limit: int = packet.end_offset
+		for pointer: int in packet.offsets:
+			if pointer > at:
+				limit = mini(limit, pointer)
+		if at < table_end or not _range(at, 8, "PATH record", limit):
+			error = "Invalid PATH record %d" % i
+			return
+		var path := MapPath.new()
+		path.path_index = i
+		path.source_offset = at
+		path.entity_list_pointer = _bytes.decode_u32(at)
+		var count: int = _bytes.decode_u32(at + 4)
+		if not _range(at + 8, count * 4, "PATH segment pointer table", limit):
+			return
+		var payload_start: int = at + 8 + count * 4
+		var pointers: Array[int] = []
+		for j: int in count:
+			var pointer: int = _bytes.decode_u32(at + 8 + j * 4)
+			if pointers.has(pointer) or pointer < payload_start or not _range(pointer, 8, "PATH segment", limit):
+				error = "Invalid PATH segment pointer at path %d segment %d" % [i, j]
+				return
+			pointers.append(pointer)
+		for j: int in count:
+			var segment_at: int = pointers[j]
+			var segment_limit: int = limit
+			for pointer: int in pointers:
+				if pointer > segment_at:
+					segment_limit = mini(segment_limit, pointer)
+			var segment := MapPathSegment.new()
+			segment.segment_type = _bytes.decode_u32(segment_at)
+			segment.length = _bytes.decode_s32(segment_at + 4)
+			segment.source_offset = segment_at
+			var required: int = 8
+			match segment.segment_type:
+				0: required = 120
+				1: required = 40
+				2: required = 24
+			if not _range(segment_at, required, "PATH segment payload", segment_limit):
+				return
+			segment.end_offset = segment_at + required if segment.segment_type <= 2 else segment_limit
+			match segment.segment_type:
+				0:
+					for k: int in 12:
+						segment.matrix.append(_bytes.decode_s32(segment_at + 8 + k * 4))
+					for k: int in 4:
+						segment.smooth_t.append(_bytes.decode_s32(segment_at + 56 + k * 4))
+					for k: int in 12:
+						segment.smooth_c.append(_bytes.decode_s32(segment_at + 72 + k * 4))
+				1:
+					segment.start = _vec(segment_at + 8)
+					segment.centre = _vec(segment_at + 16)
+					segment.normal = _vec(segment_at + 24)
+					segment.radius = _bytes.decode_s32(segment_at + 32)
+					segment.pitch = _bytes.decode_s32(segment_at + 36)
+				2:
+					segment.start = _vec(segment_at + 8)
+					segment.end = _vec(segment_at + 16)
+				_:
+					warnings.append("Unknown PATH segment type %d at path %d segment %d" % [segment.segment_type, i, j])
+			path.segments.append(segment)
+		paths.append(path)

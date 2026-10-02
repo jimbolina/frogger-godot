@@ -162,3 +162,54 @@ func test_manual_reference_camera_motion_uses_custom_projection_and_reset_restor
 	assert_true(_viewer.map_instance.reference_projection)
 	assert_false(_viewer._custom_camera)
 	assert_eq(_viewer.map_instance.projection_scale, Vector2(1, 0.9375))
+
+func test_path_overlay_uses_shared_clock_and_releases_on_replacement() -> void:
+	var source: MapSceneData = _scene()
+	var packet := MapPacket.new()
+	packet.count = 1
+	packet.offsets = PackedInt32Array([100])
+	source.map.packets["PATH"] = packet
+	var path := MapPath.new()
+	path.path_index = 0
+	path.source_offset = 100
+	var segment := MapPathSegment.new()
+	segment.segment_type = 2
+	segment.length = 160
+	segment.source_offset = 112
+	segment.start = Vector3i.ZERO
+	segment.end = Vector3i(10, 0, 0)
+	path.segments.append(segment)
+	source.map.paths.append(path)
+	assert_true(_viewer.show_scene(source))
+	assert_not_null(_viewer._path_inspection)
+	assert_false(_viewer._path_inspection.visible)
+	_viewer.set_path_visibility(true)
+	assert_true(_viewer._path_inspection.visible)
+	var start := PathStart.new()
+	start.speed = 16
+	assert_true(_viewer.configure_path(0, start))
+	assert_eq(_viewer.path_snapshot().tick_index, 0)
+	_viewer.step_animation()
+	assert_eq(_viewer.path_snapshot().tick_index, 1)
+	assert_eq(_viewer.path_snapshot().segment_distance, 16)
+	_viewer.seek_tick(0)
+	assert_eq(_viewer.path_snapshot().segment_distance, 0)
+	assert_false(_viewer.configure_path(99))
+	assert_true(_viewer.show_scene(_scene()))
+	assert_null(_viewer.path_snapshot())
+	assert_null(_viewer._path_inspection)
+	assert_false(_viewer._path_speed.editable)
+	assert_eq(_viewer._world.get_child_count(), 3)
+
+func test_synthetic_path_camera_frames_off_origin_geometry() -> void:
+	assert_true(_viewer.show_scene(_scene()))
+	var definition := PathDefinition.new()
+	var segment := PathSegmentDefinition.new()
+	segment.segment_type = PathSegmentDefinition.LINE
+	segment.length = 160
+	segment.start = Vector3i(4000, -200, 6000)
+	segment.end = Vector3i(5000, -200, 6000)
+	definition.segments.append(segment)
+	_viewer._frame_path(definition)
+	assert_eq(GameSpace.to_game(_viewer._target), Vector3i(4500, -200, 6000))
+	assert_true(_viewer._custom_camera)

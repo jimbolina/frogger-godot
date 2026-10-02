@@ -23,7 +23,18 @@ polygons absent from serialized group lists: JUN1, JUN2, SWP1, SWP2, SWP4,
 SWP5. Preserve/report these; don't reject the file or make them visible.
 GRID now retains ordered stacks and squares, flags, polygon offsets and all
 four calculation corners; [grid](../gameplay/grid.md) owns decoding, setup and query rules.
-Other gameplay packets retain bounded metadata; entity/path behavior is not implemented.
+PATH retains source-ordered paths and segments. FrogLord's final-PC segment
+ordinals are spline 0, arc 1 and line 2; their records occupy 120, 40 and 24
+bytes including type and stored length. The spline stores a row-major 4×3
+signed coefficient matrix, four smooth-t values and twelve smooth-c values.
+Arc and line coordinates are signed 16-bit vectors with two padding bytes;
+arc radius and pitch are signed 32-bit values. The decoder retains stored
+lengths and coefficients without recomputation. Pointer tables and known
+payloads must fit their PATH records. Unknown bounded segment types retain
+identity and a warning, while malformed pointers or payloads fail the map.
+The path entity-list pointer is retained as metadata: FrogLord reads that list
+with GROU, so it need not point inside PATH. See [path behavior](../gameplay/paths.md).
+FORM, EMTP and ZONE still retain bounded metadata; their gameplay behavior is deferred.
 
 ## Rendering
 

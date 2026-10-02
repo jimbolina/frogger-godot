@@ -123,6 +123,31 @@ water and sky-land. This is an inspection tool: frogs, moving entities, HUD
 and gameplay cameras are deferred. The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.
 
+The right-side path controls select a supported PATH record and set a component
+inspection start: segment, distance, speed, active state, direction and endpoint
+mode. **Show path** draws its sampled shape, runner position and tangent;
+it starts off. The default start is segment 0, distance 0, speed 16, active,
+forward and repeat. Changing a control resets the shared tick. Playback,
+step and seek move the selected cursor with map animation. The map-slice
+reference preset hides the path drawing. These settings inspect detached
+path behavior; map entities are not attached to it yet. See the
+[path contract](docs/reference/gameplay/paths.md).
+
+For reproducible path traces and an optional rendered capture, run
+`python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
+Add `--viewer` for the map overlay, `--scenario arc` or `--scenario spline`
+for other built-in paths, or `--scenario-file <JSON-file>` for a custom case.
+With player data, use `--data-dir <game-folder> --level SUB1 --path-index 0`;
+`--tick-limit` and `--render-rate 30|60|144` select the duration and rendered
+frame schedule. The wrapper writes a JSONL trace and keeps captures and logs
+outside the repository. With `--viewer` it also writes a world-only path image
+and a full window image of the inspection controls, framing the selected path
+for that capture. To compare the complete
+headless trace against rendered runs at 30, 60 and 144 frames per second, use
+`python tools/verify_path_schedules.py --godot <executable> --scenario line
+--output-directory <external-folder>`. See the
+[path verification specification](tests/golden/specs/paths.md).
+
 For repeatable captures on Windows, set `GODOT` and `FROGGER_DATA_DIR`, then:
 
 ```powershell

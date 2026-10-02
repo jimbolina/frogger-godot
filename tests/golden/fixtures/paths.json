@@ -1,0 +1,155 @@
+[
+  {
+    "name": "line_boundary",
+    "segments": [
+      {"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]},
+      {"segment_type": 2, "length": 80, "start": [100, 0, 0], "end": [100, 0, 80]}
+    ],
+    "start": {"segment_index": 0, "distance": 85, "speed": 15, "flags": 1},
+    "tick_limit": 8
+  },
+  {
+    "name": "one_shot_end",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 90, "speed": 15, "flags": 5},
+    "tick_limit": 3
+  },
+  {
+    "name": "one_shot_start",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 15, "flags": 7},
+    "tick_limit": 3
+  },
+  {
+    "name": "repeat_end",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 90, "speed": 15, "flags": 9},
+    "tick_limit": 4
+  },
+  {
+    "name": "repeat_start",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 15, "flags": 11},
+    "tick_limit": 4
+  },
+  {
+    "name": "bounce_end",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 90, "speed": 15, "flags": 1},
+    "tick_limit": 12
+  },
+  {
+    "name": "paused",
+    "segments": [{"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 40, "speed": 17, "flags": 0},
+    "tick_limit": 3
+  },
+  {
+    "name": "arc_helix",
+    "segments": [{"segment_type": 1, "length": 157, "start": [100, 0, 0], "centre": [0, 0, 0], "normal": [0, 4096, 0], "radius": 100, "pitch": 24}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 20, "flags": 9},
+    "tick_limit": 7
+  },
+  {
+    "name": "spline_linear",
+    "segments": [{"segment_type": 0, "length": 256,
+      "matrix": [0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 0],
+      "smooth_t": [100000, 100000, 100000, 100000],
+      "smooth_c": [0, 0, 134217728, 0, 0, 0, 0, 0, 0, 0, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 32, "speed": 32, "flags": 9},
+    "tick_limit": 8
+  },
+  {
+    "name": "forward_overshoot",
+    "segments": [
+      {"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]},
+      {"segment_type": 2, "length": 100, "start": [100, 0, 0], "end": [200, 0, 0]},
+      {"segment_type": 2, "length": 100, "start": [200, 0, 0], "end": [300, 0, 0]}
+    ],
+    "start": {"segment_index": 0, "distance": 80, "speed": 250, "flags": 1},
+    "tick_limit": 2
+  },
+  {
+    "name": "backward_overshoot",
+    "segments": [
+      {"segment_type": 2, "length": 100, "start": [0, 0, 0], "end": [100, 0, 0]},
+      {"segment_type": 2, "length": 100, "start": [100, 0, 0], "end": [200, 0, 0]}
+    ],
+    "start": {"segment_index": 1, "distance": 10, "speed": 150, "flags": 3},
+    "tick_limit": 2
+  },
+  {
+    "name": "line_product_wrap",
+    "segments": [{"segment_type": 2, "length": 70000, "start": [-32767, 0, 0], "end": [32767, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 50000, "speed": 1000, "flags": 1},
+    "tick_limit": 2
+  },
+  {
+    "name": "arc_local_narrowing",
+    "segments": [{"segment_type": 1, "length": 40000, "start": [30000, 0, 0], "centre": [0, 0, 0], "normal": [0, 4096, 0], "radius": 40000, "pitch": 0}],
+    "start": {"segment_index": 0, "distance": 20000, "speed": 5000, "flags": 1},
+    "tick_limit": 2
+  },
+  {
+    "name": "spline_point_narrowing",
+    "segments": [{"segment_type": 0, "length": 256,
+      "matrix": [0, 0, 0, 0, 0, 0, 4096, 0, 0, 0, 0, 0],
+      "smooth_t": [100000, 100000, 100000, 100000],
+      "smooth_c": [0, 0, 134217728, 0, 0, 0, 0, 0, 0, 0, 0, 0]}],
+    "start": {"segment_index": 0, "distance": 128, "speed": 32, "flags": 5},
+    "tick_limit": 4
+  },
+  {
+    "name": "nonlinear_spline_sections",
+    "segments": [{"segment_type": 0, "length": 16,
+      "matrix": [1, -1, 0, 3, 2, 0, 64, 32, 0, 0, 0, 0],
+      "smooth_t": [1024, 2048, 3072, 4096],
+      "smooth_c": [100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736]}],
+    "start": {"segment_index": 0, "distance": 0, "speed": 2, "flags": 5},
+    "tick_limit": 8
+  },
+  {
+    "name": "tilted_arc",
+    "segments": [{"segment_type": 1, "length": 157, "start": [100, 0, 0], "centre": [0, 0, 0], "normal": [0, 2896, 2896], "radius": 100, "pitch": -30}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 23, "flags": 5},
+    "tick_limit": 7
+  },
+  {
+    "name": "mixed_forward",
+    "segments": [
+      {"segment_type": 0, "length": 16, "matrix": [1, -1, 0, 3, 2, 0, 64, 32, 0, 0, 0, 0], "smooth_t": [1024, 2048, 3072, 4096], "smooth_c": [100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736]},
+      {"segment_type": 1, "length": 157, "start": [100, 0, 0], "centre": [0, 0, 0], "normal": [0, 2896, 2896], "radius": 100, "pitch": -30},
+      {"segment_type": 2, "length": 100, "start": [0, 0, -100], "end": [0, 0, -200]}
+    ],
+    "start": {"segment_index": 0, "distance": 14, "speed": 25, "flags": 5},
+    "tick_limit": 12
+  },
+  {
+    "name": "mixed_reverse",
+    "segments": [
+      {"segment_type": 0, "length": 16, "matrix": [1, -1, 0, 3, 2, 0, 64, 32, 0, 0, 0, 0], "smooth_t": [1024, 2048, 3072, 4096], "smooth_c": [100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736, 100000000, 500000000, 1610612736]},
+      {"segment_type": 1, "length": 157, "start": [100, 0, 0], "centre": [0, 0, 0], "normal": [0, 2896, 2896], "radius": 100, "pitch": -30},
+      {"segment_type": 2, "length": 100, "start": [0, 0, -100], "end": [0, 0, -200]}
+    ],
+    "start": {"segment_index": 2, "distance": 5, "speed": 30, "flags": 7},
+    "tick_limit": 11
+  },
+  {
+    "name": "zero_direction_line",
+    "segments": [{"segment_type": 2, "length": 100, "start": [5, 3, -7], "end": [5, 3, -7]}],
+    "start": {"segment_index": 0, "distance": 20, "speed": 20, "flags": 5},
+    "tick_limit": 5
+  },
+  {
+    "name": "zero_radial_arc",
+    "segments": [{"segment_type": 1, "length": 157, "start": [0, 0, 0], "centre": [0, 0, 0], "normal": [0, 4096, 0], "radius": 100, "pitch": 0}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 20, "flags": 5},
+    "tick_limit": 3
+  },
+  {
+    "name": "zero_normal_arc",
+    "segments": [{"segment_type": 1, "length": 157, "start": [100, 0, 0], "centre": [0, 0, 0], "normal": [0, 0, 0], "radius": 100, "pitch": 0}],
+    "start": {"segment_index": 0, "distance": 10, "speed": 20, "flags": 5},
+    "tick_limit": 3
+  }
+]

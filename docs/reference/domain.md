@@ -10,7 +10,7 @@ disagreements in the relevant technical reference; do not invent rules.
 | Area | References |
 |---|---|
 | Source data | [Build recognition](data/build-detection.md), [archives](data/archives.md), [executable tables](data/executable-tables.md), [textures](data/textures.md), [models](data/models.md), [model animation](data/animation.md), [maps](data/maps.md) |
-| Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md) |
+| Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [paths](gameplay/paths.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md) |
 | Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [gameplay projection](rendering/gameplay-projection.md) |
 | Verification | [Testing and inspection guide](testing/README.md), [golden specifications](../../tests/golden/README.md) |
 
@@ -26,12 +26,16 @@ for dependencies and ownership.
 The first gameplay definitions are detached static terrain grids, copied by
 `TerrainGridSetup` from decoded map records. Pure `GridQueries` uses these
 definitions without files or scene resources; see [grid](gameplay/grid.md).
+`PathSetup` likewise copies supported paths into definitions for component
+inspection. Each `PathRunner` owns one runner state; entity PATH_INFO attachment
+remains future work. See [paths](gameplay/paths.md).
 
 | Term | Meaning and authoritative contract |
 |---|---|
 | Source / build | Selected files versus the recognized executable configuration. Identities are scoped to that source/build; see [build detection](data/build-detection.md). |
 | Archive resource / Godot Resource | An original indexed file versus an engine resource object. An archive index is meaningful only with its owning source; see [archives](data/archives.md). |
 | Map / level | A decoded map resource versus a level selected through the executable map book and its dependencies; see [maps](data/maps.md). High/low detail use different resources. |
+| Path / path runner | Authored map geometry and its source index versus one mutable cursor over a detached definition. A path can later serve multiple entities; see [paths](gameplay/paths.md). |
 | Form book entry / form grid | A named object kind selecting behavior, model and script versus the authored form-grid reference of a map entity. Form-book ids are scoped to a theme (or GENERAL); live form-grid collision is not implemented. |
 | Map entity / live entity | An authored map record versus a future run-owned instance with identity and mutable state. Authored record identity is scoped to its map; live identity to its run. Neither implies a particular class hierarchy. |
 | Entity script / GDScript | Original opcode data versus this project's implementation language. Decoding a script does not execute it; see [executable tables](data/executable-tables.md). |

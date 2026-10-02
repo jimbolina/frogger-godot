@@ -6,7 +6,7 @@
   from `RefCounted` and depend on neither Nodes/tree access nor conversion,
   gameplay, scenes or presentation.
 - `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
-  camera, animation-control and RNG state.
+  path, camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;
   it does not depend on legacy readers, conversion or presentation, open files,
   poll input, consult wall time or access Nodes. Godot math types are allowed.
@@ -52,6 +52,15 @@ simulation must add run-owned state and preserve source-ordered updates before f
 into grid definitions; those definitions retain no legacy or rendering objects.
 Treat definitions as immutable after setup. Grid queries return new result
 objects and do not retain or mutate caller state.
+
+`PathSetup` copies source-ordered PATH geometry and source identity into
+`PathDefinition`, without retaining the decoded map. It omits unsupported or
+unsafe paths with source-located diagnostics while retaining valid neighbors.
+`PathRunner` copies its definition and initial settings, owns one mutable
+cursor and returns detached snapshots. `PathInspection` owns only sampled
+drawing resources. The map viewer frees its overlay and runner on map/source
+replacement; the common 30 Hz clock drives map animation and the selected
+path. See [path contract](gameplay/paths.md).
 
 ## Extending behavior
 

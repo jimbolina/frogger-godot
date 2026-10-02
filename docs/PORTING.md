@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: detached path decoding, runner and inspection |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -43,7 +43,8 @@ the visible color difference remains explicit.
 
 ## Next: entities and the first playable level
 
-Apply [definition/state/view ownership](reference/architecture.md) to paths,
+Attach the [path component](reference/gameplay/paths.md) to run-owned entities,
+then apply [definition/state/view ownership](reference/architecture.md) to
 entities and scripts. Resolve types, forms and callbacks through verified names
 and supported implementations; preserve source ordering and test unknown
 mappings. Per-build form callback address mappings still need investigation.
@@ -51,7 +52,7 @@ Mods may repoint supported behaviors but never load new code.
 
 Add entity diagnostics with code, severity, build/resource, entity/form or
 source offset, and fallback. Extend inspection/scenario commands with entity
-and path state. Rewind may replay from reset. Use the first additional behavior
+and path state. Use the first additional behavior
 to check that the registry and setup adapters stay small, then reassess at the
 first playable level.
 

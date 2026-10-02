@@ -37,6 +37,7 @@
   "res://tests/golden/test_retail_map.gd::test_both_sky_land_maps": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_map.gd::test_independent_animation_counter_samples": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_map.gd::test_independent_cave_falloff_samples": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_paths.gd::test_every_path_and_segment_matches_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_model_viewer.gd::test_viewer_shows_models_by_name": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_model_viewer.gd::test_hidden_parts_follow_froglords_settings": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_model_viewer.gd::test_low_poly_models_can_be_shown": "SKIP: FROGGER_DATA_DIR is not set",
