@@ -15,7 +15,30 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-There is no gameplay yet.
+There is no playable level yet.
+
+P7 is complete. Terrain movement, collision/deaths, gameplay camera
+and animation control follow the frozen C port's verified 30 Hz target;
+see [terrain contracts](docs/reference/terrain-movement.md) and
+[validation](docs/validation/p7.md).
+
+The terrain inspection driver uses the same rules as the tests:
+`godot --path . res://scenes/tools/terrain_viewer.tscn`.
+Space plays/pauses the command fixture, Period steps, R resets and I changes
+interpolation. Tab switches to live arrow-key input, Shift requests a super hop,
+and Q/E turn the gameplay camera. Pause and reset also reset drawing interpolation.
+This is terrain inspection; entities, moving platforms and progression arrive
+in later phases. Animated lighting remains a
+[documented renderer limitation](docs/reference/gameplay-projection.md).
+The game runs in GDScript. C files under `tools/` are offline reference
+validation adapters; playing or loading data does not require C code or a compiler.
+For isolated headless or rendered evidence, use `python tools/run_terrain.py
+--godot <executable> --scenario buffer --output-directory <external-folder>`;
+add `--viewer` for a captured scene and `--data-dir <game-folder>` for frog assets.
+Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
+`--tick-limit <integer>` for overrides, or `--level <name>` to inspect a player's
+selected map. The [inspection contract](docs/reference/terrain-inspection.md)
+defines scenario fields and omitted level systems.
 
 ## No game data is included
 
@@ -160,7 +183,8 @@ The complete retail and asset-free runs remain required before each commit.
 |---|---|
 | `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
-| `src/presentation/` | Screens (`frontend/`), shared viewer helpers, and development tools (`tools/`, the texture, model and map viewers). |
+| `src/game/` | Detached terrain definitions, ordered run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
+| `src/presentation/` | Screens (`frontend/`), runtime setup (`setup/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |

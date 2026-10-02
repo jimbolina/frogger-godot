@@ -10,6 +10,8 @@ var index: int = 0
 var source_offset: int = 0
 ## Stored vertex indices.
 var vertex_indices: PackedInt32Array = PackedInt32Array()
+## Four stored terrain vertex words, including triangle padding used by GRID.C.
+var grid_vertex_indices: PackedInt32Array = PackedInt32Array()
 ## Stored colors.
 var colors: PackedColorArray = PackedColorArray()
 ## Stored uvs.

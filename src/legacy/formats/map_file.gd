@@ -26,6 +26,9 @@ var lights: Array[MapLight] = []
 var animations: Array[MapAnimation] = []
 ## Bounded entity payloads, without gameplay decoding.
 var entities: Array[MapEntitySpan] = []
+## Ordered collision stacks and layers, without gameplay conversion.
+var grid_stacks: Array[MapGridStack] = []
+var grid_squares: Array[MapGridSquare] = []
 ## General settings.
 var general: MapGeneral = MapGeneral.new()
 ## Packet bounds and retained gameplay headers.
@@ -191,6 +194,9 @@ func _read_polygons() -> void:
 				return
 			for k: int in (TYPE_SIZES[t] >> 1):
 				poly.raw_words.append(_bytes.decode_u16(at + k * 2))
+			if t != 8:
+				for k: int in 4:
+					poly.grid_vertex_indices.append(_bytes.decode_u16(at + k * 2))
 			for k: int in CORNERS[t]:
 				var vertex: int = _bytes.decode_u16(at + k * 2)
 				if vertex >= vertices.size():
@@ -403,14 +409,38 @@ func _read_retained() -> void:
 		return
 	grid.dimensions = Vector2i(_bytes.decode_u16(o), _bytes.decode_u16(o + 2))
 	grid.cell_size = Vector2i(_bytes.decode_u16(o + 4), _bytes.decode_u16(o + 6))
+	if grid.dimensions.x > 0 and grid.dimensions.y > 0:
+		if grid.dimensions.x % 2 != 0 or grid.dimensions.y % 2 != 0:
+			warnings.append("GRID has odd dimensions; source world-bitmask interpolation retains its half-cell offset")
+		if grid.cell_size != Vector2i(256, 256):
+			warnings.append("GRID has non-256 cell sizes; gameplay setup requires 256-unit cells")
 	grid.count = grid.dimensions.x * grid.dimensions.y
 	if not _range(o + 8, grid.count * 4, "grid stacks", grid.end_offset):
 		return
 	for i: int in grid.count:
 		var at: int = o + 8 + i * 4
+		var stack := MapGridStack.new()
+		stack.source_offset = at
+		stack.square_count = _bytes[at]
+		stack.cliff_height_byte = _bytes[at + 1]
+		stack.first_square_index = _bytes.decode_u16(at + 2)
 		if _bytes.decode_u16(at + 2) != grid.grid_square_count:
 			error = "Grid stack index is not contiguous"
 			return
 		grid.grid_square_count += _bytes[at]
+		grid_stacks.append(stack)
 	if not _range(o + 8 + grid.count * 4, grid.grid_square_count * 8, "grid squares", grid.end_offset):
 		return
+	for i: int in grid.grid_square_count:
+		var at: int = o + 8 + grid.count * 4 + i * 8
+		var square := MapGridSquare.new()
+		square.source_offset = at
+		square.flags = _bytes.decode_u32(at)
+		if square.flags & ~0xFDFFF:
+			warnings.append("Grid square %d has unknown flags 0x%X" % [i, square.flags])
+		square.polygon_pointer = _bytes.decode_u32(at + 4)
+		if not _polygon_by_offset.has(square.polygon_pointer):
+			error = "Grid square pointer does not identify a polygon"
+			return
+		square.polygon_index = _polygon_by_offset[square.polygon_pointer]
+		grid_squares.append(square)

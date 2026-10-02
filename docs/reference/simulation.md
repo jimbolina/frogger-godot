@@ -1,15 +1,45 @@
 # Simulation contracts
 
-These are the gameplay design constraints for later phases; only the viewer clock and animation playback are implemented so far.
+`TerrainRun` implements one ordered terrain tick. Full level/entity simulation
+remains P8; [P7 validation](../validation/p7.md) records component and
+presentation integration checks.
 
-- Game logic runs in `_physics_process` at the original tick rate, with at most 3 steps per rendered frame. Rendering is interpolated. Godot's physics engine is not used; collision is the game's own.
-- The tick rate is an open question to settle in P7: the reference engine runs 30 ticks per second, while FrogLord's editor treats the PC release as 25. Compare reference traces and the retail game in P7.
+- The gameplay host schedules original-rate tick commands; the rules do not read wall time. Optional interpolation affects drawing only. Godot's physics engine is not used; collision is the game's own.
+- The owner selected frozen `froggy` source-port behavior: 30 Hz steady-state logic/presentation pacing. Its actual driver defines `FROGGER_TARGET_FPS=30`, computes `perf_freq / 30`, and its timer backend asserts `LOGIC_CALLS_PER_SEC==30`. This is source evidence independent of the existing viewer clock. See [PC timing evidence](pc-timing.md).
 - The model viewer uses that existing 30 Hz clock. Its optional smoothing changes only presentation and defaults off; textures and animation state stay tick-driven.
 - Entities update in the original list order, because random-number use depends on it.
 - These keep integer behaviour: the random number generator, script timers and counters, path distance stepping, grid coordinates and form heights, the game timer, score, entity delay counters, and radius-squared collision tests.
 - Frog hops last a whole number of ticks and snap to the grid on landing, so recorded demos replay approximately. Demo checks compare completion and end state, not the path.
-- Floats are fine for camera easing, particles, animation blending and interpolation.
+- Camera control uses the source's discrete integer state. Floats remain available for particles, animation blending and render interpolation; numeric conversion bounds require independent evidence.
 
-The C source defines 30 logic calls per second and creates a 33 ms PC timer; FrogLord converts PC entity delays using 25. P7 must resolve this discrepancy. If float demo playback drifts, use an integer-only frog and path core.
+The C source defines 30 logic calls per second and creates a 33 ms timer;
+these are source facts, not the supplied retail executable's timer contract.
+FrogLord converts PC entity delays using 25. The static retail audit found a
+20 ms periodic callback that supplies logic budget on alternate deliveries.
+Original-retail runtime delivery remains unmeasured. On 2026-10-01 the owner
+clarified that the C port's behavior is the target; this difference no longer
+blocks movement. The [terrain contract](terrain-movement.md) uses signed 16.16 frog state,
+with rendering interpolation separate from authoritative ticks.
 
-Future directories are created only when used: `src/game/` for world, entities, scripts, frog, camera, collision and effects; `src/mod/` for watching mod files and reporting unmapped behavior. See the [README layout](../../README.md#layout) for implemented directories.
+The source port arms one virtual timer tick per presented frame and delivers
+it at the next ordering-table clear. Its human-session driver uses an
+accumulating 30 Hz deadline, resetting the deadline after a large overrun so
+stalls do not bank a burst. Smoke/component comparisons have no wall-clock
+pacing. The original C loop caps accumulated virtual ticks at three; source
+reset/render-flush paths can supply several ticks to one driver call. A driver
+trace row therefore is not universally one logic tick. P7's rule API always
+performs exactly one tick per accepted command; host pacing and reset policy
+remain outside rules.
+
+Live debug input samples collected button state at the command boundary.
+Pressed edges are `held & ~previous_held`, matching `MR_INPUT.C`'s
+`in_pad_new & (in_pad_new ^ in_pad_old)`. A press released before sampling is
+absent. Scripted scenarios supply both masks explicitly. Direction precedence,
+camera mapping and the one-entry flight buffer remain rule responsibilities;
+the host does not consume or arbitrate them.
+
+`src/game/` owns detached terrain definitions and run state, grid queries,
+movement/collision, gameplay camera, animation control and source RNG. Entity
+and script systems arrive with their P8 callers. `src/mod/` remains future work
+for watching files and reporting unmapped behavior. See the
+[README layout](../../README.md#layout).

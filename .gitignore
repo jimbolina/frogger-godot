@@ -1,6 +1,7 @@
 # Godot's generated cache and import data
 .godot/
 *.translation
+/tests/golden/synthetic/*.csv.import
 
 # Export output and presets that may hold local paths or credentials
 /export/

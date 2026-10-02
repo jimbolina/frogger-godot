@@ -15,7 +15,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done, `b3188cd` |
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done; [validation](validation/p6.md) |
-| P7 | Grid, frog movement, camera, collision, deaths | XL | Side by side; the reference engine's per-tick traces within tolerance | |
+| P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; [validation](validation/p7.md), frozen C port's 30 Hz target |
 | P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
@@ -29,6 +29,12 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 
 Network play is deferred.
 
+The graphics follow-up for [animated per-part lighting](reference/gameplay-projection.md)
+needs source light/color matrices applied after each part's animation transform,
+with independent color samples. Existing static-probe prelighting does not
+provide this. P7's declared foreground checks cover geometry and silhouette;
+the visible color difference remains explicit.
+
 ## Needed from the owner
 
 | What | Needed by | Why |
@@ -40,20 +46,21 @@ Network play is deferred.
 The pre-P7 [domain foundation](reference/architecture.md) adds shared language,
 explicit viewer data ownership and local dependency/result guardrails. Its
 [validation report](validation/domain-foundation.md) records the checks;
-[remaining adoption work](plans/domain-foundation.md) belongs to P7/P8.
+[remaining adoption work](plans/domain-foundation.md) belongs to P8 and later.
 
 Start with [the current checkpoint](CURRENT.md). P6 is complete, including
 the owner's saved JUN1 terrain edit; see the [validation report](validation/p6.md).
-Plan P7 against current code and frozen per-tick traces. P7 settles retail
-timing, grid movement, gameplay camera, collision and deaths; P8 adds entity
-placement and is the first playable-level milestone.
+P7 establishes [source-port timing](reference/simulation.md),
+[terrain rules](reference/terrain-movement.md), gameplay camera and animation
+control through independent comparisons. See [P7 validation](validation/p7.md).
+P8 adds entity placement and is the first playable-level milestone.
 
 ## Completed-phase evidence
 
 Read these only when checking a historical result or reproducing a comparison:
 [archives (P1)](validation/p1.md), [textures (P3)](validation/p3.md),
 [models (P4)](validation/p4.md), [animation (P5)](validation/p5.md),
-[maps (P6)](validation/p6.md).
+[maps (P6)](validation/p6.md), [terrain gameplay (P7)](validation/p7.md).
 P0/P2 checks and generator cross-checks are documented in the
 [testing guide](reference/testing.md) and [golden specifications](../tests/golden/README.md).
 Current technical contracts are routed from [AGENTS.md](../AGENTS.md).

@@ -1,0 +1,540 @@
+{
+  "entries": [
+    {
+      "flags": 8,
+      "program": "froganim_scr_autohop",
+      "words": [
+        0,
+        0,
+        0,
+        0,
+        5,
+        3
+      ],
+      "name": "AUTOHOP"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_backflip",
+      "words": [
+        0,
+        0,
+        0,
+        1,
+        5,
+        3
+      ],
+      "name": "BACKFLIP"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_squished",
+      "words": [
+        0,
+        0,
+        0,
+        2,
+        4
+      ],
+      "name": "SQUISHED"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_wait1",
+      "words": [
+        0,
+        0,
+        0,
+        3,
+        5,
+        3
+      ],
+      "name": "WAIT1"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_timeout",
+      "words": [
+        0,
+        0,
+        0,
+        4,
+        4
+      ],
+      "name": "TIMEOUT"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_struggle",
+      "words": [
+        0,
+        1,
+        0,
+        5,
+        4
+      ],
+      "name": "STRUGGLE"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_falling",
+      "words": [
+        0,
+        1,
+        8,
+        6,
+        4
+      ],
+      "name": "FALLING"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_trigger",
+      "words": [
+        0,
+        0,
+        0,
+        7,
+        5,
+        3
+      ],
+      "name": "TRIGGER"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_drown",
+      "words": [
+        0,
+        0,
+        0,
+        8,
+        4
+      ],
+      "name": "DROWN"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_complete",
+      "words": [
+        0,
+        0,
+        0,
+        9,
+        5,
+        3
+      ],
+      "name": "COMPLETE"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_bitten",
+      "words": [
+        0,
+        0,
+        0,
+        10,
+        4
+      ],
+      "name": "BITTEN"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_freefall",
+      "words": [
+        0,
+        1,
+        5,
+        11,
+        4
+      ],
+      "name": "FREEFALL"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_flop",
+      "words": [
+        0,
+        0,
+        0,
+        12,
+        5,
+        4
+      ],
+      "name": "FLOP"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_ouch",
+      "words": [
+        0,
+        0,
+        0,
+        13,
+        5,
+        4
+      ],
+      "name": "OUCH"
+    },
+    {
+      "flags": 18,
+      "program": "froganim_scr_pant",
+      "words": [
+        0,
+        1,
+        0,
+        14,
+        1,
+        6,
+        0,
+        30,
+        0,
+        30,
+        31,
+        29,
+        28,
+        2,
+        3
+      ],
+      "name": "PANT"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_roll",
+      "words": [
+        0,
+        0,
+        0,
+        15,
+        5,
+        3
+      ],
+      "name": "ROLL"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_hop",
+      "words": [
+        0,
+        0,
+        0,
+        16,
+        5,
+        3
+      ],
+      "name": "HOP"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_superjump",
+      "words": [
+        0,
+        0,
+        0,
+        17,
+        5,
+        3
+      ],
+      "name": "SUPERJUMP"
+    },
+    {
+      "flags": 18,
+      "program": "froganim_scr_pant2",
+      "words": [
+        0,
+        1,
+        0,
+        18,
+        1,
+        6,
+        0,
+        30,
+        0,
+        30,
+        31,
+        29,
+        28,
+        2,
+        3
+      ],
+      "name": "PANT2"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_wait3",
+      "words": [
+        0,
+        0,
+        0,
+        19,
+        5,
+        3
+      ],
+      "name": "WAIT3"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_superhop",
+      "words": [
+        0,
+        0,
+        0,
+        20,
+        5,
+        3
+      ],
+      "name": "SUPERHOP"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_wait2",
+      "words": [
+        0,
+        0,
+        0,
+        21,
+        5,
+        3
+      ],
+      "name": "WAIT2"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_slip",
+      "words": [
+        0,
+        0,
+        0,
+        22,
+        5,
+        3
+      ],
+      "name": "SLIP"
+    },
+    {
+      "flags": 40,
+      "program": "froganim_scr_pop",
+      "words": [
+        0,
+        0,
+        0,
+        23,
+        4
+      ],
+      "name": "POP"
+    },
+    {
+      "flags": 4,
+      "program": "froganim_scr_slipright",
+      "words": [
+        0,
+        0,
+        0,
+        24,
+        5,
+        3
+      ],
+      "name": "SLIPRIGHT"
+    },
+    {
+      "flags": 4,
+      "program": "froganim_scr_slipleft",
+      "words": [
+        0,
+        0,
+        0,
+        25,
+        5,
+        3
+      ],
+      "name": "SLIPLEFT"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_crash",
+      "words": [
+        0,
+        0,
+        0,
+        26,
+        5,
+        3
+      ],
+      "name": "CRASH"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_phew",
+      "words": [
+        0,
+        0,
+        0,
+        27,
+        5,
+        3
+      ],
+      "name": "PHEW"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_lookdown",
+      "words": [
+        0,
+        0,
+        0,
+        28,
+        5,
+        3
+      ],
+      "name": "LOOKDOWN"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_lookup",
+      "words": [
+        0,
+        0,
+        0,
+        29,
+        5,
+        3
+      ],
+      "name": "LOOKUP"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_lookleft",
+      "words": [
+        0,
+        0,
+        0,
+        30,
+        5,
+        3
+      ],
+      "name": "LOOKLEFT"
+    },
+    {
+      "flags": 2,
+      "program": "froganim_scr_lookright",
+      "words": [
+        0,
+        0,
+        0,
+        31,
+        5,
+        3
+      ],
+      "name": "LOOKRIGHT"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_dance",
+      "words": [
+        0,
+        0,
+        0,
+        32,
+        5,
+        3
+      ],
+      "name": "DANCE"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_mown",
+      "words": [
+        0,
+        0,
+        0,
+        33,
+        5,
+        4
+      ],
+      "name": "MOWN"
+    },
+    {
+      "flags": 8,
+      "program": "froganim_scr_roll_repeating",
+      "words": [
+        0,
+        1,
+        0,
+        15,
+        4
+      ],
+      "name": "ROLL_REPEATING"
+    }
+  ],
+  "actions": [
+    "GEN_FROG_AUTOHOP",
+    "GEN_FROG_BACKFLIP",
+    "GEN_FROG_SQUISHED",
+    "GEN_FROG_WAIT1",
+    "GEN_FROG_TIMEOUT",
+    "GEN_FROG_STRUGGLE",
+    "GEN_FROG_FALLING",
+    "GEN_FROG_TRIGGER",
+    "GEN_FROG_DROWN",
+    "GEN_FROG_COMPLETE",
+    "GEN_FROG_BITTEN",
+    "GEN_FROG_FREEFALL",
+    "GEN_FROG_FLOP",
+    "GEN_FROG_OUCH",
+    "GEN_FROG_PANT",
+    "GEN_FROG_ROLL",
+    "GEN_FROG_HOP",
+    "GEN_FROG_SUPERJUMP",
+    "GEN_FROG_PANT2",
+    "GEN_FROG_WAIT3",
+    "GEN_FROG_SUPERHOP",
+    "GEN_FROG_WAIT2",
+    "GEN_FROG_SLIP",
+    "GEN_FROG_POP",
+    "GEN_FROG_SLIPRIGHT",
+    "GEN_FROG_SLIPLEFT",
+    "GEN_FROG_CRASH",
+    "GEN_FROG_PHEW",
+    "GEN_FROG_LOOKDOWN",
+    "GEN_FROG_LOOKUP",
+    "GEN_FROG_LOOKLEFT",
+    "GEN_FROG_LOOKRIGHT",
+    "GEN_FROG_DANCE",
+    "GEN_FROG_MOWN"
+  ],
+  "action_lengths": [
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3,
+    4,
+    5,
+    3
+  ]
+}

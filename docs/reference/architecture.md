@@ -5,7 +5,8 @@
 - `src/legacy/` decodes source facts, with file I/O where needed. Classes derive
   from `RefCounted` and depend on neither Nodes/tree access nor conversion,
   gameplay, scenes or presentation.
-- Future `src/game/` contains `RefCounted` definitions, live state and rules.
+- `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
+  camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;
   it does not depend on legacy readers, conversion or presentation, open files,
   poll input, consult wall time or access Nodes. Godot math types are allowed.
@@ -14,7 +15,7 @@
 - Conversion builds render resources from decoded data. Presentation owns
   scene lifetimes, input translation and drawing. `MapSceneData` is a rendering
   dependency bundle, not the future world's authoritative state.
-- Future simulation uses direct calls for ordered updates. Notifications follow
+- Simulation uses direct calls for ordered updates. Notifications follow
   state changes; subscriber order must not decide collision outcomes or RNG use.
   Rendering interpolation cannot feed back into authoritative state.
 
@@ -40,9 +41,17 @@ model definitions. Source replacement clears selections, caches and drawing
 references before another source is shown. Standalone viewer entry points and
 synthetic injection remain supported.
 
-Future runs will own frog/entity clocks, commands, RNG and mutable state; their
-coordinator will make source-backed update order explicit. P7/P8 must establish
-these concrete owners when the state is implemented, not add unused scaffolding.
+`TerrainRun` copies setup definitions and owns frog, camera, animation and RNG
+state. Each command operates on private candidate copies and commits only on
+success. Snapshots are detached, including nested camera/animation state.
+Component fixtures explicitly omit unrelated systems; integrated inspection
+supplies camera defaults and copied high-detail frog action lengths. P8 adds
+entity state and its source-ordered updates before frogs.
+
+`TerrainGridSetup` copies decoded geometry, flags and scalar source identities
+into grid definitions; those definitions retain no legacy or rendering objects.
+Treat definitions as immutable after setup. Grid queries return new result
+objects and do not retain or mutate caller state.
 
 ## Extending behavior
 

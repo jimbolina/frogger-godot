@@ -2,6 +2,12 @@
 
 External material is read-only. All external paths below are relative to the repository root, not this document. Read only the sources needed for the current task.
 
+The owner explicitly selected frozen `froggy` C-port behavior, including its
+verified 30 Hz pacing, on 2026-10-01. Original retail executable timing does not
+override that target or block implementation. Player executables remain data
+sources for recognition and tables; their data role is separate from behavioral
+authority. See [simulation](simulation.md).
+
 ## The reference engine: `../froggy`
 
 A port of the original C game code to modern PCs, matched against the retail PC game. It is frozen and serves as the behavioural reference for this project. Its own documentation uses milestone and ruling numbers; none of that bookkeeping belongs in this repository.

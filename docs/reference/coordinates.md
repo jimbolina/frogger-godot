@@ -1,7 +1,9 @@
 # Coordinates and projection
 
 - Fixed in P4: a game position `(x, y, z)` is drawn at Godot `(x, -y, -z) / 256`. One grid square is one Godot unit. The game's y points down; this is a half turn about the x axis, not a mirror image, so polygons keep their stored corner order and Godot's back-face culling works as the original's did. `GameSpace` is the only place that converts.
-- Game logic keeps the original whole units. Only what is drawn is converted.
+- Terrain geometry and camera translations keep original whole units; frog
+  positions and per-tick velocities use signed 16.16. `GameSpace.fixed_position`
+  converts those values for drawing without dropping fractional game units.
 
 Animation bases use `C * basis * C`, translations `C * translation / 256`, where `C = diag(1,-1,-1)`. Part transforms sit below model placement.
 

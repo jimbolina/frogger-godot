@@ -1,7 +1,7 @@
 extends GutTest
 ## Real synthetic archive handles exercise every viewer's borrowed/owned lifetime contract.
 
-const SCENES: PackedStringArray = ["res://scenes/tools/texture_viewer.tscn", "res://scenes/tools/model_viewer.tscn", "res://scenes/tools/map_viewer.tscn"]
+const SCENES: PackedStringArray = ["res://scenes/tools/texture_viewer.tscn", "res://scenes/tools/model_viewer.tscn", "res://scenes/tools/map_viewer.tscn", "res://scenes/tools/terrain_viewer.tscn"]
 const PAYLOAD: String = "viewer lifetime!"
 var _opened: Array[GameData] = []
 var _folders := PackedStringArray()

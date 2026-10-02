@@ -2,6 +2,11 @@
 
 Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.md).
 
+Terrain frog script requests, queues, random idle selection and authoritative
+virtual-cel advancement are specified in [frog animation control](frog-animation-control.md).
+Presentation samples that action/cel state with the existing model decoder;
+render callbacks do not advance gameplay animation clocks.
+
 ### Stored data and unsafe records
 
 The retail archive contains 78 XAR files, 28,447 transforms, 187 actions and

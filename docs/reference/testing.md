@@ -34,6 +34,10 @@ architecture. A selection matching no tests fails. Before committing, always
 run both complete modes without selectors.
 In PowerShell, quote options containing resource paths, for example
 `'-gdir=res://tests/unit/presentation'`.
+For a focused group, use `'-gdir='` and
+`'-gtest=res://tests/unit/game/test_terrain_run.gd,res://tests/unit/game/test_terrain_specials.gd'`.
+The empty directory list prevents the configured broad scan; exact scripts
+still use the same strict compilation, architecture and report validation.
 
 The [architecture contract](architecture.md#automated-checks) explains the
 scanner and its limits. Its `ARCHITECTURE FAILED` diagnostics identify the
@@ -61,6 +65,11 @@ the wrappers with a bare automated Godot launch. A sandbox root-certificate
 warning has been benign; determine success from compilation/tests and exit status.
 
 ## Tools and visual verification
+
+The game implementation is GDScript. `tools/*.c` files are offline validation
+adapters that call unchanged frozen reference objects and emit text facts;
+they are not loaded by the game. Their builders need a developer compiler,
+but normal runtime use and the Godot test suites do not build or load them.
 
 - Godot 4.5.1 Compatibility: `C:\Users\janit\Desktop\Godot.exe`.
   Its windowed executable does not reliably print to a console; use log files.

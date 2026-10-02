@@ -22,7 +22,9 @@ references separately. Read visible groups and the extra invisible group.
 The survey found invisible polygons in 68 files. Six low-detail maps have
 polygons absent from serialized group lists: JUN1, JUN2, SWP1, SWP2, SWP4,
 SWP5. Preserve/report these; don't reject the file or make them visible.
-Gameplay packets retain bounded metadata; their behavior belongs to P7/P8.
+GRID now retains ordered stacks and squares, flags, polygon offsets and all
+four calculation corners; [grid](grid.md) owns decoding, setup and query rules.
+Other gameplay packets retain bounded metadata; their behavior belongs to P8.
 
 ## Rendering
 

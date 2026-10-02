@@ -23,6 +23,11 @@ static func position(x: int, y: int, z: int) -> Vector3:
 	return Vector3(x, -y, -z) / UNITS_PER_SQUARE
 
 
+## Converts a signed 16.16 game position without discarding its fractional units.
+static func fixed_position(at: Vector3i) -> Vector3:
+	return Vector3(at.x, -float(at.y), -float(at.z)) / (65536.0 * UNITS_PER_SQUARE)
+
+
 ## The Godot direction of a stored normal.
 static func normal(x: int, y: int, z: int) -> Vector3:
 	return Vector3(x, -y, -z) / NORMAL_ONE

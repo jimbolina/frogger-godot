@@ -8,10 +8,15 @@ disagreements in the relevant technical reference; do not invent rules.
 ## Contexts and identities
 
 **Source compatibility** describes the player's selected files and decoded
-facts. **Live play** will describe one running game's state and rules in P7/P8.
+facts. **Live play** describes one running game's state and rules in P7/P8.
 Setup translates between these meanings; presentation and inspection tools
-are consumers. Live play is not implemented yet. See [architecture](architecture.md)
+are consumers. `TerrainRun` now owns the first frog component rules and detached
+snapshots; entity and complete level play remain later slices. See [architecture](architecture.md)
 for dependencies and ownership.
+
+The first gameplay definitions are detached static terrain grids, copied by
+`TerrainGridSetup` from decoded map records. Pure `GridQueries` uses these
+definitions without files or scene resources; see [grid](grid.md).
 
 | Term | Meaning and authoritative contract |
 |---|---|
@@ -41,5 +46,5 @@ must retain their source identity and diagnostics and use a documented fallback;
 the owning behavior phase must define that fallback before execution is added.
 
 Mods may select supported original behavior; player data never introduces
-executable code. Gameplay timing, including the 25/30 Hz discrepancy, remains
-an explicit P7 prerequisite in the simulation contract.
+executable code. The owner selected frozen C port behavior at 30 Hz; the
+separate original-executable discrepancy is recorded in the simulation contract.

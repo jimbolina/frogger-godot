@@ -9,7 +9,8 @@ static func external_folder(folder: String) -> bool:
 		return false
 	var project: String = ProjectSettings.globalize_path("res://").replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
 	var resolved: String = folder.replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
-	return resolved != project and not resolved.begins_with(project + "/")
+	var frozen: String = ProjectSettings.globalize_path("res://../froggy").replace("\\", "/").simplify_path().trim_suffix("/").to_lower()
+	return resolved != project and not resolved.begins_with(project + "/") and resolved != frozen and not resolved.begins_with(frozen + "/")
 
 
 ## Creates a permitted destination. Returns an actionable error, or an empty string on success.
