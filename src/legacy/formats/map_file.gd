@@ -26,6 +26,8 @@ var lights: Array[MapLight] = []
 var animations: Array[MapAnimation] = []
 ## Bounded entity payloads, without gameplay decoding.
 var entities: Array[MapEntitySpan] = []
+## Source-ordered FORM collision grids, including empty entries.
+var forms: Array[MapForm] = []
 ## Ordered collision stacks and layers, without gameplay conversion.
 var grid_stacks: Array[MapGridStack] = []
 var grid_squares: Array[MapGridSquare] = []
@@ -408,6 +410,9 @@ func _read_retained() -> void:
 				entity.flags = _bytes.decode_u16(at + 6)
 				entity.payload = _bytes.slice(at + 24, end)
 				entities.append(entity)
+	_read_forms()
+	if not error.is_empty():
+		return
 	var grid: MapPacket = packets["GRID"]
 	var o: int = grid.source_offset + 4
 	if not _range(o, 8, "GRID header", grid.end_offset):
@@ -449,6 +454,76 @@ func _read_retained() -> void:
 			return
 		square.polygon_index = _polygon_by_offset[square.polygon_pointer]
 		grid_squares.append(square)
+
+func _read_forms() -> void:
+	var packet: MapPacket = packets["FORM"]
+	for index: int in packet.count:
+		var at: int = packet.offsets[index]
+		var end: int = packet.end_offset
+		for ptr: int in packet.offsets:
+			if ptr > at:
+				end = mini(end, ptr)
+		if not _range(at, 12, "FORM header", end):
+			return
+		var form := MapForm.new()
+		form.form_index = index
+		form.source_offset = at
+		form.end_offset = end
+		form.data_count = _bytes.decode_u16(at)
+		form.stored_max_y = _bytes.decode_s16(at + 2)
+		form.dimensions = Vector2i(_bytes.decode_s16(at + 4), _bytes.decode_s16(at + 6))
+		form.offsets = Vector2i(_bytes.decode_s16(at + 8), _bytes.decode_s16(at + 10))
+		if not _range(at + 12, form.data_count * 4, "FORM data pointers", end):
+			return
+		if form.data_count == 0:
+			if form.dimensions.x <= 0 or form.dimensions.y <= 0:
+				form.diagnostics.append("Empty FORM retains nonpositive dimensions")
+			forms.append(form)
+			continue
+		if form.data_count != 1:
+			form.diagnostics.append("Multiple FORM_DATA records; gameplay uses only the first")
+		if form.dimensions.x <= 0 or form.dimensions.y <= 0:
+			form.diagnostics.append("FORM_DATA has nonpositive grid dimensions")
+		var data_pointers := PackedInt32Array()
+		for data_index: int in form.data_count:
+			var pointer: int = _bytes.decode_u32(at + 12 + data_index * 4)
+			if data_pointers.has(pointer) or pointer < at + 12 + form.data_count * 4 or not _range(pointer, 12, "FORM_DATA header", end):
+				error = "Invalid FORM_DATA record pointer"
+				return
+			data_pointers.append(pointer)
+		for data_index: int in form.data_count:
+			var data_at: int = data_pointers[data_index]
+			var data_end: int = end
+			for pointer: int in data_pointers:
+				if pointer > data_at:
+					data_end = mini(data_end, pointer)
+			if not _range(data_at, 12, "FORM_DATA bounded header", data_end):
+				return
+			var entry := MapFormData.new()
+			entry.source_offset = data_at
+			entry.end_offset = data_end
+			entry.height_type = _bytes.decode_u16(data_at)
+			entry.height = _bytes.decode_s16(data_at + 2)
+			entry.flags_pointer = _bytes.decode_u32(data_at + 4)
+			entry.heights_pointer = _bytes.decode_u32(data_at + 8)
+			if entry.height_type != 0:
+				entry.diagnostics.append("Unsupported FORM_DATA height mode %d" % entry.height_type)
+			if entry.heights_pointer != data_at + 2:
+				entry.diagnostics.append("FORM_DATA height pointer differs from scalar height")
+			if form.dimensions.x > 0 and form.dimensions.y > 0:
+				var square_count: int = form.dimensions.x * form.dimensions.y
+				if entry.flags_pointer < data_at + 12 or not _range(entry.flags_pointer, square_count * 2, "FORM_DATA grid flags", data_end):
+					error = "Invalid FORM_DATA grid flags pointer"
+					return
+				for square_index: int in square_count:
+					entry.grid_flags.append(_bytes.decode_u16(entry.flags_pointer + square_index * 2))
+			else:
+				if entry.flags_pointer < data_at + 12 or entry.flags_pointer > data_end:
+					error = "Invalid FORM_DATA grid flags pointer"
+					return
+				entry.diagnostics.append("Grid flags unavailable for nonpositive dimensions")
+			form.data.append(entry)
+		forms.append(form)
 
 func _read_paths() -> void:
 	var packet: MapPacket = packets["PATH"]

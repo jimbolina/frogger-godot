@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: paths and bounded STATIC/MOVING entity transforms with inspection |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: paths, STATIC/MOVING transforms and one-entity FORM contact inspection |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -43,10 +43,12 @@ the visible color difference remains explicit.
 
 ## Next: entities and the first playable level
 
-Extend the [bounded entity transform component](reference/gameplay/entities.md)
-with entity/form collision, scripts and zones. Resolve callbacks through verified
-names and supported implementations; preserve source ordering and test unknown
-mappings. Per-build form callback address mappings still need investigation.
+Extend the [bounded FORM contact query](reference/gameplay/entities.md) with
+lethal obstacle reactions and transactional frog/entity integration. Add
+moving-platform riding after contact is integrated, then scripts and zones.
+Resolve callbacks through verified names and supported implementations;
+preserve source ordering and test unknown mappings. Per-build form callback
+address mappings still need investigation.
 Mods may repoint supported behaviors but never load new code.
 
 Extend current entity diagnostics and inspection as behaviors are added. Use the first additional behavior

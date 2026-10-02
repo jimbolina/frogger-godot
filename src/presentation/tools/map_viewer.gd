@@ -73,6 +73,11 @@ var _entity_selected: int = -1
 var _entity_toggle: CheckButton
 var _entity_choice: OptionButton
 var _entity_readout: Label
+var _entity_contact_readout: Label
+var _form_contacts: Array[FormContactDefinition] = []
+var _form_probe_world: Vector3i = Vector3i.ZERO
+var _form_probe_spins: Array[SpinBox] = []
+var _form_place_button: Button
 var _inspection_tabs: TabContainer
 
 func _ready() -> void:
@@ -459,9 +464,14 @@ func _build_scene() -> void:
 	path_panel.add_child(_path_readout)
 	_path_readout.text = "Inspection settings\nNo path selected"
 	_set_path_controls_enabled(false)
+	var entity_scroll := ScrollContainer.new()
+	entity_scroll.name = "Entities"
+	entity_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	entity_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	tabs.add_child(entity_scroll)
 	var entity_panel := VBoxContainer.new()
-	entity_panel.name = "Entities"
-	tabs.add_child(entity_panel)
+	entity_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	entity_scroll.add_child(entity_panel)
 	_entity_toggle = CheckButton.new()
 	_entity_toggle.text = "Show entity axes"
 	_entity_toggle.toggled.connect(set_entity_visibility)
@@ -469,8 +479,31 @@ func _build_scene() -> void:
 	_entity_choice = OptionButton.new()
 	_entity_choice.item_selected.connect(_on_entity_selected)
 	entity_panel.add_child(_entity_choice)
+	_entity_contact_readout = Label.new()
+	_entity_contact_readout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_entity_contact_readout.text = "FORM point contact · no reaction\nNo contact probe attached"
+	entity_panel.add_child(_entity_contact_readout)
+	var probe_row := GridContainer.new()
+	probe_row.columns = 2
+	entity_panel.add_child(probe_row)
+	for axis: String in ["X", "Y", "Z"]:
+		var spin := SpinBox.new()
+		spin.prefix = axis
+		spin.min_value = -2147483648.0
+		spin.max_value = 2147483647.0
+		spin.step = 1.0
+		spin.rounded = true
+		spin.custom_minimum_size = Vector2(98, 0)
+		spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		spin.value_changed.connect(_on_form_probe_changed)
+		probe_row.add_child(spin)
+		_form_probe_spins.append(spin)
+	_form_place_button = Button.new()
+	_form_place_button.text = "Place probe in first cell"
+	_form_place_button.pressed.connect(_place_form_probe_first_cell)
+	entity_panel.add_child(_form_place_button)
 	_entity_readout = Label.new()
-	_entity_readout.custom_minimum_size = Vector2(210, 0)
+	_entity_readout.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_entity_readout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_entity_readout.text = "Base-transform inspection\nNo entities attached"
 	entity_panel.add_child(_entity_readout)
@@ -703,6 +736,21 @@ func _setup_entities() -> void:
 		scene_data.diagnostics.append(issue)
 	else:
 		_entity_setup = setup
+		var contact_setup: FormContactSetup = FormContactSetup.from_data(data, scene_data.level, scene_data.low_poly, setup.definitions)
+		if not contact_setup.error.is_empty():
+			scene_data.diagnostics.append("FORM contact setup: " + contact_setup.error)
+		else:
+			if source_id == "ORG1":
+				for item: int in _entity_choice.item_count:
+					if _entity_choice.get_item_id(item) == 12:
+						_entity_choice.select(item)
+						_on_entity_selected(item)
+						break
+			var contact_issue: String = set_form_contacts(contact_setup.definitions)
+			if not contact_issue.is_empty():
+				scene_data.diagnostics.append("FORM contact inspection: " + contact_issue)
+			for diagnostic: EntitySetupDiagnostic in contact_setup.diagnostics:
+				scene_data.diagnostics.append(diagnostic.to_text())
 		_entity_readout.tooltip_text = "\n".join(_entity_diagnostic_text())
 		_update_entity_readout()
 
@@ -732,6 +780,76 @@ func set_entity_definitions(definitions: Array[EntityDefinition]) -> String:
 	_entity_inspection.set_selected(0 if not copies.is_empty() else -1)
 	_replay_entities(tick)
 	return ""
+
+## Attaches detached FORM facts to the existing entity slots and starts the probe.
+func set_form_contacts(definitions: Array[FormContactDefinition], probe: Vector3i = Vector3i.ZERO, place_first: bool = true) -> String:
+	if _entity_run == null:
+		return "Entity run is not attached"
+	var aligned: Array[FormContactDefinition] = []
+	for entity: EntityDefinition in _entity_definitions:
+		var found: FormContactDefinition = null
+		for candidate: FormContactDefinition in definitions:
+			if candidate != null and candidate.entity_index == entity.entity_index:
+				found = candidate
+				break
+		if found == null:
+			return "Missing FORM contact for entity %d" % entity.entity_index
+		if found.unique_id != entity.unique_id or found.form_grid_id != entity.form_grid_id or found.form_id != entity.form_id or found.entity_flags != entity.flags:
+			return "FORM contact identity differs for entity %d" % entity.entity_index
+		aligned.append(found.copy())
+	_form_contacts = aligned
+	_form_probe_world = probe
+	if _entity_inspection != null:
+		_entity_inspection.configure_contacts(_form_contacts)
+		_entity_inspection.set_selected(_selected_entity_slot())
+		_entity_inspection.set_snapshot(entity_snapshot())
+	if place_first:
+		_place_form_probe_first_cell()
+	else:
+		_sync_form_probe_spins()
+		_update_form_contact()
+	return ""
+
+## Returns one detached contact result for the selected entity and fixed probe.
+func selected_form_contact() -> FormContactResult:
+	var slot: int = _selected_entity_slot()
+	var snapshot: EntityRunSnapshot = entity_snapshot()
+	if slot < 0 or slot >= _form_contacts.size() or snapshot == null or slot >= snapshot.entities.size():
+		return null
+	return FormContactQuery.query(_form_contacts[slot], snapshot.entities[slot], _form_probe_world)
+
+func _selected_entity_slot() -> int:
+	for index: int in _entity_definitions.size():
+		if _entity_definitions[index].entity_index == _entity_selected:
+			return index
+	return -1
+
+func _on_form_probe_changed(_value: float) -> void:
+	if _form_probe_spins.size() != 3:
+		return
+	_form_probe_world = Vector3i(int(_form_probe_spins[0].value), int(_form_probe_spins[1].value), int(_form_probe_spins[2].value))
+	_update_form_contact()
+
+func _sync_form_probe_spins() -> void:
+	if _form_probe_spins.size() != 3:
+		return
+	_form_probe_spins[0].set_value_no_signal(_form_probe_world.x)
+	_form_probe_spins[1].set_value_no_signal(_form_probe_world.y)
+	_form_probe_spins[2].set_value_no_signal(_form_probe_world.z)
+
+func _place_form_probe_first_cell() -> void:
+	var slot: int = _selected_entity_slot()
+	var snapshot: EntityRunSnapshot = entity_snapshot()
+	if slot < 0 or slot >= _form_contacts.size() or snapshot == null or slot >= snapshot.entities.size():
+		return
+	_form_probe_world = EntityScenario._first_cell_world(_form_contacts[slot], snapshot.entities[slot])
+	_sync_form_probe_spins()
+	_update_form_contact()
+
+func _update_form_contact() -> void:
+	if _entity_inspection != null:
+		_entity_inspection.set_contact(_form_probe_world, selected_form_contact())
+	_update_entity_readout()
 
 ## Returns source-located setup messages without exposing mutable map records.
 func entity_diagnostics() -> Array[EntitySetupDiagnostic]:
@@ -776,7 +894,7 @@ func _replay_entities(target_tick: int) -> void:
 		_entity_failure(issue)
 	if _entity_inspection != null:
 		_entity_inspection.set_snapshot(entity_snapshot())
-	_update_entity_readout()
+	_update_form_contact()
 
 func _step_entities(previous_tick: int) -> void:
 	if _entity_run == null:
@@ -786,7 +904,7 @@ func _step_entities(previous_tick: int) -> void:
 		_entity_failure(issue)
 	if _entity_inspection != null:
 		_entity_inspection.set_snapshot(entity_snapshot())
-	_update_entity_readout()
+	_update_form_contact()
 
 func _entity_failure(issue: String) -> void:
 	set_playing(false)
@@ -805,6 +923,8 @@ func _update_entity_readout() -> void:
 	if snapshot == null or _entity_selected < 0:
 		var count: int = _entity_setup.diagnostics.size() if _entity_setup != null else 0
 		_entity_readout.text = "Base-transform inspection\nNo supported entities\n%d diagnostics (hover)" % count
+		if _entity_contact_readout != null:
+			_entity_contact_readout.text = "FORM point contact · no reaction\nNo contact probe attached"
 		return
 	for index: int in _entity_definitions.size():
 		var definition: EntityDefinition = _entity_definitions[index]
@@ -827,19 +947,36 @@ func _update_entity_readout() -> void:
 			labels.append("world align")
 		var flags_text: String = "none" if labels.is_empty() else ", ".join(labels)
 		var diagnostic_count: int = _entity_setup.diagnostics.size() if _entity_setup != null else 0
-		_entity_readout.text = "Base-transform inspection\n%s · %s · id %d\n%s (0x%X) · tick %d\n%s\nPosition %d, %d, %d\nScripts/callbacks unexecuted\n%d diagnostics (hover)" % [definition.form_name, definition.entity_name, entity.unique_id, flags_text, definition.flags, snapshot.tick_index, path_text, entity.matrix12[9], entity.matrix12[10], entity.matrix12[11], diagnostic_count]
+		var title: String = "FORM contact inspection" if not _form_contacts.is_empty() else "Base-transform inspection"
+		var hooks: String = "Scripts/callbacks/reactions unexecuted" if not _form_contacts.is_empty() else "Scripts/callbacks unexecuted"
+		_entity_readout.text = "%s\n%s · %s · id %d\n%s (0x%X) · tick %d\n%s\nPosition %d, %d, %d\n%s\n%d diagnostics (hover)" % [title, definition.form_name, definition.entity_name, entity.unique_id, flags_text, definition.flags, snapshot.tick_index, path_text, entity.matrix12[9], entity.matrix12[10], entity.matrix12[11], hooks, diagnostic_count]
+		var contact: FormContactResult = selected_form_contact()
+		if _entity_contact_readout != null:
+			_entity_contact_readout.text = "FORM contact inspection · point only\nReactions/scripts unexecuted"
+			if contact != null:
+				_entity_contact_readout.text += "\nProbe %d, %d, %d: %s" % [_form_probe_world.x, _form_probe_world.y, _form_probe_world.z, contact.status]
+				if contact.status == FormContactResult.CONTACT:
+					_entity_contact_readout.text += "\nCell %d, %d · flags 0x%X" % [contact.cell.x, contact.cell.y, contact.cell_flags]
+				elif not contact.reason.is_empty():
+					_entity_contact_readout.text += "\n" + contact.reason
+			else:
+				_entity_contact_readout.text += "\nNo contact grid attached"
 		return
 
 func _on_entity_selected(item: int) -> void:
 	_entity_selected = _entity_choice.get_item_id(item)
 	if _entity_inspection != null:
 		_entity_inspection.set_selected(item)
-	_update_entity_readout()
+		_entity_inspection.set_snapshot(entity_snapshot())
+	_update_form_contact()
 
 func _release_entities(detach: bool = true) -> void:
 	_entity_setup = null
 	_entity_run = null
 	_entity_definitions.clear()
+	_form_contacts.clear()
+	_form_probe_world = Vector3i.ZERO
+	_sync_form_probe_spins()
 	_entity_selected = -1
 	_entity_visible = false
 	if _entity_toggle != null:
@@ -851,6 +988,8 @@ func _release_entities(detach: bool = true) -> void:
 	if _entity_readout != null:
 		_entity_readout.text = "Base-transform inspection\nNo entities attached"
 		_entity_readout.tooltip_text = ""
+	if _entity_contact_readout != null:
+		_entity_contact_readout.text = "FORM point contact · no reaction\nNo contact probe attached"
 	if _entity_inspection != null:
 		if detach and _entity_inspection.get_parent() == _world:
 			_world.remove_child(_entity_inspection)
@@ -1074,6 +1213,15 @@ func _run_entity_scenario() -> void:
 		if not attach_issue.is_empty():
 			_fail_path_run(attach_issue)
 			return
+	var contact_issue: String = set_form_contacts(scenario.contact_definitions, scenario.probe_world, false)
+	if not contact_issue.is_empty():
+		_fail_path_run(contact_issue)
+		return
+	for index: int in _entity_choice.item_count:
+		if _entity_choice.get_item_id(index) == scenario.contact_entity_index:
+			_entity_choice.select(index)
+			_on_entity_selected(index)
+			break
 	set_entity_visibility(true)
 	_inspection_tabs.current_tab = 1
 	var trace := EntityTrace.new()

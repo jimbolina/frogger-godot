@@ -5,6 +5,9 @@ func test_builtin_shares_path_but_owns_independent_cursors() -> void:
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")
 	assert_eq(scenario.error, "")
 	assert_eq(scenario.definitions.size(), 4)
+	assert_eq(scenario.contact_definitions.size(), 4)
+	assert_eq(scenario.contact_entity_index, 1)
+	assert_eq(scenario.probe_world, Vector3i(-100, 0, 0))
 	assert_eq(scenario.definitions[0].entity_name, "STATIC")
 	assert_eq(scenario.definitions[1].path_definition.path_index, scenario.definitions[2].path_definition.path_index)
 	assert_not_same(scenario.definitions[1].path_definition, scenario.definitions[2].path_definition)
@@ -40,8 +43,12 @@ func test_trace_records_metadata_and_every_snapshot_deterministically() -> void:
 	var metadata: Dictionary = JSON.parse_string(trace.rows[0])
 	var schema: String = metadata["schema"]
 	var identities: Array = metadata["entities"]
-	assert_eq(schema, "entity-run-v1")
+	assert_eq(schema, "entity-contact-v1")
 	assert_eq(identities.size(), 4)
+	var contacts: Array = metadata["contacts"]
+	assert_eq(contacts.size(), 4)
+	var probe_values: Array = metadata["probe_world"]
+	assert_eq(probe_values, [-100.0, 0.0, 0.0])
 	var tick_one: Dictionary = JSON.parse_string(trace.rows[2])
 	var tick_index: int = tick_one["tick_index"]
 	var entities: Array = tick_one["entities"]
@@ -50,6 +57,15 @@ func test_trace_records_metadata_and_every_snapshot_deterministically() -> void:
 	var stopped_moving: Dictionary = entities[2]
 	var first_path: Dictionary = first_moving["path"]
 	var stopped_path: Dictionary = stopped_moving["path"]
+	var moving_contact: Dictionary = first_moving["contact"]
+	var contact_status: String = moving_contact["status"]
+	var contact_local: Array = moving_contact["local_position"]
+	var contact_cell: Array = moving_contact["cell"]
+	var contact_flags: int = moving_contact["cell_flags"]
+	assert_eq(contact_status, FormContactResult.CONTACT)
+	assert_eq(contact_local, [0.0, 0.0, -10.0])
+	assert_eq(contact_cell, [1.0, 0.0])
+	assert_eq(contact_flags, 1)
 	var first_distance: int = first_path["segment_distance"]
 	var stopped_distance: int = stopped_path["segment_distance"]
 	var static_path_is_null: bool = static_row["path"] == null

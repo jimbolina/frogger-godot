@@ -20,7 +20,8 @@ disagreements in the relevant technical reference; do not invent rules.
 facts. **Live play** describes one running game's state and rules.
 Setup translates between these meanings; presentation and inspection tools
 are consumers. `TerrainRun` now owns the first frog component rules and detached
-snapshots; bounded entity transforms exist, while complete level play is not implemented. See [architecture](architecture.md)
+snapshots; bounded entity transforms and a one-entity FORM contact query exist,
+while complete level play is not implemented. See [architecture](architecture.md)
 for dependencies and ownership.
 
 The first gameplay definitions are detached static terrain grids, copied by
@@ -36,7 +37,7 @@ owns a separate runner, including when paths share geometry. See
 | Archive resource / Godot Resource | An original indexed file versus an engine resource object. An archive index is meaningful only with its owning source; see [archives](data/archives.md). |
 | Map / level | A decoded map resource versus a level selected through the executable map book and its dependencies; see [maps](data/maps.md). High/low detail use different resources. |
 | Path / path runner | Authored map geometry and its source index versus one mutable cursor over a detached definition. A path can serve multiple entities with separate cursors; see [paths](gameplay/paths.md). |
-| Form book entry / form grid | A named object kind selecting behavior, model and script versus the authored form-grid reference of a map entity. Form-book ids are scoped to a theme (or GENERAL); live form-grid collision is not implemented. |
+| Form book entry / form grid | A named object kind selecting behavior, model and script versus a map's indexed collision grid. Form-book ids are scoped to a theme (or GENERAL); bounded contact inspection reads the grid without running frog reactions. |
 | Map entity / live entity | An authored map record versus run-owned base transform and optional path cursor. Authored record identity is scoped to its map; run identity uses the authored array index even when retained indices have gaps. See [entities](gameplay/entities.md). |
 | Entity script / GDScript | Original opcode data versus this project's implementation language. Decoding a script does not execute it; see [executable tables](data/executable-tables.md). |
 | Tick / rendered frame / animation frame / cel | A logic update, displayed image, animation clock position and authored pose selection. See [simulation](gameplay/simulation.md) and [animation](data/animation.md). |
@@ -51,8 +52,10 @@ FrogLord's named entity overrides. `GameData` resolves the selected model/WAD
 for existing tools. Parser examples live in the executable-table unit tests;
 retail facts live in the corresponding golden tests.
 
-Entity setup currently selects supported STATIC/MOVING base transforms by
-resolved name; no general behavior registry exists yet. Form callback
+Entity setup selects supported STATIC/MOVING base transforms by resolved name.
+The [FORM contact contract](gameplay/entities.md#form-contact-inspection) copies
+the selected grid and checks one detached entity pose against a world point.
+No general behavior registry exists yet. Form callback
 addresses need verified per-build name mappings before callback execution; the script
 list's `CallbackNames` is a separate opcode callback namespace. Unknown entries
 must retain their source identity and diagnostics and use a documented fallback;

@@ -10,7 +10,7 @@ import sys
 
 def read_trace(path):
     rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()]
-    if not rows or rows[0].get('schema') != 'entity-run-v1':
+    if not rows or rows[0].get('schema') != 'entity-contact-v1':
         raise ValueError(f'Invalid entity trace: {path}')
     if len(rows) != rows[0]['tick_limit'] + 2:
         raise ValueError(f'Entity trace row count differs from tick limit: {path}')

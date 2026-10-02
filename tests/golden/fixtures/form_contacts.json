@@ -1,0 +1,41 @@
+{
+  "defaults": {
+    "matrix12": [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0],
+    "frog": [0, 0, 0],
+    "offsets": [-256, -256],
+    "dimensions": [2, 2],
+    "height": -100,
+    "max_y": 100,
+    "radius_squared": 1000000,
+    "entity_flags": 0,
+    "grid_flags": [17, 17, 17, 17],
+    "entity_index": 7,
+    "unique_id": 41,
+    "form_grid_id": 2,
+    "form_id": 3,
+    "form_name": "SYNTHETIC_FORM"
+  },
+  "cases": [
+    {"name": "origin_contact"},
+    {"name": "sphere_exact_edge", "frog": [100, 0, 0], "radius_squared": 10000},
+    {"name": "sphere_just_inside", "frog": [99, 0, 0], "radius_squared": 10000},
+    {"name": "sphere_negative_radius", "radius_squared": -1},
+    {"name": "x_min_exact", "frog": [-256, 0, 0]},
+    {"name": "x_min_inside", "frog": [-255, 0, 0]},
+    {"name": "x_max_exact", "frog": [256, 0, 0]},
+    {"name": "z_min_exact", "frog": [0, 0, -256]},
+    {"name": "z_max_exact", "frog": [0, 0, 256]},
+    {"name": "y_lower_inclusive", "frog": [0, -100, 0]},
+    {"name": "y_upper_inclusive", "frog": [0, 100, 0]},
+    {"name": "y_below", "frog": [0, -101, 0]},
+    {"name": "y_above", "frog": [0, 101, 0]},
+    {"name": "translated", "matrix12": [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 100, -20, 200], "frog": [150, -20, 150]},
+    {"name": "rotated", "matrix12": [0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 100, -20, 200], "frog": [150, -20, 150]},
+    {"name": "signed16_displacement", "matrix12": [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -30000, 0, 0], "frog": [30000, 0, 50], "offsets": [-6000, 0], "dimensions": [16, 1], "grid_flags": [17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17], "radius_squared": 40000000},
+    {"name": "signed32_dot_overflow", "matrix12": [32767, 0, 0, 32767, 4096, 0, 32767, 0, 4096, 0, 0, 0], "frog": [30000, 30000, 30000], "radius_squared": 2147483647},
+    {"name": "sphere_sum_overflow", "frog": [30000, 30000, 30000], "radius_squared": 2147483647},
+    {"name": "sphere_sum_overflow_contact", "matrix12": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "frog": [30000, 30000, 30000], "radius_squared": 1},
+    {"name": "no_collision", "entity_flags": 8},
+    {"name": "cell_flags_observed", "grid_flags": [0, 0, 0, 0]}
+  ]
+}

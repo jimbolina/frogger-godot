@@ -86,7 +86,7 @@ def main():
     if not rows:
         raise RuntimeError('Entity scenario produced an empty trace: ' + str(evidence))
     metadata = json.loads(rows[0])
-    if metadata.get('schema') != 'entity-run-v1':
+    if metadata.get('schema') != 'entity-contact-v1':
         raise RuntimeError('Entity trace has an unknown schema: ' + str(trace))
     if len(rows) != metadata['tick_limit'] + 2:
         raise RuntimeError('Entity trace has the wrong tick count: ' + str(trace))

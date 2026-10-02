@@ -3,6 +3,9 @@ extends RefCounted
 ## Detached entity run stimulus for inspection and schedule comparisons.
 
 var definitions: Array[EntityDefinition] = []
+var contact_definitions: Array[FormContactDefinition] = []
+var probe_world: Vector3i = Vector3i.ZERO
+var contact_entity_index: int = -1
 var error: String = ""
 var name: String = ""
 var tick_limit: int = 16
@@ -51,6 +54,24 @@ static func builtin(selected: String) -> EntityScenario:
 			moving.path_start.flags |= PathStart.BACKWARDS
 			moving.path_start.distance = 160
 		scenario.definitions.append(moving)
+	for definition: EntityDefinition in scenario.definitions:
+		var contact := FormContactDefinition.new()
+		contact.source_id = definition.source_id
+		contact.entity_index = definition.entity_index
+		contact.unique_id = definition.unique_id
+		contact.form_grid_id = definition.form_grid_id
+		contact.form_id = definition.form_id
+		contact.form_name = definition.form_name
+		contact.entity_flags = definition.flags
+		contact.dimensions = Vector2i(2, 2)
+		contact.offsets = Vector2i(-256, -256)
+		contact.height = -32
+		contact.max_y = 32
+		contact.radius_squared = 1000000
+		contact.grid_flags = PackedInt32Array([3, 1, 5, 7])
+		scenario.contact_definitions.append(contact)
+	scenario.contact_entity_index = 1
+	scenario.probe_world = Vector3i(-100, 0, 0)
 	scenario.error = EntityRun.create(scenario.definitions).error
 	return scenario
 
@@ -79,10 +100,76 @@ func attach_data(data: GameData, selected_level_code: String = "ORG1") -> String
 	var run: EntityRun = EntityRun.create(copies)
 	if not run.error.is_empty():
 		return run.error
+	var contacts: FormContactSetup = FormContactSetup.from_data(data, number, false, copies)
+	if not contacts.error.is_empty():
+		return contacts.error
 	definitions = copies
+	contact_definitions.clear()
+	for contact: FormContactDefinition in contacts.definitions:
+		contact_definitions.append(contact.copy())
+	contact_entity_index = 12 if selected_code == "ORG1" and _has_contact_index(12) else -1
+	if contact_entity_index < 0:
+		for contact: FormContactDefinition in contact_definitions:
+			if contact.unsupported_reason.is_empty() and not (contact.entity_flags & EntityDefinition.NO_COLLISION):
+				contact_entity_index = contact.entity_index
+				break
+	if contact_entity_index < 0 and not contact_definitions.is_empty():
+		contact_entity_index = contact_definitions[0].entity_index
+	if contact_entity_index >= 0:
+		var selected_definition: FormContactDefinition = _contact_at(contact_entity_index)
+		var first_entity: EntitySnapshot = _entity_at(run.snapshot(), contact_entity_index)
+		probe_world = _first_cell_world(selected_definition, first_entity)
 	diagnostics.clear()
 	for diagnostic: EntitySetupDiagnostic in setup.diagnostics:
+		diagnostics.append(diagnostic.to_text())
+	for diagnostic: EntitySetupDiagnostic in contacts.diagnostics:
 		diagnostics.append(diagnostic.to_text())
 	level_code = selected_code
 	name = selected_code.to_lower() + "-entities"
 	return ""
+
+## Returns the selected contact definition by authored entity index.
+func selected_contact() -> FormContactDefinition:
+	return _contact_at(contact_entity_index)
+
+## Returns the detached query result at the fixed scenario probe point.
+func contact_at(snapshot: EntityRunSnapshot) -> FormContactResult:
+	if snapshot == null:
+		return null
+	var contact: FormContactDefinition = _contact_at(contact_entity_index)
+	var entity: EntitySnapshot = _entity_at(snapshot, contact_entity_index)
+	if contact == null or entity == null:
+		return null
+	return FormContactQuery.query(contact, entity, probe_world)
+
+func _has_contact_index(index: int) -> bool:
+	return _contact_slot(index) >= 0
+
+func _contact_slot(index: int) -> int:
+	for slot: int in contact_definitions.size():
+		if contact_definitions[slot].entity_index == index:
+			return slot
+	return -1
+
+func _contact_at(index: int) -> FormContactDefinition:
+	var slot: int = _contact_slot(index)
+	return contact_definitions[slot] if slot >= 0 else null
+
+static func _entity_at(snapshot: EntityRunSnapshot, index: int) -> EntitySnapshot:
+	if snapshot == null:
+		return null
+	for entity: EntitySnapshot in snapshot.entities:
+		if entity.entity_index == index:
+			return entity
+	return null
+
+static func _first_cell_world(contact: FormContactDefinition, entity: EntitySnapshot) -> Vector3i:
+	if entity == null:
+		return Vector3i.ZERO
+	var matrix: PackedInt32Array = entity.matrix12
+	if contact == null or matrix.size() != 12 or contact.dimensions.x <= 0 or contact.dimensions.y <= 0:
+		return Vector3i(matrix[9], matrix[10], matrix[11]) if matrix.size() == 12 else Vector3i.ZERO
+	var local: Vector3i = Vector3i(contact.offsets.x + 128, contact.height, contact.offsets.y + 128)
+	return Vector3i(matrix[9] + ((matrix[0] * local.x + matrix[1] * local.y + matrix[2] * local.z) >> 12),
+		matrix[10] + ((matrix[3] * local.x + matrix[4] * local.y + matrix[5] * local.z) >> 12),
+		matrix[11] + ((matrix[6] * local.x + matrix[7] * local.y + matrix[8] * local.z) >> 12))

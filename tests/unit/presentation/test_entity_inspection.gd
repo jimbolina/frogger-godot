@@ -58,7 +58,9 @@ func test_path_controls_do_not_change_attached_entity_start() -> void:
 func test_replacement_releases_run_definitions_and_markers() -> void:
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")
 	assert_eq(_viewer.set_entity_definitions(scenario.definitions), "")
+	assert_eq(_viewer.set_form_contacts(scenario.contact_definitions, scenario.probe_world, false), "")
 	var old: WeakRef = weakref(_viewer._entity_inspection)
+	assert_eq(_viewer._entity_inspection._contact_probe.get_parent(), _viewer._entity_inspection)
 	assert_true(_viewer.show_scene(_viewer._synthetic_path_scene()))
 	await get_tree().process_frame
 	var released: EntityInspection = old.get_ref()
@@ -67,7 +69,41 @@ func test_replacement_releases_run_definitions_and_markers() -> void:
 	assert_null(_viewer._entity_inspection)
 	assert_eq(_viewer._entity_definitions.size(), 0)
 	assert_false(_viewer._entity_visible)
+	assert_eq(_viewer._form_contacts.size(), 0)
 	assert_eq(_viewer._world.get_child_count(), 3)
+
+func test_fixed_probe_contacts_follow_post_tick_pose_and_selection() -> void:
+	var scenario: EntityScenario = EntityScenario.builtin("shared-path")
+	assert_eq(_viewer.set_entity_definitions(scenario.definitions), "")
+	assert_eq(_viewer.set_form_contacts(scenario.contact_definitions, scenario.probe_world, false), "")
+	_viewer._on_entity_selected(1)
+	var at_zero: FormContactResult = _viewer.selected_form_contact()
+	assert_not_null(at_zero)
+	assert_eq(at_zero.entity_index, 1)
+	assert_eq(at_zero.status, FormContactResult.CONTACT)
+	assert_eq(at_zero.local_position, Vector3i.ZERO)
+	assert_eq(at_zero.cell, Vector2i(1, 1))
+	assert_eq(at_zero.cell_flags, 7)
+	assert_eq(_viewer._form_probe_world, scenario.probe_world)
+	assert_eq(_viewer._entity_inspection._contact_probe.get_parent(), _viewer._entity_inspection)
+	_viewer.step_animation()
+	var at_one: FormContactResult = _viewer.selected_form_contact()
+	assert_eq(_viewer.entity_snapshot().tick_index, 1)
+	assert_eq(at_one.entity_index, 1)
+	assert_eq(at_one.status, FormContactResult.CONTACT)
+	assert_eq(at_one.local_position, Vector3i(0, 0, -10))
+	assert_eq(at_one.cell, Vector2i(1, 0))
+	assert_eq(at_one.cell_flags, 1)
+	assert_eq(_viewer._form_probe_world, scenario.probe_world)
+	assert_string_contains(_viewer._entity_contact_readout.text, "Probe -100, 0, 0")
+	assert_string_contains(_viewer._entity_contact_readout.text, "Cell 1, 0 · flags 0x1")
+	var entity_scroll: ScrollContainer = _viewer._inspection_tabs.get_child(1) as ScrollContainer
+	assert_not_null(entity_scroll)
+	assert_eq(entity_scroll.horizontal_scroll_mode, ScrollContainer.SCROLL_MODE_DISABLED)
+	_viewer._form_probe_spins[0].value = 100
+	assert_eq(_viewer._form_probe_world.x, 100)
+	_viewer._place_form_probe_first_cell()
+	assert_ne(_viewer._form_probe_world.x, 100)
 
 func test_diagnostics_are_visible_and_returned_as_detached_values() -> void:
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")

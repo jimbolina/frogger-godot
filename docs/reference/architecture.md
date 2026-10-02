@@ -64,6 +64,12 @@ path. `EntitySetup` resolves supported STATIC/MOVING records into detached
 definitions and source-located diagnostics. `EntityRun` owns copies and a path
 cursor for each moving entity, with aggregate commit on success and detached
 snapshots. Its all-attached transform inspection is separate from `TerrainRun`.
+`FormContactSetup` copies FORM flags and resolved model bounds into one
+definition per supported base entity, after considering every authored model
+writer in source order. `FormContactQuery` consumes that definition, an entity
+snapshot and one world point without changing run state. The viewer owns the
+selected probe and drawing resources. Contact inspection remains separate from
+the frog simulation.
 See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).
 
 ## Extending behavior

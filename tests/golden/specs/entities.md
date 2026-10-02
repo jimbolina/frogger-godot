@@ -54,5 +54,52 @@ endpoints. Generic forms can also have scripts and callbacks; this component
 leaves them unexecuted and does not claim complete entity behavior. Local
 alignment and land projection are outside this component's scope.
 
+## FORM grids and bounded contact
+
+`pc-retail-v3.0e/forms_retail.tsv` has one row per final-PC `FROG` map with
+`resource_id`, map name, FORM count, FORM_DATA count, and three list digests:
+`form_digest`, `form_data_digest` and `flags_digest`. `form_digest` flattens
+`(form index, offset, data count, stored maximum Y, X count, Z count, X offset,
+Z offset)`. `form_data_digest` flattens `(form index, data index, offset, height
+mode, height, flags pointer, heights pointer)`. `flags_digest` concatenates
+square flags in form, data and Z-major cell order. The independent Python
+reader follows FrogLord's FORM pointer, header and grid-square layouts. It
+reads the player's map data; the TSV contains decimal facts and digests only.
+Regenerate with:
+
+```powershell
+python -B tools/make_golden_form_contacts.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --out-dir tests\golden\pc-retail-v3.0e
+```
+
+`pc-retail-v3.0e/form_contacts_retail.tsv` pins every ORG1 small-log entity's
+source identity and its resolved collision facts: `resource_id`, `map`,
+`entity_index`, `source_offset`, `unique_id`, `form_grid_id`, `form_id`,
+`form_name`, `entity_flags`, `form_source_offset`, `xnum`, `znum`, `xofs`,
+`zofs`, `height`, `max_y`, `radius_squared` and `flags_digest`. The generator
+independently combines the player's EXE form book, map FORM/EMTP records and
+MOF boxes. This is a narrow setup check for the first log contact case.
+
+`fixtures/form_contacts.json` supplies invented contact definitions and world
+points. `synthetic/form_contacts.tsv` records `case`, `status`, `local_x/y/z`,
+`cell_x/z`, `height` and `cell_flags`; statuses are `contact`, `miss` and
+`disabled`. A cell not reached by the query uses `(-1,-1)`; its height and
+flags are zero. The Python evaluator independently checks frozen
+`MR_SVEC_MOD_SQR` distance, `MRTransposeMatrix`/`MRApplyMatrix` local XYZ, and
+each case's contact boolean against an adapter calling `CollideFrog` with one
+live entity and map group. A signed 32-bit overflow case verifies source sphere
+arithmetic. The adapter uses a model without API collision primitives and
+USABLE, SLIPPY grid flags, so agreement checks the bounded contact gate, not
+frog reactions, platform riding or full live-entity ordering. Build and regenerate:
+
+```powershell
+& tools/build_form_contact_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-form-contact-oracle')
+python -B tools/make_golden_form_contacts.py --oracle (Join-Path $env:TEMP 'frogger-form-contact-oracle/form_contact_oracle.exe') --out-dir tests\golden\synthetic
+```
+
+The [entity contact contract](../../../docs/reference/gameplay/entities.md#form-contact-inspection)
+defines the supported first GRID-mode record, model exclusions, shared runtime
+maximum Y and exact geometric boundaries. An unusable square can still have
+geometric contact; the query returns its raw flags without a reaction.
+
 For each new golden family, corrupt one fact, observe its focused test fail,
 restore it and observe the focused test pass.

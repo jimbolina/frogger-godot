@@ -34,9 +34,19 @@ payloads must fit their PATH records. Unknown bounded segment types retain
 identity and a warning, while malformed pointers or payloads fail the map.
 The path entity-list pointer is retained as metadata: FrogLord reads that list
 with GROU, so it need not point inside PATH. See [path behavior](../gameplay/paths.md).
-FORM and EMTP retain bounded metadata. The [entity setup](../gameplay/entities.md)
-reads STATIC matrix and MOVING PATH_INFO prefixes from EMTP spans without
-discarding subtype bytes. ZONE gameplay remains deferred.
+FORM retains source-ordered grids: data count, runtime maximum-Y scratch word,
+signed dimensions and offsets, FORM_DATA height mode and scalar height, pointer
+metadata, and unsigned 16-bit square flags in Z-major order. Empty grids retain
+their sometimes garbage dimensions. Each data and flag pointer must stay within
+its enclosing record; malformed structure fails the map. The unused alignment
+short after flags may be nonzero. Nonzero height modes and additional data
+records remain visible with diagnostics; bounded contact uses the first record
+only when its mode is GRID (zero). The scalar-height pointer is metadata and is
+not dereferenced. FrogLord's `FroggerFormGrid` and `FroggerFormGridData` define
+the layout; [entity contact](../gameplay/entities.md#form-contact-inspection)
+follows frozen `mapload.C` and `COLLIDE.C` behavior. EMTP retains bounded
+identity and payload; entity setup reads STATIC matrix and MOVING PATH_INFO
+prefixes without discarding subtype bytes. ZONE gameplay remains deferred.
 
 ## Rendering
 

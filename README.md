@@ -119,8 +119,9 @@ the frozen reference camera, 128-group limit and 2,500-polygon group budget.
 Dragging switches to a custom inspection pose; R restores the preset.
 
 Maps include stored terrain colours, cave illumination, animated textures,
-water and sky-land. The entity overlay can show bounded STATIC/MOVING base
-transforms; entity collision, scripts, HUD and complete level play are deferred.
+water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
+and can inspect one entity's FORM contact against a fixed point. Frog reactions,
+scripts, HUD and complete level play are deferred.
 The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.
 
@@ -137,8 +138,12 @@ path runner; map entity attachment has its own authored starts. See the
 
 In the **Entities** tab, enable **Show entity axes** to draw attached base
 transforms and choose a source-indexed entity for its path and position
-readout. The panel counts omitted records; hover over the count for source
-diagnostics. The axes start hidden and the map-slice reference preset hides them.
+readout. Set the FORM probe's X/Y/Z world coordinates, or choose **Place probe
+in first cell**. The viewer draws the selected FORM outline and contacted cell
+and reports contact status, cell and raw flags. An unsupported form shows its
+reason. This query does not move or kill the frog. The panel counts omitted
+records; hover over the count for source diagnostics. The axes start hidden
+and the map-slice reference preset hides them.
 
 For reproducible path traces and an optional rendered capture, run
 `python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
@@ -161,7 +166,8 @@ Use `--viewer` to capture world and full-window images, or `--data-dir
 <game-folder> --level ORG1` to inspect player data. `--tick-limit` and
 `--render-rate 30|60|144` control the trace duration and render schedule.
 `python tools/verify_entity_schedules.py --godot <executable> --scenario
-shared-path --output-directory <external-folder>` compares schedules. Traces,
+shared-path --output-directory <external-folder>` compares schedules, including
+the fixed contact probe. Traces,
 logs and captures stay outside the repository.
 
 For repeatable captures on Windows, set `GODOT` and `FROGGER_DATA_DIR`, then:
