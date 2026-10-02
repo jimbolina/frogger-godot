@@ -1,6 +1,6 @@
 # Archives
 
-Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.md).
+Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../sources.md).
 
 | Fact | Value |
 |---|---|
@@ -13,4 +13,5 @@ Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.m
 - No WAD child is compressed on its own.
 - The index inside the executable is the authoritative one. FrogLord writes the index back into the executable; the standalone `.MWI` file is a copy.
 - Always resolve archive offsets through the loaded index. FrogLord moves and resizes files when it saves.
-Performance evidence: [P1 validation](../validation/p1.md).
+
+Schemas and regeneration: [archive golden specification](../../../tests/golden/specs/archives.md).

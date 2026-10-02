@@ -52,6 +52,6 @@ python tools/make_golden_camera.py --c-oracle <external-folder>/terrain_oracle.e
 
 For deliberate-break validation, increment a committed source-X fact, require
 generation verification or its Godot comparison to fail, restore and pass.
-The [terrain component contract](../../../docs/reference/terrain-trace-oracle.md)
+The [terrain component contract](../../../docs/reference/testing/terrain-trace-oracle.md)
 documents frozen linkage/provenance and omitted broader systems. These camera
 updates are separate component fixtures, not a coupled full gameplay step.

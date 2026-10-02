@@ -7,7 +7,7 @@ are not runtime dependencies and end users do not need a C compiler.
 It calls the existing frozen engine's real `ControlFrog` and then `MoveFrog`,
 recording a row after each call. Its component calls have no wall clock.
 The owner's selected source-port timing is
-documented separately in [PC timing](pc-timing.md).
+documented separately in [PC timing](../gameplay/pc-timing.md).
 
 Three authored scenarios each reset the C random seed to 12345, frog/input/camera
 state, a 4x4 flat safe grid and caller-owned frog matrix/trail storage. One north
@@ -25,7 +25,7 @@ through tick 8 and releases at tick 9. The real jumping controller buffers one
 key; the real stationary controller consumes it at tick 6 while east is held,
 and the east hop completes on move 11 at (128,0,128). See `FROG.C`'s
 `FrogModeControlJumping` and `FrogModeControlStationary` through the
-[source locations](sources.md). This tests input buffering within the two
+[source locations](../sources.md). This tests input buffering within the two
 components, without adding a second input implementation to the adapter.
 
 The adapter links the frozen real-source library and existing common objects.
@@ -98,7 +98,7 @@ generate, or add `--verify` to require the committed text facts to match.
 The adapter's `--camera` route calls real `ResetCamera` and `UpdateCamera`
 on separate authored fixtures. `tools/make_golden_camera.py` independently
 calculates and cross-checks 327 camera records before saving text facts.
-See the [camera specification](../../tests/golden/specs/camera-components.md)
+See the [camera specification](../../../tests/golden/specs/camera-components.md)
 for scenario inputs, field ordering and the narrow world-target reconstruction.
 This route supplies caller-owned camera matrix storage and an authored GENE
 header for default offsets. It initializes the frozen trig table using
@@ -108,7 +108,7 @@ state exchange of a complete coupled gameplay step.
 
 ## Ordered integration fixtures
 
-The [integrated terrain family](../../tests/golden/specs/integrated-terrain.md)
+The [integrated terrain family](../../../tests/golden/specs/integrated-terrain.md)
 executes control, movement, collision, camera, animation scripts and pose in
 source order over shared caller-owned state. Independent Python composition
 checks the exact represented fields before facts are accepted. The component

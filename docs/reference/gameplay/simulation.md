@@ -1,8 +1,7 @@
 # Simulation contracts
 
 `TerrainRun` implements one ordered terrain tick. Full level/entity simulation
-remains P8; [P7 validation](../validation/p7.md) records component and
-presentation integration checks.
+is not implemented.
 
 - The gameplay host schedules original-rate tick commands; the rules do not read wall time. Optional interpolation affects drawing only. Godot's physics engine is not used; collision is the game's own.
 - The owner selected frozen `froggy` source-port behavior: 30 Hz steady-state logic/presentation pacing. Its actual driver defines `FROGGER_TARGET_FPS=30`, computes `perf_freq / 30`, and its timer backend asserts `LOGIC_CALLS_PER_SEC==30`. This is source evidence independent of the existing viewer clock. See [PC timing evidence](pc-timing.md).
@@ -16,9 +15,8 @@ The C source defines 30 logic calls per second and creates a 33 ms timer;
 these are source facts, not the supplied retail executable's timer contract.
 FrogLord converts PC entity delays using 25. The static retail audit found a
 20 ms periodic callback that supplies logic budget on alternate deliveries.
-Original-retail runtime delivery remains unmeasured. On 2026-10-01 the owner
-clarified that the C port's behavior is the target; this difference no longer
-blocks movement. The [terrain contract](terrain-movement.md) uses signed 16.16 frog state,
+Original-retail runtime delivery remains unmeasured. The selected behavior
+target is the C port. The [terrain contract](terrain-movement.md) uses signed 16.16 frog state,
 with rendering interpolation separate from authoritative ticks.
 
 The source port arms one virtual timer tick per presented frame and delivers
@@ -27,7 +25,7 @@ accumulating 30 Hz deadline, resetting the deadline after a large overrun so
 stalls do not bank a burst. Smoke/component comparisons have no wall-clock
 pacing. The original C loop caps accumulated virtual ticks at three; source
 reset/render-flush paths can supply several ticks to one driver call. A driver
-trace row therefore is not universally one logic tick. P7's rule API always
+trace row therefore is not universally one logic tick. The terrain rule API always
 performs exactly one tick per accepted command; host pacing and reset policy
 remain outside rules.
 
@@ -40,6 +38,6 @@ the host does not consume or arbitrate them.
 
 `src/game/` owns detached terrain definitions and run state, grid queries,
 movement/collision, gameplay camera, animation control and source RNG. Entity
-and script systems arrive with their P8 callers. `src/mod/` remains future work
+and script systems are not implemented. `src/mod/` remains future work
 for watching files and reporting unmapped behavior. See the
-[README layout](../../README.md#layout).
+[README layout](../../../README.md#layout).

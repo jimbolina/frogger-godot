@@ -25,6 +25,17 @@ Exit codes: 0 = all passed; 1 = test, compile, architecture or result failure;
 Retail mode must have none. A supplied but invalid `FROGGER_DATA_DIR` fails;
 unset the variable explicitly for asset-free mode.
 
+## Feature checks
+
+- [Terrain inspection](terrain-inspection.md): scenarios, headless/rendered traces
+  and schedule comparisons.
+- [Terrain component oracle](terrain-trace-oracle.md): controller/mover,
+  separate camera and integrated source comparisons.
+- [Terrain collision oracle](terrain-collision-oracle.md): height, death and
+  effect-request boundaries.
+- [Golden specifications](../../../tests/golden/README.md): expected-data schemas
+  and independent generator commands, grouped by feature.
+
 ## Focused iteration and guardrails
 
 Append `-gselect=test_model_viewer` to either wrapper to select one script.
@@ -39,7 +50,7 @@ For a focused group, use `'-gdir='` and
 The empty directory list prevents the configured broad scan; exact scripts
 still use the same strict compilation, architecture and report validation.
 
-The [architecture contract](architecture.md#automated-checks) explains the
+The [architecture contract](../architecture.md#automated-checks) explains the
 scanner and its limits. Its `ARCHITECTURE FAILED` diagnostics identify the
 file, line and dependency rule. New gameplay directories are checked when added;
 no empty gameplay scaffolding is needed now.
@@ -59,10 +70,9 @@ results to success in an external runner. Hosted CI remains deferred.
 
 Use isolated writable Godot user data, explicit logs, awaited hidden
 processes and `--disable-crash-handler` for automated runs. The wrappers
-already enforce this and retain log paths in their output. A previous
-unwritable default log directory caused exception windows; do not bypass
-the wrappers with a bare automated Godot launch. A sandbox root-certificate
-warning has been benign; determine success from compilation/tests and exit status.
+already enforce this and retain log paths in their output. Do not bypass
+them with a bare automated Godot launch; determine success from
+compilation/tests and exit status.
 
 ## Tools and visual verification
 
@@ -82,9 +92,9 @@ but normal runtime use and the Godot test suites do not build or load them.
   normalizes lexical paths; callers must not use filesystem links to redirect
   an external destination into the checkout.
 - After changing Godot, renderer or environment, run `tools/probe_model_shader.gd`
-  with a window and inspect the measured colours; see [rendering](rendering.md).
+  with a window and inspect the measured colours; see [rendering](../rendering/README.md).
 - Every new golden family needs an independent generator and a deliberate-break
-  check, with the original fact restored. See [golden rules](../../tests/golden/README.md).
+  check, with the original fact restored. See [golden rules](../../../tests/golden/README.md).
 
 ## GDScript and runner pitfalls
 
@@ -98,4 +108,5 @@ but normal runtime use and the Godot test suites do not build or load them.
 - Godot stores mesh normals packed; they come back changed in the fifth decimal place.
 - Assign a `Variant` to a typed local before passing it to a GUT assertion.
 
-Completed runs belong in the owning phase's validation report, not this guide.
+Report completed runs in the delivery message and commit body. Keep raw logs,
+captures and per-run provenance outside the repository.

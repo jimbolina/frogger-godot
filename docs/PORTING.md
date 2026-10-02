@@ -14,8 +14,8 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P3 | Texture banks (VLO) and a texture viewer | S | Per-image hashes; screenshots inspected | Done, `bf6d356` |
 | P4 | Static models (MOF) and a model viewer | L | Counts and digests of every part from an independent Python reader; measured screen colours; screenshots inspected | Done, `b3188cd` |
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
-| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done; [validation](validation/p6.md) |
-| P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; [validation](validation/p7.md), frozen C port's 30 Hz target |
+| P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
+| P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
 | P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
@@ -29,7 +29,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 
 Network play is deferred.
 
-The graphics follow-up for [animated per-part lighting](reference/gameplay-projection.md)
+The graphics follow-up for [animated per-part lighting](reference/rendering/gameplay-projection.md)
 needs source light/color matrices applied after each part's animation transform,
 with independent color samples. Existing static-probe prelighting does not
 provide this. P7's declared foreground checks cover geometry and silhouette;
@@ -41,26 +41,27 @@ the visible color difference remains explicit.
 |---|---|---|
 | A licence for this project's own code | Before the repository is made public | |
 
-## Planning the next phase
+## Next: entities and the first playable level
 
-The pre-P7 [domain foundation](reference/architecture.md) adds shared language,
-explicit viewer data ownership and local dependency/result guardrails. Its
-[validation report](validation/domain-foundation.md) records the checks;
-[remaining adoption work](plans/domain-foundation.md) belongs to P8 and later.
+Apply [definition/state/view ownership](reference/architecture.md) to paths,
+entities and scripts. Resolve types, forms and callbacks through verified names
+and supported implementations; preserve source ordering and test unknown
+mappings. Per-build form callback address mappings still need investigation.
+Mods may repoint supported behaviors but never load new code.
 
-Start with [the current checkpoint](CURRENT.md). P6 is complete, including
-the owner's saved JUN1 terrain edit; see the [validation report](validation/p6.md).
-P7 establishes [source-port timing](reference/simulation.md),
-[terrain rules](reference/terrain-movement.md), gameplay camera and animation
-control through independent comparisons. See [P7 validation](validation/p7.md).
-P8 adds entity placement and is the first playable-level milestone.
+Add entity diagnostics with code, severity, build/resource, entity/form or
+source offset, and fallback. Extend inspection/scenario commands with entity
+and path state. Rewind may replay from reset. Use the first additional behavior
+to check that the registry and setup adapters stay small, then reassess at the
+first playable level.
 
-## Completed-phase evidence
+Measure tick/load/conversion costs and resource counts as real level workloads
+arrive. Keep captures outside the repository; do not impose limits from
+uncalibrated shared runners. Add progression, save and reload boundaries with
+their owning features.
 
-Read these only when checking a historical result or reproducing a comparison:
-[archives (P1)](validation/p1.md), [textures (P3)](validation/p3.md),
-[models (P4)](validation/p4.md), [animation (P5)](validation/p5.md),
-[maps (P6)](validation/p6.md), [terrain gameplay (P7)](validation/p7.md).
-P0/P2 checks and generator cross-checks are documented in the
-[testing guide](reference/testing.md) and [golden specifications](../tests/golden/README.md).
-Current technical contracts are routed from [AGENTS.md](../AGENTS.md).
+## Infrastructure
+
+When a repository host is selected, add asset-free CI pinned to Godot 4.5.1,
+starting with one verified desktop runner. Retain logs, enforce named skips,
+and keep legally held retail data in local/private gates.

@@ -2,7 +2,7 @@
 
 `synthetic/terrain_components.csv` contains 96 text fact rows: three authored
 scenarios, 16 ticks, two components per tick. It contains no retail bytes.
-The [component oracle contract](../../../docs/reference/terrain-trace-oracle.md)
+The [component oracle contract](../../../docs/reference/testing/terrain-trace-oracle.md)
 owns fixture setup, represented fields, omitted systems and C linkage.
 
 Columns exactly match `compare_terrain_trace.FIELDS`: scenario/tick/component,

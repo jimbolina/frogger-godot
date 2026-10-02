@@ -68,4 +68,4 @@ it unsigned and scales it without changing sign. Both meanings remain visible.
 
 Independent synthetic Python facts checked against frozen C cover averages,
 centres, normals, both triangles, negative values, diagonal equality, multilayer
-selection, empty cells, odd dimensions and signed16 centre wrapping. See the [golden index](../../tests/golden/README.md).
+selection, empty cells, odd dimensions and signed16 centre wrapping. See the [golden index](../../../tests/golden/README.md).

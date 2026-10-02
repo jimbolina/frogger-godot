@@ -20,7 +20,7 @@
   Rendering interpolation cannot feed back into authoritative state.
 
 The [domain glossary](domain.md) gives semantic boundaries. Existing
-[simulation](simulation.md), [coordinates](coordinates.md) and topic references
+[simulation](gameplay/simulation.md), [coordinates](rendering/coordinates.md) and topic references
 remain authoritative for detailed rules.
 
 ## Current lifetimes
@@ -45,8 +45,8 @@ synthetic injection remain supported.
 state. Each command operates on private candidate copies and commits only on
 success. Snapshots are detached, including nested camera/animation state.
 Component fixtures explicitly omit unrelated systems; integrated inspection
-supplies camera defaults and copied high-detail frog action lengths. P8 adds
-entity state and its source-ordered updates before frogs.
+supplies camera defaults and copied high-detail frog action lengths. Entity
+simulation must add run-owned state and preserve source-ordered updates before frogs.
 
 `TerrainGridSetup` copies decoded geometry, flags and scalar source identities
 into grid definitions; those definitions retain no legacy or rendering objects.
@@ -68,7 +68,7 @@ never dispatch executable addresses directly.
 ## Automated checks
 
 Both test wrappers compile scripts, check architecture, then run tests and
-validate their results; see [testing](testing.md). The architecture scanner
+validate their results; see [testing](testing/README.md). The architecture scanner
 checks protected code and its statically discoverable dependencies, including
 project class names, literal script paths and inherited bases. It reports
 computed loads and dynamic calls for review. Gameplay runtime resource loading

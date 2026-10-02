@@ -1,15 +1,14 @@
-# PC timing evidence
+# PC timing
 
 The owner selected the frozen `froggy` source port as the behavioral target,
 including its 30 Hz clock. Original retail timing is a separate comparison;
-it no longer blocks source-port movement work. Static evidence below strongly
-supports a nominal 25 Hz budget for the supplied original executable, without
-measuring timer delivery or game speed on the current machine.
+static evidence below supports a nominal 25 Hz budget for the supplied original
+executable, without measuring timer delivery or game speed on the current machine.
 
 ## Supplied retail executable
 
 Inspected 2026-10-01 using GNU objdump from `C:/msys64/mingw64/bin`.
-The source is the owner's `FROGGER.EXE` at the [retail location](sources.md).
+The source is the owner's `FROGGER.EXE` at the [retail location](../sources.md).
 SHA-256: `215b444ebb6317c136cfaded17922909b743deb34ab16f72e140a99d87340e06`.
 PE32 image base is `0x00400000`; addresses below are virtual addresses.
 Only scalar facts are retained here, never retail bytes or disassembly.
@@ -70,16 +69,6 @@ request/counter increment; sanitized `gamesys.H:164-165` still declares 3/30.
 `mr_stub_timer.c:28` asserts 30 and delivers deterministic ticks by presented
 frame rather than measuring retail wall time.
 
-Audit SHA-256 identities (working-tree bytes):
-
-| Input | SHA-256 |
-|---|---|
-| Sanitization script | `94eea225c95f0b990e6a8f5f0bd2fbeac09bb7cf7209939d32b3d2a36824cb04` |
-| Vendored MAIN.C | `2563708752458f63f91a314c84e7fcdf15e1a19a4e1ef848859d5b15f2fede46` |
-| Sanitized MAIN.C | `0ac5a67b5529977184bb720257562a9af14f96df01b5723cdd0e053df0b19a74` |
-| Vendored gamesys.H | `e73e33456f2c6f7984c29401f4c2af180b2f7258c4100872d71c1c35261ff830` |
-| Sanitized gamesys.H | `6bf3b37bb6c8a6e00ec624d5deb08e72a90bee249695316501971b8fd680f120` |
-
 ### Source-port clock actually implemented
 
 `mr_stub_timer.c:122-139` arms one pending virtual tick at timer creation.
@@ -129,9 +118,7 @@ observation is possible. OS initialization at `0x00457200` calls
 Windows 95 path (`0x004572f6`); value 2 takes `0x00457453`, returning zero at
 `0x00457460`. WinMain's caller at `0x0042322d` takes this failure and returns
 zero at `0x00423234`. Thus a modern NT-family Windows result can produce a
-successful process exit code without launching gameplay. This statically
-established path is consistent with a short exit-zero attempt, but the
-attempt's actual branch was not observed.
+successful process exit code without launching gameplay. An exit-zero process result alone therefore does not establish gameplay startup.
 
 Renderer setup is a second prerequisite, later in startup. The loader at
 `0x00448200` opens the 32-bit game's HKLM
@@ -141,8 +128,7 @@ Renderer setup is a second prerequisite, later in startup. The loader at
 `SETUP.DAT` fallback in this loader. Its caller at `0x00447ece` returns an
 error at `0x00447eda`; WinMain tests that result at `0x004234ae` and cleans up
 before its return at `0x004234de`. Other renderer configuration and DLL entry
-points are also required after successfully loading the DLL. This does not
-establish that renderer setup was reached in the short launch attempt.
+points are also required after successfully loading the DLL.
 
 The owner's original `SETUP.INI` specifies installing the renderer DLLs,
 registering the game, and running VideoSetup before Frogger. The installer
@@ -154,26 +140,11 @@ components on the current system. Merely staging EXE/MWD/SETUP.DAT and DLLs
 does not satisfy the OS check or renderer registry configuration. No supported
 command-line override for these two checks was found in the audited paths.
 
-The subsequent bounded launch probe used the staged original executable with
-process-only `__COMPAT_LAYER=WIN95` and error mode `0x8003`. It terminated after
-0.146324 seconds with status `0xc0000005`, before gameplay observation; external
-evidence is `p7/retail-probe/win95-launch.json`. This records a failed launch,
-not proof that a particular OS-check branch changed or that any timing counter
-ran. No installer or registry/settings modification was performed. No further
-launches are planned within this investigation.
+Original retail runtime timing remains unmeasured. Observation requires a
+working environment for this exact executable identity; an SDL rebuild of
+the frozen engine cannot establish its cadence.
 
-A working original retail environment supplied by the owner is
-needed to observe this identity without changing its executable. An SDL
-rebuild of the frozen engine cannot establish original-retail runtime timing.
-
-Runtime access checked on 2026-10-01: an isolated external copy of the supplied
-retail executable exited with code 0 after 0.410 seconds, before gameplay.
-The owner's portable `C:/Users/janit/Desktop/frogger/frogger.exe` has SHA-256
-`8886f43a067e0822a5b2f1dceb2aada7293971ac6421a0166a15bb8488cf8e1b`.
-Its existing log identifies rebuilt engine entry points and live SDL input;
-it is not the audited retail binary and was not launched for this measurement.
-Its timing therefore cannot establish retail cadence. A working original-PC
-runtime or suitably timestamped original-PC observation remains necessary.
+## Reproduction
 
 Reproduce the identity-pinned static assertions with:
 
@@ -208,5 +179,4 @@ that a launcher left process memory unpatched, or rule out a concurrent file
 replacement; document any wrapper in the observation environment. Outputs in
 the frozen `../froggy` tree are refused as well.
 
-Validate the tools with `python -B tools/test_pc_timing.py`. Strict gameplay
-script compilation and both repository test modes remain separate phase gates.
+Validate the tools with `python -B tools/test_pc_timing.py`. The repository test wrappers separately check gameplay compilation and tests.

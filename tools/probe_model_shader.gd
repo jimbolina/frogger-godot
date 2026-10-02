@@ -8,8 +8,8 @@ extends SceneTree
 ##
 ##   godot --path . -s res://tools/probe_model_shader.gd -- --out=<file>
 ##
-## The report goes to the file and to the log. The values measured are kept
-## in docs/validation/p4.md.
+## The report goes to the file and to the log. Expected colour behavior is
+## documented in docs/reference/rendering/README.md.
 
 ## The colour behind the squares.
 const BACKGROUND := Color8(100, 60, 20)

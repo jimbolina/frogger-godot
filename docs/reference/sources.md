@@ -3,10 +3,10 @@
 External material is read-only. All external paths below are relative to the repository root, not this document. Read only the sources needed for the current task.
 
 The owner explicitly selected frozen `froggy` C-port behavior, including its
-verified 30 Hz pacing, on 2026-10-01. Original retail executable timing does not
+30 Hz pacing. Original retail executable timing does not
 override that target or block implementation. Player executables remain data
 sources for recognition and tables; their data role is separate from behavioral
-authority. See [simulation](simulation.md).
+authority. See [simulation](gameplay/simulation.md).
 
 ## The reference engine: `../froggy`
 
@@ -22,7 +22,6 @@ A port of the original C game code to modern PCs, matched against the retail PC 
 | Tables transcribed from the retail executable: demos, cheats, languages, options pages | `../froggy/engine/asset_pipeline/include/frogger_*.h` |
 | Measured facts about how the PC game behaves, many of them differences from the PlayStation game | `../froggy/engine/docs/KEY_FACTS.md`; the index at the end of `REFERENCE.md` says which entries matter |
 | Reference pictures: 148 PNGs of maps, the frog and options pages | `../froggy/engine/tests/baselines/` |
-| The original plan for this project | `../froggy/engine/docs/handoffs/handoff-m56-ungraft.md`, "Part 2". The [current roadmap](../PORTING.md) supersedes it. |
 
 ### Where to look in the C source
 

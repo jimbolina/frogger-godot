@@ -13,7 +13,7 @@ downward view with a nonzero horizontal look axis. Map defaults are supplied by
 setup; debug-only CAMERA.H defaults are not an authority for each map.
 
 The following anchors are under the frozen source directory in
-[sources](sources.md):
+[sources](../sources.md):
 
 | Rule | Source |
 |---|---|
@@ -59,11 +59,3 @@ The 327-row independent C/Python corpus includes fixed freeze, follow shake
 and accumulating fixed shake. Unsupported zones/entity transforms remain
 explicit errors. Shake accepts the verified terrain amplitude range0â€“128;
 larger amplitudes are outside this slice.
-
-Component validation (2026-10-01): retail wrapper passed 369 tests with no skips
-and 170 scripts compiled. Deliberately changing camera corpus row0 sourceX
-from200 to201 failed exactly row0 column14; restored focus passed8 tests,
-9298 assertions. Logs are external temp runs7f88963308bc4d29a56bb749710e824c,
-86d9962b5121451e9f411e9b7b7e8c50 (expected failure), and
-47f1b9a39bc344b7ac18bb52cf222207 (restored). This component evidence does not
-close the later integrated terrain or animation checks.

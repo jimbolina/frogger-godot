@@ -28,6 +28,5 @@ The separate frog hash test uses the reference driver's FNV-1a over a
 32-byte matrix, including its two zero padding bytes: action zero yields
 `0x9655a8c6` at viewer tick zero and `0xa933ba38` after 179 further ticks.
 
-Deliberate-break and regeneration results: [P5 validation](../../../docs/validation/p5.md).
 
 [Golden data index and shared rules](../README.md). Commands above run from the repository root.

@@ -35,6 +35,6 @@ executes in C, but its internal state is outside this collision schema.
 
 This D1 family supplies authored power flags without executing modifier expiry.
 Separate D2 special-mode, matrix and modifier fixtures are indexed in the
-[terrain movement contract](terrain-movement.md). Pickup application remains
+[terrain movement contract](../gameplay/terrain-movement.md). Pickup application remains
 outside these component facts. Source-undefined storage accesses are diagnosed
 before committing a tick; ignored authored flag bits are retained.

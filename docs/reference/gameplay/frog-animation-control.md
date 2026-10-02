@@ -17,7 +17,7 @@ separate script and pose steps. Presentation samples action, cel and one-shot
 state without advancing either clock. Script evaluation captures cel/count
 before queued or restored programs restart, preserving the source's behavior.
 
-The [independent component corpus](../../tests/golden/specs/frog-animation.md)
+The [independent component corpus](../../../tests/golden/specs/frog-animation.md)
 compares 320 actual frozen-C phase records. The adapter omits LW renderer
 transform construction by temporarily clearing its update flag; the flag is
 restored in recorded state. It does not replace animation rules, action setters,

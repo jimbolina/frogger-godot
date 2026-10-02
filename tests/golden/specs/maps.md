@@ -21,8 +21,8 @@ C:\Python313\python.exe tools/make_golden_map.py RETAIL_DIR tests/golden/pc-reta
 
 The adapter receives each decompressed map on stdin and emits only decimal
 facts; no asset blobs are saved. The generator compares its independent Python
-decoding to compiled `map_reader.c` calls before writing facts. The 2026-10-01
-run passed all 78 maps: nine polygon type counts, general/group/grid/header
+decoding to compiled `map_reader.c` calls before writing facts. Coverage includes
+all 78 maps: nine polygon type counts, general/group/grid/header
 census, grid-square counts, maximum local texture indices and RGB-component
 scans over FT3/FT4/GT3/GT4, 297 animation scalar/cel records, and 7,123 entity
 identities. The frozen build no longer ships map-scan CLI executables, so this
@@ -93,8 +93,8 @@ squared-distance calculation. They do not validate scene illumination.
 The generator checks all packet identifiers, bounds, group/animation target
 resolution and the 78 plus two census. Section census fields match the frozen
 C reader offsets and counts. Integrated retail tests compare each file, type
-list and animation; the phase validation records the required deliberate-break
-check and restoration.
+list and animation. New families require a deliberate-break check and
+byte-exact restoration before delivery.
 
 ## Synthetic reference projection
 
@@ -147,11 +147,10 @@ are external JSON only, never retail images or bytes in the repository.
 Masks declare `raster_edge_policy: eligible_union_silhouette`. The comparator
 finds the inner one-pixel silhouette of the source eligible union, then applies
 the fixed two-pixel Chebyshev band. Internal polygon seams remain fully tested.
-The earlier image-gradient rule also excluded texture stripes and ripples, while
-the intermediate per-polygon perimeter band excluded internal seams. Both
-overstated the intended raster-edge allowance. Their historical comparisons
-remain separate external evidence. The final uniform policy preserves the source
-denominator and channel error <=8, 95% agreement, 50% coverage and 1000-pixel gates.
+Do not exclude image gradients or individual polygon perimeters: that would
+hide texture errors and internal seams. Require channel error <=8, 95%
+agreement, 50% eligible coverage, at least 1000 compared pixels, and three
+landmarks within two pixels. Preserve the source denominator.
 Clipping creates no artificial viewport-border edges.
 `python tools/test_map_capture_masks.py`
 checks the exact band width and that texture stripes retain their interior pixels.

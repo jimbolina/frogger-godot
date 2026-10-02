@@ -1,6 +1,6 @@
 # Build detection
 
-Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.md).
+Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../sources.md).
 
 - A FrogLord-saved executable ends in the eight bytes `FROGLORD`. Before them: the config text in UTF-8, a zero byte, a version byte, and the original executable length as a 32-bit integer. The config text names the build.
 - Otherwise the build is found by the CRC-32 of the whole executable, matched against `exeChecksum` in FrogLord's version files. The retail executable gives 378672750.

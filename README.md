@@ -17,10 +17,9 @@ and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
 There is no playable level yet.
 
-P7 is complete. Terrain movement, collision/deaths, gameplay camera
-and animation control follow the frozen C port's verified 30 Hz target;
-see [terrain contracts](docs/reference/terrain-movement.md) and
-[validation](docs/validation/p7.md).
+Terrain movement, collision/deaths, gameplay camera and animation control
+follow the frozen C port's 30 Hz target; see the
+[terrain contract](docs/reference/gameplay/terrain-movement.md).
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
@@ -29,7 +28,7 @@ interpolation. Tab switches to live arrow-key input, Shift requests a super hop,
 and Q/E turn the gameplay camera. Pause and reset also reset drawing interpolation.
 This is terrain inspection; entities, moving platforms and progression arrive
 in later phases. Animated lighting remains a
-[documented renderer limitation](docs/reference/gameplay-projection.md).
+[documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
 The game runs in GDScript. C files under `tools/` are offline reference
 validation adapters; playing or loading data does not require C code or a compiler.
 For isolated headless or rendered evidence, use `python tools/run_terrain.py
@@ -37,7 +36,7 @@ For isolated headless or rendered evidence, use `python tools/run_terrain.py
 add `--viewer` for a captured scene and `--data-dir <game-folder>` for frog assets.
 Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
 `--tick-limit <integer>` for overrides, or `--level <name>` to inspect a player's
-selected map. The [inspection contract](docs/reference/terrain-inspection.md)
+selected map. The [inspection contract](docs/reference/testing/terrain-inspection.md)
 defines scenario fields and omitted level systems.
 
 ## No game data is included
@@ -146,7 +145,7 @@ you edited in FrogLord. For fixed-pose comparisons, the capture wrapper accepts
 
 Contributors: start with the [domain language](docs/reference/domain.md) and
 [architecture and ownership](docs/reference/architecture.md). These describe
-source identities, viewer lifetimes, and the boundary reserved for P7 gameplay.
+source identities, viewer lifetimes, and ownership of gameplay state.
 
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
 
@@ -195,8 +194,11 @@ The complete retail and asset-free runs remain required before each commit.
 ## Contributing and project documentation
 
 Start with [AGENTS.md](AGENTS.md) and the short [current checkpoint](docs/CURRENT.md).
-The [roadmap](docs/PORTING.md) tracks phases; AGENTS links the technical
-references to read for a specific task. Completed validation is kept per phase.
+The [roadmap](docs/PORTING.md) owns status and remaining work. The
+[domain index](docs/reference/domain.md) groups references by data, gameplay
+and rendering; the [testing guide](docs/reference/testing/README.md) covers checks and
+inspection tools. Documentation describes current behavior and use. Run logs
+stay outside the repository, and Git retains development history.
 
 ## Licence
 

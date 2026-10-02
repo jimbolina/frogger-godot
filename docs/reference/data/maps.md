@@ -1,7 +1,6 @@
 # PC maps
 
-Current map implementation contract; see [P6 validation](../validation/p6.md).
-[Sources](sources.md) locate read-only
+[Sources](../sources.md) locate read-only
 FrogLord and frozen C; format authority is FrogLord, behavior authority is C.
 
 ## Data and source authority
@@ -23,12 +22,12 @@ The survey found invisible polygons in 68 files. Six low-detail maps have
 polygons absent from serialized group lists: JUN1, JUN2, SWP1, SWP2, SWP4,
 SWP5. Preserve/report these; don't reject the file or make them visible.
 GRID now retains ordered stacks and squares, flags, polygon offsets and all
-four calculation corners; [grid](grid.md) owns decoding, setup and query rules.
-Other gameplay packets retain bounded metadata; their behavior belongs to P8.
+four calculation corners; [grid](../gameplay/grid.md) owns decoding, setup and query rules.
+Other gameplay packets retain bounded metadata; entity/path behavior is not implemented.
 
 ## Rendering
 
-Use [GameSpace](coordinates.md) once. Map quads use GPU strip corner order,
+Use [GameSpace](../rendering/coordinates.md) once. Map quads use GPU strip corner order,
 unlike stored MOF quads; preserve each corner's colour and UV association.
 One mesh per visible group, split by material/animation. Unreferenced and
 invisible polygons are diagnostic-only. The map's local texture index resolves
@@ -83,7 +82,7 @@ limit), preserving C unsigned squared-radius arithmetic and underflow clamping.
 Radius one is a valid initial ramp; zero has no usable range. Gameplay's
 separate minimum-radius assertions do not define this static preview adapter.
 Models use ambient plus at most three parallel lights from LITE. C
-`CreateMapLights` ignores point/spot records. See [rendering](rendering.md).
+`CreateMapLights` ignores point/spot records. See [rendering](../rendering/README.md).
 
 ## Camera and reference captures
 
@@ -101,7 +100,7 @@ next group; stop when the budget is exhausted. These limitations belong only
 to the reference preset, not the ordinary full-map viewer.
 Cave light holder is the same target. `map_slice` updates map textures and sky
 but does not call gameplay water wibble; match update count before comparison.
-It includes entities outside P6, requiring declared comparison masks.
+It includes entities absent from the map viewer, requiring declared comparison masks.
 
 The reference preset reproduces fixed 4.12 rotation, separately rounded
 translation, depth clamping at 500, truncating screen division and signed
@@ -115,5 +114,5 @@ Use `mr_stub/src/drivers/map_slice/mr_map_slice_main.c`, `API.SRC/MR_VIEW.C`,
 `CAMERA.C`, `MAPVIEW.C`, `gamesys.C` and GPU rasterizer for behavior. The driver
 uses affine interpolation. Do not confuse its H with Game_perspective=256
 (used for view-list calculations). Reference images are external evidence,
-never copied into this repository. Acceptance tolerances and measured results
-are recorded in the [phase validation report](../validation/p6.md).
+never copied into this repository. Mask construction and acceptance tolerances are defined in the
+[map golden specification](../../../tests/golden/specs/maps.md#synthetic-reference-projection).

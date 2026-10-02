@@ -17,7 +17,7 @@
 - Mixing with the background happens after the conversion, on stored values, which is what the original did. A renderer that mixes in linear light would give about 0.73 where the original gives 0.5.
 - Textures are given to the shader without Godot's colour conversion, and vertex colours reach it unchanged.
 
-## Lighting contract for P6
+## Model lighting
 
 Models are lit while the game runs; nothing is baked into the files. From the original's source (`API.SRC/MR_LIGHT.C`, `MR_VIEW.C`, `mr_stat.c`) and the reference engine:
 
@@ -25,7 +25,7 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 - A flat polygon is lit once from its one normal; a gouraud polygon once per corner.
 - A level's lights are stored in its map file. The options screens use an ambient light of (0x60, 0x60, 0x60) and one parallel light of (0xA0, 0xA0, 0xC0).
 - Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
-- Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag. Entity fade behavior remains with the entity phase. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](maps.md#rendering).
+- Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag. Entity fade behavior is not implemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
 
 ## Semi-transparency
 
@@ -40,4 +40,15 @@ Follow the frozen C engine for behavior:
 | Semi-transparent model polygons on PC retail | Never shown. `MRMofPolygon.isSemiTransparent` answers no for every build after build 8, while its own comment says the game starts doing this at build 11, so the test reads as the wrong way round. | Shown for textures with the translucent flag |
 | Lighting of models | None: the polygon's colour is shown | Lit while running, from the map's lights |
 
-Screen measurements: [P4 validation](../validation/p4.md). Animation-specific UV and blend rules: [animation](animation.md). Validated map rendering: [map contracts](maps.md) and [P6 evidence](../validation/p6.md).
+## Screen colour check
+
+`tools/probe_model_shader.gd` checks textured modulation, dark colours,
+transparency and all four blend modes against expected screen RGB values.
+Run it with a window after renderer/environment changes; it writes its report
+outside the repository. The probe uses background (100, 60, 20) and permits
+one byte per channel. For example, texture (200, 120, 40) with polygon colour
+64 yields (100, 60, 20). Averaging the unmodulated texture with that
+background yields (150, 90, 30). The expected cases live in the probe.
+
+See [model animation](../data/animation.md) for animated UV/blend rules and
+[map rendering](../data/maps.md#rendering) for terrain sampling and ordering.

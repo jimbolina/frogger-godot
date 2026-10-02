@@ -1,6 +1,6 @@
 # Models
 
-Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.md).
+Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../sources.md).
 
 | Fact | Value |
 |---|---|
@@ -38,4 +38,4 @@ Follow FrogLord for these format rules; they agree on retail values.
 
 ## Open behavior question
 
-FrogLord selects the multiplayer general WAD for multiplayer levels, and this project follows it. Verify against the running game in P8. See [P4 validation](../validation/p4.md) for mesh timings and inspected winding/filtering results, and [animation](animation.md) for inherited playback data.
+FrogLord selects the multiplayer general WAD for multiplayer levels, and this project follows it. Runtime verification remains open. See [animation](animation.md) for inherited playback data.

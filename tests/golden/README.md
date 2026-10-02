@@ -15,7 +15,7 @@ observe the intended failure, then restore it.
 Read only the specification for the format being changed. Each lists the
 files, columns, generator command, and independent cross-checks. All
 commands run from the repository root; generated facts live in
-`pc-retail-v3.0e/`. Existing phase families keep their original meaning.
+`pc-retail-v3.0e/` or `synthetic/`, as specified for each family.
 
 | Format | Specification |
 |---|---|
@@ -41,4 +41,3 @@ bytes.
 
 Format-specific geometry/pixel ordering, padding and hash algorithms are
 specified in the linked documents. Do not assume every digest hashes raw bytes.
-Historical phase results live in [validation reports](../../docs/PORTING.md#completed-phase-evidence).

@@ -1,7 +1,7 @@
 # Agent instructions
 
 Read this and [docs/CURRENT.md](docs/CURRENT.md) at session start. Load other
-documents only for the task at hand; do not read historical reports by default.
+documents only for the task at hand.
 
 ## Project and boundaries
 
@@ -33,7 +33,7 @@ FrogLord names, warn/fall back/report unknown entries.
 ## Verification and delivery
 
 Before every commit, run both retail and asset-free modes using
-`tools/run_tests.ps1` or `tools/run_tests.sh`. Read [testing](docs/reference/testing.md)
+`tools/run_tests.ps1` or `tools/run_tests.sh`. Read [testing](docs/reference/testing/README.md)
 for commands and process safety: isolated writable user data, explicit logs,
 hidden awaited processes, disabled crash handler, stop on failure.
 Retail requires all tests passing without skips; asset-free allows only named
@@ -41,33 +41,40 @@ retail skips (exit 3). Strict script compilation is required.
 
 New golden families need a deliberate-break check and restoration. Inspect
 visual changes and save captures outside the repository. Complete each phase
-with one descriptive commit, user-facing README changes, roadmap status,
-updated technical contracts and a compact validation report.
+with one descriptive commit and update affected user-facing documentation,
+roadmap status and technical contracts. Report test results in the delivery
+message and commit body; keep raw logs outside the repository.
 
 ## Read on demand
 
 | Task | Start here |
 |---|---|
-| Current work / phase planning | [Checkpoint](docs/CURRENT.md), [roadmap](docs/PORTING.md) |
-| Domain / dependencies / ownership | [Domain](docs/reference/domain.md), [architecture](docs/reference/architecture.md) |
-| External source locations | [Sources](docs/reference/sources.md) |
-| Build/config recognition | [Build detection](docs/reference/build-detection.md) |
-| Archives / executable tables | [Archives](docs/reference/archives.md), [tables](docs/reference/executable-tables.md) |
-| Textures / models / animation | [Textures](docs/reference/textures.md), [models](docs/reference/models.md), [animation](docs/reference/animation.md) |
-| Space / rendering / gameplay timing | [Coordinates](docs/reference/coordinates.md), [rendering](docs/reference/rendering.md), [simulation](docs/reference/simulation.md) |
-| Tests / golden formats | [Testing](docs/reference/testing.md), [golden index](tests/golden/README.md) |
+| Current work | [Checkpoint](docs/CURRENT.md), [roadmap](docs/PORTING.md) |
+| Data, gameplay and rendering | [Domain index](docs/reference/domain.md), [architecture](docs/reference/architecture.md) |
+| External sources | [Sources](docs/reference/sources.md) |
+| Verification | [Testing](docs/reference/testing/README.md), [golden index](tests/golden/README.md) |
 
 ## Keep documentation small
 
-Keep this file around 400–600 words and CURRENT at most 300. Replace the
-checkpoint; never append progress history. Each fact has one authoritative
-home: link instead of copying. Reference files hold current topic contracts;
-validation files hold completed-phase evidence. Plans hold active scope and
-remaining work; at phase completion distill contracts/evidence and remove the
-completed plan (Git preserves it). Keep implementation details in code/tests.
-Read archives only when relevant. Do not add a monolithic progress file.
+Keep this file around 400–600 words and CURRENT at most 300. CURRENT holds only
+the current capability, next work and blockers; replace it, never append history.
+PORTING owns roadmap status and remaining work. README owns user instructions.
+Reference files explain current behavior, formats, limitations and source
+disagreements. Golden schemas and reproduction belong
+beside the golden tests. Each fact has one home; link instead of copying.
+
+Before adding a document, extend the existing subject file unless the new topic
+has a distinct responsibility. Name new files for that topic and link them from
+the domain index or testing guide. Do not create phase/milestone reports,
+validation directories, retrospective summaries, audit journals or duplicate
+plans. Keep implementation details in code/tests. Test counts, timings, run
+hashes and session paths belong in external logs or commit messages. Preserve
+only measurements that define a current behavior or compatibility limit, in
+the matching topic file with enough context to interpret them. Git owns history.
+
+Before delivery, check links and remove obsolete or duplicate prose.
 
 Act on authorized reversible work and fix issues within scope; questions
 alone are not implementation requests. Ask before irreversible, external or
 costly actions. Finish the requested work; name genuine blockers explicitly.
-Save findings, measurements and decisions in the repository before reporting.
+Save durable domain findings and decisions in their owning topic before reporting.

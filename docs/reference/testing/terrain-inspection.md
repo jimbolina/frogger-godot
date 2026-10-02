@@ -34,7 +34,7 @@ Drawing consumes copied snapshots. Interpolation, overlays and projection never
 advance rules. Completion pauses the viewer and ends automated capture. The
 overlay shows destination, layer flags, source identity, camera, death and
 ordered outcomes. Projection scaling reaches terrain, frog and animated texture
-frame materials after resize; see [gameplay projection](gameplay-projection.md).
+frame materials after resize; see [gameplay projection](../rendering/gameplay-projection.md).
 
 `tools/run_terrain.py` runs either driver with an isolated profile, hidden awaited
 processes and external logs. `--viewer --render-rate=30|60|144` uses explicit
@@ -48,5 +48,18 @@ fixtures against all three render schedules sequentially.
 Captures and traces must be outside this checkout and frozen `froggy`.
 Generated resources are released on reset/replacement rather than accumulated.
 
-Completed comparison and resource-lifetime evidence is recorded in
-[P7 validation](../validation/p7.md).
+## Reproducing schedule comparisons
+
+Generate the independent integrated fixtures with
+`tools/make_golden_integrated_terrain.py --scenario-dir <external-scenarios>`;
+see the [integrated corpus specification](../../../tests/golden/specs/integrated-terrain.md)
+for the full generator invocation and C reference requirement. Then run:
+
+```powershell
+python tools/verify_terrain_schedules.py --godot <godot-executable> --scenario-directory <external-scenarios> --reference tests/golden/synthetic/integrated_terrain.csv --output-directory <external-output>
+```
+
+The complete-trace comparator requires ticks starting at zero and Control,
+Move, Collision, Camera and Final in order. A trace must reach `tick_limit` or
+end in explicit completion; a zero limit permits metadata only. Missing,
+reordered, truncated, error and post-completion records fail comparison.

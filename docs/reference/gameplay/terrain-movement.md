@@ -1,4 +1,5 @@
 # Terrain movement source contract
+
 Frozen `FROG.C`, `COLLIDE.C` and `froguser.C` govern behavior. GRID shape follows
 the [grid contract](grid.md). The run owns copied definitions, snapshots and
 ordered command indices. Invalid commands and unsafe authored-storage accesses
@@ -15,38 +16,40 @@ Entity transforms and croak scaling are separate source branches.
 Local quick/auto/tongue timers are unsigned16. A nonzero timer decrements to zero;
 its flag clears on the following modifier call. Quick and auto fixture powers
 must supply their remaining timers explicitly. Pickup application and global
-timer-speed mutation belong to P10. Start timer is explicit external context,
+timer-speed mutation belong to game flow. Start timer is explicit external context,
 not an invented countdown inside the terrain run. `RunStart.start_mode` selects
 stationary components, fast/play reset camera wait, or single-start bounce.
 `TickCommand.start_timer_context` supplies the game loop's current timer value;
 `start_sequence_complete` supplies HUD completion and enters camera wait. The
 host must supply that completion; the port does not substitute elapsed ticks for
 the source HUD script. Completion commands outside bounce/rest are rejected.
+
 ## Reachability and comparison gates
+
 | Source callback or branch | Independent actual-C facts | Godot gate | Scope |
 |---|---|---|---|
-| Ordinary/super/quick/auto JumpFrog; buffering | terrain_components, terrain_d1 | test_terrain_run | P7 |
-| Landing, stun, deferred death, fade/theme height | terrain_collision | test_terrain_run supported terminal prefix | P7 |
-| Positive odd dimensions; source centred-base hop | grid_odd, terrain_odd | test_grid_queries, test_terrain_specials | P7; world-bitmask quirk preserved |
-| Map-specific freefall animation, dying velocity, VOL death request and camera-wait collision guard | terrain_map_branches | test_terrain_specials | P7 selection; factory internals P11 |
-| Extreme signed16 normals and signed32 world macros | grid_width | test_grid_queries | P7; only macros observed outside grid |
-| Terrain UpdateFrogMatrix | terrain_matrix | test_terrain_matrix | P7; entity/scaling excluded |
-| Grid and simple grid slip setup/movement; signed slope threshold | terrain_special, terrain_slope | test_terrain_specials | P7 |
-| Bounce setup/movement; cliff roll/null fall | terrain_roll | test_terrain_specials | P7 |
-| Freeform setup/movement and held steering | terrain_freeform, terrain_steering | test_terrain_specials | P7; tongue/entity interaction P8/P10 |
-| Local modifier expiry | terrain_modifiers | test_terrain_specials | P7; global timer-speed P10 |
-| BOUNCY_COBWEB entered by authored N/E wall flags or cliff boundary | terrain_wall | test_terrain_specials | P7 |
-| Single-start bounce/rest and fast-start wait | terrain_startup; explicit completion test | test_terrain_specials, test_terrain_run | P7 callbacks; HUD completion P10 |
-| Combined reaction flags and first-match precedence | terrain_priority | test_terrain_specials | P7 |
-| Signed32 hop delta, wall numerator and freeform floor wrapping; forced failed-search pointer carry | terrain_narrow safe prefixes | test_terrain_specials | P7; out-of-global-storage pointers are diagnosed |
-| Outward bounds adjustment | terrain_bounds supported prefix | test_terrain_specials | P7; final unbounded C lookup is diagnosed |
-| Entity slipping, cobweb, thermal and throw | Entity fixture deferred | P8 | P8 |
-| Move-to-target/checkpoint callbacks | Checkpoint/game-flow fixture deferred | P10 | P10 |
+| Ordinary/super/quick/auto JumpFrog; buffering | terrain_components, terrain_d1 | test_terrain_run | Terrain |
+| Landing, stun, deferred death, fade/theme height | terrain_collision | test_terrain_run supported terminal prefix | Terrain |
+| Positive odd dimensions; source centred-base hop | grid_odd, terrain_odd | test_grid_queries, test_terrain_specials | Terrain; world-bitmask quirk preserved |
+| Map-specific freefall animation, dying velocity, VOL death request and camera-wait collision guard | terrain_map_branches | test_terrain_specials | Terrain selection; effect factories excluded |
+| Extreme signed16 normals and signed32 world macros | grid_width | test_grid_queries | Terrain; only macros observed outside grid |
+| Terrain UpdateFrogMatrix | terrain_matrix | test_terrain_matrix | Terrain; entity/scaling excluded |
+| Grid and simple grid slip setup/movement; signed slope threshold | terrain_special, terrain_slope | test_terrain_specials | Terrain |
+| Bounce setup/movement; cliff roll/null fall | terrain_roll | test_terrain_specials | Terrain |
+| Freeform setup/movement and held steering | terrain_freeform, terrain_steering | test_terrain_specials | Terrain; tongue/entity interaction excluded |
+| Local modifier expiry | terrain_modifiers | test_terrain_specials | Terrain; global timer-speed excluded |
+| BOUNCY_COBWEB entered by authored N/E wall flags or cliff boundary | terrain_wall | test_terrain_specials | Terrain |
+| Single-start bounce/rest and fast-start wait | terrain_startup; explicit completion test | test_terrain_specials, test_terrain_run | Terrain callbacks; HUD completion supplied by caller |
+| Combined reaction flags and first-match precedence | terrain_priority | test_terrain_specials | Terrain |
+| Signed32 hop delta, wall numerator and freeform floor wrapping; forced failed-search pointer carry | terrain_narrow safe prefixes | test_terrain_specials | Terrain; out-of-global-storage pointers are diagnosed |
+| Outward bounds adjustment | terrain_bounds supported prefix | test_terrain_specials | Terrain; final unbounded C lookup is diagnosed |
+| Entity slipping, cobweb, thermal and throw | Entity fixture deferred | Not implemented | Entities/forms |
+| Move-to-target/checkpoint callbacks | Checkpoint/game-flow fixture deferred | Not implemented | Game flow |
+
 The callback fixtures isolate their declared transport boundaries. The
-[collision oracle contract](terrain-collision-oracle.md) records effect factories,
+[collision oracle contract](../testing/terrain-collision-oracle.md) records effect factories,
 request interception and omitted RNG work; a match does not establish full
-engine effects or RNG parity. Scalar corruption/restoration evidence is recorded
-in the [P7 validation report](../validation/p7.md).
+engine effects or RNG parity.
 Authored fade corners must fit signed16, death height signed32, flags unsigned32,
 modifier timers unsigned16 and stack count/cliff bytes unsigned8. Ordered layer
 spans must cover every square. Ignored flag data is retained, with unknown-bit
@@ -68,9 +71,9 @@ controller. The rows above cover failed setup's mode overwrite, slip-to-safe,
 freeform-to-fall/death, wall-to-land, cliff-to-fall/death, bounce-to-reaction and
 explicit start completion to camera-wait.
 Remaining callback branches require another domain: ON_ENTITY/JUMP_FROM_ENTITY
-matrix and movement, slipping-entity/cobweb/thermal/throw setup depend on P8
+matrix and movement, slipping-entity/cobweb/thermal/throw setup depend on
 entities/forms. Tongue targets, croak lighting, checkpoint collection, HUD start
-completion and global timer-speed mutation depend on P8/P10. These are explicit
+completion and global timer-speed mutation depend on entities and game flow. These are explicit
 command/domain boundaries rather than omitted terrain dispatch modes.
 The map identity used by `Game_map` is distinct from archive resource identity.
 `LevelDefinition.map_index` supplies that scalar. SKY1 through SKY multiplayer

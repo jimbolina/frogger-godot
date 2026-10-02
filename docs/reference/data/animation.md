@@ -1,9 +1,9 @@
 # Model animation
 
-Retail counts below refer to `pc-retail-v3.0e`. See [source locations](sources.md).
+Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../sources.md).
 
 Terrain frog script requests, queues, random idle selection and authoritative
-virtual-cel advancement are specified in [frog animation control](frog-animation-control.md).
+virtual-cel advancement are specified in [frog animation control](../gameplay/frog-animation-control.md).
 Presentation samples that action/cel state with the existing model decoder;
 render callbacks do not advance gameplay animation clocks.
 
@@ -31,8 +31,7 @@ repaired. Structural truncation or impossible pointers still reject a
 file. An invalid texture list disables only its target, which keeps its
 original image. Incomplete models share their counterpart's effective
 geometry and animation arrays while retaining their own polygons,
-colours and image IDs. Raw stored counts remain separate; P4 facts did
-not change.
+colours and image IDs. Raw stored counts remain separate from inherited data.
 Undefined scale flag bits are preserved and explicitly reported; as in
 FrogLord and C, only bit zero affects sampling. Unsupported structural
 format modes fail with a diagnostic.
@@ -50,11 +49,10 @@ Stored quaternions are converted with the C fixed-point formulas without
 normalizing them. Matrix entries narrow to signed 16 bits, and scale
 left-multiplies the matrix (scales its rows). Old standard virtual-cel
 tables are one-based; authored interpolation endpoints are zero-based.
-Space conversion follows the [coordinate contract](coordinates.md).
+Space conversion follows the [coordinate contract](../rendering/coordinates.md).
 
-The viewer uses the existing 30 Hz physics clock and three-step catch-up
-limit. This adopts the frozen reference's clock for animation; the
-retail 25/30 Hz timing investigation remains P7 work.
+The viewer uses the 30 Hz physics clock and three-step catch-up limit
+defined by the [simulation contract](../gameplay/simulation.md).
 
 ### Textures and smoothing
 
@@ -96,8 +94,7 @@ Use the existing `anim_slice.exe` with SDL's dummy driver and an external
 (relative to the repository root). `verify_anim_retail` is the relevant
 catalogue entry; `frog_anim_slice` tests sprite command lists instead.
 The expected hashes and serialization are specified in the
-[animation golden specification](../../tests/golden/specs/animation.md).
-Completed comparisons are in [P5 validation](../validation/p5.md).
+[animation golden specification](../../../tests/golden/specs/animation.md).
 
 The driver's camera is `(0,-100,-350)` and model placement `(0,0,1000)`.
 Its projection constant is 1000, but `MR_VIEW.C` first scales X by
@@ -105,9 +102,9 @@ viewport width/320 and Y by height/256 (the driver's PAL configuration).
 At 640x480 the effective focal lengths are 2000 horizontally and 1875
 vertically. Godot's reference capture uses FOV `2 * atan(240 / 2000)`
 and a reference-only 240/256 scale of model and camera Y. Omitting the
-aspect matrix produced a silhouette half the reference's size; using
-the NTSC height of 240 left a further vertical mismatch. This calibration
-applies to the standalone driver; general map projection remains P6 work.
+aspect matrix halves the silhouette size; using the NTSC height of 240
+creates a vertical mismatch. This calibration applies to the standalone
+driver; see [map projection](maps.md#camera-and-reference-captures) for terrain.
 
 Authored quaternion interpolation uses analytic trigonometry in place of
 the C lookup tables, while preserving integer translation/scale stepping,

@@ -27,7 +27,7 @@ It supplies only caller-owned scalar fixtures, no replacement renderer.
 `tools/make_golden_gameplay_projection.py` independently computes all 40 samples
 and verifies all 40 integer fields against that executable. Fixtures include
 follow, quarter-turn, death-offset and reset camera poses, terrain corners,
-frog-height landmarks and adjacent256-unit cells. The corpus is
+frog-height landmarks and adjacent 256-unit cells. The corpus is
 `tests/golden/synthetic/gameplay_projection.csv`.
 
 Each X/Y bound is declared before candidate inspection: signed rotation and
@@ -36,9 +36,9 @@ separately. Godot's concrete Gram-Schmidt order is independently applied to the 
 source basis; its difference from the ideal unit basis is calculated per point,
 not replaced by a chosen tolerance. Float32 rounding uses gamma128=
 128*2^-24/(1-128*2^-24) with absolute coordinate L1 error propagation.
-The operation budget is27 normalization operations,33 dot/projection/subtraction
-operations for Gram-Schmidt,21 view-coordinate operations,28 homogeneous
-projection operations,11 viewport operations and 8 input/setup roundings.
+The operation budget is 27 normalization operations, 33 dot/projection/subtraction
+operations for Gram-Schmidt, 21 view-coordinate operations, 28 homogeneous
+projection operations, 11 viewport operations and 8 input/setup roundings.
 The depth denominator is reduced by the propagated error; all samples remain
 above the 128-unit clamp. Maximum row bounds are 1.543992 pixels X and
 2.248278 pixels Y. These apply
@@ -48,7 +48,7 @@ The native projection test applies the same Y scale as the existing shaders.
 Visual comparison masks are semantic: the 40 authored point IDs and their
 camera/terrain/frog-height categories form the projection acceptance mask.
 Exclude UI, entity/form meshes, lighting, texture filtering and raster coverage
-from this numeric test. A future silhouette comparison requires identical
+from this numeric test. Silhouette comparison requires identical
 frog action/cel, matrices, loaded mesh and source draw ownership; no image-wide
 pixel tolerance is established here. Source images alone do not close that gate.
 
@@ -58,16 +58,6 @@ Build externally with `tools/build_gameplay_projection_oracle.ps1
  tests/golden/synthetic/gameplay_projection.csv --c-oracle <external-exe>`.
 The builder rejects repository/frozen-tree destinations, links only existing
 reference objects and records hashes externally. It never rebuilds froggy.
-
-The existing frozen frog_slice.exe supported `--target=org3 --render` capture
-was run from an external stage with FROG_SLICE_SCREENSHOT_DIR pointing there.
-It loaded the owner's EXE/MWD and existing high-detail assets; exit 0 produced
-start, first jumping frame and landed 640x480 images. Paths/provenance live in
-the authorized visualization root under `p7/projection`. This provides an
-actual source-rendered reference, not a guessed rasterizer. It is an authored
-ORG3 scene containing P8 entities, so it cannot be scored against the current
-synthetic P7 scene. Candidate screenshot inspection has not selected these
-bounds or masks.
 
 Godot4.5 implementation anchors: [basis.cpp](https://github.com/godotengine/godot/blob/4.5-stable/core/math/basis.cpp#L52)
 uses ordered Gram-Schmidt; [camera_3d.cpp](https://github.com/godotengine/godot/blob/4.5-stable/scene/3d/camera_3d.cpp#L235)
@@ -92,14 +82,8 @@ The driver probes rejected north then resets and chooses east; frame numbers
 include reset/probe swaps. Reproducing just a six-tick jump without that prior
 history will not reproduce entity states or random consumption. Camera/frog
 scalars permit a detached foreground comparison; matching a full image still
-requires identical map/entity state. The scalar tap's logs are external
-`source-capture-facts.log` and contain each PNG path.
+requires identical map/entity state.
 
-Native helper validation: projection focus passed one test with 243 assertions,
-181 strict scripts. Changing source row 0 screen X 320 to 330 failed exactly that
-X comparison; restoration passed. Logs are external temp runs
-10451b2e33a242fa914bddfb227d581e, ab65fe8c70c54620bc9f29841adc69aa
-(expected failure), ef1a15ab1af34bc19a6e4e7ec92460fb (restored).
 Fixture cameras disable host physics interpolation because native unprojection
 otherwise sees a cached prior transform when poses change in the same frame.
 
@@ -108,13 +92,12 @@ animation environment in a fresh viewport, with the retained camera and
 viewport lighting matrices, against black. It uses existing MRAnimAddEnvToViewport,
 MRRenderViewport and MRSwapDisplay; no subsequent game tick occurs. This
 omits map/entities/shadows by viewport ownership rather than guessed image
-segmentation. Two independent source launches produced the identical PNG hash
-`d42e9644b3110fb1e27c31acca2ab81fccd4f61b8942c10e215c55b4e5760f45`.
+segmentation.
 
 Before rendering a candidate, `prepare_gameplay_foreground.py` records 227
 actual frozen-C vertex landmarks, per-vertex X/Y bounds, source input/image
-hashes and the exact action/cel/world matrices externally. Maximum bounds are
-1.247466 pixels X and 1.255062 pixels Y for this pose. The float32 operation
+hashes and the exact action/cel/world matrices externally. The start-pose maximum bounds are
+1.247466 pixels X and 1.255062 pixels Y; other poses use their own computed bounds. The float32 operation
 budget is 146: 18 part-world transformation operations plus the 128 camera/view/
 projection budget above. Integer part/view composition and projection errors
 are computed from each C observation against the independent double transform.
@@ -127,32 +110,24 @@ foreground coverage; color/lighting RMS and full-scene raster equivalence are
 not inferred. This bound was fixed from source data before candidate capture.
 The fixture and masks are external because they derive from player assets.
 
-The first foreground comparison retained in external evidence failed only for
-part 15: the oracle initially included all 227 vertices, including 20 vertices
-of the hidden throat. The actual source reports part flags 2 with
-`MR_ANIM_ENV_DISPLAY_LIMITED_PARTS` enabled. `MR_ANIM.C:775–790` skips that
-part; `FROG.C:317` clears its display bit and the PC FrogLord configuration
-also hides part 15. The corrected eligibility therefore compares 207 rendered
-vertices while preserving all 227 raw scalar observations externally. Numeric
-bounds are unchanged. Fresh start, airborne and landed comparisons passed after this correction.
-All 207 visible vertices meet their individual bounds and both silhouette
-directions have zero pixels outside the declared radius 3. Maximum errors
-(X/Y pixels) are 1.1913/1.0734, 1.0708/1.1572 and 1.0931/1.0796 respectively.
-External evidence directories under `p7/projection` are
-`foreground-e2fa1cfa0588419688e04de3cf37f4ba`,
-`foreground-be512da0e4484ff38e563dfd14dc4664` and
-`foreground-9b5fb4ea4a954ea294c054d303b5e8a8`. Each strict check parsed
-190 scripts without failure. The original failure remains in
-`foreground-3724d870a0514d4eb9559e27816a16e5`. This establishes foreground
-geometry and coverage for these poses, not lighting or whole-level parity.
+Only source-visible vertices belong in the comparison. The high-detail frog
+contains 227 raw vertices, of which 207 are rendered in these fixtures.
+Part 15 contains 20 hidden throat vertices: `MR_ANIM.C:775–790` skips the
+part when `MR_ANIM_ENV_DISPLAY_LIMITED_PARTS` is enabled and its display bit
+is clear. `FROG.C:317` clears that bit; the PC FrogLord configuration also
+hides the part. Keep raw observations, but exclude that part from visible
+landmark acceptance. Compare start, airborne and landed poses with the same
+per-vertex bounds and radius-three silhouette rule.
 
-Visual inspection finds the candidate frog brighter and more uniformly green.
+## Animated lighting limitation
+
+The current frog renderer appears brighter and more uniformly green than the
+frozen source because animated part lighting is missing.
 The source isolation copies the live viewport lighting/color matrices; the
 candidate uses the existing model shaders without those source lighting
 matrices. The existing `ModelMeshBuilder.lighting` path prelights static probes once with
 a single build-time basis. Animated frog parts move afterward, so supplying
 map lights there would freeze lighting against undeformed normals. Exact
 animated part lighting needs a dedicated rendering change and independent
-color samples; it is a future graphics follow-up. No color or lighting
-acceptance metric was declared, so these
-geometry and coverage passes do not establish lighting equivalence.
+color samples; see the [roadmap](../../PORTING.md). Geometry and silhouette comparisons do not
+establish lighting equivalence.
