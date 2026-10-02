@@ -1,5 +1,6 @@
 {
   "res://tests/golden/test_retail_grid.gd::test_all_grid_records_geometry_and_surface_averages": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_entities.gd::test_all_entity_identity_base_records_and_setup_census": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_animation_census": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_all_xar_headers_transforms_and_metadata": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_animation.gd::test_every_frame_of_every_xar_action": "SKIP: FROGGER_DATA_DIR is not set",

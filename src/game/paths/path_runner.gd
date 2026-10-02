@@ -96,6 +96,14 @@ func step(tick_index: int) -> String:
 func snapshot() -> PathSnapshot:
 	return _state.copy() if _state != null else null
 
+## Returns an independent runner with the same definition and current cursor.
+func copy() -> PathRunner:
+	var result := PathRunner.new()
+	result.error = error
+	result._definition = _definition.copy() if _definition != null else null
+	result._state = _state.copy() if _state != null else null
+	return result
+
 func _advance_backwards(candidate: PathSnapshot) -> void:
 	candidate.segment_distance = _signed32(candidate.segment_distance - candidate.speed)
 	candidate.total_distance = _signed32(candidate.total_distance - candidate.speed)

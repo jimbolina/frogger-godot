@@ -6,7 +6,7 @@
   from `RefCounted` and depend on neither Nodes/tree access nor conversion,
   gameplay, scenes or presentation.
 - `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
-  path, camera, animation-control and RNG state.
+  path, entity, camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;
   it does not depend on legacy readers, conversion or presentation, open files,
   poll input, consult wall time or access Nodes. Godot math types are allowed.
@@ -60,7 +60,11 @@ unsafe paths with source-located diagnostics while retaining valid neighbors.
 cursor and returns detached snapshots. `PathInspection` owns only sampled
 drawing resources. The map viewer frees its overlay and runner on map/source
 replacement; the common 30 Hz clock drives map animation and the selected
-path. See [path contract](gameplay/paths.md).
+path. `EntitySetup` resolves supported STATIC/MOVING records into detached
+definitions and source-located diagnostics. `EntityRun` owns copies and a path
+cursor for each moving entity, with aggregate commit on success and detached
+snapshots. Its all-attached transform inspection is separate from `TerrainRun`.
+See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).
 
 ## Extending behavior
 

@@ -34,7 +34,9 @@ payloads must fit their PATH records. Unknown bounded segment types retain
 identity and a warning, while malformed pointers or payloads fail the map.
 The path entity-list pointer is retained as metadata: FrogLord reads that list
 with GROU, so it need not point inside PATH. See [path behavior](../gameplay/paths.md).
-FORM, EMTP and ZONE still retain bounded metadata; their gameplay behavior is deferred.
+FORM and EMTP retain bounded metadata. The [entity setup](../gameplay/entities.md)
+reads STATIC matrix and MOVING PATH_INFO prefixes from EMTP spans without
+discarding subtype bytes. ZONE gameplay remains deferred.
 
 ## Rendering
 

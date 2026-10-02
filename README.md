@@ -119,8 +119,9 @@ the frozen reference camera, 128-group limit and 2,500-polygon group budget.
 Dragging switches to a custom inspection pose; R restores the preset.
 
 Maps include stored terrain colours, cave illumination, animated textures,
-water and sky-land. This is an inspection tool: frogs, moving entities, HUD
-and gameplay cameras are deferred. The explicit hidden-geometry inspection
+water and sky-land. The entity overlay can show bounded STATIC/MOVING base
+transforms; entity collision, scripts, HUD and complete level play are deferred.
+The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.
 
 The right-side path controls select a supported PATH record and set a component
@@ -129,9 +130,15 @@ mode. **Show path** draws its sampled shape, runner position and tangent;
 it starts off. The default start is segment 0, distance 0, speed 16, active,
 forward and repeat. Changing a control resets the shared tick. Playback,
 step and seek move the selected cursor with map animation. The map-slice
-reference preset hides the path drawing. These settings inspect detached
-path behavior; map entities are not attached to it yet. See the
-[path contract](docs/reference/gameplay/paths.md).
+reference preset hides the path drawing. These settings inspect a detached
+path runner; map entity attachment has its own authored starts. See the
+[path](docs/reference/gameplay/paths.md) and
+[entity](docs/reference/gameplay/entities.md) contracts.
+
+In the **Entities** tab, enable **Show entity axes** to draw attached base
+transforms and choose a source-indexed entity for its path and position
+readout. The panel counts omitted records; hover over the count for source
+diagnostics. The axes start hidden and the map-slice reference preset hides them.
 
 For reproducible path traces and an optional rendered capture, run
 `python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
@@ -147,6 +154,15 @@ headless trace against rendered runs at 30, 60 and 144 frames per second, use
 `python tools/verify_path_schedules.py --godot <executable> --scenario line
 --output-directory <external-folder>`. See the
 [path verification specification](tests/golden/specs/paths.md).
+
+For source-ordered entity transforms, run `python tools/run_entities.py --godot
+<executable> --scenario shared-path --output-directory <external-folder>`.
+Use `--viewer` to capture world and full-window images, or `--data-dir
+<game-folder> --level ORG1` to inspect player data. `--tick-limit` and
+`--render-rate 30|60|144` control the trace duration and render schedule.
+`python tools/verify_entity_schedules.py --godot <executable> --scenario
+shared-path --output-directory <external-folder>` compares schedules. Traces,
+logs and captures stay outside the repository.
 
 For repeatable captures on Windows, set `GODOT` and `FROGGER_DATA_DIR`, then:
 
@@ -207,7 +223,7 @@ The complete retail and asset-free runs remain required before each commit.
 |---|---|
 | `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
-| `src/game/` | Detached terrain definitions, ordered run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
+| `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
 | `src/presentation/` | Screens (`frontend/`), runtime setup (`setup/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |

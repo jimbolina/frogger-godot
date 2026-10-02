@@ -37,7 +37,8 @@ inspection start; changing one resets the clock. Seeking backward replays from
 that start. The overlay is hidden by default and always hidden in the map-slice
 reference preset. Its visual samples and marker never drive gameplay state.
 
-These are component rules and inspection only. Map entities do not yet attach
-their authored `PATH_INFO` to a run-owned cursor; no moving-platform or entity
-behavior is implied. The independent [golden specification](../../../tests/golden/specs/paths.md)
+`EntitySetup` now attaches authored `PATH_INFO` to independently owned cursors
+for supported moving base transforms. The [entity contract](entities.md) defines
+this bounded use; moving-platform collision and other entity behavior remain
+future work. The independent [golden specification](../../../tests/golden/specs/paths.md)
 defines source comparisons.

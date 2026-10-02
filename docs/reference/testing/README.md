@@ -36,6 +36,14 @@ unset the variable explicitly for asset-free mode.
 - [Path behavior](../gameplay/paths.md): decoded records, detached runner and
   map inspection; [path golden specification](../../../tests/golden/specs/paths.md)
   defines the independent data and trace checks.
+- [Entity base transforms](../gameplay/entities.md): source-ordered setup,
+  independently owned paths, unit tests and headless/rendered inspection.
+  `python tools/run_entities.py --godot <executable> --scenario shared-path
+  --output-directory <external-folder>` writes a trace; add `--viewer` for
+  world and full-window captures. `--data-dir <game-folder> --level ORG1`
+  selects player data. `--tick-limit` and `--render-rate 30|60|144` select
+  duration and frame schedule. Use `tools/verify_entity_schedules.py` with
+  the same selection arguments to compare headless and rendered traces.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 

@@ -40,12 +40,18 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 			var previous_instance: WeakRef
 			var previous_scene: WeakRef
 			var previous_path: WeakRef
+			var previous_entity: WeakRef
+			var previous_entity_run: WeakRef
 			if _viewer.current_mesh != null:
 				previous_mesh = weakref(_viewer.current_mesh)
 				previous_instance = weakref(_viewer.map_instance)
 				previous_scene = weakref(_viewer.scene_data)
 				if _viewer._path_inspection != null:
 					previous_path = weakref(_viewer._path_inspection)
+				if _viewer._entity_inspection != null:
+					previous_entity = weakref(_viewer._entity_inspection)
+				if _viewer._entity_run != null:
+					previous_entity_run = weakref(_viewer._entity_run)
 			assert_true(_viewer.load_level_by_code(FroggerIds.LEVEL_CODES[level], low_poly))
 			await get_tree().process_frame
 			await get_tree().process_frame
@@ -59,11 +65,20 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 				if previous_path != null:
 					var old_path: PathInspection = previous_path.get_ref()
 					assert_null(old_path, "previous path overlay released")
+				if previous_entity != null:
+					var old_entity: EntityInspection = previous_entity.get_ref()
+					assert_null(old_entity, "previous entity overlay released")
+				if previous_entity_run != null:
+					var old_entity_run: EntityRun = previous_entity_run.get_ref()
+					assert_null(old_entity_run, "previous entity run released")
 			var has_path: bool = _viewer._path_inspection != null
-			assert_eq(_viewer._world.get_child_count(), 4 if has_path else 3, "camera, environment, active map and optional active path remain")
+			var has_entity: bool = _viewer._entity_inspection != null
+			assert_eq(_viewer._world.get_child_count(), 3 + int(has_path) + int(has_entity), "camera, environment, active map and active inspection overlays remain")
 			assert_same(_viewer._world.get_child(2), _viewer.map_instance)
 			if has_path:
 				assert_same(_viewer._world.get_child(3), _viewer._path_inspection)
+			if has_entity:
+				assert_same(_viewer._world.get_child(3 + int(has_path)), _viewer._entity_inspection)
 			switched += 1
 	assert_eq(switched, 78)
 

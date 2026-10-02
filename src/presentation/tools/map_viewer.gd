@@ -64,9 +64,22 @@ var _path_backwards: CheckButton
 var _path_mode: OptionButton
 var _path_toggle: CheckButton
 var _path_readout: Label
+var _entity_setup: EntitySetup
+var _entity_definitions: Array[EntityDefinition] = []
+var _entity_run: EntityRun
+var _entity_inspection: EntityInspection
+var _entity_visible: bool = false
+var _entity_selected: int = -1
+var _entity_toggle: CheckButton
+var _entity_choice: OptionButton
+var _entity_readout: Label
+var _inspection_tabs: TabContainer
 
 func _ready() -> void:
 	_build_scene()
+	if ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--run-entity-scenario"):
+		_run_entity_scenario.call_deferred()
+		return
 	if ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--run-path-scenario"):
 		_run_path_scenario.call_deferred()
 		return
@@ -171,6 +184,7 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	if not source.error.is_empty() or source.map == null:
 		_status.text = source.error if not source.error.is_empty() else "Missing decoded map"
 		return false
+	_release_entities()
 	if map_instance != null:
 		_world.remove_child(map_instance)
 		map_instance.queue_free()
@@ -193,6 +207,7 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	map_instance.set_reference_target(source.midpoint)
 	map_instance.set_cave_frog(source.midpoint)
 	_setup_paths()
+	_setup_entities()
 	reset_camera()
 	seek_tick(0)
 	_refresh_status()
@@ -207,6 +222,7 @@ func set_camera_preset(preset: String) -> bool:
 	if map_instance != null:
 		map_instance.set_reference_mode(preset == "map-slice")
 	_update_path_visibility()
+	_update_entity_visibility()
 	reset_camera()
 	_refresh_status()
 	return true
@@ -248,6 +264,7 @@ func seek_tick(value: int) -> void:
 	if map_instance != null:
 		map_instance.set_tick(tick)
 	_replay_path(tick)
+	_replay_entities(tick)
 	_refresh_status()
 
 ## Pauses and advances one tick without rebuilding geometry.
@@ -257,6 +274,7 @@ func step_animation() -> void:
 		map_instance.step()
 	tick += 1
 	_step_path(tick - 1)
+	_step_entities(tick - 1)
 	_refresh_status()
 
 ## Changes sampling on existing materials.
@@ -284,6 +302,7 @@ func _process(delta: float) -> void:
 		tick += 1
 		map_instance.step()
 		_step_path(tick - 1)
+		_step_entities(tick - 1)
 		if not playing:
 			break
 	_refresh_status()
@@ -398,13 +417,17 @@ func _build_scene() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_status)
 	_status.text = "Choose a map. Drag to orbit; right-drag to pan; wheel to zoom."
+	var tabs := TabContainer.new()
+	tabs.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	tabs.offset_left = -230
+	tabs.offset_right = -8
+	tabs.offset_top = 8
+	tabs.offset_bottom = 340
+	_ui.add_child(tabs)
+	_inspection_tabs = tabs
 	var path_panel := VBoxContainer.new()
-	path_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	path_panel.offset_left = -230
-	path_panel.offset_right = -8
-	path_panel.offset_top = 8
-	path_panel.custom_minimum_size = Vector2(220, 0)
-	_ui.add_child(path_panel)
+	path_panel.name = "Path"
+	tabs.add_child(path_panel)
 	_path_toggle = CheckButton.new()
 	_path_toggle.text = "Show path"
 	_path_toggle.toggled.connect(set_path_visibility)
@@ -436,6 +459,21 @@ func _build_scene() -> void:
 	path_panel.add_child(_path_readout)
 	_path_readout.text = "Inspection settings\nNo path selected"
 	_set_path_controls_enabled(false)
+	var entity_panel := VBoxContainer.new()
+	entity_panel.name = "Entities"
+	tabs.add_child(entity_panel)
+	_entity_toggle = CheckButton.new()
+	_entity_toggle.text = "Show entity axes"
+	_entity_toggle.toggled.connect(set_entity_visibility)
+	entity_panel.add_child(_entity_toggle)
+	_entity_choice = OptionButton.new()
+	_entity_choice.item_selected.connect(_on_entity_selected)
+	entity_panel.add_child(_entity_choice)
+	_entity_readout = Label.new()
+	_entity_readout.custom_minimum_size = Vector2(210, 0)
+	_entity_readout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_entity_readout.text = "Base-transform inspection\nNo entities attached"
+	entity_panel.add_child(_entity_readout)
 
 func _path_spin(parent: Control, prefix: String, maximum: int) -> SpinBox:
 	var spin := SpinBox.new()
@@ -645,6 +683,180 @@ func _set_path_controls_enabled(value: bool) -> void:
 	_path_mode.disabled = not value
 	_path_toggle.disabled = not value
 
+func _setup_entities() -> void:
+	_release_entities()
+	if data == null or not data.is_valid() or scene_data == null or scene_data.map == null:
+		return
+	var source_id: String = FroggerIds.LEVEL_CODES[scene_data.level]
+	var row: MapBookEntry = data.map_book_entry(scene_data.level)
+	var resource_id: int = row.map_id(scene_data.low_poly) if row != null else -1
+	var build_id: String = data.version.internal_name if data.version != null else ""
+	var setup: EntitySetup = EntitySetup.from_map(scene_data.map, data.tables.theme_book(), build_id + ":" + source_id, resource_id, build_id)
+	if not setup.error.is_empty():
+		scene_data.diagnostics.append(setup.error)
+		_entity_readout.text = "Base-transform inspection\n" + setup.error
+		return
+	for diagnostic: EntitySetupDiagnostic in setup.diagnostics:
+		scene_data.diagnostics.append(diagnostic.to_text())
+	var issue: String = set_entity_definitions(setup.definitions)
+	if not issue.is_empty():
+		scene_data.diagnostics.append(issue)
+	else:
+		_entity_setup = setup
+		_entity_readout.tooltip_text = "\n".join(_entity_diagnostic_text())
+		_update_entity_readout()
+
+## Injects detached synthetic definitions without replacing map or path controls.
+func set_entity_definitions(definitions: Array[EntityDefinition]) -> String:
+	_release_entities()
+	var copies: Array[EntityDefinition] = []
+	for definition: EntityDefinition in definitions:
+		copies.append(definition.copy() if definition != null else null)
+	var candidate: EntityRun = EntityRun.create(copies)
+	if not candidate.error.is_empty():
+		return candidate.error
+	_entity_definitions = copies
+	_entity_run = candidate
+	_entity_inspection = EntityInspection.new()
+	_world.add_child(_entity_inspection)
+	_entity_inspection.configure(copies)
+	_entity_choice.clear()
+	for definition: EntityDefinition in copies:
+		_entity_choice.add_item("%d · %s" % [definition.entity_index, definition.form_name], definition.entity_index)
+	_entity_choice.disabled = copies.is_empty()
+	_entity_selected = copies[0].entity_index if not copies.is_empty() else -1
+	if not copies.is_empty():
+		_entity_choice.select(0)
+	_entity_toggle.disabled = copies.is_empty()
+	_update_entity_visibility()
+	_entity_inspection.set_selected(0 if not copies.is_empty() else -1)
+	_replay_entities(tick)
+	return ""
+
+## Returns source-located setup messages without exposing mutable map records.
+func entity_diagnostics() -> Array[EntitySetupDiagnostic]:
+	var detached: Array[EntitySetupDiagnostic] = []
+	if _entity_setup != null:
+		for diagnostic: EntitySetupDiagnostic in _entity_setup.diagnostics:
+			detached.append(diagnostic.copy())
+	return detached
+
+func _entity_diagnostic_text() -> PackedStringArray:
+	var lines := PackedStringArray()
+	if _entity_setup != null:
+		for diagnostic: EntitySetupDiagnostic in _entity_setup.diagnostics:
+			lines.append(diagnostic.to_text())
+	return lines
+
+## Returns a detached observation of every attached entity at the shared tick.
+func entity_snapshot() -> EntityRunSnapshot:
+	return _entity_run.snapshot() if _entity_run != null else null
+
+## Controls marker visibility without changing entity state.
+func set_entity_visibility(value: bool) -> void:
+	_entity_visible = value
+	_entity_toggle.set_pressed_no_signal(value)
+	_update_entity_visibility()
+
+func _update_entity_visibility() -> void:
+	if _entity_inspection != null:
+		_entity_inspection.visible = _entity_visible and camera_preset != "map-slice"
+
+func _replay_entities(target_tick: int) -> void:
+	if _entity_run == null:
+		_update_entity_readout()
+		return
+	var issue: String = _entity_run.reset()
+	if issue.is_empty():
+		for index: int in target_tick:
+			issue = _entity_run.step(index)
+			if not issue.is_empty():
+				break
+	if not issue.is_empty():
+		_entity_failure(issue)
+	if _entity_inspection != null:
+		_entity_inspection.set_snapshot(entity_snapshot())
+	_update_entity_readout()
+
+func _step_entities(previous_tick: int) -> void:
+	if _entity_run == null:
+		return
+	var issue: String = _entity_run.step(previous_tick)
+	if not issue.is_empty():
+		_entity_failure(issue)
+	if _entity_inspection != null:
+		_entity_inspection.set_snapshot(entity_snapshot())
+	_update_entity_readout()
+
+func _entity_failure(issue: String) -> void:
+	set_playing(false)
+	var committed: EntityRunSnapshot = entity_snapshot()
+	if committed != null:
+		tick = committed.tick_index
+		if map_instance != null:
+			map_instance.set_tick(tick)
+	if scene_data != null:
+		scene_data.diagnostics.append("Entity run: " + issue)
+
+func _update_entity_readout() -> void:
+	if _entity_readout == null:
+		return
+	var snapshot: EntityRunSnapshot = entity_snapshot()
+	if snapshot == null or _entity_selected < 0:
+		var count: int = _entity_setup.diagnostics.size() if _entity_setup != null else 0
+		_entity_readout.text = "Base-transform inspection\nNo supported entities\n%d diagnostics (hover)" % count
+		return
+	for index: int in _entity_definitions.size():
+		var definition: EntityDefinition = _entity_definitions[index]
+		if definition.entity_index != _entity_selected:
+			continue
+		var entity: EntitySnapshot = snapshot.entities[index]
+		var path_text: String = "Static transform"
+		if entity.path != null:
+			path_text = "Path %d · segment %d · distance %d/%d\nSpeed %d · cursor flags 0x%X" % [definition.path_definition.path_index, entity.path.segment_index, entity.path.segment_distance, entity.path.segment_length, entity.path.speed, entity.path.flags]
+		var labels := PackedStringArray()
+		if definition.flags & EntityDefinition.HIDDEN:
+			labels.append("hidden")
+		if definition.flags & EntityDefinition.NO_DISPLAY:
+			labels.append("no display")
+		if definition.flags & EntityDefinition.NO_COLLISION:
+			labels.append("no collision")
+		if definition.flags & EntityDefinition.NO_MOVEMENT:
+			labels.append("no movement")
+		if definition.flags & EntityDefinition.ALIGN_TO_WORLD:
+			labels.append("world align")
+		var flags_text: String = "none" if labels.is_empty() else ", ".join(labels)
+		var diagnostic_count: int = _entity_setup.diagnostics.size() if _entity_setup != null else 0
+		_entity_readout.text = "Base-transform inspection\n%s · %s · id %d\n%s (0x%X) · tick %d\n%s\nPosition %d, %d, %d\nScripts/callbacks unexecuted\n%d diagnostics (hover)" % [definition.form_name, definition.entity_name, entity.unique_id, flags_text, definition.flags, snapshot.tick_index, path_text, entity.matrix12[9], entity.matrix12[10], entity.matrix12[11], diagnostic_count]
+		return
+
+func _on_entity_selected(item: int) -> void:
+	_entity_selected = _entity_choice.get_item_id(item)
+	if _entity_inspection != null:
+		_entity_inspection.set_selected(item)
+	_update_entity_readout()
+
+func _release_entities(detach: bool = true) -> void:
+	_entity_setup = null
+	_entity_run = null
+	_entity_definitions.clear()
+	_entity_selected = -1
+	_entity_visible = false
+	if _entity_toggle != null:
+		_entity_toggle.set_pressed_no_signal(false)
+		_entity_toggle.disabled = true
+	if _entity_choice != null:
+		_entity_choice.clear()
+		_entity_choice.disabled = true
+	if _entity_readout != null:
+		_entity_readout.text = "Base-transform inspection\nNo entities attached"
+		_entity_readout.tooltip_text = ""
+	if _entity_inspection != null:
+		if detach and _entity_inspection.get_parent() == _world:
+			_world.remove_child(_entity_inspection)
+		_entity_inspection.queue_free()
+		_entity_inspection = null
+
 func _run_path_scenario() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
 	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
@@ -809,6 +1021,110 @@ func _frame_path(definition: PathDefinition) -> void:
 func _fail_path_run(message: String) -> void:
 	push_error(message)
 	get_tree().quit(1)
+
+func _run_entity_scenario() -> void:
+	var arguments: PackedStringArray = OS.get_cmdline_user_args()
+	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
+	var trace_path: String = ViewerArguments.value(arguments, "--trace-jsonl=")
+	if not _external_capture_folder(folder) or not ViewerCapture.external_folder(trace_path.get_base_dir()):
+		_fail_path_run("Entity output requires absolute external destinations")
+		return
+	var selected: String = ViewerArguments.value(arguments, "--scenario=")
+	var scenario: EntityScenario = EntityScenario.builtin(selected if not selected.is_empty() else "shared-path")
+	if not scenario.error.is_empty():
+		_fail_path_run(scenario.error)
+		return
+	var limit_text: String = ViewerArguments.value(arguments, "--tick-limit=")
+	if not limit_text.is_empty():
+		if not limit_text.is_valid_int() or limit_text.to_int() < 0 or limit_text.to_int() > 100000:
+			_fail_path_run("Entity tick limit must be in 0..100000")
+			return
+		scenario.tick_limit = limit_text.to_int()
+	var rate_text: String = ViewerArguments.value(arguments, "--render-rate=")
+	var render_rate: int = 60 if rate_text.is_empty() else rate_text.to_int()
+	if render_rate not in [30, 60, 144]:
+		_fail_path_run("Entity render rate must be 30, 60 or 144")
+		return
+	var level_code: String = ViewerArguments.value(arguments, "--level=")
+	if not level_code.is_empty():
+		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
+		if not found.is_ok():
+			_fail_path_run(found.error)
+			return
+		open_data(GameData.open(found.source, found.version), true)
+		if data == null or not data.is_valid():
+			_fail_path_run(data.error if data != null else "No game data")
+			return
+		var attach_error: String = scenario.attach_data(data, level_code)
+		if not attach_error.is_empty():
+			_fail_path_run(attach_error)
+			return
+		if not load_level_by_code(level_code):
+			_fail_path_run(_status.text)
+			return
+		if _entity_run == null or _entity_setup == null:
+			_fail_path_run("Entity setup did not attach the selected map")
+			return
+	else:
+		if not show_scene(_synthetic_path_scene()):
+			_fail_path_run(_status.text)
+			return
+		_frame_path(scenario.definitions[1].path_definition)
+		var attach_issue: String = set_entity_definitions(scenario.definitions)
+		if not attach_issue.is_empty():
+			_fail_path_run(attach_issue)
+			return
+	set_entity_visibility(true)
+	_inspection_tabs.current_tab = 1
+	var trace := EntityTrace.new()
+	trace.configure(scenario)
+	trace.append_snapshot(entity_snapshot())
+	set_process(false)
+	set_playing(true)
+	var frames: int = 0
+	var frame_cap: int = ceili(float(scenario.tick_limit + 1) * float(render_rate) / 30.0) + render_rate
+	while tick < scenario.tick_limit and frames < frame_cap:
+		var before: int = tick
+		_process(1.0 / float(render_rate))
+		if tick > before:
+			if tick != before + 1 or entity_snapshot() == null or entity_snapshot().tick_index != tick:
+				_fail_path_run("Entity render schedule advanced more than one tick")
+				return
+			trace.append_snapshot(entity_snapshot())
+		elif not playing:
+			_fail_path_run("Entity update stopped at tick %d" % tick)
+			return
+		frames += 1
+		await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+	set_playing(false)
+	if tick != scenario.tick_limit:
+		_fail_path_run("Entity render schedule did not reach tick %d" % scenario.tick_limit)
+		return
+	var save_issue: String = trace.save(trace_path)
+	if not save_issue.is_empty():
+		_fail_path_run(save_issue)
+		return
+	var capture_issue: String = ViewerCapture.prepare_folder(folder)
+	if not capture_issue.is_empty():
+		_fail_path_run(capture_issue)
+		return
+	_ui.visible = false
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	capture_issue = ViewerCapture.save_image(_viewport.get_texture().get_image(), folder.path_join("entity_tick%d.png" % tick))
+	if not capture_issue.is_empty():
+		_fail_path_run(capture_issue)
+		return
+	_ui.visible = true
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	capture_issue = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("entity_controls.png"))
+	if not capture_issue.is_empty():
+		_fail_path_run(capture_issue)
+		return
+	print("entity_viewer: %s, %d ticks, next tick %d" % [scenario.name, scenario.tick_limit, entity_snapshot().tick_index])
+	get_tree().quit(0)
 
 func _on_level_selected(index: int) -> void:
 	load_level_by_code(FroggerIds.LEVEL_CODES[_levels.get_item_id(index)], _low.button_pressed)
@@ -996,6 +1312,7 @@ func _release_scene(detach: bool = true) -> void:
 	_clock = 0.0
 	tick = 0
 	_release_path(detach)
+	_release_entities(detach)
 	for instance: Node3D in [map_instance, _probe]:
 		if instance != null:
 			if detach:
