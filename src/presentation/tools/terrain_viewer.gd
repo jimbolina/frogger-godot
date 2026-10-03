@@ -40,6 +40,7 @@ func _ready() -> void:
 	_build_scene()
 	if auto_open:
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
+		configure_input(arguments)
 		record_trace = ViewerArguments.has_prefix(arguments, "--trace-csv=") or ViewerArguments.has_prefix(arguments, "--trace-jsonl=")
 		var path: String = ViewerArguments.value(arguments, "--scenario-file=")
 		var name_arg: String = ViewerArguments.value(arguments, "--scenario=")
@@ -63,6 +64,13 @@ func _exit_tree() -> void:
 		data.close()
 	data = null
 	_owns_data = false
+
+## Direct map exploration uses live controls; explicit fixtures and captures replay.
+func configure_input(arguments: PackedStringArray) -> void:
+	replay_commands = ViewerArguments.value(arguments, "--level=").is_empty() \
+		or ViewerArguments.has_flag(arguments, "--run-scenario") \
+		or ViewerArguments.has_prefix(arguments, "--scenario=") \
+		or ViewerArguments.has_prefix(arguments, "--scenario-file=")
 
 ## Loads optional frog presentation; callers retain borrowed data until this viewer detaches.
 func open_data(selected: GameData, take_ownership: bool = false) -> String:
@@ -278,7 +286,13 @@ func draw_state(fraction: float) -> void:
 			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
 		_label.text += "\n"
 		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
-	_label.text += "Space play/pause | . step | R reset | I interpolate\nTab replay/live | arrows hop | Q/E camera\n" + last_error
+	var input_status: String = "REPLAY" if replay_commands else "LIVE"
+	input_status += " | running" if playing else " | paused"
+	if _current.completed:
+		input_status += " | run ended: R resets"
+	elif replay_commands and _current.tick_index >= scenario.tick_limit:
+		input_status += " | replay finished: Tab selects live input"
+	_label.text += input_status + "\nSpace play/pause | . step | R reset | I interpolate\nTab replay/live | arrows hop | Q/E camera\n" + last_error
 
 func _process(delta: float) -> void:
 	if run == null or _current == null:

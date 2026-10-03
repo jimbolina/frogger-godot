@@ -23,9 +23,14 @@ follow the frozen C port's 30 Hz target; see the
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
-Space plays/pauses the command fixture, Period steps, R resets and I changes
-interpolation. Tab switches to live arrow-key input, Shift requests a super hop,
-and Q/E turn the gameplay camera. Pause and reset also reset drawing interpolation.
+Space plays/pauses, Period steps, R resets and I changes interpolation.
+A direct retail-map launch selects live arrow-key input:
+`godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1`.
+Press Space to start hopping. The overlay shows LIVE/REPLAY and running/paused;
+Tab switches input mode, Shift requests a super hop and Q/E turn the gameplay
+camera. Reset pauses and retains the selected input mode. Explicit scenario
+fixtures and automated captures still replay their bounded command sequence.
+Pause and reset also reset drawing interpolation.
 Optional POP and SAFE-platform interactions are available below;
 level progression remains deferred. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).

@@ -25,6 +25,12 @@ authored entity boundary markers are omitted. `--entity-reactions=pop` or
 complete playable level. `--entity-lifecycle visibility` additionally enables
 the bounded lifetime below; `all-attached` remains the command-line default.
 
+Direct interactive launches with `--level` select live keyboard input unless
+`--scenario`, `--scenario-file` or `--run-scenario` explicitly selects a replay.
+Space starts/pauses; Tab switches LIVE/REPLAY, shown with the playback state in
+the overlay. Live input has no fixture tick limit and reset retains its selection.
+A finished replay stays paused and explains how to select live input.
+
 The viewer borrows injected `GameData` unless ownership is transferred.
 Replacement closes an owned source once; reattaching the same source retains
 ownership. Detaching or replacing a data-derived level clears its scene, run

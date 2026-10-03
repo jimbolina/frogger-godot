@@ -3,7 +3,8 @@
 Terrain movement, collision/deaths, gameplay camera and animation control are
 implemented against the frozen C port's 30 Hz behavior. Typed scenarios run
 the same rules in tests, headless traces and the terrain viewer. There is no
-playable level yet. See the [domain index](reference/domain.md).
+complete playable level yet. Direct retail terrain-viewer launches select live
+keyboard exploration; see [controls](../README.md) and the [domain index](reference/domain.md).
 
 Final-PC PATH and FORM records decode into detached definitions. Optional
 entity integration advances owned STATIC/MOVING transforms before the frog,

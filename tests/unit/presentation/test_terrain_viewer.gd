@@ -78,6 +78,62 @@ func test_live_pressed_edges_are_derived_at_the_tick_boundary() -> void:
 	assert_eq(_viewer.step_live().error, "")
 	assert_eq(_viewer.run.snapshot().buffered_keys, 1)
 
+func test_direct_map_controls_idle_and_hop_beyond_the_replay_limit() -> void:
+	_viewer.configure_input(PackedStringArray(["--level=ORG1"]))
+	assert_false(_viewer.replay_commands)
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_viewer.open_scenario(scenario), "")
+	var start: Vector3i = _viewer.run.snapshot().position_16
+	_press(KEY_SPACE)
+	for tick: int in 24:
+		_viewer._process(1.0 / 30.0)
+	assert_eq(_viewer.run.snapshot().tick_index, 24)
+	assert_eq(_viewer.run.snapshot().position_16, start, "No fixture hop leaks into live input")
+	assert_true(_viewer.playing)
+	assert_string_contains(_viewer._label.text, "LIVE | running")
+	_press(KEY_UP)
+	_viewer._process(1.0 / 30.0)
+	_press(KEY_UP, false)
+	for tick: int in 9:
+		_viewer._process(1.0 / 30.0)
+	assert_ne(_viewer.run.snapshot().position_16, start)
+	_press(KEY_DOWN)
+	_viewer._process(1.0 / 30.0)
+	_press(KEY_DOWN, false)
+	for tick: int in 9:
+		_viewer._process(1.0 / 30.0)
+	assert_eq(_viewer.run.snapshot().position_16, start, "A later live hop still responds")
+	_press(KEY_R)
+	assert_false(_viewer.replay_commands, "Reset retains live control selection")
+	assert_false(_viewer.playing)
+	assert_string_contains(_viewer._label.text, "LIVE | paused")
+
+func test_explicit_fixtures_keep_replay_and_report_its_end() -> void:
+	for arguments: PackedStringArray in [PackedStringArray(),
+		PackedStringArray(["--level=ORG1", "--run-scenario"]),
+		PackedStringArray(["--level=ORG1", "--scenario=normal"]),
+		PackedStringArray(["--level=ORG1", "--scenario-file=fixture.json"])]:
+		_viewer.configure_input(arguments)
+		assert_true(_viewer.replay_commands)
+	assert_eq(_viewer.open_scenario(TerrainScenario.builtin("normal")), "")
+	_press(KEY_SPACE)
+	for tick: int in 17:
+		_viewer._process(1.0 / 30.0)
+	assert_eq(_viewer.run.snapshot().tick_index, 16)
+	assert_false(_viewer.playing)
+	assert_string_contains(_viewer._label.text, "replay finished: Tab selects live input")
+	_press(KEY_TAB)
+	_press(KEY_SPACE)
+	_viewer._process(1.0 / 30.0)
+	assert_eq(_viewer.run.snapshot().tick_index, 17)
+	assert_string_contains(_viewer._label.text, "LIVE | running")
+
+func _press(code: Key, pressed: bool = true) -> void:
+	var key := InputEventKey.new()
+	key.physical_keycode = code
+	key.pressed = pressed
+	_viewer._unhandled_key_input(key)
+
 func test_authored_json_inputs_and_command_line_overrides_are_detached() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	var values: Dictionary = {"level": {"theme": 4, "theme_name": "JUN", "collision_enabled": true,

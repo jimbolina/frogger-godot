@@ -46,7 +46,8 @@ the visible color difference remains explicit.
 The [bounded entity reactions](reference/gameplay/entities.md) include POP,
 platform landing, centring, carrying, local hops, departure and camera attachment.
 Other lethal reactions, entity-specific sliding/bouncing and primitive collision
-remain unimplemented. P8 remains in progress; no level is playable yet.
+remain unimplemented. P8 remains in progress; complete level play is unfinished.
+Live keyboard terrain exploration is available through the [terrain viewer](../README.md).
 Opt-in visibility lifecycle now covers script-free generic entities on zero-zone
 maps within its selected-group budget guard; the demonstrated camera sequence
 is synthetic. Complete level collision still needs scripts, zones, custom and
