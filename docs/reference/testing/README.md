@@ -50,6 +50,9 @@ unset the variable explicitly for asset-free mode.
 - [POP entity inspection](terrain-inspection.md#pop-entity-inspection): optional
   atomic frog/entity advancement and all eligible nearby FORM reactions, with
   the DES2 cactus demonstration and `entity-pop-v1` schedule comparisons.
+- [SAFE platform inspection](terrain-inspection.md#safe-platform-inspection):
+  JUN1 moving-log landing/carry and synthetic departure, with atomic camera
+  transitions and `entity-platform-v1` schedule comparisons.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 

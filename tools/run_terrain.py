@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--render-rate', type=int, choices=(30, 60, 144), default=60)
     parser.add_argument('--level', help='Optional single-player map code for terrain inspection')
-    parser.add_argument('--entity-reactions', choices=('pop',), help='Enable integrated FORM reactions')
+    parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()

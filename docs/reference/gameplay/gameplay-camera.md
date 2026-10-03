@@ -6,9 +6,9 @@ frog movement. Snapshots are detached and include source/target world positions,
 fixed-12 axes and camera-relative controller directions. Presentation owns the
 Godot camera and may interpolate snapshots without changing gameplay state.
 
-The supported slice is frozen C's default terrain camera without camera zones,
-entity transforms or non-cardinal entity dismount correction. Unsupported
-zone/entity input is rejected before mutation. Definitions require a
+The supported slice is frozen C's default camera with bounded platform
+attachment and dismount correction. Unsupported zone input and invalid entity
+matrices are rejected before mutation. Definitions require a
 downward view with a nonzero horizontal look axis. Map defaults are supplied by
 setup; debug-only CAMERA.H defaults are not an authority for each map.
 
@@ -56,6 +56,30 @@ seed 1 gives 16838, 5758 and state 2524885223. Shake executes after the camera m
 switch, including FIXED, changes translation only and retains the basis.
 Presentation must retain that basis when rendering the shaken translation.
 The 327-row independent C/Python corpus includes fixed freeze, follow shake
-and accumulating fixed shake. Unsupported zones/entity transforms remain
-explicit errors. Shake accepts the verified terrain amplitude range0â€“128;
-larger amplitudes are outside this slice.
+and accumulating fixed shake. Unsupported zones remain explicit errors.
+Shake accepts the verified amplitude range 0–128; larger amplitudes are outside
+this slice.
+
+## Platform attachment
+
+`transition_attachment(old, new, correct_quadrant)` validates detached matrices
+before changing the candidate. Mount/transfer multiplies the modification matrix
+by projected old rotation, then inverse projected new rotation; detachment
+absorbs the old projection. Empty old/new arrays mean no corresponding entity.
+`step` accepts an optional attached matrix and composes the projected entity
+rotation after modification and turn/correction. This applies whenever the frog
+retains its entity link, including angled departure in flight.
+
+`COLLIDE.C:1075–1106` and `CAMERA.C:492–589,674–730,820–883` own the order.
+Y correction advances by 32 angle units toward the selected quadrant. Controller
+vectors retain their projected fixed-12 values as well as cardinal directions.
+A quarter-turn completion persists its rotation in the modification matrix and
+emits an entity-angle delta consumed within the run's transaction. Camera
+snapshots copy those matrices, vectors, correction angles and per-tick delta.
+
+The frozen acos lookup is reconstructed as
+`min(2047, floor(acos(i / 4096.0) * 2048 / PI))`, except input zero yields 1023.
+All 8,193 entries are checked against an independent digest generated from the
+read-only original table; the C adapter explicitly loads that table. Runtime
+uses only the mathematical reconstruction. Reproduction belongs to the
+[entity golden specification](../../../tests/golden/specs/entities.md).

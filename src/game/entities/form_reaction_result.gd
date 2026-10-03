@@ -5,6 +5,7 @@ extends RefCounted
 const NONE: String = "none"
 const HIT: String = "hit"
 const POP: String = "pop"
+const SAFE: String = "safe"
 const UNSUPPORTED: String = "unsupported"
 const INVALID: String = "invalid"
 

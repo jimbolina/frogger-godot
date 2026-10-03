@@ -10,7 +10,7 @@ var _entity_reactions: bool = false
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
-	var metadata: Dictionary = {"schema": "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
+	var metadata: Dictionary = {"schema": "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
 		"camera_definition": facts(scenario.level.camera) if scenario.level.camera != null else null,
@@ -18,6 +18,8 @@ func configure(scenario: TerrainScenario) -> void:
 		"omitted": ["platforms", "scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle"] if scenario.entity_reactions else ["entities", "forms", "zones", "audio", "effects", "game_flow"],
 		"diagnostics": Array(scenario.diagnostics)}
 	if scenario.entity_reactions:
+		if scenario.platforms_enabled:
+			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
 		metadata["entity_collision"] = facts(scenario.level.entity_collision) if scenario.level.entity_collision != null else null
 		metadata["entity_lifetime"] = "all_attached"
 	full_rows = PackedStringArray([JSON.stringify(metadata)])

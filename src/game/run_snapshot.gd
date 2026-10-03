@@ -6,6 +6,14 @@ var tick_index: int = 0
 var entities: EntityRunSnapshot = null
 var entity_hit_indices: PackedInt32Array = PackedInt32Array()
 var death_entity_index: int = -1
+## Authored attachment identities; local coordinates remain in the source entity frame.
+var current_entity_index: int = -1
+var forbidden_entity_index: int = -1
+var entity_cell: Vector2i = Vector2i.ZERO
+var entity_offset_16: Vector3i = Vector3i.ZERO
+var entity_angle: int = 0
+var entity_transform12: PackedInt32Array = PackedInt32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+var entity_carry_indices: PackedInt32Array = PackedInt32Array()
 var position_16: Vector3i = Vector3i.ZERO
 var velocity_16: Vector3i = Vector3i.ZERO
 var cell: Vector2i = Vector2i.ZERO
@@ -72,6 +80,13 @@ func copy() -> RunSnapshot:
 	result.entities = entities.copy() if entities != null else null
 	result.entity_hit_indices = entity_hit_indices.duplicate()
 	result.death_entity_index = death_entity_index
+	result.current_entity_index = current_entity_index
+	result.forbidden_entity_index = forbidden_entity_index
+	result.entity_cell = entity_cell
+	result.entity_offset_16 = entity_offset_16
+	result.entity_angle = entity_angle
+	result.entity_transform12 = entity_transform12.duplicate()
+	result.entity_carry_indices = entity_carry_indices.duplicate()
 	result.position_16 = position_16
 	result.velocity_16 = velocity_16
 	result.cell = cell

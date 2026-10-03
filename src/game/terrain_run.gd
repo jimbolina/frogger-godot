@@ -1,7 +1,7 @@
 class_name TerrainRun
 extends RefCounted
 ## Frozen-source terrain movement, collision and ordered run systems at 30 ticks/sec.
-## Owns detached definitions and state; entity and game-flow domains remain separate.
+## Owns detached frog/entity candidates; game-flow progression remains external.
 
 const TICKS_PER_SECOND: int = 30
 const GRAVITY_16: int = 0x100000
@@ -57,6 +57,9 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
 	if level.entity_collision != null:
+		if level.entity_collision.platforms_enabled and level.camera == null:
+			run.error = "Platform execution requires an integrated camera"
+			return run
 		if not level.collision_enabled:
 			run.error = "Entity collision requires enabled frog collision"
 			return run
@@ -209,6 +212,9 @@ func step(command: TickCommand) -> TickResult:
 	var next: RunSnapshot = _state.copy()
 	next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
 	next.entity_hit_indices = PackedInt32Array()
+	next.entity_carry_indices = PackedInt32Array()
+	if next.current_entity_index >= 0 and (_platform_pose(next) == null or _platform_definition(next) == null):
+		return _failed_tick(result, "Current platform identity or matrix is invalid")
 	if command.start_timer_context >= 0:
 		next.start_timer = command.start_timer_context
 	if command.start_sequence_complete:
@@ -223,6 +229,8 @@ func step(command: TickCommand) -> TickResult:
 	_move(next, result.events)
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
+	if next.flags & 4 and next.current_entity_index >= 0:
+		_mark_carry(next, next.current_entity_index)
 	_sync_systems(next)
 	result.move_snapshot = next.copy()
 	TerrainModifiers.update(next)
@@ -249,13 +257,21 @@ func step(command: TickCommand) -> TickResult:
 		camera_input.freefall = next.flags & 128 != 0
 		camera_input.superjump = next.flags & 32 != 0
 		camera_input.start_timer = next.start_timer
+		camera_input.on_entity = next.current_entity_index >= 0
+		if camera_input.on_entity:
+			camera_input.entity_matrix12 = _platform_pose(next).matrix12.duplicate()
 		result.error = _candidate_camera.step(camera_input)
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
 		next.camera = _candidate_camera.snapshot()
+		next.entity_angle = (next.entity_angle + next.camera.entity_angle_delta) & 3
 	result.camera_snapshot = next.copy()
 	if _candidate_animation != null:
 		next.no_input_timer = _candidate_animation.update_scripts(next.no_input_timer)
+		_sync_systems(next)
+		next.animation_condition_counter = _candidate_animation.context.if_counter
+	result.scripts_snapshot = next.copy()
+	if _candidate_animation != null:
 		_candidate_animation.advance_pose()
 		if not _candidate_animation.error.is_empty():
 			result.error = _candidate_animation.error
@@ -341,7 +357,7 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[String]) -
 			TerrainFreeformSlip.forward_control(state, _grid.squares[state.square_index])
 		_apply_requests(state, callback, events)
 		return _callback_error
-	if state.mode not in [0, 1, 258, 267]:
+	if state.mode not in [0, 1, 5, 258, 267]:
 		return ""
 	if state.mode == MODE_JUMPING:
 		var pressed: int = _first_direction(command.pressed_mask)
@@ -382,7 +398,7 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[String]) -
 			return ""
 	var is_super: bool = input & 8 != 0
 	if is_super:
-		input = (state.direction - _controller_directions[0]) & 3
+		input = (state.direction - (state.entity_angle if state.flags & 4 else _controller_directions[0])) & 3
 	if input != NO_INPUT:
 		state.no_input_timer = 0
 		var failure: String = _jump(state, input, events, is_super)
@@ -392,6 +408,8 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[String]) -
 	return ""
 
 func _jump(state: RunSnapshot, direction: int, events: Array[String], is_super: bool = false, forced: bool = false, distance: int = 1, duration: int = 0) -> String:
+	if state.flags & 4:
+		return _jump_platform(state, direction, events, is_super, distance)
 	direction = _controller_directions[direction]
 	var offsets: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
 	var target_cell: Vector2i = state.cell + offsets[direction] * distance
@@ -489,6 +507,15 @@ func _jump(state: RunSnapshot, direction: int, events: Array[String], is_super: 
 	return ""
 
 func _move(state: RunSnapshot, events: Array[String]) -> void:
+	if state.current_entity_index >= 0 and state.mode in [0, 3, 5] and state.flags & 4:
+		var was_centring: bool = state.mode == 5
+		_apply_requests(state, TerrainPlatform.carry(state, _platform_pose(state)), events)
+		_update_world(state)
+		if not was_centring:
+			state.target_y = state.world_position.y
+		if was_centring:
+			_update_matrix(state)
+			return
 	if state.mode == 262:
 		_apply_callback(state, TerrainFreeformSlip.move(state, _grid), events)
 		return
@@ -553,6 +580,9 @@ func _move(state: RunSnapshot, events: Array[String]) -> void:
 		_update_matrix(state)
 
 func _move_jumping(state: RunSnapshot, events: Array[String], react_on_land: bool = true) -> void:
+	if state.current_entity_index >= 0:
+		_move_platform_jumping(state, events, react_on_land)
+		return
 	state.remaining_ticks -= 1
 	if state.remaining_ticks == 0:
 		if state.flags & 64:
@@ -599,6 +629,13 @@ func _update_world(state: RunSnapshot) -> void:
 	state.matrix12[11] = state.world_position.z
 
 func _update_matrix(state: RunSnapshot) -> void:
+	if state.flags & 4 and state.current_entity_index >= 0:
+		TerrainPlatform.update_matrix(state, _platform_pose(state))
+		return
+	if state.current_entity_index >= 0 and state.flags & (16 | 64) == 16:
+		var facing: Vector3i = PlatformMath.apply(_platform_pose(state).matrix12, TerrainPlatform.DIRECTIONS[state.direction])
+		state.matrix12 = TerrainMatrix.update(state.matrix12, state.flags, state.direction, null, facing)
+		return
 	state.matrix12 = TerrainMatrix.update(state.matrix12, state.flags, state.direction, _grid.squares[state.square_index] if state.square_index >= 0 else null)
 
 func _land(state: RunSnapshot, events: Array[String]) -> void:
@@ -607,6 +644,18 @@ func _land(state: RunSnapshot, events: Array[String]) -> void:
 		state.position_16 = GridQueries.square_centre(_grid, _grid.squares[state.square_index]) * 65536
 	state.target_y = state.position_16.y >> 16
 	var distance: int = state.target_y - state.old_y
+	_react_fall(state, distance, flags, events)
+	state.current_entity_index = -1
+	state.forbidden_entity_index = -1
+	state.velocity_16 = Vector3i.ZERO
+	state.old_y = state.target_y
+	state.flags &= ~(4 | 2 | 16 | 32 | 64 | 128 | 256 | 65536 | 16384)
+	if _entity_collision != null and _entity_collision.platforms_enabled and _candidate_camera != null and _candidate_camera.snapshot().twist_counter == 0:
+		_candidate_camera.align_y()
+	if _entity_collision != null and _entity_collision.platforms_enabled:
+		state.direction = PlatformMath.quadrant(Vector3i(state.matrix12[2], state.matrix12[5], state.matrix12[8]))
+
+func _react_fall(state: RunSnapshot, distance: int, flags: int, events: Array[String]) -> void:
 	state.mode = 0
 	if flags & 256 or distance <= 512:
 		state.animation_requests += 1
@@ -635,9 +684,6 @@ func _land(state: RunSnapshot, events: Array[String]) -> void:
 			state.sound_requests += 1
 		else:
 			_kill(state, 2, false, events)
-	state.velocity_16 = Vector3i.ZERO
-	state.old_y = state.target_y
-	state.flags &= ~(4 | 2 | 16 | 32 | 64 | 128 | 256 | 65536 | 16384)
 
 func _react(state: RunSnapshot, flags: int, events: Array[String]) -> void:
 	flags &= 65535
@@ -731,7 +777,10 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		if actual == null or actual.entity_index != expected.entity_index or actual.unique_id != expected.unique_id:
 			return "Entity collision snapshot identity does not match validated definitions"
 	var ordered: PackedInt32Array = EntityContactOrder.indices(_entity_collision, state.entities, state.world_position)
+	var forbidden: int = state.forbidden_entity_index
 	for entity_id: int in ordered:
+		if entity_id == state.current_entity_index or entity_id == forbidden:
+			continue
 		var index: int = -1
 		for candidate: int in _entity_collision.entities.size():
 			if _entity_collision.entities[candidate].entity_index == entity_id:
@@ -740,16 +789,58 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		if index < 0:
 			return "Entity contact order produced an unknown authored index"
 		var contact: FormContactResult = FormContactQuery.query(_entity_collision.contacts[index], state.entities.entities[index], state.world_position)
-		var reaction: FormReactionResult = FormReaction.evaluate(_entity_collision.contacts[index], contact)
+		var reaction: FormReactionResult = FormReaction.evaluate(_entity_collision.contacts[index], contact, _entity_collision.platforms_enabled)
 		if reaction.status == FormReactionResult.INVALID:
 			return reaction.reason
 		result.entity_contacts.append(reaction)
-		if reaction.hit:
-			state.entity_hit_indices.append(entity_id)
-		if reaction.status == FormReactionResult.POP and state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
-			_kill(state, reaction.kill_animation, false, result.events)
-			state.death_entity_index = entity_id
-			result.events.append("entity_pop_explosion_request")
+		var issue: String = _apply_form_reaction(state, _entity_collision.contacts[index], state.entities.entities[index], reaction, result)
+		if not issue.is_empty():
+			return issue
+	if state.current_entity_index >= 0 and state.flags & (2 | 16) == (2 | 16) and state.remaining_ticks == 1:
+		var pose: EntitySnapshot = _platform_pose(state)
+		var definition: FormContactDefinition = _platform_definition(state)
+		var delta: Vector3i = state.world_position - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
+		delta = Vector3i(PlatformMath.s16(delta.x), PlatformMath.s16(delta.y), PlatformMath.s16(delta.z))
+		var local: Vector3i = PlatformMath.apply(PlatformMath.transpose(pose.matrix12), delta)
+		var cell := Vector2i((local.x - definition.offsets.x) >> 8, (local.z - definition.offsets.y) >> 8)
+		if cell.x < 0 or cell.y < 0 or cell.x >= definition.dimensions.x or cell.y >= definition.dimensions.y:
+			return "Source same-platform re-reaction cell lies outside authored storage"
+		var contact := FormContactResult.new()
+		contact.status = FormContactResult.CONTACT
+		contact.entity_index = definition.entity_index
+		contact.unique_id = definition.unique_id
+		contact.form_grid_id = definition.form_grid_id
+		contact.form_id = definition.form_id
+		contact.form_name = definition.form_name
+		contact.local_position = local
+		contact.cell = cell
+		contact.height = definition.height
+		contact.cell_flags = definition.grid_flags[cell.y * definition.dimensions.x + cell.x]
+		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact, true)
+		if reaction.status in [FormReactionResult.INVALID, FormReactionResult.UNSUPPORTED]:
+			return "Same-platform re-reaction requires a supported cell: " + reaction.reason
+		result.entity_contacts.append(reaction)
+		var issue: String = _apply_form_reaction(state, definition, pose, reaction, result)
+		if not issue.is_empty():
+			return issue
+		# COLLIDE.C reasserts HIT outside ReactFrogWithForm in this special path,
+		# including a geometric/vertical rejection by the FORM reaction itself.
+		reaction.hit = true
+		if not state.entity_hit_indices.has(pose.entity_index):
+			state.entity_hit_indices.append(pose.entity_index)
+	return ""
+
+func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, result: TickResult) -> String:
+	if reaction.status == FormReactionResult.SAFE:
+		var issue: String = _mount_platform(state, definition, pose, reaction, result.events)
+		if not issue.is_empty():
+			return issue
+	if reaction.hit and not state.entity_hit_indices.has(pose.entity_index):
+		state.entity_hit_indices.append(pose.entity_index)
+	if reaction.status == FormReactionResult.POP and state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
+		_kill(state, reaction.kill_animation, false, result.events)
+		state.death_entity_index = pose.entity_index
+		result.events.append("entity_pop_explosion_request")
 	return ""
 
 func _failed_tick(result: TickResult, issue: String) -> TickResult:
@@ -758,11 +849,168 @@ func _failed_tick(result: TickResult, issue: String) -> TickResult:
 	result.move_snapshot = null
 	result.collision_snapshot = null
 	result.camera_snapshot = null
+	result.scripts_snapshot = null
 	result.final_snapshot = null
 	result.entity_contacts.clear()
 	result.events.clear()
 	result.rng_consumers.clear()
 	return result
+
+func _platform_pose(state: RunSnapshot) -> EntitySnapshot:
+	if state.entities != null:
+		for pose: EntitySnapshot in state.entities.entities:
+			if pose != null and pose.entity_index == state.current_entity_index and PlatformMath.valid(pose.matrix12):
+				return pose
+	return null
+
+func _platform_definition(state: RunSnapshot) -> FormContactDefinition:
+	if _entity_collision != null:
+		for definition: FormContactDefinition in _entity_collision.contacts:
+			if definition.entity_index == state.current_entity_index:
+				return definition
+	return null
+
+func _mark_carry(state: RunSnapshot, index: int) -> void:
+	if not state.entity_carry_indices.has(index):
+		state.entity_carry_indices.append(index)
+
+func _mount_platform(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, events: Array[String]) -> String:
+	var matrix: PackedInt32Array = pose.matrix12
+	if PlatformMath.s32(matrix[2] * matrix[2] + matrix[8] * matrix[8]) < 0x700 * 0x700:
+		reaction.status = FormReactionResult.NONE
+		reaction.reason = "SAFE platform is too vertical"
+		return ""
+	if state.flags & (2 | 16) != (2 | 16):
+		var previous: PackedInt32Array = PackedInt32Array()
+		if state.current_entity_index >= 0:
+			previous = _platform_pose(state).matrix12
+		_react_fall(state, state.world_position.y - state.old_y, reaction.contact.cell_flags, events)
+		var outcome: TerrainCallbackResult = TerrainPlatform.land(state, definition, reaction.contact, pose, _candidate_camera, previous)
+		_apply_requests(state, outcome, events)
+		if not outcome.error.is_empty():
+			return outcome.error
+		_update_world(state)
+		_mark_carry(state, pose.entity_index)
+		events.append("platform_attachment")
+	reaction.hit = true
+	return ""
+
+func _detach_platform(state: RunSnapshot, events: Array[String]) -> void:
+	if state.current_entity_index < 0:
+		return
+	_callback_error = _candidate_camera.transition_attachment(_platform_pose(state).matrix12, PackedInt32Array(), false)
+	state.current_entity_index = -1
+	events.append("platform_departure")
+
+func _jump_platform(state: RunSnapshot, input: int, events: Array[String], is_super: bool, distance: int) -> String:
+	var definition: FormContactDefinition = _platform_definition(state)
+	var pose: EntitySnapshot = _platform_pose(state)
+	if definition == null or pose == null:
+		return "Platform departure requires a current definition and pose"
+	var old_direction: int = state.direction
+	var old_y: int = state.target_y
+	var selection: PlatformJumpResult = TerrainPlatform.prepare_jump(state, definition, pose, _grid, _controller_directions, input, is_super, distance)
+	if not selection.error.is_empty():
+		return selection.error
+	if selection.blocked:
+		state.animation_requests += 1
+		_request_animation(FrogAnimationCatalog.OUCH, state)
+		events.append("ouch")
+		return ""
+	if not selection.moved:
+		return ""
+	if selection.detach:
+		_detach_platform(state, events)
+		if not _callback_error.is_empty():
+			return _callback_error
+	state.mode = MODE_JUMPING
+	state.remaining_ticks = 15 if is_super else 3 if state.powerup_flags & 2 else 6
+	state.old_y = old_y
+	if is_super:
+		state.flags |= 32
+	var origin: Vector3i = state.entity_offset_16 if state.current_entity_index >= 0 and not state.flags & 64 else state.position_16
+	state.velocity_16.x = PlatformMath.divide(state.target_16.x - origin.x, state.remaining_ticks)
+	state.velocity_16.z = PlatformMath.divide(state.target_16.z - origin.z, state.remaining_ticks)
+	state.velocity_16.y = PlatformMath.divide((state.target_y - state.world_position.y) << 16, state.remaining_ticks + 1) - ((GRAVITY_16 * (state.remaining_ticks + 1)) >> 1)
+	var roll: bool = old_direction == state.direction and state.buffered_input_count > 3 and not is_super and not state.powerup_flags & (2 | 4)
+	if roll:
+		state.buffered_input_count = 0
+	state.animation_requests += 1
+	_request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.powerup_flags & 2 else FrogAnimationCatalog.AUTOHOP if state.powerup_flags & 4 else FrogAnimationCatalog.ROLL if roll else FrogAnimationCatalog.HOP, state)
+	state.sound_requests += 1
+	events.append("super_hop" if is_super else "quick_hop" if state.powerup_flags & 2 else "auto_hop" if state.powerup_flags & 4 else "roll" if roll else "hop")
+	events.append("hop_sound")
+	if is_super or state.powerup_flags & 2 or not state.powerup_flags & 4:
+		state.score_requests += 1
+		events.append("score_10_request" if is_super else "score_50_request" if roll or state.powerup_flags & 2 else "score_5_request")
+	return ""
+
+func _move_platform_jumping(state: RunSnapshot, events: Array[String], react_on_land: bool) -> void:
+	var pose: EntitySnapshot = _platform_pose(state)
+	state.remaining_ticks -= 1
+	if state.remaining_ticks > 0:
+		_platform_freefall(state, pose, events)
+		return
+	if state.flags & (16 | 2) == (16 | 2):
+		var definition: FormContactDefinition = _platform_definition(state)
+		state.flags = (state.flags & ~TerrainPlatform.LANDED_CLEAR) | 4
+		state.mode = 0
+		state.animation_requests += 1
+		_request_animation(FrogAnimationCatalog.PANT, state)
+		state.entity_offset_16 = state.target_16
+		state.entity_transform12 = PlatformMath.project(PlatformMath.multiply(state.matrix12, PlatformMath.transpose(pose.matrix12)))
+		state.position_16 = PlatformMath.world(pose.matrix12, state.entity_offset_16) * 65536
+		state.velocity_16 = Vector3i.ZERO
+		var flags: int = definition.grid_flags[state.entity_cell.y * definition.dimensions.x + state.entity_cell.x]
+		_react_fall(state, state.world_position.y - state.old_y, flags, events)
+		_update_world(state)
+		_update_matrix(state)
+		if react_on_land:
+			_react(state, flags, events)
+		state.old_position_16 = state.position_16
+		return
+	if state.flags & 64:
+		if not state.flags & 16:
+			state.position_16.x = state.target_16.x
+			state.position_16.z = state.target_16.z
+		_detach_platform(state, events)
+		_land(state, events)
+		_update_world(state)
+		_update_matrix(state)
+		if react_on_land:
+			_react(state, _grid.squares[state.square_index].flags, events)
+		state.old_position_16 = state.position_16
+		return
+	# At the last no-land departure tick C integrates once more before detaching.
+	_platform_freefall(state, pose, events)
+	_detach_platform(state, events)
+	if state.square_index < 0:
+		var stack: GridStackDefinition = _grid.stack_at(state.cell)
+		if stack == null:
+			_callback_error = "Source platform final-hop stack lookup lies outside authored storage"
+			return
+		for index: int in range(stack.first_square_index + stack.square_count - 1, stack.first_square_index - 1, -1):
+			if _grid.squares[index].flags & 1 and GridQueries.square_height(_grid.squares[index]) >= state.world_position.y:
+				state.square_index = index
+				break
+	state.flags = (state.flags & ~TerrainPlatform.LANDED_CLEAR) | 128 | 8192
+	state.remaining_ticks = 0x7FFFFFF
+	state.velocity_16.x = 0
+	state.velocity_16.z = 0
+	_update_world(state)
+	state.old_position_16 = state.position_16
+
+func _platform_freefall(state: RunSnapshot, pose: EntitySnapshot, events: Array[String]) -> void:
+	state.velocity_16.y += GRAVITY_16
+	if state.flags & (128 | 8192) == (128 | 8192) and state.world_position.y - state.old_y >= 0:
+		state.animation_requests += 1
+		_request_animation(FrogAnimationCatalog.FREEFALL if _map_index >= 42 and _map_index <= 47 else FrogAnimationCatalog.FALLING, state)
+		state.flags &= ~8192
+		events.append("falling")
+	if not state.flags & 64:
+		TerrainPlatform.airborne(state, pose)
+	else:
+		state.position_16 += state.velocity_16
 
 func _request_animation(animation_id: int, state: RunSnapshot) -> void:
 	state.last_animation_request = animation_id
@@ -781,6 +1029,13 @@ func _sync_facts(state: RunSnapshot) -> void:
 	state.resource_id = _resource_id
 	state.map_index = _map_index
 	state.destination_cell = GridQueries.world_to_cell(_grid, state.target_16.x >> 16, state.target_16.z >> 16)
+	if _entity_collision != null and _entity_collision.platforms_enabled and (state.flags & 128 or (state.current_entity_index < 0 and state.mode != MODE_JUMPING)):
+		# After angled departure the source retains a stale local target. Freefall
+		# has no active horizontal target; inspect the current world cell instead.
+		state.destination_cell = state.cell
+	elif state.current_entity_index >= 0 and not state.flags & 64:
+		var target: Vector3i = PlatformMath.world(_platform_pose(state).matrix12, state.target_16)
+		state.destination_cell = GridQueries.world_to_cell(_grid, target.x, target.z)
 	state.square_flags = 0
 	state.square_source_offset = -1
 	state.polygon_index = -1

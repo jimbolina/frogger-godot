@@ -180,3 +180,66 @@ repositories with:
 & tools/build_integrated_entity_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-integrated-entity-oracle')
 python -B tools/make_golden_integrated_entities.py --c-oracle (Join-Path $env:TEMP 'frogger-integrated-entity-oracle/integrated_entity_oracle.exe') --verify
 ```
+
+## JUN1 SAFE platform
+
+`pc-retail-v3.0e/platform_retail.tsv` contains one selected high-detail JUN1
+`JUN_LOG` entity. It records its authored map/entity index and offset, EXE form
+book identity, behavior and callback IDs, high-detail WAD/model kind and primitive
+count, tick-zero position/tangent/matrix, first GRID
+FORM dimensions, bounds, height, flags and model-derived collision radius.
+It also records the PATH start and selected line segment, then the first SAFE
+contact with that log from an explicit water-cell inspection start. The contact columns give
+the command and advanced-entity tick, frog/entity world position, entity-local
+position, FORM cell/flags and squared distance. All fields are decimal facts or
+names; no source asset bytes are included.
+
+The independent Python generator reads the owner's EXE, archive, JUN1 map and
+MOF, then evaluates the frozen path sample, 6-tick normal hop and
+`CollideFrog` fixed-width contact gate. It starts at authored water cell
+`(18,5)`, facing NORTH and commanding NORTH at tick zero; this is an inspection
+start, not an established route from safe terrain. The selected source entity
+has no behavior script or collision/bonus callback. Regenerate or verify with:
+
+```powershell
+python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER
+python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --verify
+```
+
+## Synthetic SAFE interaction and camera correction
+
+`fixtures/platforms.json` supplies invented platform scenarios through the
+existing terrain start API. `synthetic/platforms.tsv` compares control, movement,
+collision, camera, animation-script and pose phases independently. Its header
+names fixed-point frog position/velocity, count, mode, flags, input, direction,
+old height, no-input timer, attachment/forbidden indices, local cell/offset,
+relative matrix and carry list. It also includes entity pose/path distance,
+camera position, modification matrix, correction angles and projected controller
+vectors; animation program/offset, script type/timer/flags, action/cel/environment;
+shared RNG and intercepted sound/particle request counts. Matrices are row-major
+fixed12 plus whole translations; positions ending in `16` are 16.16. Empty carry
+lists are `-`; indices are authored identities, with `-1` absent.
+
+The Python implementation must agree field-for-field with `platform_oracle.c`
+before writing expected data. The adapter calls unchanged frozen path/entity,
+frog, collision, camera, script and pose functions. Display/audio factories are
+intercepted as requests; renderer transform construction and effect RNG are
+outside this component comparison. Builder provenance hashes source and linked
+objects and stays outside both repositories. The original read-only acos table
+must be loaded explicitly; an uninitialized POP adapter table is not an oracle.
+
+`synthetic/platform_acos_digest.txt` is the standard comma-separated decimal
+list digest over reconstructed inputs -4096 through 4096. The generator compares
+all entries against the original table before writing its digest; Godot computes
+the entire mathematical sequence independently and compares the digest.
+
+```powershell
+& tools/build_platform_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-platform-oracle')
+python -B tools/make_golden_platforms.py --c-oracle (Join-Path $env:TEMP 'frogger-platform-oracle/platform_oracle.exe') --acos-table ../froggy/engine/vendor/frogger-psx-src/source/API.BIN/acos_le.dat --verify
+```
+
+Omit `--verify` to regenerate. Platform trajectories, acos digest and JUN1 retail
+facts each require a deliberate corruption/failure/restoration check. Runtime
+retail acceptance checks the complete ordered scan, including earlier candidates,
+against the independently predicted first contact; it does not bypass the scan
+with a selected-entity query.

@@ -7,7 +7,7 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Composes the independent transform and contact adapters for a decoded map.
-static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "") -> EntityCollisionSetup:
+static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", platforms_enabled: bool = false) -> EntityCollisionSetup:
 	var result := EntityCollisionSetup.new()
 	if map == null or book == null:
 		result.error = "Entity collision requires a map and theme book"
@@ -23,6 +23,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 		result.error = contacts.error
 		return result
 	var assembled := EntityCollisionDefinition.new()
+	assembled.platforms_enabled = platforms_enabled
 	assembled.group_base = map.group_base
 	assembled.group_dimensions = map.group_dimensions
 	assembled.group_size = map.group_size
@@ -34,6 +35,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 			result.error = "Accepted entity has no form-book entry"
 			return result
 		contact.death_type = form.death_type
+		contact.form_book_flags = form.flags
 		if entity.script_id != 0:
 			contact.reaction_unsupported_reason = "Entity script may alter state before contact"
 			result._issue("unexecuted_entity_script", contact.reaction_unsupported_reason, entity, "Geometry remains inspectable; reaction omitted")
@@ -52,7 +54,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 				sample.form_grid_id = contact.form_grid_id
 				sample.form_id = contact.form_id
 				sample.cell_flags = cell_flags
-				var reaction: FormReactionResult = FormReaction.evaluate(contact, sample)
+				var reaction: FormReactionResult = FormReaction.evaluate(contact, sample, platforms_enabled)
 				if reaction.status == FormReactionResult.UNSUPPORTED:
 					result._issue("unsupported_form_reaction", "%s (cell flags 0x%X)" % [reaction.reason, cell_flags], entity, "Geometry remains inspectable; reaction omitted")
 		assembled.entities.append(entity.copy())
@@ -63,7 +65,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 	return result
 
 ## Reads player high-detail resources and detaches every accepted base entity.
-static func from_data(data: GameData, level: int, low_poly: bool = false) -> EntityCollisionSetup:
+static func from_data(data: GameData, level: int, low_poly: bool = false, platforms_enabled: bool = false) -> EntityCollisionSetup:
 	var result := EntityCollisionSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Entity collision requires valid player data"
@@ -90,7 +92,7 @@ static func from_data(data: GameData, level: int, low_poly: bool = false) -> Ent
 			var model: MofFile = data.read_model(model_id, problems)
 			if model != null:
 				models[span.form_id] = model
-	return from_map(map, book, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name)
+	return from_map(map, book, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name, platforms_enabled)
 
 func _issue(code: String, message: String, entity: EntityDefinition, fallback: String) -> void:
 	var diagnostic := EntitySetupDiagnostic.new()

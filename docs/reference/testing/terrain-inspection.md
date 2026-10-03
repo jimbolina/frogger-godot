@@ -20,8 +20,9 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
 existing `GameData` APIs. By default entities, forms, platforms, zones and
-authored entity boundary markers are omitted. `--entity-reactions=pop` opts into
-the bounded entity mode below. Neither mode is a complete playable level.
+authored entity boundary markers are omitted. `--entity-reactions=pop` or
+`--entity-reactions=platforms` opts into the bounded modes below. None is a
+complete playable level.
 
 The viewer borrows injected `GameData` unless ownership is transferred.
 Replacement closes an owned source once; reattaching the same source retains
@@ -80,6 +81,34 @@ completion. `--case-index` selects an authored case from the grouped synthetic
 fixture; a standalone scenario needs no index. Inspect the pre-contact, hit,
 POP-animation and death-camera images,
 including the full controls at 640x480. All evidence stays outside both repos.
+
+## SAFE platform inspection
+
+`--entity-reactions platforms` enables SAFE plus existing POP reactions, with
+an integrated camera. `--data-dir <game-folder> --level JUN1` explicitly starts
+at water cell `(18,5)`, facing NORTH, presses NORTH at command tick zero, and
+observes 90 ticks. This is an inspection start, not a verified route from safe
+terrain. The first log contact must occur at command tick 3 / entity tick 4.
+The [entity contract](../gameplay/entities.md#bounded-safe-platforms) defines
+support; [golden reproduction](../../../tests/golden/specs/entities.md) owns
+the independent retail facts. No airborne-start API is involved.
+
+`entity-platform-v1` extends the ordered trace with attachment/forbidden authored
+identities, local cell/offset/relative transform, transient carry indices and
+camera modification/correction state. The HUD shows attachment and carry state;
+the existing play, step, reset, interpolation, live input and turn controls apply.
+
+```powershell
+python tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --output-directory <external-output>
+python tools/verify_platform_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/platforms.json --case-index 0 --output-directory <external-output>
+```
+
+The verifier runs headless and rendered 30/60/144 schedules serially, checks
+complete trace equality, source stability and retail contact identity, and saves
+640×480 captures. Inspect approach, attachment, centring, carrying and camera
+transition; synthetic cases also demonstrate departure. Keep logs, provenance,
+selected scenarios and captures outside both repositories. Freeze source edits
+while verifying a candidate.
 
 ## Reproducing schedule comparisons
 

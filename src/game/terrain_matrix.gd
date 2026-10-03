@@ -1,9 +1,9 @@
 class_name TerrainMatrix
 extends RefCounted
-## Pure terrain branch of frozen UpdateFrogMatrix; entity transforms are P8.
+## Pure surface-facing branch of frozen UpdateFrogMatrix, including departure facing.
 
 ## Updates rotation while retaining cached translation; freefall preserves rotation.
-static func update(previous: PackedInt32Array, flags: int, direction: int, square: GridSquareDefinition) -> PackedInt32Array:
+static func update(previous: PackedInt32Array, flags: int, direction: int, square: GridSquareDefinition, facing_override: Vector3i = Vector3i.ZERO) -> PackedInt32Array:
 	var result: PackedInt32Array = previous.duplicate()
 	if (flags & 128) != 0:
 		return result
@@ -13,6 +13,8 @@ static func update(previous: PackedInt32Array, flags: int, direction: int, squar
 	else:
 		normal = GridQueries.average_normal(square)
 	var facing: Vector3i = [Vector3i(0, 0, 4096), Vector3i(4096, 0, 0), Vector3i(0, 0, -4096), Vector3i(-4096, 0, 0)][direction]
+	if facing_override != Vector3i.ZERO:
+		facing = facing_override
 	var local_x: Vector3i = GridQueries._normal(GridQueries._cross12(facing, normal))
 	var local_z: Vector3i = GridQueries._cross12(normal, local_x)
 	result[0] = local_x.x

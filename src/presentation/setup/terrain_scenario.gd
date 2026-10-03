@@ -15,6 +15,7 @@ var diagnostics: PackedStringArray = PackedStringArray()
 var level_code: String = ""
 var entity_collision: EntityCollisionDefinition = null
 var entity_reactions: bool = false
+var platforms_enabled: bool = false
 var collision_enabled_authored: bool = false
 var authored_fixture: bool = false
 var tick_limit_override: bool = false
@@ -101,15 +102,16 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
 	if entity_reactions:
-		var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number)
+		var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled)
 		if not collision_setup.error.is_empty():
 			return collision_setup.error
 		entity_collision = collision_setup.definition
 		level.entity_collision = entity_collision.copy()
 		for diagnostic: EntitySetupDiagnostic in collision_setup.diagnostics:
 			diagnostics.append(diagnostic.to_text())
-		diagnostics.append("Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
+		diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
 		apply_des2_inspection_defaults()
+		apply_jun1_inspection_defaults()
 	else:
 		diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
 	return ""
@@ -130,6 +132,23 @@ func apply_des2_inspection_defaults() -> void:
 	east.pressed_mask = TickCommand.EAST
 	east.held_mask = TickCommand.EAST
 	commands[0] = east
+
+## Explicit water-cell start demonstrates contact; this is not a safe-bank route.
+func apply_jun1_inspection_defaults() -> void:
+	if not platforms_enabled or level_code.to_upper() != "JUN1" or authored_fixture:
+		return
+	initial.spawn_cell = Vector2i(18, 5)
+	initial.spawn_direction = 0
+	initial.controller_directions = PackedInt32Array()
+	initial.camera_startup = false
+	if not tick_limit_override:
+		tick_limit = 90
+	commands.clear()
+	var north := TickCommand.new()
+	north.pressed_mask = TickCommand.NORTH
+	north.held_mask = TickCommand.NORTH
+	commands[0] = north
+	diagnostics.append("JUN1 inspection starts on authored water cell (18,5); no playable safe-bank route is implied")
 
 ## Reads a scenario JSON object with builtin, tick_limit and optional command overrides.
 static func from_file(path: String) -> TerrainScenario:
@@ -227,10 +246,13 @@ func command_at(tick: int) -> TickCommand:
 ## Applies explicit command-line seed and duration overrides in both driver surfaces.
 func apply_arguments(arguments: PackedStringArray) -> String:
 	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
-	if not reaction.is_empty() and reaction != "pop":
-		return "entity-reactions must be pop"
-	entity_reactions = reaction == "pop"
+	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
+		return "entity-reactions must be pop or platforms"
+	entity_reactions = reaction in ["pop", "platforms"]
+	platforms_enabled = reaction == "platforms"
 	level.entity_collision = entity_collision.copy() if entity_reactions and entity_collision != null else null
+	if level.entity_collision != null:
+		level.entity_collision.platforms_enabled = platforms_enabled
 	if entity_reactions and entity_collision != null:
 		if collision_enabled_authored and not level.collision_enabled:
 			return "Entity reaction scenario requires collision_enabled=true"

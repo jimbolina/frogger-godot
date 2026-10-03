@@ -19,6 +19,12 @@ var mode: int = 0
 var move_timer: int = 0
 var twist_counter: int = 0
 var rotation_angle: int = 0
+var mod_matrix12: PackedInt32Array = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
+var current_ytheta: int = 0
+var destination_ytheta: int = 0
+var delta_ytheta: int = 0
+var direction_vectors_12: Array[Vector3i] = [Vector3i(0, 0, 4096), Vector3i(4096, 0, 0), Vector3i(0, 0, -4096), Vector3i(-4096, 0, 0)]
+var entity_angle_delta: int = 0
 var controller_directions: PackedInt32Array = PackedInt32Array([0, 0, 0, 0])
 var axis_x_12: Vector3i = Vector3i(4096, 0, 0)
 var axis_y_12: Vector3i = Vector3i(0, 4096, 0)
@@ -42,6 +48,12 @@ func copy() -> GameplayCameraSnapshot:
 	value.move_timer = move_timer
 	value.twist_counter = twist_counter
 	value.rotation_angle = rotation_angle
+	value.mod_matrix12 = mod_matrix12.duplicate()
+	value.current_ytheta = current_ytheta
+	value.destination_ytheta = destination_ytheta
+	value.delta_ytheta = delta_ytheta
+	value.direction_vectors_12.assign(direction_vectors_12)
+	value.entity_angle_delta = entity_angle_delta
 	value.controller_directions = controller_directions.duplicate()
 	value.axis_x_12 = axis_x_12
 	value.axis_y_12 = axis_y_12

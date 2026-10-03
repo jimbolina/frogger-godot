@@ -14,4 +14,5 @@ var ignore_frog_y: bool = false
 ## Unsupported branches are explicit instead of silently approximated.
 var has_camera_zone: bool = false
 var on_entity: bool = false
+var entity_matrix12: PackedInt32Array = PackedInt32Array()
 var shaking: bool = false

@@ -253,6 +253,8 @@ func draw_state(fraction: float) -> void:
 	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.position_16, _current.velocity_16, _current.remaining_ticks, _current.flags, _current.buffered_keys, _current.buffered_input_count]
 	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.destination_cell, _current.square_flags, _current.source_id, camera_facts, _current.death_equate, _current.death_count, str(_current.completed), "; ".join(_outcomes)]
 	if scenario.entity_reactions:
+		if scenario.platforms_enabled:
+			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.current_entity_index, _current.entity_cell, _current.entity_carry_indices]
 		var contact_lines := PackedStringArray()
 		var nearby_count: int = _last_contacts.size()
 		for reaction: FormReactionResult in _last_contacts:
@@ -486,14 +488,18 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 			get_tree().quit(1)
 			return
 	var hit_tick: int = -1
+	var centred_tick: int = -1
 	var captured: Dictionary[String, bool] = {}
-	if scenario.entity_reactions and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
+	if scenario.platforms_enabled and not folder.is_empty():
+		await RenderingServer.frame_post_draw
+		last_error = _save_stage(folder, "platform-approach", captured)
+	elif scenario.entity_reactions and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "before-contact", captured)
-		if not last_error.is_empty():
-			push_error(last_error)
-			get_tree().quit(1)
-			return
+	if not last_error.is_empty():
+		push_error(last_error)
+		get_tree().quit(1)
+		return
 	playing = true
 	while _current.tick_index < scenario.tick_limit and not _current.completed:
 		_process(1.0 / render_rate)
@@ -502,7 +508,30 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 			get_tree().quit(1)
 			return
 		await RenderingServer.frame_post_draw
-		if scenario.entity_reactions and not folder.is_empty():
+		if scenario.platforms_enabled and not folder.is_empty():
+			var stages: Array[String] = []
+			if hit_tick < 0 and _current.current_entity_index >= 0:
+				hit_tick = _current.tick_index
+				stages.append("platform-attachment")
+			if hit_tick >= 0 and _current.tick_index >= hit_tick + 1:
+				stages.append("platform-camera")
+			if hit_tick >= 0 and _current.current_entity_index >= 0 and _current.mode == 0:
+				if centred_tick < 0:
+					centred_tick = _current.tick_index
+				stages.append("platform-centred")
+				if _current.tick_index >= centred_tick + 2:
+					stages.append("platform-carry")
+			if hit_tick >= 0 and _current.current_entity_index < 0:
+				stages.append("platform-departure")
+			for stage: String in stages:
+				last_error = _save_stage(folder, stage, captured)
+				if not last_error.is_empty():
+					break
+			if not last_error.is_empty():
+				push_error(last_error)
+				get_tree().quit(1)
+				return
+		elif scenario.entity_reactions and not folder.is_empty():
 			if hit_tick < 0 and _current.death_entity_index >= 0:
 				hit_tick = _current.tick_index
 				last_error = _save_stage(folder, "hit", captured)

@@ -16,6 +16,10 @@ static func decode(value: Variant, errors: PackedStringArray) -> EntityCollision
 		errors.append("entity_collision requires entities and contacts arrays")
 		return null
 	var result := EntityCollisionDefinition.new()
+	if not row.get("platforms_enabled", false) is bool:
+		errors.append("platforms_enabled must be boolean")
+		return null
+	result.platforms_enabled = row.get("platforms_enabled", false)
 	var group_base: Array = row.group_base
 	var group_dimensions: Array = row.group_dimensions
 	var group_size: Array = row.group_size
@@ -106,6 +110,10 @@ static func _contact(value: Variant, errors: PackedStringArray) -> FormContactDe
 		return null
 	var row: Dictionary = value
 	var contact := FormContactDefinition.new()
+	if not _integer(row.get("form_book_flags", 0)):
+		errors.append("form_book_flags must be an integer")
+		return null
+	contact.form_book_flags = _number(row.get("form_book_flags", 0))
 	for key: String in ["entity_index", "unique_id", "form_grid_id", "form_id", "entity_flags", "height", "max_y", "radius_squared", "death_type"]:
 		if not _integer(row.get(key)):
 			errors.append("Contact %s must be an integer" % key)

@@ -3,6 +3,7 @@ extends RefCounted
 ## Authored entity/contact pairs and source collision-group geometry.
 
 var entities: Array[EntityDefinition] = []
+var platforms_enabled: bool = false
 var contacts: Array[FormContactDefinition] = []
 var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
@@ -11,6 +12,7 @@ var group_size: Vector2i = Vector2i.ZERO
 ## Returns detached definitions and source group dimensions.
 func copy() -> EntityCollisionDefinition:
 	var result := EntityCollisionDefinition.new()
+	result.platforms_enabled = platforms_enabled
 	for entity: EntityDefinition in entities:
 		result.entities.append(entity.copy() if entity != null else null)
 	for contact: FormContactDefinition in contacts:

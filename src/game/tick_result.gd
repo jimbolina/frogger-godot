@@ -8,6 +8,7 @@ var control_snapshot: RunSnapshot = null
 var move_snapshot: RunSnapshot = null
 var collision_snapshot: RunSnapshot = null
 var camera_snapshot: RunSnapshot = null
+var scripts_snapshot: RunSnapshot = null
 var final_snapshot: RunSnapshot = null
 ## Ordered request names emitted during this tick for presentation consumers.
 var events: Array[String] = []

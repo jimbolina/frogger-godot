@@ -7,14 +7,16 @@ playable level yet. See the [domain index](reference/domain.md).
 
 Final-PC PATH and FORM records decode into detached definitions. Optional
 entity integration advances owned STATIC/MOVING transforms before the frog,
-queries nearby map groups and applies supported POP FORM reactions. Frog,
+queries nearby map groups and applies supported POP and SAFE FORM reactions. Frog,
 entities, camera, animation and RNG commit atomically. The high-detail DES2
-cactus inspection demonstrates an airborne entity hit. Standalone fixed-point
+cactus inspection demonstrates an airborne entity hit. SAFE platforms support
+landing, centring, carrying, hops along and off platforms, and camera attachment.
+The high-detail JUN1 log inspection starts explicitly on water, with its first
+contact verified through the ordered scan. Standalone fixed-point
 contact inspection remains available. See [paths](reference/gameplay/paths.md)
 and [entities](reference/gameplay/entities.md) for support and exclusions.
 
-Next is platform landing, centring, carrying, jumping off and camera attachment,
-then live-entity lifecycle, scripts, zones and verified callback mappings toward
+Next is live-entity lifecycle, scripts, zones and verified callback mappings toward
 the first playable level. The [roadmap](PORTING.md) owns
 remaining work; [architecture](reference/architecture.md) defines ownership.
 

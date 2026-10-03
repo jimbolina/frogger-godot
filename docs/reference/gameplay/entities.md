@@ -105,10 +105,11 @@ reverse-authored moving entities before reverse-authored statics in each group.
 Authored indices, not unique IDs or compacted array offsets, identify outcomes.
 
 `ReactFrogWithForm` requires `USABLE` and selects CHECKPOINT, SAFE, POPDEATH,
-DEADLY, SLIPPY, then BOUNCY in that order. This slice implements POPDEATH and
+DEADLY, SLIPPY, then BOUNCY in that order. The default mode implements POPDEATH and
 DEADLY with form-book death type POP. Higher-priority unsupported branches never
-fall through to POP. Other deaths, checkpoint, safe-platform and bounce reactions
-are diagnosed and omitted. Unusable squares do nothing; supported usable no-op
+fall through to POP. Other deaths, checkpoint and bounce reactions are diagnosed
+and omitted; SAFE requires the platform capability below. Unusable squares do
+nothing; supported usable no-op
 squares still set the per-tick hit observation. Scanning continues after a
 death request, so later supported usable contacts also record hits. The first
 accepted death wins through `FrogKill`'s pending-death guard.
@@ -140,7 +141,59 @@ Its source facts and reproduction belong in the
 Runtime verification is against v3.0e, not an assertion of equivalent runs on
 the other supported builds.
 
-Platform centring, carrying, jumping off, camera attachment, current/forbidden
-entity links, visibility-driven live creation, scripts, zones, primitives,
-callback dispatch and multiplayer remain outside this reaction slice. It does
-not make a complete level playable.
+## Bounded SAFE platforms
+
+`EntityCollisionDefinition.platforms_enabled` defaults to false. Enabling it
+adds SAFE to the existing POP capability and requires an integrated camera.
+The same primitive-free static/flipbook model and first GRID-mode FORM_DATA
+limits apply. The copied form-book flags retain `NO_ROTATION_SNAPPING` (2),
+`NO_ENTITY_ANGLE` (4), `NO_CENTRING_X` (64) and `NO_CENTRING_Z` (128).
+
+`COLLIDE.C:216–330,902–1106` owns contact and attachment order. The neighborhood
+and forbidden authored identity are cached at scan start. Current attachment
+and position are read again for every candidate: a SAFE landing can move or
+transfer the frog before a later SAFE or POP reaction. Scanning continues after
+mount or death request. SAFE classification alone sets no HIT. It rejects a
+forward axis whose horizontal squared length is below `0x700²`; otherwise the
+inclusive FORM Y volume is the gate, even for an ascending frog. Unless SOFT
+bypasses it, the existing fall reaction runs first, retaining ordered safe,
+stun/shake and fatal-fall requests without terrain snapping or clear masks.
+
+Landing starts from contact-local X/Z and FORM height. Each enabled centring
+axis targets the authored cell centre; a coordinate outside
+`±(dimension−1)*128` forces centring even with NO_CENTRING. A displacement at
+least 96 on either axis requests STRUGGLE, otherwise PANT. Source vector length
+gives `count = length / 15 + 1`; velocity truncates, movement decrements first,
+and zero snaps and clears velocity. Stationary and centring carry use the
+advanced pose and signed-short whole local coordinates. Airborne local X/Z
+uses full 16.16 values and the frozen wide matrix accumulator. Entity update
+clears transient HIT/CARRY, which their source phases reassert.
+
+`FROG.C:1038–1507,1818–1849,1944–2134,2300–2338` owns local hops and departure.
+Normal/quick/super hops retain 6/3/15 ticks, buffering, auto-hop and ordered
+animation/sound/score requests. A requested in-FORM destination requiring an
+unsupported reaction fails the whole tick before commit. An unusable destination
+blocks with OUCH, except source `BOUNCE_WALL_N` permits departure. Same-platform
+hops perform their special FORM re-reaction after movement reduces count to 1;
+the next tick completes the jump with terrain-style grid-flag reaction order.
+Usable no-op and existing POP destinations remain supported; they are not
+reclassified as SAFE. The special count-one path reasserts HIT outside the FORM
+reaction, even if that reaction rejects a now-vertical SAFE surface.
+
+Departure searches terrain using camera controller directions; NO_ENTITY_ANGLE
+uses a world target. Angled departure without terrain retains the entity frame
+until jump completion, whereas NO_ENTITY_ANGLE detaches immediately. Departure
+caches the forbidden identity; terrain landing clears it. The
+[camera contract](gameplay-camera.md) owns projection and correction behavior.
+
+The high-detail JUN1 inspection starts explicitly on water cell `(18,5)`, facing
+NORTH and pressing NORTH at command tick zero. It is not a verified route from
+safe terrain. Its independently predicted first JUN_LOG contact is command tick
+3 / advanced entity tick 4 and is verified through the complete ordered scan.
+The [golden specification](../../../tests/golden/specs/entities.md) owns the
+retail facts and reproduction. Runtime evidence is specifically v3.0e.
+
+Visibility-driven live creation, scripts, zones, primitives, checkpoints,
+entity-specific sliding/bouncing, callback dispatch and multiplayer stacking
+remain outside this slice. Bonus callbacks remain unexecuted diagnostics without
+independently blocking collision. This does not complete P8 or make a level playable.

@@ -3,7 +3,7 @@ extends RefCounted
 ## Pure bounded reaction for a geometric FORM contact.
 
 ## Evaluates supported source flag precedence without changing frog state.
-static func evaluate(definition: FormContactDefinition, contact: FormContactResult) -> FormReactionResult:
+static func evaluate(definition: FormContactDefinition, contact: FormContactResult, platforms_enabled: bool = false) -> FormReactionResult:
 	var result := FormReactionResult.new()
 	result.contact = contact.copy() if contact != null else null
 	if definition == null or contact == null:
@@ -35,8 +35,8 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		result.status = FormReactionResult.UNSUPPORTED
 		result.reason = "FORM checkpoint reaction is unsupported"
 	elif flags & 2:
-		result.status = FormReactionResult.UNSUPPORTED
-		result.reason = "FORM safe attachment is unsupported"
+		result.status = FormReactionResult.SAFE if platforms_enabled else FormReactionResult.UNSUPPORTED
+		result.reason = "" if platforms_enabled else "FORM safe attachment is unsupported"
 	elif flags & 4096:
 		result.status = FormReactionResult.POP
 		result.kill_animation = 23

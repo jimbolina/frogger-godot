@@ -20,7 +20,7 @@ disagreements in the relevant technical reference; do not invent rules.
 facts. **Live play** describes one running game's state and rules.
 Setup translates between these meanings; presentation and inspection tools
 are consumers. `TerrainRun` now owns the first frog component rules and detached
-snapshots, optionally including atomic entity advancement and bounded POP FORM
+snapshots, optionally including atomic entity advancement and bounded POP/SAFE FORM
 reactions. A one-entity fixed-point probe remains available; complete level play
 is not implemented. See [architecture](architecture.md)
 for dependencies and ownership.
@@ -56,8 +56,8 @@ retail facts live in the corresponding golden tests.
 Entity setup selects supported STATIC/MOVING base transforms by resolved name.
 The [FORM contact contract](gameplay/entities.md#form-contact-inspection) copies
 the selected grid and checks one detached entity pose against a world point.
-Bounded POP reactions use source map-group order and a shared run transaction;
-platform and other entity reactions remain deferred. No general behavior
+Bounded POP and SAFE-platform reactions use source map-group order and a shared
+run transaction. Other entity reactions remain deferred. No general behavior
 registry exists yet. Form callback
 addresses need verified per-build name mappings before callback execution; the script
 list's `CallbackNames` is a separate opcode callback namespace. Unknown entries

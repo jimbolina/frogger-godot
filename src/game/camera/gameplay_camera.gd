@@ -1,6 +1,6 @@
 class_name GameplayCamera
 extends RefCounted
-## Discrete default terrain camera from frozen CAMERA.C, without zones or entity transforms.
+## Discrete default camera and detached platform attachment from frozen CAMERA.C.
 
 const FOLLOW: int = 0
 const FIXED_SWEEP: int = 2
@@ -89,14 +89,54 @@ func request_death() -> void:
 	_state.next_target_offset = Vector3i.ZERO
 	_state.move_timer = 45
 
+## Changes the source camera frame on mounting, transfer or dismounting.
+func transition_attachment(old_matrix12: PackedInt32Array, new_matrix12: PackedInt32Array, snap: bool) -> String:
+	if _state == null:
+		return "Camera must be initialized"
+	for matrix: PackedInt32Array in [old_matrix12, new_matrix12]:
+		if not matrix.is_empty() and not PlatformMath.valid(matrix):
+			return "Camera attachment requires a valid source matrix"
+	var changed: PackedInt32Array = _state.mod_matrix12.duplicate()
+	if not old_matrix12.is_empty():
+		changed = PlatformMath.multiply(changed, PlatformMath.project(old_matrix12))
+	if not new_matrix12.is_empty():
+		changed = PlatformMath.multiply(changed, PlatformMath.transpose(PlatformMath.project(new_matrix12)))
+	_state.mod_matrix12 = changed
+	if snap:
+		align_y()
+	return ""
+
+## Starts frozen SetupCameraYRotation's correction to the nearest quadrant.
+func align_y() -> void:
+	var matrix: PackedInt32Array = _state.mod_matrix12
+	var direction: int = 0 if matrix[8] > 0xb50 else 2 if matrix[8] < -0xb50 else 1 if matrix[2] > 0xb50 else 3
+	var fixed: Vector3i = [Vector3i(0, 0, 4096), Vector3i(4096, 0, 0), Vector3i(0, 0, -4096), Vector3i(-4096, 0, 0)][direction]
+	var vector := Vector3i(matrix[2], matrix[5], matrix[8])
+	var theta: int = PlatformMath.acos12((fixed.x * vector.x + fixed.z * vector.z) >> 12)
+	var normal: Vector3i = EntityTransform._cross12(fixed, vector)
+	_state.destination_ytheta = 0
+	if normal.y > 0:
+		_state.destination_ytheta = direction * 1024
+		_state.current_ytheta = _state.destination_ytheta + theta
+		_state.delta_ytheta = -32
+	elif normal.y < 0:
+		_state.destination_ytheta = 4096 if direction == 0 else direction * 1024
+		_state.current_ytheta = _state.destination_ytheta - theta
+		_state.delta_ytheta = 32
+	else:
+		_state.delta_ytheta = 0
+
 ## Applies one integer camera tick; rejected unsupported input leaves state untouched.
 func step(input: GameplayCameraTick) -> String:
 	if _state == null or input == null:
 		return "Camera and tick input must be initialized"
-	if input.has_camera_zone or input.on_entity:
-		return "Terrain camera does not yet support camera zones or entity transforms"
+	if input.has_camera_zone:
+		return "Terrain camera does not yet support camera zones"
+	if input.on_entity and not PlatformMath.valid(input.entity_matrix12):
+		return "Camera entity transforms require a valid source matrix"
 	if input.remaining_ticks < 0 or input.start_timer < 0:
 		return "Camera timers must be nonnegative"
+	_state.entity_angle_delta = 0
 	match _state.mode:
 		START:
 			if input.start_timer <= _state.move_timer:
@@ -129,29 +169,49 @@ func _follow(input: GameplayCameraTick) -> void:
 	_state.tracked_world.x = _approach_horizontal(_state.tracked_world.x, input.frog_world.x)
 	_state.tracked_world.z = _approach_horizontal(_state.tracked_world.z, input.frog_world.z)
 	var twist_angle: int = 0
+	var twist_end: bool = false
 	if _state.twist_counter != 0:
 		twist_angle = _divide(_state.twist_counter * 1024, 8)
 		_state.twist_counter += 1 if _state.twist_counter > 0 else -1
 		if absi(_state.twist_counter) > 8:
 			_state.twist_counter = 0
 			_base_angle = (_base_angle + twist_angle) & 4095
+			_state.entity_angle_delta = 1 if twist_angle > 0 else -1
+			twist_end = true
+	if _state.delta_ytheta != 0:
+		_state.current_ytheta += _state.delta_ytheta
+		if (_state.delta_ytheta > 0 and _state.current_ytheta >= _state.destination_ytheta) or (_state.delta_ytheta < 0 and _state.current_ytheta <= _state.destination_ytheta):
+			_state.current_ytheta = _state.destination_ytheta
+			_state.delta_ytheta = 0
+		_state.mod_matrix12 = PlatformMath.yaw(_state.current_ytheta)
+	var composed: PackedInt32Array = _state.mod_matrix12.duplicate()
+	if twist_angle != 0:
+		composed = PlatformMath.multiply(PlatformMath.yaw(twist_angle), composed)
+		if twist_end:
+			_state.mod_matrix12 = composed.duplicate()
 			twist_angle = 0
+	if input.on_entity:
+		composed = PlatformMath.multiply(composed, PlatformMath.project(input.entity_matrix12))
 	_state.rotation_angle = (_base_angle + twist_angle) & 4095
-	_compose(input.frog_world, false, true)
+	_compose(input.frog_world, false, true, composed)
 
 func _sweep_offsets(divisor: int) -> void:
 	_state.source_offset = _offset_step(_state.source_offset, _state.next_source_offset, divisor)
 	_state.target_offset = _offset_step(_state.target_offset, _state.next_target_offset, divisor)
 
-func _compose(origin: Vector3i, use_origin: bool, update_controls: bool) -> void:
+func _compose(origin: Vector3i, use_origin: bool, update_controls: bool, rotation: PackedInt32Array = PackedInt32Array()) -> void:
 	var anchor: Vector3i = origin if use_origin else _state.tracked_world
-	_state.source_world = anchor + (_state.source_offset if use_origin else _rotate(_state.source_offset, _state.rotation_angle))
-	_state.target_world = anchor + (_state.target_offset if use_origin else _rotate(_state.target_offset, _state.rotation_angle))
+	var source_offset: Vector3i = _rotate(_state.source_offset, _state.rotation_angle) if rotation.is_empty() else PlatformMath.apply(rotation, _state.source_offset)
+	var target_offset: Vector3i = _rotate(_state.target_offset, _state.rotation_angle) if rotation.is_empty() else PlatformMath.apply(rotation, _state.target_offset)
+	_state.source_world = anchor + (_state.source_offset if use_origin else source_offset)
+	_state.target_world = anchor + (_state.target_offset if use_origin else target_offset)
 	_state.axis_z_12 = _normalize(_state.target_world - _state.source_world)
 	_state.axis_x_12 = _normalize(_cross_12(Vector3i(0, 4096, 0), _state.axis_z_12))
 	_state.axis_y_12 = _cross_12(_state.axis_z_12, _state.axis_x_12)
 	if update_controls:
 		var north: Vector3i = _normalize(Vector3i(-_state.axis_y_12.x, 0, -_state.axis_y_12.z))
+		var east: Vector3i = _normalize(Vector3i(_state.axis_x_12.x, 0, _state.axis_x_12.z))
+		_state.direction_vectors_12.assign([north, east, -north, -east])
 		var direction: int = (0 if north.z > 0 else 2) if absi(north.z) > absi(north.x) else (1 if north.x > 0 else 3)
 		for index: int in range(4):
 			_state.controller_directions[index] = (direction + index) & 3

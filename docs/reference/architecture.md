@@ -53,6 +53,25 @@ the entity phase too. Only the final aggregate commit publishes matching frog an
 entity ticks, per-tick hits and requests. Failed reset or tick preserves every
 owned component and returns no partial phase snapshots or outcomes.
 
+Opt-in platform execution requires an integrated camera. The order is entity
+paths/transforms, frog control, movement, modifiers, terrain collision,
+sequential FORM reactions, camera, animation scripts, pose, then aggregate commit.
+The scan caches its neighborhood and forbidden authored identity; each candidate
+uses the current attachment and position, so a SAFE transfer affects later
+candidates. Camera transitions and fall requests belong to that same candidate
+transaction. Missing attachment identities, invalid matrices and unsupported
+commanded destinations fail without publishing contacts, carries or requests.
+Reset clears current/forbidden links and transient observations. Detached
+platform helpers retain no legacy objects or live scene references.
+
+`RunSnapshot.entity_cell` and `entity_offset_16` are platform-local. `target_16`
+is local while attached or jumping within the entity frame, and world-space
+for a terrain target; derived inspection destinations convert it accordingly.
+After departure into freefall, the inactive local target remains a source fact
+while inspection reports the frog's current world cell.
+Attachment, forbidden, hit and carry identities use authored indices with `-1`
+for absent links. Relative matrices and camera modification state are copied.
+
 `TerrainGridSetup` copies decoded geometry, flags and scalar source identities
 into grid definitions; those definitions retain no legacy or rendering objects.
 Treat definitions as immutable after setup. Grid queries return new result

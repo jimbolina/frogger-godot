@@ -58,5 +58,6 @@
   "res://tests/golden/test_retail_vlo.gd::test_summary_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_vlo.gd::test_texture_library_resolves_a_level_through_its_remap": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_terrain_presentation.gd::test_live_frog_attachment_releases_replaced_render_resources": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_terrain_presentation.gd::test_selected_level_rebind_clears_old_scene_and_preserves_owned_source": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_terrain_presentation.gd::test_selected_level_rebind_clears_old_scene_and_preserves_owned_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_platforms.gd::test_jun1_log_setup_and_first_safe_contact_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set"
 }
