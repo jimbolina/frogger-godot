@@ -14,8 +14,8 @@ Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start,
 unknown entity flag bits, `LOCAL_ALIGN` and `PROJECT_ON_LAND` omit only that
 entity. Diagnostics include source/build/resource, authored index, form and
 offset with the reason and fallback. `HIDDEN`, `NO_DISPLAY` and `NO_COLLISION`
-are retained as flags; this component intentionally attaches every supported
-record and does not model visibility or collision lifetimes. Script and callback
+are retained as flags; the default component attaches every supported
+record. The opt-in visibility lifetime below narrows that set. Script and callback
 ids are retained but unexecuted, with an `unexecuted_hooks` warning.
 
 `EntityRun` owns copies of definitions and one independent `PathRunner` per
@@ -40,7 +40,65 @@ and nested path cursors. Failed reset or step leaves the full aggregate state
 intact. Standalone transform inspection remains available. `TerrainRun` can also
 own an entity run for the bounded reaction sequence below. The frozen live-entity
 traversal depends on visibility and creation lifecycle, which this all-attached
-component does not reproduce.
+default does not reproduce.
+
+## Visibility lifecycle
+
+`EntityCollisionDefinition.lifecycle` opts an integrated run into bounded
+single-player live-entity creation. Null preserves all-attached inspection.
+Setup admits zero-zone maps and script-free generic STATIC/MOVING entities.
+Script-bearing records retain source identity and inspection poses but never
+enter the supported live set. Custom/immortal behaviors, scripts, zones and
+selective checkpoint/death resets remain deferred. Existing FORM/model and
+collision-callback exclusions still govern collision; bonus callbacks remain
+unexecuted diagnostics.
+
+`TerrainRun` advances persistent paths, culls/updates live entities, runs frog
+and camera/animation phases, then selects and expands visible groups before
+the aggregate commit (`gamesys.C:1322–1350`). Reset has no ordinary live
+instances and does not prewarm visibility. End-of-tick creation first becomes
+eligible for updates and collision on the following tick. Paths continue while
+their live instances are absent. Recreation uses the current path pose and
+increments a generation; a full reset restores generation zero.
+
+`MapGroupVisibility` follows `MAPVIEW.C:55–86,109–243,457–566`: fixed view-plane
+half-size 160×120, perspective 256, ground projection, 768-unit border, the six
+source raster edges, and at most 128 groups in Z/X order. Geometry must fit the
+source's 64-row visibility buffer and signed16 group indices. It consumes the
+candidate camera frame, including shake, never Godot culling or an interpolated
+camera. Signed source arithmetic, the rasterizer's small-Z branch and the final
+view ray's retained Y component during border normalization are preserved. The
+selected groups' eight-type polygon counts must sum to less than 2500. This
+conservative guard proves `CreateMapGroups` visits the whole list without
+reproducing renderer allocation history; equality is unsupported. Selection or
+budget failure rejects the entire tick rather than approximating the live set.
+`mapdisp.c:413–435,454–478,962–977` owns this boundary.
+
+Every surviving mortal instance is marked DESTROY during entity update.
+Visible nonhidden membership clears that mark at the tail. A mark surviving
+until the next update destroys the instance, except when frog 0 retains its
+current entity link (`ENTITY.C:370–400`). This protection also covers angled
+departure and retained-link freefall, independent of ON_ENTITY/CARRY flags.
+The forbidden identity alone does not protect an instance. Destruction does
+not invent a detachment or camera transition. Hidden moving records are
+unlinked; hidden statics retain their groups but receive no creation/renewal.
+NO_DISPLAY has no lifetime effect. Collision and attachment pose lookups
+require a live supported identity.
+
+Snapshots retain source-ordered slots, authored indices and duplicate unique
+IDs, plus live/pending state, generations, actual live-list order and ordered
+creation/destruction observations. Dormant matrices are inspection poses only.
+The viewer creates a fresh presentation instance at each generation and releases
+it on destruction; a tail-created instance starts at its initial animation frame.
+All lifecycle definitions and snapshots are detached. Failed tick/reset leaves
+frog, entities, paths, camera, animation, RNG and requests unchanged.
+
+The automatic-camera demonstration is synthetic. High-detail v3.0e FOR1 is
+a source-data candidate with zero zones and script-free FOR_JAY movers, but an
+automatic retail camera/lifecycle sequence is not verified. A manually selected
+group is only a component stimulus. Reproduction and independent facts belong
+in the [entity golden specification](../../../tests/golden/specs/entities.md);
+inspection commands belong in the [testing guide](../testing/terrain-inspection.md).
 
 ## FORM contact inspection
 
@@ -193,7 +251,8 @@ safe terrain. Its independently predicted first JUN_LOG contact is command tick
 The [golden specification](../../../tests/golden/specs/entities.md) owns the
 retail facts and reproduction. Runtime evidence is specifically v3.0e.
 
-Visibility-driven live creation, scripts, zones, primitives, checkpoints,
+Outside the opt-in visibility mode above, this inspection still assumes
+all-attached lifetime. Scripts, zones, primitives, checkpoints,
 entity-specific sliding/bouncing, callback dispatch and multiplayer stacking
 remain outside this slice. Bonus callbacks remain unexecuted diagnostics without
 independently blocking collision. This does not complete P8 or make a level playable.

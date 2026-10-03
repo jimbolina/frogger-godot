@@ -53,6 +53,17 @@ the entity phase too. Only the final aggregate commit publishes matching frog an
 entity ticks, per-tick hits and requests. Failed reset or tick preserves every
 owned component and returns no partial phase snapshots or outcomes.
 
+Optional visibility lifecycle adds a final camera-to-group selection and live
+creation/renewal phase after animation, before commit. Its pure selector and
+owned live-list state depend only on detached group facts and camera snapshots.
+Late selection or polygon-budget rejection rolls back the same aggregate.
+Persistent paths outlive live instances. Authored slots never compact when
+instances disappear; live membership gates collision and attachment lookup.
+The [entity contract](gameplay/entities.md#visibility-lifecycle) owns eligibility,
+source ordering, attachment retention and reset semantics. Presentation consumes
+generations to allocate/release instances; it cannot select the authoritative
+live set. Existing all-attached inspection remains the default.
+
 Opt-in platform execution requires an integrated camera. The order is entity
 paths/transforms, frog control, movement, modifiers, terrain collision,
 sequential FORM reactions, camera, animation scripts, pose, then aggregate commit.

@@ -26,6 +26,24 @@ static func decode(value: Variant, errors: PackedStringArray) -> EntityCollision
 	result.group_base = _v3(group_base)
 	result.group_dimensions = _v2(group_dimensions)
 	result.group_size = _v2(group_size)
+	if row.has("lifecycle"):
+		if not row.lifecycle is Dictionary:
+			errors.append("entity_collision.lifecycle must be an object")
+			return null
+		var authored_lifecycle: Dictionary = row.lifecycle
+		if not authored_lifecycle.get("polygon_counts") is Array:
+			errors.append("lifecycle polygon_counts must be an integer array")
+			return null
+		var lifecycle := EntityLifecycleDefinition.new()
+		lifecycle.group_base = result.group_base
+		lifecycle.group_dimensions = result.group_dimensions
+		lifecycle.group_size = result.group_size
+		for count: Variant in authored_lifecycle.polygon_counts:
+			if not _integer(count):
+				errors.append("lifecycle polygon_counts must contain integers")
+				return null
+			lifecycle.polygon_counts.append(_number(count))
+		result.lifecycle = lifecycle
 	for value_entity: Variant in row.entities:
 		var entity: EntityDefinition = _entity(value_entity, errors)
 		if entity == null:
@@ -53,6 +71,18 @@ static func _entity(value: Variant, errors: PackedStringArray) -> EntityDefiniti
 			errors.append("Entity %s must be an integer" % key)
 			return null
 		entity.set(key, _number(row[key]))
+	for key: String in ["script_id", "collision_callback", "bonus_callback", "source_offset", "resource_id"]:
+		if row.has(key):
+			if not _integer(row[key]):
+				errors.append("Entity %s must be an integer" % key)
+				return null
+			entity.set(key, _number(row[key]))
+	for key: String in ["source_id", "build_id"]:
+		if row.has(key):
+			if not row[key] is String:
+				errors.append("Entity %s must be a string" % key)
+				return null
+			entity.set(key, row[key])
 	for key: String in ["form_name", "entity_name"]:
 		if not row.get(key) is String:
 			errors.append("Entity %s must be a string" % key)
@@ -119,6 +149,18 @@ static func _contact(value: Variant, errors: PackedStringArray) -> FormContactDe
 			errors.append("Contact %s must be an integer" % key)
 			return null
 		contact.set(key, _number(row[key]))
+	for key: String in ["source_offset", "resource_id"]:
+		if row.has(key):
+			if not _integer(row[key]):
+				errors.append("Contact %s must be an integer" % key)
+				return null
+			contact.set(key, _number(row[key]))
+	for key: String in ["source_id", "build_id"]:
+		if row.has(key):
+			if not row[key] is String:
+				errors.append("Contact %s must be a string" % key)
+				return null
+			contact.set(key, row[key])
 	if not row.get("form_name") is String or not row.get("reaction_unsupported_reason", "") is String or not row.get("unsupported_reason", "") is String:
 		errors.append("Contact names and reasons must be strings")
 		return null

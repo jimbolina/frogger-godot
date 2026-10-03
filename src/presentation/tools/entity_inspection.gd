@@ -4,7 +4,9 @@ extends Node3D
 
 var _axes: Array[MeshInstance3D] = []
 var _positions: Array[MeshInstance3D] = []
+var _generations: Array[int] = []
 var _selected: int = -1
+var _lifecycle_mode: bool = false
 var _contacts: Array[FormContactDefinition] = []
 var _contact_outline: MeshInstance3D
 var _contact_cell: MeshInstance3D
@@ -13,14 +15,18 @@ var _contact_probe: MeshInstance3D
 ## Allocates one marker per definition; flags remain visible as metadata.
 func configure(definitions: Array[EntityDefinition]) -> void:
 	for marker: MeshInstance3D in _axes:
-		remove_child(marker)
-		marker.queue_free()
+		if marker != null:
+			remove_child(marker)
+			marker.queue_free()
 	for marker: MeshInstance3D in _positions:
-		remove_child(marker)
-		marker.queue_free()
+		if marker != null:
+			remove_child(marker)
+			marker.queue_free()
 	_axes.clear()
 	_positions.clear()
+	_generations.clear()
 	_selected = -1
+	_lifecycle_mode = false
 	_contacts.clear()
 	if _contact_outline != null:
 		remove_child(_contact_outline)
@@ -35,17 +41,10 @@ func configure(definitions: Array[EntityDefinition]) -> void:
 		_contact_probe.queue_free()
 		_contact_probe = null
 	for _definition: EntityDefinition in definitions:
-		var axes := MeshInstance3D.new()
-		axes.mesh = _axes_mesh()
-		add_child(axes)
-		_axes.append(axes)
-		var position := MeshInstance3D.new()
-		var sphere := SphereMesh.new()
-		sphere.radius = 0.09
-		sphere.height = 0.18
-		position.mesh = sphere
-		add_child(position)
-		_positions.append(position)
+		_axes.append(null)
+		_positions.append(null)
+		_generations.append(-1)
+		_create_marker(_axes.size() - 1)
 	set_selected(0 if not definitions.is_empty() else -1)
 	visible = false
 
@@ -78,7 +77,16 @@ func configure_contacts(definitions: Array[FormContactDefinition]) -> void:
 func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 	if snapshot == null:
 		return
+	_lifecycle_mode = snapshot.lifecycle_enabled
 	for index: int in mini(_axes.size(), snapshot.entities.size()):
+		if _lifecycle_mode and not snapshot.entities[index].live:
+			_destroy_marker(index)
+			continue
+		if _lifecycle_mode and _axes[index] != null and _generations[index] != snapshot.entities[index].generation:
+			_destroy_marker(index)
+		if _axes[index] == null:
+			_create_marker(index)
+		_generations[index] = snapshot.entities[index].generation
 		var matrix: PackedInt32Array = snapshot.entities[index].matrix12
 		var origin: Vector3 = GameSpace.position(matrix[9], matrix[10], matrix[11])
 		var x_axis: Vector3 = GameSpace.normal(matrix[0], matrix[3], matrix[6]).normalized()
@@ -90,9 +98,10 @@ func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 		else:
 			_axes[index].visible = true
 			_axes[index].transform = Transform3D(Basis(x_axis, y_axis, z_axis), origin)
+	set_selected(_selected)
 	if _contact_outline != null and _selected >= 0 and _selected < snapshot.entities.size():
 		var contact: FormContactDefinition = _selected_contact()
-		_contact_outline.visible = contact != null and contact.unsupported_reason.is_empty() and contact.dimensions.x > 0 and contact.dimensions.y > 0
+		_contact_outline.visible = (not _lifecycle_mode or snapshot.entities[_selected].live) and contact != null and contact.unsupported_reason.is_empty() and contact.dimensions.x > 0 and contact.dimensions.y > 0
 		if _contact_outline.visible:
 			_contact_outline.transform = GameSpace.transform(snapshot.entities[_selected].matrix12)
 			_contact_cell.transform = _contact_outline.transform
@@ -101,6 +110,8 @@ func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 func set_selected(index: int) -> void:
 	_selected = index
 	for marker_index: int in _positions.size():
+		if _positions[marker_index] == null:
+			continue
 		var material := StandardMaterial3D.new()
 		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		material.no_depth_test = true
@@ -163,7 +174,35 @@ static func _grid_mesh(x0: int, z0: int, x1: int, z1: int, y: int, color: Color,
 
 ## Marker count exposes lifecycle state to inspection tests.
 func marker_count() -> int:
-	return _positions.size()
+	var count: int = 0
+	for marker: MeshInstance3D in _positions:
+		if marker != null:
+			count += 1
+	return count
+
+func _create_marker(index: int) -> void:
+	var axes := MeshInstance3D.new()
+	axes.mesh = _axes_mesh()
+	add_child(axes)
+	_axes[index] = axes
+	var position := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.09
+	sphere.height = 0.18
+	position.mesh = sphere
+	add_child(position)
+	_positions[index] = position
+
+func _destroy_marker(index: int) -> void:
+	if _axes[index] != null:
+		remove_child(_axes[index])
+		_axes[index].queue_free()
+		_axes[index] = null
+	if _positions[index] != null:
+		remove_child(_positions[index])
+		_positions[index].queue_free()
+		_positions[index] = null
+	_generations[index] = -1
 
 static func _axes_mesh() -> ImmediateMesh:
 	var mesh := ImmediateMesh.new()

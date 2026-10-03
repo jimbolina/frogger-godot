@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: paths, STATIC/MOVING transforms, bounded POP and SAFE-platform interactions with atomic frog/entity ticks |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: paths, STATIC/MOVING transforms, bounded POP/SAFE interactions and opt-in script-free visibility lifecycle with atomic ticks |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -47,8 +47,13 @@ The [bounded entity reactions](reference/gameplay/entities.md) include POP,
 platform landing, centring, carrying, local hops, departure and camera attachment.
 Other lethal reactions, entity-specific sliding/bouncing and primitive collision
 remain unimplemented. P8 remains in progress; no level is playable yet.
-Replace the explicit all-attached lifetime with visibility-driven live-entity
-creation before claiming complete level collision. Add scripts and zones.
+Opt-in visibility lifecycle now covers script-free generic entities on zero-zone
+maps within its selected-group budget guard; the demonstrated camera sequence
+is synthetic. Complete level collision still needs scripts, zones, custom and
+immortal behaviors, selective game-flow reset and broader visibility workloads.
+FOR1's automatic retail lifecycle sequence remains unverified.
+ORG1 logs remain a later bounded script candidate; their nonzero scripts must
+be implemented before lifecycle admission. A verified playable route is still required.
 Resolve callbacks through verified names and supported implementations;
 preserve source ordering and test unknown mappings. Per-build form callback
 address mappings still need investigation.

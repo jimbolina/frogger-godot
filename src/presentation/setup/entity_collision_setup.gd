@@ -7,10 +7,17 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Composes the independent transform and contact adapters for a decoded map.
-static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", platforms_enabled: bool = false) -> EntityCollisionSetup:
+static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", platforms_enabled: bool = false, visibility_enabled: bool = false) -> EntityCollisionSetup:
 	var result := EntityCollisionSetup.new()
 	if map == null or book == null:
 		result.error = "Entity collision requires a map and theme book"
+		return result
+	var zones: MapPacket = map.packets.get("ZONE")
+	if visibility_enabled and zones != null and zones.count > 0:
+		result.error = "Visibility lifecycle requires a map without authored zones"
+		return result
+	if visibility_enabled and map.groups.size() < map.group_dimensions.x * map.group_dimensions.y:
+		result.error = "Visibility lifecycle requires every authored map group"
 		return result
 	var entities: EntitySetup = EntitySetup.from_map(map, book, source_id, resource_id, build_id)
 	result.diagnostics.append_array(entities.diagnostics)
@@ -27,6 +34,17 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 	assembled.group_base = map.group_base
 	assembled.group_dimensions = map.group_dimensions
 	assembled.group_size = map.group_size
+	if visibility_enabled:
+		var lifecycle := EntityLifecycleDefinition.new()
+		lifecycle.group_base = map.group_base
+		lifecycle.group_dimensions = map.group_dimensions
+		lifecycle.group_size = map.group_size
+		for group_index: int in map.group_dimensions.x * map.group_dimensions.y:
+			var count: int = 0
+			for polygon_type: int in 8:
+				count += map.groups[group_index].counts[polygon_type]
+			lifecycle.polygon_counts.append(count)
+		assembled.lifecycle = lifecycle
 	for index: int in entities.definitions.size():
 		var entity: EntityDefinition = entities.definitions[index]
 		var contact: FormContactDefinition = contacts.definitions[index].copy()
@@ -39,6 +57,8 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 		if entity.script_id != 0:
 			contact.reaction_unsupported_reason = "Entity script may alter state before contact"
 			result._issue("unexecuted_entity_script", contact.reaction_unsupported_reason, entity, "Geometry remains inspectable; reaction omitted")
+			if visibility_enabled:
+				result._issue("lifecycle_dormant_script", "Entity script has no verified visibility behavior", entity, "Entity remains dormant in visibility mode")
 		if entity.bonus_callback != 0:
 			result._issue("unexecuted_bonus_callback", "Bonus callback is not dispatched for tongue pickup", entity, "FORM reaction remains available")
 		if contact.unsupported_reason.is_empty() and contact.reaction_unsupported_reason.is_empty():
@@ -65,7 +85,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 	return result
 
 ## Reads player high-detail resources and detaches every accepted base entity.
-static func from_data(data: GameData, level: int, low_poly: bool = false, platforms_enabled: bool = false) -> EntityCollisionSetup:
+static func from_data(data: GameData, level: int, low_poly: bool = false, platforms_enabled: bool = false, visibility_enabled: bool = false) -> EntityCollisionSetup:
 	var result := EntityCollisionSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Entity collision requires valid player data"
@@ -92,7 +112,7 @@ static func from_data(data: GameData, level: int, low_poly: bool = false, platfo
 			var model: MofFile = data.read_model(model_id, problems)
 			if model != null:
 				models[span.form_id] = model
-	return from_map(map, book, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name, platforms_enabled)
+	return from_map(map, book, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name, platforms_enabled, visibility_enabled)
 
 func _issue(code: String, message: String, entity: EntityDefinition, fallback: String) -> void:
 	var diagnostic := EntitySetupDiagnostic.new()

@@ -243,3 +243,87 @@ facts each require a deliberate corruption/failure/restoration check. Runtime
 retail acceptance checks the complete ordered scan, including earlier candidates,
 against the independently predicted first contact; it does not bypass the scan
 with a selected-entity query.
+
+## Visibility-driven live-entity lifecycle
+
+`fixtures/lifecycle_visibility.json` defines a 32×32 invented map-group grid,
+two source-ordered entities with authored indices 2 and 9 and duplicate unique
+ID 77, camera axes, a seven-step visibility/attachment schedule, selector edge
+cases and signed raster lines. `synthetic/lifecycle_visibility.tsv` records the
+ordered selected groups, polygon sum, both live/pending/generation states,
+live-list order, creation/destruction observations and continuing path distance.
+Tick zero is dormant. `synthetic/lifecycle_mapview_lines.tsv` pins the row
+extents for short forward/reverse Z edges and signed coordinate boundaries.
+The away-facing camera reaches the source 128-group cap; the far camera selects
+no groups. Camera axes are fixed12 **columns**, while the C transport receives
+the corresponding row-major `MR_MAT`.
+
+Creation occurs at the tail of a tick, so first live update and collision are
+deferred to the next tick. Pending instances disappear at the following entity
+update unless the current frog link retains them. Paths advance while their
+instances are absent; re-entry creates a new generation from that cursor. The
+fixture keeps authored indices and duplicate unique IDs separate. These rows
+describe the supported script-free mortal lifecycle only; they cannot justify
+script, zone, custom callback, immortal or selective reset behavior.
+
+`fixtures/lifecycle_integrated.json` is an invented 24×4 flat SAFE terrain
+scenario with origin `(-512,-512)`, a 336-tick EAST/return WEST command sequence,
+zero entity collision and one polygon per map group. The matching
+`synthetic/lifecycle_integrated.tsv` records every command tick's frog X/Y,
+camera source, ordered visible groups, live list, lifecycle events and dormant
+path distance. The complete independent event schedule is: tick 0 creates 9
+then 2; tick 59 destroys 9; tick 63 recreates 9; tick 75 destroys 9 then 2;
+tick 245 recreates 2; tick 255 creates moving generation 3. The generation 2
+recreation at tick 63 is an early visibility edge reentry; the later tick 255
+creation follows full disappearance and return. This is a component inspection,
+not a playable-level claim.
+
+The Python generator implements C signed division, fixed12 projection, border
+normalization, six-edge rasterization, source group links, paths and mortal
+live-list transitions independently. It requires three separately built C
+transports and compares every expected row before writing or verifying facts.
+The first calls unchanged `CreateMapViewList` and `MapViewDrawLine`; the second
+calls unchanged `UnlinkEntities`, `UpdatePathRunners`, `UpdateLiveEntities`,
+`LinkEntities` and `CreateMapGroups`, using the source `NO_MODEL` form flag and
+an initialized memory arena; the third reuses the existing integrated source
+transport to call frozen frog, collision, camera and animation functions on the
+invented 24×4 grid. The integrated Python hop/camera trajectory agrees with
+all 336 frozen rows, including the camera matrix, before selecting groups.
+Only model/polygon payloads and presentation sinks are omitted from C
+transport. Polygon budget eligibility is checked separately against the text
+counts; selected total must remain strictly below 2500.
+
+`MAPVIEW.C` leaves the final view ray's Y in its scratch `vec` when it writes
+only average X/Z before border normalization. Thus the border delta uses that
+retained Y; for the default integrated camera at source `(-128,-512,-640)`,
+group 556 is excluded. This source detail is pinned by the full selector array,
+in addition to the signed short-Z line cases.
+
+Build outside both repositories, then regenerate or verify:
+
+```powershell
+& tools/build_lifecycle_mapview_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-lifecycle-mapview-oracle')
+& tools/build_lifecycle_entity_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-lifecycle-entity-oracle')
+& tools/build_lifecycle_integrated_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-lifecycle-integrated-oracle')
+python -B tools/make_golden_entity_lifecycle.py --mapview-oracle (Join-Path $env:TEMP 'frogger-lifecycle-mapview-oracle/lifecycle_mapview_oracle.exe') --entity-oracle (Join-Path $env:TEMP 'frogger-lifecycle-entity-oracle/lifecycle_entity_oracle.exe') --integrated-oracle (Join-Path $env:TEMP 'frogger-lifecycle-integrated-oracle/lifecycle_integrated_oracle.exe') --verify
+```
+
+Omit `--verify` only when intentionally regenerating after reviewing source
+behavior. Corrupt and restore a fact in each TSV, and require its golden test
+to fail then pass. `tools/verify_lifecycle_schedules.py` compares the complete
+headless and 30/60/144 FPS lifecycle traces, validates the 336-tick final
+states against `lifecycle_integrated.tsv`, and checks external captures. It
+also accepts `lifecycle_safe_moving.json` and `lifecycle_safe_static.json` to
+check attachment/departure presentation without a retail asset.
+
+Independent v3.0e retail inspection identifies high-detail FOR1 resource 654
+as a zero-zone, script-free generic MOVING candidate with 11×9 groups and 2,992
+polygons. Entity 1 has offset 3684,
+unique ID 1532, path 2, initial distance 348, speed 18 and repeat motion; its
+line runs `(512,-1433,3200)` to `(-896,-1433,2048)`, length 1819. Component
+path calculations place it in group 83 initially, group 82 at advanced tick 18,
+and group 83 again at tick 94. Holding group 83 constant creates it after the
+first advance, destroys it at tick 19 and recreates it at tick 94. Group 83 has
+74 polygons. That manual
+selection is not an automatic retail camera sequence. A rendered retail
+visibility demonstration remains unverified.

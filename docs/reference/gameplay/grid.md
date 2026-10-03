@@ -25,6 +25,11 @@ of referenced terrain polygons, rejects G2 and invalid fourth words, and copies
 coordinates and flags. Inactive fourth words on unreferenced triangles remain
 legal for inspection/rendering. Definitions are treated as immutable after setup.
 
+Synthetic inspection definitions may supply an explicit grid origin, including
+the extended flat lifecycle route. Queries and movement use that origin with
+the same 256-unit cell arithmetic. Retail setup always derives the centred base
+from the decoded dimensions.
+
 ## C query behavior
 
 `mapload.C` sets base X/Z to `-(length * count) >> 1`; `GRID.H` converts world

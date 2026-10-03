@@ -40,6 +40,15 @@ func test_edges_flags_and_height_are_source_exact() -> void:
 	assert_eq(FormContactQuery.query(form, pose, Vector3i(0, 0, 0)).status, FormContactResult.CONTACT)
 	assert_eq(FormContactQuery.query(form, pose, Vector3i(0, 0, 0)).cell_flags, 0)
 
+func test_dormant_inspection_pose_cannot_supply_collision() -> void:
+	var pose: EntitySnapshot = _snapshot()
+	pose.live = false
+	var result: FormContactResult = FormContactQuery.query(_definition(), pose, Vector3i.ZERO)
+	assert_eq(result.status, FormContactResult.DISABLED)
+	assert_eq(result.reason, "Entity has no live instance")
+	pose.live = true
+	assert_eq(FormContactQuery.query(_definition(), pose, Vector3i.ZERO).status, FormContactResult.CONTACT)
+
 func test_strict_sphere_and_signed_short_displacement() -> void:
 	var form: FormContactDefinition = _definition()
 	var pose: EntitySnapshot = _snapshot()

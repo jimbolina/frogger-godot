@@ -16,7 +16,14 @@ contact verified through the ordered scan. Standalone fixed-point
 contact inspection remains available. See [paths](reference/gameplay/paths.md)
 and [entities](reference/gameplay/entities.md) for support and exclusions.
 
-Next is live-entity lifecycle, scripts, zones and verified callback mappings toward
+Opt-in visibility lifecycle now creates and retires script-free generic entities
+from the source camera/group selector. Paths persist while instances are absent;
+retained frog attachments protect live platforms. Selection and creation join
+the atomic transaction. The demonstrated automatic-camera route is synthetic;
+FOR1 is a retail-data candidate, not a verified runtime demonstration. The mode
+requires zero zones and a bounded selected-group polygon budget.
+
+Next are scripts, zones, custom behavior and verified callback mappings toward
 the first playable level. The [roadmap](PORTING.md) owns
 remaining work; [architecture](reference/architecture.md) defines ownership.
 

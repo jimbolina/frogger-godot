@@ -22,7 +22,8 @@ Player data optionally supplies the high-detail frog and real action lengths.
 existing `GameData` APIs. By default entities, forms, platforms, zones and
 authored entity boundary markers are omitted. `--entity-reactions=pop` or
 `--entity-reactions=platforms` opts into the bounded modes below. None is a
-complete playable level.
+complete playable level. `--entity-lifecycle visibility` additionally enables
+the bounded lifetime below; `all-attached` remains the command-line default.
 
 The viewer borrows injected `GameData` unless ownership is transferred.
 Replacement closes an owned source once; reattaching the same source retains
@@ -109,6 +110,41 @@ complete trace equality, source stability and retail contact identity, and saves
 transition; synthetic cases also demonstrate departure. Keep logs, provenance,
 selected scenarios and captures outside both repositories. Freeze source edits
 while verifying a candidate.
+
+## Visibility lifecycle inspection
+
+`--entity-lifecycle visibility` requires integrated entity reactions and a
+camera. Authored JSON may supply `level.entity_collision.lifecycle` with
+`polygon_counts`, one total per authored map group; the enclosing collision geometry
+defines the group base, dimensions and size. Setup rejects zone-bearing maps.
+The [entity contract](../gameplay/entities.md#visibility-lifecycle) owns the
+supported behavior, polygon guard and delayed creation/culling rules.
+
+`entity-lifecycle-v1` adds live membership, pending destruction, generation,
+actual live-list order, selected groups and ordered lifecycle observations to
+the integrated trace. The display distinguishes those states and preserves
+authored indices. Model instances are released when killed and restart animation
+on recreation; persistent path state is independent. Rendering never decides
+the live set. Existing contact/POP/platform schemas and all-attached behavior
+remain available.
+
+```powershell
+python tools/run_terrain.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility --viewer --output-directory <external-output>
+python tools/verify_lifecycle_schedules.py --godot <godot-executable> --output-directory <external-output>
+python tools/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_moving.json --output-directory <external-output>
+python tools/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_static.json --output-directory <external-output>
+```
+
+The synthetic fixture follows the ordinary camera as the frog walks east and
+returns. Require creation, disappearance, continuously advancing dormant paths
+and later recreation; an empty live set throughout is not success. Compare
+headless and rendered 30/60/144 schedules serially. Inspect initial, created,
+pending, destroyed and recreated captures, plus lifecycle-enabled SAFE landing
+and departure. Keep captures/logs outside both repositories.
+
+FOR1's script-free jay/path facts are independent retail setup evidence, not a
+verified automatic-camera demonstration. A fixture selecting its group directly
+is component-only. Retail runtime coverage must retain that distinction.
 
 ## Reproducing schedule comparisons
 

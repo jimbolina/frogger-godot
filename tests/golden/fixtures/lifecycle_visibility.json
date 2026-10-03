@@ -1,0 +1,41 @@
+{
+  "groups": {
+    "base": [-8192, 0, -8192],
+    "dimensions": [32, 32],
+    "size": [512, 512],
+    "polygon_counts": "one-per-group"
+  },
+  "cameras": {
+    "A": {
+      "source": [0, -512, -512],
+      "axes": [[4096, 0, 0], [0, 2896, -2896], [0, 2896, 2896]]
+    },
+    "B": {
+      "source": [4096, -512, -512],
+      "axes": [[4096, 0, 0], [0, 2896, -2896], [0, 2896, 2896]]
+    }
+  },
+  "entities": [
+    {"entity_index": 2, "unique_id": 77, "entity_name": "STATIC", "position": [0, 0, 0]},
+    {"entity_index": 9, "unique_id": 77, "entity_name": "MOVING",
+     "path": {"start": [-256, 0, 0], "end": [256, 0, 0], "length": 512,
+              "initial_distance": 256, "speed": 16, "flags": 8}}
+  ],
+  "component_schedule": [
+    [0, "A", -1], [1, "A", -1], [2, "B", 9], [3, "B", 9],
+    [4, "B", 9], [5, "B", -1], [6, "A", -1]
+  ],
+  "selector_cases": {
+    "away": {"source": [0, -512, -512],
+             "axes": [[4096, 0, 0], [0, -2896, 2896], [0, -2896, -2896]]},
+    "west_boundary": {"source": [-8192, -512, -512],
+                      "axes": [[4096, 0, 0], [0, 2896, -2896], [0, 2896, 2896]]},
+    "far_empty": {"source": [20000, -512, 20000],
+                  "axes": [[4096, 0, 0], [0, 2896, -2896], [0, 2896, 2896]]}
+  },
+  "line_cases": {
+    "short_forward": [32, 4, 512, 512, -513, 511, 513, 512],
+    "short_reverse": [32, 4, 512, 512, 513, 512, -513, 511],
+    "signed_boundary": [32, 4, 512, 512, -513, -513, 513, 513]
+  }
+}

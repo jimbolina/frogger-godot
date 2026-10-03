@@ -5,6 +5,7 @@ extends RefCounted
 var entities: Array[EntityDefinition] = []
 var platforms_enabled: bool = false
 var contacts: Array[FormContactDefinition] = []
+var lifecycle: EntityLifecycleDefinition = null
 var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
 var group_size: Vector2i = Vector2i.ZERO
@@ -17,6 +18,7 @@ func copy() -> EntityCollisionDefinition:
 		result.entities.append(entity.copy() if entity != null else null)
 	for contact: FormContactDefinition in contacts:
 		result.contacts.append(contact.copy() if contact != null else null)
+	result.lifecycle = lifecycle.copy() if lifecycle != null else null
 	result.group_base = group_base
 	result.group_dimensions = group_dimensions
 	result.group_size = group_size
@@ -30,6 +32,12 @@ func validate() -> String:
 		return "Entity collision requires positive group dimensions and size"
 	if group_dimensions.x > 65535 or group_dimensions.y > 65535 or group_size.x > 65535 or group_size.y > 65535:
 		return "Entity collision group dimensions and size must fit unsigned16"
+	if lifecycle != null:
+		var lifecycle_issue: String = lifecycle.validate()
+		if not lifecycle_issue.is_empty():
+			return lifecycle_issue
+		if lifecycle.group_base != group_base or lifecycle.group_dimensions != group_dimensions or lifecycle.group_size != group_size:
+			return "Entity lifecycle and collision group geometry must agree"
 	for coordinate: int in [group_base.x, group_base.y, group_base.z]:
 		if coordinate < -32768 or coordinate > 32767:
 			return "Entity collision group base must fit signed16"

@@ -6,11 +6,13 @@ const HEADER: String = "scenario,tick,component,x16,y16,z16,vx16,vy16,vz16,grid_
 var rows: PackedStringArray = [HEADER]
 var full_rows: PackedStringArray = PackedStringArray()
 var _entity_reactions: bool = false
+var _entity_lifecycle: bool = false
 
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
-	var metadata: Dictionary = {"schema": "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
+	_entity_lifecycle = scenario.entity_lifecycle
+	var metadata: Dictionary = {"schema": "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
 		"camera_definition": facts(scenario.level.camera) if scenario.level.camera != null else null,
@@ -20,8 +22,10 @@ func configure(scenario: TerrainScenario) -> void:
 	if scenario.entity_reactions:
 		if scenario.platforms_enabled:
 			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
-		metadata["entity_collision"] = facts(scenario.level.entity_collision) if scenario.level.entity_collision != null else null
-		metadata["entity_lifetime"] = "all_attached"
+		if scenario.entity_lifecycle:
+			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "entity_sliding_bouncing", "multiplayer"]
+		metadata["entity_collision"] = facts(scenario.level.entity_collision, _entity_lifecycle) if scenario.level.entity_collision != null else null
+		metadata["entity_lifetime"] = "visibility" if scenario.entity_lifecycle else "all_attached"
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
@@ -34,11 +38,13 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 			var record: Dictionary = {"tick": command.tick_index, "phase": phase,
 				"pressed": command.pressed_mask, "held": command.held_mask,
 				"command": facts(command),
-				"state": facts(snapshot),
+				"state": facts(snapshot, _entity_lifecycle),
 				"outcomes": Array(result.events) if phase == "final" else [],
 				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}
 			if _entity_reactions:
 				record["entity_contacts"] = _value(result.entity_contacts) if phase == "final" else []
+				if _entity_lifecycle:
+					record["entity_lifecycle"] = facts(snapshot.entities, true) if snapshot.entities != null else null
 			full_rows.append(JSON.stringify(record))
 
 ## Saves text evidence only to a caller-selected external directory.
@@ -77,16 +83,27 @@ func _append(scenario: int, command: TickCommand, phase: String, state: RunSnaps
 	rows.append(",".join(strings))
 
 ## Serializes detached rule records only; this reflection remains outside gameplay.
-static func facts(record: RefCounted) -> Dictionary:
+static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictionary:
 	var values: Dictionary = {}
 	for property: Dictionary in record.get_property_list():
 		var usage: int = property.usage
 		if usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			var key: String = property.name
-			values[key] = _value(record.get(key))
+			if not include_lifecycle and _lifecycle_key(record, key):
+				continue
+			values[key] = _value(record.get(key), include_lifecycle)
 	return values
 
-static func _value(value: Variant) -> Variant:
+static func _lifecycle_key(record: RefCounted, key: String) -> bool:
+	if record is EntityCollisionDefinition:
+		return key == "lifecycle"
+	if record is EntityRunSnapshot:
+		return key in ["lifecycle_enabled", "live_order", "selected_groups", "lifecycle_events"]
+	if record is EntitySnapshot:
+		return key in ["lifecycle_supported", "live", "destroy_pending", "generation"]
+	return false
+
+static func _value(value: Variant, include_lifecycle: bool = false) -> Variant:
 	if value is Vector3i:
 		var vector: Vector3i = value
 		return [vector.x, vector.y, vector.z]
@@ -106,11 +123,11 @@ static func _value(value: Variant) -> Variant:
 		var source: Array = value
 		var array: Array = []
 		for item: Variant in source:
-			array.append(_value(item))
+			array.append(_value(item, include_lifecycle))
 		return array
 	if value is RefCounted:
 		var child: RefCounted = value
-		return facts(child)
+		return facts(child, include_lifecycle)
 	if value == null or value is int or value is bool or value is String or value is StringName:
 		return value
 	push_error("Unsupported rule trace value type %d" % typeof(value))

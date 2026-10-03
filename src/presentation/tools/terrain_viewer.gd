@@ -30,6 +30,9 @@ var _frog_pose_tick: int = -1
 var _outcomes: PackedStringArray = PackedStringArray()
 var _projection_size: Vector2i = Vector2i.ZERO
 var _entity_models: Array[AnimatedModelInstance] = []
+var _entity_meshes: Array[ModelMesh] = []
+var _entity_files: Array[MofFile] = []
+var _entity_generations: Array[int] = []
 var _entity_inspection: EntityInspection
 var _last_contacts: Array[FormReactionResult] = []
 
@@ -169,8 +172,10 @@ func step_command(command: TickCommand) -> TickResult:
 		_last_contacts.clear()
 		for contact: FormReactionResult in result.entity_contacts:
 			_last_contacts.append(contact.copy())
-		for model: AnimatedModelInstance in _entity_models:
-			if model != null:
+		var created: PackedInt32Array = _sync_entity_models()
+		for slot: int in _entity_models.size():
+			var model: AnimatedModelInstance = _entity_models[slot]
+			if model != null and not created.has(slot):
 				model.advance_tick()
 		if record_trace:
 			trace.append_result(scenario.scenario_index, command, result)
@@ -253,6 +258,13 @@ func draw_state(fraction: float) -> void:
 	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.position_16, _current.velocity_16, _current.remaining_ticks, _current.flags, _current.buffered_keys, _current.buffered_input_count]
 	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.destination_cell, _current.square_flags, _current.source_id, camera_facts, _current.death_equate, _current.death_count, str(_current.completed), "; ".join(_outcomes)]
 	if scenario.entity_reactions:
+		if scenario.entity_lifecycle and _current.entities != null:
+			var selected: PackedInt32Array = _current.entities.selected_groups
+			var subjects := PackedStringArray()
+			for slot: int in mini(3, _current.entities.entities.size()):
+				var subject: EntitySnapshot = _current.entities.entities[slot]
+				subjects.append("#%d support=%s live=%s pending=%s gen=%d" % [subject.entity_index, str(subject.lifecycle_supported), str(subject.live), str(subject.destroy_pending), subject.generation])
+			_label.text += "live %d | groups %d %s | events %s\n%s\n" % [_current.entities.live_order.size(), selected.size(), selected.slice(0, mini(4, selected.size())), _current.entities.lifecycle_events.slice(0, 3), "; ".join(subjects)]
 		if scenario.platforms_enabled:
 			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.current_entity_index, _current.entity_cell, _current.entity_carry_indices]
 		var contact_lines := PackedStringArray()
@@ -396,6 +408,9 @@ func _clear_entity_visuals() -> void:
 			remove_child(model)
 			model.queue_free()
 	_entity_models.clear()
+	_entity_meshes.clear()
+	_entity_files.clear()
+	_entity_generations.clear()
 	if _entity_inspection != null:
 		var empty: Array[EntityDefinition] = []
 		_entity_inspection.configure(empty)
@@ -410,6 +425,9 @@ func _build_entity_visuals() -> void:
 	_entity_inspection.visible = true
 	for _entity: EntityDefinition in definitions.entities:
 		_entity_models.append(null)
+		_entity_meshes.append(null)
+		_entity_files.append(null)
+		_entity_generations.append(-1)
 	if data == null or not data.is_valid() or scenario.map_scene == null:
 		return
 	var meshes: Dictionary[int, ModelMesh] = {}
@@ -432,24 +450,56 @@ func _build_entity_visuals() -> void:
 			meshes[resource] = ModelMeshBuilder.new(scenario.map_scene.library, scenario.map_scene.preferred).build_animated(file)
 		if not meshes.has(resource):
 			continue
-		var model := AnimatedModelInstance.new()
-		add_child(model)
-		model.setup(meshes[resource], ModelAnimationPlayer.new(files[resource]))
-		_entity_models[slot] = model
+		_entity_meshes[slot] = meshes[resource]
+		_entity_files[slot] = files[resource]
+	_sync_entity_models()
 	if _current != null:
 		_projection_size = Vector2i.ZERO
 		draw_state(1.0)
+
+## Reconciles visual lifetimes with the committed run, resetting animation on recreation.
+func _sync_entity_models() -> PackedInt32Array:
+	var created := PackedInt32Array()
+	if _current == null or _current.entities == null:
+		return created
+	for slot: int in mini(_entity_models.size(), _current.entities.entities.size()):
+		var entity: EntitySnapshot = _current.entities.entities[slot]
+		var should_live: bool = not _current.entities.lifecycle_enabled or entity.live
+		if not should_live:
+			if _entity_models[slot] != null:
+				remove_child(_entity_models[slot])
+				_entity_models[slot].queue_free()
+				_entity_models[slot] = null
+			_entity_generations[slot] = -1
+			continue
+		if _entity_files[slot] == null or _entity_meshes[slot] == null:
+			continue
+		if _entity_models[slot] != null and _entity_generations[slot] == entity.generation:
+			continue
+		if _entity_models[slot] != null:
+			remove_child(_entity_models[slot])
+			_entity_models[slot].queue_free()
+		var model := AnimatedModelInstance.new()
+		add_child(model)
+		model.setup(_entity_meshes[slot], ModelAnimationPlayer.new(_entity_files[slot]))
+		_set_model_projection(_entity_meshes[slot], GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+		_entity_models[slot] = model
+		_entity_generations[slot] = entity.generation
+		created.append(slot)
+	return created
 
 func _selected_contact_index() -> int:
 	if scenario == null or scenario.level.entity_collision == null:
 		return -1
 	for slot: int in scenario.level.entity_collision.entities.size():
-		if scenario.level.entity_collision.entities[slot].entity_index == _current.death_entity_index:
+		if scenario.level.entity_collision.entities[slot].entity_index == _current.death_entity_index and (_current.entities == null or not _current.entities.lifecycle_enabled or _current.entities.entities[slot].live):
 			return slot
 	var nearest: int = -1
 	var nearest_distance: int = 0x7fffffffffffffff
 	for slot: int in scenario.level.entity_collision.contacts.size():
 		if not scenario.level.entity_collision.contacts[slot].unsupported_reason.is_empty() or _current.entities == null or slot >= _current.entities.entities.size():
+			continue
+		if _current.entities.lifecycle_enabled and not _current.entities.entities[slot].live:
 			continue
 		var matrix: PackedInt32Array = _current.entities.entities[slot].matrix12
 		var dx: int = matrix[9] - _current.world_position.x
@@ -489,11 +539,16 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 			return
 	var hit_tick: int = -1
 	var centred_tick: int = -1
+	var had_lifecycle_creation: bool = false
+	var had_global_absence: bool = false
 	var captured: Dictionary[String, bool] = {}
+	if scenario.entity_lifecycle and not folder.is_empty():
+		await RenderingServer.frame_post_draw
+		last_error = _save_stage(folder, "lifecycle-initial", captured)
 	if scenario.platforms_enabled and not folder.is_empty():
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "platform-approach", captured)
-	elif scenario.entity_reactions and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
+	if scenario.entity_reactions and not scenario.entity_lifecycle and not scenario.platforms_enabled and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "before-contact", captured)
 	if not last_error.is_empty():
@@ -508,22 +563,49 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 			get_tree().quit(1)
 			return
 		await RenderingServer.frame_post_draw
+		if scenario.entity_lifecycle and not folder.is_empty() and _current.entities != null:
+			var lifecycle_stages: Array[String] = []
+			for event: String in _current.entities.lifecycle_events:
+				if event.begins_with("create:"):
+					var fields: PackedStringArray = event.split(":")
+					lifecycle_stages.append("lifecycle-create" if fields.size() < 3 or fields[2].to_int() <= 1 else "lifecycle-recreate")
+					if had_global_absence:
+						lifecycle_stages.append("lifecycle-return")
+						had_global_absence = false
+					had_lifecycle_creation = true
+				elif event.begins_with("destroy:"):
+					lifecycle_stages.append("lifecycle-destroy")
+			for entity: EntitySnapshot in _current.entities.entities:
+				if entity.destroy_pending:
+					lifecycle_stages.append("lifecycle-pending")
+					break
+			if had_lifecycle_creation and _current.entities.live_order.is_empty() and not had_global_absence:
+				lifecycle_stages.append("lifecycle-absent")
+				had_global_absence = true
+			for stage: String in lifecycle_stages:
+				last_error = _save_stage(folder, stage, captured)
+				if not last_error.is_empty():
+					break
+			if not last_error.is_empty():
+				push_error(last_error)
+				get_tree().quit(1)
+				return
 		if scenario.platforms_enabled and not folder.is_empty():
-			var stages: Array[String] = []
+			var platform_stages: Array[String] = []
 			if hit_tick < 0 and _current.current_entity_index >= 0:
 				hit_tick = _current.tick_index
-				stages.append("platform-attachment")
+				platform_stages.append("platform-attachment")
 			if hit_tick >= 0 and _current.tick_index >= hit_tick + 1:
-				stages.append("platform-camera")
+				platform_stages.append("platform-camera")
 			if hit_tick >= 0 and _current.current_entity_index >= 0 and _current.mode == 0:
 				if centred_tick < 0:
 					centred_tick = _current.tick_index
-				stages.append("platform-centred")
+				platform_stages.append("platform-centred")
 				if _current.tick_index >= centred_tick + 2:
-					stages.append("platform-carry")
+					platform_stages.append("platform-carry")
 			if hit_tick >= 0 and _current.current_entity_index < 0:
-				stages.append("platform-departure")
-			for stage: String in stages:
+				platform_stages.append("platform-departure")
+			for stage: String in platform_stages:
 				last_error = _save_stage(folder, stage, captured)
 				if not last_error.is_empty():
 					break

@@ -16,6 +16,10 @@ static func query(definition: FormContactDefinition, entity_snapshot: EntitySnap
 	if entity_snapshot.entity_index != definition.entity_index or entity_snapshot.unique_id != definition.unique_id:
 		result.reason = "Entity snapshot identity does not match contact definition"
 		return result
+	if not entity_snapshot.live:
+		result.status = FormContactResult.DISABLED
+		result.reason = "Entity has no live instance"
+		return result
 	var matrix: PackedInt32Array = entity_snapshot.matrix12
 	if matrix.size() != 12:
 		result.reason = "Entity matrix requires 12 source values"

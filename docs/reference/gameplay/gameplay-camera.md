@@ -12,6 +12,12 @@ matrices are rejected before mutation. Definitions require a
 downward view with a nonzero horizontal look axis. Map defaults are supplied by
 setup; debug-only CAMERA.H defaults are not an authority for each map.
 
+Opt-in [entity visibility lifecycle](entities.md#visibility-lifecycle) consumes
+the post-update camera source and fixed12 axes inside the same run transaction.
+Rendering interpolation and host window size do not change selection. The
+visibility mode rejects zone-bearing maps until their camera behavior is
+implemented; it does not silently use default offsets for them.
+
 The following anchors are under the frozen source directory in
 [sources](../sources.md):
 

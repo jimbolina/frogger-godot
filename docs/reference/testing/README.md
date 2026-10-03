@@ -53,6 +53,9 @@ unset the variable explicitly for asset-free mode.
 - [SAFE platform inspection](terrain-inspection.md#safe-platform-inspection):
   JUN1 moving-log landing/carry and synthetic departure, with atomic camera
   transitions and `entity-platform-v1` schedule comparisons.
+- [Visibility lifecycle](terrain-inspection.md#visibility-lifecycle-inspection):
+  opt-in source camera selection and atomic live-instance creation/retirement,
+  with synthetic headless/rendered parity and external visual captures.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 

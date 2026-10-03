@@ -16,6 +16,7 @@ var level_code: String = ""
 var entity_collision: EntityCollisionDefinition = null
 var entity_reactions: bool = false
 var platforms_enabled: bool = false
+var entity_lifecycle: bool = false
 var collision_enabled_authored: bool = false
 var authored_fixture: bool = false
 var tick_limit_override: bool = false
@@ -102,14 +103,17 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
 	if entity_reactions:
-		var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled)
+		var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled, entity_lifecycle)
 		if not collision_setup.error.is_empty():
 			return collision_setup.error
 		entity_collision = collision_setup.definition
 		level.entity_collision = entity_collision.copy()
 		for diagnostic: EntitySetupDiagnostic in collision_setup.diagnostics:
 			diagnostics.append(diagnostic.to_text())
-		diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
+		if entity_lifecycle:
+			diagnostics.append("Visibility inspection omits scripts, authored boundary markers and unsupported FORM reactions")
+		else:
+			diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
 		apply_des2_inspection_defaults()
 		apply_jun1_inspection_defaults()
 	else:
@@ -248,11 +252,26 @@ func apply_arguments(arguments: PackedStringArray) -> String:
 	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
 	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
 		return "entity-reactions must be pop or platforms"
-	entity_reactions = reaction in ["pop", "platforms"]
-	platforms_enabled = reaction == "platforms"
+	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
+	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
+		return "entity-lifecycle must be all-attached or visibility"
+	entity_reactions = reaction in ["pop", "platforms"] or not lifetime.is_empty() or (entity_collision != null and entity_collision.lifecycle != null)
+	platforms_enabled = entity_reactions and (reaction == "platforms" or (reaction.is_empty() and entity_collision != null and entity_collision.platforms_enabled))
+	entity_lifecycle = lifetime == "visibility" or (lifetime.is_empty() and entity_collision != null and entity_collision.lifecycle != null)
+	if entity_lifecycle and level.camera == null:
+		return "Visibility lifecycle requires a gameplay camera"
+	if entity_lifecycle and entity_collision == null:
+		var data_available: bool = ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty()
+		var requested_level: String = ViewerArguments.value(arguments, "--level=")
+		if not data_available or (requested_level.is_empty() and level_code.is_empty()):
+			return "Visibility lifecycle requires an authored entity fixture or player data with --level"
 	level.entity_collision = entity_collision.copy() if entity_reactions and entity_collision != null else null
 	if level.entity_collision != null:
 		level.entity_collision.platforms_enabled = platforms_enabled
+		if entity_lifecycle and level.entity_collision.lifecycle == null:
+			return "Visibility lifecycle requires map-group polygon counts"
+		if not entity_lifecycle:
+			level.entity_collision.lifecycle = null
 	if entity_reactions and entity_collision != null:
 		if collision_enabled_authored and not level.collision_enabled:
 			return "Entity reaction scenario requires collision_enabled=true"

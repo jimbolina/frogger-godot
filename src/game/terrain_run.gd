@@ -57,6 +57,9 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
 	if level.entity_collision != null:
+		if level.entity_collision.lifecycle != null and level.camera == null:
+			run.error = "Visibility lifecycle requires an integrated camera"
+			return run
 		if level.entity_collision.platforms_enabled and level.camera == null:
 			run.error = "Platform execution requires an integrated camera"
 			return run
@@ -67,7 +70,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 		if not run.error.is_empty():
 			return run
 		run._entity_collision = level.entity_collision.copy()
-		run._entities = EntityRun.create(run._entity_collision.entities)
+		run._entities = EntityRun.create(run._entity_collision.entities, run._entity_collision.lifecycle)
 		if not run._entities.error.is_empty():
 			run.error = run._entities.error
 			return run
@@ -206,7 +209,7 @@ func step(command: TickCommand) -> TickResult:
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
 	_candidate_entities = _entities.copy() if _entities != null else null
 	if _candidate_entities != null:
-		result.error = _candidate_entities.step(command.tick_index)
+		result.error = _candidate_entities.step(command.tick_index, _state.current_entity_index)
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
 	var next: RunSnapshot = _state.copy()
@@ -278,6 +281,13 @@ func step(command: TickCommand) -> TickResult:
 			return _failed_tick(result, result.error)
 		next.animation = _candidate_animation.state.copy()
 		next.animation_condition_counter = _candidate_animation.context.if_counter
+	# gamesys.C creates/renews visible live entities only after camera and animation.
+	# A failure here discards the entire candidate, including earlier frog requests.
+	if _candidate_entities != null and _entity_collision.lifecycle != null:
+		var visibility_error: String = _candidate_entities.apply_visibility(next.camera)
+		if not visibility_error.is_empty():
+			return _failed_tick(result, visibility_error)
+		next.entities = _candidate_entities.snapshot()
 	next.rng_state = _candidate_random.state
 	next.rng_draw_count = _candidate_random.draw_count
 	result.rng_consumers.assign(_candidate_random.consumers)
@@ -295,7 +305,7 @@ func step(command: TickCommand) -> TickResult:
 func _copy_grid(source: GridDefinition) -> String:
 	if source.dimensions.x <= 0 or source.dimensions.y <= 0 or source.dimensions.x > 65535 or source.dimensions.y > 65535:
 		return "Terrain run requires positive unsigned16 grid dimensions"
-	if source.base != Vector2i(-source.dimensions.x * 128, -source.dimensions.y * 128) or source.stacks.size() != source.dimensions.x * source.dimensions.y:
+	if source.stacks.size() != source.dimensions.x * source.dimensions.y:
 		return "Terrain run requires validated 256-unit grid bounds"
 	var grid := GridDefinition.new()
 	grid.dimensions = source.dimensions
@@ -788,6 +798,8 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 				break
 		if index < 0:
 			return "Entity contact order produced an unknown authored index"
+		if state.entities.lifecycle_enabled and not state.entities.entities[index].live:
+			return "Entity contact order produced a dormant identity"
 		var contact: FormContactResult = FormContactQuery.query(_entity_collision.contacts[index], state.entities.entities[index], state.world_position)
 		var reaction: FormReactionResult = FormReaction.evaluate(_entity_collision.contacts[index], contact, _entity_collision.platforms_enabled)
 		if reaction.status == FormReactionResult.INVALID:
@@ -860,6 +872,8 @@ func _platform_pose(state: RunSnapshot) -> EntitySnapshot:
 	if state.entities != null:
 		for pose: EntitySnapshot in state.entities.entities:
 			if pose != null and pose.entity_index == state.current_entity_index and PlatformMath.valid(pose.matrix12):
+				if state.entities.lifecycle_enabled and (not pose.live or not pose.lifecycle_supported):
+					return null
 				return pose
 	return null
 

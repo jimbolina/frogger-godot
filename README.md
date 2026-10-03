@@ -50,8 +50,17 @@ For landing, centring and riding a moving log, use the same command with
 `--level JUN1 --entity-reactions platforms`. This explicitly starts on water
 cell `(18,5)` and hops NORTH; it is an inspection start, not a verified route
 from safe terrain. Platform mode also supports local hops, departure and camera
-attachment. Scripts, zones, callback mappings and visibility-driven lifetimes
-remain deferred; see the [entity contract](docs/reference/gameplay/entities.md).
+attachment. Scripts, zones and callback mappings remain deferred; see the
+[entity contract](docs/reference/gameplay/entities.md).
+
+For the synthetic visibility lifecycle demonstration, use
+`python tools/run_terrain.py --godot <executable> --scenario-file
+tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility
+--viewer --output-directory <external-folder>`. The frog walks out and back;
+the camera controls entity creation, retirement and recreation. Existing modes
+default to all-attached lifetime. Visibility mode supports only script-free
+generic entities on zero-zone maps within its polygon-budget limit; it does not
+make a level playable. See [inspection](docs/reference/testing/terrain-inspection.md#visibility-lifecycle-inspection).
 
 ## No game data is included
 

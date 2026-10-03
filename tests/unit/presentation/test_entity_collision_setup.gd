@@ -7,6 +7,10 @@ func _map() -> MapFile:
 	map.group_base = Vector3i(-1024, 0, -1024)
 	map.group_dimensions = Vector2i(4, 4)
 	map.group_size = Vector2i(512, 512)
+	for group_index: int in 16:
+		var group := MapGroup.new()
+		group.counts = PackedInt32Array([1 if group_index == 3 else 0, 0, 2 if group_index == 3 else 0, 0, 0, 0, 0, 0, 7])
+		map.groups.append(group)
 	var entity_packet := MapPacket.new()
 	entity_packet.identifier = "EMTP"
 	entity_packet.count = 1
@@ -112,3 +116,19 @@ func test_script_excludes_reaction_only_and_bonus_callback_is_warning() -> void:
 	book.entries[1].forms[0].script_id = 0
 	setup = EntityCollisionSetup.from_map(_map(), book, models)
 	assert_eq(setup.definition.contacts[0].reaction_unsupported_reason, "")
+
+func test_visibility_setup_copies_eight_terrain_counts_and_rejects_only_authored_zones() -> void:
+	var map: MapFile = _map()
+	var setup: EntityCollisionSetup = EntityCollisionSetup.from_map(map, _book(), {0: _model()}, "TEST", 77, "fixture", false, true)
+	assert_eq(setup.error, "")
+	assert_not_null(setup.definition.lifecycle)
+	assert_eq(setup.definition.lifecycle.group_base, map.group_base)
+	assert_eq(setup.definition.lifecycle.polygon_counts.size(), 16)
+	assert_eq(setup.definition.lifecycle.polygon_counts[3], 3, "G2 is excluded from the source scan budget")
+	map.groups[3].counts[0] = 9
+	assert_eq(setup.definition.lifecycle.polygon_counts[3], 3)
+	var zone := MapPacket.new()
+	zone.count = 1
+	map.packets["ZONE"] = zone
+	assert_string_contains(EntityCollisionSetup.from_map(map, _book(), {0: _model()}, "TEST", 77, "fixture", false, true).error, "zones")
+	assert_eq(EntityCollisionSetup.from_map(map, _book(), {0: _model()}).error, "")
