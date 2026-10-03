@@ -75,6 +75,19 @@ commanded destinations fail without publishing contacts, carries or requests.
 Reset clears current/forbidden links and transient observations. Detached
 platform helpers retain no legacy objects or live scene references.
 
+`LevelDefinition.exploration_guard` is nullable; null preserves existing runs.
+`TerrainRun` validates and deep-copies its world rectangle and zone definitions.
+Spawn/reset must satisfy both guards. During a tick, the zone query uses the
+source grid cell after movement and before modifiers/collision. World X/Z is
+checked there, before each FORM query, after each FORM reaction/correction and
+before aggregate commit. A rejection discards the frog, entity/path, camera,
+animation, RNG and every candidate outcome. It neither clamps nor publishes a
+partial contact. `ZoneSetup` converts legacy records; pure `ZoneQueries` owns
+matching. No mutable active-zone state exists. The JUN1 setup adapter verifies
+the independent admission manifest before enabling this all-attached preset.
+The viewer pauses on rejection. R reconstructs the whole inspection, including
+input buffers and presentation clocks, while retaining the selected input mode.
+
 `RunSnapshot.entity_cell` and `entity_offset_16` are platform-local. `target_16`
 is local while attached or jumping within the entity frame, and world-space
 for a terrain target; derived inspection destinations convert it accordingly.

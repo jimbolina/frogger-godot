@@ -705,6 +705,7 @@ func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 	assert_eq(failed_carry.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before_carry.tick_index)
 	assert_eq(run.snapshot().current_entity_index, 4)
+
 	assert_eq(run.snapshot().entity_offset_16, before_carry.entity_offset_16)
 	run._state.remaining_ticks = before_carry.remaining_ticks
 	assert_eq(_tick(run).error, "")
@@ -739,3 +740,81 @@ func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 	run._animation.error = ""
 	assert_eq(_tick(run).error, "")
 	assert_eq(run.snapshot().current_entity_index, 4)
+
+func _guarded_mover() -> LevelDefinition:
+	var level: LevelDefinition = _level()
+	var entity: EntityDefinition = level.entity_collision.entities[0]
+	entity.entity_name = "MOVING"
+	entity.flags = EntityDefinition.ALIGN_TO_WORLD
+	entity.path_definition = PathDefinition.new()
+	var segment := PathSegmentDefinition.new()
+	segment.segment_type = PathSegmentDefinition.LINE
+	segment.length = 1000
+	segment.start = Vector3i(-100, 0, -148)
+	segment.end = Vector3i(-100, 0, 852)
+	entity.path_definition.segments.append(segment)
+	entity.path_start = PathStart.new()
+	entity.path_start.speed = 20
+	level.entity_collision.contacts[0].entity_flags = entity.flags
+	level.exploration_guard = ExplorationGuard.new()
+	level.exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 1024)
+	return level
+
+func test_carry_guard_rejects_boundary_and_zone_without_advancing_paths() -> void:
+	for active_zone: bool in [false, true]:
+		var level: LevelDefinition = _guarded_mover()
+		if active_zone:
+			var zone := ZoneDefinition.new()
+			zone.bounds = PackedInt32Array([0, 1, 0, 1])
+			level.exploration_guard.zones.append(zone)
+		else:
+			level.exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 392)
+		var run: TerrainRun = TerrainRun.create(level)
+		assert_eq(run.error, "")
+		assert_eq(_tick(run).error, "")
+		var failed: TickResult = null
+		for unused: int in 10:
+			var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+			var result: TickResult = _tick(run)
+			if not result.error.is_empty():
+				failed = result
+				assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+				break
+		assert_not_null(failed)
+		if failed != null:
+			assert_string_contains(failed.error, "active camera zone" if active_zone else "Exploration boundary")
+			assert_null(failed.final_snapshot)
+			assert_true(failed.events.is_empty())
+			assert_true(failed.entity_contacts.is_empty())
+			assert_eq(run.snapshot().current_entity_index, 4)
+
+func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision.entities[0].matrix12 = PackedInt32Array([4096, 0, 0, 0, 2896, -2896, 0, 2896, 2896, -100, 0, -128])
+	level.entity_collision.contacts[0].height = -20
+	level.entity_collision.contacts[0].grid_flags[0] = SAFE
+	level.exploration_guard = ExplorationGuard.new()
+	level.exploration_guard.world_bounds = Rect2i(-256, -130, 512, 386)
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	run._state.old_y = -600
+	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	var failed: TickResult = _tick(run)
+	assert_string_contains(failed.error, "Exploration boundary")
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+	assert_null(failed.control_snapshot)
+	assert_null(failed.collision_snapshot)
+	assert_null(failed.final_snapshot)
+	assert_true(failed.events.is_empty())
+	assert_true(failed.entity_contacts.is_empty())
+	assert_true(failed.rng_consumers.is_empty())
+	# Widen only the test-owned guard to allow retrying the same unconsumed tick.
+	run._exploration_guard.world_bounds = Rect2i(-256, -256, 512, 512)
+	var retry: TickResult = _tick(run)
+	assert_eq(retry.error, "")
+	if retry.error.is_empty():
+		assert_eq(retry.final_snapshot.tick_index, 1)
+		assert_eq(retry.final_snapshot.current_entity_index, 4)
+		assert_eq(retry.final_snapshot.rng_draw_count, 2)
+		assert_true(retry.events.has("camera_stun_shake"))
+		assert_true(retry.events.has("platform_attachment"))

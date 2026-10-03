@@ -46,7 +46,25 @@ not dereferenced. FrogLord's `FroggerFormGrid` and `FroggerFormGridData` define
 the layout; [entity contact](../gameplay/entities.md#form-contact-inspection)
 follows frozen `mapload.C` and `COLLIDE.C` behavior. EMTP retains bounded
 identity and payload; entity setup reads STATIC matrix and MOVING PATH_INFO
-prefixes without discarding subtype bytes. ZONE gameplay remains deferred.
+prefixes without discarding subtype bytes.
+
+ZONE retains authored indices, offsets, type, bounds and child-region order.
+FrogLord's common record is 16 bytes: type/count unsigned shorts, four signed
+bounds and a map-relative region pointer. CAMERA type 0 adds 68 bytes: flags,
+direction and eight padded signed16 vectors. Each child region occupies eight
+bytes. The decoder bounds pointers and payloads to their records, retains
+inverted bounds and reports unsafe records without hiding them. `ZoneSetup`
+rejects the entire zone set on unsafe storage or unknown semantics.
+Known flags use FrogLord's mask `0x1f`: bit 0 selects per-direction offsets in
+the editor. Frozen C does not read that bit; it already indexes the eight
+stored vectors by camera direction. Retain it as known storage metadata,
+without adding active-zone behavior or treating retail flag 1 as unknown.
+FrogLord stores signed bounds; frozen `ZONE.H` interprets the outer four words
+as unsigned and child words as signed. This difference is preserved at query
+time, without rewriting decoded values. High-detail JUN1 zone 12 has inverted
+Z bounds `(12,40,15,39)` and therefore never matches. The
+[camera contract](../gameplay/gameplay-camera.md#zone-boundaries) owns queries
+and their current use as inspection restrictions; active zones remain deferred.
 
 ## Rendering
 

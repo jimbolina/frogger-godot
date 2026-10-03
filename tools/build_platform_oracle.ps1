@@ -26,11 +26,11 @@ $metadata=[ordered]@{
     adapter_binary_sha256=(Get-FileHash "$out/platform_oracle.exe").Hash.ToLowerInvariant()
     reference_build=$build
     reference_inputs=@($objects | ForEach-Object { [ordered]@{path=$_;sha256=(Get-FileHash $_).Hash.ToLowerInvariant()} })
-    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA|froganim|MR_ANIM|ENTITY|PATH|MISC)\.[cC]$'} | ForEach-Object {
+    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA|froganim|MR_ANIM|ENTITY|PATH|ZONE|MISC)\.[cC]$'} | ForEach-Object {
         [ordered]@{path=$_.file;sha256=(Get-FileHash $_.file).Hash.ToLowerInvariant();object=$_.output}
     })
     acos_table=[ordered]@{path=$acos;sha256=(Get-FileHash $acos).Hash.ToLowerInvariant();count=8193;encoding='signed 16-bit little-endian'}
-    components=@('UpdatePathRunners','ENTSTRUpdateMovingMOF','ControlFrog','MoveFrog','CollideFrog','UpdateCamera','UpdateFrogAnimationScripts','MRAnimUpdateEnvironments')
+    components=@('UpdatePathRunners','ENTSTRUpdateMovingMOF','ControlFrog','MoveFrog','CollideFrog','UpdateCamera','UpdateFrogAnimationScripts','MRAnimUpdateEnvironments','CheckCoordsInZones')
     scenarios=@('moving SAFE landing, centring, carry and departure','within-platform hop','no-centring interior cell','quarter-turn with no rotation snap','angled camera attachment','no-entity-angle departure','quick within-platform hop','super off-platform hop','thirty-unit centring','USABLE-only within-platform hop','POPDEATH within-platform hop','water freefall with retained link','water freefall with NO_ENTITY_ANGLE')
     omitted_requests=@('MRSNDPlaySound','AddFrogScore','MRCreatePgen')
     phases=@('ControlFrog','MoveFrog','CollideFrog','UpdateCamera','UpdateFrogAnimationScripts','MRAnimUpdateEnvironments')
@@ -38,6 +38,8 @@ $metadata=[ordered]@{
     factory_wrappers=@('MRCreatePgen','MRCreate3DSprite','CreateParticleEffect','GameAddObjectToViewports')
     game_mode_wrapper='SetGameMainloopMode records mode without running setup callbacks'
     entity_scope='All fixtures use a single SAFE live entity with a one- or two-cell form. One case advances its bounded moving path before frog control; the others use static transforms.'
+    retail_route_scope='Decoded high-detail JUN1 bank-log-bank route: all 115 authored identities in source group order; six script-free generic logs use frozen live/path/FORM behavior; 109 geometry-certified neighbors are explicit null-live proof exclusions. The adapter checks independent path positions and the admitted rectangle each phase. It does not execute excluded scripts, audio/effect factories, or retail animation action lengths.'
+    zone_scope='The --zones mode calls frozen CheckCoordsInZones for invented and all-cell retail queries. Input fixtures contain decimal decoded bounds and regions only.'
     rng_scope='Effect factories may consume RNG in the full engine; their omitted work is not simulated or compensated.'
     seed=12345
 }

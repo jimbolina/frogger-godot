@@ -54,6 +54,70 @@ endpoints. Generic forms can also have scripts and callbacks; this component
 leaves them unexecuted and does not claim complete entity behavior. Local
 alignment and land projection are outside this component's scope.
 
+## Guarded JUN1 route and zones
+
+`fixtures/jun1_log_bank.json` supplies logical WEST `8` at command tick 0 and
+EAST `2` at tick 12, observing 60 ticks. The independent retail reader combines
+the player's MAP 656, EXE tables and resolved models. Its frozen-C transport
+extends `platform_oracle.c`, retaining all 115 authored scan identities and
+all six potentially contacting generic logs. Explicit proof-excluded null-live
+shells retain the other identities and group order; this adapter does not claim
+to execute their custom behavior. The [entity contract](../../../docs/reference/gameplay/entities.md#guarded-jun1-bank-route)
+owns the boundary, exclusion conditions and route outcome.
+
+`pc-retail-v3.0e/platform_jun1_route.tsv` contains 360 ordered rows: Control,
+Move, Collision, Camera, Scripts and Pose for each command tick. Columns retain
+fixed-point frog position/velocity, source cell/mode/flags/direction/input,
+attachment, local cell, forbidden identity, selected-log pose/path cursor,
+tracked camera/controller mapping, hit identities and source scan diagnostics.
+Expected rows require agreement with the independent Python route calculation.
+The C transport's synthetic animation lengths are not retail animation/RNG
+expectations. Existing animation goldens cover those rules; full rendered
+schedule comparisons include runtime animation, RNG and all outcomes.
+
+`jun1_zone_records.tsv` records all 18 authored definitions, source offsets,
+types, signed stored bounds, ordered child bounds/offsets, camera flags,
+direction and eight vectors. `jun1_zones.tsv` contains 3,360 queries: all 28×60
+cells for both camera type 0 and absent type 1. `fixtures/zones_synthetic.json`
+and `synthetic/zones.tsv` additionally pin inclusive edges, empty child lists,
+region gaps, overlapping zones/source order, inverted bounds and unsigned outer
+versus signed child bounds. Both query families compare independent Python
+results with unchanged frozen `CheckCoordsInZones`; GDScript never generates
+expected data. The [map contract](../../../docs/reference/data/maps.md) owns
+the packet layout and signedness disagreement.
+
+Build the existing platform oracle into an external directory, then generate
+numeric transports there. Use the builder provenance's frozen `acos_le.dat` path in
+place of `<acos-table>` below. All stored golden files are text facts only.
+
+```powershell
+& tools/build_platform_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/verify_jun1_admission.py --data-dir <game-folder>
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-fixture <external-route-input>
+& <external-oracle>/platform_oracle.exe <acos-table> --retail-route <external-route-input> > <external-route-csv>
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-trace <external-route-csv> --route-golden tests/golden/pc-retail-v3.0e/platform_jun1_route.tsv --verify
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-admission src/presentation/setup/jun1_exploration_admission.json --verify
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-records-golden tests/golden/pc-retail-v3.0e/jun1_zone_records.tsv --verify
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-fixture <external-zone-input>
+& <external-oracle>/platform_oracle.exe <acos-table> --zones <external-zone-input> > <external-zone-csv>
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-trace <external-zone-csv> --zones-golden tests/golden/pc-retail-v3.0e/jun1_zones.tsv --verify
+```
+
+For the synthetic zone family, replace `--data-dir <game-folder>` with
+`--zones-synthetic-case tests/golden/fixtures/zones_synthetic.json` in the two
+zone transport/comparison commands and use `tests/golden/synthetic/zones.tsv`.
+Omit `--verify` only for intentional regeneration after source review. Corrupt
+and restore one fact in each new family, requiring the focused check to fail
+then pass. The [inspection guide](../../../docs/reference/testing/terrain-inspection.md#guarded-jun1-bank-exploration)
+owns full 30/60/144 schedule and keyboard/capture acceptance.
+
+The admission helper enumerates every integer distance on complete authored
+paths, checks exact unresolved broad-phase identities, transformed FORM bounds,
+the hippo's integer contact maximum and signed arithmetic closure. The source
+behavior exclusions are documented in the helper and entity contract. Its
+input dependency manifest contains hashes and decoded numeric facts, never
+retail bytes; changing determining inputs requires a fresh source proof.
+
 ## FORM grids and bounded contact
 
 `pc-retail-v3.0e/forms_retail.tsv` has one row per final-PC `FROG` map with

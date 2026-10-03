@@ -252,7 +252,74 @@ The [golden specification](../../../tests/golden/specs/entities.md) owns the
 retail facts and reproduction. Runtime evidence is specifically v3.0e.
 
 Outside the opt-in visibility mode above, this inspection still assumes
-all-attached lifetime. Scripts, zones, primitives, checkpoints,
+all-attached lifetime. Scripts, active zones, primitives, checkpoints,
 entity-specific sliding/bouncing, callback dispatch and multiplayer stacking
 remain outside this slice. Bonus callbacks remain unexecuted diagnostics without
 independently blocking collision. This does not complete P8 or make a level playable.
+
+## Guarded JUN1 bank route
+
+The opt-in `jun1-log-bank` preset uses audited high-detail v3.0e resource 656.
+It starts safely at cell `(22,10)`, world `(2176,-324,-4992)`, facing west.
+The independently calculated route uses logical WEST mask 8 at command tick 0
+and EAST mask 2 at tick 12. Contact at tick 3/entity tick 4 mounts JUN_LOG
+authored index 24, unique ID 11, offset 13532, FORM 45/grid 1. Eight ticks of
+centring/carry lead to departure and a detached, alive terrain landing at
+`(22,9)`, height -180, on tick 17. Observation continues through tick 59.
+The original PC input masks are LEFT 1/RIGHT 2; `TickCommand` uses its existing
+normalized cardinal encoding. The camera mapping is independently verified.
+
+World admission is X `[1900,2304)`, Z `[-5376,-4864)`. The initially proposed
+west edge 1856 is unsafe: hippo 23 can contact `(1856,-256,-4924)` at advanced
+entity tick 27. Exhaustive integer path/FORM evaluation bounds hippo contacts
+in this Z band at X 1888. The revised boundary excludes them without changing
+retail collision. Complete path cycles, transformed FORM extents, sphere and
+primitive precedence, shared FORM writers and custom movement determine the
+other exclusions. Only logs 16,24,25,26,27,31 can contact this rectangle.
+All 18 zones are decoded; the demonstrated cells activate none.
+
+The exclusion proof covers ordinary inspection controls from a fresh run, with
+no tongue pickup or external outro transition. `ENTITY.C:1018–1056` land
+projection changes Y/orientation, preserving the rhino/monkey path XZ. Scorpion
+creation delegates generic movement (`ent_jun.c:1149`). Hippo dive/rise changes
+only Y (`ent_jun.c:354–367,372+`); all five share the same primitive-free model,
+FORM and repeat path. All 17,398 integer path poses bound flat-pose contact X
+at 1888; the 932 nearby tilted poses have Y-independent local X, bounded at
+1789. Crocodile 0 has no primitives in any animated component; its action,
+timer and sound script does not move the root (`ent_jun.c:542–557`). All 6,105
+path poses bound its FORM Z below -5632.28. Crocodile 19 is sphere-excluded.
+
+Plants change animation/timer/audio only (`ent_jun.c:59–179`); bridge collapse
+changes animation/collision enablement, retaining the root. Plinths, stone
+frogs and doors have null updates (`ENTlib.C:415–461`). Outro gold frogs start
+SITTING, whose update is a no-op (`ent_jun.c:783–794,841–870`). Checkpoints and
+markers stay at authored origins. Those fixed records are sphere-excluded;
+tree 109 and mushroom 110 instead have identity roots, no primitives and
+strict FORM minimum X of 2561 and 2570. Animated primitives are tested only
+after the bounding sphere, so excluded models need no primitive simulation.
+Shared FORM writers resolve to the audited matching models.
+
+Every NO_MODEL record has a null collision callback, taking the early skip in
+`COLLIDE.C:272–286`; the flag alone is insufficient. Bonus flies bob only in Y
+and cannot collect themselves (`ent_gen.c:257,329`). Complete path and fixed
+origin checks keep XZ differences within signed16 and their squared sum at
+most 152,901,121. Adding any signed16 Y square remains below signed32 overflow
+(1,226,642,945), making sphere exclusions valid even for wrapped source Y.
+
+The frozen adapter retains all 115 authored scan identities. Six potentially
+contacting logs execute normally; other identities are explicit proof-excluded
+null-live shells, justified by the exhaustive geometry/behavior proof. This
+does not simulate their custom scripts or RNG/audio. The runtime still scans
+every admitted generic entity in source order. Its independent admission
+manifest pins determining map, form/behavior, script and model facts, including
+WAD mappings and incomplete-model counterparts. Changed dependencies reject
+this preset; ordinary inspection remains available for mods.
+
+All-attached lifetime is explicit and visibility mode is rejected. Guards
+roll back and pause attempts to leave the world rectangle or activate a zone.
+R restores the entire inspection; it does not implement checkpoint/death reset.
+Scripts, active zones, custom/immortal behavior, verified form callbacks,
+selective reset, additional reactions, primitives and broader lifecycle work
+remain P8 work. Scoring, progression and win conditions are not part of this
+demonstration. Reproduction belongs to the existing
+[golden specification](../../../tests/golden/specs/entities.md).

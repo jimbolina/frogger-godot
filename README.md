@@ -55,8 +55,28 @@ For landing, centring and riding a moving log, use the same command with
 `--level JUN1 --entity-reactions platforms`. This explicitly starts on water
 cell `(18,5)` and hops NORTH; it is an inspection start, not a verified route
 from safe terrain. Platform mode also supports local hops, departure and camera
-attachment. Scripts, zones and callback mappings remain deferred; see the
+attachment. Scripts, active zones and callback mappings remain deferred; see the
 [entity contract](docs/reference/gameplay/entities.md).
+
+For guarded exploration from a safe bank, launch:
+
+```text
+godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=JUN1 --exploration=jun1-log-bank
+```
+
+This opens LIVE and paused at bank cell `(22,10)`, facing west. It has no
+automatic commands or live tick limit. From reset, the verified route presses
+Left at tick 0 and Right at tick 12, after centring on log 24; the frog reaches
+bank `(22,9)` at tick 17. Period steps one tick, including while an arrow is
+held. R resets the whole inspection and drawing clocks, then pauses while
+retaining the selected LIVE/REPLAY mode.
+The overlay shows the world boundary and the all-attached lifetime assumption.
+Leaving the boundary or entering an unsupported camera zone rejects the entire
+tick and pauses with a reason. It does not create a wall or clamp the frog.
+This preset admits only the audited high-detail `pc-retail-v3.0e` map, behavior,
+script and model inputs; it rejects changed proof dependencies and visibility
+mode. Ordinary inspection remains available for edited data. See the
+[bounded route contract](docs/reference/gameplay/entities.md#guarded-jun1-bank-route).
 
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file

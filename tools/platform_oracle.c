@@ -13,10 +13,12 @@
 #include "LIBRARY.H"
 #include "MAPVIEW.H"
 #include "ENTITY.H"
+#include "ENTLIB.H"
 #include "FORM.H"
 #include "PATH.H"
 #include "mapload.H"
 #include "formlib.H"
+#include "ZONE.H"
 #include "froguser.h"
 #undef main
 #include "gpu/mr_stub_gpu.h"
@@ -52,18 +54,181 @@ static EFFECT trail_effect;
 static TRAIL trail;
 static ZONE_HEADER zone_header;
 static GENERAL_HEADER general_header;
-static ENTITY entities[2], entity_roots[9];
-static LIVE_ENTITY lives[2];
+static ENTITY entities[128], entity_roots[9];
+static LIVE_ENTITY lives[128];
 static FORM_BOOK books[2];
 static FORM *forms[2];
 static FORM_DATA form_data[2];
-static MR_USHORT form_flags[2][2];
+static MR_USHORT form_flags[2][64];
 static MAP_GROUP groups[9];
 static PATH_RUNNER moving_runner;
 extern PATH_RUNNER *Path_runner_root_ptr;
 static PATH_SEGMENT *moving_segment;
 static PATH_SEGMENT *moving_segments[1];
 static int entity_count;
+
+/* Retail route input contains decoded numeric facts only. Keep the existing
+ * synthetic corpus intact; this mode uses the same frozen gameplay functions. */
+static GRID_STACK *route_stacks;
+static GRID_SQUARE *route_squares;
+static MAP_F4 *route_polygons;
+static MR_SVEC *route_vertices;
+static PATH_SEGMENT **route_segments;
+static int route_width,route_depth,route_segment_count;
+static int route_start_x,route_start_z,route_start_y;
+static int route_candidate_count,route_selected_slot;
+static int route_inventory_count;
+static int route_reasons[128],route_inventory_uids[128],route_inventory_flags[128];
+static int route_inventory_types[128];
+static MR_VEC route_inventory_positions[60][128];
+static int route_indices[128],route_uids[128],route_entity_flags[128];
+static int route_distances[128],route_speeds[128],route_segment_indices[128];
+static PATH_RUNNER route_runners[128];
+static int route_form_x,route_form_z,route_xofs,route_zofs,route_height,route_max_y;
+static int route_radius,route_book_flags;
+static int route_form_cells[64];
+static int route_base_x,route_base_z;
+static int route_group_x,route_group_z,route_group_width,route_group_depth;
+static int route_group_base_x,route_group_base_z,route_map_index,route_death_height;
+static MAP_GROUP *route_groups;
+static ENTITY *route_group_roots;
+static MR_MAT camera_matrix;
+static int route_int(FILE *stream);
+
+static int zone_run(const char *fixture) {
+    FILE *stream=fopen(fixture,"r");
+    if(!stream) {perror(fixture);return 2;}
+    int count=route_int(stream);
+    if(count<1 || count>64) return 2;
+    ZONE **zone_ptrs=calloc(count,sizeof(*zone_ptrs));
+    zone_header.zh_numzones=count;
+    Map_zone_header=&zone_header;Map_zone_ptrs=zone_ptrs;
+    for(int index=0;index<count;index++) {
+        ZONE *zone=calloc(1,sizeof(*zone));zone_ptrs[index]=zone;
+        zone->zo_type=route_int(stream);zone->zo_numregions=route_int(stream);
+        zone->zo_xmin=route_int(stream);zone->zo_zmin=route_int(stream);
+        zone->zo_xmax=route_int(stream);zone->zo_zmax=route_int(stream);
+        if(zone->zo_numregions>64) return 2;
+        if(zone->zo_numregions) zone->zo_regions=calloc(zone->zo_numregions,sizeof(ZONE_REGION));
+        for(int region=0;region<zone->zo_numregions;region++) {
+            ZONE_REGION *part=&zone->zo_regions[region];
+            part->zr_xmin=route_int(stream);part->zr_zmin=route_int(stream);
+            part->zr_xmax=route_int(stream);part->zr_zmax=route_int(stream);
+        }
+    }
+    int queries=route_int(stream);
+    if(queries<1 || queries>100000) return 2;
+    puts("query,x,z,type,found,zone_index,region_index");
+    for(int query=0;query<queries;query++) {
+        int x=route_int(stream),z=route_int(stream),type=route_int(stream);
+        ZONE *hit=NULL;ZONE_REGION *region=NULL;
+        int found=CheckCoordsInZones(x,z,type,&hit,&region);
+        int zone_index=-1,region_index=-1;
+        if(found) {
+            for(int index=0;index<count;index++) if(zone_ptrs[index]==hit) zone_index=index;
+            if(zone_index<0) return 3;
+            if(hit->zo_numregions) region_index=(int)(region-hit->zo_regions);
+        }
+        printf("%d,%d,%d,%d,%d,%d,%d\n",query,x,z,type,found,zone_index,region_index);
+    }
+    fclose(stream);return 0;
+}
+
+static int route_int(FILE *stream) {
+    int value;
+    if (fscanf(stream,"%d",&value)!=1) { fputs("incomplete retail route fixture\n",stderr); exit(2); }
+    return value;
+}
+
+static void route_read(const char *file) {
+    FILE *stream=fopen(file,"r");
+    if(!stream) { perror(file); exit(2); }
+    route_width=route_int(stream);route_depth=route_int(stream);
+    route_base_x=route_int(stream);route_base_z=route_int(stream);
+    route_start_x=route_int(stream);route_start_y=route_int(stream);route_start_z=route_int(stream);
+    route_group_base_x=route_int(stream);route_group_base_z=route_int(stream);
+    route_group_x=route_int(stream);route_group_z=route_int(stream);
+    route_group_width=route_int(stream);route_group_depth=route_int(stream);
+    route_map_index=route_int(stream);route_death_height=route_int(stream);
+    if(route_width<1 || route_depth<1 || route_width*route_depth>4096) exit(2);
+    int cells=route_width*route_depth;
+    int total_squares=route_int(stream);
+    if(total_squares<cells/2 || total_squares>8192) exit(2);
+    route_stacks=calloc(cells,sizeof(*route_stacks));
+    route_squares=calloc(total_squares,sizeof(*route_squares));
+    route_polygons=calloc(total_squares,sizeof(*route_polygons));
+    route_vertices=calloc(total_squares*4,sizeof(*route_vertices));
+    int square_index=0;
+    for(int i=0;i<cells;i++) {
+        int count=route_int(stream),average=route_int(stream);
+        if(count<0 || count>255 || square_index+count>total_squares) exit(2);
+        route_stacks[i].gs_numsquares=count;route_stacks[i].gs_average_ht=average;
+        route_stacks[i].gs_index=square_index;
+        for(int layer=0;layer<count;layer++) {
+            int current=square_index++;
+            route_squares[current].gs_flags=route_int(stream);
+            route_squares[current].gs_map_poly=&route_polygons[current];
+            for(int j=0;j<4;j++) {
+                MR_SVEC *v=&route_vertices[current*4+j];
+                v->vx=route_int(stream);v->vy=route_int(stream);v->vz=route_int(stream);
+                route_polygons[current].mp_vertices[j]=current*4+j;
+            }
+        }
+    }
+    if(square_index!=total_squares) exit(2);
+    route_segment_count=route_int(stream);
+    if(route_segment_count<1 || route_segment_count>64) exit(2);
+    route_segments=calloc(route_segment_count,sizeof(*route_segments));
+    for(int i=0;i<route_segment_count;i++) {
+        int kind=route_int(stream),length=route_int(stream);
+        int bytes=kind==0?sizeof(PATH_SPLINE):kind==1?sizeof(PATH_ARC):kind==2?sizeof(PATH_LINE):0;
+        if(!bytes || length<=0) exit(2);
+        route_segments[i]=calloc(1,offsetof(PATH_SEGMENT,ps_segment_ptr)+bytes);
+        route_segments[i]->ps_type=kind;
+        MR_LONG *dest=(MR_LONG*)&route_segments[i]->ps_segment_ptr;
+        dest[0]=length;
+        if(kind==0) for(int j=0;j<28;j++) dest[j+1]=route_int(stream);
+        else if(kind==2) {
+            PATH_LINE *line=(PATH_LINE*)dest;
+            line->pl_start.vx=route_int(stream);line->pl_start.vy=route_int(stream);line->pl_start.vz=route_int(stream);
+            line->pl_end.vx=route_int(stream);line->pl_end.vy=route_int(stream);line->pl_end.vz=route_int(stream);
+        } else { fputs("route arc not yet supported\n",stderr); exit(2); }
+    }
+    route_candidate_count=route_int(stream);route_selected_slot=-1;
+    if(route_candidate_count<1 || route_candidate_count>128) exit(2);
+    for(int i=0;i<route_candidate_count;i++) {
+        route_indices[i]=route_int(stream);route_uids[i]=route_int(stream);
+        route_entity_flags[i]=route_int(stream);route_segment_indices[i]=route_int(stream);
+        route_distances[i]=route_int(stream);route_speeds[i]=route_int(stream);
+        if(route_indices[i]==24) route_selected_slot=i;
+        if(i && route_indices[i]<=route_indices[i-1]) exit(2);
+        if(route_segment_indices[i]<0 || route_segment_indices[i]>=route_segment_count) exit(2);
+    }
+    if(route_selected_slot<0) exit(2);
+    route_form_x=route_int(stream);route_form_z=route_int(stream);
+    route_xofs=route_int(stream);route_zofs=route_int(stream);
+    route_height=route_int(stream);route_max_y=route_int(stream);
+    route_radius=route_int(stream);route_book_flags=route_int(stream);
+    if(route_form_x<1 || route_form_z<1 || route_form_x*route_form_z>64) exit(2);
+    for(int i=0;i<route_form_x*route_form_z;i++) route_form_cells[i]=route_int(stream);
+    route_inventory_count=route_int(stream);
+    if(route_inventory_count!=115) exit(2);
+    for(int index=0;index<route_inventory_count;index++) {
+        if(route_int(stream)!=index) exit(2);
+        route_inventory_uids[index]=route_int(stream);
+        route_inventory_flags[index]=route_int(stream);
+        route_inventory_types[index]=route_int(stream);
+        route_reasons[index]=route_int(stream);
+        if(route_inventory_types[index]<0 || route_inventory_types[index]>ENTITY_TYPE_SWP_STAT_WEIR) exit(2);
+        if(route_reasons[index]<0 || route_reasons[index]>5) exit(2);
+        for(int tick=0;tick<60;tick++) {
+            route_inventory_positions[tick][index].vx=route_int(stream);
+            route_inventory_positions[tick][index].vy=route_int(stream);
+            route_inventory_positions[tick][index].vz=route_int(stream);
+        }
+    }
+    fclose(stream);
+}
 
 static void print_contact_order(FROG *frog) {
     int fx=(frog->fr_lwtrans->t[0]-Map_view_basepoint.vx)/Map_view_xlen;
@@ -206,7 +371,194 @@ static void animation_setup(int jungle) {
     Frogs[0].fr_api_item=&env;FrogInitialiseAnimation(&Frogs[0],FROG_ANIMATION_PANT,0);
 }
 
-static MR_MAT camera_matrix;
+static void route_setup(void) {
+    setup();animation_setup(1);
+    Grid_xnum=route_width;Grid_znum=route_depth;
+    Grid_xlen=Grid_zlen=256;Grid_xshift=Grid_zshift=8;
+    Grid_base_x=route_base_x;Grid_base_z=route_base_z;
+    Grid_squares=route_squares;Grid_stacks=route_stacks;Map_vertices=route_vertices;
+    int cell_x=(route_start_x-route_base_x)>>8,cell_z=(route_start_z-route_base_z)>>8;
+    if(cell_x<0 || cell_x>=route_width || cell_z<0 || cell_z>=route_depth) exit(2);
+    FROG *frog=&Frogs[0];
+    frog->fr_grid_x=cell_x;frog->fr_grid_z=cell_z;
+    GRID_STACK *start_stack=&route_stacks[cell_z*route_width+cell_x];
+    if(!start_stack->gs_numsquares) exit(2);
+    frog->fr_grid_square=&route_squares[start_stack->gs_index+start_stack->gs_numsquares-1];
+    frog->fr_pos.vx=route_start_x<<16;frog->fr_pos.vy=route_start_y<<16;frog->fr_pos.vz=route_start_z<<16;
+    frog->fr_y=route_start_y;frog->fr_direction=3;
+    UpdateFrogOldPositionalInfo(frog);
+    matrix.t[0]=route_start_x;matrix.t[1]=route_start_y;matrix.t[2]=route_start_z;
+    general_header.gh_default_camera_source_ofs.vx=0;
+    general_header.gh_default_camera_source_ofs.vy=-1435;
+    general_header.gh_default_camera_source_ofs.vz=-100;
+    general_header.gh_default_camera_target_ofs.vx=0;
+    general_header.gh_default_camera_target_ofs.vy=0;
+    general_header.gh_default_camera_target_ofs.vz=0;
+    Map_view_basepoint.vx=route_group_base_x;Map_view_basepoint.vz=route_group_base_z;
+    Map_view_xnum=route_group_x;Map_view_znum=route_group_z;
+    Map_view_xlen=route_group_width;Map_view_zlen=route_group_depth;
+    if(route_group_x<1 || route_group_z<1 || route_group_x*route_group_z>1024) exit(2);
+    route_groups=calloc(route_group_x*route_group_z,sizeof(*route_groups));
+    route_group_roots=calloc(route_group_x*route_group_z,sizeof(*route_group_roots));
+    Map_groups=route_groups;
+    for(int i=0;i<route_group_x*route_group_z;i++) route_groups[i].mg_entity_root_ptr=&route_group_roots[i];
+    memset(entities,0,sizeof(entities));memset(lives,0,sizeof(lives));
+    memset(books,0,sizeof(books));memset(form_data,0,sizeof(form_data));
+    Form_library_ptrs[0]=books;Map_form_ptrs=forms;
+    forms[0]=calloc(1,offsetof(FORM,fo_formdata_ptrs)+sizeof(FORM_DATA*));
+    FORM *form=forms[0];FORM_DATA *data=&form_data[0];
+    data->fd_height_type=FORM_DATA_HEIGHT_TYPE_GRID;data->fd_height=route_height;
+    for(int i=0;i<route_form_x*route_form_z;i++) form_flags[0][i]=route_form_cells[i];
+    data->fd_grid_squares=form_flags[0];memcpy(&form->fo_formdata_ptrs,&data,sizeof(data));
+    form->fo_numformdatas=1;form->fo_xnum=route_form_x;form->fo_znum=route_form_z;
+    form->fo_xofs=route_xofs;form->fo_zofs=route_zofs;form->fo_max_y=route_max_y;
+    books[0].fb_radius2=route_radius;books[0].fb_flags=route_book_flags;
+    books[0].fb_entity_type=ENTITY_TYPE_MOVING;
+    InitialisePathRunners();memset(route_runners,0,sizeof(route_runners));
+    entity_count=route_inventory_count;
+    for(int index=0;index<route_inventory_count;index++) {
+        entities[index].en_unique_id=route_inventory_uids[index];
+        entities[index].en_flags=route_inventory_flags[index];
+    }
+    for(int i=0;i<route_candidate_count;i++) {
+        int index=route_indices[i];
+        if(route_reasons[index]!=0 || route_inventory_uids[index]!=route_uids[i] ||
+            route_inventory_flags[index]!=route_entity_flags[i]) exit(2);
+        PATH_RUNNER *runner=&route_runners[index];
+        int segment=route_segment_indices[i];
+        runner->pr_flags=PATH_RUNNER_ACTIVE|PATH_RUNNER_REPEAT;
+        runner->pr_numsegments=route_segment_count;runner->pr_segments=route_segments;
+        runner->pr_segment_index=segment;
+        runner->pr_segment_type=route_segments[segment]->ps_type;
+        runner->pr_segment_ptr=&route_segments[segment]->ps_segment_ptr;
+        runner->pr_segment_length=((PATH_SPLINE*)runner->pr_segment_ptr)->ps_length;
+        runner->pr_segment_dist=route_distances[i];runner->pr_speed=route_speeds[i];
+        EvaluatePathRunnerPosition(runner);EvaluatePathRunnerTotalDistance(runner);
+        if((runner->pr_next=Path_runner_root_ptr->pr_next))
+            Path_runner_root_ptr->pr_next->pr_prev=runner;
+        Path_runner_root_ptr->pr_next=runner;runner->pr_prev=Path_runner_root_ptr;
+        ENTITY *entity=&entities[index];LIVE_ENTITY *live=&lives[index];
+        entity->en_form_book_id=0;entity->en_form_grid_id=0;
+        entity->en_live_entity=live;entity->en_path_runner=runner;
+        live->le_entity=entity;live->le_lwtrans=&live->le_matrix;
+        MR_INIT_MAT(&live->le_matrix);ENTSTRUpdateMovingMOF(live);
+    }
+    for(int index=0;index<route_inventory_count;index++)
+        if(Entity_library[route_inventory_types[index]].eb_flags & ENTITY_BOOK_STATIC)
+            EntityLinkToMapGroup(&entities[index],&route_inventory_positions[0][index]);
+    Game_total_viewports=0;frog->fr_lives=3;Game_map=route_map_index;
+    Cheat_collision_toggle=FALSE;Cheat_infinite_lives_toggle=FALSE;
+    Fade_top_left_pos.vx=-32767;Fade_top_left_pos.vz=32767;
+    Fade_bottom_right_pos.vx=32767;Fade_bottom_right_pos.vz=-32767;
+    if(Theme_library[Game_map_theme].tb_death_height!=route_death_height) exit(2);
+    memset(&camera_matrix,0,sizeof(camera_matrix));Cameras[0].ca_matrix=&camera_matrix;
+    ResetCamera(Cameras);Cameras[0].ca_mode=CAMERA_MODE_FOLLOW_FROG;Cameras[0].ca_move_timer=0;
+    Cameras[0].ca_current_source_ofs=general_header.gh_default_camera_source_ofs;
+    Cameras[0].ca_current_target_ofs=general_header.gh_default_camera_target_ofs;
+    Cameras[0].ca_current.vx=route_start_x;Cameras[0].ca_current.vy=route_start_y;
+    Cameras[0].ca_current.vz=route_start_z;UpdateCamera(Cameras);
+}
+
+static void route_emit(int tick,const char *phase) {
+    FROG *f=&Frogs[0];CAMERA *c=&Cameras[0];
+    int world_x=f->fr_pos.vx>>16,world_z=f->fr_pos.vz>>16;
+    if(world_x<1900 || world_x>=2304 || world_z< -5376 || world_z>= -4864 ||
+       f->fr_lwtrans->t[0]<1900 || f->fr_lwtrans->t[0]>=2304 ||
+       f->fr_lwtrans->t[2]< -5376 || f->fr_lwtrans->t[2]>= -4864) {
+        fprintf(stderr,"admission rectangle escaped at tick %d phase %s\n",tick,phase);exit(3);
+    }
+    int selected=route_indices[route_selected_slot];
+    int attached=f->fr_entity?(int)(f->fr_entity-entities):-1;
+    int forbidden=f->fr_forbid_entity?(int)(f->fr_forbid_entity-entities):-1;
+    printf("%d,%s,%d,%d,%d,%d,%d,%d,%d,%d,%u,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%u,%u,%d,%d,",
+      tick,phase,f->fr_pos.vx,f->fr_pos.vy,f->fr_pos.vz,
+      f->fr_velocity.vx,f->fr_velocity.vy,f->fr_velocity.vz,
+      f->fr_grid_x,f->fr_grid_z,f->fr_flags,f->fr_mode,
+      attached,f->fr_count,f->fr_direction,f->fr_current_key,
+      lives[selected].le_matrix.t[0],lives[selected].le_matrix.t[1],lives[selected].le_matrix.t[2],
+      route_runners[selected].pr_segment_index,route_runners[selected].pr_segment_dist,
+      c->ca_current.vx,c->ca_current.vy,c->ca_current.vz,
+      c->ca_frog_controller_directions[0],c->ca_frog_controller_directions[1],
+      c->ca_frog_controller_directions[2],c->ca_frog_controller_directions[3],
+      f->fr_old_y,f->fr_entity_grid_x,f->fr_entity_grid_z,
+      forbidden,lives[selected].le_flags,Game_mode,pgens,sounds);
+    printf("%u,",MRInput[0].in_pad_new);
+    int fx=(f->fr_lwtrans->t[0]-Map_view_basepoint.vx)/Map_view_xlen;
+    int fz=(f->fr_lwtrans->t[2]-Map_view_basepoint.vz)/Map_view_zlen;
+    int xmin=fx-1<0?0:fx-1,xmax=fx+1>=Map_view_xnum?Map_view_xnum-1:fx+1;
+    int zmin=fz-1<0?0:fz-1,zmax=fz+1>=Map_view_znum?Map_view_znum-1:fz+1;
+    int first=1;
+    for(int z=zmin;z<=zmax;z++) for(int x=xmin;x<=xmax;x++) {
+        ENTITY *e=route_groups[z*Map_view_xnum+x].mg_entity_root_ptr->en_next;
+        while(e) {
+            if(!first) putchar(';');
+            printf("%d",(int)(e-entities));first=0;e=e->en_next;
+        }
+    }
+    if(first) putchar('-');
+    putchar(',');first=1;
+    for(int i=route_inventory_count-1;i>=0;i--) if(lives[i].le_flags & LIVE_ENTITY_HIT_FROG_0) {
+        if(!first)putchar(';');printf("%d",i);first=0;
+    }
+    if(first)putchar('-');
+    putchar('\n');
+}
+
+static int route_run(const char *fixture) {
+    route_read(fixture);route_setup();
+    puts("tick,phase,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,flags,mode,attached,count,direction,input,entity_x,entity_y,entity_z,segment,distance,camera_x,camera_y,camera_z,controller_n,controller_e,controller_s,controller_w,old_y,entity_cell_x,entity_cell_z,forbidden,entity_flags,game_mode,pgen_requests,sound_requests,pad_mask,contact_order,hit_indices");
+    for(int tick=0;tick<60;tick++) {
+        MR_ULONG key=0;
+        int desired=tick==0?3:tick==12?1:-1;
+        if(desired>=0) {
+            for(int direction=0;direction<4;direction++) if(Cameras[0].ca_frog_controller_directions[direction]==desired) {
+                key=direction==0?Frogs[0].fr_control_method->fc_up_control:
+                    direction==1?Frogs[0].fr_control_method->fc_right_control:
+                    direction==2?Frogs[0].fr_control_method->fc_down_control:
+                    Frogs[0].fr_control_method->fc_left_control;
+            }
+            if(!key) { fprintf(stderr,"no input mapping for world direction %d at tick %d\n",desired,tick);return 1; }
+        }
+        MRInput[0].in_pad_down=key;MRInput[0].in_pad_new=key;
+        for(int i=0;i<route_inventory_count;i++) {
+            lives[i].le_flags &= ~LIVE_ENTITY_CLEAR_MASK;
+            ENTITY *entity=&entities[i];
+            if(!(Entity_library[route_inventory_types[i]].eb_flags & ENTITY_BOOK_STATIC) && entity->en_prev) {
+                entity->en_prev->en_next=entity->en_next;
+                if(entity->en_next) entity->en_next->en_prev=entity->en_prev;
+                entity->en_prev=entity->en_next=NULL;
+            }
+        }
+        UpdatePathRunners();
+        for(int i=route_candidate_count-1;i>=0;i--)
+            ENTSTRUpdateMovingMOF(&lives[route_indices[i]]);
+        for(int index=0;index<route_inventory_count;index++) {
+            MR_VEC *position=&route_inventory_positions[tick][index];
+            if(route_reasons[index]==0) {
+                MR_VEC *actual=&route_runners[index].pr_position;
+                if(actual->vx!=position->vx || actual->vy!=position->vy || actual->vz!=position->vz) {
+                    fprintf(stderr,"independent path mismatch at tick %d entity %d\n",tick,index);return 3;
+                }
+                position=actual;
+            } else if(entities[index].en_live_entity) {
+                fputs("excluded entity accidentally live\n",stderr);return 3;
+            }
+            if(!(Entity_library[route_inventory_types[index]].eb_flags & ENTITY_BOOK_STATIC))
+                EntityLinkToMapGroup(&entities[index],position);
+        }
+        MRFrame_number=tick;
+        ControlFrog(Frogs);route_emit(tick,"control");
+        MoveFrog(Frogs);route_emit(tick,"move");
+        CollideFrog(Frogs);route_emit(tick,"collision");
+        UpdateCamera(Cameras);route_emit(tick,"camera");
+        UpdateFrogAnimationScripts();route_emit(tick,"scripts");
+        MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;
+        MRAnimUpdateEnvironments();env.ae_flags=saved;route_emit(tick,"pose");
+        if(Game_mode!=GAME_MODE_LEVEL_PLAY) return 1;
+    }
+    return 0;
+}
+
 static void integrated_emit(int scenario,int tick,const char* phase) {
  FROG* f=Frogs; CAMERA* c=Cameras; FROG_ANIM_INFO* ai=&f->fr_anim_info;
  int program,offset;pointer(ai->fi_script,&program,&offset);
@@ -250,9 +602,14 @@ static void integrated_emit(int scenario,int tick,const char* phase) {
  putchar('\n');
 }
 int main(int argc, char **argv) {
- if(argc!=2) {fprintf(stderr,"usage: platform_oracle <absolute-acos-table-path>\n");return 2;}
+ if(argc!=2 && argc!=4) {fprintf(stderr,"usage: platform_oracle <absolute-acos-table-path> [--retail-route|--zones <decoded-facts>]\n");return 2;}
  MRStub_LoadAcosTable(argv[1]);
  SetErrorMode(3);setvbuf(stdout,NULL,_IONBF,0);MRStub_GpuInit(NULL,0);
+ if(argc==4) {
+    if(!strcmp(argv[2],"--retail-route")) return route_run(argv[3]);
+    if(!strcmp(argv[2],"--zones")) return zone_run(argv[3]);
+    return 2;
+ }
  puts("scenario,tick,phase,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,no_input_timer,death_count,camera_mode,camera_move_timer,camera_twist,camera_x,camera_y,camera_z,source_x,source_y,source_z,controller_up,shake_timer,animation_type,script_timer,animation_flags,env_flags,rng_seed,if_counter,program,offset,action,cel,total,update_count,game_mode,e0x,e0y,e0z,e0segment,e0total,e0flags,e1x,e1y,e1z,e1segment,e1total,e1flags,contact_order,hit_indices,pgen_requests,sound_requests,current_entity_index,forbidden_entity_index,entity_cell_x,entity_cell_z,entity_offset_x16,entity_offset_y16,entity_offset_z16,entity_angle,old_y,entity_transform00,entity_transform01,entity_transform02,entity_transform10,entity_transform11,entity_transform12,entity_transform20,entity_transform21,entity_transform22,entity_transform_t0,entity_transform_t1,entity_transform_t2,entity_carry_indices,camera_mod00,camera_mod01,camera_mod02,camera_mod10,camera_mod11,camera_mod12,camera_mod20,camera_mod21,camera_mod22,camera_mod_t0,camera_mod_t1,camera_mod_t2,camera_current_ytheta,camera_destination_ytheta,camera_delta_ytheta,camera_direction_n_x,camera_direction_n_y,camera_direction_n_z,camera_direction_e_x,camera_direction_e_y,camera_direction_e_z,camera_direction_s_x,camera_direction_s_y,camera_direction_s_z,camera_direction_w_x,camera_direction_w_y,camera_direction_w_z");
  for(int scenario=3;scenario<16;scenario++) {
   setup();animation_setup(0);

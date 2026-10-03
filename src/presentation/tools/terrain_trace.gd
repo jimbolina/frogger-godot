@@ -7,12 +7,14 @@ var rows: PackedStringArray = [HEADER]
 var full_rows: PackedStringArray = PackedStringArray()
 var _entity_reactions: bool = false
 var _entity_lifecycle: bool = false
+var _guarded_exploration: bool = false
 
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
 	_entity_lifecycle = scenario.entity_lifecycle
-	var metadata: Dictionary = {"schema": "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
+	_guarded_exploration = scenario.level.exploration_guard != null
+	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
 		"camera_definition": facts(scenario.level.camera) if scenario.level.camera != null else null,
@@ -26,13 +28,20 @@ func configure(scenario: TerrainScenario) -> void:
 			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "entity_sliding_bouncing", "multiplayer"]
 		metadata["entity_collision"] = facts(scenario.level.entity_collision, _entity_lifecycle) if scenario.level.entity_collision != null else null
 		metadata["entity_lifetime"] = "visibility" if scenario.entity_lifecycle else "all_attached"
+	if scenario.level.exploration_guard != null:
+		metadata["exploration"] = scenario.exploration_preset
+		metadata["exploration_guard"] = facts(scenario.level.exploration_guard)
+		metadata["omitted"] = ["scripts", "active_camera_zones", "custom_behaviors", "primitives", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
 func append_result(scenario: int, command: TickCommand, result: TickResult) -> void:
 	_append(scenario, command, "control", result.control_snapshot)
 	_append(scenario, command, "move", result.move_snapshot)
-	for phase: String in ["control", "move", "collision", "camera", "final"]:
+	var phases: Array[String] = ["control", "move", "collision", "camera", "final"]
+	if _guarded_exploration:
+		phases.insert(4, "scripts")
+	for phase: String in phases:
 		var snapshot: RunSnapshot = result.get(phase + "_snapshot")
 		if snapshot != null:
 			var record: Dictionary = {"tick": command.tick_index, "phase": phase,
@@ -104,6 +113,9 @@ static func _lifecycle_key(record: RefCounted, key: String) -> bool:
 	return false
 
 static func _value(value: Variant, include_lifecycle: bool = false) -> Variant:
+	if value is Rect2i:
+		var rectangle: Rect2i = value
+		return [rectangle.position.x, rectangle.position.y, rectangle.size.x, rectangle.size.y]
 	if value is Vector3i:
 		var vector: Vector3i = value
 		return [vector.x, vector.y, vector.z]

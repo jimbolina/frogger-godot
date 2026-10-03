@@ -33,6 +33,7 @@ var _entities: EntityRun = null
 var _candidate_entities: EntityRun = null
 var _source_id: String = ""
 var _resource_id: int = -1
+var _exploration_guard: ExplorationGuard = null
 var _callback_error: String = ""
 
 ## Validates and copies ordinary terrain, then creates a stationary component start.
@@ -56,6 +57,14 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._theme_name = level.theme_name
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
+	if level.exploration_guard != null:
+		run.error = level.exploration_guard.validate()
+		if not run.error.is_empty():
+			return run
+		if level.entity_collision != null and level.entity_collision.lifecycle != null:
+			run.error = "Guarded exploration requires all-attached entity lifetime"
+			return run
+		run._exploration_guard = level.exploration_guard.copy()
 	if level.entity_collision != null:
 		if level.entity_collision.lifecycle != null and level.camera == null:
 			run.error = "Visibility lifecycle requires an integrated camera"
@@ -144,6 +153,12 @@ func reset(initial: RunStart = null) -> String:
 		state.target_y = state.old_y
 	elif state.start_mode == 1:
 		state.mode = 3
+	if _exploration_guard != null:
+		var guard_error: String = _exploration_guard.check_world(state.world_position)
+		if guard_error.is_empty():
+			guard_error = _exploration_guard.check_cell(state.cell)
+		if not guard_error.is_empty():
+			return guard_error
 	_sync_facts(state)
 	var random: SourceRandom = SourceRandom.create(initial.seed if initial != null else 1)
 	var camera: GameplayCamera = null
@@ -234,6 +249,13 @@ func step(command: TickCommand) -> TickResult:
 		return _failed_tick(result, _callback_error)
 	if next.flags & 4 and next.current_entity_index >= 0:
 		_mark_carry(next, next.current_entity_index)
+	# MoveFrog updates the camera zone here, before modifiers and collision.
+	if _exploration_guard != null:
+		var guard_error: String = _exploration_guard.check_cell(next.cell)
+		if guard_error.is_empty():
+			guard_error = _exploration_guard.check_world(next.world_position)
+		if not guard_error.is_empty():
+			return _failed_tick(result, guard_error)
 	_sync_systems(next)
 	result.move_snapshot = next.copy()
 	TerrainModifiers.update(next)
@@ -290,6 +312,10 @@ func step(command: TickCommand) -> TickResult:
 		next.entities = _candidate_entities.snapshot()
 	next.rng_state = _candidate_random.state
 	next.rng_draw_count = _candidate_random.draw_count
+	if _exploration_guard != null:
+		var guard_error: String = _exploration_guard.check_world(next.world_position)
+		if not guard_error.is_empty():
+			return _failed_tick(result, guard_error)
 	result.rng_consumers.assign(_candidate_random.consumers)
 	next.tick_index += 1
 	_state = next
@@ -789,6 +815,10 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 	var ordered: PackedInt32Array = EntityContactOrder.indices(_entity_collision, state.entities, state.world_position)
 	var forbidden: int = state.forbidden_entity_index
 	for entity_id: int in ordered:
+		if _exploration_guard != null:
+			var guard_error: String = _exploration_guard.check_world(state.world_position)
+			if not guard_error.is_empty():
+				return guard_error
 		if entity_id == state.current_entity_index or entity_id == forbidden:
 			continue
 		var index: int = -1
@@ -809,6 +839,10 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		if not issue.is_empty():
 			return issue
 	if state.current_entity_index >= 0 and state.flags & (2 | 16) == (2 | 16) and state.remaining_ticks == 1:
+		if _exploration_guard != null:
+			var guard_error: String = _exploration_guard.check_world(state.world_position)
+			if not guard_error.is_empty():
+				return guard_error
 		var pose: EntitySnapshot = _platform_pose(state)
 		var definition: FormContactDefinition = _platform_definition(state)
 		var delta: Vector3i = state.world_position - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
@@ -853,6 +887,8 @@ func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition,
 		_kill(state, reaction.kill_animation, false, result.events)
 		state.death_entity_index = pose.entity_index
 		result.events.append("entity_pop_explosion_request")
+	if _exploration_guard != null:
+		return _exploration_guard.check_world(state.world_position)
 	return ""
 
 func _failed_tick(result: TickResult, issue: String) -> TickResult:

@@ -1,36 +1,36 @@
 # Current checkpoint
 
-Terrain movement, collision/deaths, gameplay camera and animation control are
-implemented against the frozen C port's 30 Hz behavior. Typed scenarios run
-the same rules in tests, headless traces and the terrain viewer. There is no
-complete playable level yet. Direct retail terrain-viewer launches select live
-keyboard exploration; see [controls](../README.md) and the [domain index](reference/domain.md).
+Terrain movement, collision/deaths, gameplay camera and animation control
+follow the frozen C port at 30 Hz. Direct retail terrain-viewer launches use
+live keyboard input. There is no complete playable level yet. See
+[launch and controls](../README.md) and the [domain index](reference/domain.md).
 
-Final-PC PATH and FORM records decode into detached definitions. Optional
-entity integration advances owned STATIC/MOVING transforms before the frog,
-queries nearby map groups and applies supported POP and SAFE FORM reactions. Frog,
-entities, camera, animation and RNG commit atomically. The high-detail DES2
-cactus inspection demonstrates an airborne entity hit. SAFE platforms support
-landing, centring, carrying, hops along and off platforms, and camera attachment.
-The high-detail JUN1 log inspection starts explicitly on water, with its first
-contact verified through the ordered scan. Standalone fixed-point
-contact inspection remains available. See [paths](reference/gameplay/paths.md)
-and [entities](reference/gameplay/entities.md) for support and exclusions.
+Optional POP and SAFE interactions advance detached entity/path, frog, camera,
+animation and RNG state atomically. Platforms support landing, centring,
+carrying, local/departing hops and camera attachment. The opt-in JUN1 bank/log
+preset connects safe terrain to a moving log and back. It opens LIVE and
+paused, assumes all-attached lifetime, and rejects entire ticks that leave its
+audited world boundary or enter a camera zone. Its proof depends on pinned
+retail inputs; changed dependencies and visibility mode are rejected. R resets
+the complete inspection and presentation clocks. The earlier explicit
+water-start inspection remains available. See the
+[entity contract](reference/gameplay/entities.md#guarded-jun1-bank-route).
 
-Opt-in visibility lifecycle now creates and retires script-free generic entities
-from the source camera/group selector. Paths persist while instances are absent;
-retained frog attachments protect live platforms. Selection and creation join
-the atomic transaction. The demonstrated automatic-camera route is synthetic;
-FOR1 is a retail-data candidate, not a verified runtime demonstration. The mode
-requires zero zones and a bounded selected-group polygon budget.
+ZONE records now decode into detached, source-ordered queries with the frozen
+unsigned outer/signed child interpretation. Active camera-zone behavior is
+still deferred. Opt-in visibility lifecycle supports script-free generic
+entities on zero-zone maps within its polygon budget. Its demonstrated route
+is synthetic; FOR1 remains an unverified retail lifecycle candidate.
 
-Next are scripts, zones, custom behavior and verified callback mappings toward
-the first playable level. The [roadmap](PORTING.md) owns
-remaining work; [architecture](reference/architecture.md) defines ownership.
+Next are scripts, active zones, custom/immortal behavior, verified form
+callbacks, selective reset, additional reactions, primitives and broader
+lifecycle workloads. [PORTING](PORTING.md) owns remaining P8 work;
+[architecture](reference/architecture.md) owns transaction boundaries.
+Scoring, progression and win conditions remain unfinished.
 
-Animated per-part lighting remains a [renderer limitation](reference/rendering/gameplay-projection.md).
-Original retail runtime timing is unmeasured; the selected source-port target
-is described in [simulation](reference/gameplay/simulation.md).
-
+Animated per-part lighting remains a
+[renderer limitation](reference/rendering/gameplay-projection.md).
+Original retail runtime timing is unmeasured; the selected source target is
+explained in [simulation](reference/gameplay/simulation.md).
 Hosted CI awaits a repository host. The licence remains the owner's decision
 before publication. Never push.

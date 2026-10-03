@@ -1,6 +1,7 @@
 """Compare platform landing traces at headless and three render schedules."""
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -12,6 +13,7 @@ import uuid
 
 
 PHASES = ('control', 'move', 'collision', 'camera', 'final')
+EXPLORATION_PHASES = ('control', 'move', 'collision', 'camera', 'scripts', 'final')
 RATES = (30, 60, 144)
 CAPTURES = ('approach', 'attachment', 'centred', 'carry', 'departure', 'camera')
 PLATFORM_STATE = ('current_entity_index', 'forbidden_entity_index', 'entity_cell',
@@ -19,12 +21,77 @@ PLATFORM_STATE = ('current_entity_index', 'forbidden_entity_index', 'entity_cell
                   'entity_carry_indices')
 
 
-def read_trace(path, retail):
+def check_exploration_source_trace(rows, golden_path):
+    """Compare the represented JUN1 route fields with the frozen-C golden."""
+    with golden_path.open('r', encoding='ascii', newline='') as stream:
+        source_rows = list(csv.DictReader(stream, delimiter='\t'))
+    if len(source_rows) != 360:
+        raise ValueError(f'{golden_path}: expected 360 frozen-C route rows')
+    source_by_key = {}
+    for source in source_rows:
+        key = (int(source['tick']), source['phase'])
+        if key in source_by_key:
+            raise ValueError(f'{golden_path}: duplicate frozen-C route phase {key}')
+        source_by_key[key] = source
+    for row in rows[1:]:
+        phase = 'pose' if row['phase'] == 'final' else row['phase']
+        key = (row['tick'], phase)
+        source = source_by_key.get(key)
+        if source is None:
+            raise ValueError(f'{golden_path}: missing frozen-C route phase {key}')
+        state = row['state']
+        pose = next((entity for entity in state['entities']['entities']
+                     if entity['entity_index'] == 24), None)
+        if pose is None:
+            raise ValueError(f'{key}: missing selected JUN1 log24 pose')
+        expected = {
+            'x16': state['position_16'][0], 'y16': state['position_16'][1],
+            'z16': state['position_16'][2], 'vx16': state['velocity_16'][0],
+            'vy16': state['velocity_16'][1], 'vz16': state['velocity_16'][2],
+            'grid_x': state['cell'][0], 'grid_z': state['cell'][1],
+            'flags': state['flags'], 'mode': state['mode'],
+            'attached': state['current_entity_index'],
+            'count': state['remaining_ticks'], 'direction': state['direction'],
+            'input': state['current_input'],
+            'entity_x': pose['matrix12'][9], 'entity_y': pose['matrix12'][10],
+            'entity_z': pose['matrix12'][11],
+            'segment': pose['path']['segment_index'],
+            'distance': pose['path']['segment_distance'],
+            'camera_x': state['camera']['tracked_world'][0],
+            'camera_y': state['camera']['tracked_world'][1],
+            'camera_z': state['camera']['tracked_world'][2],
+            'controller_n': state['camera']['controller_directions'][0],
+            'controller_e': state['camera']['controller_directions'][1],
+            'controller_s': state['camera']['controller_directions'][2],
+            'controller_w': state['camera']['controller_directions'][3],
+            'old_y': state['old_y'],
+            'entity_cell_x': state['entity_cell'][0],
+            'entity_cell_z': state['entity_cell'][1],
+            'forbidden': state['forbidden_entity_index'],
+        }
+        for field, actual in expected.items():
+            if int(source[field]) != actual:
+                raise ValueError(f'{key}: {field} frozen C {source[field]}, runtime {actual}')
+        hit_indices = ';'.join(map(str, state['entity_hit_indices'])) or '-'
+        if source['hit_indices'] != hit_indices:
+            raise ValueError(f'{key}: hit_indices frozen C {source["hit_indices"]}, '
+                             f'runtime {hit_indices}')
+        if row['phase'] == 'final':
+            observed_order = ';'.join(str(item['contact']['entity_index'])
+                                      for item in row['entity_contacts']) or '-'
+            if source['supported_order'] != observed_order:
+                raise ValueError(f'{key}: supported_order frozen C '
+                                 f'{source["supported_order"]}, runtime {observed_order}')
+
+
+def read_trace(path, retail, exploration=False):
     rows = [json.loads(line) for line in path.read_text(encoding='utf-8').splitlines()
             if line.strip()]
-    if not rows or rows[0].get('schema') != 'entity-platform-v1':
-        raise ValueError(f'{path}: missing entity-platform-v1 metadata')
-    if (len(rows) - 1) % len(PHASES):
+    schema = 'entity-exploration-v1' if exploration else 'entity-platform-v1'
+    phases = EXPLORATION_PHASES if exploration else PHASES
+    if not rows or rows[0].get('schema') != schema:
+        raise ValueError(f'{path}: missing {schema} metadata')
+    if (len(rows) - 1) % len(phases):
         raise ValueError(f'{path}: incomplete phase sequence')
     limit = rows[0].get('tick_limit')
     if type(limit) is not int or not 0 <= limit <= 100000:
@@ -32,7 +99,7 @@ def read_trace(path, retail):
     if not isinstance(rows[0].get('entity_collision'), dict):
         raise ValueError(f'{path}: missing entity collision source facts')
     for index, row in enumerate(rows[1:]):
-        expected = (index // len(PHASES), PHASES[index % len(PHASES)])
+        expected = (index // len(phases), phases[index % len(phases)])
         if (row.get('tick'), row.get('phase')) != expected:
             raise ValueError(f'{path}: expected {expected}, got '
                              f'{(row.get("tick"), row.get("phase"))}')
@@ -50,12 +117,40 @@ def read_trace(path, retail):
                 raise ValueError(f'{path}: missing ordered contacts at {expected}')
             if state.get('completed') and index != len(rows) - 2:
                 raise ValueError(f'{path}: records continue after completion')
-    if (len(rows) - 1) // len(PHASES) > limit:
+    if (len(rows) - 1) // len(phases) > limit:
         raise ValueError(f'{path}: trace exceeds tick limit')
-    tick_count = (len(rows) - 1) // len(PHASES)
+    tick_count = (len(rows) - 1) // len(phases)
     if not rows[-1]['state'].get('completed') and tick_count != limit:
         raise ValueError(f'{path}: run stopped early without completion')
-    if retail:
+    if exploration:
+        metadata = rows[0]
+        if tick_count != 60:
+            raise ValueError(f'{path}: guarded route must run all 60 ticks')
+        if (metadata.get('source_id') != 'pc-retail-v3.0e:JUN1'
+                or metadata.get('resource_id') != 656 or metadata.get('map_index') != 18
+                or metadata.get('exploration') != 'jun1-log-bank' or limit != 60):
+            raise ValueError(f'{path}: expected audited 60-tick high-detail JUN1 exploration')
+        guard = metadata.get('exploration_guard') or {}
+        if guard.get('world_bounds') != [1900, -5376, 404, 512]:
+            raise ValueError(f'{path}: audited exploration rectangle changed')
+        finals = [row for row in rows[1:] if row['phase'] == 'final']
+        attached = [(row['tick'], row['state']['current_entity_index']) for row in finals
+                    if row['state']['current_entity_index'] >= 0]
+        if attached != [(tick, 24) for tick in range(3, 17)]:
+            raise ValueError(f'{path}: JUN1 log24 mount/carry interval changed')
+        for row in rows[1:]:
+            state = row['state']
+            if state.get('completed') is not False or state.get('death_count') != 0:
+                raise ValueError(f'{path}: guarded route must remain alive and incomplete')
+            world = state.get('world_position')
+            if not (isinstance(world, list) and len(world) == 3 and
+                    1900 <= world[0] < 2304 and -5376 <= world[2] < -4864):
+                raise ValueError(f'{path}: phase escaped audited rectangle at '
+                                 f"{(row['tick'], row['phase'])}")
+        if finals[17]['state']['cell'] != [22, 9] or any(
+                row['state']['current_entity_index'] != -1 for row in finals[17:]):
+            raise ValueError(f'{path}: return to ordinary safe bank changed')
+    if retail and not exploration:
         metadata = rows[0]
         if (metadata.get('source_id') != 'pc-retail-v3.0e:JUN1'
                 or metadata.get('resource_id') != 656 or metadata.get('map_index') != 18):
@@ -127,9 +222,9 @@ def check_png(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    selection = parser.add_mutually_exclusive_group(required=True)
-    selection.add_argument('--scenario-file', type=Path)
-    selection.add_argument('--data-dir', type=Path)
+    parser.add_argument('--scenario-file', type=Path)
+    parser.add_argument('--data-dir', type=Path)
+    parser.add_argument('--exploration', choices=('jun1-log-bank',))
     parser.add_argument('--case-index', type=int, default=0,
                         help='Case inside a scenario file with a cases array (default: 0)')
     parser.add_argument('--level', default='JUN1', help='Retail level code (default: JUN1)')
@@ -137,6 +232,10 @@ def main():
                         help='Override selected scenario duration (retail default: 90)')
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
+    if args.exploration and (args.scenario_file is None or args.data_dir is None or args.level.upper() != 'JUN1'):
+        parser.error('jun1-log-bank requires both --scenario-file, --data-dir and --level=JUN1')
+    if not args.exploration and bool(args.scenario_file) == bool(args.data_dir):
+        parser.error('select exactly one of --scenario-file or --data-dir outside exploration')
     if args.tick_limit is not None and not 0 <= args.tick_limit <= 100000:
         parser.error('tick-limit must be in 0..100000')
 
@@ -151,7 +250,7 @@ def main():
         parser.error('data-dir does not exist')
 
     def source_identities():
-        paths = [path for path in (repo / 'src').rglob('*') if path.suffix in ('.gd', '.gdshader')]
+        paths = [path for path in (repo / 'src').rglob('*') if path.suffix in ('.gd', '.gdshader', '.json')]
         paths += [path for path in (repo / 'tools').glob('*') if path.suffix in ('.gd', '.py')]
         paths += list((repo / 'scenes').rglob('*.tscn')) + [repo / 'project.godot']
         return {str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest()
@@ -172,6 +271,8 @@ def main():
         startup.wShowWindow = 0
 
     selected = ['--entity-reactions=platforms']
+    if args.exploration:
+        selected.append('--exploration=' + args.exploration)
     if args.scenario_file:
         authored = json.loads(args.scenario_file.read_text(encoding='utf-8'))
         if isinstance(authored, dict) and isinstance(authored.get('cases'), list):
@@ -190,9 +291,13 @@ def main():
         selected.extend(('--data-dir=' + str(args.data_dir.resolve()), '--level=' + args.level))
         if args.tick_limit is None:
             selected.append('--tick-limit=90')
+    if args.exploration:
+        selected.extend(('--data-dir=' + str(args.data_dir.resolve()), '--level=JUN1'))
     if args.tick_limit is not None:
         selected.append('--tick-limit=' + str(args.tick_limit))
     identity = hashlib.sha256(args.scenario_file.read_bytes()).hexdigest() if args.scenario_file else None
+    route_golden = repo / 'tests/golden/pc-retail-v3.0e/platform_jun1_route.tsv'
+    route_golden_sha = hashlib.sha256(route_golden.read_bytes()).hexdigest() if args.exploration else None
     source_hashes = source_identities()
     (evidence / 'provenance.json').write_text(json.dumps({'source_sha256': source_hashes,
         'scenario_sha256': identity, 'retail_data_dir': str(args.data_dir.resolve()) if args.data_dir else None},
@@ -219,25 +324,29 @@ def main():
     stage('headless', ['-s', 'res://tools/run_terrain_scenario.gd', '--',
                        '--trace-jsonl=' + str(baseline), *selected])
     retail = bool(args.data_dir) and args.level.upper() == 'JUN1'
-    reference = read_trace(baseline, retail)
+    reference = read_trace(baseline, retail, bool(args.exploration))
+    if args.exploration:
+        check_exploration_source_trace(reference, route_golden)
     for rate in RATES:
         rendered = evidence / f'rendered-{rate}.jsonl'
         captures = evidence / f'captures-{rate}'
         stage(f'rendered-{rate}', ['res://scenes/tools/terrain_viewer.tscn', '--', '--run-scenario',
               '--render-rate=' + str(rate), '--trace-jsonl=' + str(rendered),
               '--screenshot-dir=' + str(captures), *selected], headless=False)
-        candidate = read_trace(rendered, retail)
+        candidate = read_trace(rendered, retail, bool(args.exploration))
         if len(candidate) != len(reference):
             raise ValueError(f'{rate} Hz trace has {len(candidate)} rows; expected {len(reference)}')
         for index, (expected, actual) in enumerate(zip(reference, candidate)):
             if expected != actual:
-                location = 'metadata' if index == 0 else f'tick {(index - 1) // 5} phase {PHASES[(index - 1) % 5]}'
+                phases = EXPLORATION_PHASES if args.exploration else PHASES
+                location = 'metadata' if index == 0 else f'tick {(index - 1) // len(phases)} phase {phases[(index - 1) % len(phases)]}'
                 raise ValueError(f'{rate} Hz first difference at {location}')
         states = [row['state'] for row in candidate[1:] if row.get('phase') == 'final']
         mounted = any(state['current_entity_index'] >= 0 for state in states)
         departed = any(before['current_entity_index'] >= 0 and after['current_entity_index'] < 0
                        for before, after in zip(states, states[1:]))
-        required = {'approach'}
+        required = {'safe-start', 'approach', 'attachment', 'centring', 'centred',
+                    'carry', 'camera', 'departure', 'safe-return'} if args.exploration else {'approach'}
         if mounted:
             required.add('attachment')
             attachment_tick = next(state['tick_index'] for state in states
@@ -262,9 +371,12 @@ def main():
         raise RuntimeError('Candidate source changed during schedule verification')
     if args.scenario_file and hashlib.sha256(args.scenario_file.read_bytes()).hexdigest() != identity:
         raise RuntimeError('Scenario changed during schedule verification')
-    (evidence / 'comparison.json').write_text(json.dumps({'schema': 'entity-platform-v1',
+    if args.exploration and hashlib.sha256(route_golden.read_bytes()).hexdigest() != route_golden_sha:
+        raise RuntimeError('Frozen-C route golden changed during schedule verification')
+    (evidence / 'comparison.json').write_text(json.dumps({'schema': 'entity-exploration-v1' if args.exploration else 'entity-platform-v1',
         'rates': list(RATES), 'phase_records': len(reference) - 1, 'completed': True,
-        'scenario_sha256': identity, 'pass': True}, indent=2), encoding='utf-8')
+        'scenario_sha256': identity, 'route_golden_sha256': route_golden_sha,
+        'pass': True}, indent=2), encoding='utf-8')
     print('Entity platform schedules match exactly: ' + str(evidence), flush=True)
 
 

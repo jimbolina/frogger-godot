@@ -117,6 +117,41 @@ transition; synthetic cases also demonstrate departure. Keep logs, provenance,
 selected scenarios and captures outside both repositories. Freeze source edits
 while verifying a candidate.
 
+## Guarded JUN1 bank exploration
+
+`--level JUN1 --exploration jun1-log-bank` admits the independently audited
+v3.0e high-detail map and its determining EXE/model facts. It starts on safe
+bank cell `(22,10)`, LIVE and paused, with no automatic commands or live tick
+limit. The preset supplies platform reactions, all-attached lifetime and a
+half-open world boundary, X `[1900,2304)`, Z `[-5376,-4864)`. It rejects active
+camera-zone entry and cannot be combined with visibility lifetime. The
+[entity contract](../gameplay/entities.md#guarded-jun1-bank-route) owns the
+admission proof and limitations; the existing water-start inspection is separate.
+
+For the reproducible route, use the explicit fixture: logical WEST mask `8`
+at command tick 0, EAST mask `2` at tick 12, and observe all 60 ticks. Contact
+is tick 3, centring finishes at tick 11, and tick 17 returns detached and alive
+to safe cell `(22,9)`. The new `entity-exploration-v1` trace records Control,
+Move, Collision, Camera, Scripts and Final, including unchanged script-phase
+state; it does not execute entity scripts. The verifier rejects truncated or
+prematurely completed runs, compares every represented command, snapshot,
+contact, camera, animation, RNG consumer and outcome across schedules, and
+checks the independently defined frozen-C movement/contact/camera fields.
+
+```powershell
+python tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --scenario-file tests/golden/fixtures/jun1_log_bank.json --exploration jun1-log-bank --output-directory <external-output>
+```
+
+Inspect safe start, airborne approach, attachment, centring, carry and safe
+return captures at 640×480. Exercise actual Godot keyboard dispatch separately:
+idle past ticks 16 and 90 without movement, pause/reset, Left onto the log,
+Right after centring, Space pause/resume, Q/E turns, Period step, Shift hop and
+Tab mode switching. A rejected boundary move must pause with a readable reason
+and leave the complete prior tick intact. R must clear buffered input and
+presentation clocks, restore the whole inspection, pause and retain LIVE.
+This is an inspection reset, not checkpoint or death recovery. Animated-lighting
+limitations remain those of the existing renderer.
+
 ## Visibility lifecycle inspection
 
 `--entity-lifecycle visibility` requires integrated entity reactions and a

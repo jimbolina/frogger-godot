@@ -196,6 +196,24 @@ func test_lifecycle_overlay_releases_and_recreates_only_live_markers() -> void:
 	var released_generation: Object = prior_generation.get_ref()
 	assert_null(released_generation)
 
+func test_exploration_arguments_require_audited_level_and_all_attached_platforms() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	var arguments := PackedStringArray(["--exploration=jun1-log-bank", "--level=JUN1", "--data-dir=player-owned"])
+	assert_eq(scenario.apply_arguments(arguments), "")
+	assert_true(scenario.entity_reactions)
+	assert_true(scenario.platforms_enabled)
+	assert_false(scenario.entity_lifecycle)
+	arguments.append("--entity-lifecycle=visibility")
+	assert_string_contains(scenario.apply_arguments(arguments), "cannot be combined")
+	arguments.remove_at(arguments.size() - 1)
+	arguments.append("--entity-reactions=pop")
+	assert_string_contains(scenario.apply_arguments(arguments), "requires platform reactions")
+	arguments.remove_at(arguments.size() - 1)
+	arguments[1] = "--level=ORG1"
+	assert_string_contains(scenario.apply_arguments(arguments), "requires --level=JUN1")
+	arguments[0] = "--exploration=unknown"
+	assert_string_contains(scenario.apply_arguments(arguments), "must be jun1-log-bank")
+
 func test_integrated_lifecycle_fixture_decodes_and_selects_visibility() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_integrated.json")
 	assert_eq(scenario.error, "")

@@ -89,3 +89,20 @@ All 8,193 entries are checked against an independent digest generated from the
 read-only original table; the C adapter explicitly loads that table. Runtime
 uses only the mathematical reconstruction. Reproduction belongs to the
 [entity golden specification](../../../tests/golden/specs/entities.md).
+
+## Zone boundaries
+
+`ZoneDefinition` owns detached signed storage values and ordered child regions.
+`ZoneQueries.first_camera_match` follows unchanged `ZONE.C/CheckCoordsInZones`:
+visit authored zones in order, filter CAMERA type 0, test inclusive unsigned16
+outer bounds, then inclusive signed16 child bounds in order. Zero children
+means the entire outer rectangle. Gaps, overlaps and inverted bounds retain
+their source meaning; the first matching authored index wins.
+
+Guarded exploration queries the candidate source grid cell at the end of frog
+movement, before modifiers and collision (`FROG.C/MoveFrog`, lines 837–878).
+It rejects a matching zone atomically. No active-zone state, offset transition
+or camera-zone behavior is introduced. The world boundary is a separate
+half-open X/Z inspection restriction, checked around contact corrections and
+before commit. See [ownership](../architecture.md) and
+[map records](../data/maps.md) for their separate responsibilities.

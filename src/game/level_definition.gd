@@ -4,6 +4,8 @@ extends RefCounted
 
 var grid: GridDefinition = null
 var entity_collision: EntityCollisionDefinition = null
+## Optional inspection restriction; null leaves ordinary terrain behavior unchanged.
+var exploration_guard: ExplorationGuard = null
 var source_id: String = ""
 var resource_id: int = -1
 ## Source Map_library index (Game_map), distinct from archive resource identity.

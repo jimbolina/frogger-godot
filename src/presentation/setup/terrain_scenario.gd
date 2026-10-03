@@ -20,6 +20,7 @@ var entity_lifecycle: bool = false
 var collision_enabled_authored: bool = false
 var authored_fixture: bool = false
 var tick_limit_override: bool = false
+var exploration_preset: String = ""
 
 ## Creates authored flat terrain; these inputs contain no expected rule results.
 static func builtin(name: String) -> TerrainScenario:
@@ -110,12 +111,17 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 		level.entity_collision = entity_collision.copy()
 		for diagnostic: EntitySetupDiagnostic in collision_setup.diagnostics:
 			diagnostics.append(diagnostic.to_text())
-		if entity_lifecycle:
+		if not exploration_preset.is_empty():
+			var exploration_error: String = Jun1ExplorationSetup.apply(self, data)
+			if not exploration_error.is_empty():
+				return exploration_error
+		elif entity_lifecycle:
 			diagnostics.append("Visibility inspection omits scripts, authored boundary markers and unsupported FORM reactions")
 		else:
 			diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
-		apply_des2_inspection_defaults()
-		apply_jun1_inspection_defaults()
+		if exploration_preset.is_empty():
+			apply_des2_inspection_defaults()
+			apply_jun1_inspection_defaults()
 	else:
 		diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
 	return ""
@@ -249,12 +255,26 @@ func command_at(tick: int) -> TickCommand:
 
 ## Applies explicit command-line seed and duration overrides in both driver surfaces.
 func apply_arguments(arguments: PackedStringArray) -> String:
+	exploration_preset = ViewerArguments.value(arguments, "--exploration=")
+	if not exploration_preset.is_empty() and exploration_preset != Jun1ExplorationSetup.PRESET:
+		return "exploration must be jun1-log-bank"
 	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
 	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
 		return "entity-reactions must be pop or platforms"
 	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
 	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
 		return "entity-lifecycle must be all-attached or visibility"
+	if not exploration_preset.is_empty():
+		if lifetime == "visibility" or (entity_collision != null and entity_collision.lifecycle != null):
+			return "jun1-log-bank cannot be combined with visibility lifecycle"
+		if not reaction.is_empty() and reaction != "platforms":
+			return "jun1-log-bank requires platform reactions"
+		if ViewerArguments.value(arguments, "--level=").to_upper() != "JUN1":
+			return "jun1-log-bank requires --level=JUN1"
+		if not ViewerArguments.has_prefix(arguments, "--data-dir=") and OS.get_environment("FROGGER_DATA_DIR").is_empty():
+			return "jun1-log-bank requires player data"
+		reaction = "platforms"
+		lifetime = "all-attached"
 	entity_reactions = reaction in ["pop", "platforms"] or not lifetime.is_empty() or (entity_collision != null and entity_collision.lifecycle != null)
 	platforms_enabled = entity_reactions and (reaction == "platforms" or (reaction.is_empty() and entity_collision != null and entity_collision.platforms_enabled))
 	entity_lifecycle = lifetime == "visibility" or (lifetime.is_empty() and entity_collision != null and entity_collision.lifecycle != null)

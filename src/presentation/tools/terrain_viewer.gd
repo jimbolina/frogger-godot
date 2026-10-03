@@ -286,13 +286,19 @@ func draw_state(fraction: float) -> void:
 			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
 		_label.text += "\n"
 		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
+	if scenario.level.exploration_guard != null:
+		var bounds: Rect2i = scenario.level.exploration_guard.world_bounds
+		_label.text = "JUN1 BANK / LOG EXPLORATION\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
+		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
+		_label.text += "All-attached lifetime | active camera zones unsupported\n"
+		_label.text += "From reset: Left onto log, then Right after centring.\n"
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
 		input_status += " | run ended: R resets"
 	elif replay_commands and _current.tick_index >= scenario.tick_limit:
 		input_status += " | replay finished: Tab selects live input"
-	_label.text += input_status + "\nSpace play/pause | . step | R reset | I interpolate\nTab replay/live | arrows hop | Q/E camera\n" + last_error
+	_label.text += input_status + "\nSpace play/pause | . step | R reset | I interpolate\nArrows hop | Shift super hop | Q/E camera | Tab replay/live\n" + last_error
 
 func _process(delta: float) -> void:
 	if run == null or _current == null:
@@ -561,7 +567,7 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 		last_error = _save_stage(folder, "lifecycle-initial", captured)
 	if scenario.platforms_enabled and not folder.is_empty():
 		await RenderingServer.frame_post_draw
-		last_error = _save_stage(folder, "platform-approach", captured)
+		last_error = _save_stage(folder, "platform-safe-start" if scenario.level.exploration_guard != null else "platform-approach", captured)
 	if scenario.entity_reactions and not scenario.entity_lifecycle and not scenario.platforms_enabled and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "before-contact", captured)
@@ -606,6 +612,15 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				return
 		if scenario.platforms_enabled and not folder.is_empty():
 			var platform_stages: Array[String] = []
+			if scenario.level.exploration_guard != null:
+				if _current.tick_index == 3:
+					platform_stages.append("platform-approach")
+				if _current.tick_index == 8:
+					platform_stages.append("platform-centring")
+				if _current.tick_index == 12:
+					platform_stages.append("platform-carry")
+				if _current.tick_index == 18:
+					platform_stages.append("platform-safe-return")
 			if hit_tick < 0 and _current.current_entity_index >= 0:
 				hit_tick = _current.tick_index
 				platform_stages.append("platform-attachment")

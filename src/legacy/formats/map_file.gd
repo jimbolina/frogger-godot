@@ -28,6 +28,8 @@ var animations: Array[MapAnimation] = []
 var entities: Array[MapEntitySpan] = []
 ## Source-ordered FORM collision grids, including empty entries.
 var forms: Array[MapForm] = []
+## Source-ordered camera zones; malformed records retain diagnostics.
+var zones: Array[MapZone] = []
 ## Ordered collision stacks and layers, without gameplay conversion.
 var grid_stacks: Array[MapGridStack] = []
 var grid_squares: Array[MapGridSquare] = []
@@ -131,7 +133,52 @@ func _read() -> void:
 	_read_retained()
 	if not error.is_empty():
 		return
+	_read_zones()
+	if not error.is_empty():
+		return
 	_read_paths()
+
+func _read_zones() -> void:
+	var packet: MapPacket = packets["ZONE"]
+	for index: int in packet.count:
+		var at: int = packet.offsets[index]
+		var end: int = packet.end_offset
+		for later: int in packet.offsets:
+			if later > at:
+				end = mini(end, later)
+		var zone := MapZone.new()
+		zone.zone_index = index
+		zone.source_offset = at
+		zone.end_offset = end
+		zones.append(zone)
+		var table_end: int = packet.source_offset + 8 + packet.count * 4
+		if at < table_end or at >= packet.end_offset or packet.offsets.count(at) > 1:
+			zone.diagnostics.append("ZONE record %d has invalid or duplicate pointer %d" % [index, at])
+			continue
+		if at + 84 > end:
+			zone.diagnostics.append("ZONE record %d at %d lacks its 84-byte camera prefix" % [index, at])
+			continue
+		zone.zone_type = _bytes.decode_u16(at)
+		var region_count: int = _bytes.decode_u16(at + 2)
+		for axis: int in 4:
+			zone.bounds.append(_bytes.decode_s16(at + 4 + axis * 2))
+		zone.region_pointer = _bytes.decode_u32(at + 12)
+		zone.camera_flags = _bytes.decode_u16(at + 16)
+		zone.camera_direction = _bytes.decode_s16(at + 18)
+		for vector_index: int in 8:
+			zone.camera_offsets.append(_vec(at + 20 + vector_index * 8))
+		if region_count == 0:
+			continue
+		if zone.region_pointer < at + 84 or zone.region_pointer > end or region_count * 8 > end - zone.region_pointer:
+			zone.diagnostics.append("ZONE record %d at %d has out-of-bounds region pointer %d/count %d" % [index, at, zone.region_pointer, region_count])
+			continue
+		for region_index: int in region_count:
+			var region := MapZoneRegion.new()
+			region.region_index = region_index
+			region.source_offset = zone.region_pointer + region_index * 8
+			for axis: int in 4:
+				region.bounds.append(_bytes.decode_s16(region.source_offset + axis * 2))
+			zone.regions.append(region)
 
 func _read_general() -> void:
 	var p: MapPacket = packets["GENE"]
@@ -388,6 +435,11 @@ func _read_retained() -> void:
 			return
 		for i: int in p.count:
 			var ptr: int = _bytes.decode_u32(o + 4 + i * 4)
+			if name == "ZONE":
+				# Keep an otherwise usable map when one zone record is malformed.
+				# Zone setup rejects the diagnostic before any gameplay admission.
+				p.offsets.append(ptr)
+				continue
 			if p.offsets.has(ptr) or ptr < o + 4 + p.count * 4 or not _range(ptr, 4, name + " record", p.end_offset):
 				error = "Invalid %s record pointer" % name
 				return

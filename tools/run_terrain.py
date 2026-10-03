@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
                         help='Select entity lifetime for an integrated FORM scenario')
+    parser.add_argument('--exploration', choices=('jun1-log-bank',), help='Select an audited guarded retail preset')
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()
@@ -74,6 +75,8 @@ def main():
         selected += ['--entity-reactions=' + args.entity_reactions]
     if args.entity_lifecycle:
         selected += ['--entity-lifecycle=' + args.entity_lifecycle]
+    if args.exploration:
+        selected += ['--exploration=' + args.exploration]
     if args.viewer:
         stage('viewer', ['res://scenes/tools/terrain_viewer.tscn', '--', '--run-scenario',
                          '--screenshot-dir=' + str(evidence), *selected], headless=False)
