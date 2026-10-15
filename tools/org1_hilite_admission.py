@@ -11,11 +11,17 @@ also tilted/scaled roots).  It is an over-approximation, not a reachability
 claim.  Its overlap cannot establish that a collision is reachable.
 """
 import hashlib
+import csv
+import io
+import os
 import re
+import subprocess
 
 import make_golden_animation as animation
 import make_golden_mof as mof
 import make_golden_retail_platform as platform
+import make_golden_grid as grid_math
+import make_golden_paths as path_math
 
 
 SHORT = (-32768, 32767)
@@ -28,6 +34,193 @@ ROOTS = (
     ('south', (-4096, 0, 0, 0, 4096, 0, 0, 0, -4096)),
     ('west', (0, 0, -4096, 0, 4096, 0, 4096, 0, 0)),
 )
+
+# Source closure for an unpowered, single frog on SAFE bank/platforms or WATER.
+# DYING returns before primitive queries. Idle PANT selects the four look actions.
+LIVE_ACTIONS = (5, 6, 11, 13, 14, 15, 16, 17, 28, 29, 30, 31)
+
+
+def live_action_closure():
+    """Decode action IDs and random idle requests from the frozen programs."""
+    import make_golden_frog_animation as frog_animation
+    entries=frog_animation.catalog()['entries']
+    pending=[5,6,11,13,14,15,16,17];visited=set();actions=set()
+    lengths=[4,1,1,1,1,1,8,2,2]
+    while pending:
+        request=pending.pop()
+        if request in visited:continue
+        visited.add(request);words=entries[request]['words'];cursor=0
+        while cursor<len(words):
+            opcode=words[cursor]
+            if opcode==0:actions.add(words[cursor+3])
+            elif opcode==6:pending.extend(words[cursor+4:cursor+8])
+            cursor+=lengths[opcode]
+    if tuple(sorted(actions))!=LIVE_ACTIONS:raise ValueError('live frog action closure changed')
+    return tuple(sorted(actions))
+
+
+def multiply(a, b):
+    """Frozen fixed12 rotation composition, including the signed16 store."""
+    return tuple(short(sum(a[3*r+k]*b[3*k+c] for k in range(3)) >> 12)
+                 for r in range(3) for c in range(3))
+
+
+def axes(x, y, z):
+    """Write three source axes as matrix columns."""
+    return tuple(v[r] for r in range(3) for v in (x, y, z))
+
+
+def root_closure(terrain, supports):
+    """Conservative finite closure of UpdateFrogMatrix and SAFE snapping.
+
+    Terrain normals, inherited up axes and four local headings are closed
+    under the actual rounded normalization/cross products. Freefall retains
+    its matrix. Scaling, no-snap forms and powerups are separate prerequisites.
+    """
+    normals = {tuple(grid_math.normal(layer['vertices'])) for cell in terrain for layer in cell['layers']}
+    directions = [(r[2],r[5],r[8]) for _,r in ROOTS]
+    for support in supports:
+        directions += [tuple(sum(support[3*r+k]*d[k] for k in range(3)) >> 12 for r in range(3))
+                       for d in list(directions[:4])]
+    roots = {tuple(r) for _,r in ROOTS}
+    for support in supports:
+        inverse = tuple(support[3*c+r] for r in range(3) for c in range(3))
+        for _,cardinal in ROOTS:
+            snapped = multiply(cardinal,support)
+            relative = multiply(snapped,inverse)
+            z = path_math.normalised([relative[2],0,relative[8]])
+            x = path_math.normalised(grid_math.cross([0,4096,0],z))
+            roots.add(snapped)
+            roots.add(multiply(support,axes(x,[0,4096,0],z)))
+    for iteration in range(32):
+        before=set(roots)
+        ups=normals|{tuple(path_math.normalised([-r[1],-r[4],-r[7]])) for r in roots}
+        for up in ups:
+            for direction in directions:
+                x=path_math.normalised(grid_math.cross(direction,up))
+                z=grid_math.cross(up,x)
+                roots.add(axes(x,[-v for v in up],z))
+        if roots==before:return sorted(roots)
+        if len(roots)>10000:break
+    raise ValueError('frog root transform closure did not converge')
+
+
+def check_reachable_probes(context, neighbors, oracle, acos, output):
+    """Check every reachable-bank pose against linked fixed-point operations.
+
+    This establishes a conditional traffic separation for the narrower
+    rectangle. Integrated phase timing and action preconditions remain gates.
+    """
+    import org1_neighbor_admission as neighbor
+    import make_golden_entities as entities
+    definitions=neighbor.decode_paths(context['data'])
+    supports=set()
+    # Include the whole support paths: airborne departures retain their entity
+    # link outside its FORM, so contact-only poses are not a sufficient closure.
+    for pid in (6,8):
+        for segment in definitions[pid]:
+            for distance in range(segment['length']+1):
+                _,position,tangent=path_math.sample(segment,distance,False)
+                matrix=entities.moving_matrix([0]*9+position+tangent,0)
+                supports.add(tuple(matrix[:9]))
+    roots=root_closure(neighbors['terrain'],supports)
+    root_checks=check_root_oracle(roots,neighbors['terrain'],supports,oracle,acos,output)
+    raw=platform.resource(context['files'],context['entries'],context['mwd'],214)
+    warnings=[];mesh=mof.parse_model(raw,'GEN_FROG.XAR',None,warnings)
+    if warnings or mesh['incomplete']:raise ValueError('unsupported selected frog mesh')
+    xar=animation.parse_xar(raw);actions=discrete_actions(xar,16)
+    probes=list(all_hilites(mesh['statics'][0]))
+    inputs=[];wanted=[];metadata=[]
+    for action in (0,*live_action_closure()):
+        for frame in range(1 if action==0 else actions[action]['frames']):
+            for part,hilite,partcel,vertex in probes:
+                matrix=animation.sampled_matrix(xar,actions[action],frame,part)
+                for root in roots:
+                    point=transformed_probe(matrix,vertex,root)
+                    if any(v!=short(v) for v in point):raise ValueError('probe offset wraps signed16')
+                    inputs.append([*root,*matrix,*vertex]);wanted.append(point)
+                    metadata.append((action,frame,part,hilite,partcel))
+    source=output/'org1-frog-probes.txt'
+    source.write_text(str(len(inputs))+'\n'+''.join(' '.join(map(str,row))+'\n' for row in inputs),encoding='ascii')
+    result=subprocess.run([str(oracle),str(acos),'--frog-probes',str(source)],capture_output=True,text=True,
+                          timeout=30,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+    (output/'org1-frog-probes.csv').write_text(result.stdout,encoding='utf-8')
+    if result.returncode:raise ValueError(f'C probe transform exited {result.returncode}')
+    lines=result.stdout.splitlines();at=lines.index('probe,x,y,z')
+    actual=list(csv.DictReader(io.StringIO('\n'.join(lines[at:]))))
+    if len(actual)!=len(wanted):raise ValueError('C probe count differs')
+    for i,(row,point) in enumerate(zip(actual,wanted)):
+        if int(row['probe'])!=i or [int(row[a]) for a in 'xyz']!=point:
+            raise ValueError(f'C/Python animated probe mismatch at {i}, pose {metadata[i]}')
+    low=min(p[2] for p in wanted);which=next(i for i,p in enumerate(wanted) if p[2]==low)
+    import verify_org1_admission as admission
+    offsets=bounds(wanted)
+    world_bounds=[[-512+offsets[0][0],511+offsets[0][1]],[-128+offsets[2][0],479+offsets[2][1]]]
+    traffic=admission.traffic_geometry(context,world_bounds)
+    if len(traffic['entities'])!=24:raise ValueError('traffic census changed')
+    maximum=max(e['primitive_point_z'][1] for e in traffic['entities'])
+    if world_bounds[1][0]<=maximum:raise ValueError('reachable animated frog probes overlap traffic')
+    return dict(status='conditional',route_admitted=False,candidate_x=[-512,512],candidate_z=[-128,480],
+                animation_resource_id=214,animation_sha256=hashlib.sha256(raw).hexdigest(),
+                live_actions=list(LIVE_ACTIONS),initial_action_cel=[0,0],roots=[list(r) for r in roots],
+                support_roots=[list(r) for r in sorted(supports)],probe_checks=len(wanted),root_checks=root_checks,
+                minimum_probe_offset_z=low,minimum_probe_world_z=-128+low,
+                minimum_pose=list(metadata[which]),
+                probe_offset_bounds=offsets,probe_world_xz_bounds=world_bounds,
+                traffic_maximum_accepted_z=maximum,traffic_source_widths_closed=True,
+                separated=(-128+low)>maximum,
+                prerequisites=['Single player uses GEN_FROG.XAR resource 214, no powerups or body scaling.',
+                  'Every stored LW root origin is inside the narrower rectangle at every primitive scan.',
+                  'Only SAFE bank/platforms and WATER reactions; no fall exceeding safe height.',
+                  'Every support uses rotation snapping and the enumerated level path transforms.',
+                  'Dying frogs skip primitive scans; reset restores the admitted initial pose.'])
+
+
+def check_root_oracle(roots, terrain, supports, oracle, acos, output):
+    """Compare all generating root transitions with unchanged frozen functions."""
+    inputs=[];wanted=[];identity=ROOTS[0][1]
+    empty=[0]*12
+    def rotated(up,direction):
+        x=path_math.normalised(grid_math.cross(direction,up));z=grid_math.cross(up,x)
+        return axes(x,[-v for v in up],z)
+    for cell in terrain:
+        for layer in cell['layers']:
+            up=grid_math.normal(layer['vertices'])
+            for direction,(_,root) in enumerate(ROOTS):
+                inputs.append([0,direction,*identity,*identity,*[v for p in layer['vertices'] for v in p]])
+                wanted.append(rotated(up,[root[2],root[5],root[8]]))
+    for root in roots:
+        up=path_math.normalised([-root[1],-root[4],-root[7]])
+        for direction,(_,cardinal) in enumerate(ROOTS):
+            vector=[cardinal[2],cardinal[5],cardinal[8]]
+            inputs.append([1,direction,*root,*identity,*empty]);wanted.append(rotated(up,vector))
+            for support in sorted(supports):
+                moved=[sum(support[3*r+k]*vector[k] for k in range(3))>>12 for r in range(3)]
+                inputs.append([2,direction,*root,*support,*empty]);wanted.append(rotated(up,moved))
+    for support in sorted(supports):
+        inverse=tuple(support[3*c+r] for r in range(3) for c in range(3))
+        for direction,(_,root) in enumerate(ROOTS):
+            facing=[root[2],root[5],root[8]]
+            local=[sum(inverse[3*r+k]*facing[k] for k in range(3))>>12 for r in range(3)]
+            angle=(0 if local[2]>0 else 2) if abs(local[2])>abs(local[0]) else (1 if local[0]>0 else 3)
+            snapped=multiply(ROOTS[angle][1],support);relative=multiply(snapped,inverse)
+            z=path_math.normalised([relative[2],0,relative[8]])
+            x=path_math.normalised(grid_math.cross([0,4096,0],z))
+            expected=multiply(support,axes(x,[0,4096,0],z))
+            inputs.append([3,direction,*root,*support,*empty]);wanted.append(expected)
+    source=output/'org1-frog-roots.txt'
+    source.write_text(str(len(inputs))+'\n'+''.join(' '.join(map(str,row))+'\n' for row in inputs),encoding='ascii')
+    result=subprocess.run([str(oracle),str(acos),'--frog-roots',str(source)],capture_output=True,text=True,
+                          timeout=30,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+    (output/'org1-frog-roots.csv').write_text(result.stdout,encoding='utf-8')
+    if result.returncode:raise ValueError(f'C root transition exited {result.returncode}')
+    lines=result.stdout.splitlines();at=lines.index('case,m00,m01,m02,m10,m11,m12,m20,m21,m22')
+    actual=list(csv.reader(lines[at+1:]))
+    if len(actual)!=len(wanted):raise ValueError('C root transition count differs')
+    for i,(row,expected) in enumerate(zip(actual,wanted)):
+        if list(map(int,row))!=[i,*expected] or expected not in roots:
+            raise ValueError(f'C/Python root closure mismatch at {i}: C={row}, Python={expected}')
+    return len(wanted)
 
 
 def short(value):

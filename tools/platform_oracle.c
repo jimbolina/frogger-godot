@@ -35,22 +35,66 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdarg.h>
 __declspec(dllimport) unsigned long __stdcall SetErrorMode(unsigned long);
 extern FROG_CONTROL_METHOD Frog_control_methods[];
 extern MR_BOOL Recording_demo;
 static int animations,sounds,scores,pgens;
+static int decoded_model_factory;
+static int request_capture;
+static char captured_requests[8192];
+static void capture_request(const char *format,...) {
+    if(!request_capture)return;
+    size_t used=strlen(captured_requests);if(used)captured_requests[used++]=';';
+    va_list args;va_start(args,format);int written=vsnprintf(captured_requests+used,sizeof(captured_requests)-used,format,args);va_end(args);
+    if(written<0 || (size_t)written>=sizeof(captured_requests)-used)exit(3);
+}
+extern MR_VOID __real_ENTSTRCreateMovingMOF(LIVE_ENTITY*);
+extern MR_VOID __real_ENTSTRCreateDynamicMOF(LIVE_ENTITY*);
+extern MR_VOID __real_ENTSTRCreateStationaryMOF(LIVE_ENTITY*);
+/* Keep the real path-transform creation and custom creator. Decoded model
+ * metadata is already installed by the ORG transport; omit renderer allocation
+ * only, restoring the book before the custom creator resumes. */
+MR_VOID __wrap_ENTSTRCreateMovingMOF(LIVE_ENTITY *live) {
+    if(!decoded_model_factory) {__real_ENTSTRCreateMovingMOF(live);return;}
+    FORM_BOOK *book=ENTITY_GET_FORM_BOOK(live->le_entity);MR_ULONG flags=book->fb_flags;
+    book->fb_flags|=FORM_BOOK_FLAG_NO_MODEL;
+    __real_ENTSTRCreateMovingMOF(live);book->fb_flags=flags;
+}
+MR_VOID __wrap_ENTSTRCreateDynamicMOF(LIVE_ENTITY *live) {
+    if(!decoded_model_factory) {__real_ENTSTRCreateDynamicMOF(live);return;}
+    FORM_BOOK *book=ENTITY_GET_FORM_BOOK(live->le_entity);MR_ULONG flags=book->fb_flags;
+    book->fb_flags|=FORM_BOOK_FLAG_NO_MODEL;
+    __real_ENTSTRCreateDynamicMOF(live);book->fb_flags=flags;
+}
+MR_VOID __wrap_ENTSTRCreateStationaryMOF(LIVE_ENTITY *live) {
+    if(!decoded_model_factory) {__real_ENTSTRCreateStationaryMOF(live);return;}
+    FORM_BOOK *book=ENTITY_GET_FORM_BOOK(live->le_entity);MR_ULONG flags=book->fb_flags;
+    book->fb_flags|=FORM_BOOK_FLAG_NO_MODEL;
+    __real_ENTSTRCreateStationaryMOF(live);book->fb_flags=flags;
+}
 /* Rendering-only factories provide writable result storage; no behavior is replaced.
  * Mainloop setup is explicitly omitted, while its requested mode remains observable. */
-static MR_OBJECT pgen_object,sprite_object,particle_object;
+static MR_OBJECT pgen_object,particle_object;
 static MR_PGEN pgen;
-static MR_3DSPRITE sprite;
-MR_OBJECT* __wrap_MRCreatePgen(MR_PGEN_INIT* init,MR_FRAME* frame,MR_ULONG flags,MR_SVEC* offset) { (void)init;(void)frame;(void)flags;(void)offset;pgens++;pgen_object.ob_extra.ob_extra_pgen=&pgen;return &pgen_object; }
-MR_OBJECT* __wrap_MRCreate3DSprite(MR_FRAME* frame,MR_ULONG flags,MR_VOID* anim) { (void)frame;(void)flags;(void)anim;sprite_object.ob_extra.ob_extra_3dsprite=&sprite;return &sprite_object; }
+MR_OBJECT* __wrap_MRCreatePgen(MR_PGEN_INIT* init,MR_FRAME* frame,MR_ULONG flags,MR_SVEC* offset) { (void)init;(void)frame;(void)flags;(void)offset;pgens++;capture_request("death_pgen");pgen_object.ob_extra.ob_extra_pgen=&pgen;return &pgen_object; }
+MR_OBJECT* __wrap_MRCreate3DSprite(MR_FRAME* frame,MR_ULONG flags,MR_VOID* anim) {
+    (void)anim;MR_OBJECT *object=calloc(1,sizeof(MR_OBJECT));object->ob_type=MR_OBJTYPE_3DSPRITE;
+    object->ob_flags=flags;object->ob_frame=frame;object->ob_extra.ob_extra_3dsprite=calloc(1,sizeof(MR_3DSPRITE));return object;
+}
 MR_OBJECT* __wrap_CreateParticleEffect(MR_VOID* owner,MR_ULONG type,MR_SVEC* offset) { (void)owner;(void)type;(void)offset;return &particle_object; }
-void __wrap_GameAddObjectToViewports(MR_OBJECT* object) { (void)object; }
+void __wrap_GameAddObjectToViewports(MR_OBJECT* object) {
+    if(object->ob_type==MR_OBJTYPE_3DSPRITE)capture_request("sprite:%d:%d:%d:%d:%d",object->ob_offset.vx,object->ob_offset.vy,object->ob_offset.vz,
+        !!(object->ob_extra.ob_extra_sp_core->sc_flags&MR_SPF_IN_XZ_PLANE),object->ob_extra.ob_extra_sp_core->sc_ot_offset);
+}
 void __wrap_SetGameMainloopMode(MR_ULONG mode) { Game_mode=mode; }
 
-MR_LONG __wrap_MRSNDPlaySound(MR_USHORT s,SndVolume* v,MR_USHORT f,MR_LONG p) { (void)s;(void)v;(void)f;(void)p; sounds++; return -1; }
+MR_LONG __wrap_MRSNDPlaySound(MR_USHORT s,SndVolume* v,MR_USHORT f,MR_LONG p) { capture_request("sound:%u:%d:%u:%ld",s,v!=NULL,f,(long)p);sounds++; return -1; }
+extern MR_VOID __real_PlayMovingSound(LIVE_ENTITY*,MR_LONG,MR_LONG,MR_LONG);
+MR_VOID __wrap_PlayMovingSound(LIVE_ENTITY *live,MR_LONG sfx,MR_LONG min,MR_LONG max) {
+    int existed=live->le_moving_sound!=NULL;__real_PlayMovingSound(live,sfx,min,max);
+    if(!existed && live->le_moving_sound)capture_request("moving:%ld:%ld:%ld",(long)sfx,(long)min,(long)max);
+}
 SCORE_SPRITE* __wrap_AddFrogScore(FROG* f,MR_ULONG s,MR_MAT* m) { (void)f;(void)s;(void)m; scores++; return NULL; }
 static MR_SVEC vertices[64];
 static MAP_F4 polygons[16];
@@ -285,6 +329,30 @@ static int route_int(FILE *stream) {
     int value;
     if (fscanf(stream,"%d",&value)!=1) { fputs("incomplete retail route fixture\n",stderr); exit(2); }
     return value;
+}
+
+/* Exact stored-part arithmetic used by MR_ANIM and MR_COLL. The transport
+ * contains decoded integer transforms/vertices, never executable data. */
+static int frog_probe_run(const char *file) {
+    FILE *stream=fopen(file,"r"); if(!stream) return 2;
+    int count=route_int(stream); if(count<1 || count>2000000) return 2;
+    puts("probe,x,y,z");
+    for(int n=0;n<count;n++) {
+        MR_MAT owner={0},part={0},world={0};
+        MR_SVEC translation={0},vertex={0},point={0}; MR_VEC moved={0};
+        for(int r=0;r<3;r++) for(int c=0;c<3;c++) owner.m[r][c]=route_int(stream);
+        for(int r=0;r<3;r++) for(int c=0;c<3;c++) part.m[r][c]=route_int(stream);
+        translation.vx=route_int(stream);translation.vy=route_int(stream);translation.vz=route_int(stream);
+        vertex.vx=route_int(stream);vertex.vy=route_int(stream);vertex.vz=route_int(stream);
+        MRMulMatrixABC(&owner,&part,&world);
+        MRApplyMatrix(&owner,&translation,&moved);
+        world.t[0]=moved.vx;world.t[1]=moved.vy;world.t[2]=moved.vz;
+        MRApplyMatrixSVEC(&world,&vertex,&point);
+        point.vx+=world.t[0];point.vy+=world.t[1];point.vz+=world.t[2];
+        printf("%d,%d,%d,%d\n",n,point.vx,point.vy,point.vz);
+    }
+    int extra; if(fscanf(stream,"%d",&extra)!=EOF) return 2;
+    fclose(stream);return 0;
 }
 
 static void route_read(const char *file) {
@@ -748,6 +816,8 @@ static void integrated_emit(int scenario,int tick,const char* phase) {
  }
  putchar('\n');
 }
+#include "org1_route_oracle.h"
+
 int main(int argc, char **argv) {
  if(argc!=2 && argc!=4) {fprintf(stderr,"usage: platform_oracle <absolute-acos-table-path> [--retail-route|--zones|--script-rng|--org1-background|--moving-sound-state <decoded-facts>]\n");return 2;}
  MRStub_LoadAcosTable(argv[1]);
@@ -758,6 +828,9 @@ int main(int argc, char **argv) {
     if(!strcmp(argv[2],"--script-rng")) return script_rng_run(argv[3]);
     if(!strcmp(argv[2],"--org1-background")) return org1_background_run(argv[3]);
     if(!strcmp(argv[2],"--moving-sound-state")) return moving_sound_state_run(argv[3]);
+    if(!strcmp(argv[2],"--frog-probes")) return frog_probe_run(argv[3]);
+    if(!strcmp(argv[2],"--org1-route")) return org1_route_run(argv[3]);
+    if(!strcmp(argv[2],"--frog-roots")) return org1_roots_run(argv[3]);
     return 2;
  }
  puts("scenario,tick,phase,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,no_input_timer,death_count,camera_mode,camera_move_timer,camera_twist,camera_x,camera_y,camera_z,source_x,source_y,source_z,controller_up,shake_timer,animation_type,script_timer,animation_flags,env_flags,rng_seed,if_counter,program,offset,action,cel,total,update_count,game_mode,e0x,e0y,e0z,e0segment,e0total,e0flags,e1x,e1y,e1z,e1segment,e1total,e1flags,contact_order,hit_indices,pgen_requests,sound_requests,current_entity_index,forbidden_entity_index,entity_cell_x,entity_cell_z,entity_offset_x16,entity_offset_y16,entity_offset_z16,entity_angle,old_y,entity_transform00,entity_transform01,entity_transform02,entity_transform10,entity_transform11,entity_transform12,entity_transform20,entity_transform21,entity_transform22,entity_transform_t0,entity_transform_t1,entity_transform_t2,entity_carry_indices,camera_mod00,camera_mod01,camera_mod02,camera_mod10,camera_mod11,camera_mod12,camera_mod20,camera_mod21,camera_mod22,camera_mod_t0,camera_mod_t1,camera_mod_t2,camera_current_ytheta,camera_destination_ytheta,camera_delta_ytheta,camera_direction_n_x,camera_direction_n_y,camera_direction_n_z,camera_direction_e_x,camera_direction_e_y,camera_direction_e_z,camera_direction_s_x,camera_direction_s_y,camera_direction_s_z,camera_direction_w_x,camera_direction_w_y,camera_direction_w_z");

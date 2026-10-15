@@ -118,14 +118,54 @@ behavior exclusions are documented in the helper and entity contract. Its
 input dependency manifest contains hashes and decoded numeric facts, never
 retail bytes; changing determining inputs requires a fresh source proof.
 
+## ORG1 route proof
+
+`pc-retail-v3.0e/org1_round_trip.tsv` and `org1_attached_diver.tsv` contain six
+ordered phases per tick: control, move, collision, camera, scripts and pose.
+Their columns record fixed16 frog positions, flags/mode/link/count/direction,
+old Y, camera current/source/target/modification matrix and controller mapping,
+actual retail frog action/cel, shared RNG, diver state, sound count and the
+complete authored contact-scan order. All listed fields are independently
+calculated in Python and compared with unchanged frozen C before writing.
+The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
+owns route coordinates and source-proof conditions.
+
+Each matching `_entities.tsv` stores one SHA-256 per tick over all 64 live
+updates, in descending authored order. Canonical input is the tab-separated
+field-name row from `org1_entity_update_fields.json`, LF, then 64 tab-separated
+decimal/string rows, each ending LF. Fields include source script root/current
+cursor and loop bounds, unsigned16 timer, narrowed deviation state, actual
+flipbook action/cel, RNG, previous/current live flags, callback slots, logical
+sound ownership, colours/ambient, ordered requests, transforms, fly state and
+checkpoint coverage. A callback is `id:condition:type:called`; an unregistered
+slot is `-1:0:0:0`. Requests are semicolon-ordered, or `-`: sound records carry
+ID, volume-present flag, flags and pitch; moving-sound records carry ID/min/max;
+sprite records carry local XYZ, XZ-plane flag and ordering offset. The death
+particle request is `death_pgen`. Full transports and C rows stay external.
+
+Build with `tools/build_platform_oracle.ps1`, then verify both families:
+
+```powershell
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round-trip> --ticks 730 --golden-name org1_round_trip --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-diver> --ticks 1255 --commands 1230:0 --expected-death-tick 1254 --golden-name org1_attached_diver
+```
+
+Add `--write-goldens` only for reviewed regeneration. `--admission` also
+compares every root transition and animated hilite with linked C and verifies
+the pinned setup manifest. It requires the frozen round-trip schedule. Corrupt
+and restore both phase and entity-digest families and the manifest; each must
+fail verification. `tools/test_org1_script_state.py` covers asset-free oracle
+edge cases. Runtime golden consumption and rendered/keyboard parity are later
+integration gates; this proof alone does not enable a preset.
+
 ## ORG1 admission counterexample
 
 `tools/verify_org1_admission.py` independently decodes the supplied v3.0e
 ORG1 identities, form/entity/script mappings and unconditional traffic script
 prefixes using the existing Python EXE/MAP readers and FrogLord names. It is
 a counterexample verifier, not an admission manifest or new golden family.
-The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission-blocker)
-owns the failed obligation and remaining scope.
+The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
+owns the failed three-program assumption and expanded behavior closure.
 
 Build the platform oracle outside both repositories, then run:
 
@@ -178,7 +218,7 @@ external `org1-admission-proof.json` includes all authored identities, shared
 FORM writers, model hashes, complete path bounds, candidate terrain layers,
 per-action frog probe bounds and authored pose examples. It keeps
 `route_admitted` false and exits 3 for known remaining obligations. Unsupported
-inputs or failed comparisons exit 1. The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission-blocker)
+inputs or failed comparisons exit 1. The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
 owns the interpretation and limitations; these reports are not new goldens.
 
 Run the asset-free verifier regressions separately from the required Godot gates:

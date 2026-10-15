@@ -133,7 +133,7 @@ ownership in `EntityRun`. `TerrainRun` owns the shared RNG, frog reactions,
 checkpoint covered bits required by the bonus fly, and aggregate commit.
 Setup supplies decoded programs/callback names, checkpoint positions and an
 explicit live-update order; snapshot order and contact-scan order stay separate.
-The [entity contract](gameplay/entities.md#org1-admission-blocker) owns the
+The [entity contract](gameplay/entities.md#org1-admission) owns the
 expanded behavior closure and source proof. This interface is planned, not
 implemented by the current script-free run.
 

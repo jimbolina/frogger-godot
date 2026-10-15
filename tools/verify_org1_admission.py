@@ -392,7 +392,7 @@ def check_moving_sound(oracle, acos, output, context):
     return dict(cases=cases,scope='Real allocation/owner state only; no voice or audio update, no RNG compensation.')
 
 
-def traffic_geometry(context):
+def traffic_geometry(context, point_bounds=None):
     """Bound traffic cuboids at every integer path pose, not the frog probe.
 
     Axis-aligned yaw and source-width closure make local X independent of frog
@@ -400,6 +400,9 @@ def traffic_geometry(context):
     Frog primitive checks use an animated hilite, not simply the frog origin.
     Its bound is still required before this becomes a collision exclusion.
     """
+    if point_bounds is None:point_bounds=[[-512,511],[-224,479]]
+    if len(point_bounds)!=2 or any(len(b)!=2 or b[0]>b[1] or b[0]<-32768 or b[1]>32767 for b in point_bounds):
+        raise ValueError('invalid world-short traffic probe bounds')
     data=context['data'];pp=contacts.read(data,96,'<I');models={};sampled={};proof=[]
     for item in context['inventory']:
         if item['form_name'] not in TRAFFIC:
@@ -442,8 +445,9 @@ def traffic_geometry(context):
                 if matrix[0]!=0 or matrix[3]!=0 or abs(matrix[6])!=4096:
                     raise ValueError('traffic cuboid local X no longer equals signed world Z')
                 # World XZ differences stay signed16 even for any point in the candidate.
-                if max(abs(position[0]+512),abs(position[0]-511),
-                       abs(position[2]+224),abs(position[2]-479))>=32768:
+                dx=max(abs(position[0]-x) for x in point_bounds[0])
+                dz=max(abs(position[2]-z) for z in point_bounds[1])
+                if max(dx,dz)>=32768 or dx*dx+dz*dz+32768**2>=2**31:
                     raise ValueError('traffic source-width exclusion no longer holds')
                 poses.append((position[2],matrix[6]//4096))
             sampled[path_id]=poses

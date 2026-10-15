@@ -1,0 +1,668 @@
+{
+  "schema": "org1-route-admission-v1",
+  "build": "pc-retail-v3.0e",
+  "map_resource_id": 658,
+  "map_sha256": "369c0eb23140ef408b1fa77363ddd608389ef6c1cf2cfc42960985c587a604b4",
+  "form_book_rows_sha256": "6f6c3cf6040f569be89b34e415e7f1053d504a2f93813d4c55660b68e697b03f",
+  "script_rows_sha256": "4598300941b69843fad8770aeef8e747b59b8792f1989b61681171f25ba591a2",
+  "model_resources": [
+    {
+      "resource_id": 206,
+      "sha256": "de15b44f404d19a7bb2e45eb4222273d13cd57a13ed1a529261df1f6c30193ef",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 207,
+      "sha256": "45ca3b7b7dd93c0bdbeece6ec7e18192012816c9fc6712925a0339c96d2b6345",
+      "counterpart_resource_id": 206
+    },
+    {
+      "resource_id": 208,
+      "sha256": "798708bcdac1085b22c399b84fa4a2484782b85e9421c124d4f3aa60280fa965",
+      "counterpart_resource_id": 206
+    },
+    {
+      "resource_id": 209,
+      "sha256": "81d58f2139db24ee617bd1b6e2c7e8ea9e0e5c1dd5c2ffbd899518333b809c1d",
+      "counterpart_resource_id": 206
+    },
+    {
+      "resource_id": 210,
+      "sha256": "b4a215d189a52af07f3ec24cd110a27940c49d039b4fb7060a2dbc83586c9da5",
+      "counterpart_resource_id": 206
+    },
+    {
+      "resource_id": 211,
+      "sha256": "bd4e78bd391c0600aeee050a04415f61db9feb432ea93a696f57d1342b654090",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 214,
+      "sha256": "f5291c43344661b84ba61379cb3d312e98af4e7eff6bd89f3ccea1f93cb01ca1",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 380,
+      "sha256": "b9c97c1671088fb646d83c0957fbf0cf8e7ed402e7cc9abf530ab1e9f4edceeb",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 381,
+      "sha256": "74ac313b842b6a3fec4718b53828730ef16a4e3af96fdd678c66f9c8b61f7e40",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 382,
+      "sha256": "3d4f124ebcbf4926130d7d78601a2051bafdedba55412fb75d3f5a23fa7ec3e1",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 383,
+      "sha256": "0b0052bb947c2ac405da1f33f4ee40c04c5483fa6e53f7a978bf0b86eb7ea6ea",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 384,
+      "sha256": "eb82782f71d7124709001449ac2fe0c786d902f1fd4e39243bc0b760ce6b9a9f",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 385,
+      "sha256": "9c9fb963555c8b1845684b55da415ab41a3fef97fc31e58fb7d8c7cf8ed62ae7",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 386,
+      "sha256": "51004c250dd84b7551e487131a1ad13bb2ae66d6bd2d514c1f9d034c395f20f7",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 387,
+      "sha256": "3d33fadd44a6536ff3e35da6f9d623d57b4816f8c0d6a9dae89aaa863979e9c7",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 388,
+      "sha256": "e10f147ec70623c4aa78594465b9f0c7d1cad44192baff334739b530e9981427",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 389,
+      "sha256": "974f6b11bfae0abebca60f41c40a007b3f0cf2ab95691792820439d59f767da2",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 390,
+      "sha256": "885b04d64fb925d61581ff917cec2638a438c4aaa107c463123627edfe7b1095",
+      "counterpart_resource_id": -1
+    },
+    {
+      "resource_id": 391,
+      "sha256": "90a4163d9fb3e33add5dad3b864a91e8248db0375fa9e0278fe77161e89f406c",
+      "counterpart_resource_id": -1
+    }
+  ],
+  "entity_model_resources": [
+    391,
+    391,
+    391,
+    391,
+    390,
+    390,
+    390,
+    390,
+    390,
+    385,
+    385,
+    385,
+    383,
+    383,
+    383,
+    383,
+    383,
+    384,
+    384,
+    384,
+    384,
+    384,
+    384,
+    383,
+    387,
+    387,
+    387,
+    387,
+    387,
+    387,
+    386,
+    386,
+    386,
+    386,
+    382,
+    382,
+    382,
+    382,
+    382,
+    382,
+    380,
+    380,
+    380,
+    380,
+    380,
+    381,
+    381,
+    380,
+    390,
+    207,
+    208,
+    209,
+    210,
+    389,
+    206,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    211,
+    211,
+    -1,
+    -1
+  ],
+  "theme_index": 5,
+  "theme_death_height": 256,
+  "general_high_wad": 205,
+  "admitted_x": [
+    -512,
+    512
+  ],
+  "admitted_z": [
+    -128,
+    480
+  ],
+  "frog_resource_id": 214,
+  "live_frog_actions": [
+    5,
+    6,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    28,
+    29,
+    30,
+    31
+  ],
+  "initial_action_cel": [
+    0,
+    0
+  ],
+  "frog_roots": [
+    [
+      -4096,
+      0,
+      0,
+      0,
+      3974,
+      -993,
+      0,
+      -993,
+      -3974
+    ],
+    [
+      -4096,
+      0,
+      0,
+      0,
+      4096,
+      -19,
+      0,
+      -19,
+      -4096
+    ],
+    [
+      -4096,
+      0,
+      0,
+      0,
+      4096,
+      0,
+      0,
+      0,
+      -4096
+    ],
+    [
+      -4096,
+      0,
+      13,
+      -4,
+      3974,
+      -993,
+      -13,
+      -993,
+      -3974
+    ],
+    [
+      -4096,
+      0,
+      13,
+      -1,
+      4096,
+      -19,
+      -13,
+      -19,
+      -4096
+    ],
+    [
+      -4096,
+      0,
+      13,
+      0,
+      4096,
+      0,
+      -13,
+      0,
+      -4096
+    ],
+    [
+      -4096,
+      0,
+      14,
+      -4,
+      3974,
+      -993,
+      -14,
+      -993,
+      -3974
+    ],
+    [
+      -4096,
+      0,
+      14,
+      -1,
+      4096,
+      -19,
+      -14,
+      -19,
+      -4096
+    ],
+    [
+      -4096,
+      0,
+      14,
+      0,
+      4096,
+      0,
+      -14,
+      0,
+      -4096
+    ],
+    [
+      -14,
+      0,
+      -4097,
+      19,
+      4096,
+      -1,
+      4096,
+      -19,
+      -14
+    ],
+    [
+      -14,
+      0,
+      -4097,
+      993,
+      3974,
+      -4,
+      3974,
+      -993,
+      -14
+    ],
+    [
+      -14,
+      0,
+      -4096,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      -14
+    ],
+    [
+      -13,
+      0,
+      -4097,
+      19,
+      4096,
+      -1,
+      4096,
+      -19,
+      -13
+    ],
+    [
+      -13,
+      0,
+      -4097,
+      993,
+      3974,
+      -4,
+      3974,
+      -993,
+      -13
+    ],
+    [
+      -13,
+      0,
+      -4096,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      -13
+    ],
+    [
+      0,
+      0,
+      -4097,
+      19,
+      4096,
+      0,
+      4096,
+      -19,
+      0
+    ],
+    [
+      0,
+      0,
+      -4097,
+      993,
+      3974,
+      0,
+      3974,
+      -993,
+      0
+    ],
+    [
+      0,
+      0,
+      -4096,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      4096,
+      -993,
+      3974,
+      0,
+      -3974,
+      -993,
+      0
+    ],
+    [
+      0,
+      0,
+      4096,
+      -19,
+      4096,
+      0,
+      -4096,
+      -19,
+      0
+    ],
+    [
+      0,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      -4096,
+      0,
+      0
+    ],
+    [
+      12,
+      0,
+      4096,
+      -993,
+      3974,
+      2,
+      -3974,
+      -993,
+      11
+    ],
+    [
+      13,
+      0,
+      4096,
+      -993,
+      3974,
+      3,
+      -3974,
+      -993,
+      12
+    ],
+    [
+      13,
+      0,
+      4096,
+      -19,
+      4096,
+      0,
+      -4096,
+      -19,
+      13
+    ],
+    [
+      13,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      -4096,
+      0,
+      13
+    ],
+    [
+      14,
+      0,
+      4096,
+      -19,
+      4096,
+      0,
+      -4096,
+      -19,
+      14
+    ],
+    [
+      14,
+      0,
+      4096,
+      0,
+      4096,
+      0,
+      -4096,
+      0,
+      14
+    ],
+    [
+      4096,
+      0,
+      -14,
+      0,
+      4096,
+      0,
+      14,
+      0,
+      4096
+    ],
+    [
+      4096,
+      0,
+      -14,
+      0,
+      4096,
+      19,
+      14,
+      -19,
+      4096
+    ],
+    [
+      4096,
+      0,
+      -14,
+      3,
+      3974,
+      993,
+      13,
+      -993,
+      3974
+    ],
+    [
+      4096,
+      0,
+      -13,
+      0,
+      4096,
+      0,
+      13,
+      0,
+      4096
+    ],
+    [
+      4096,
+      0,
+      -13,
+      0,
+      4096,
+      19,
+      13,
+      -19,
+      4096
+    ],
+    [
+      4096,
+      0,
+      -13,
+      3,
+      3974,
+      993,
+      12,
+      -993,
+      3974
+    ],
+    [
+      4096,
+      0,
+      0,
+      0,
+      3974,
+      993,
+      0,
+      -993,
+      3974
+    ],
+    [
+      4096,
+      0,
+      0,
+      0,
+      4096,
+      0,
+      0,
+      0,
+      4096
+    ],
+    [
+      4096,
+      0,
+      0,
+      0,
+      4096,
+      19,
+      0,
+      -19,
+      4096
+    ]
+  ],
+  "included_contact_indices": [
+    0,
+    1,
+    2,
+    3,
+    12,
+    13,
+    14,
+    15,
+    16,
+    23
+  ],
+  "authored_count": 64,
+  "lifetime": "all-attached",
+  "spawn_cell": [
+    10,
+    7
+  ],
+  "spawn_world": [
+    128,
+    -256,
+    -128
+  ],
+  "spawn_direction": 0,
+  "round_trip": {
+    "commands": [
+      [
+        0,
+        1
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        34,
+        4
+      ],
+      [
+        46,
+        4
+      ]
+    ],
+    "observation_ticks": 730,
+    "bank_return_tick": 51
+  },
+  "attached_diver": {
+    "commands": [
+      [
+        1230,
+        1
+      ]
+    ],
+    "observation_ticks": 1255,
+    "contact_tick": 1233,
+    "death_tick": 1254
+  },
+  "traffic_probe_z_minimum": -294,
+  "traffic_point_z_maximum": -316,
+  "conditions": [
+    "Single unpowered player; the selected high-detail frog resource and reset state are pinned.",
+    "Every collision-bearing stored root origin remains in the half-open rectangle; rejected ticks roll back.",
+    "SAFE bank/platforms and WATER only; maximum landing-height difference is below the 512-unit stun threshold.",
+    "All support-path orientations, cardinal hops, snapping, centring and inherited up axes are included.",
+    "Death/MUST_DIE skips primitive scans before death animation changes; croak imports affect no hilite-bearing part.",
+    "No tongueable neighbor within 640 units, no collectable contact, no powerups or body scaling.",
+    "All 64 authored identities retain their ordered logical updates; only ten require FORM contact.",
+    "Checkpoint croak radius 512 is excluded; baby parent never retires; fly covered state and sound owners persist."
+  ]
+}

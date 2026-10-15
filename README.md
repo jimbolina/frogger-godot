@@ -78,6 +78,10 @@ script and model inputs; it rejects changed proof dependencies and visibility
 mode. Ordinary inspection remains available for edited data. See the
 [bounded route contract](docs/reference/gameplay/entities.md#guarded-jun1-bank-route).
 
+The [ORG1 source proof](docs/reference/gameplay/entities.md#org1-admission)
+now establishes a bank/turtle/log round trip and a separate diving-turtle
+death. Its guarded runtime preset is still being implemented.
+
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file
 tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility

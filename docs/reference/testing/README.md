@@ -61,8 +61,9 @@ unset the variable explicitly for asset-free mode.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-admission-counterexample):
-  independent background, neighbor and animated-hilite diagnostics. A blocked
-  admission result is expected; it does not enable a gameplay preset.
+  independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
+  The older general-pose diagnostic remains blocked; the narrower route has
+  its own complete proof and pinned inputs.
 
 ## Focused iteration and guardrails
 
