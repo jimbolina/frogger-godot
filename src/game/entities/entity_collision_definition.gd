@@ -6,6 +6,7 @@ var entities: Array[EntityDefinition] = []
 var platforms_enabled: bool = false
 var contacts: Array[FormContactDefinition] = []
 var lifecycle: EntityLifecycleDefinition = null
+var environment: EntityEnvironmentState = null
 var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
 var group_size: Vector2i = Vector2i.ZERO
@@ -19,6 +20,7 @@ func copy() -> EntityCollisionDefinition:
 	for contact: FormContactDefinition in contacts:
 		result.contacts.append(contact.copy() if contact != null else null)
 	result.lifecycle = lifecycle.copy() if lifecycle != null else null
+	result.environment = environment.copy() if environment != null else null
 	result.group_base = group_base
 	result.group_dimensions = group_dimensions
 	result.group_size = group_size
@@ -26,6 +28,12 @@ func copy() -> EntityCollisionDefinition:
 
 ## Checks paired authored identities and positive group geometry.
 func validate() -> String:
+	if environment != null:
+		if lifecycle != null:
+			return "Entity background requires all-attached lifetime"
+		var issue: String = environment.validate()
+		if not issue.is_empty():
+			return issue
 	if entities.size() != contacts.size():
 		return "Entity collision requires one contact per entity"
 	if group_dimensions.x <= 0 or group_dimensions.y <= 0 or group_size.x <= 0 or group_size.y <= 0:
@@ -47,6 +55,8 @@ func validate() -> String:
 		var contact: FormContactDefinition = contacts[index]
 		if entity == null or contact == null:
 			return "Entity collision pair %d is null" % index
+		if entity.background_admitted and environment == null:
+			return "Admitted custom background requires its shared environment"
 		if entity.entity_index <= previous_index:
 			return "Entity collision indices must be strictly increasing"
 		previous_index = entity.entity_index

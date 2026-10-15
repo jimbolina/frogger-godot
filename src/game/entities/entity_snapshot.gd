@@ -13,6 +13,11 @@ var generation: int = 0
 var script_state: EntityScriptState = null
 var animation: EntityAnimationState = null
 var requests: Array[String] = []
+var entity_flags: int = 0
+var background: EntityBackgroundState = null
+var live_flags: int = 0
+var colour_scale: Vector3i = Vector3i.ZERO
+var ambient: Vector3i = Vector3i.ZERO
 
 ## Returns an independent transform and nested path snapshot.
 func copy() -> EntitySnapshot:
@@ -28,4 +33,9 @@ func copy() -> EntitySnapshot:
 	result.script_state = script_state.copy() if script_state != null else null
 	result.animation = animation.copy() if animation != null else null
 	result.requests.assign(requests)
+	result.entity_flags = entity_flags
+	result.background = background.copy() if background != null else null
+	result.live_flags = live_flags
+	result.colour_scale = colour_scale
+	result.ambient = ambient
 	return result

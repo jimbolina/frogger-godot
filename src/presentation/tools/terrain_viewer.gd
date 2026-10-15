@@ -184,7 +184,11 @@ func step_command(command: TickCommand) -> TickResult:
 		for slot: int in _entity_models.size():
 			var model: AnimatedModelInstance = _entity_models[slot]
 			if model != null and not created.has(slot):
-				model.advance_tick()
+				var entity: EntitySnapshot = _current.entities.entities[slot]
+				if entity.animation != null and entity.animation.action >= 0:
+					model.player.advance_tick()
+				else:
+					model.advance_tick()
 		if record_trace:
 			trace.append_result(scenario.scenario_index, command, result)
 	else:
@@ -259,7 +263,15 @@ func draw_state(fraction: float) -> void:
 	if _current.entities != null:
 		for index: int in mini(_entity_models.size(), _current.entities.entities.size()):
 			if _entity_models[index] != null:
-				_entity_models[index].transform = GameSpace.transform(_current.entities.entities[index].matrix12)
+				var entity: EntitySnapshot = _current.entities.entities[index]
+				var model: AnimatedModelInstance = _entity_models[index]
+				model.transform = GameSpace.transform(entity.matrix12)
+				if entity.animation != null and entity.animation.action >= 0:
+					if model.player.action_index != entity.animation.action:
+						model.player.set_action(entity.animation.action)
+					model.player.frame = entity.animation.cel
+					model.apply_exact()
+				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.background == null or not entity.background.model_hidden)
 	var camera_facts: String = "none" if _current.camera == null else "%d source %s" % [_current.camera.mode, _current.camera.source_world]
 	var presentation: String = "synthetic marker" if _frog_model == null else "high-detail frog"
 	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.mode, _current.cell, _current.square_index]

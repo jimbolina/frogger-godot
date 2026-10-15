@@ -35,6 +35,7 @@ var _source_id: String = ""
 var _resource_id: int = -1
 var _exploration_guard: ExplorationGuard = null
 var _callback_error: String = ""
+var _has_entity_updates: bool = false
 
 ## Validates and copies ordinary terrain, then creates a stationary component start.
 static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainRun:
@@ -79,6 +80,8 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 		if not run.error.is_empty():
 			return run
 		run._entity_collision = level.entity_collision.copy()
+		for entity: EntityDefinition in run._entity_collision.entities:
+			run._has_entity_updates = run._has_entity_updates or entity.script_definition != null or entity.background_admitted
 		run._entities = EntityRun.create(run._entity_collision.entities, run._entity_collision.lifecycle)
 		if not run._entities.error.is_empty():
 			run.error = run._entities.error
@@ -184,6 +187,7 @@ func reset(initial: RunStart = null) -> String:
 		if not entity_error.is_empty():
 			return entity_error
 		state.entities = candidate_entities.snapshot()
+		state.entity_environment = _entity_collision.environment.copy() if _entity_collision.environment != null else null
 	_state = state
 	_controller_directions = controller_directions
 	_camera = camera
@@ -223,12 +227,15 @@ func step(command: TickCommand) -> TickResult:
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
 	_candidate_entities = _entities.copy() if _entities != null else null
+	var next: RunSnapshot = _state.copy()
 	if _candidate_entities != null:
 		result.error = _candidate_entities.step(command.tick_index, _state.current_entity_index)
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
-	var next: RunSnapshot = _state.copy()
 	next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
+	var entity_issue: String = _update_entity_scripts(next, result.events)
+	if not entity_issue.is_empty():
+		return _failed_tick(result, entity_issue)
 	next.entity_hit_indices = PackedInt32Array()
 	next.entity_carry_indices = PackedInt32Array()
 	if next.current_entity_index >= 0 and (_platform_pose(next) == null or _platform_definition(next) == null):
@@ -247,7 +254,7 @@ func step(command: TickCommand) -> TickResult:
 	_move(next, result.events)
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
-	if next.flags & 4 and next.current_entity_index >= 0:
+	if next.flags & 4 and next.current_entity_index >= 0 and next.mode != 2:
 		_mark_carry(next, next.current_entity_index)
 	# MoveFrog updates the camera zone here, before modifiers and collision.
 	if _exploration_guard != null:
@@ -304,6 +311,9 @@ func step(command: TickCommand) -> TickResult:
 		next.animation = _candidate_animation.state.copy()
 		next.animation_condition_counter = _candidate_animation.context.if_counter
 	# gamesys.C creates/renews visible live entities only after camera and animation.
+	if _candidate_entities != null:
+		_candidate_entities.advance_animations()
+		next.entities = _candidate_entities.snapshot()
 	# A failure here discards the entire candidate, including earlier frog requests.
 	if _candidate_entities != null and _entity_collision.lifecycle != null:
 		var visibility_error: String = _candidate_entities.apply_visibility(next.camera)
@@ -327,6 +337,64 @@ func step(command: TickCommand) -> TickResult:
 		_controller_directions = next.camera.controller_directions.duplicate()
 	result.final_snapshot = next.copy()
 	return result
+
+func _update_entity_scripts(state: RunSnapshot, events: Array[String]) -> String:
+	if _candidate_entities == null or not _has_entity_updates:
+		return ""
+	for slot: int in range(_entity_collision.entities.size() - 1, -1, -1):
+		var previous_flags: int = state.entities.entities[slot].live_flags
+		var was_alive: bool = state.mode != 2 and not state.flags & 8
+		var issue: String = _visit_entity(slot, previous_flags, state, events)
+		if not issue.is_empty():
+			return issue
+		var killed: bool = was_alive and bool(state.flags & 8)
+		if killed:
+			events.append("entity:%d:death_pgen" % _entity_collision.entities[slot].entity_index)
+		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.sound_requests, state.entity_environment, killed)
+		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+	state.entities = _candidate_entities.snapshot()
+	return ""
+
+func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: Array[String]) -> String:
+	var definition: EntityDefinition = _entity_collision.entities[slot]
+	if definition.background_admitted:
+		var frog_position := Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
+		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index))
+		if not background.error.is_empty():
+			return background.error
+		state.entity_environment = background.environment
+		_candidate_random.state = background.random.state
+		_candidate_random.draw_count = background.random.draw_count
+		_candidate_random.consumers.assign(background.random.consumers)
+		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+	if definition.script_definition == null:
+		return ""
+	var context := EntityUpdateContext.new()
+	context.entity_index = definition.entity_index
+	context.form_id = definition.form_id
+	context.base_matrix = state.entities.entities[slot].matrix12.duplicate()
+	context.frog_position = Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
+	context.previous_hit = bool(previous_flags & 64)
+	context.previous_carry = bool(previous_flags & 4)
+	context.has_path = definition.path_definition != null
+	context.no_display = bool(state.entities.entities[slot].entity_flags & EntityDefinition.NO_DISPLAY)
+	context.fade_bounds = PackedInt32Array([_collision_bounds.position.x, _collision_bounds.end.x, _collision_bounds.position.y, _collision_bounds.end.y])
+	var update: EntityUpdateResult = _candidate_entities.update_script(definition.entity_index, context, _candidate_random)
+	if not update.error.is_empty():
+		return "Entity %d script: %s" % [definition.entity_index, update.error]
+	# Keep the shared candidate object: the frog animation context owns this
+	# same stream and must observe every preceding entity draw.
+	_candidate_random.state = update.random.state
+	_candidate_random.draw_count = update.random.draw_count
+	_candidate_random.consumers.assign(update.random.consumers)
+	for request: String in update.requests:
+		events.append("entity:%d:%s" % [definition.entity_index, request])
+		if request.begins_with("sound:"):
+			state.sound_requests += 1
+	if update.drown:
+		_kill(state, FrogAnimationCatalog.DROWN, false, events)
+	state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+	return ""
 
 func _copy_grid(source: GridDefinition) -> String:
 	if source.dimensions.x <= 0 or source.dimensions.y <= 0 or source.dimensions.x > 65535 or source.dimensions.y > 65535:
@@ -1068,6 +1136,9 @@ func _request_animation(animation_id: int, state: RunSnapshot) -> void:
 		_candidate_animation.request(animation_id)
 
 func _sync_systems(state: RunSnapshot) -> void:
+	if _has_entity_updates:
+		_candidate_entities.set_contact_flags(state.entity_hit_indices, state.entity_carry_indices)
+		state.entities = _candidate_entities.snapshot()
 	state.camera = _candidate_camera.snapshot() if _candidate_camera != null else null
 	state.animation = _candidate_animation.state.copy() if _candidate_animation != null else null
 	state.rng_state = _candidate_random.state

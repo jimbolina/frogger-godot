@@ -32,6 +32,9 @@ var path_start: PathStart = null
 var script_definition: EntityScriptDefinition = null
 var action_lengths: PackedInt32Array = PackedInt32Array()
 var animation_one_shot: bool = false
+## Enables only the source-proved all-attached background branches.
+var background_admitted: bool = false
+var parent_unique_id: int = -1
 
 ## Returns a copy with independently owned matrix and path records.
 func copy() -> EntityDefinition:
@@ -56,4 +59,6 @@ func copy() -> EntityDefinition:
 	result.script_definition = script_definition.copy() if script_definition != null else null
 	result.action_lengths = action_lengths.duplicate()
 	result.animation_one_shot = animation_one_shot
+	result.background_admitted = background_admitted
+	result.parent_unique_id = parent_unique_id
 	return result

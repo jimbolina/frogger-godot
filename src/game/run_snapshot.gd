@@ -4,6 +4,7 @@ extends RefCounted
 
 var tick_index: int = 0
 var entities: EntityRunSnapshot = null
+var entity_environment: EntityEnvironmentState = null
 var entity_hit_indices: PackedInt32Array = PackedInt32Array()
 var death_entity_index: int = -1
 ## Authored attachment identities; local coordinates remain in the source entity frame.
@@ -78,6 +79,7 @@ func copy() -> RunSnapshot:
 	var result := RunSnapshot.new()
 	result.tick_index = tick_index
 	result.entities = entities.copy() if entities != null else null
+	result.entity_environment = entity_environment.copy() if entity_environment != null else null
 	result.entity_hit_indices = entity_hit_indices.duplicate()
 	result.death_entity_index = death_entity_index
 	result.current_entity_index = current_entity_index

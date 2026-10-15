@@ -7,6 +7,115 @@ const ON_ENTITY: int = 1 << 2
 const FROM_ENTITY: int = 1 << 4
 const TO_ENTITY: int = 1 << 1
 
+func _script(words: PackedInt32Array) -> EntityScriptDefinition:
+	var program := EntityScriptDefinition.new()
+	program.root_id = 1
+	program.programs[1] = words
+	program.names[1] = "SCRIPT_TURTLE"
+	program.callbacks = {1: "SCRIPT_CB_LOG_SPLASH", 2: "SCRIPT_CB_DIVE_COLOUR_CHANGE"}
+	return program
+
+func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> void:
+	var level: LevelDefinition = _level()
+	var entity: EntityDefinition = level.entity_collision.entities[0]
+	entity.script_definition = _script([34, 0, 1, 0, 0, 11, 13, 0, 6, 2, 1, 12, 5])
+	entity.script_definition.programs[2] = PackedInt32Array([38])
+	entity.script_definition.names[2] = "SCRIPT_ORG_TRUCK_SFX"
+	entity.action_lengths = PackedInt32Array([3, 4])
+	level.exploration_guard = ExplorationGuard.new()
+	level.exploration_guard.world_bounds = Rect2i(-129, -129, 2, 2)
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	var first: TickResult = _tick(run)
+	assert_eq(first.error, "")
+	assert_eq(first.final_snapshot.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(first.final_snapshot.sound_requests, 0, "Same-tick hit must not call the script")
+	var before: RunSnapshot = run.snapshot()
+	var failed: TickResult = _tick(run)
+	assert_string_contains(failed.error, "boundary")
+	assert_null(failed.control_snapshot)
+	assert_eq(failed.events, [])
+	assert_eq(run.snapshot().rng_state, before.rng_state)
+	assert_eq(run.snapshot().sound_requests, before.sound_requests)
+	assert_eq(run.snapshot().entities.entities[0].script_state.timer, 1)
+	assert_eq(run.snapshot().entities.entities[0].animation.cel, 0)
+	assert_eq(run.reset(), "")
+	assert_eq(run.snapshot().entities.entities[0].script_state.timer, 0)
+	assert_eq(run.snapshot().entities.entities[0].animation.cel, -1)
+	assert_eq(run.snapshot().rng_state, 1)
+	level.exploration_guard = null
+	run = TerrainRun.create(level)
+	assert_eq(_tick(run).error, "")
+	var second: TickResult = _tick(run)
+	assert_eq(second.error, "")
+	assert_true(second.events.has("entity:4:sound:19:0:0:0"))
+	assert_eq(second.control_snapshot.sound_requests, 1)
+	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
+	assert_eq(second.control_snapshot.entities.updates[0].entity.requests, ["sound:19:0:0:0"])
+	assert_eq(second.control_snapshot.entities.entities[0].live_flags & 1020, 0)
+	assert_eq(second.final_snapshot.entities.entities[0].animation.cel, 1)
+
+func test_ordered_scripts_share_rng_and_late_failure_discards_all_visits() -> void:
+	var level: LevelDefinition = _level()
+	_second_platform(level)
+	for unused: int in FrogAnimationCatalog.ACTION_NAMES.size():
+		level.frog_action_lengths.append(3)
+	for entity: EntityDefinition in level.entity_collision.entities:
+		entity.script_definition = _script([11, 13, 0, 6, 2, 1, 12, 5])
+		entity.script_definition.programs[2] = PackedInt32Array([38])
+		entity.script_definition.names[2] = "SCRIPT_ORG_TRUCK_SFX"
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	run._animation.error = "forced post-script failure"
+	var failed: TickResult = _tick(run)
+	assert_eq(failed.error, "forced post-script failure")
+	assert_null(failed.final_snapshot)
+	assert_eq(run.snapshot().entities.updates.size(), 0)
+	run._animation.error = ""
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), initial)
+	var passed: TickResult = _tick(run)
+	assert_eq(passed.error, "")
+	var visits: Array[EntityUpdateObservation] = passed.control_snapshot.entities.updates
+	assert_eq(visits.size(), 2)
+	assert_eq(visits[0].entity.entity_index, 7)
+	assert_eq(visits[1].entity.entity_index, 4)
+	assert_eq(visits[0].rng_state, 1103527590)
+	assert_eq(visits[1].rng_state, 2524885223)
+	visits[0].entity.script_state.timer = 99
+	assert_eq(run.snapshot().entities.updates[0].entity.script_state.timer, 1)
+
+func test_diver_callback_death_reaches_same_control_phase() -> void:
+	var level: LevelDefinition = _level()
+	var entity: EntityDefinition = level.entity_collision.entities[0]
+	entity.entity_name = "SUB_TURTLE"
+	var segment := PathSegmentDefinition.new()
+	segment.segment_type = PathSegmentDefinition.LINE
+	segment.start = Vector3i(-100, 0, -128)
+	segment.end = Vector3i(-99, 0, -128)
+	segment.length = 1
+	entity.path_definition = PathDefinition.new()
+	entity.path_definition.segments.append(segment)
+	entity.path_start = PathStart.new()
+	entity.path_start.speed = 0
+	entity.path_start.flags = PathStart.REPEAT
+	entity.script_definition = _script([34, 1, 2, 7, 1, 7, 0, 0, 0, 0, 1, 8, 0, 1, 128, 2048, -1, 9, 38])
+	entity.action_lengths = PackedInt32Array([3, 4])
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	for tick: int in 16:
+		var result: TickResult = _tick(run)
+		assert_eq(result.error, "", str(tick))
+		if not result.error.is_empty():
+			return
+		assert_ne(result.final_snapshot.mode, 2)
+	var killed: TickResult = _tick(run)
+	assert_eq(killed.error, "")
+	assert_eq(killed.control_snapshot.mode, 2)
+	assert_eq(killed.control_snapshot.death_equate, FrogAnimationCatalog.DROWN)
+	assert_eq(killed.final_snapshot.entity_carry_indices, PackedInt32Array())
+	assert_eq(killed.final_snapshot.entities.entities[0].script_state.colours, Vector3i(0, 64, 255))
+
 func _level(width: int = 2) -> LevelDefinition:
 	var level := LevelDefinition.new()
 	level.grid = GridDefinition.new()

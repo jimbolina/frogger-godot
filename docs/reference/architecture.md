@@ -133,22 +133,22 @@ ownership in `EntityRun`. Each `EntityScriptRunner` update returns detached
 script/animation state, RNG, ordered requests and a frog effect; failures
 discard all candidate outputs. `EntityScriptSetup` supplies decoded named
 programs and callbacks, including turtle creation's script replacement.
-Aggregate integration is next: `TerrainRun` will own frog reactions, shared
-checkpoint covered bits and commit. Snapshot and contact-scan order stay
+`TerrainRun` owns frog reactions, shared checkpoint covered bits and commit.
+Snapshot and contact-scan order stay
 separate from the source live-update order.
 The [entity contract](gameplay/entities.md#org1-admission) owns the
-expanded behavior closure and source proof. The existing aggregate still
-executes script-free behavior until the integration gate passes.
+expanded behavior closure and source proof. General inspection remains
+script-free; admitted definitions opt into these updates.
 
-Clone the frog and shared state before entity updates. Visit each entity in
-live order, execute its script/custom update, apply callback frog effects and
-shared-state writes before advancing to the next entity, then clear transient
-flags at the source point. Ordered requests and logical resource ownership
+The aggregate clones frog and shared state before entity updates. It visits
+entities in descending all-attached live order, executes custom/script updates,
+applies frog effects and shared writes before the next entity, records the visit,
+then clears transient flags at the source point. Ordered requests and logical resource ownership
 are candidate state, even with playback/rendering deferred. A failed later
-contact or guard must discard them alongside script timers, animation clocks,
-colours, checkpoint flags and RNG. Never approximate excluded entities with
-fixed RNG draws or dispatch script callbacks after the entity pass. Preserve
-the existing script-free API behavior while adding this explicit dependency.
+contact or guard discards them alongside script timers, animation clocks,
+colours, checkpoint flags and RNG. Entity animation advances in the aggregate
+pose phase; presentation consumes committed actions and cels. Existing
+script-free APIs retain their behavior.
 
 1. Find the source rule under the [source policy](sources.md).
 2. Name its inputs, owned state, units and observable outcomes.

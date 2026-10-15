@@ -35,7 +35,7 @@ static func query(definition: FormContactDefinition, entity_snapshot: EntitySnap
 	if not _fits_signed(probe_world.x, 32) or not _fits_signed(probe_world.y, 32) or not _fits_signed(probe_world.z, 32):
 		result.reason = "Probe position is outside signed 32-bit source range"
 		return result
-	if definition.entity_flags & EntityDefinition.NO_COLLISION:
+	if (definition.entity_flags | entity_snapshot.entity_flags) & EntityDefinition.NO_COLLISION:
 		result.status = FormContactResult.DISABLED
 		result.reason = "ENTITY_NO_COLLISION"
 		return result

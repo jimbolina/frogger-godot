@@ -20,17 +20,20 @@ static func indices(definition: EntityCollisionDefinition, snapshot: EntityRunSn
 				var pose: EntitySnapshot = snapshot.entities[index]
 				if pose == null or pose.entity_index != entity.entity_index or pose.unique_id != entity.unique_id or pose.matrix12.size() != 12:
 					return PackedInt32Array()
-				if entity.entity_name != "MOVING" or entity.flags & EntityDefinition.HIDDEN or (snapshot.lifecycle_enabled and not pose.live):
+				if not _moving(entity) or (entity.flags | pose.entity_flags) & EntityDefinition.HIDDEN or (snapshot.lifecycle_enabled and not pose.live):
 					continue
 				if _group_x(definition, pose.matrix12[9]) == x and _group_z(definition, pose.matrix12[11]) == z:
 					result.append(entity.entity_index)
 			for index: int in range(definition.entities.size() - 1, -1, -1):
 				var entity: EntityDefinition = definition.entities[index]
-				if entity.entity_name != "STATIC" or entity.matrix12.size() != 12 or (snapshot.lifecycle_enabled and not snapshot.entities[index].live):
+				if _moving(entity) or entity.matrix12.size() != 12 or (snapshot.lifecycle_enabled and not snapshot.entities[index].live):
 					continue
 				if _group_x(definition, entity.matrix12[9]) == x and _group_z(definition, entity.matrix12[11]) == z:
 					result.append(entity.entity_index)
 	return result
+
+static func _moving(entity: EntityDefinition) -> bool:
+	return entity.entity_name in ["MOVING", "SUB_TURTLE", "ORG_FLY", "ORG_BABY_FROG"]
 
 static func _group_x(definition: EntityCollisionDefinition, coordinate: int) -> int:
 	return clampi(_source_div(_signed32(coordinate - definition.group_base.x), definition.group_size.x), 0, definition.group_dimensions.x - 1)

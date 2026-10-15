@@ -8,6 +8,7 @@ var lifecycle_enabled: bool = false
 var live_order: PackedInt32Array = PackedInt32Array()
 var selected_groups: PackedInt32Array = PackedInt32Array()
 var lifecycle_events: Array[String] = []
+var updates: Array[EntityUpdateObservation] = []
 
 ## Returns independent entity, transform and path snapshots.
 func copy() -> EntityRunSnapshot:
@@ -17,6 +18,8 @@ func copy() -> EntityRunSnapshot:
 	result.live_order = live_order.duplicate()
 	result.selected_groups = selected_groups.duplicate()
 	result.lifecycle_events.assign(lifecycle_events)
+	for update: EntityUpdateObservation in updates:
+		result.updates.append(update.copy())
 	for entity: EntitySnapshot in entities:
 		result.entities.append(entity.copy() if entity != null else null)
 	return result

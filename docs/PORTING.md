@@ -60,8 +60,8 @@ excluded-neighbor obligations for a narrower rectangle. Independent traces
 cover the normal round trip, full dive/rise cycles and an attached-diver death.
 The [entity contract](reference/gameplay/entities.md#org1-admission) owns
 bounds, routes and the expanded script/background closure. Bounded script
-components are implemented. Next are source-ordered atomic integration and guarded live
-exploration, with independent goldens and rendered/keyboard acceptance.
+components and source-ordered atomic integration are implemented. Next is guarded
+live exploration, with independent retail goldens and rendered/keyboard acceptance.
 A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;
 preserve source ordering and test unknown mappings. Per-build form callback

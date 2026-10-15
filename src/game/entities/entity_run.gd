@@ -50,7 +50,10 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & (EntityDefinition.LOCAL_ALIGN | EntityDefinition.PROJECT_ON_LAND):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
-		if definition.entity_name == "STATIC":
+		if definition.background_admitted and lifecycle != null:
+			result.error = "Custom background entities require all-attached lifetime"
+			return result
+		if definition.entity_name == "STATIC" or (definition.background_admitted and definition.entity_name in ["CHECKPOINT", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "ORG_BABY_FROG", "ORG_FLY"]):
 			if definition.path_definition != null or definition.path_start != null:
 				result.error = "Static entity %d cannot attach a path" % definition.entity_index
 				return result
@@ -106,8 +109,20 @@ func reset() -> String:
 	for index: int in next_state.entities.size():
 		var definition: EntityDefinition = _definitions[index]
 		next_state.entities[index].animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
+		next_state.entities[index].live_flags = 4098 if not definition.action_lengths.is_empty() else 0
 		if definition.script_definition != null:
 			next_state.entities[index].script_state = EntityScriptState.create(definition.script_definition.root_id)
+		if definition.background_admitted:
+			var entity: EntitySnapshot = next_state.entities[index]
+			entity.background = EntityBackgroundState.new()
+			if definition.entity_name == "ORG_FLY":
+				entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
+				entity.background.model_hidden = true
+			elif definition.entity_name == "ORG_BABY_FROG":
+				entity.background.timer = 0
+				entity.background.model_hidden = true
+			elif definition.entity_name == "CHECKPOINT":
+				entity.ambient = Vector3i(160, 160, 160)
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		for entity: EntitySnapshot in next_state.entities:
@@ -144,6 +159,13 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 		var previous: EntitySnapshot = _state.entities[index]
 		next_state.entities[index].script_state = previous.script_state.copy() if previous.script_state != null else null
 		next_state.entities[index].animation = previous.animation.copy() if previous.animation != null else null
+		next_state.entities[index].entity_flags = previous.entity_flags
+		next_state.entities[index].background = previous.background.copy() if previous.background != null else null
+		next_state.entities[index].live_flags = previous.live_flags
+		next_state.entities[index].colour_scale = previous.colour_scale
+		next_state.entities[index].ambient = previous.ambient
+		if _definitions[index].entity_name == "ORG_FLY":
+			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		next_state.live_order = _state.live_order.duplicate()
@@ -193,13 +215,63 @@ func update_script(entity_index: int, context: EntityUpdateContext, random: Sour
 		entity.animation = result.animation.copy()
 		entity.matrix12 = result.matrix12.duplicate()
 		entity.requests.assign(result.requests)
+		entity.colour_scale = result.script_state.colours
+		entity.ambient = result.script_state.ambient
+		entity.live_flags = (entity.live_flags & ~65536) | (65536 if result.script_state.no_screen_fade else 0)
+		if result.drown:
+			entity.live_flags &= ~4
 	return result
+
+## Copies one current authored slot without cloning the aggregate.
+func entity_snapshot(slot: int) -> EntitySnapshot:
+	return _state.entities[slot].copy()
+
+## Captures an ordered update, then applies UpdateLiveEntities' transient clear.
+func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds: int, environment: EntityEnvironmentState, death_requested: bool) -> void:
+	if death_requested:
+		_state.entities[slot].requests.append("death_pgen")
+	var observation := EntityUpdateObservation.new()
+	observation.entity = _state.entities[slot].copy()
+	observation.previous_flags = previous_flags
+	observation.rng_state = random.state
+	observation.sound_requests = sounds
+	observation.environment = environment.copy() if environment != null else null
+	_state.updates.append(observation)
+	_state.entities[slot].live_flags &= ~25596
+
+## Publishes this tick's frog contact flags for the following entity update.
+func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array) -> void:
+	for entity: EntitySnapshot in _state.entities:
+		entity.live_flags &= ~1020
+		if hits.has(entity.entity_index):
+			entity.live_flags |= 64
+		if carries.has(entity.entity_index):
+			entity.live_flags |= 4
 
 ## Advances authoritative entity clocks once at the aggregate pose phase.
 func advance_animations() -> void:
 	for entity: EntitySnapshot in _state.entities:
 		if entity.animation != null:
 			entity.animation.advance()
+
+## Updates one admitted custom neighbor on detached candidate state.
+func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool) -> EntityBackgroundResult:
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0:
+		var failed := EntityBackgroundResult.new()
+		failed.error = "Unknown background entity"
+		return failed
+	var definition: EntityDefinition = _definitions[slot]
+	var parent_live: bool = false
+	if definition.entity_name == "ORG_BABY_FROG":
+		for candidate: EntitySnapshot in _state.entities:
+			if candidate.unique_id == definition.parent_unique_id:
+				parent_live = candidate.live
+				break
+	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live)
+	if result.error.is_empty():
+		_state.entities[slot] = result.entity.copy()
+	return result
 
 ## Applies the post-camera source view list; new live objects first update next tick.
 func apply_visibility(camera: GameplayCameraSnapshot) -> String:
@@ -261,6 +333,7 @@ func _make_snapshot(runners: Array[PathRunner], tick_index: int) -> EntityRunSna
 		var entity := EntitySnapshot.new()
 		entity.entity_index = definition.entity_index
 		entity.unique_id = definition.unique_id
+		entity.entity_flags = definition.flags
 		entity.matrix12 = definition.matrix12.duplicate()
 		result.entities.append(entity)
 	for index: int in range(_definitions.size() - 1, -1, -1):

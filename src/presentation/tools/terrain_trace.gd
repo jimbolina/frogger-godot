@@ -113,6 +113,12 @@ static func _lifecycle_key(record: RefCounted, key: String) -> bool:
 	return false
 
 static func _value(value: Variant, include_lifecycle: bool = false) -> Variant:
+	if value is Dictionary:
+		var source: Dictionary = value
+		var result: Dictionary = {}
+		for key: Variant in source:
+			result[str(key)] = _value(source[key], include_lifecycle)
+		return result
 	if value is Rect2i:
 		var rectangle: Rect2i = value
 		return [rectangle.position.x, rectangle.position.y, rectangle.size.x, rectangle.size.y]

@@ -87,7 +87,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			reason = "Entity references an invalid FORM grid"
 		elif form == null:
 			reason = "Authored form does not resolve"
-		elif entity.entity_name != "STATIC" and entity.entity_name != "MOVING":
+		elif entity.entity_name not in ["STATIC", "MOVING", "SUB_TURTLE"]:
 			reason = "Entity behavior has no bounded contact transform"
 		elif entity.flags & EntityDefinition.NO_COLLISION:
 			reason = "Entity disables collision"

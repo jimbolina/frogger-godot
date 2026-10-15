@@ -328,8 +328,8 @@ demonstration. Reproduction belongs to the existing
 
 The independent proof admits high-detail v3.0e ORG1 (resource 658) within
 X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
-all-attached lifetime. Script components exist; aggregate integration and the
-guarded preset are not yet implemented. The proof pins map, source-ordered form/behavior rows, script
+all-attached lifetime. Script components and atomic integration exist; the
+guarded preset is not yet enabled. The proof pins map, source-ordered form/behavior rows, script
 streams, model mappings, counterpart models and the selected frog resource in
 `src/presentation/setup/org1_exploration_admission.json`.
 
@@ -425,8 +425,15 @@ colour/ambient state and logical moving-sound ownership. SET_ACTION resets cel
 to -1 even for the current action; pose advancement uses supplied lengths.
 `EntityScriptRunner` returns private state/RNG copies, ordered request parameters
 and a drowning effect. A failure returns none of those candidate changes.
-The aggregate caller must apply that frog effect before visiting the next
-entity; connecting this protocol to `TerrainRun` is the next increment.
 Existing script-free APIs remain available. Audio and splash rendering stay
 deferred. [Component goldens](../../../tests/golden/specs/entities.md#entity-script-components)
 cover interpreter edge cases independently of the retail route.
+
+The aggregate runs admitted custom/script updates before frog control, using
+previous-tick hit/carry flags. Drowning reaches that tick's control phase.
+Ordered observations retain each visit before transient flags clear; entity
+animation advances after frog animation scripts. Failed later phases discard
+requests, clocks, colours, RNG and checkpoint covered bits together. The bounded
+background branches preserve bonus-fly timing/RNG and the baby frog's permanent
+live-parent invariant; checkpoint croak/contact and parent retirement reject.
+Presentation reads committed entity actions/cels and hidden state.
