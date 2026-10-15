@@ -20,9 +20,16 @@
 #include "formlib.H"
 #include "ZONE.H"
 #include "froguser.h"
+#include "scripter.h"
+#include "scripts.h"
+#include "tempopt.h"
+#include "ent_org.h"
+#include "ent_gen.h"
+#include "sound.h"
 #undef main
 #include "gpu/mr_stub_gpu.h"
 #include "gpu/mr_stub_acos.h"
+#include "backend/mr_stub_pool.h"
 #undef main
 #include <stdio.h>
 #include <string.h>
@@ -94,6 +101,146 @@ static MAP_GROUP *route_groups;
 static ENTITY *route_group_roots;
 static MR_MAT camera_matrix;
 static int route_int(FILE *stream);
+
+/* Admission counterexample, not a script interpreter or route simulation.
+ * Execute the actual frozen random-branch instruction with no hit/carry flags.
+ * An invented target is only a pointer marker; it is never executed. */
+static int script_rng_run(const char *fixture) {
+    FILE *stream=fopen(fixture,"r");
+    if(!stream) { perror(fixture); return 2; }
+    int count=route_int(stream);
+    if(count<1 || count>256) { fclose(stream); return 2; }
+    MR_LONG target[]={ENTSCR_STOP};
+    MR_LONG *saved_none=Scripts[SCRIPT_NONE];
+    Scripts[SCRIPT_NONE]=target;
+    puts("case,seed,divisor,sound_disabled,seed_after,branch_taken,continues");
+    for(int index=0;index<count;index++) {
+        int seed=route_int(stream),divisor=route_int(stream),muted=route_int(stream);
+        if(seed<0 || (divisor!=2 && divisor!=4) || (muted!=0 && muted!=1)) {
+            Scripts[SCRIPT_NONE]=saved_none;fclose(stream);return 2;
+        }
+        LIVE_ENTITY live={0};
+        SCRIPT_INFO state={0};
+        MR_LONG args[]={ENTSCR_NEW_SCRIPT,ENTSCR_RANDOM,SCRIPT_NONE,divisor};
+        MRRnd_seed=(MR_ULONG)seed;
+        Game_over_no_new_sound=muted;
+        MR_LONG result=ENTSCR_SCRIPT_IF_command(&live,&state,args);
+        int branched=state.si_script==target;
+        if(!branched && state.si_script!=args+4) {
+            Scripts[SCRIPT_NONE]=saved_none;fclose(stream);return 3;
+        }
+        printf("%d,%d,%d,%d,%lu,%d,%d\n",index,seed,divisor,muted,
+            (unsigned long)MRRnd_seed,branched,result==ENTSCR_RETURN_CONTINUE);
+    }
+    Scripts[SCRIPT_NONE]=saved_none;
+    fclose(stream);
+    return 0;
+}
+
+/* Background behavior component, not a route oracle. Supplied programs are
+ * decoded numeric transports outside the repo. No collision or sound playback
+ * occurs: all frog slots are inactive and traffic hit/carry flags stay zero. */
+static int org1_background_run(const char *fixture) {
+    FILE *stream=fopen(fixture,"r");
+    if(!stream) {perror(fixture);return 2;}
+    int ticks=route_int(stream),seed=route_int(stream),reverse=route_int(stream);
+    int program_count=route_int(stream);
+    if(ticks<1 || ticks>100000 || program_count!=10 || (reverse!=0 && reverse!=1)) return 2;
+    MR_LONG *programs[256]={0};int lengths[256]={0};
+    for(int n=0;n<program_count;n++) {
+        int id=route_int(stream),length=route_int(stream);
+        if(id<1 || id>=256 || length<1 || length>256 || programs[id]) return 2;
+        programs[id]=calloc(length,sizeof(MR_LONG));lengths[id]=length;
+        for(int j=0;j<length;j++) programs[id][j]=route_int(stream);
+        Scripts[id]=programs[id];
+    }
+    int count=route_int(stream);
+    if(count!=24) return 2;
+    ENTITY traffic_entities[24]={0};LIVE_ENTITY traffic_lives[24]={0};
+    SCRIPT_INFO states[24]={0};MR_MAT poses[24]={0};int indices[24];
+    for(int n=0;n<count;n++) {
+        indices[n]=route_int(stream);int id=route_int(stream);
+        if(id<1 || id>=256 || !programs[id]) return 2;
+        traffic_lives[n].le_entity=&traffic_entities[n];
+        traffic_lives[n].le_lwtrans=&poses[n];
+        traffic_lives[n].le_script=&states[n];
+        MR_INIT_MAT(&poses[n]);StartScript(&states[n],id,&traffic_lives[n]);
+    }
+    memset(Frogs,0,sizeof(FROG)*4);
+    Checkpoints=route_int(stream);
+    for(int n=0;n<5;n++) {
+        Checkpoint_data[n].cp_flags=route_int(stream);
+        Checkpoint_data[n].cp_position.vx=route_int(stream);
+        Checkpoint_data[n].cp_position.vy=route_int(stream);
+        Checkpoint_data[n].cp_position.vz=route_int(stream);
+    }
+    struct { ENTITY entity; ORG_BONUS_FLY payload; } fly_data={0};
+    LIVE_ENTITY fly={0};ORG_RT_BONUS_FLY fly_state={0};
+    fly.le_entity=&fly_data.entity;fly.le_specific=&fly_state;
+    MR_INIT_MAT(&fly_data.payload.bf_matrix);
+    for(int j=0;j<3;j++) fly_data.payload.bf_matrix.t[j]=route_int(stream);
+    fclose(stream);Game_total_viewports=0;Game_over_no_new_sound=0;
+    ENTSTROrgCreateBonusFly(&fly);
+    MRRnd_seed=(MR_ULONG)seed;
+    puts("tick,index,root_program,cursor,loop_start,loop_end,timer,callback_condition,callback_type,callback_called,rng,fly_mode,fly_timer,fly_checkpoint,covered,entity_flags,x,y,z,sounds");
+    for(int tick=0;tick<ticks;tick++) {
+        for(int visit=0;visit<25;visit++) {
+            int n=reverse?24-visit:visit;sounds=0;
+            if(n==24) ENTSTROrgUpdateBonusFly(&fly);
+            else UpdateScriptInfo(&traffic_lives[n]);
+            int covered=0;
+            for(int j=0;j<5;j++) if(Checkpoint_data[j].cp_flags & GEN_CHECKPOINT_IS_COVERED) covered|=1<<j;
+            int root=-1,cursor=-1,start=-1,end=-1,timer=-1,condition=-1,type=-1,called=-1;
+            if(n!=24) {
+                SCRIPT_INFO *s=&states[n];root=s->si_type;timer=s->si_timer;
+                if(s->si_script<programs[root] || s->si_script>=programs[root]+lengths[root]) return 3;
+                cursor=(int)(s->si_script-programs[root]);
+                if(s->si_script_loop_start) start=(int)(s->si_script_loop_start-programs[root]);
+                if(s->si_script_loop_end) end=(int)(s->si_script_loop_end-programs[root]);
+                condition=s->si_script_callback_condition[0];type=s->si_script_callback_type[0];called=s->si_script_callback_called[0];
+            }
+            printf("%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%lu,%ld,%ld,%ld,%d,%u,%ld,%ld,%ld,%d\n",
+                tick,n==24?55:indices[n],root,cursor,start,end,timer,condition,type,called,
+                (unsigned long)MRRnd_seed,(long)fly_state.bf_mode,(long)fly_state.bf_timer,
+                (long)fly_state.bf_checkpoint_id,covered,fly.le_entity->en_flags,
+                (long)fly.le_lwtrans->t[0],(long)fly.le_lwtrans->t[1],(long)fly.le_lwtrans->t[2],sounds);
+        }
+    }
+    for(int id=0;id<256;id++) free(programs[id]);
+    return 0;
+}
+
+/* Execute real allocation/owner clearing without a voice/playback update. */
+static int moving_sound_state_run(const char *fixture) {
+    FILE *stream=fopen(fixture,"r");if(!stream) return 2;
+    int sound=route_int(stream),minimum=route_int(stream),maximum=route_int(stream);
+    fclose(stream);
+    void *raw=NULL,*pool=MRStub_PoolAlloc(1024*1024,&raw);
+    if(!pool) return 2;
+    MRInitMem(pool,1024*1024);MRStub_SetMemArena(pool,1024*1024);
+    extern MRSND_MOVING_SOUND MRSND_moving_sound_root;
+    extern MRSND_MOVING_SOUND *MRSND_moving_sound_root_ptr;
+    extern MR_ULONG MRSND_moving_sound_count;
+    extern MR_USHORT MRSND_viewports;
+    memset(&MRSND_moving_sound_root,0,sizeof(MRSND_moving_sound_root));
+    MRSND_moving_sound_root_ptr=&MRSND_moving_sound_root;MRSND_moving_sound_count=0;MRSND_viewports=0;
+    ENTITY entity={0};LIVE_ENTITY live={0};SCRIPT_INFO state={0};MR_MAT pose={0};
+    live.le_entity=&entity;live.le_lwtrans=&pose;
+    MR_LONG args[]={sound,ENTSCR_NO_REGISTERS,minimum,maximum};
+    memset(Frogs,0,sizeof(FROG)*4);Game_total_players=1;MRRnd_seed=12345;
+    puts("case,allocated,count,min_radius,max_radius,owner_matches,rng");
+    for(int c=0;c<5;c++) {
+        Game_over_no_new_sound=c==0;
+        if(c==3) KillMovingSound(&live);
+        else ENTSCR_PLAY_MOVING_SOUND_command(&live,&state,args);
+        MRSND_MOVING_SOUND *snd=live.le_moving_sound;
+        printf("%d,%d,%lu,%ld,%ld,%d,%lu\n",c,snd!=NULL,(unsigned long)MRSND_moving_sound_count,
+          snd?(long)snd->ms_min_radius:-1,snd?(long)snd->ms_max_radius:-1,
+          snd?snd->ms_owner==(MRSND_MOVING_SOUND**)&live.le_moving_sound:0,(unsigned long)MRRnd_seed);
+    }
+    if(live.le_moving_sound) KillMovingSound(&live);
+    return 0;
+}
 
 static int zone_run(const char *fixture) {
     FILE *stream=fopen(fixture,"r");
@@ -602,12 +749,15 @@ static void integrated_emit(int scenario,int tick,const char* phase) {
  putchar('\n');
 }
 int main(int argc, char **argv) {
- if(argc!=2 && argc!=4) {fprintf(stderr,"usage: platform_oracle <absolute-acos-table-path> [--retail-route|--zones <decoded-facts>]\n");return 2;}
+ if(argc!=2 && argc!=4) {fprintf(stderr,"usage: platform_oracle <absolute-acos-table-path> [--retail-route|--zones|--script-rng|--org1-background|--moving-sound-state <decoded-facts>]\n");return 2;}
  MRStub_LoadAcosTable(argv[1]);
  SetErrorMode(3);setvbuf(stdout,NULL,_IONBF,0);MRStub_GpuInit(NULL,0);
  if(argc==4) {
     if(!strcmp(argv[2],"--retail-route")) return route_run(argv[3]);
     if(!strcmp(argv[2],"--zones")) return zone_run(argv[3]);
+    if(!strcmp(argv[2],"--script-rng")) return script_rng_run(argv[3]);
+    if(!strcmp(argv[2],"--org1-background")) return org1_background_run(argv[3]);
+    if(!strcmp(argv[2],"--moving-sound-state")) return moving_sound_state_run(argv[3]);
     return 2;
  }
  puts("scenario,tick,phase,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,no_input_timer,death_count,camera_mode,camera_move_timer,camera_twist,camera_x,camera_y,camera_z,source_x,source_y,source_z,controller_up,shake_timer,animation_type,script_timer,animation_flags,env_flags,rng_seed,if_counter,program,offset,action,cel,total,update_count,game_mode,e0x,e0y,e0z,e0segment,e0total,e0flags,e1x,e1y,e1z,e1segment,e1total,e1flags,contact_order,hit_indices,pgen_requests,sound_requests,current_entity_index,forbidden_entity_index,entity_cell_x,entity_cell_z,entity_offset_x16,entity_offset_y16,entity_offset_z16,entity_angle,old_y,entity_transform00,entity_transform01,entity_transform02,entity_transform10,entity_transform11,entity_transform12,entity_transform20,entity_transform21,entity_transform22,entity_transform_t0,entity_transform_t1,entity_transform_t2,entity_carry_indices,camera_mod00,camera_mod01,camera_mod02,camera_mod10,camera_mod11,camera_mod12,camera_mod20,camera_mod21,camera_mod22,camera_mod_t0,camera_mod_t1,camera_mod_t2,camera_current_ytheta,camera_destination_ytheta,camera_delta_ytheta,camera_direction_n_x,camera_direction_n_y,camera_direction_n_z,camera_direction_e_x,camera_direction_e_y,camera_direction_e_z,camera_direction_s_x,camera_direction_s_y,camera_direction_s_z,camera_direction_w_x,camera_direction_w_y,camera_direction_w_z");

@@ -127,6 +127,26 @@ See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).
 
 ## Extending behavior
 
+The planned ORG1 script transaction keeps per-entity cursors, registers,
+callback slots, deviations, action/colour state and logical moving-sound
+ownership in `EntityRun`. `TerrainRun` owns the shared RNG, frog reactions,
+checkpoint covered bits required by the bonus fly, and aggregate commit.
+Setup supplies decoded programs/callback names, checkpoint positions and an
+explicit live-update order; snapshot order and contact-scan order stay separate.
+The [entity contract](gameplay/entities.md#org1-admission-blocker) owns the
+expanded behavior closure and source proof. This interface is planned, not
+implemented by the current script-free run.
+
+Clone the frog and shared state before entity updates. Visit each entity in
+live order, execute its script/custom update, apply callback frog effects and
+shared-state writes before advancing to the next entity, then clear transient
+flags at the source point. Ordered requests and logical resource ownership
+are candidate state, even with playback/rendering deferred. A failed later
+contact or guard must discard them alongside script timers, animation clocks,
+colours, checkpoint flags and RNG. Never approximate excluded entities with
+fixed RNG draws or dispatch script callbacks after the entity pass. Preserve
+the existing script-free API behavior while adding this explicit dependency.
+
 1. Find the source rule under the [source policy](sources.md).
 2. Name its inputs, owned state, units and observable outcomes.
 3. Add an asset-free example to the owning feature's unit tests.

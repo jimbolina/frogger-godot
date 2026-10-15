@@ -26,7 +26,7 @@ $metadata=[ordered]@{
     adapter_binary_sha256=(Get-FileHash "$out/platform_oracle.exe").Hash.ToLowerInvariant()
     reference_build=$build
     reference_inputs=@($objects | ForEach-Object { [ordered]@{path=$_;sha256=(Get-FileHash $_).Hash.ToLowerInvariant()} })
-    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA|froganim|MR_ANIM|ENTITY|PATH|ZONE|MISC)\.[cC]$'} | ForEach-Object {
+    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA|froganim|MR_ANIM|ENTITY|PATH|ZONE|MISC|scripter|scripts|ent_org|sound|MR_SOUND)\.[cC]$'} | ForEach-Object {
         [ordered]@{path=$_.file;sha256=(Get-FileHash $_.file).Hash.ToLowerInvariant();object=$_.output}
     })
     acos_table=[ordered]@{path=$acos;sha256=(Get-FileHash $acos).Hash.ToLowerInvariant();count=8193;encoding='signed 16-bit little-endian'}
@@ -40,6 +40,9 @@ $metadata=[ordered]@{
     entity_scope='All fixtures use a single SAFE live entity with a one- or two-cell form. One case advances its bounded moving path before frog control; the others use static transforms.'
     retail_route_scope='Decoded high-detail JUN1 bank-log-bank route: all 115 authored identities in source group order; six script-free generic logs use frozen live/path/FORM behavior; 109 geometry-certified neighbors are explicit null-live proof exclusions. The adapter checks independent path positions and the admitted rectangle each phase. It does not execute excluded scripts, audio/effect factories, or retail animation action lengths.'
     zone_scope='The --zones mode calls frozen CheckCoordsInZones for invented and all-cell retail queries. Input fixtures contain decimal decoded bounds and regions only.'
+    script_rng_scope='The --script-rng mode calls frozen ENTSCR_SCRIPT_IF_command for RANDOM with zero hit/carry flags and sound enabled/disabled. Only the branch instruction executes; an invented target is a pointer marker, not executed code. No entity lifecycle, script loop or complete ORG1 route is simulated.'
+    background_scope='The --org1-background mode executes UpdateScriptInfo for all 24 traffic programs and real ORG bonus-fly creation/update, using supplied decoded script streams and checkpoint positions. Inactive frogs exclude contact and distance sound. Forward and reverse inventory orders are explicit component cases, not a claim about retail visibility order. Sprite storage is supplied by the existing renderer wrapper; no route, geometry, audio playback or rendering is certified.'
+    moving_sound_scope='The --moving-sound-state mode executes the real script command, PlayMovingSound, MRSNDCreateMovingSound and KillMovingSound with a real memory arena. Sound suppression, allocation reuse, owner clearing and recreation are observed; no voice/playback update runs.'
     rng_scope='Effect factories may consume RNG in the full engine; their omitted work is not simulated or compensated.'
     seed=12345
 }

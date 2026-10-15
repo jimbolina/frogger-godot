@@ -323,3 +323,122 @@ selective reset, additional reactions, primitives and broader lifecycle work
 remain P8 work. Scoring, progression and win conditions are not part of this
 demonstration. Reproduction belongs to the existing
 [golden specification](../../../tests/golden/specs/entities.md).
+
+## ORG1 admission blocker
+
+The proposed bank/turtle/small-log round trip cannot admit only
+`SCRIPT_TURTLE`, `SCRIPT_TURTLE_NO_DIVE` and `SCRIPT_LOG_SPLASH` while excluding
+all other entities' non-contact effects. Independent v3.0e MAP 658 and EXE
+decoding identifies traffic at authored indices 24–47. Each has an
+unconditional `REGISTER_CALLBACK`, `SETLOOP`, `SCRIPT_IF RANDOM` prefix;
+the branch divisor is 2 for lorries and 4 for the other traffic. For example,
+index 24, UID 554, offset 2580 resolves to `ORG_TRUCK_RED` and
+`SCRIPT_ORG_TRUCK`.
+
+Frozen `scripter.c/ENTSCR_SCRIPT_IF_command` consumes `rand()` before deciding
+whether to branch. `API.SRC/MR_SYS.H:141–149` maps it to the shared unsigned32
+`MRrand` generator. The linked instruction check confirms that both branch
+outcomes advance the seed with zero HIT/CARRY flags and with sound enabled or
+disabled. `ENTITY.C/UpdateLiveEntities` runs scripts before frog control
+(`gamesys.C:1322–1333`); geometric separation does not remove this RNG effect.
+The actual branch instruction executes in the oracle, with an invented target
+used only as a pointer marker. It does not execute the target script or claim
+whole-engine parity. [Reproduction](../../../tests/golden/specs/entities.md#org1-admission-counterexample)
+records the independent input and linked-object checks.
+
+The expanded dependency closure retains these entities' live script state;
+it does not compensate with fixed RNG draws. The five traffic root programs
+and five named `_SFX` targets add only `SCRIPT_IF` to the proposed turtle/log
+opcode set, and `SCRIPT_CB_FROG_TRAFFIC_SPLAT` to its callback names. A taken
+`NEW_SCRIPT` branch changes the cursor and clears loop pointers but preserves
+`si_type`: the target's `RESTART` returns to the original traffic program,
+potentially drawing again in the same update. The linked frozen port's
+`ENDLOOP` yields; the vendored reconstruction's `CONTINUE` is not the linked
+behavior. Timer increments remain unsigned16, and registration stores
+`SCRIPT_CALLBACK_NOT_CALLED` (2), without inventing a later called write.
+
+Authored index 55 (`ORG_FLY`) also has a shared-state effect. Its custom
+creator initializes WAITING with timer 60. On expiration, its update draws
+`MRrand() % 5`, tests collected/covered checkpoint bits, and either restarts
+the wait or appears above the selected checkpoint for timer 120. It sets and
+later clears that checkpoint's covered bit. The post-decrement tests make
+these phases 61 and 121 updates. Support its detached timer, mode, selected
+checkpoint, visibility/collision flags and position, plus the five decoded
+checkpoint positions/covered flags. This does not require checkpoint
+collection or level-completion flow inside the guarded rectangle.
+
+Static-noise indices 56–59 and 62–63 use `SCRIPT_ORG_ROAD_NOISE` and
+`SCRIPT_ORG_WATER_NOISE`, already within the proposed opcode set. Their
+moving-sound commands need logical resource ownership. Real
+`MRSNDCreateMovingSound` allocates once; subsequent commands reuse the owner
+pointer, and killing the resource clears it. Sound suppression prevents the
+allocation. The allocation/kill component does not advance RNG. Audio voice
+updates and playback remain outside this proof, not assumed to have no RNG
+effects. The proposed request boundary must retain resource state even while
+playback is deferred.
+
+The complete retail inventory contains ten turtles (including the second
+lane), fifteen logs, twenty-four traffic entities, five checkpoints, one baby
+frog, one bonus fly, six static noises and two boundary markers. Collision
+exclusion and update exclusion are separate decisions: retain the scripts of
+geometrically excluded turtles/logs/traffic/noises. Under uninterrupted
+all-attached lifetime, the baby frog's first search finds its live parent,
+increments its search count to 1 and enters WAIT_TO_SEARCH_AGAIN; that state
+waits for the parent to lose its live instance. Its no-contact exclusion must
+pin this lifetime invariant, its authored origin and initial hidden mesh,
+rather than assume an ordinary hopping cycle.
+
+Update order is an explicit input. Frozen `CreateLiveEntity` inserts at the
+head; creating all authored identities in ascending order produces descending
+live updates. Use that construction for the expanded all-attached preset and
+record its order separately from source-ordered snapshots and contact scans.
+Forward/reverse component traces deliberately differ in RNG state; they do
+not establish original retail visibility order.
+
+The component oracle now executes complete traffic updates and real bonus-fly
+creation/update, with independent Python agreement through repeated successful
+and failed checkpoint selections. A separate real-allocation check covers
+noise creation/reuse/kill/recreation. These resolve the background behavior
+design, but do not admit an ORG1 rectangle, route, integrated trace or preset.
+Active-frog sound/callback requests, all-neighbor geometry and shared FORM
+writers, turtle behavior, retail animation and the connected route still need
+their admission gates. In particular, traffic uses cuboid primitives, and
+`CollideFrogWithCollPrims` tests the frog model's animated hilites across all
+parts. A cuboid's separation from the frog-origin rectangle is insufficient:
+bound the reachable retail hilites and their world transforms before certifying
+traffic exclusion.
+
+The independent `--admission` checker now inventories all authored FORM writers
+in source order, including empty FORM grids and NO_MODEL records. THICK_FORM
+takes precedence over UNIT_FORM; the last writer sets the shared maximum Y.
+Neighbor classification uses complete integer path poses, exact rational
+inversion of the source's rounded XZ transpose, and explicit lifetime and
+source-width conditions. Terrain layers and zone count accompany the candidate
+X `[-512,512)`, Z `[-224,480)`. These are conditional geometry facts, not an
+admitted route or runtime preset.
+
+In the supplied v3.0e data, possible FORM contacts are turtle indices 0–3 and
+small-log indices 12–16 and 23. The second turtle lane and larger logs are
+outside the candidate over their complete paths. All writers of each shared
+FORM agree on maximum Y. Spatial witnesses exist for the bank, first turtle
+lane and small-log lane, but their sampled poses are not a timed round trip.
+Contact exclusion retains the separate background update obligations above.
+
+The frog diagnostic scans every part/hilite and every discrete action cel in
+both high-poly animation banks and their alternate player meshes. It rejects
+interpolated/unsupported banks and imported transforms on collision-bearing
+parts. Stored part transforms use source integer composition and short stores;
+this new pose calculation has not yet had a linked-C pose comparison. Its
+general signed16-root envelope deliberately includes unreachable matrices.
+Even a cardinal authored pose demonstrates why a tighter route proof is needed:
+HOP action 16, cel 2, part 7 facing south has offset `(0,-15,-166)`.
+At candidate minimum Z `-224`, that probe projects to `-390`, while the nearest
+traffic cuboid's accepted Z interval reaches `-316`. This projection overlap
+is neither a reachable collision nor a rejection of every possible route.
+
+Admission still needs the reachable action/mode/Y and stored-transform timing
+contract, source-width checks for the expanded probes, full traffic exclusion,
+active-frog requests, turtle updates and a linked-C connected round trip.
+The combined checker returns blocked and never enables runtime behavior;
+changed unsupported inputs or evidence disagreement fail separately.
+The existing JUN1 demonstration and its declared oracle limits are unchanged.

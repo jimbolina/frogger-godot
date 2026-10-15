@@ -55,8 +55,18 @@ and back, with all-attached lifetime and transactional world/zone restrictions.
 Complete level collision still needs scripts, active zones, custom and
 immortal behaviors, selective game-flow reset and broader visibility workloads.
 FOR1's automatic retail lifecycle sequence remains unverified.
-ORG1 logs remain a later bounded script candidate; their nonzero scripts must
-be implemented before lifecycle admission. A complete playable level is still required.
+The ORG1 bank/turtle/log proposal now retains traffic scripts, the bonus-fly
+checkpoint cycle and static-noise resource ownership; the original three-program
+scope omitted shared RNG effects. Their independent component proof is available;
+[the entity contract](reference/gameplay/entities.md#org1-admission-blocker)
+owns the expanded closure and exact source semantics. The independent checker
+now inventories every shared FORM writer and neighbor and scans all high-poly
+frog animation hilites. Its conservative bounds overlap traffic; authored pose
+examples do not establish reachable collisions. Next, constrain reachable
+actions and transforms, prove active-frog requests and turtle behavior, then
+compare a connected round trip with frozen C before runtime integration.
+Neither a route nor inspection bounds have been admitted.
+A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;
 preserve source ordering and test unknown mappings. Per-build form callback
 address mappings still need investigation.

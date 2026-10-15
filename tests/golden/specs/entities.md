@@ -118,6 +118,85 @@ behavior exclusions are documented in the helper and entity contract. Its
 input dependency manifest contains hashes and decoded numeric facts, never
 retail bytes; changing determining inputs requires a fresh source proof.
 
+## ORG1 admission counterexample
+
+`tools/verify_org1_admission.py` independently decodes the supplied v3.0e
+ORG1 identities, form/entity/script mappings and unconditional traffic script
+prefixes using the existing Python EXE/MAP readers and FrogLord names. It is
+a counterexample verifier, not an admission manifest or new golden family.
+The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission-blocker)
+owns the failed obligation and remaining scope.
+
+Build the platform oracle outside both repositories, then run:
+
+```powershell
+& tools/build_platform_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/verify_org1_admission.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-evidence>
+# Expected exit 3: evidence agrees, admission is blocked. Exit 1 is a check failure.
+```
+
+Use the builder provenance's frozen `acos_le.dat` path. Its source, linked
+object/library and executable hashes identify the actual oracle build. The
+verifier writes decoded identities, input hashes, numeric instruction inputs
+and C output externally. Decoded script transports also stay outside both
+repositories; no retail bytes or extracted script streams are committed.
+Python independently calculates the unsigned32 LCG and branch result for
+divisors 2 and 4, each with taken/untaken branches and sound enabled/disabled.
+The oracle's `--script-rng` mode calls unchanged frozen
+`ENTSCR_SCRIPT_IF_command` with zero HIT/CARRY flags. Only this instruction
+executes; an invented target is a pointer marker, not simulated target behavior.
+No complete script loop, allocation effects, lifecycle, geometry exclusion or
+round trip is certified. A changed inventory or C/Python mismatch fails the
+check instead of producing admission evidence.
+
+Add `--background` to verify the expanded dependency closure (exit 0 on
+agreement). This independently decodes all authored identities, the five
+traffic root programs and five `_SFX` targets, and checkpoint/fly positions.
+External numeric transports drive unchanged frozen `UpdateScriptInfo` and
+`ENTSTROrgCreateBonusFly`/`ENTSTROrgUpdateBonusFly`. Forward/reverse update-order
+cases and an all-checkpoints-collected case compare every entity visit's
+script cursor, loop pointers, timer, callback metadata, shared RNG, fly
+mode/timer/selection, covered bits, flags and position. All frog slots are
+inactive: these are background component traces, not active-frog, contact,
+camera, retail-animation or integrated route goldens. The existing sprite
+wrapper supplies storage; no rendering or voice/playback update runs.
+
+The same mode decodes the six noise records' sound IDs and radius registers,
+then exercises real `PLAY_MOVING_SOUND`, allocation and owner clearing. It
+checks suppression, first allocation, reuse, kill and recreation against
+independent expected state, with a real reference memory arena. Provenance
+includes the actual linked sound and script sources/libraries. The resulting
+`org1-background-proof.json` explicitly keeps `route_admitted` false. No
+transport, per-run trace or new golden family belongs in the checkout.
+Its separate Python traffic-geometry facts enumerate complete integer line
+paths and decode cuboid frames/widths. They bound primitive world points;
+the background mode alone does not inspect animated frog hilites.
+
+Use `--admission` instead of `--background` to add the independent
+`org1_neighbor_admission.py` and `org1_hilite_admission.py` diagnostics. The
+external `org1-admission-proof.json` includes all authored identities, shared
+FORM writers, model hashes, complete path bounds, candidate terrain layers,
+per-action frog probe bounds and authored pose examples. It keeps
+`route_admitted` false and exits 3 for known remaining obligations. Unsupported
+inputs or failed comparisons exit 1. The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission-blocker)
+owns the interpretation and limitations; these reports are not new goldens.
+
+Run the asset-free verifier regressions separately from the required Godot gates:
+
+```powershell
+python -B -m unittest discover -s tools -p 'test_org1*.py'
+```
+
+Invented programs, buffers and captured oracle responses exercise unsigned
+arithmetic, source-order effects, phase lengths, changed dependency rejection,
+FORM bounds and all-part hilite scans. No retail data is required. The real
+background C/Python comparison remains a separate required feature check.
+
+For deliberate-break checking, corrupt the independent expected seed in
+memory, require C/Python disagreement, restore it and rerun. Also mutate a
+decoded branch target or callback operand in memory and require closure
+validation to reject it; never change the player's files or shipped configs.
+
 ## FORM grids and bounded contact
 
 `pc-retail-v3.0e/forms_retail.tsv` has one row per final-PC `FROG` map with

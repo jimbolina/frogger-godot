@@ -22,9 +22,15 @@ still deferred. Opt-in visibility lifecycle supports script-free generic
 entities on zero-zone maps within its polygon budget. Its demonstrated route
 is synthetic; FOR1 remains an unverified retail lifecycle candidate.
 
-Next are scripts, active zones, custom/immortal behavior, verified form
-callbacks, selective reset, additional reactions, primitives and broader
-lifecycle workloads. [PORTING](PORTING.md) owns remaining P8 work;
+ORG1's [admission checker](reference/gameplay/entities.md#org1-admission-blocker)
+compares traffic/fly updates and moving-sound ownership with frozen C, inventories
+shared FORM writers and neighbors, and bounds retail animated frog hilites.
+The candidate remains blocked: pose bounds overlap traffic in Z, without
+establishing a reachable collision. Next are reachable action/transform bounds,
+active-frog requests, turtle behavior and an integrated round-trip proof before
+runtime integration.
+
+[PORTING](PORTING.md) owns the other remaining P8 dependencies;
 [architecture](reference/architecture.md) owns transaction boundaries.
 Scoring, progression and win conditions remain unfinished.
 
