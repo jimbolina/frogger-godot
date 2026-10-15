@@ -49,3 +49,27 @@ func test_validation_duplicate_unknown_and_copy_detaches_nested_bounds() -> void
 	guard = _guard()
 	guard.world_bounds = Rect2i(0, 0, 0, 1)
 	assert_string_contains(guard.validate(), "positive")
+
+func test_animated_admission_rejects_unproved_roots_actions_and_powerups() -> void:
+	var guard := ExplorationGuard.new()
+	guard.world_bounds = Rect2i(-512, -128, 1024, 608)
+	guard.frog_roots.append(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096]))
+	guard.frog_actions = PackedInt32Array([16])
+	var state := RunSnapshot.new()
+	state.animation = FrogAnimationState.new()
+	state.animation.action = 16
+	assert_eq(guard.check_frog(state), "")
+	state.matrix12[0] = 4095
+	assert_string_contains(guard.check_frog(state), "root")
+	state.matrix12[0] = 4096
+	state.animation.action = 18
+	assert_string_contains(guard.check_frog(state), "action")
+	state.mode = 2
+	assert_eq(guard.check_frog(state), "", "Dying skips primitive collision before death animation")
+	state.powerup_flags = 1
+	assert_string_contains(guard.check_frog(state), "unpowered")
+	var detached: ExplorationGuard = guard.copy()
+	guard.frog_roots[0][0] = 2
+	guard.frog_actions[0] = 3
+	assert_eq(detached.frog_roots[0][0], 4096)
+	assert_eq(detached.frog_actions[0], 16)

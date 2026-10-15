@@ -67,6 +67,10 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 			return run
 		run._exploration_guard = level.exploration_guard.copy()
 	if level.entity_collision != null:
+		for contact: FormContactDefinition in level.entity_collision.contacts:
+			if not contact.admission_exclusion.is_empty() and (run._exploration_guard == null or run._exploration_guard.frog_roots.is_empty()):
+				run.error = "Contact exclusion requires animated inspection admission"
+				return run
 		if level.entity_collision.lifecycle != null and level.camera == null:
 			run.error = "Visibility lifecycle requires an integrated camera"
 			return run
@@ -177,6 +181,10 @@ func reset(initial: RunStart = null) -> String:
 		if not animation.error.is_empty():
 			return animation.error
 		state.animation = animation.state.copy()
+	if _exploration_guard != null:
+		var animated_issue: String = _exploration_guard.check_frog(state)
+		if not animated_issue.is_empty():
+			return animated_issue
 	state.rng_state = random.state
 	state.start_timer = initial.start_timer if initial != null else 0
 	if state.start_timer < 0:
@@ -272,6 +280,10 @@ func step(command: TickCommand) -> TickResult:
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
 	if continue_entities and _candidate_entities != null:
+		if _exploration_guard != null:
+			var animated_issue: String = _exploration_guard.check_frog(next)
+			if not animated_issue.is_empty():
+				return _failed_tick(result, animated_issue)
 		var entity_error: String = _contact_entities(next, result)
 		if not entity_error.is_empty():
 			return _failed_tick(result, entity_error)
@@ -324,6 +336,8 @@ func step(command: TickCommand) -> TickResult:
 	next.rng_draw_count = _candidate_random.draw_count
 	if _exploration_guard != null:
 		var guard_error: String = _exploration_guard.check_world(next.world_position)
+		if guard_error.is_empty():
+			guard_error = _exploration_guard.check_frog(next)
 		if not guard_error.is_empty():
 			return _failed_tick(result, guard_error)
 	result.rng_consumers.assign(_candidate_random.consumers)
@@ -651,6 +665,10 @@ func _move(state: RunSnapshot, events: Array[String]) -> void:
 		return
 	if state.mode == 2:
 		var continuing_jump: bool = state.remaining_ticks != 0
+		if state.current_entity_index >= 0 and state.flags & 4:
+			# FrogModeMovementDying retains the attachment and carries before
+			# applying death velocity, without reasserting live CARRY flags.
+			state.position_16 = PlatformMath.world(_platform_pose(state).matrix12, state.entity_offset_16) * 65536
 		state.death_count -= 1
 		if state.death_count == 0:
 			state.flags &= ~2048
@@ -885,6 +903,8 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 	for entity_id: int in ordered:
 		if _exploration_guard != null:
 			var guard_error: String = _exploration_guard.check_world(state.world_position)
+			if guard_error.is_empty():
+				guard_error = _exploration_guard.check_frog(state)
 			if not guard_error.is_empty():
 				return guard_error
 		if entity_id == state.current_entity_index or entity_id == forbidden:

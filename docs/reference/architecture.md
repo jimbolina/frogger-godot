@@ -64,8 +64,9 @@ source ordering, attachment retention and reset semantics. Presentation consumes
 generations to allocate/release instances; it cannot select the authoritative
 live set. Existing all-attached inspection remains the default.
 
-Opt-in platform execution requires an integrated camera. The order is entity
-paths/transforms, frog control, movement, modifiers, terrain collision,
+Opt-in platform execution requires an integrated camera. The order is paths,
+source-ordered entity transforms and admitted custom/script updates, frog
+control, movement, modifiers, terrain collision,
 sequential FORM reactions, camera, animation scripts, pose, then aggregate commit.
 The scan caches its neighborhood and forbidden authored identity; each candidate
 uses the current attachment and position, so a SAFE transfer affects later
@@ -84,7 +85,11 @@ before aggregate commit. A rejection discards the frog, entity/path, camera,
 animation, RNG and every candidate outcome. It neither clamps nor publishes a
 partial contact. `ZoneSetup` converts legacy records; pure `ZoneQueries` owns
 matching. No mutable active-zone state exists. The JUN1 setup adapter verifies
-the independent admission manifest before enabling this all-attached preset.
+the independent admission manifest before enabling its all-attached preset.
+ORG1 additionally pins supplied behavior names and the animated frog collision
+point closure; its guard validates admitted actions, roots and unpowered state
+before contacts and commit. Excluded contacts require that guard, while their
+admitted logical updates remain live. Setup rejects changed proof dependencies.
 The viewer pauses on rejection. R reconstructs the whole inspection, including
 input buffers and presentation clocks, while retaining the selected input mode.
 

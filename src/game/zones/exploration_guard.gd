@@ -4,9 +4,17 @@ extends RefCounted
 
 var world_bounds: Rect2i = Rect2i()
 var zones: Array[ZoneDefinition] = []
+## Optional complete stored-root and live-action closure for primitive exclusion.
+var frog_roots: Array[PackedInt32Array] = []
+var frog_actions: PackedInt32Array = PackedInt32Array()
 
 ## Validates a half-open world rectangle and every supported zone definition.
 func validate() -> String:
+	if frog_roots.is_empty() != frog_actions.is_empty():
+		return "Animated admission requires both root and action closure"
+	for root: PackedInt32Array in frog_roots:
+		if root.size() != 9:
+			return "Animated admission root must contain nine values"
 	if world_bounds.size.x <= 0 or world_bounds.size.y <= 0:
 		return "Exploration boundary requires positive width and depth"
 	for coordinate: int in [int(world_bounds.position.x) + world_bounds.size.x, int(world_bounds.position.y) + world_bounds.size.y]:
@@ -28,9 +36,26 @@ func validate() -> String:
 func copy() -> ExplorationGuard:
 	var result := ExplorationGuard.new()
 	result.world_bounds = world_bounds
+	for root: PackedInt32Array in frog_roots:
+		result.frog_roots.append(root.duplicate())
+	result.frog_actions = frog_actions.duplicate()
 	for zone: ZoneDefinition in zones:
 		result.zones.append(zone.copy())
 	return result
+
+## Rejects an unproved animated collision point before any neighbor scan.
+func check_frog(state: RunSnapshot) -> String:
+	if frog_roots.is_empty():
+		return ""
+	if state.powerup_flags != 0:
+		return "Animated admission requires an unpowered frog; tick rolled back"
+	if state.mode == 2 or state.flags & 8:
+		return ""
+	if not frog_roots.has(state.matrix12.slice(0, 9)):
+		return "Animated admission rejected an unproved frog root; tick rolled back"
+	if state.animation == null or (not frog_actions.has(state.animation.action) and not (state.animation.action == 0 and state.animation.cel == 0)):
+		return "Animated admission rejected an unproved frog action; tick rolled back"
+	return check_world(Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11]))
 
 ## Checks actual source world X/Z using inclusive starts and exclusive ends.
 func check_world(world: Vector3i) -> String:

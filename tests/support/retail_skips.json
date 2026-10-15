@@ -61,5 +61,8 @@
   "res://tests/golden/test_retail_terrain_presentation.gd::test_selected_level_rebind_clears_old_scene_and_preserves_owned_source": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_platforms.gd::test_jun1_log_setup_and_first_safe_contact_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_exploration.gd::test_guarded_jun1_bank_log_bank_phases_match_frozen_c": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_exploration.gd::test_all_jun1_zone_records_and_source_queries_match": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_exploration.gd::test_all_jun1_zone_records_and_source_queries_match": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_round_trip_and_complete_dive_cycles_match_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_attached_diver_drowns_before_control_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_admission_dependencies_and_complete_reset": "SKIP: FROGGER_DATA_DIR is not set"
 }

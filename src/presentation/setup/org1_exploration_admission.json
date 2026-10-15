@@ -168,6 +168,546 @@
     -1,
     -1
   ],
+  "name_bindings": [
+    {
+      "index": 0,
+      "form": "ORG_TURTLE3",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 1,
+      "form": "ORG_TURTLE3",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 2,
+      "form": "ORG_TURTLE3",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 3,
+      "form": "ORG_TURTLE3",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 4,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 5,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 6,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 7,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 8,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 9,
+      "form": "ORG_LOG_LARGE",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 10,
+      "form": "ORG_LOG_LARGE",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 11,
+      "form": "ORG_LOG_LARGE",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 12,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 13,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 14,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 15,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 16,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 17,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 18,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 19,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 20,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 21,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 22,
+      "form": "ORG_LOG_MEDIUM",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 23,
+      "form": "ORG_LOG_SMALL",
+      "entity": "MOVING",
+      "script": "SCRIPT_LOG_SPLASH"
+    },
+    {
+      "index": 24,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 25,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 26,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 27,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 28,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 29,
+      "form": "ORG_TRUCK_RED",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_TRUCK"
+    },
+    {
+      "index": 30,
+      "form": "ORG_LORRY",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_LORRY"
+    },
+    {
+      "index": 31,
+      "form": "ORG_LORRY",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_LORRY"
+    },
+    {
+      "index": 32,
+      "form": "ORG_LORRY",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_LORRY"
+    },
+    {
+      "index": 33,
+      "form": "ORG_LORRY",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_LORRY"
+    },
+    {
+      "index": 34,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 35,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 36,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 37,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 38,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 39,
+      "form": "ORG_CAR_PURPLE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_PURPLE"
+    },
+    {
+      "index": 40,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 41,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 42,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 43,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 44,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 45,
+      "form": "ORG_CAR_BLUE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_BLUE"
+    },
+    {
+      "index": 46,
+      "form": "ORG_CAR_BLUE",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_CAR_BLUE"
+    },
+    {
+      "index": 47,
+      "form": "ORG_BULL_DOZER",
+      "entity": "MOVING",
+      "script": "SCRIPT_ORG_BULL_DOZER"
+    },
+    {
+      "index": 48,
+      "form": "ORG_TURTLE2",
+      "entity": "SUB_TURTLE",
+      "script": "SCRIPT_TURTLE"
+    },
+    {
+      "index": 49,
+      "form": "GEN_CHECKPOINT_2",
+      "entity": "CHECKPOINT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 50,
+      "form": "GEN_CHECKPOINT_3",
+      "entity": "CHECKPOINT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 51,
+      "form": "GEN_CHECKPOINT_4",
+      "entity": "CHECKPOINT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 52,
+      "form": "GEN_CHECKPOINT_5",
+      "entity": "CHECKPOINT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 53,
+      "form": "ORG_BABYFROG",
+      "entity": "ORG_BABY_FROG",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 54,
+      "form": "GEN_CHECKPOINT_1",
+      "entity": "CHECKPOINT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 55,
+      "form": "ORG_FLY",
+      "entity": "ORG_FLY",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 56,
+      "form": "ORG_ROADNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_ROAD_NOISE"
+    },
+    {
+      "index": 57,
+      "form": "ORG_ROADNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_ROAD_NOISE"
+    },
+    {
+      "index": 58,
+      "form": "ORG_RIVERNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_WATER_NOISE"
+    },
+    {
+      "index": 59,
+      "form": "ORG_RIVERNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_WATER_NOISE"
+    },
+    {
+      "index": 60,
+      "form": "GEN_BOTTOMRIGHT",
+      "entity": "GEN_BOTTOM_RIGHT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 61,
+      "form": "GEN_TOPLEFT",
+      "entity": "GEN_TOP_LEFT",
+      "script": "SCRIPT_NONE"
+    },
+    {
+      "index": 62,
+      "form": "ORG_RIVERNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_WATER_NOISE"
+    },
+    {
+      "index": 63,
+      "form": "ORG_ROADNOISE",
+      "entity": "STATIC_NOISE",
+      "script": "SCRIPT_ORG_ROAD_NOISE"
+    }
+  ],
+  "script_names": [
+    "SCRIPT_NONE",
+    "SCRIPT_ORG_CROCODILE",
+    "SCRIPT_ORG_CAR_BLUE",
+    "SCRIPT_ORG_LORRY",
+    "SCRIPT_ORG_SNAKE",
+    "SCRIPT_SUB_SWAN",
+    "SCRIPT_SUB_SWAN_SFX",
+    "SCRIPT_ORG_TRUCK",
+    "SCRIPT_SKY_HELIUM_BALLOON_WAITING",
+    "SCRIPT_SKY_HELIUM_BALLOON_RISING",
+    "SCRIPT_SKY_HELIUM_BALLOON_SINKING",
+    "SCRIPT_SKY_HELIUM_BALLOON_POPPING",
+    "SCRIPT_SWP_NUCLEAR_BARLLEL_WAITING",
+    "SCRIPT_SWP_NUCLEAR_BARLLEL_EJECTING",
+    "SCRIPT_LOG_SPLASH",
+    "SCRIPT_SWP_WASTE_BARLLEL_WAITING",
+    "SCRIPT_SWP_WASTE_BARLLEL_SPINNING",
+    "SCRIPT_SWP_BOBBING_WASTE_BARREL",
+    "SCRIPT_SKY_RUBBER_BALLOON_WAITING",
+    "SCRIPT_SKY_RUBBER_BALLOON_RISING",
+    "SCRIPT_SKY_RUBBER_BALLOON_SINKING",
+    "SCRIPT_SKY_RUBBER_BALLOON_POPPING",
+    "SCRIPT_SUB_LILLY_PAD",
+    "SCRIPT_SUB_LAWN_MOWER",
+    "SCRIPT_SUB_LAWN_MOWER_KILL_FROGGER",
+    "SCRIPT_CAV_ROCKFALLFLOOR_WAITING",
+    "SCRIPT_CAV_ROCKFALLFLOOR_FALLING",
+    "SCRIPT_SKY_HELICOPTER",
+    "SCRIPT_ORG_CAR_PURPLE",
+    "SCRIPT_ORG_BULL_DOZER",
+    "SCRIPT_SKY_BIRD",
+    "SCRIPT_SKY_BIRD_HIT_FROG",
+    "SCRIPT_ORG_LORRY_SFX",
+    "SCRIPT_ORG_CAR_BLUE_SFX",
+    "SCRIPT_ORG_CAR_PURPLE_SFX",
+    "SCRIPT_ORG_TRUCK_SFX",
+    "SCRIPT_ORG_BULL_DOZER_SFX",
+    "SCRIPT_ORG_ROAD_NOISE",
+    "SCRIPT_ORG_WATER_NOISE",
+    "SCRIPT_SWP_OIL_DRUM",
+    "SCRIPT_SWP_PALLET",
+    "SCRIPT_SWP_SUNKCAR",
+    "SCRIPT_SWP_STAT_PIPE",
+    "SCRIPT_SWP_STAT_PIPE_BIG_STR",
+    "SCRIPT_SWP_STAT_PIPE_HOLE",
+    "SCRIPT_DES_BISON",
+    "SCRIPT_DES_BISON_SFX",
+    "SCRIPT_DES_LIZARD",
+    "SCRIPT_CAV_BAT",
+    "SCRIPT_CAV_BAT_SFX",
+    "SCRIPT_CAV_VAMP_BAT",
+    "SCRIPT_CAV_VAMP_BAT_SFX",
+    "SCRIPT_TURTLE",
+    "SCRIPT_TURTLE_NO_DIVE",
+    "SCRIPT_SKY_BIRD1_1",
+    "SCRIPT_SKY_BIRD1_CALL_SFX",
+    "SCRIPT_SKY_BIRD2_1",
+    "SCRIPT_SKY_BIRD2_CALL_SFX",
+    "SCRIPT_SKY_BIRD3_1",
+    "SCRIPT_SKY_BIRD3_CALL_SFX",
+    "SCRIPT_SKY_BIRD4_1",
+    "SCRIPT_SKY_BIRD4_CALL_SFX",
+    "SCRIPT_SKY_JET1",
+    "SCRIPT_SKY_JET3",
+    "SCRIPT_SKY_BIPLANE",
+    "SCRIPT_VOL_MECHANISM",
+    "SCRIPT_SUB_CAR_BLUE",
+    "SCRIPT_SUB_CAR_BLUE_SFX",
+    "SCRIPT_SUB_LORRY",
+    "SCRIPT_SUB_LORRY_SFX",
+    "SCRIPT_SUB_TRUCK",
+    "SCRIPT_SUB_TRUCK_SFX",
+    "SCRIPT_SWP_WATER_NOISE",
+    "SCRIPT_SUB_SNAKE",
+    "SCRIPT_SUB_ROAD_NOISE",
+    "SCRIPT_SUB_WATER_NOISE",
+    "SCRIPT_JUN_FLOATING_TREE",
+    "SCRIPT_JUN_FLOATING_TREE_MOVING",
+    "SCRIPT_SUB_SMALL_BIRD",
+    "SCRIPT_SWP_RAT",
+    "SCRIPT_SWP_RAT_SFX",
+    "SCRIPT_JUN_HIPPO",
+    "SCRIPT_JUN_HIPPO_NO_DIVE",
+    "SCRIPT_SUB_SNAKE_TURN",
+    "SCRIPT_SUB_PELICAN",
+    "SCRIPT_SUB_PELICAN_CALL_SFX",
+    "SCRIPT_FOR_SQUIRREL",
+    "SCRIPT_FOR_SQUIRREL_SFX",
+    "SCRIPT_FOR_OWL",
+    "SCRIPT_FOR_OWL_SFX",
+    "SCRIPT_FOR_RIVER_NOISE",
+    "SCRIPT_VOL_COG_NOISE",
+    "SCRIPT_VOL_LAVA_NOISE",
+    "SCRIPT_VOL_SPINNER",
+    "SCRIPT_JUN_WATER_NOISE",
+    "SCRIPT_JUN_MONKEY",
+    "SCRIPT_JUN_MONKEY_SFX",
+    "SCRIPT_JUN_MONKEY_SCREAM_SFX",
+    "SCRIPT_JUN_CROCODILE",
+    "SCRIPT_JUN_HIPPO_SFX",
+    "SCRIPT_JUN_SCORPION",
+    "SCRIPT_JUN_RHINO",
+    "SCRIPT_JUN_RHINO_SFX",
+    "SCRIPT_JUN_PIRANAHA",
+    "SCRIPT_SWP_MUTANT_FISH",
+    "SCRIPT_CAV_SPIDER",
+    "SCRIPT_VOL_FURNACE_PLATFORM",
+    "SCRIPT_SWP_RACCOON",
+    "SCRIPT_SWP_SNAIL",
+    "SCRIPT_DES_BEETLE",
+    "SCRIPT_DES_SALAMANDER",
+    "SCRIPT_SWP_PELICAN",
+    "SCRIPT_SWP_PELICAN_CALL_SFX",
+    "SCRIPT_FOR_SWAN",
+    "SCRIPT_FOR_SWAN_SFX",
+    "SCRIPT_VOL_LAVA_SPRAY",
+    "SCRIPT_SKY_MAGICAL_POPPING_BALLOON",
+    "SCRIPT_SKY_MAGICAL_POPPING_BALLOON_POP",
+    "SCRIPT_DES_SNAKE",
+    "SCRIPT_ORG_TURTLE_SWIM",
+    "SCRIPT_DES_FALLING_ROCK",
+    "SCRIPT_SWP_WEIR_NOISE",
+    "SCRIPT_SWP_RECYCLE_BIN_NOISE",
+    "SCRIPT_SKY_CLOUDPLATFORM",
+    "SCRIPT_SWP_WEIR_ROTATE"
+  ],
+  "callback_names": [
+    "SCRIPT_CB_FROG_TRAFFIC_SPLAT",
+    "SCRIPT_CB_LOG_SPLASH",
+    "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "SCRIPT_CB_SWP_OIL_DRUM",
+    "SCRIPT_CB_SWP_PALLET",
+    "SCRIPT_CB_SWP_SUNKCAR",
+    "SCRIPT_CB_SWP_STAT_PIPE",
+    "SCRIPT_CB_SWP_STAT_PIPE_BIG_STR",
+    "SCRIPT_CB_HIT_TURTLE",
+    "SCRIPT_CB_SKY_BIRD1_CALL",
+    "SCRIPT_CB_SKY_BIRD2_CALL",
+    "SCRIPT_CB_SKY_BIRD3_CALL",
+    "SCRIPT_CB_SKY_BIRD4_CALL",
+    "SCRIPT_CB_SKY_FROG_HELICOPTER",
+    "SCRIPT_CB_SKY_HELIUM_BALLOON",
+    "SCRIPT_CB_SUB_LILLY_PAD",
+    "SCRIPT_CB_JUN_HIPPO_HIT",
+    "SCRIPT_CB_JUN_PIRANAHA",
+    "SCRIPT_CB_SWP_MUTANT_FISH",
+    "SCRIPT_CB_SWP_RACCOON",
+    "SCRIPT_CB_SWP_PELICAN_CALL",
+    "SCRIPT_CB_VOL_MECHANISM",
+    "SCRIPT_CB_SKY_HOMING_BIRD",
+    "SCRIPT_CB_SKY_BALLOON",
+    "SCRIPT_CB_JUN_HIPPO_DIVE"
+  ],
   "theme_index": 5,
   "theme_death_height": 256,
   "general_high_wad": 205,
@@ -609,6 +1149,332 @@
     23
   ],
   "authored_count": 64,
+  "contact_exclusions": [
+    {
+      "index": 4,
+      "unique_id": 929,
+      "offset": 1800,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 5,
+      "unique_id": 930,
+      "offset": 1848,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 6,
+      "unique_id": 931,
+      "offset": 1896,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 7,
+      "unique_id": 932,
+      "offset": 1944,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 8,
+      "unique_id": 933,
+      "offset": 1992,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 9,
+      "unique_id": 560,
+      "offset": 2040,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 10,
+      "unique_id": 99,
+      "offset": 2076,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 11,
+      "unique_id": 100,
+      "offset": 2112,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 17,
+      "unique_id": 23,
+      "offset": 2328,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 18,
+      "unique_id": 216,
+      "offset": 2364,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 19,
+      "unique_id": 215,
+      "offset": 2400,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 20,
+      "unique_id": 101,
+      "offset": 2436,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 21,
+      "unique_id": 22,
+      "offset": 2472,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 22,
+      "unique_id": 214,
+      "offset": 2508,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 24,
+      "unique_id": 554,
+      "offset": 2580,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 25,
+      "unique_id": 553,
+      "offset": 2616,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 26,
+      "unique_id": 552,
+      "offset": 2652,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 27,
+      "unique_id": 551,
+      "offset": 2688,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 28,
+      "unique_id": 550,
+      "offset": 2724,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 29,
+      "unique_id": 549,
+      "offset": 2760,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 30,
+      "unique_id": 213,
+      "offset": 2796,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 31,
+      "unique_id": 212,
+      "offset": 2832,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 32,
+      "unique_id": 211,
+      "offset": 2868,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 33,
+      "unique_id": 210,
+      "offset": 2904,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 34,
+      "unique_id": 206,
+      "offset": 2940,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 35,
+      "unique_id": 204,
+      "offset": 2976,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 36,
+      "unique_id": 203,
+      "offset": 3012,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 37,
+      "unique_id": 202,
+      "offset": 3048,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 38,
+      "unique_id": 201,
+      "offset": 3084,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 39,
+      "unique_id": 200,
+      "offset": 3120,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 40,
+      "unique_id": 199,
+      "offset": 3156,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 41,
+      "unique_id": 198,
+      "offset": 3192,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 42,
+      "unique_id": 197,
+      "offset": 3228,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 43,
+      "unique_id": 196,
+      "offset": 3264,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 44,
+      "unique_id": 195,
+      "offset": 3300,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 45,
+      "unique_id": 127,
+      "offset": 3336,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 46,
+      "unique_id": 125,
+      "offset": 3372,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 47,
+      "unique_id": 967,
+      "offset": 3408,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 48,
+      "unique_id": 994,
+      "offset": 3444,
+      "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 49,
+      "unique_id": 969,
+      "offset": 3492,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 50,
+      "unique_id": 970,
+      "offset": 3552,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 51,
+      "unique_id": 971,
+      "offset": 3612,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 52,
+      "unique_id": 972,
+      "offset": 3672,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 53,
+      "unique_id": 991,
+      "offset": 3732,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 54,
+      "unique_id": 968,
+      "offset": 3792,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 55,
+      "unique_id": 974,
+      "offset": 3852,
+      "reason": "excluded_by_all_cycle_origin_sphere"
+    },
+    {
+      "index": 56,
+      "unique_id": 982,
+      "offset": 3908,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    },
+    {
+      "index": 57,
+      "unique_id": 983,
+      "offset": 3972,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    },
+    {
+      "index": 58,
+      "unique_id": 984,
+      "offset": 4036,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    },
+    {
+      "index": 59,
+      "unique_id": 985,
+      "offset": 4100,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    },
+    {
+      "index": 60,
+      "unique_id": 993,
+      "offset": 4164,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 61,
+      "unique_id": 992,
+      "offset": 4220,
+      "reason": "excluded_by_origin_sphere"
+    },
+    {
+      "index": 62,
+      "unique_id": 996,
+      "offset": 4276,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    },
+    {
+      "index": 63,
+      "unique_id": 997,
+      "offset": 4340,
+      "reason": "excluded_NO_MODEL_without_collision_callback"
+    }
+  ],
   "lifetime": "all-attached",
   "spawn_cell": [
     10,

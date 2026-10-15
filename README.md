@@ -55,7 +55,7 @@ For landing, centring and riding a moving log, use the same command with
 `--level JUN1 --entity-reactions platforms`. This explicitly starts on water
 cell `(18,5)` and hops NORTH; it is an inspection start, not a verified route
 from safe terrain. Platform mode also supports local hops, departure and camera
-attachment. Scripts, active zones and callback mappings remain deferred; see the
+attachment. This inspection omits scripts, active zones and form callback dispatch; see the
 [entity contract](docs/reference/gameplay/entities.md).
 
 For guarded exploration from a safe bank, launch:
@@ -78,10 +78,23 @@ script and model inputs; it rejects changed proof dependencies and visibility
 mode. Ordinary inspection remains available for edited data. See the
 [bounded route contract](docs/reference/gameplay/entities.md#guarded-jun1-bank-route).
 
-The [ORG1 source proof](docs/reference/gameplay/entities.md#org1-admission)
-now establishes a bank/turtle/log round trip and a separate diving-turtle
-death. Script components are verified; its guarded runtime preset is still
-being implemented.
+The guarded ORG1 inspection connects safe bank, turtle, small log, turtle and
+bank, including the diving turtle's behavior:
+
+```text
+godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1 --exploration=org1-turtle-log-bank
+```
+
+It opens LIVE and paused. Press Space to run or Period to step; Up hops toward
+the turtles/logs and Down returns toward the bank. Time hops after centring.
+The exact replay uses `tests/golden/fixtures/org1_turtle_log_bank.json`.
+R restores the whole inspection while retaining LIVE/REPLAY mode. Boundary or
+unsupported-pose rejection pauses and rolls back the tick. The preset requires
+audited high-detail v3.0e inputs and all-attached lifetime; visibility mode is
+rejected. Scripts, diving animation/colour and logical neighbor effects run;
+sound and splash sprites remain ordered requests. See the
+[ORG1 contract](docs/reference/gameplay/entities.md#org1-admission) and
+[verification instructions](docs/reference/testing/terrain-inspection.md#guarded-org1-turtlelog-exploration).
 
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file
@@ -174,7 +187,8 @@ Dragging switches to a custom inspection pose; R restores the preset.
 Maps include stored terrain colours, cave illumination, animated textures,
 water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
 and can inspect one entity's FORM contact against a fixed point. The separate
-terrain inspector supports bounded POP and SAFE-platform interactions; scripts, HUD and
+terrain inspector supports bounded POP and SAFE-platform interactions, plus the
+admitted ORG1 script closure; HUD and
 complete level play remain deferred.
 The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.

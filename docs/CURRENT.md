@@ -22,14 +22,14 @@ still deferred. Opt-in visibility lifecycle supports script-free generic
 entities on zero-zone maps within its polygon budget. Its demonstrated route
 is synthetic; FOR1 remains an unverified retail lifecycle candidate.
 
-ORG1's [source proof](reference/gameplay/entities.md#org1-admission)
-bounds animated collision points and connects bank, turtle, small log, turtle
-and bank inside X `[-512,512)`, Z `[-128,480)`. Independent Python and frozen C
-agree on the normal round trip and a separate attached-diver death, retaining
-all neighbors' logical updates and retail animation lengths. Bounded script
-components pass independent component goldens. Atomic integration includes
-ordered callbacks, shared neighbor state and rollback. Guarded preset acceptance
-is next.
+The guarded [ORG1 preset](reference/gameplay/entities.md#org1-admission)
+connects bank, turtle, small log, turtle and bank inside X `[-512,512)`,
+Z `[-128,480)`. Its animated collision-point proof pins supplied inputs and
+individual neighbor exclusions. All authored logical updates run, including
+diving, traffic scripts and shared neighbor state. Independent Python/frozen-C
+goldens cover complete dive/rise cycles and attached-diver drowning. Callbacks,
+RNG, animation, colour and requests commit atomically. Audio playback and splash
+rendering remain deferred. See [inspection](reference/testing/terrain-inspection.md).
 
 [PORTING](PORTING.md) owns the other remaining P8 dependencies;
 [architecture](reference/architecture.md) owns transaction boundaries.

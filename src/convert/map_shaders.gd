@@ -124,12 +124,7 @@ static func shader(textured: bool, blend: ModelShaders.Blend, linear_filter: boo
 	var key: String = "%s/%d/%s/%s" % [textured, blend, linear_filter, far_layer]
 	if not _shaders.has(key):
 		var code: String = ModelShaders.shader_code(textured, blend, linear_filter, false)
-		code = code.replace("""uniform vec2 projection_scale = vec2(1.0);
-void vertex() {
-	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
-	POSITION.xy *= projection_scale;
-}
-""", "")
+		code = code.replace(ModelShaders.VERTEX_CODE, "")
 		code = code.replace("void fragment() {", _VERTEX + "\nvoid fragment() {")
 		code = code.replace("void fragment() {", "void fragment() {\n\tif (reference_visible < 0.5) { discard; }")
 		code = code.replace("UV * uv_scale + uv_offset", "affine_uv / affine_weight")

@@ -20,7 +20,7 @@ def main():
     parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
                         help='Select entity lifetime for an integrated FORM scenario')
-    parser.add_argument('--exploration', choices=('jun1-log-bank',), help='Select an audited guarded retail preset')
+    parser.add_argument('--exploration', choices=('jun1-log-bank','org1-turtle-log-bank'), help='Select an audited guarded retail preset')
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()
@@ -52,7 +52,7 @@ def main():
         command += arguments
         with (evidence / (name + '-process.log')).open('w', encoding='utf-8') as stream:
             result = subprocess.run(command, cwd=repo, env=env, startupinfo=startup,
-                                    stdout=stream, stderr=subprocess.STDOUT, timeout=120)
+                                    stdout=stream, stderr=subprocess.STDOUT, timeout=1200)
         text = log.read_text(encoding='utf-8') if log.exists() else ''
         if result.returncode or not text or any(marker in text for marker in (
                 'SCRIPT ERROR', 'Parse Error', 'Failed to load script', 'CHECK FAILED')):

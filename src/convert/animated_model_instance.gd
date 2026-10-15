@@ -20,6 +20,10 @@ var smoothing_enabled: bool = false:
 var _previous: ModelPose
 var _current: ModelPose
 var _revision: int = -1
+var _lighting: MapLighting = null
+var _materials: Dictionary[ShaderMaterial, ShaderMaterial] = {}
+var _source_ambient: Vector3 = Vector3.ZERO
+var _source_colours: Array[Vector3] = []
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -29,6 +33,7 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		remove_child(node)
 		node.queue_free()
 	part_nodes.clear()
+	_materials.clear()
 	model_mesh = mesh
 	player = animation_player
 	for index: int in mesh.part_meshes.size():
@@ -40,6 +45,35 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		add_child(node)
 		part_nodes.append(node)
 	apply_exact()
+
+## Applies source colour-matrix scaling and custom ambient to instance-local materials.
+func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector3i, scaled: bool, custom: bool) -> void:
+	_lighting = lighting
+	var multiplier: Vector3 = Vector3(scale) / 128.0 if scaled else Vector3.ONE
+	var base: Vector3 = Vector3(ambient) if custom else lighting.ambient / 16.0
+	_source_ambient = (base * multiplier).floor() * 16.0
+	_source_colours.clear()
+	for colour: Vector3 in lighting.colours:
+		_source_colours.append((colour * multiplier).floor())
+	for original: ShaderMaterial in _materials:
+		_update_lighting(_materials[original], original)
+	apply_exact()
+
+func _material(original: ShaderMaterial) -> ShaderMaterial:
+	if _lighting == null or original == null:
+		return original
+	if not _materials.has(original):
+		_materials[original] = original.duplicate() as ShaderMaterial
+	_update_lighting(_materials[original], original)
+	return _materials[original]
+
+func _update_lighting(material: ShaderMaterial, original: ShaderMaterial) -> void:
+	material.set_shader_parameter("projection_scale", original.get_shader_parameter("projection_scale"))
+	material.set_shader_parameter("source_lighting", true)
+	material.set_shader_parameter("source_ambient", _source_ambient)
+	for index: int in 3:
+		material.set_shader_parameter("source_direction%d" % index, _lighting.directions[index] if index < _lighting.directions.size() else Vector3.ZERO)
+		material.set_shader_parameter("source_colour%d" % index, _source_colours[index] if index < _source_colours.size() else Vector3.ZERO)
 
 
 ## Advances one integer game tick and retains the previous sample for drawing.
@@ -90,6 +124,9 @@ func render(fraction: float) -> void:
 			node.transform = before.interpolate_with(now, weight)
 		if node.mesh != null:
 			var mesh: ArrayMesh = node.mesh as ArrayMesh
+			if _lighting != null:
+				for surface: int in mesh.get_surface_count():
+					node.set_surface_override_material(surface, _material(mesh.surface_get_material(surface) as ShaderMaterial))
 			var current_cel: int = _current.partcels[index] if index < _current.partcels.size() else 0
 			var previous_cel: int = _previous.partcels[index] if _previous != null and index < _previous.partcels.size() else current_cel
 			for blend: int in mesh.get_blend_shape_count():
@@ -101,4 +138,4 @@ func render(fraction: float) -> void:
 			var entry: int = -1
 			if index < _current.texture_entries.size() and track.target < _current.texture_entries[index].size():
 				entry = _current.texture_entries[index][track.target]
-			node.set_surface_override_material(track.surface, track.frames[entry] if entry >= 0 and entry < track.frames.size() else track.original)
+			node.set_surface_override_material(track.surface, _material(track.frames[entry] if entry >= 0 and entry < track.frames.size() else track.original))

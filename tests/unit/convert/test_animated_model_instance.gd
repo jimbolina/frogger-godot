@@ -36,6 +36,30 @@ func test_matrix_changes_both_axes_and_scales_only_translation() -> void:
 	var scaled_rotation := Basis(Vector3(2, 1, 0) / sqrt(2.0), Vector3(-2, 1, 0) / sqrt(2.0), Vector3.BACK)
 	assert_almost_eq(ModelMeshBuilder._basis_extent(scaled_rotation), 2.0, 0.00001, "bounds cover rotated nonuniform scales")
 
+func test_source_appearance_is_instance_local_and_preserves_shared_materials() -> void:
+	var first: AnimatedModelInstance = _instance(_flipbook())
+	var second := AnimatedModelInstance.new()
+	add_child_autofree(second)
+	second.setup(first.model_mesh, ModelAnimationPlayer.new(_flipbook()))
+	var source: ShaderMaterial = first.model_mesh.part_meshes[0].surface_get_material(0) as ShaderMaterial
+	var original_lighting: Variant = source.get_shader_parameter("source_lighting")
+	var lighting := MapLighting.new()
+	lighting.ambient = Vector3(1024, 1024, 1024)
+	first.set_source_lighting(lighting, Vector3i(0, 64, 255), Vector3i(64, 64, 192), true, true)
+	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	var a: ShaderMaterial = first.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
+	var b: ShaderMaterial = second.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
+	assert_ne(a, b)
+	assert_ne(a, source)
+	var ambient_a: Vector3 = a.get_shader_parameter("source_ambient")
+	var ambient_b: Vector3 = b.get_shader_parameter("source_ambient")
+	assert_eq(ambient_a, Vector3(0, 512, 6112))
+	assert_eq(ambient_b, Vector3(1024, 1024, 1024))
+	var unchanged: bool = source.get_shader_parameter("source_lighting") == original_lighting
+	assert_true(unchanged)
+	first.advance_tick()
+	assert_same(first.part_nodes[0].get_surface_override_material(0), a)
+
 
 func test_flipbook_geometry_is_prebuilt_and_bounds_cover_all_cels() -> void:
 	var instance: AnimatedModelInstance = _instance(_flipbook())

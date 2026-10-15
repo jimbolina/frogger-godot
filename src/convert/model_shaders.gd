@@ -43,15 +43,34 @@ enum Blend {
 	ADD_QUARTER,
 }
 
-const _TEMPLATE: String = """shader_type spatial;
-render_mode unshaded, %s, %s, %s;
-%s
-uniform vec2 projection_scale = vec2(1.0);
+## Model-only vertex stage, replaced wholesale by the map shader.
+const VERTEX_CODE: String = """uniform vec2 projection_scale = vec2(1.0);
+uniform bool source_lighting = false;
+uniform vec3 source_ambient = vec3(4096.0);
+uniform vec3 source_direction0 = vec3(0.0);
+uniform vec3 source_direction1 = vec3(0.0);
+uniform vec3 source_direction2 = vec3(0.0);
+uniform vec3 source_colour0 = vec3(0.0);
+uniform vec3 source_colour1 = vec3(0.0);
+uniform vec3 source_colour2 = vec3(0.0);
 void vertex() {
 	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
 	POSITION.xy *= projection_scale;
+	if (source_lighting) {
+		vec3 normal = mat3(MODEL_MATRIX) * NORMAL;
+		vec3 light = source_ambient;
+		light += source_colour0 * max(0.0, dot(source_direction0, normal));
+		light += source_colour1 * max(0.0, dot(source_direction1, normal));
+		light += source_colour2 * max(0.0, dot(source_direction2, normal));
+		COLOR.rgb = clamp(floor(COLOR.rgb * 255.0 * light / 4096.0), vec3(0.0), vec3(255.0)) / 255.0;
+	}
 }
-// The renderer turns ALBEDO into linear light and back with two formulas
+"""
+
+const _TEMPLATE: String = """shader_type spatial;
+render_mode unshaded, %s, %s, %s;
+%s
+%s// The renderer turns ALBEDO into linear light and back with two formulas
 // that do not quite undo each other, which darkens dark colours. This gives
 // the ALBEDO that comes out of that as the colour wanted.
 vec3 through_renderer(vec3 wanted) {
@@ -113,7 +132,7 @@ static func shader_code(textured: bool, blend: Blend, linear_filter: bool, two_s
 	if textured:
 		uniform = _TEXTURED_UNIFORM % ("filter_linear" if linear_filter else "filter_nearest")
 		body = _TEXTURED_BODY % scale
-	return _TEMPLATE % [blend_mode, depth, cull, uniform, body, alpha]
+	return _TEMPLATE % [blend_mode, depth, cull, uniform, VERTEX_CODE, body, alpha]
 
 
 ## The shader for one combination of choices (made once, then reused).

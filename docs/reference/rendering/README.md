@@ -27,6 +27,13 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 - Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
 - Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag. Entity fade behavior is not implemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
 
+Guarded ORG1 flipbooks consume committed colour scaling and custom ambient,
+including the diving turtle's blue tint. `AnimatedModelInstance` clones materials
+per instance; shared meshes and materials remain unchanged. The shader applies
+map parallel lights to transformed normals, source colour-matrix scaling and
+custom ambient narrowing before polygon modulation. This bounded path does not
+close animated frog per-part lighting or establish full retail pixel equality.
+
 ## Semi-transparency
 
 For models, a textured polygon is drawn semi-transparent when its texture has the translucent flag (bit 0), using the texture's blend mode. Model untextured polygons are opaque. Maps instead use polygon flag bit 0; ENVMAP and MAX_OT control camera-relative UVs and background ordering. Retail textures use modes 0 (average) and 1 (add); synthetic tests cover all four.
@@ -43,7 +50,8 @@ Follow the frozen C engine for behavior:
 ## Screen colour check
 
 `tools/probe_model_shader.gd` checks textured modulation, dark colours,
-transparency and all four blend modes against expected screen RGB values.
+transparency, all four blend modes, custom ambient and dive colour scaling
+against expected screen RGB values.
 Run it with a window after renderer/environment changes; it writes its report
 outside the repository. The probe uses background (100, 60, 20) and permits
 one byte per channel. For example, texture (200, 120, 40) with polygon colour

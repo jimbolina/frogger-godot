@@ -8,7 +8,7 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Resolves source-ordered entity spans and attaches validated source paths.
-static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "") -> EntitySetup:
+static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "", admitted_org1: bool = false) -> EntitySetup:
 	var result := EntitySetup.new()
 	if map == null or theme_book == null:
 		result.error = "Entity setup requires a map and theme book"
@@ -59,13 +59,16 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
 		definition.flags = span.flags
-		if form.entity_name == "STATIC":
+		if form.entity_name == "STATIC" or (admitted_org1 and form.entity_name in ["CHECKPOINT", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "ORG_BABY_FROG", "ORG_FLY"]):
 			var matrix: MapEntityPayload = MapEntityPayload.read_matrix(span)
 			if not matrix.error.is_empty():
 				result._issue("invalid_payload", matrix.error, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.matrix12 = matrix.matrix12.duplicate()
-		elif form.entity_name == "MOVING":
+			definition.background_admitted = admitted_org1 and form.entity_name != "STATIC"
+			if form.entity_name == "ORG_BABY_FROG" and span.payload.size() >= 36:
+				definition.parent_unique_id = span.payload.decode_s16(32)
+		elif form.entity_name == "MOVING" or (admitted_org1 and form.entity_name == "SUB_TURTLE"):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)

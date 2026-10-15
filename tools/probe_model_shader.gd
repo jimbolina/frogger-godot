@@ -43,6 +43,8 @@ func _run() -> void:
 		["translucent, add", Color8(50, 40, 30), Color8(128, 128, 128), ModelShaders.Blend.ADD, Color8(150, 100, 50)],
 		["translucent, subtract", Color8(50, 40, 30), Color8(128, 128, 128), ModelShaders.Blend.SUBTRACT, Color8(50, 20, 0)],
 		["translucent, add a quarter", Color8(200, 120, 40), Color8(128, 128, 128), ModelShaders.Blend.ADD_QUARTER, Color8(150, 90, 30)],
+		["custom ambient 64,64,192", null, Color8(90, 160, 30), ModelShaders.Blend.OPAQUE, Color8(22, 40, 22), Vector3(1024, 1024, 3072)],
+		["dive scaled custom ambient", null, Color8(90, 160, 30), ModelShaders.Blend.OPAQUE, Color8(0, 20, 44), Vector3(0, 512, 6112)],
 	]
 	var centres: Array[Vector3] = []
 	for i: int in cases.size():
@@ -51,7 +53,12 @@ func _run() -> void:
 		var texture_colour: Variant = cases[i][1]
 		var polygon_colour: Color = cases[i][2]
 		var blend: ModelShaders.Blend = cases[i][3]
-		root.add_child(_square(centre, texture_colour, polygon_colour, blend))
+		var square: MeshInstance3D = _square(centre, texture_colour, polygon_colour, blend)
+		if cases[i].size() > 5:
+			var material: ShaderMaterial = square.mesh.surface_get_material(0) as ShaderMaterial
+			material.set_shader_parameter("source_lighting", true)
+			material.set_shader_parameter("source_ambient", cases[i][5])
+		root.add_child(square)
 	for _frame: int in 4:
 		await process_frame
 	await RenderingServer.frame_post_draw

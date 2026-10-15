@@ -183,8 +183,12 @@ compares every root transition and animated hilite with linked C and verifies
 the pinned setup manifest. It requires the frozen round-trip schedule. Corrupt
 and restore both phase and entity-digest families and the manifest; each must
 fail verification. `tools/test_org1_script_state.py` covers asset-free oracle
-edge cases. Runtime golden consumption and rendered/keyboard parity are later
-integration gates; this proof alone does not enable a preset.
+edge cases. `test_retail_org1.gd` consumes every phase and ordered update digest,
+and checks dependency rejection and complete reset. The
+[inspection verifier](../../../docs/reference/testing/terrain-inspection.md#guarded-org1-turtlelog-exploration)
+compares complete represented state across headless and rendered schedules.
+The manifest also retains each excluded identity's reason and the supplied
+script/callback names; geometry alone never suppresses logical neighbor updates.
 
 ## ORG1 admission counterexample
 

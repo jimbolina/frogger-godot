@@ -22,6 +22,8 @@ var unsupported_reason: String = ""
 var death_type: int = 0
 var form_book_flags: int = 0
 var reaction_unsupported_reason: String = ""
+## Nonempty only after a complete guarded neighbor proof; logical updates remain live.
+var admission_exclusion: String = ""
 
 ## Returns an independently owned definition, including grid square flags.
 func copy() -> FormContactDefinition:
@@ -46,4 +48,5 @@ func copy() -> FormContactDefinition:
 	result.death_type = death_type
 	result.form_book_flags = form_book_flags
 	result.reaction_unsupported_reason = reaction_unsupported_reason
+	result.admission_exclusion = admission_exclusion
 	return result

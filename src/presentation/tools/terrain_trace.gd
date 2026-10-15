@@ -8,12 +8,16 @@ var full_rows: PackedStringArray = PackedStringArray()
 var _entity_reactions: bool = false
 var _entity_lifecycle: bool = false
 var _guarded_exploration: bool = false
+var _scripted_exploration: bool = false
+var _full_stream: FileAccess = null
+var _full_path: String = ""
 
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
 	_entity_lifecycle = scenario.entity_lifecycle
 	_guarded_exploration = scenario.level.exploration_guard != null
+	_scripted_exploration = scenario.exploration_preset == Org1ExplorationSetup.PRESET
 	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
@@ -32,6 +36,8 @@ func configure(scenario: TerrainScenario) -> void:
 		metadata["exploration"] = scenario.exploration_preset
 		metadata["exploration_guard"] = facts(scenario.level.exploration_guard)
 		metadata["omitted"] = ["scripts", "active_camera_zones", "custom_behaviors", "primitives", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
+		if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+			metadata["omitted"] = ["unsupported_scripts_and_custom_behaviors", "active_camera_zones", "primitives", "audio_playback", "splash_rendering", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
@@ -47,14 +53,31 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 			var record: Dictionary = {"tick": command.tick_index, "phase": phase,
 				"pressed": command.pressed_mask, "held": command.held_mask,
 				"command": facts(command),
-				"state": facts(snapshot, _entity_lifecycle),
+				"state": facts(snapshot, _entity_lifecycle or _scripted_exploration),
 				"outcomes": Array(result.events) if phase == "final" else [],
 				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}
 			if _entity_reactions:
 				record["entity_contacts"] = _value(result.entity_contacts) if phase == "final" else []
 				if _entity_lifecycle:
 					record["entity_lifecycle"] = facts(snapshot.entities, true) if snapshot.entities != null else null
-			full_rows.append(JSON.stringify(record))
+			var line: String = JSON.stringify(record)
+			if _full_stream != null:
+				_full_stream.store_line(line)
+			else:
+				full_rows.append(line)
+
+## Streams long inspection evidence externally without retaining it in memory.
+func stream_full(path: String) -> String:
+	var issue: String = _save_lines(path, full_rows)
+	if not issue.is_empty():
+		return issue
+	_full_stream = FileAccess.open(path, FileAccess.READ_WRITE)
+	if _full_stream == null:
+		return "Cannot open full trace stream: " + path
+	_full_path = path
+	_full_stream.seek_end()
+	full_rows.clear()
+	return ""
 
 ## Saves text evidence only to a caller-selected external directory.
 func save(path: String) -> String:
@@ -62,6 +85,12 @@ func save(path: String) -> String:
 
 ## Saves all represented integer state and ordered outcomes for replay comparisons.
 func save_full(path: String) -> String:
+	if _full_stream != null:
+		_full_stream.flush()
+		var issue: String = "" if _full_stream.get_error() == OK and path == _full_path else "Full trace stream failed: " + path
+		_full_stream.close()
+		_full_stream = null
+		return issue
 	return _save_lines(path, full_rows)
 
 func _save_lines(path: String, lines: PackedStringArray) -> String:

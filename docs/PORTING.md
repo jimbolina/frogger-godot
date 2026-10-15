@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: paths, STATIC/MOVING transforms, bounded POP/SAFE, guarded JUN1 bank/log exploration, decoded zone queries and opt-in script-free visibility lifecycle |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE, guarded JUN1 and scripted ORG1 exploration, decoded zone queries and script-free visibility lifecycle |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -60,8 +60,10 @@ excluded-neighbor obligations for a narrower rectangle. Independent traces
 cover the normal round trip, full dive/rise cycles and an attached-diver death.
 The [entity contract](reference/gameplay/entities.md#org1-admission) owns
 bounds, routes and the expanded script/background closure. Bounded script
-components and source-ordered atomic integration are implemented. Next is guarded
-live exploration, with independent retail goldens and rendered/keyboard acceptance.
+components, source-ordered atomic integration and guarded live exploration are
+implemented, with independent retail goldens and rendered/keyboard checks.
+Remaining work includes broader instruction/custom-behavior coverage, active
+zones, verified form callbacks, selective reset, primitives and lifecycle workloads.
 A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;
 preserve source ordering and test unknown mappings. Per-build form callback

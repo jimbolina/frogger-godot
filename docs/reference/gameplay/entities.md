@@ -146,8 +146,10 @@ The [testing guide](../testing/README.md) describes both inspection modes.
 
 `EntityCollisionSetup` composes base transforms, contact definitions and copied
 map-group bounds. An optional `LevelDefinition.entity_collision` enables the
-integrated run. Nonzero scripts exclude reaction execution because frozen
-`ENTITY.C` runs scripts before frog collision. Geometry remains inspectable.
+integrated run. General inspection excludes nonzero scripts from reaction
+execution because frozen `ENTITY.C` runs scripts before frog collision.
+The guarded ORG1 adapter supplies its verified script closure instead.
+Geometry remains inspectable.
 Collision callback addresses remain excluded until verified mappings and
 implementations exist. Bonus callbacks belong to tongue collection; they remain
 unexecuted diagnostics without independently blocking a FORM reaction.
@@ -328,8 +330,8 @@ demonstration. Reproduction belongs to the existing
 
 The independent proof admits high-detail v3.0e ORG1 (resource 658) within
 X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
-all-attached lifetime. Script components and atomic integration exist; the
-guarded preset is not yet enabled. The proof pins map, source-ordered form/behavior rows, script
+all-attached lifetime. The guarded `org1-turtle-log-bank` preset validates the
+proof before enabling scripts or excluding contact. The proof pins map, source-ordered form/behavior rows, script
 streams, model mappings, counterpart models and the selected frog resource in
 `src/presentation/setup/org1_exploration_admission.json`.
 
@@ -437,3 +439,7 @@ requests, clocks, colours, RNG and checkpoint covered bits together. The bounded
 background branches preserve bonus-fly timing/RNG and the baby frog's permanent
 live-parent invariant; checkpoint croak/contact and parent retirement reject.
 Presentation reads committed entity actions/cels and hidden state.
+ORG1 draws the diving callback's blue tint through the bounded
+[model lighting](../rendering/README.md#model-lighting) path.
+Dying attached frogs retain source platform
+carry before death velocity; they do not reassert live carry flags.

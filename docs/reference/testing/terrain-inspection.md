@@ -152,6 +152,38 @@ presentation clocks, restore the whole inspection, pause and retain LIVE.
 This is an inspection reset, not checkpoint or death recovery. Animated-lighting
 limitations remain those of the existing renderer.
 
+## Guarded ORG1 turtle/log exploration
+
+`--level=ORG1 --exploration=org1-turtle-log-bank` opens LIVE and paused with no
+automatic commands or live tick limit. The [entity contract](../gameplay/entities.md#org1-admission)
+owns the source proof, bounds, supported closure and frozen route schedules.
+Setup pins the supplied resources, named bindings and every neighbor exclusion.
+Changed dependencies and visibility lifetime reject; boundary/animated-pose
+violations discard the entire tick and pause. R restores inspection/input and
+presentation state while retaining the selected input mode.
+
+The two fixtures exercise the connected round trip through full dive/rise
+cycles and a separate attached-diver drowning case. Run each complete fixture:
+
+```powershell
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_turtle_log_bank.json --output-directory <external-output>
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_attached_diver.json --output-directory <external-output>
+```
+
+The verifier streams complete six-phase records externally, checks independent
+source phase facts and ordered entity-update digests, then compares every
+represented field and outcome at rendered 30/60/144 schedules. Inspect each
+transfer, bank return and visible attached dive/death at 640×480. Audio playback
+and splash rendering remain deferred. Entity action/cel, colour and ambient
+state come from committed snapshots; materials are instance-local.
+
+`tools/probe_org1_keyboard.gd` dispatches `InputEventKey` through Godot's input
+system and checks the round trip, Space/Period, camera-relative controls,
+boundary rollback, R, mode retention and unlimited live ticks. Run it rendered
+with the same level/exploration/data arguments and an external screenshot
+directory, using the isolated-profile, hidden/awaited process rules in the
+[testing guide](README.md). Check its log for errors as well as its exit code.
+
 ## Visibility lifecycle inspection
 
 `--entity-lifecycle visibility` requires integrated entity reactions and a

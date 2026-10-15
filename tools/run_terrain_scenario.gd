@@ -34,6 +34,12 @@ func _run() -> void:
 		return
 	var trace := TerrainTrace.new()
 	trace.configure(scenario)
+	var full_output: String = ViewerArguments.value(arguments, "--trace-jsonl=")
+	if not full_output.is_empty():
+		var issue: String = trace.stream_full(full_output)
+		if not issue.is_empty():
+			_fail(issue)
+			return
 	for tick: int in scenario.tick_limit:
 		var command: TickCommand = scenario.command_at(tick)
 		var result: TickResult = run.step(command)
@@ -49,7 +55,6 @@ func _run() -> void:
 		if not failure.is_empty():
 			_fail(failure)
 			return
-	var full_output: String = ViewerArguments.value(arguments, "--trace-jsonl=")
 	if not full_output.is_empty():
 		var failure: String = trace.save_full(full_output)
 		if not failure.is_empty():

@@ -35,6 +35,8 @@ var _entity_files: Array[MofFile] = []
 var _entity_generations: Array[int] = []
 var _entity_inspection: EntityInspection
 var _last_contacts: Array[FormReactionResult] = []
+var _entity_lighting: MapLighting = null
+var _full_trace_destination: String = ""
 
 func _ready() -> void:
 	_build_scene()
@@ -42,6 +44,7 @@ func _ready() -> void:
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
 		configure_input(arguments)
 		record_trace = ViewerArguments.has_prefix(arguments, "--trace-csv=") or ViewerArguments.has_prefix(arguments, "--trace-jsonl=")
+		_full_trace_destination = ViewerArguments.value(arguments, "--trace-jsonl=")
 		var path: String = ViewerArguments.value(arguments, "--scenario-file=")
 		var name_arg: String = ViewerArguments.value(arguments, "--scenario=")
 		var selected: TerrainScenario = TerrainScenario.from_file(path) if not path.is_empty() else TerrainScenario.builtin(name_arg if not name_arg.is_empty() else "normal")
@@ -150,6 +153,10 @@ func open_scenario(selected: TerrainScenario) -> String:
 	run = replacement
 	trace = TerrainTrace.new()
 	trace.configure(selected)
+	if not _full_trace_destination.is_empty():
+		last_error = trace.stream_full(_full_trace_destination)
+		if not last_error.is_empty():
+			return last_error
 	playing = false
 	_elapsed = 0.0
 	_held = 0
@@ -266,6 +273,8 @@ func draw_state(fraction: float) -> void:
 				var entity: EntitySnapshot = _current.entities.entities[index]
 				var model: AnimatedModelInstance = _entity_models[index]
 				model.transform = GameSpace.transform(entity.matrix12)
+				if _entity_lighting != null:
+					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
 				if entity.animation != null and entity.animation.action >= 0:
 					if model.player.action_index != entity.animation.action:
 						model.player.set_action(entity.animation.action)
@@ -300,10 +309,11 @@ func draw_state(fraction: float) -> void:
 		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
 	if scenario.level.exploration_guard != null:
 		var bounds: Rect2i = scenario.level.exploration_guard.world_bounds
-		_label.text = "JUN1 BANK / LOG EXPLORATION\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
+		var org1: bool = scenario.exploration_preset == Org1ExplorationSetup.PRESET
+		_label.text = ("ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION") + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
 		_label.text += "All-attached lifetime | active camera zones unsupported\n"
-		_label.text += "From reset: Left onto log, then Right after centring.\n"
+		_label.text += "Hop Up to turtle, Up to log; return Down twice.\n" if org1 else "From reset: Left onto log, then Right after centring.\n"
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
@@ -449,6 +459,7 @@ func _clear_entity_visuals() -> void:
 
 func _build_entity_visuals() -> void:
 	_clear_entity_visuals()
+	_entity_lighting = null
 	if scenario == null or not scenario.entity_reactions or scenario.level.entity_collision == null:
 		return
 	var definitions: EntityCollisionDefinition = scenario.level.entity_collision
@@ -462,6 +473,9 @@ func _build_entity_visuals() -> void:
 		_entity_generations.append(-1)
 	if data == null or not data.is_valid() or scenario.map_scene == null:
 		return
+	if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+		_entity_lighting = MapLighting.new()
+		_entity_lighting.configure(scenario.map_scene.map.lights)
 	var meshes: Dictionary[int, ModelMesh] = {}
 	var files: Dictionary[int, MofFile] = {}
 	for slot: int in definitions.entities.size():
@@ -624,7 +638,11 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				return
 		if scenario.platforms_enabled and not folder.is_empty():
 			var platform_stages: Array[String] = []
-			if scenario.level.exploration_guard != null:
+			if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+				var stages: Dictionary[int, String] = {4: "org1-turtle-out", 19: "org1-log", 40: "org1-turtle-return", 52: "org1-bank-return", 60: "org1-diving", 90: "org1-rising", 1234: "org1-diver-attachment", 1255: "org1-diver-drowning"}
+				if stages.has(_current.tick_index):
+					platform_stages.append(stages[_current.tick_index])
+			elif scenario.level.exploration_guard != null:
 				if _current.tick_index == 3:
 					platform_stages.append("platform-approach")
 				if _current.tick_index == 8:
