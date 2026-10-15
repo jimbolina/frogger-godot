@@ -118,6 +118,34 @@ behavior exclusions are documented in the helper and entity contract. Its
 input dependency manifest contains hashes and decoded numeric facts, never
 retail bytes; changing determining inputs requires a fresh source proof.
 
+## Entity script components
+
+`fixtures/entity_scripts.json` contains invented programs and tick inputs;
+`synthetic/entity_scripts.tsv` records complete ordered script state, callback
+slots, colours, animation clocks, RNG and requests after each update. The
+Python interpreter constructs expectations independently and compares them
+with unchanged frozen `UpdateScriptInfo`, callback, animation and logical
+moving-sound allocation functions before writing. No retail bytes are needed.
+
+Cases cover STOP/timer wrap, repeated eligible ONCE callbacks, previous flags,
+slot order, dive/rise thresholds, NO_DISPLAY/fade, action reset, loop yielding,
+register timers, deviation narrowing, distance sound, sprite parameters,
+allocation suppression/reuse/clearing and random branch/restart ordering.
+Runtime unit tests additionally reject malformed names, instructions, operands,
+loops and non-yielding execution, and verify state/RNG rollback.
+
+Build the existing platform oracle, then run:
+
+```powershell
+python -B tools/make_golden_entity_scripts.py --oracle <external/platform_oracle.exe> --acos-table <frozen/API.BIN/acos_le.dat> --output-directory <external-folder>
+```
+
+Add `--write` only to regenerate reviewed facts. Corrupt a TSV value, require
+the GUT golden test and independent verifier to fail, restore it and require
+both to pass. C numeric transports and logs stay outside both repositories.
+The adapter uses synthetic flipbook lengths here; retail route expectations
+use their independently decoded lengths instead.
+
 ## ORG1 route proof
 
 `pc-retail-v3.0e/org1_round_trip.tsv` and `org1_attached_diver.tsv` contain six

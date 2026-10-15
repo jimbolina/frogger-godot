@@ -28,6 +28,10 @@ var flags: int = 0
 var matrix12: PackedInt32Array = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
 var path_definition: PathDefinition = null
 var path_start: PathStart = null
+## Null preserves the earlier script-free transform API.
+var script_definition: EntityScriptDefinition = null
+var action_lengths: PackedInt32Array = PackedInt32Array()
+var animation_one_shot: bool = false
 
 ## Returns a copy with independently owned matrix and path records.
 func copy() -> EntityDefinition:
@@ -49,4 +53,7 @@ func copy() -> EntityDefinition:
 	result.matrix12 = matrix12.duplicate()
 	result.path_definition = path_definition.copy() if path_definition != null else null
 	result.path_start = path_start.copy() if path_start != null else null
+	result.script_definition = script_definition.copy() if script_definition != null else null
+	result.action_lengths = action_lengths.duplicate()
+	result.animation_one_shot = animation_one_shot
 	return result

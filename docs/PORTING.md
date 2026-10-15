@@ -59,8 +59,8 @@ The ORG1 bank/turtle/log proof now closes the animated frog-probe and
 excluded-neighbor obligations for a narrower rectangle. Independent traces
 cover the normal round trip, full dive/rise cycles and an attached-diver death.
 The [entity contract](reference/gameplay/entities.md#org1-admission) owns
-bounds, routes and the expanded script/background closure. Next are bounded
-script components, source-ordered atomic integration and guarded live
+bounds, routes and the expanded script/background closure. Bounded script
+components are implemented. Next are source-ordered atomic integration and guarded live
 exploration, with independent goldens and rendered/keyboard acceptance.
 A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;

@@ -328,8 +328,8 @@ demonstration. Reproduction belongs to the existing
 
 The independent proof admits high-detail v3.0e ORG1 (resource 658) within
 X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
-all-attached lifetime. Runtime scripts and the guarded preset are not yet
-implemented. The proof pins map, source-ordered form/behavior rows, script
+all-attached lifetime. Script components exist; aggregate integration and the
+guarded preset are not yet implemented. The proof pins map, source-ordered form/behavior rows, script
 streams, model mappings, counterpart models and the selected frog resource in
 `src/presentation/setup/org1_exploration_admission.json`.
 
@@ -403,3 +403,30 @@ Root/probe math is checked separately; no GDScript output defines expectations.
 [Golden reproduction](../../../tests/golden/specs/entities.md#org1-route-proof)
 owns commands and schemas. Active zones, selective reset, primitive execution,
 checkpoint collection and full-level flow remain outside this slice.
+
+## Bounded script components
+
+`EntityScriptSetup` resolves supplied programs and the `CallbackNames` bank,
+copies only the supported branch closure and validates both the authored
+turtle script and its named non-diving replacement. Turtle register payloads
+retain their three words after PATH_INFO; static noise retains two words after
+the matrix. Neither callback numbers nor executable addresses dispatch code.
+`SUB_TURTLE` keeps its identity while sharing the generic path transform.
+
+`EntityScriptDefinition` validates instruction widths, operand modes, register
+indices, action indices, callback names, branch targets and balanced single
+loops. The supported closure is the turtle/log programs plus the five traffic
+program/SFX pairs and two noise programs. Unsupported instructions and malformed
+or non-yielding programs fail explicitly. Definitions retain no legacy data.
+
+`EntityRun` owns `EntityScriptState` and `EntityAnimationState`, including
+cursors, six registers, callback slots, signed16 deviations, unsigned16 timer,
+colour/ambient state and logical moving-sound ownership. SET_ACTION resets cel
+to -1 even for the current action; pose advancement uses supplied lengths.
+`EntityScriptRunner` returns private state/RNG copies, ordered request parameters
+and a drowning effect. A failure returns none of those candidate changes.
+The aggregate caller must apply that frog effect before visiting the next
+entity; connecting this protocol to `TerrainRun` is the next increment.
+Existing script-free APIs remain available. Audio and splash rendering stay
+deferred. [Component goldens](../../../tests/golden/specs/entities.md#entity-script-components)
+cover interpreter edge cases independently of the retail route.

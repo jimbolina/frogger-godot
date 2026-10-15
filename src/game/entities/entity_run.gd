@@ -54,7 +54,7 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 			if definition.path_definition != null or definition.path_start != null:
 				result.error = "Static entity %d cannot attach a path" % definition.entity_index
 				return result
-		elif definition.entity_name == "MOVING":
+		elif definition.entity_name in ["MOVING", "SUB_TURTLE"]:
 			if definition.path_definition == null or definition.path_start == null:
 				result.error = "Moving entity %d requires a path and start" % definition.entity_index
 				return result
@@ -65,6 +65,17 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		else:
 			result.error = "Entity %d has unsupported name %s" % [definition.entity_index, definition.entity_name]
 			return result
+		for length: int in definition.action_lengths:
+			if length <= 0:
+				result.error = "Entity animation lengths must be positive"
+				return result
+		if definition.script_definition != null:
+			if lifecycle != null:
+				result.error = "Script entities require explicit all-attached lifetime"
+				return result
+			result.error = definition.script_definition.validate(definition.action_lengths, definition.form_id, definition.path_definition != null)
+			if not result.error.is_empty():
+				return result
 		copies.append(definition.copy())
 	result._definitions = copies
 	result._ready = true
@@ -82,7 +93,7 @@ func reset() -> String:
 	for index: int in _definitions.size():
 		var definition: EntityDefinition = _definitions[index]
 		var runner: PathRunner = null
-		if definition.entity_name == "MOVING":
+		if definition.path_definition != null:
 			var start: PathStart = definition.path_start.copy()
 			start.flags |= PathStart.ACTIVE
 			if definition.flags & EntityDefinition.NO_MOVEMENT:
@@ -92,6 +103,11 @@ func reset() -> String:
 				return "Entity %d: %s" % [definition.entity_index, runner.error]
 		candidates.append(runner)
 	var next_state: EntityRunSnapshot = _make_snapshot(candidates, 0)
+	for index: int in next_state.entities.size():
+		var definition: EntityDefinition = _definitions[index]
+		next_state.entities[index].animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
+		if definition.script_definition != null:
+			next_state.entities[index].script_state = EntityScriptState.create(definition.script_definition.root_id)
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		for entity: EntitySnapshot in next_state.entities:
@@ -124,6 +140,10 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 		if not issue.is_empty():
 			return "Entity %d: %s" % [_definitions[index].entity_index, issue]
 	var next_state: EntityRunSnapshot = _make_snapshot(candidates, tick_index + 1)
+	for index: int in next_state.entities.size():
+		var previous: EntitySnapshot = _state.entities[index]
+		next_state.entities[index].script_state = previous.script_state.copy() if previous.script_state != null else null
+		next_state.entities[index].animation = previous.animation.copy() if previous.animation != null else null
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		next_state.live_order = _state.live_order.duplicate()
@@ -158,6 +178,28 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 ## Returns a fully detached source-ordered run snapshot.
 func snapshot() -> EntityRunSnapshot:
 	return _state.copy() if _state != null else null
+
+## Updates one candidate entity; the caller applies frog effects before the next visit.
+func update_script(entity_index: int, context: EntityUpdateContext, random: SourceRandom) -> EntityUpdateResult:
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0 or _state == null or _definitions[slot].script_definition == null:
+		var failed := EntityUpdateResult.new()
+		failed.error = "Entity has no script state"
+		return failed
+	var entity: EntitySnapshot = _state.entities[slot]
+	var result: EntityUpdateResult = EntityScriptRunner.update(_definitions[slot].script_definition, entity.script_state, entity.animation, context, random)
+	if result.error.is_empty():
+		entity.script_state = result.script_state.copy()
+		entity.animation = result.animation.copy()
+		entity.matrix12 = result.matrix12.duplicate()
+		entity.requests.assign(result.requests)
+	return result
+
+## Advances authoritative entity clocks once at the aggregate pose phase.
+func advance_animations() -> void:
+	for entity: EntitySnapshot in _state.entities:
+		if entity.animation != null:
+			entity.animation.advance()
 
 ## Applies the post-camera source view list; new live objects first update next tick.
 func apply_visibility(camera: GameplayCameraSnapshot) -> String:

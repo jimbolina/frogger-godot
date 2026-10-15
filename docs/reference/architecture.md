@@ -127,15 +127,18 @@ See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).
 
 ## Extending behavior
 
-The planned ORG1 script transaction keeps per-entity cursors, registers,
+The bounded script components keep per-entity cursors, registers,
 callback slots, deviations, action/colour state and logical moving-sound
-ownership in `EntityRun`. `TerrainRun` owns the shared RNG, frog reactions,
-checkpoint covered bits required by the bonus fly, and aggregate commit.
-Setup supplies decoded programs/callback names, checkpoint positions and an
-explicit live-update order; snapshot order and contact-scan order stay separate.
+ownership in `EntityRun`. Each `EntityScriptRunner` update returns detached
+script/animation state, RNG, ordered requests and a frog effect; failures
+discard all candidate outputs. `EntityScriptSetup` supplies decoded named
+programs and callbacks, including turtle creation's script replacement.
+Aggregate integration is next: `TerrainRun` will own frog reactions, shared
+checkpoint covered bits and commit. Snapshot and contact-scan order stay
+separate from the source live-update order.
 The [entity contract](gameplay/entities.md#org1-admission) owns the
-expanded behavior closure and source proof. This interface is planned, not
-implemented by the current script-free run.
+expanded behavior closure and source proof. The existing aggregate still
+executes script-free behavior until the integration gate passes.
 
 Clone the frog and shared state before entity updates. Visit each entity in
 live order, execute its script/custom update, apply callback frog effects and

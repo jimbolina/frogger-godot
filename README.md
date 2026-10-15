@@ -80,7 +80,8 @@ mode. Ordinary inspection remains available for edited data. See the
 
 The [ORG1 source proof](docs/reference/gameplay/entities.md#org1-admission)
 now establishes a bank/turtle/log round trip and a separate diving-turtle
-death. Its guarded runtime preset is still being implemented.
+death. Script components are verified; its guarded runtime preset is still
+being implemented.
 
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file

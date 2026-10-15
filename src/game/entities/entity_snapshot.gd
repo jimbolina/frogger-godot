@@ -10,6 +10,9 @@ var lifecycle_supported: bool = true
 var live: bool = true
 var destroy_pending: bool = false
 var generation: int = 0
+var script_state: EntityScriptState = null
+var animation: EntityAnimationState = null
+var requests: Array[String] = []
 
 ## Returns an independent transform and nested path snapshot.
 func copy() -> EntitySnapshot:
@@ -22,4 +25,7 @@ func copy() -> EntitySnapshot:
 	result.live = live
 	result.destroy_pending = destroy_pending
 	result.generation = generation
+	result.script_state = script_state.copy() if script_state != null else null
+	result.animation = animation.copy() if animation != null else null
+	result.requests.assign(requests)
 	return result

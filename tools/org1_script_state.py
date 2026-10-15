@@ -30,7 +30,7 @@ class Script:
         self.colours=[0,0,0];self.ambient=[0,0,0];self.no_fade=False
         self.requests=[]
 
-    def update(self,seed,matrix,frog,hit=False,carry=False,form_id=0,fade=None,no_display=False):
+    def update(self,seed,matrix,frog,hit=False,carry=False,form_id=0,fade=None,no_display=False,allocation=True):
         """Run until a source yield, then deviation, callbacks and timer."""
         sounds=[];sprites=[];drown=False;self.requests=[]
         def value(mode,operand):
@@ -76,17 +76,17 @@ class Script:
                 if ((seed>>16)&32767)%args[3]==1:
                     self.program=args[2];following=0;self.start=self.end=-1
             elif op=='PLAY_MOVING_SOUND':
-                if not self.moving_sound:
+                if not self.moving_sound and allocation:
                     self.moving_sound=(args[0],value(args[1],args[2]),value(args[1],args[3]))
                     self.requests.append('moving:'+':'.join(map(str,self.moving_sound)))
             elif op=='PLAY_SOUND_DISTANCE':
                 if args[3] not in (0,1,2):raise ValueError('invalid sound coordinate')
-                offset=[0,0,0];offset[args[3]]=args[4]
+                offset=[0,0,0];offset[args[3]]=short(args[4])
                 local=[short(v) for v in apply(matrix,offset)]
                 point=[short(local[k]+matrix[9+k]) for k in range(3)]
                 distance=math.isqrt(sum(short(frog[k]-point[k])**2 for k in range(3)))
                 threshold=value(args[0],args[1]);eligible=(threshold<math.isqrt(distance)) if args[0] else (threshold>math.isqrt(distance))
-                if eligible:
+                if eligible and allocation:
                     sounds.append(value(args[0],args[2]));self.requests.append(f'sound:{sounds[-1]}:0:0:0')
             elif op=='CREATE_3D_SPRITE':
                 if form_id not in (19,20,21):raise ValueError('unaudited turtle splash form')
@@ -105,12 +105,15 @@ class Script:
                 self.remaining=short(self.remaining-1)
                 if self.remaining==0:self.delta=0
         for slot,(callback,condition,kind,called) in sorted(self.callbacks.items()):
+            if kind!=1 and called==3:continue
             if condition==0 and not hit:continue
             if callback==2:
                 if no_display:continue
                 self.no_fade=fade is None or (fade[0]<=matrix[9]<=fade[1] and fade[2]<=matrix[11]<=fade[3])
                 if self.no_fade:
-                    self.colours=[128-self.deviation,128+(-self.deviation>>1),127+self.deviation]
+                    red,green,blue=128-self.deviation,128+(-self.deviation>>1),127+self.deviation
+                    packed=(blue<<16)+(green<<8)+red
+                    self.colours=[(packed>>shift)&255 for shift in (0,8,16)]
                     self.ambient=[64,64,192]
                 drown=carry and self.deviation>=128
             # Frozen sound.h GENERIC enum: splat, splash2, thud/splash1.

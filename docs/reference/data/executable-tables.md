@@ -33,7 +33,13 @@ Follow FrogLord for these format rules; they agree on retail values.
 | Size of the sky-land remap | 76 ids | 154 bytes, counting the terminator |
 | Map book rows 4 and 57, which have remap pointers but no map | Skipped | Used as boundaries |
 
-## Future behavior mapping
+## Behavior mapping
+
+`EntityScriptSetup` resolves the bounded supplied script closure and opcode
+callbacks through FrogLord names. Unknown names or unsupported instructions
+reject execution; general inspection can still display their decoded facts.
+The [entity contract](../gameplay/entities.md#bounded-script-components) owns
+the implemented subset and turtle creation's named script replacement.
 
 Form callbacks retain executable addresses as source facts. Before implementing
 their behaviors, verify address-to-name mappings for each supported build; setup

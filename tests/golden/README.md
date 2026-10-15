@@ -27,6 +27,7 @@ commands run from the repository root; generated facts live in
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, contacts, bounded POP/SAFE, guarded JUN1 zones/route, ORG1 script/route proof and visibility lifecycle | [Entities](specs/entities.md) |
+| Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
 | Synthetic frog controller/mover, collision and terrain callback records | [Terrain components](specs/terrain-components.md) |
 | Synthetic default camera component records | [Default camera](specs/camera-components.md) |
