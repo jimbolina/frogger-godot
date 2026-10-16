@@ -122,8 +122,14 @@ class Instance extends Node3D:
 
 	## Environment UVs and sky backdrop camera translation use raw game position.
 	func set_camera_position(value: Vector3i) -> void:
+		if camera_position == value:
+			return
 		camera_position = value
-		_update_materials()
+		for material: ShaderMaterial in _material_copies.values():
+			material.set_shader_parameter("camera_game", Vector3(value))
+		if _sky_node != null:
+			var drift: Vector3i = sky.translation()
+			_sky_node.position = GameSpace.position(value.x + drift.x, value.y + drift.y, value.z + drift.z)
 
 	## Reference-only C viewport aspect matrix; ordinary cameras keep Vector2.ONE.
 	func set_projection_scale(value: Vector2) -> void:
@@ -156,8 +162,11 @@ class Instance extends Node3D:
 
 	## Moves the cave terrain lamp independently of models and gameplay entities.
 	func set_cave_frog(value: Vector3i) -> void:
+		if cave_frog == value:
+			return
 		cave_frog = value
-		_update_materials()
+		for material: ShaderMaterial in _material_copies.values():
+			material.set_shader_parameter("cave_frog", Vector3(value))
 
 	## Changes cached shader variants; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:

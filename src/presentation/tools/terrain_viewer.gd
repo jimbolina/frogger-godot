@@ -35,6 +35,7 @@ var _entity_files: Array[MofFile] = []
 var _entity_generations: Array[int] = []
 var _entity_inspection: EntityInspection
 var _last_contacts: Array[FormReactionResult] = []
+var _entity_pose_tick: int = -1
 var _entity_lighting: MapLighting = null
 var _full_trace_destination: String = ""
 
@@ -164,6 +165,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 	_current = run.snapshot()
 	_previous = _current
 	_frog_pose_tick = -1
+	_entity_pose_tick = -1
 	_outcomes.clear()
 	_last_contacts.clear()
 	if _ground != null:
@@ -173,12 +175,12 @@ func open_scenario(selected: TerrainScenario) -> String:
 	return ""
 
 ## Advances exactly one command; used by interactive stepping and automated scene tests.
-func step_command(command: TickCommand) -> TickResult:
+func step_command(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if run == null:
 		var rejected := TickResult.new()
 		rejected.error = "Open a terrain scenario before stepping"
 		return rejected
-	var result: TickResult = run.step(command)
+	var result: TickResult = run.step(command, capture_phases or record_trace)
 	last_error = result.error
 	if last_error.is_empty():
 		_previous = _current
@@ -210,7 +212,7 @@ func step_command(command: TickCommand) -> TickResult:
 
 ## Replays the authored command at the run's next tick, without polling input.
 func step_scenario() -> TickResult:
-	return step_command(scenario.command_at(run.snapshot().tick_index))
+	return step_command(scenario.command_at(_current.tick_index), record_trace)
 
 ## Samples the host's collected button state once at the command boundary.
 func step_live() -> TickResult:
@@ -219,7 +221,7 @@ func step_live() -> TickResult:
 	command.pressed_mask = _held & ~_sampled_held
 	command.held_mask = _held
 	_sampled_held = _held
-	return step_command(command)
+	return step_command(command, record_trace)
 
 ## Clears scenario state, pending input and presentation clocks without reusing mutable snapshots.
 func reset_scenario() -> String:
@@ -257,17 +259,19 @@ func draw_state(fraction: float) -> void:
 				_map_instance.set_tick(_current.tick_index - 1)
 		_map_instance.set_camera_position(_current.camera.source_world)
 		_map_instance.set_cave_frog(_current.world_position)
-	if _entity_inspection != null and _current.entities != null:
-		_entity_inspection.set_snapshot(_current.entities)
+	var update_entities: bool = _entity_pose_tick != _current.tick_index
+	if update_entities and _entity_inspection != null and _current.entities != null:
 		var selected_index: int = _selected_contact_index()
 		_entity_inspection.set_selected(selected_index)
+		_entity_inspection.set_snapshot(_current.entities)
 		var hit_contact: FormContactResult = null
 		for reaction: FormReactionResult in _last_contacts:
 			if reaction.contact != null and scenario.level.entity_collision != null and selected_index >= 0 and reaction.contact.entity_index == scenario.level.entity_collision.entities[selected_index].entity_index:
 				hit_contact = reaction.contact
 				break
 		_entity_inspection.set_contact(_current.world_position, hit_contact)
-	if _current.entities != null:
+	if update_entities and _current.entities != null:
+		_entity_pose_tick = _current.tick_index
 		for index: int in mini(_entity_models.size(), _current.entities.entities.size()):
 			if _entity_models[index] != null:
 				var entity: EntitySnapshot = _current.entities.entities[index]
@@ -459,6 +463,7 @@ func _clear_entity_visuals() -> void:
 
 func _build_entity_visuals() -> void:
 	_clear_entity_visuals()
+	_entity_pose_tick = -1
 	_entity_lighting = null
 	if scenario == null or not scenario.entity_reactions or scenario.level.entity_collision == null:
 		return
@@ -711,6 +716,7 @@ func _update_projection() -> void:
 	if size == _projection_size:
 		return
 	_projection_size = size
+	_entity_pose_tick = -1
 	_label.size = Vector2(maxf(1.0, float(size.x) - 24.0), maxf(1.0, float(size.y) - 40.0))
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
 	if _map_instance != null:

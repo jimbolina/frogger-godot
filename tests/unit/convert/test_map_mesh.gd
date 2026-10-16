@@ -130,6 +130,13 @@ func test_animation_updates_materials_without_rebuilding_shared_meshes() -> void
 	assert_eq(animation_offset, Vector2(1, 0))
 	assert_ne(material, built.groups[0].surface_get_material(0))
 	var material_id: int = material.get_instance_id()
+	first.set_camera_position(Vector3i(500, -200, 900))
+	first.set_cave_frog(Vector3i(100, -64, 200))
+	for prepared: ShaderMaterial in first._material_copies.values():
+		var camera: Vector3 = prepared.get_shader_parameter("camera_game")
+		var frog: Vector3 = prepared.get_shader_parameter("cave_frog")
+		assert_eq(camera, Vector3(500, -200, 900))
+		assert_eq(frog, Vector3(100, -64, 200))
 	first.set_tick(2)
 	material = node.get_surface_override_material(0)
 	assert_eq(material.get_instance_id(), material_id, "prepared frame material reused")

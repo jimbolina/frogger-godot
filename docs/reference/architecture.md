@@ -52,6 +52,11 @@ collision and before camera/animation. A terrain collision early return suppress
 the entity phase too. Only the final aggregate commit publishes matching frog and
 entity ticks, per-tick hits and requests. Failed reset or tick preserves every
 owned component and returns no partial phase snapshots or outcomes.
+`TerrainRun.step` captures diagnostic phases by default. Interactive playback
+disables that capture: it still commits the same detached final state, contacts,
+requests and RNG, but omits intermediate snapshots and ordered entity-update
+observations. Trace recording always enables them. Retail tests compare both
+paths over the complete source-verified ORG1 routes.
 
 Optional visibility lifecycle adds a final camera-to-group selection and live
 creation/renewal phase after animation, before commit. Its pure selector and
@@ -117,7 +122,10 @@ path. `EntitySetup` resolves supported STATIC/MOVING records into detached
 definitions and source-located diagnostics. `EntityRun` owns copies and a path
 cursor for each moving entity, with aggregate commit on success and detached
 snapshots. Standalone all-attached transform inspection remains available;
-integrated `TerrainRun` owns its own independent copy.
+integrated `TerrainRun` owns its own independent mutable state. Transaction
+copies of `PathRunner` and `EntityRun` share their private, validated definitions
+read-only; creation still detaches all caller-owned inputs, and cursors, scripts,
+animation, requests and lifecycle state remain independently mutable.
 `FormContactSetup` copies FORM flags and resolved model bounds into one
 definition per supported base entity, after considering every authored model
 writer in source order. `FormContactQuery` consumes that definition, an entity

@@ -92,6 +92,7 @@ func test_inputs_and_nested_snapshots_are_detached() -> void:
 	var run: EntityRun = EntityRun.create([definition])
 	assert_eq(run.error, "")
 	path.segments[0].end = Vector3i(1000, 0, 0)
+	var fork: EntityRun = run.copy()
 	definition.path_start.speed = 99
 	definition.matrix12[9] = 800
 	var state: EntityRunSnapshot = run.snapshot()
@@ -100,8 +101,13 @@ func test_inputs_and_nested_snapshots_are_detached() -> void:
 	state.entities.clear()
 	assert_eq(run.step(0), "")
 	assert_eq(run.snapshot().entities[0].path.position, Vector3i(10, 0, 0))
+	assert_eq(fork.snapshot().tick_index, 0)
+	assert_eq(fork.step(0), "")
+	assert_eq(fork.step(1), "")
+	assert_eq(fork.snapshot().entities[0].path.position, Vector3i(20, 0, 0))
 	assert_eq(run.reset(), "")
 	assert_eq(run.snapshot().entities[0].path.speed, 10)
+	assert_eq(fork.snapshot().entities[0].path.position, Vector3i(20, 0, 0))
 
 func test_invalid_definitions_and_failed_create_reset() -> void:
 	var bad: EntityDefinition = _moving(0, _path())

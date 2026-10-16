@@ -24,6 +24,13 @@ var _lighting: MapLighting = null
 var _materials: Dictionary[ShaderMaterial, ShaderMaterial] = {}
 var _source_ambient: Vector3 = Vector3.ZERO
 var _source_colours: Array[Vector3] = []
+var _lighting_directions: Array[Vector3] = []
+var _lighting_colours: Array[Vector3] = []
+var _lighting_ambient: Vector3 = Vector3.ZERO
+var _colour_scale: Vector3i = Vector3i.ZERO
+var _ambient: Vector3i = Vector3i.ZERO
+var _scaled: bool = false
+var _custom: bool = false
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -34,6 +41,7 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		node.queue_free()
 	part_nodes.clear()
 	_materials.clear()
+	_lighting = null
 	model_mesh = mesh
 	player = animation_player
 	for index: int in mesh.part_meshes.size():
@@ -48,7 +56,16 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 
 ## Applies source colour-matrix scaling and custom ambient to instance-local materials.
 func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector3i, scaled: bool, custom: bool) -> void:
+	if _lighting == lighting and _colour_scale == scale and _ambient == ambient and _scaled == scaled and _custom == custom and _lighting_ambient == lighting.ambient and _lighting_directions == lighting.directions and _lighting_colours == lighting.colours:
+		return
 	_lighting = lighting
+	_colour_scale = scale
+	_ambient = ambient
+	_scaled = scaled
+	_custom = custom
+	_lighting_ambient = lighting.ambient
+	_lighting_directions.assign(lighting.directions)
+	_lighting_colours.assign(lighting.colours)
 	var multiplier: Vector3 = Vector3(scale) / 128.0 if scaled else Vector3.ONE
 	var base: Vector3 = Vector3(ambient) if custom else lighting.ambient / 16.0
 	_source_ambient = (base * multiplier).floor() * 16.0
@@ -57,14 +74,15 @@ func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector
 		_source_colours.append((colour * multiplier).floor())
 	for original: ShaderMaterial in _materials:
 		_update_lighting(_materials[original], original)
-	apply_exact()
+	render(1.0)
 
 func _material(original: ShaderMaterial) -> ShaderMaterial:
 	if _lighting == null or original == null:
 		return original
 	if not _materials.has(original):
 		_materials[original] = original.duplicate() as ShaderMaterial
-	_update_lighting(_materials[original], original)
+		_update_lighting(_materials[original], original)
+	_materials[original].set_shader_parameter("projection_scale", original.get_shader_parameter("projection_scale"))
 	return _materials[original]
 
 func _update_lighting(material: ShaderMaterial, original: ShaderMaterial) -> void:

@@ -2,7 +2,7 @@
 
 Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port at 30 Hz. Direct retail terrain-viewer launches use
-live keyboard input. There is no complete playable level yet. See
+live keyboard input without diagnostic phase capture. See
 [launch and controls](../README.md) and the [domain index](reference/domain.md).
 
 POP and SAFE interactions advance detached entity/path, frog, camera,

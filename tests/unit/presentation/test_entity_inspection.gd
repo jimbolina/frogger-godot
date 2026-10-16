@@ -84,6 +84,17 @@ func test_fixed_probe_contacts_follow_post_tick_pose_and_selection() -> void:
 	assert_eq(at_zero.local_position, Vector3i.ZERO)
 	assert_eq(at_zero.cell, Vector2i(1, 1))
 	assert_eq(at_zero.cell_flags, 7)
+	var overlay: EntityInspection = _viewer._entity_inspection
+	var marker: Material = overlay._positions[1].material_override
+	var outline: Mesh = overlay._contact_outline.mesh
+	var cell: Mesh = overlay._contact_cell.mesh
+	for repeat: int in 3:
+		overlay.set_snapshot(_viewer.entity_snapshot())
+		overlay.set_selected(1)
+		overlay.set_contact(scenario.probe_world, at_zero)
+	assert_same(overlay._positions[1].material_override, marker)
+	assert_same(overlay._contact_outline.mesh, outline)
+	assert_same(overlay._contact_cell.mesh, cell)
 	assert_eq(_viewer._form_probe_world, scenario.probe_world)
 	assert_eq(_viewer._entity_inspection._contact_probe.get_parent(), _viewer._entity_inspection)
 	_viewer.step_animation()
@@ -94,6 +105,8 @@ func test_fixed_probe_contacts_follow_post_tick_pose_and_selection() -> void:
 	assert_eq(at_one.local_position, Vector3i(0, 0, -10))
 	assert_eq(at_one.cell, Vector2i(1, 0))
 	assert_eq(at_one.cell_flags, 1)
+	assert_ne(overlay._contact_cell.mesh, cell)
+	assert_same(overlay._contact_outline.mesh, outline)
 	assert_eq(_viewer._form_probe_world, scenario.probe_world)
 	assert_string_contains(_viewer._entity_contact_readout.text, "Probe -100, 0, 0")
 	assert_string_contains(_viewer._entity_contact_readout.text, "Cell 1, 0 · flags 0x1")

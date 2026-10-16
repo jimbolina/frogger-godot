@@ -96,11 +96,11 @@ func step(tick_index: int) -> String:
 func snapshot() -> PathSnapshot:
 	return _state.copy() if _state != null else null
 
-## Returns an independent runner with the same definition and current cursor.
+## Returns an independent cursor sharing the private read-only validated definition.
 func copy() -> PathRunner:
 	var result := PathRunner.new()
 	result.error = error
-	result._definition = _definition.copy() if _definition != null else null
+	result._definition = _definition
 	result._state = _state.copy() if _state != null else null
 	return result
 

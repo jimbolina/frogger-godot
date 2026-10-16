@@ -9,14 +9,13 @@ var _state: EntityRunSnapshot = null
 var _ready: bool = false
 var _lifecycle: EntityLifecycleDefinition = null
 
-## Clones definitions, path runners and the current detached aggregate state.
+## Clones owned mutable state; private validated definitions are shared read-only.
 func copy() -> EntityRun:
 	var result := EntityRun.new()
 	result.error = error
 	result._ready = _ready
-	result._lifecycle = _lifecycle.copy() if _lifecycle != null else null
-	for definition: EntityDefinition in _definitions:
-		result._definitions.append(definition.copy() if definition != null else null)
+	result._lifecycle = _lifecycle
+	result._definitions.assign(_definitions)
 	for runner: PathRunner in _runners:
 		result._runners.append(runner.copy() if runner != null else null)
 	result._state = _state.copy() if _state != null else null
@@ -227,16 +226,17 @@ func entity_snapshot(slot: int) -> EntitySnapshot:
 	return _state.entities[slot].copy()
 
 ## Captures an ordered update, then applies UpdateLiveEntities' transient clear.
-func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds: int, environment: EntityEnvironmentState, death_requested: bool) -> void:
+func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds: int, environment: EntityEnvironmentState, death_requested: bool, capture_observation: bool = true) -> void:
 	if death_requested:
 		_state.entities[slot].requests.append("death_pgen")
-	var observation := EntityUpdateObservation.new()
-	observation.entity = _state.entities[slot].copy()
-	observation.previous_flags = previous_flags
-	observation.rng_state = random.state
-	observation.sound_requests = sounds
-	observation.environment = environment.copy() if environment != null else null
-	_state.updates.append(observation)
+	if capture_observation:
+		var observation := EntityUpdateObservation.new()
+		observation.entity = _state.entities[slot].copy()
+		observation.previous_flags = previous_flags
+		observation.rng_state = random.state
+		observation.sound_requests = sounds
+		observation.environment = environment.copy() if environment != null else null
+		_state.updates.append(observation)
 	_state.entities[slot].live_flags &= ~25596
 
 ## Publishes this tick's frog contact flags for the following entity update.

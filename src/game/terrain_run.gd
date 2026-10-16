@@ -25,6 +25,7 @@ var _theme_name: StringName = &"SUB"
 var _camera: GameplayCamera = null
 var _random: SourceRandom = null
 var _animation: FrogAnimationController = null
+var _capture_phases: bool = true
 var _candidate_camera: GameplayCamera = null
 var _candidate_random: SourceRandom = null
 var _candidate_animation: FrogAnimationController = null
@@ -208,9 +209,10 @@ func reset(initial: RunStart = null) -> String:
 func snapshot() -> RunSnapshot:
 	return _state.copy() if _state != null else null
 
-## Applies exactly one ordered control/move tick, committing only after validation.
-func step(command: TickCommand) -> TickResult:
+## Commits one atomic tick. Optional phase capture affects diagnostics only; final state is always detached.
+func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	var result := TickResult.new()
+	_capture_phases = capture_phases
 	if _state == null or command == null:
 		result.error = "Terrain run and tick command must be initialized"
 		return result
@@ -257,7 +259,8 @@ func step(command: TickCommand) -> TickResult:
 	if not control_error.is_empty():
 		return _failed_tick(result, control_error)
 	_sync_systems(next)
-	result.control_snapshot = next.copy()
+	if capture_phases:
+		result.control_snapshot = next.copy()
 	next.old_position_16 = next.position_16
 	_move(next, result.events)
 	if not _callback_error.is_empty():
@@ -272,7 +275,8 @@ func step(command: TickCommand) -> TickResult:
 		if not guard_error.is_empty():
 			return _failed_tick(result, guard_error)
 	_sync_systems(next)
-	result.move_snapshot = next.copy()
+	if capture_phases:
+		result.move_snapshot = next.copy()
 	TerrainModifiers.update(next)
 	var continue_entities: bool = true
 	if _collision_enabled:
@@ -290,7 +294,8 @@ func step(command: TickCommand) -> TickResult:
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
 	_sync_systems(next)
-	result.collision_snapshot = next.copy()
+	if capture_phases:
+		result.collision_snapshot = next.copy()
 	if _candidate_camera != null:
 		var camera_input := GameplayCameraTick.new()
 		camera_input.frog_world = next.world_position
@@ -309,12 +314,14 @@ func step(command: TickCommand) -> TickResult:
 			return _failed_tick(result, result.error)
 		next.camera = _candidate_camera.snapshot()
 		next.entity_angle = (next.entity_angle + next.camera.entity_angle_delta) & 3
-	result.camera_snapshot = next.copy()
+	if capture_phases:
+		result.camera_snapshot = next.copy()
 	if _candidate_animation != null:
 		next.no_input_timer = _candidate_animation.update_scripts(next.no_input_timer)
 		_sync_systems(next)
 		next.animation_condition_counter = _candidate_animation.context.if_counter
-	result.scripts_snapshot = next.copy()
+	if capture_phases:
+		result.scripts_snapshot = next.copy()
 	if _candidate_animation != null:
 		_candidate_animation.advance_pose()
 		if not _candidate_animation.error.is_empty():
@@ -364,9 +371,10 @@ func _update_entity_scripts(state: RunSnapshot, events: Array[String]) -> String
 		var killed: bool = was_alive and bool(state.flags & 8)
 		if killed:
 			events.append("entity:%d:death_pgen" % _entity_collision.entities[slot].entity_index)
-		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.sound_requests, state.entity_environment, killed)
+		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.sound_requests, state.entity_environment, killed, _capture_phases)
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
-	state.entities = _candidate_entities.snapshot()
+	if _capture_phases:
+		state.entities = _candidate_entities.snapshot()
 	return ""
 
 func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: Array[String]) -> String:
@@ -1158,7 +1166,15 @@ func _request_animation(animation_id: int, state: RunSnapshot) -> void:
 func _sync_systems(state: RunSnapshot) -> void:
 	if _has_entity_updates:
 		_candidate_entities.set_contact_flags(state.entity_hit_indices, state.entity_carry_indices)
-		state.entities = _candidate_entities.snapshot()
+		if _capture_phases:
+			state.entities = _candidate_entities.snapshot()
+		else:
+			for entity: EntitySnapshot in state.entities.entities:
+				entity.live_flags &= ~1020
+				if state.entity_hit_indices.has(entity.entity_index):
+					entity.live_flags |= 64
+				if state.entity_carry_indices.has(entity.entity_index):
+					entity.live_flags |= 4
 	state.camera = _candidate_camera.snapshot() if _candidate_camera != null else null
 	state.animation = _candidate_animation.state.copy() if _candidate_animation != null else null
 	state.rng_state = _candidate_random.state

@@ -31,7 +31,9 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	assert_eq(first.final_snapshot.entity_hit_indices, PackedInt32Array([4]))
 	assert_eq(first.final_snapshot.sound_requests, 0, "Same-tick hit must not call the script")
 	var before: RunSnapshot = run.snapshot()
-	var failed: TickResult = _tick(run)
+	var command := TickCommand.new()
+	command.tick_index = before.tick_index
+	var failed: TickResult = run.step(command, false)
 	assert_string_contains(failed.error, "boundary")
 	assert_null(failed.control_snapshot)
 	assert_eq(failed.events, [])
@@ -68,7 +70,7 @@ func test_ordered_scripts_share_rng_and_late_failure_discards_all_visits() -> vo
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	run._animation.error = "forced post-script failure"
-	var failed: TickResult = _tick(run)
+	var failed: TickResult = run.step(TickCommand.new(), false)
 	assert_eq(failed.error, "forced post-script failure")
 	assert_null(failed.final_snapshot)
 	assert_eq(run.snapshot().entities.updates.size(), 0)

@@ -59,6 +59,20 @@ func test_source_appearance_is_instance_local_and_preserves_shared_materials() -
 	assert_true(unchanged)
 	first.advance_tick()
 	assert_same(first.part_nodes[0].get_surface_override_material(0), a)
+	first.set_source_lighting(lighting, Vector3i(0, 64, 255), Vector3i(64, 64, 192), true, true)
+	assert_same(first.part_nodes[0].get_surface_override_material(0), a)
+	lighting.ambient = Vector3(2048, 2048, 2048)
+	lighting.directions.append(Vector3.RIGHT)
+	lighting.colours.append(Vector3(256, 512, 1024))
+	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	var changed_ambient: Vector3 = b.get_shader_parameter("source_ambient")
+	var changed_colour: Vector3 = b.get_shader_parameter("source_colour0")
+	assert_eq(changed_ambient, lighting.ambient)
+	assert_eq(changed_colour, lighting.colours[0])
+	lighting.colours[0] = Vector3(128, 256, 512)
+	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	changed_colour = b.get_shader_parameter("source_colour0")
+	assert_eq(changed_colour, lighting.colours[0], "in-place edits invalidate the lighting cache")
 
 
 func test_flipbook_geometry_is_prebuilt_and_bounds_cover_all_cels() -> void:

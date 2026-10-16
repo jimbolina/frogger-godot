@@ -56,6 +56,16 @@ fixtures against all three render schedules sequentially.
 Captures and traces must be outside this checkout and frozen `froggy`.
 Generated resources are released on reset/replacement rather than accumulated.
 
+For actual host frame pacing, run `tools/probe_terrain_performance.gd` with a
+rendered 640×480 window, `--data-dir=<game-folder> --level=ORG1
+--exploration=org1-turtle-log-bank`, isolated user data and an external log using
+the [testing process rules](README.md). It measures simulation and repeated-draw
+cost separately, then plays the frozen round trip for eight wall-clock seconds
+without trace recording. The JSON reports host FPS, simulation ticks per second
+and an alive bank return. Preserve timings externally; schedule parity alone
+does not establish interactive performance. Trace capture deliberately retains
+the more expensive intermediate observations; ordinary LIVE/REPLAY omits them.
+
 ## POP entity inspection
 
 `--entity-reactions=pop` attaches copied STATIC/MOVING definitions and FORM

@@ -11,6 +11,8 @@ var _contacts: Array[FormContactDefinition] = []
 var _contact_outline: MeshInstance3D
 var _contact_cell: MeshInstance3D
 var _contact_probe: MeshInstance3D
+var _marker_materials: Array[StandardMaterial3D] = []
+var _cell_key: Vector3i = Vector3i(-1, -1, -1)
 
 ## Allocates one marker per definition; flags remain visible as metadata.
 func configure(definitions: Array[EntityDefinition]) -> void:
@@ -50,6 +52,7 @@ func configure(definitions: Array[EntityDefinition]) -> void:
 
 ## Installs detached FORM geometry for the selected entity's query display.
 func configure_contacts(definitions: Array[FormContactDefinition]) -> void:
+	_cell_key = Vector3i(-1, -1, -1)
 	_contacts.clear()
 	for definition: FormContactDefinition in definitions:
 		_contacts.append(definition.copy() if definition != null else null)
@@ -98,7 +101,6 @@ func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 		else:
 			_axes[index].visible = true
 			_axes[index].transform = Transform3D(Basis(x_axis, y_axis, z_axis), origin)
-	set_selected(_selected)
 	if _contact_outline != null and _selected >= 0 and _selected < snapshot.entities.size():
 		var contact: FormContactDefinition = _selected_contact()
 		_contact_outline.visible = (not _lifecycle_mode or snapshot.entities[_selected].live) and contact != null and contact.unsupported_reason.is_empty() and contact.dimensions.x > 0 and contact.dimensions.y > 0
@@ -108,17 +110,27 @@ func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 
 ## Highlights one source-ordered definition slot while retaining all markers.
 func set_selected(index: int) -> void:
+	if _selected == index:
+		return
+	var previous: int = _selected
 	_selected = index
-	for marker_index: int in _positions.size():
-		if _positions[marker_index] == null:
-			continue
-		var material := StandardMaterial3D.new()
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		material.no_depth_test = true
-		material.albedo_color = Color(1.0, 0.95, 0.2) if marker_index == _selected else Color(1.0, 0.3, 0.15)
-		_positions[marker_index].material_override = material
-		_positions[marker_index].scale = Vector3.ONE * (1.6 if marker_index == _selected else 1.0)
+	for marker_index: int in [previous, index]:
+		_style_marker(marker_index)
+	_cell_key = Vector3i(-1, -1, -1)
 	_rebuild_contact_outline()
+
+func _style_marker(index: int) -> void:
+	if index < 0 or index >= _positions.size() or _positions[index] == null:
+		return
+	if _marker_materials.is_empty():
+		for color: Color in [Color(1.0, 0.3, 0.15), Color(1.0, 0.95, 0.2)]:
+			var material := StandardMaterial3D.new()
+			material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			material.no_depth_test = true
+			material.albedo_color = color
+			_marker_materials.append(material)
+	_positions[index].material_override = _marker_materials[1 if index == _selected else 0]
+	_positions[index].scale = Vector3.ONE * (1.6 if index == _selected else 1.0)
 
 ## Places the fixed world probe and highlights the selected local FORM cell.
 func set_contact(probe_world: Vector3i, result: FormContactResult) -> void:
@@ -132,7 +144,10 @@ func set_contact(probe_world: Vector3i, result: FormContactResult) -> void:
 		return
 	var x0: int = contact.offsets.x + (result.cell.x << 8)
 	var z0: int = contact.offsets.y + (result.cell.y << 8)
-	_contact_cell.mesh = _grid_mesh(x0, z0, x0 + 256, z0 + 256, contact.height, Color(0.2, 1.0, 0.4), false)
+	var key := Vector3i(_selected, result.cell.x, result.cell.y)
+	if key != _cell_key:
+		_contact_cell.mesh = _grid_mesh(x0, z0, x0 + 256, z0 + 256, contact.height, Color(0.2, 1.0, 0.4), false)
+		_cell_key = key
 	_contact_cell.visible = true
 
 func _selected_contact() -> FormContactDefinition:
@@ -192,6 +207,7 @@ func _create_marker(index: int) -> void:
 	position.mesh = sphere
 	add_child(position)
 	_positions[index] = position
+	_style_marker(index)
 
 func _destroy_marker(index: int) -> void:
 	if _axes[index] != null:

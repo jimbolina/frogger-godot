@@ -45,12 +45,12 @@ func test_admission_dependencies_and_complete_reset() -> void:
 	var command := TickCommand.new()
 	command.pressed_mask = TickCommand.SOUTH
 	command.held_mask = command.pressed_mask
-	assert_string_contains(run.step(command).error, "boundary")
+	assert_string_contains(run.step(command, false).error, "boundary")
 	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), initial)
 	for tick: int in 65:
 		command = TickCommand.new()
 		command.tick_index = tick
-		assert_eq(run.step(command).error, "")
+		assert_eq(run.step(command, false).error, "")
 	assert_ne(run.snapshot().entity_environment.covered, 0)
 	assert_eq(run.reset(scenario.initial), "")
 	assert_true(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)) == initial, "Every reset field matches the selected inspection start")
@@ -69,6 +69,7 @@ func _route(name: String, ticks: int, commands: Dictionary) -> void:
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
+	var live: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
 	var rows: Array[PackedStringArray] = GoldenFiles.rows(name + ".tsv")
 	var digests: Array[PackedStringArray] = GoldenFiles.rows(name + "_entities.tsv")
 	var fields: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/org1_entity_update_fields.json"))
@@ -111,5 +112,22 @@ func _route(name: String, ticks: int, commands: Dictionary) -> void:
 			canonical += "\t".join(values) + "\n"
 		if canonical.sha256_text() != digests[tick + 1][1].strip_edges():
 			fail_test("tick %d ordered entity updates differ: %s" % [tick, canonical])
+			return
+		var live_result: TickResult = live.step(command, false)
+		assert_eq(live_result.error, "", "live tick %d" % tick)
+		if not live_result.error.is_empty():
+			return
+		assert_null(live_result.control_snapshot)
+		assert_true(live_result.final_snapshot.entities.updates.is_empty())
+		# Only diagnostic observations are omitted. Compare all authoritative
+		# fields, ordered contacts, outcomes and RNG consumers to the golden run.
+		result.final_snapshot.entities.updates.clear()
+		result.control_snapshot = null
+		result.move_snapshot = null
+		result.collision_snapshot = null
+		result.camera_snapshot = null
+		result.scripts_snapshot = null
+		if JSON.stringify(TerrainTrace.facts(live_result, true)) != JSON.stringify(TerrainTrace.facts(result, true)):
+			fail_test("tick %d live execution differs from the source-verified diagnostic run" % tick)
 			return
 	assert_eq(run.snapshot().tick_index, ticks)

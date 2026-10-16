@@ -102,6 +102,7 @@ func test_reset_and_definition_are_detached() -> void:
 	var definition: PathDefinition = _path()
 	var run: PathRunner = PathRunner.create(definition)
 	assert_eq(run.error, "")
+	var fork: PathRunner = run.copy()
 	definition.segments[0].end = Vector3i(1000, 0, 0)
 	var state: PathSnapshot = run.snapshot()
 	state.position = Vector3i(999, 999, 999)
@@ -111,6 +112,12 @@ func test_reset_and_definition_are_detached() -> void:
 	assert_false(run.reset(bad).is_empty())
 	assert_eq(run.snapshot().tick_index, 0)
 	assert_eq(run.step(0), "")
+	assert_eq(run.snapshot().position, Vector3i(16, 0, 0))
+	assert_eq(fork.snapshot().tick_index, 0)
+	assert_eq(fork.step(0), "")
+	assert_eq(fork.snapshot().position, Vector3i(16, 0, 0))
+	assert_eq(fork.reset(), "")
+	assert_eq(fork.snapshot().position, Vector3i.ZERO)
 	assert_eq(run.snapshot().position, Vector3i(16, 0, 0))
 
 func test_evaluator_rejects_invalid_shapes_and_distance() -> void:

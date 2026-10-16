@@ -88,6 +88,9 @@ godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder
 It opens LIVE and paused. Press Space to run or Period to step; Up hops toward
 the turtles/logs and Down returns toward the bank. Time hops after centring.
 The exact replay uses `tests/golden/fixtures/org1_turtle_log_bank.json`.
+Ordinary playback omits diagnostic phase copies; trace capture enables them
+and is more expensive. The [frame-pacing probe](docs/reference/testing/terrain-inspection.md)
+measures actual host FPS separately from deterministic replay schedules.
 R restores the whole inspection while retaining LIVE/REPLAY mode. Boundary or
 unsupported-pose rejection pauses and rolls back the tick. The preset requires
 audited high-detail v3.0e inputs and all-attached lifetime; visibility mode is

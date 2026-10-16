@@ -62,6 +62,8 @@ The [entity contract](reference/gameplay/entities.md#org1-admission) owns
 bounds, routes and the expanded script/background closure. Bounded script
 components, source-ordered atomic integration and guarded live exploration are
 implemented, with independent retail goldens and rendered/keyboard checks.
+Interactive playback omits diagnostic phase capture and reuses draw resources;
+the [inspection probe](reference/testing/terrain-inspection.md) checks host pacing.
 Remaining work includes broader instruction/custom-behavior coverage, active
 zones, verified form callbacks, selective reset, primitives and lifecycle workloads.
 A complete playable level is still required.
