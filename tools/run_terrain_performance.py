@@ -27,6 +27,8 @@ def main():
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--mode', choices=('full', 'paused', 'simulation', 'no-inspector'), default='full')
     parser.add_argument('--sync', choices=('default', 'uncapped'), default='uncapped')
+    parser.add_argument('--window-mode', choices=('windowed', 'exclusive'), default='windowed')
+    parser.add_argument('--threaded', choices=('true', 'false'), default='true')
     parser.add_argument('--smoothing', choices=('true', 'false'), default='true')
     parser.add_argument('--require-target', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Separate diagnostic run with Godot script profiler')
@@ -90,7 +92,7 @@ def main():
         fixture = 'org1_turtle_log_bank.json' if route == 'round-trip' else 'org1_attached_diver.json'
         for repetition in range(args.repetitions):
             name = f'{route}-{repetition + 1}'
-            flags = ['--resolution', args.resolution]
+            flags = ['--resolution', args.resolution, '--borderless', '--position', '0,0']
             if args.sync == 'uncapped':
                 flags += ['--disable-vsync', '--max-fps', '0']
             stage(name, [*flags, '-s', 'res://tools/probe_terrain_performance.gd', '--',
@@ -98,6 +100,8 @@ def main():
                          '--data-dir=' + str(args.data_dir.resolve()),
                          '--scenario-file=' + str(repo / 'tests/golden/fixtures' / fixture),
                          '--performance-mode=' + args.mode, '--smoothing=' + args.smoothing,
+                         '--performance-size=' + args.resolution,
+                         '--window-mode=' + args.window_mode, '--threaded=' + args.threaded,
                          '--performance-output=' + str(evidence / (name + '.json'))])
             report = json.loads((evidence / (name + '.json')).read_text())
             report.pop('frame_ms', None)

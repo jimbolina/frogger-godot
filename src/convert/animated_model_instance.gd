@@ -31,6 +31,9 @@ var _colour_scale: Vector3i = Vector3i.ZERO
 var _ambient: Vector3i = Vector3i.ZERO
 var _scaled: bool = false
 var _custom: bool = false
+var _blend_values: Array[PackedFloat32Array] = []
+var _active_blends: Array[PackedInt32Array] = []
+var _static_pose: bool = false
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -40,10 +43,15 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		remove_child(node)
 		node.queue_free()
 	part_nodes.clear()
+	_blend_values.clear()
+	_active_blends.clear()
 	_materials.clear()
 	_lighting = null
 	model_mesh = mesh
 	player = animation_player
+	_static_pose = player.action_count() == 0
+	for tracks: Array in mesh.texture_tracks:
+		_static_pose = _static_pose and tracks.is_empty()
 	for index: int in mesh.part_meshes.size():
 		var node := MeshInstance3D.new()
 		node.name = "Part%d" % index
@@ -52,6 +60,10 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 			node.custom_aabb = mesh.part_bounds[index]
 		add_child(node)
 		part_nodes.append(node)
+		var values := PackedFloat32Array()
+		values.resize(mesh.part_meshes[index].get_blend_shape_count() if mesh.part_meshes[index] != null else 0)
+		_blend_values.append(values)
+		_active_blends.append(PackedInt32Array())
 	apply_exact()
 
 ## Applies source colour-matrix scaling and custom ambient to instance-local materials.
@@ -74,6 +86,7 @@ func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector
 		_source_colours.append((colour * multiplier).floor())
 	for original: ShaderMaterial in _materials:
 		_update_lighting(_materials[original], original)
+	refresh_materials()
 	render(1.0)
 
 func _material(original: ShaderMaterial) -> ShaderMaterial:
@@ -82,7 +95,9 @@ func _material(original: ShaderMaterial) -> ShaderMaterial:
 	if not _materials.has(original):
 		_materials[original] = original.duplicate() as ShaderMaterial
 		_update_lighting(_materials[original], original)
-	_materials[original].set_shader_parameter("projection_scale", original.get_shader_parameter("projection_scale"))
+	var projection: Variant = original.get_shader_parameter("projection_scale")
+	if _materials[original].get_shader_parameter("projection_scale") != projection:
+		_materials[original].set_shader_parameter("projection_scale", projection)
 	return _materials[original]
 
 func _update_lighting(material: ShaderMaterial, original: ShaderMaterial) -> void:
@@ -100,10 +115,13 @@ func advance_tick() -> void:
 		return
 	_previous = _current
 	player.advance_tick()
+	if _static_pose and player.revision == _revision:
+		return
 	_current = player.sample_pose()
 	if player.wrapped or player.revision != _revision or _previous == null:
 		_previous = _current
 	_revision = player.revision
+	refresh_materials()
 	render(1.0 if not smoothing_enabled else 0.0)
 
 
@@ -114,6 +132,7 @@ func apply_exact() -> void:
 	_current = player.sample_pose()
 	_previous = _current
 	_revision = player.revision
+	refresh_materials()
 	render(1.0)
 
 
@@ -142,18 +161,43 @@ func render(fraction: float) -> void:
 			node.transform = before.interpolate_with(now, weight)
 		if node.mesh != null:
 			var mesh: ArrayMesh = node.mesh as ArrayMesh
-			if _lighting != null:
-				for surface: int in mesh.get_surface_count():
-					node.set_surface_override_material(surface, _material(mesh.surface_get_material(surface) as ShaderMaterial))
 			var current_cel: int = _current.partcels[index] if index < _current.partcels.size() else 0
 			var previous_cel: int = _previous.partcels[index] if _previous != null and index < _previous.partcels.size() else current_cel
-			for blend: int in mesh.get_blend_shape_count():
+			var active := PackedInt32Array()
+			for cel: int in [current_cel, previous_cel]:
+				if cel > 0 and cel <= mesh.get_blend_shape_count() and not active.has(cel - 1):
+					active.append(cel - 1)
+			var changed: PackedInt32Array = active.duplicate()
+			for blend: int in _active_blends[index]:
+				if not changed.has(blend):
+					changed.append(blend)
+			for blend: int in changed:
 				var amount: float = (weight if current_cel == blend + 1 else 0.0) + (1.0 - weight if previous_cel == blend + 1 else 0.0)
-				node.set_blend_shape_value(blend, amount)
-		if index >= model_mesh.texture_tracks.size():
+				if _blend_values[index][blend] != amount:
+					node.set_blend_shape_value(blend, amount)
+					_blend_values[index][blend] = amount
+			_active_blends[index] = active
+
+## Refreshes discrete texture bindings and instance materials after pose or projection changes.
+func refresh_materials() -> void:
+	if _current == null:
+		return
+	for index: int in part_nodes.size():
+		var node: MeshInstance3D = part_nodes[index]
+		var mesh: ArrayMesh = node.mesh as ArrayMesh
+		if mesh == null:
 			continue
-		for track: ModelMesh.TextureTrack in model_mesh.texture_tracks[index]:
-			var entry: int = -1
-			if index < _current.texture_entries.size() and track.target < _current.texture_entries[index].size():
-				entry = _current.texture_entries[index][track.target]
-			node.set_surface_override_material(track.surface, _material(track.frames[entry] if entry >= 0 and entry < track.frames.size() else track.original))
+		var overrides: Dictionary[int, ShaderMaterial] = {}
+		if _lighting != null:
+			for surface: int in mesh.get_surface_count():
+				overrides[surface] = mesh.surface_get_material(surface) as ShaderMaterial
+		if index < model_mesh.texture_tracks.size():
+			for track: ModelMesh.TextureTrack in model_mesh.texture_tracks[index]:
+				var entry: int = -1
+				if index < _current.texture_entries.size() and track.target < _current.texture_entries[index].size():
+					entry = _current.texture_entries[index][track.target]
+				overrides[track.surface] = track.frames[entry] if entry >= 0 and entry < track.frames.size() else track.original
+		for surface: int in overrides:
+			var material: ShaderMaterial = _material(overrides[surface])
+			if node.get_surface_override_material(surface) != material:
+				node.set_surface_override_material(surface, material)

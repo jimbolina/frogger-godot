@@ -63,13 +63,21 @@ ORG1 routes three times at 2560×1440 with VSync disabled and no frame cap. Each
 warms for five seconds and resets before measuring real frame completion intervals.
 JSON reports retain individual frame times, percentiles, tick-frame costs, cadence,
 route outcome, hardware, effective viewport, draw calls and resource counts.
+At a 2560×1440 window, the preserved 4:3 aspect renders 1920×1440 natively
+with 320-pixel side bars. The probe explicitly sizes the window after startup
+to avoid Windows work-area clamping. It derives the native extent from the
+logical viewport and stretch transform: Godot 4.5.1's viewport texture size
+accessor applies that stretch twice.
 Loading and reset costs are separate. Reports and logs stay outside the repository.
 
 Use `--resolution 640x480 --sync default --smoothing false` to reproduce the older
 configuration; `--route round-trip --repetitions 1` shortens diagnostic iteration.
 `--mode paused|simulation|no-inspector` isolates rendering, pure simulation, or
 inspection drawing respectively. `--profile` enables Godot's script profiler in a
-separate diagnostic run. These are not acceptance modes. `--require-target` requires
+separate diagnostic run; `--threaded false` compares synchronous simulation and
+`--window-mode exclusive` isolates window-compositor effects. Script and visual
+profiler packets are retained together with a readable script timing summary.
+These are not acceptance modes. `--require-target` requires
 both routes three times, smooth uncapped 1440p, average above 200 FPS, p99 at most
 5 ms, correct outcome and 30 Hz cadence within one tick. The target is specific to
 the owner's i7-10700K/RTX 4070 Ti SUPER; it is not a portable test-suite threshold.

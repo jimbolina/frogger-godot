@@ -18,6 +18,51 @@ func _context() -> EntityUpdateContext:
 func _update(definition: EntityScriptDefinition, state: EntityScriptState, context: EntityUpdateContext = null, animation: EntityAnimationState = null) -> EntityUpdateResult:
 	return EntityScriptRunner.update(definition, state, animation if animation != null else EntityAnimationState.create([3, 4]), context if context != null else _context(), SourceRandom.create(1))
 
+func test_prepared_definition_detaches_and_matches_standalone_execution() -> void:
+	var definition: EntityScriptDefinition = _definition([11, 3, 1, 7, 0, 0, 12, 5])
+	var animation: EntityAnimationState = EntityAnimationState.create([3, 4])
+	var context: EntityUpdateContext = _context()
+	var prepared: PreparedEntityScript = PreparedEntityScript.create(definition, animation.lengths, context.form_id, context.has_path)
+	assert_eq(prepared.error, "")
+	var original: EntityUpdateResult = _update(definition, EntityScriptState.create(1))
+	definition.programs[1][0] = 999
+	definition.names[1] = "UNKNOWN"
+	var state: EntityScriptState = EntityScriptState.create(1)
+	var random: SourceRandom = SourceRandom.create(1)
+	var actual: EntityUpdateResult = EntityScriptRunner.update_prepared(prepared, state, animation, context, random)
+	assert_eq(actual.error, "")
+	assert_eq(actual.script_state.cursor, original.script_state.cursor)
+	assert_eq(actual.script_state.loop_end, original.script_state.loop_end)
+	assert_eq(actual.animation.action, original.animation.action)
+	assert_eq(state.cursor, 0)
+	assert_eq(animation.action, 0)
+	actual.script_state.timer = 99
+	assert_eq(state.timer, 0)
+	assert_ne(_update(definition, state).error, "")
+
+func test_prepared_dependencies_and_runtime_cursor_are_checked() -> void:
+	var definition: EntityScriptDefinition = _definition([3, 1, 44, 0, 8, 0, 1, 128, 2048, -1, 9, 38])
+	var prepared: PreparedEntityScript = PreparedEntityScript.create(definition, PackedInt32Array([3, 4]), 21, true)
+	assert_eq(prepared.error, "")
+	var context: EntityUpdateContext = _context()
+	var animation: EntityAnimationState = EntityAnimationState.create([3, 4])
+	var state: EntityScriptState = EntityScriptState.create(1)
+	var random: SourceRandom = SourceRandom.create(1)
+	state.cursor = 1
+	assert_string_contains(EntityScriptRunner.update_prepared(prepared, state, animation, context, random).error, "cursor")
+	state.cursor = 0
+	context.form_id = 1
+	assert_ne(EntityScriptRunner.update_prepared(prepared, state, animation, context, random).error, "")
+	context.form_id = 21
+	context.has_path = false
+	assert_ne(EntityScriptRunner.update_prepared(prepared, state, animation, context, random).error, "")
+	context.has_path = true
+	animation.lengths = PackedInt32Array([3])
+	assert_ne(EntityScriptRunner.update_prepared(prepared, state, animation, context, random).error, "")
+	assert_eq(state.cursor, 0)
+	assert_eq(random.draw_count, 0)
+	assert_ne(PreparedEntityScript.create(_definition([11, 38]), PackedInt32Array([3]), 21, true).error, "")
+
 func test_stop_timer_wrap_previous_hits_and_repeated_once() -> void:
 	var definition: EntityScriptDefinition = _definition([34, 0, 1, 0, 0, 38])
 	var original: EntityScriptState = EntityScriptState.create(1)

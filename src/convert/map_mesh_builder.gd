@@ -136,6 +136,8 @@ func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
 					uv = base_uv[corner]
 				surface.uvs.append(uv)
 				var rank: int = ranks.get(vertex_index, -1)
+				if rank >= 0:
+					surface.spec.water = true
 				surface.water_ranks.append(Vector2(rank, polygon.vertex_indices.size()))
 				surface.reference_depths.append_array(reference_depths)
 		for key: String in order:

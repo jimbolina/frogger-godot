@@ -4,6 +4,7 @@ extends RefCounted
 
 var error: String = ""
 var _definitions: Array[EntityDefinition] = []
+var _scripts: Array[PreparedEntityScript] = []
 var _runners: Array[PathRunner] = []
 var _state: EntityRunSnapshot = null
 var _ready: bool = false
@@ -16,9 +17,26 @@ func copy() -> EntityRun:
 	result._ready = _ready
 	result._lifecycle = _lifecycle
 	result._definitions.assign(_definitions)
+	result._scripts.assign(_scripts)
 	for runner: PathRunner in _runners:
 		result._runners.append(runner.copy() if runner != null else null)
 	result._state = _state.copy() if _state != null else null
+	return result
+
+## Builds the next independent tick directly, avoiding a redundant pre-step deep copy.
+func advanced_copy(tick_index: int, attached_entity_index: int = -1) -> EntityRun:
+	var result := EntityRun.new()
+	result._ready = _ready
+	result._lifecycle = _lifecycle
+	result._definitions.assign(_definitions)
+	result._scripts.assign(_scripts)
+	# step reads these inputs and replaces them only after complete success.
+	result._runners.assign(_runners)
+	result._state = _state
+	result.error = result.step(tick_index, attached_entity_index)
+	if not result.error.is_empty():
+		result._runners.clear()
+		result._state = null
 	return result
 
 ## Validates and copies source-ordered definitions, then creates tick zero.
@@ -80,6 +98,8 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 				return result
 		copies.append(definition.copy())
 	result._definitions = copies
+	for definition: EntityDefinition in copies:
+		result._scripts.append(PreparedEntityScript.create(definition.script_definition, definition.action_lengths, definition.form_id, definition.path_definition != null) if definition.script_definition != null else null)
 	result._ready = true
 	result.error = result.reset()
 	if not result.error.is_empty():
@@ -145,12 +165,14 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 			return "Current attached entity must be a supported live authored identity"
 	var candidates: Array[PathRunner] = []
 	for runner: PathRunner in _runners:
-		candidates.append(runner.copy() if runner != null else null)
+		candidates.append(runner)
 	for index: int in range(candidates.size() - 1, -1, -1):
 		var runner: PathRunner = candidates[index]
 		if runner == null:
 			continue
-		var issue: String = runner.step(tick_index)
+		runner = runner.advanced_copy(tick_index)
+		candidates[index] = runner
+		var issue: String = runner.error
 		if not issue.is_empty():
 			return "Entity %d: %s" % [_definitions[index].entity_index, issue]
 	var next_state: EntityRunSnapshot = _make_snapshot(candidates, tick_index + 1)
@@ -203,15 +225,24 @@ func snapshot() -> EntityRunSnapshot:
 ## Updates one candidate entity; the caller applies frog effects before the next visit.
 func update_script(entity_index: int, context: EntityUpdateContext, random: SourceRandom) -> EntityUpdateResult:
 	var slot: int = _slot_for_id(entity_index)
+	return _update_script(slot, context, random, false)
+
+# Only TerrainRun's unpublished candidate uses this path. Any error discards
+# the entire aggregate, including RNG and effects from earlier entities.
+func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool) -> EntityUpdateResult:
 	if slot < 0 or _state == null or _definitions[slot].script_definition == null:
 		var failed := EntityUpdateResult.new()
 		failed.error = "Entity has no script state"
 		return failed
 	var entity: EntitySnapshot = _state.entities[slot]
-	var result: EntityUpdateResult = EntityScriptRunner.update(_definitions[slot].script_definition, entity.script_state, entity.animation, context, random)
+	var result: EntityUpdateResult
+	if owned and _scripts[slot].matches(entity.animation, context):
+		result = EntityScriptRunner._update_validated(_scripts[slot]._definition, entity.script_state, entity.animation, context, random, _scripts[slot], true)
+	else:
+		result = EntityScriptRunner.update_prepared(_scripts[slot], entity.script_state, entity.animation, context, random)
 	if result.error.is_empty():
-		entity.script_state = result.script_state.copy()
-		entity.animation = result.animation.copy()
+		entity.script_state = result.script_state if owned else result.script_state.copy()
+		entity.animation = result.animation if owned else result.animation.copy()
 		entity.matrix12 = result.matrix12.duplicate()
 		entity.requests.assign(result.requests)
 		entity.colour_scale = result.script_state.colours

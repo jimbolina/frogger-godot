@@ -38,6 +38,13 @@ var _last_contacts: Array[FormReactionResult] = []
 var _entity_pose_tick: int = -1
 var _entity_lighting: MapLighting = null
 var _full_trace_destination: String = ""
+var _host_step: bool = false
+var _overlay_key: Array = []
+var threaded_playback: bool = false
+var _worker: TerrainTickWorker
+var _pending_command: TickCommand
+var _render_elapsed: float = 0.0
+var last_tick_usec: int = 0
 
 func _ready() -> void:
 	_build_scene()
@@ -63,6 +70,7 @@ func _ready() -> void:
 			_capture_scenario.call_deferred(arguments)
 
 func _exit_tree() -> void:
+	_close_worker()
 	_clear_entity_visuals()
 	if _owns_data and data != null:
 		data.close()
@@ -71,6 +79,7 @@ func _exit_tree() -> void:
 
 ## Direct map exploration uses live controls; explicit fixtures and captures replay.
 func configure_input(arguments: PackedStringArray) -> void:
+	threaded_playback = not ViewerArguments.has_flag(arguments, "--run-scenario") and ViewerArguments.value(arguments, "--threaded=") != "false"
 	replay_commands = ViewerArguments.value(arguments, "--level=").is_empty() \
 		or ViewerArguments.has_flag(arguments, "--run-scenario") \
 		or ViewerArguments.has_prefix(arguments, "--scenario=") \
@@ -78,6 +87,7 @@ func configure_input(arguments: PackedStringArray) -> void:
 
 ## Loads optional frog presentation; callers retain borrowed data until this viewer detaches.
 func open_data(selected: GameData, take_ownership: bool = false) -> String:
+	_close_worker()
 	_projection_size = Vector2i.ZERO
 	_clear_entity_visuals()
 	if data != selected:
@@ -151,6 +161,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 		playing = false
 		return last_error
 	scenario = selected
+	_close_worker()
 	run = replacement
 	trace = TerrainTrace.new()
 	trace.configure(selected)
@@ -160,6 +171,8 @@ func open_scenario(selected: TerrainScenario) -> String:
 			return last_error
 	playing = false
 	_elapsed = 0.0
+	_render_elapsed = 0.0
+	_overlay_key.clear()
 	_held = 0
 	_sampled_held = 0
 	_current = run.snapshot()
@@ -176,15 +189,23 @@ func open_scenario(selected: TerrainScenario) -> String:
 
 ## Advances exactly one command; used by interactive stepping and automated scene tests.
 func step_command(command: TickCommand, capture_phases: bool = true) -> TickResult:
+	_finish_pending()
+	_close_worker()
 	if run == null:
 		var rejected := TickResult.new()
 		rejected.error = "Open a terrain scenario before stepping"
 		return rejected
+	var started: int = Time.get_ticks_usec()
 	var result: TickResult = run.step(command, capture_phases or record_trace)
+	last_tick_usec = Time.get_ticks_usec() - started
+	_accept_result(command, result)
+	return result
+
+func _accept_result(command: TickCommand, result: TickResult) -> void:
 	last_error = result.error
 	if last_error.is_empty():
 		_previous = _current
-		_current = run.snapshot()
+		_current = result.final_snapshot if _host_step else run.snapshot()
 		_outcomes = PackedStringArray(result.events)
 		_last_contacts.clear()
 		for contact: FormReactionResult in result.entity_contacts:
@@ -206,22 +227,28 @@ func step_command(command: TickCommand, capture_phases: bool = true) -> TickResu
 		playing = false
 	if not playing:
 		_previous = _current
-	_elapsed = 0.0
-	draw_state(1.0)
-	return result
+	_render_elapsed = 0.0
+	if not _host_step:
+		_elapsed = 0.0
+		draw_state(1.0)
 
 ## Replays the authored command at the run's next tick, without polling input.
 func step_scenario() -> TickResult:
+	_finish_pending()
 	return step_command(scenario.command_at(_current.tick_index), record_trace)
 
 ## Samples the host's collected button state once at the command boundary.
 func step_live() -> TickResult:
+	_finish_pending()
+	return step_command(_live_command(), record_trace)
+
+func _live_command() -> TickCommand:
 	var command := TickCommand.new()
 	command.tick_index = _current.tick_index
 	command.pressed_mask = _held & ~_sampled_held
 	command.held_mask = _held
 	_sampled_held = _held
-	return step_command(command, record_trace)
+	return command
 
 ## Clears scenario state, pending input and presentation clocks without reusing mutable snapshots.
 func reset_scenario() -> String:
@@ -250,7 +277,6 @@ func draw_state(fraction: float) -> void:
 			_frog_pose_tick = _current.tick_index
 	if _current.camera != null:
 		_camera.transform = GameplayProjection.camera_transform(_current.camera)
-		_camera.fov = GameplayProjection.vertical_fov_degrees(Vector2i(get_viewport().get_visible_rect().size))
 	if _map_instance != null:
 		if _map_instance.tick != _current.tick_index - 1:
 			if _map_instance.tick == _current.tick_index - 2:
@@ -285,6 +311,10 @@ func draw_state(fraction: float) -> void:
 					model.player.frame = entity.animation.cel
 					model.apply_exact()
 				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.background == null or not entity.background.model_hidden)
+	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size]
+	if overlay_key == _overlay_key:
+		return
+	_overlay_key = overlay_key
 	var camera_facts: String = "none" if _current.camera == null else "%d source %s" % [_current.camera.mode, _current.camera.source_world]
 	var presentation: String = "synthetic marker" if _frog_model == null else "high-detail frog"
 	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.mode, _current.cell, _current.square_index]
@@ -329,22 +359,60 @@ func draw_state(fraction: float) -> void:
 func _process(delta: float) -> void:
 	if run == null or _current == null:
 		return
+	_render_elapsed += delta
+	if _worker != null and _worker.pending:
+		var completed: TickResult = _worker.poll()
+		if completed != null:
+			last_tick_usec = _worker.last_tick_usec
+			_host_step = true
+			_accept_result(_pending_command, completed)
+			_host_step = false
+	var period: float = 1.0 / TerrainRun.TICKS_PER_SECOND
 	if playing:
 		_elapsed += delta
-		var period: float = 1.0 / TerrainRun.TICKS_PER_SECOND
-		if _elapsed >= period:
-			# Source human pacer does not bank a burst after a large stall.
+		if _elapsed >= period and (_worker == null or not _worker.pending):
+			# The original pacer schedules at most one tick and drops accumulated
+			# time after a large stall, including a slow worker transaction.
 			var remainder: float = 0.0 if _elapsed > period * 2.0 else _elapsed - period
-			if replay_commands:
-				if _current.tick_index < scenario.tick_limit:
-					step_scenario()
-				else:
+			_host_step = true
+			if replay_commands and _current.tick_index >= scenario.tick_limit:
+				playing = false
+				_previous = _current
+			elif threaded_playback and not record_trace:
+				_pending_command = scenario.command_at(_current.tick_index) if replay_commands else _live_command()
+				if _worker == null:
+					_worker = TerrainTickWorker.new()
+					var issue: Error = _worker.start(run)
+					if issue != OK:
+						last_error = "Cannot start terrain tick worker: %s" % error_string(issue)
+						_worker = null
+						playing = false
+				if _worker != null and not _worker.submit(_pending_command):
+					last_error = "Terrain tick worker already has a command"
 					playing = false
-					_previous = _current
+			elif replay_commands:
+				step_scenario()
 			else:
 				step_live()
+			_host_step = false
 			_elapsed = remainder
-		draw_state(_elapsed / period)
+	var fraction: float = (_render_elapsed if threaded_playback and not record_trace else _elapsed) / period
+	draw_state(fraction if playing else 1.0)
+
+func _finish_pending() -> void:
+	if _worker == null or not _worker.pending:
+		return
+	var result: TickResult = _worker.finish()
+	last_tick_usec = _worker.last_tick_usec
+	var was_host: bool = _host_step
+	_host_step = true
+	_accept_result(_pending_command, result)
+	_host_step = was_host
+
+func _close_worker() -> void:
+	if _worker != null:
+		_worker.close()
+		_worker = null
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
@@ -369,10 +437,12 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		return
 	match key.physical_keycode:
 		KEY_SPACE:
+			_finish_pending()
 			playing = not playing and not _current.completed
 			_previous = _current
 			_elapsed = 0.0
 		KEY_PERIOD:
+			_finish_pending()
 			playing = false
 			if replay_commands:
 				step_scenario()
@@ -381,6 +451,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_R: reset_scenario()
 		KEY_I: smoothing = not smoothing
 		KEY_TAB:
+			_finish_pending()
 			replay_commands = not replay_commands
 			_sampled_held = 0
 			_held = 0
@@ -716,6 +787,7 @@ func _update_projection() -> void:
 	if size == _projection_size:
 		return
 	_projection_size = size
+	_camera.fov = GameplayProjection.vertical_fov_degrees(size)
 	_entity_pose_tick = -1
 	_label.size = Vector2(maxf(1.0, float(size.x) - 24.0), maxf(1.0, float(size.y) - 40.0))
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
@@ -723,9 +795,12 @@ func _update_projection() -> void:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:
 		_set_model_projection(frog_assets.mesh, scale)
+		if _frog_model != null:
+			_frog_model.refresh_materials()
 	for instance: AnimatedModelInstance in _entity_models:
 		if instance != null and instance.model_mesh != null:
 			_set_model_projection(instance.model_mesh, scale)
+			instance.refresh_materials()
 	for child: Node in _ground.get_children():
 		var face: MeshInstance3D = child as MeshInstance3D
 		if face != null:

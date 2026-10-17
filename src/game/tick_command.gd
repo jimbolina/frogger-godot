@@ -16,3 +16,13 @@ var held_mask: int = 0
 var start_timer_context: int = -1
 ## Explicit host/HUD completion, accepted only while single-start bounce/rest is active.
 var start_sequence_complete: bool = false
+
+## Detaches input before transferring it to an ordered worker transaction.
+func copy() -> TickCommand:
+	var result := TickCommand.new()
+	result.tick_index = tick_index
+	result.pressed_mask = pressed_mask
+	result.held_mask = held_mask
+	result.start_timer_context = start_timer_context
+	result.start_sequence_complete = start_sequence_complete
+	return result

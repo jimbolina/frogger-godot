@@ -2,6 +2,12 @@ extends RetailTest
 ## Full admitted ORG1 phases and ordered visits against independent source facts.
 
 var _data: GameData
+var _workers: Array[TerrainTickWorker] = []
+
+func after_each() -> void:
+	for worker: TerrainTickWorker in _workers:
+		worker.close()
+	_workers.clear()
 
 func before_all() -> void:
 	if retail_skip_reason().is_empty():
@@ -70,6 +76,9 @@ func _route(name: String, ticks: int, commands: Dictionary) -> void:
 	if not run.error.is_empty():
 		return
 	var live: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var worker := TerrainTickWorker.new()
+	_workers.append(worker)
+	assert_eq(worker.start(live), OK)
 	var rows: Array[PackedStringArray] = GoldenFiles.rows(name + ".tsv")
 	var digests: Array[PackedStringArray] = GoldenFiles.rows(name + "_entities.tsv")
 	var fields: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/org1_entity_update_fields.json"))
@@ -113,7 +122,8 @@ func _route(name: String, ticks: int, commands: Dictionary) -> void:
 		if canonical.sha256_text() != digests[tick + 1][1].strip_edges():
 			fail_test("tick %d ordered entity updates differ: %s" % [tick, canonical])
 			return
-		var live_result: TickResult = live.step(command, false)
+		assert_true(worker.submit(command))
+		var live_result: TickResult = worker.finish()
 		assert_eq(live_result.error, "", "live tick %d" % tick)
 		if not live_result.error.is_empty():
 			return

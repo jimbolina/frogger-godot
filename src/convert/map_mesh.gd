@@ -28,6 +28,7 @@ class Surface extends RefCounted:
 	var environment: bool = false
 	var cave: bool = false
 	var textured: bool = false
+	var water: bool = false
 	var frames: Dictionary[int, ShaderMaterial] = {}
 
 
@@ -58,6 +59,8 @@ class Instance extends Node3D:
 	var _selection := PackedInt32Array()
 	var _linear_filter: bool = false
 	var _show_hidden: bool = false
+	var _configured: Dictionary[ShaderMaterial, bool] = {}
+	var _animation_values: Dictionary[ShaderMaterial, Vector3i] = {}
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -117,6 +120,7 @@ class Instance extends Node3D:
 		reference_mode = value
 		water.enabled = not value
 		water.seek(tick)
+		_configured.clear()
 		_update_visibility()
 		_update_materials()
 
@@ -134,11 +138,13 @@ class Instance extends Node3D:
 	## Reference-only C viewport aspect matrix; ordinary cameras keep Vector2.ONE.
 	func set_projection_scale(value: Vector2) -> void:
 		projection_scale = value
+		_configured.clear()
 		_update_materials()
 
 	## Exact frozen map-slice integer projection; custom cameras keep this off.
 	func set_reference_projection(value: bool) -> void:
 		reference_projection = value
+		_configured.clear()
 		_update_materials()
 
 	## Raw target of the reference group's distance selection (default midpoint).
@@ -171,6 +177,7 @@ class Instance extends Node3D:
 	## Changes cached shader variants; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
 		_linear_filter = value
+		_configured.clear()
 		_update_materials()
 
 	## Currently selected nonempty mesh groups, for diagnostics and reference gates.
@@ -200,27 +207,33 @@ class Instance extends Node3D:
 					image = source.scene.library.image_for_id(id, source.scene.preferred) if spec.textured else null
 					offset = animation.track_offset(spec.animation_index)
 				var material: ShaderMaterial = _material_copies[template]
-				var blend: ModelShaders.Blend = spec.blend
-				if image != null and spec.blend != ModelShaders.Blend.OPAQUE:
-					blend = ModelShaders.blend_for_mode(image.blend_mode())
-				material.shader = MapShaders.shader(image != null, blend, _linear_filter, spec.layer >= 0)
-				material.set_shader_parameter("animated", spec.animation_index >= 0 and tick >= 0)
-				var texture: Texture2D
-				if image != null:
-					texture = material.get_shader_parameter("image")
-				material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
-				material.set_shader_parameter("animation_offset", Vector2(offset))
-				material.set_shader_parameter("environment_uv", spec.environment)
-				material.set_shader_parameter("camera_game", Vector3(camera_position))
-				material.set_shader_parameter("projection_scale", projection_scale)
-				material.set_shader_parameter("reference_projection", reference_projection)
-				material.set_shader_parameter("water_enabled", water.enabled)
-				material.set_shader_parameter("water_offsets", water_offsets)
-				material.set_shader_parameter("cave_enabled", spec.cave)
-				material.set_shader_parameter("cave_frog", Vector3(cave_frog))
-				material.set_shader_parameter("cave_min_r2", float(source.scene.cave_min_r2))
-				material.set_shader_parameter("cave_max_r2", float(source.scene.cave_max_r2))
-				_nodes[index].set_surface_override_material(surface_index, material)
+				if not _configured.has(material):
+					var blend: ModelShaders.Blend = spec.blend
+					if image != null and spec.blend != ModelShaders.Blend.OPAQUE:
+						blend = ModelShaders.blend_for_mode(image.blend_mode())
+					material.shader = MapShaders.shader(image != null, blend, _linear_filter, spec.layer >= 0)
+					var texture: Texture2D = material.get_shader_parameter("image") if image != null else null
+					material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
+					material.set_shader_parameter("environment_uv", spec.environment)
+					material.set_shader_parameter("camera_game", Vector3(camera_position))
+					material.set_shader_parameter("projection_scale", projection_scale)
+					material.set_shader_parameter("reference_projection", reference_projection)
+					material.set_shader_parameter("water_enabled", water.enabled)
+					material.set_shader_parameter("cave_enabled", spec.cave)
+					material.set_shader_parameter("cave_frog", Vector3(cave_frog))
+					material.set_shader_parameter("cave_min_r2", float(source.scene.cave_min_r2))
+					material.set_shader_parameter("cave_max_r2", float(source.scene.cave_max_r2))
+					_configured[material] = true
+				var animated: bool = spec.animation_index >= 0 and tick >= 0
+				var animation_value := Vector3i(offset.x, offset.y, int(animated))
+				if not _animation_values.has(material) or _animation_values[material] != animation_value:
+					material.set_shader_parameter("animated", animated)
+					material.set_shader_parameter("animation_offset", Vector2(offset))
+					_animation_values[material] = animation_value
+				if spec.water:
+					material.set_shader_parameter("water_offsets", water_offsets)
+				if _nodes[index].get_surface_override_material(surface_index) != material:
+					_nodes[index].set_surface_override_material(surface_index, material)
 		if _sky_node != null:
 			var drift: Vector3i = sky.translation()
 			_sky_node.position = GameSpace.position(camera_position.x + drift.x,

@@ -10,6 +10,14 @@
 - One mesh per map group, split by material. Polygons with animated textures get their own surfaces.
 - Map captures use a fixed 640x480 viewport; projection is explicit. Gameplay HUD remains deferred.
 
+Map instances cache static material settings separately from animated UVs,
+water offsets and texture bindings. Filtering, projection and reference-mode
+changes invalidate settings for inactive animation frames too. Model instances
+retain material bindings and update only changed morph weights; static poses
+keep their animation clocks without rebuilding their drawing state. Terrain
+playback draws once per host frame and refreshes its overlay when displayed
+state changes. None of these caches selects or suppresses gameplay entities.
+
 ## Stored colour conversion
 
 - **In the Compatibility renderer a shader's `ALBEDO` is a stored colour value, not linear light.** The renderer converts it to linear light and back before writing it (`drivers/gles3/shaders/scene.glsl` and `tonemap_inc.glsl` in Godot's source).

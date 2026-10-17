@@ -74,11 +74,11 @@ var start_mode: int = 0
 var start_target_16: int = 0
 var rng_draw_count: int = 0
 
-## Makes an independently mutable value snapshot.
-func copy() -> RunSnapshot:
+## Makes an independently mutable value snapshot; an aggregate candidate may omit replaced entities.
+func copy(include_entities: bool = true) -> RunSnapshot:
 	var result := RunSnapshot.new()
 	result.tick_index = tick_index
-	result.entities = entities.copy() if entities != null else null
+	result.entities = entities.copy() if include_entities and entities != null else null
 	result.entity_environment = entity_environment.copy() if entity_environment != null else null
 	result.entity_hit_indices = entity_hit_indices.duplicate()
 	result.death_entity_index = death_entity_index

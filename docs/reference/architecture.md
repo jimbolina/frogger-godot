@@ -44,6 +44,21 @@ synthetic injection remain supported.
 `TerrainRun` copies setup definitions and owns frog, camera, animation and RNG
 state, plus an optional `EntityRun` supplied through `EntityCollisionDefinition`.
 Each command operates on private candidate copies and commits only on success.
+Entity/path advancement builds its next independent state directly. The frog and
+entity aggregate share that unpublished candidate during the transaction;
+intermediate observations and public results still deep-copy it. Prepared script
+definitions detach caller inputs and validate animation/form/path dependencies
+once, retaining bounded runtime cursor and instruction-budget checks. Standalone
+script calls validate supplied definitions on every call. A dependency mismatch
+uses that safe validation path. Private candidate script execution may update its
+owned state and RNG directly; any subsequent failure discards the whole candidate.
+Interactive playback assigns the run to a dedicated `TerrainTickWorker`.
+The scene host retains the 30 Hz input pacer and original stall policy, permits
+one outstanding command, and consumes only detached completed results. Drawing
+uses the last completed samples while a transaction runs. Pause/step drains the
+pending command; reset, source replacement and exit join the worker before
+replacing or releasing the run. Deterministic trace captures execute synchronously.
+Timing instrumentation belongs to this presentation worker, never gameplay classes.
 Snapshots are detached, including nested entity/path and camera/animation state.
 Component fixtures explicitly omit unrelated systems; integrated inspection
 supplies camera defaults and copied high-detail frog action lengths. Entity

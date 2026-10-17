@@ -30,6 +30,22 @@ func _static(index: int) -> EntityDefinition:
 	result.matrix12[9] = 73
 	return result
 
+func test_advanced_fork_and_failed_tick_leave_source_and_public_snapshots_detached() -> void:
+	var run: EntityRun = EntityRun.create([_moving(0, _path())])
+	var saved: EntityRunSnapshot = run.snapshot()
+	var fork: EntityRun = run.advanced_copy(0)
+	assert_eq(fork.error, "")
+	assert_eq(fork.snapshot().entities[0].path.position.x, 10)
+	assert_eq(run.snapshot().tick_index, 0)
+	saved.entities[0].matrix12[9] = 999
+	assert_eq(run.snapshot().entities[0].matrix12[9], 0)
+	assert_ne(fork.advanced_copy(99).error, "")
+	assert_eq(fork.snapshot().tick_index, 1)
+	assert_eq(fork.step(1), "")
+	assert_eq(run.step(0), "")
+	assert_eq(run.snapshot().entities[0].path.position.x, 10)
+	assert_eq(fork.snapshot().entities[0].path.position.x, 20)
+
 func test_independent_runners_source_order_and_authored_indices() -> void:
 	var shared: PathDefinition = _path()
 	var a: EntityDefinition = _moving(2, shared, 10)

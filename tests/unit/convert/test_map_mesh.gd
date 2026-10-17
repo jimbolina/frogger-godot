@@ -2,6 +2,33 @@ extends GutTest
 ## Synthetic map group geometry, materials and independent instance playback.
 
 
+func test_material_settings_invalidate_inactive_animation_frames() -> void:
+	var scene: MapSceneData = _scene()
+	var track := MapAnimation.new()
+	track.type = 2
+	track.frames_per_texture = 1
+	track.texture_ids = PackedInt32Array([0, 1])
+	track.target_polygon_indices = PackedInt32Array([0])
+	scene.map.animations.append(track)
+	var instance: MapMesh.Instance = MapMeshBuilder.new().build(scene).create_instance()
+	var node: MeshInstance3D = instance.get_child(0)
+	instance.set_tick(0)
+	instance.set_projection_scale(Vector2(1.0, 0.9375))
+	instance.set_reference_projection(true)
+	instance.set_filtering(true)
+	instance.set_camera_position(Vector3i(20, 30, 40))
+	for tick: int in 4:
+		instance.set_tick(tick)
+		var material: ShaderMaterial = node.get_surface_override_material(0)
+		var scale: Vector2 = material.get_shader_parameter("projection_scale")
+		var camera: Vector3 = material.get_shader_parameter("camera_game")
+		var reference: bool = material.get_shader_parameter("reference_projection")
+		assert_eq(scale, Vector2(1.0, 0.9375))
+		assert_eq(camera, Vector3(20, 30, 40))
+		assert_true(reference)
+		assert_true(material.shader.code.contains("filter_linear"))
+	instance.free()
+
 func test_reference_polygon_budget_skips_whole_groups_and_excludes_lines() -> void:
 	var groups: Array[MapGroup] = []
 	for count: int in [2000, 600, 400, 100, 1]:

@@ -11,14 +11,28 @@ static func update(definition: EntityScriptDefinition, state: EntityScriptState,
 	result.error = definition.validate(animation.lengths, context.form_id, context.has_path)
 	if not result.error.is_empty():
 		return result
+	return _update_validated(definition, state, animation, context, random)
+
+## Uses run-owned validation, checking dependencies and runtime cursors on every update.
+static func update_prepared(prepared: PreparedEntityScript, state: EntityScriptState, animation: EntityAnimationState, context: EntityUpdateContext, random: SourceRandom) -> EntityUpdateResult:
+	if prepared == null or not prepared.error.is_empty() or state == null or animation == null or context == null or random == null:
+		var failed := EntityUpdateResult.new()
+		failed.error = "Prepared script update requires valid complete inputs"
+		return failed
+	if not prepared.matches(animation, context):
+		return update(prepared._definition, state, animation, context, random)
+	return _update_validated(prepared._definition, state, animation, context, random, prepared)
+
+static func _update_validated(definition: EntityScriptDefinition, state: EntityScriptState, animation: EntityAnimationState, context: EntityUpdateContext, random: SourceRandom, prepared: PreparedEntityScript = null, owned: bool = false) -> EntityUpdateResult:
+	var result := EntityUpdateResult.new()
 	if context.base_matrix.size() != 12 or context.fade_bounds.size() not in [0, 4]:
 		result.error = "Invalid script transform or fade bounds"
 		return result
-	result.script_state = state.copy()
-	result.animation = animation.copy()
-	result.random = random.copy()
+	result.script_state = state if owned else state.copy()
+	result.animation = animation if owned else animation.copy()
+	result.random = random if owned else random.copy()
 	result.matrix12 = context.base_matrix.duplicate()
-	result.error = _execute(definition, context, result)
+	result.error = _execute(definition, context, result, prepared)
 	if not result.error.is_empty():
 		var failed := EntityUpdateResult.new()
 		failed.error = result.error
@@ -29,13 +43,13 @@ static func update(definition: EntityScriptDefinition, state: EntityScriptState,
 	result.script_state.timer = (result.script_state.timer + 1) & 65535
 	return result
 
-static func _execute(definition: EntityScriptDefinition, context: EntityUpdateContext, result: EntityUpdateResult) -> String:
+static func _execute(definition: EntityScriptDefinition, context: EntityUpdateContext, result: EntityUpdateResult, prepared: PreparedEntityScript = null) -> String:
 	var state: EntityScriptState = result.script_state
 	for instruction: int in 4096:
 		if not definition.programs.has(state.program_id):
 			return "Unknown current script program"
 		var words: PackedInt32Array = definition.programs[state.program_id]
-		if not _instruction_boundary(words, state.cursor):
+		if (prepared.following(state.program_id, state.cursor) < 0) if prepared != null else not _instruction_boundary(words, state.cursor):
 			return "Invalid current script cursor"
 		var opcode: int = words[state.cursor]
 		var following: int = state.cursor + EntityScriptDefinition.WIDTHS[opcode]
@@ -51,12 +65,15 @@ static func _execute(definition: EntityScriptDefinition, context: EntityUpdateCo
 				state.callbacks[a[0]] = PackedInt32Array([a[1], a[2], a[3], 2])
 			11:
 				state.loop_start = following
-				var end: int = following
-				while words[end] != 12:
-					end += EntityScriptDefinition.WIDTHS[words[end]]
-				state.loop_end = end + 1
+				if prepared != null:
+					state.loop_end = prepared.loop_end(state.program_id, state.cursor)
+				else:
+					var end: int = following
+					while words[end] != 12:
+						end += EntityScriptDefinition.WIDTHS[words[end]]
+					state.loop_end = end + 1
 			12:
-				if state.loop_start < 0 or not _instruction_boundary(words, state.loop_start):
+				if state.loop_start < 0 or ((prepared.following(state.program_id, state.loop_start) < 0) if prepared != null else not _instruction_boundary(words, state.loop_start)):
 					return "Invalid active script loop"
 				following = state.loop_start
 				yielded = true

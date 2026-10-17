@@ -33,11 +33,10 @@ rendering remain deferred. See [inspection](reference/testing/terrain-inspection
 
 [PORTING](PORTING.md) owns the other remaining P8 dependencies;
 [architecture](reference/architecture.md) owns transaction boundaries.
-Next: ORG1 performance and smoothing; progression remains unfinished.
+ORG1 uses prepared scripts, private transactions and asynchronous playback.
+Next: smoothing and sustained performance acceptance; progression remains unfinished.
 
 Animated per-part lighting remains a
 [renderer limitation](reference/rendering/gameplay-projection.md).
-Retail runtime timing is unmeasured; the source target is
-explained in [simulation](reference/gameplay/simulation.md).
 Hosted CI awaits a repository host. The licence remains the owner's decision
 before publication. Never push.

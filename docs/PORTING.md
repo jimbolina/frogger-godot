@@ -83,6 +83,9 @@ their owning features.
 The ORG1 performance launcher measures complete routes and separates throughput
 from schedule correctness. Smooth 200+ FPS at 1440p on the owner's machine is the
 current optimization target; see [inspection](reference/testing/terrain-inspection.md).
+Prepared scripts, transaction ownership and rendering caches reduce repeated work;
+the presentation worker keeps ordered simulation off the rendering thread.
+The frame-time target and coherent smoothing remain open until measured acceptance.
 
 ## Infrastructure
 

@@ -92,6 +92,16 @@ func step(tick_index: int) -> String:
 	_state = candidate
 	return ""
 
+## Builds a next-tick fork without copying the input cursor twice.
+func advanced_copy(tick_index: int) -> PathRunner:
+	var result := PathRunner.new()
+	result._definition = _definition
+	result._state = _state
+	result.error = result.step(tick_index)
+	if not result.error.is_empty():
+		result._state = null
+	return result
+
 ## Returns a detached snapshot of the current runner state.
 func snapshot() -> PathSnapshot:
 	return _state.copy() if _state != null else null

@@ -6,6 +6,12 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
+	var requested: PackedStringArray = ViewerArguments.value(arguments, "--performance-size=").split("x")
+	if requested.size() == 2:
+		root.size = Vector2i(requested[0].to_int(), requested[1].to_int())
+		root.position = Vector2i.ZERO
+	if ViewerArguments.value(arguments, "--window-mode=") == "exclusive":
+		root.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
 	var output: String = ViewerArguments.value(arguments, "--performance-output=")
 	var issue: String = ViewerCapture.prepare_folder(output.get_base_dir())
 	if not issue.is_empty():
@@ -103,6 +109,7 @@ func _run() -> void:
 			frames.append(frame_ms)
 			if viewer._current.tick_index != before_tick:
 				tick_frames.append(frame_ms)
+				simulation.append(viewer.last_tick_usec / 1000.0)
 			previous_draw = drawn
 			draw_calls = maxi(draw_calls, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 			primitives = maxi(primitives, int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
@@ -118,9 +125,13 @@ func _run() -> void:
 	if EngineDebugger.is_active():
 		EngineDebugger.send_message("terrain:measurement_end", [Engine.get_process_frames()])
 	viewer.playing = false
+	viewer._close_worker()
 	var final: RunSnapshot = viewer.run.snapshot()
 	var diver: bool = scenario.tick_limit == 1255
-	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (bool(final.flags & 8) if diver else final.current_entity_index == -1 and final.cell == Vector2i(10, 7) and not bool(final.flags & 8))
+	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.current_entity_index == -1 and final.cell == Vector2i(10, 7) and final.mode != 2)
+	# ViewportTexture.get_size double-applies canvas stretch in Godot 4.5.1.
+	# The visible logical extent times the stretch is the native render extent.
+	var native_size := Vector2i(root.get_visible_rect().size * root.get_stretch_transform().get_scale())
 	var fps: float = frames.size() / seconds
 	var frame_stats: Dictionary = _stats(frames)
 	var cadence_ok: bool = absf(final.tick_index - seconds * 30.0) <= 1.0
@@ -131,8 +142,12 @@ func _run() -> void:
 		"engine": Engine.get_version_info(), "cpu": OS.get_processor_name(),
 		"gpu": RenderingServer.get_video_adapter_name(), "renderer": RenderingServer.get_current_rendering_method(),
 		"window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y],
-		"render_target_size": [root.get_texture().get_width(), root.get_texture().get_height()],
+		"render_target_size": [native_size.x, native_size.y],
+		"bars": [(root.size.x - native_size.x) / 2.0, (root.size.y - native_size.y) / 2.0],
+		"final_mode": final.mode, "final_action": final.animation.action,
 		"vsync": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
+		"window_mode": root.mode, "screen_refresh_hz": DisplayServer.screen_get_refresh_rate(),
+		"threaded": viewer.threaded_playback,
 		"route": "diver" if diver else "round-trip", "tick_limit": scenario.tick_limit,
 		"load_ms": load_ms, "reset_ms": reset_ms, "seconds": seconds, "fps": fps,
 		"frames": frame_stats, "tick_frames": _stats(tick_frames), "host_work": _stats(host_work),
