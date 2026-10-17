@@ -80,6 +80,9 @@ Measure tick/load/conversion costs and resource counts as real level workloads
 arrive. Keep captures outside the repository; do not impose limits from
 uncalibrated shared runners. Add progression, save and reload boundaries with
 their owning features.
+The ORG1 performance launcher measures complete routes and separates throughput
+from schedule correctness. Smooth 200+ FPS at 1440p on the owner's machine is the
+current optimization target; see [inspection](reference/testing/terrain-inspection.md).
 
 ## Infrastructure
 

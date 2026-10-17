@@ -34,6 +34,8 @@ Pause and reset also reset drawing interpolation.
 Optional POP and SAFE-platform interactions are available below;
 level progression remains deferred. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
+For real frame-time measurements and the machine-specific 1440p target, use the
+[ORG1 performance launcher](docs/reference/testing/terrain-inspection.md).
 The game runs in GDScript. C files under `tools/` are offline reference
 validation adapters; playing or loading data does not require C code or a compiler.
 For isolated headless or rendered evidence, use `python tools/run_terrain.py

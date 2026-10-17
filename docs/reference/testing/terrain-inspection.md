@@ -56,15 +56,25 @@ fixtures against all three render schedules sequentially.
 Captures and traces must be outside this checkout and frozen `froggy`.
 Generated resources are released on reset/replacement rather than accumulated.
 
-For actual host frame pacing, run `tools/probe_terrain_performance.gd` with a
-rendered 640×480 window, `--data-dir=<game-folder> --level=ORG1
---exploration=org1-turtle-log-bank`, isolated user data and an external log using
-the [testing process rules](README.md). It measures simulation and repeated-draw
-cost separately, then plays the frozen round trip for eight wall-clock seconds
-without trace recording. The JSON reports host FPS, simulation ticks per second
-and an alive bank return. Preserve timings externally; schedule parity alone
-does not establish interactive performance. Trace capture deliberately retains
-the more expensive intermediate observations; ordinary LIVE/REPLAY omits them.
+For actual host frame pacing, use `python tools/run_terrain_performance.py
+--godot <executable> --data-dir <game-folder> --output-directory <external-folder>`.
+The launcher strictly compiles scripts, isolates user data, and runs both complete
+ORG1 routes three times at 2560×1440 with VSync disabled and no frame cap. Each run
+warms for five seconds and resets before measuring real frame completion intervals.
+JSON reports retain individual frame times, percentiles, tick-frame costs, cadence,
+route outcome, hardware, effective viewport, draw calls and resource counts.
+Loading and reset costs are separate. Reports and logs stay outside the repository.
+
+Use `--resolution 640x480 --sync default --smoothing false` to reproduce the older
+configuration; `--route round-trip --repetitions 1` shortens diagnostic iteration.
+`--mode paused|simulation|no-inspector` isolates rendering, pure simulation, or
+inspection drawing respectively. `--profile` enables Godot's script profiler in a
+separate diagnostic run. These are not acceptance modes. `--require-target` requires
+both routes three times, smooth uncapped 1440p, average above 200 FPS, p99 at most
+5 ms, correct outcome and 30 Hz cadence within one tick. The target is specific to
+the owner's i7-10700K/RTX 4070 Ti SUPER; it is not a portable test-suite threshold.
+Passing schedule parity alone never establishes interactive performance. Full phase
+tracing remains deliberately more expensive than ordinary LIVE/REPLAY.
 
 ## POP entity inspection
 

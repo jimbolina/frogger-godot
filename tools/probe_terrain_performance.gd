@@ -1,81 +1,187 @@
 extends SceneTree
-## Measures live terrain frame pacing and separates simulation from repeated drawing.
+## Measures complete ORG1 routes on the real host clock; never synthesizes frame deltas.
 
 func _initialize() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
+	var output: String = ViewerArguments.value(arguments, "--performance-output=")
+	var issue: String = ViewerCapture.prepare_folder(output.get_base_dir())
+	if not issue.is_empty():
+		_fail(issue)
+		return
 	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
 	if not found.is_ok():
-		push_error(found.error)
-		quit(1)
+		_fail(found.error)
 		return
+	var started: int = Time.get_ticks_usec()
 	var data: GameData = GameData.open(found.source, found.version)
-	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	var issue: String = scenario.apply_arguments(arguments)
-	if not issue.is_empty():
-		push_error(issue)
-		data.close()
-		quit(1)
-		return
+	var scenario: TerrainScenario = TerrainScenario.from_file(ViewerArguments.value(arguments, "--scenario-file="))
+	issue = scenario.error
+	if issue.is_empty():
+		issue = scenario.apply_arguments(arguments)
 	scenario.level_code = "ORG1"
+	if not issue.is_empty():
+		data.close()
+		_fail(issue)
+		return
 	var viewer := TerrainViewer.new()
 	viewer.auto_open = false
 	root.add_child(viewer)
-	await process_frame
 	viewer.set_process(false)
 	viewer.configure_input(arguments)
 	issue = viewer.open_scenario(scenario)
 	if issue.is_empty():
 		issue = viewer.open_data(data, true)
 	if not issue.is_empty():
-		push_error(issue)
-		quit(1)
+		_fail(issue)
+		return
+	if scenario.map_scene == null or scenario.level.exploration_guard == null or viewer._current.entities == null:
+		_fail("Performance measurement requires the guarded retail ORG1 world")
+		return
+	viewer.smoothing = ViewerArguments.value(arguments, "--smoothing=") == "true"
+	var mode: String = ViewerArguments.value(arguments, "--performance-mode=")
+	if mode == "no-inspector":
+		viewer._entity_inspection.hide()
+		viewer._label.hide()
+	var load_ms: float = (Time.get_ticks_usec() - started) / 1000.0
+	viewer.playing = true
+	viewer.replay_commands = true
+	var previous: int = Time.get_ticks_usec()
+	var warm_start: int = previous
+	while Time.get_ticks_usec() - warm_start < 5000000:
+		await process_frame
+		var now: int = Time.get_ticks_usec()
+		viewer._process((now - previous) / 1000000.0)
+		previous = now
+		await RenderingServer.frame_post_draw
+		if not viewer.last_error.is_empty():
+			_fail(viewer.last_error)
+			return
+	started = Time.get_ticks_usec()
+	issue = viewer.reset_scenario()
+	var reset_ms: float = (Time.get_ticks_usec() - started) / 1000.0
+	if not issue.is_empty():
+		_fail(issue)
 		return
 	await process_frame
 	await RenderingServer.frame_post_draw
-	var start: int = Time.get_ticks_usec()
-	for tick: int in 90:
-		var command := TickCommand.new()
-		command.tick_index = tick
-		var result: TickResult = viewer.run.step(command, false)
-		if not result.error.is_empty():
-			push_error(result.error)
-			quit(1)
-			return
-	var simulation_us: float = (Time.get_ticks_usec() - start) / 90.0
-	start = Time.get_ticks_usec()
-	for unused: int in 90:
-		viewer.draw_state(1.0)
-	var draw_us: float = (Time.get_ticks_usec() - start) / 90.0
-	issue = viewer.reset_scenario()
-	if not issue.is_empty():
-		push_error(issue)
-		quit(1)
+	var resources_before: Dictionary = _resources()
+	var frames := PackedFloat64Array()
+	var tick_frames := PackedFloat64Array()
+	var host_work := PackedFloat64Array()
+	var simulation := PackedFloat64Array()
+	var draw_calls: int = 0
+	var primitives: int = 0
+	viewer.playing = mode != "paused"
+	if EngineDebugger.is_active():
+		EngineDebugger.send_message("terrain:measurement_begin", [Engine.get_process_frames()])
+	started = Time.get_ticks_usec()
+	previous = started
+	var previous_draw: int = started
+	var duration: float = scenario.tick_limit / 30.0
+	if mode == "simulation":
+		for tick: int in scenario.tick_limit:
+			var before: int = Time.get_ticks_usec()
+			var result: TickResult = viewer.run.step(scenario.command_at(tick), false)
+			simulation.append((Time.get_ticks_usec() - before) / 1000.0)
+			if not result.error.is_empty():
+				_fail(result.error)
+				return
+	else:
+		while viewer._current.tick_index < scenario.tick_limit:
+			await process_frame
+			var now: int = Time.get_ticks_usec()
+			var before_tick: int = viewer._current.tick_index
+			viewer._process((now - previous) / 1000000.0)
+			host_work.append((Time.get_ticks_usec() - now) / 1000.0)
+			previous = now
+			await RenderingServer.frame_post_draw
+			var drawn: int = Time.get_ticks_usec()
+			var frame_ms: float = (drawn - previous_draw) / 1000.0
+			frames.append(frame_ms)
+			if viewer._current.tick_index != before_tick:
+				tick_frames.append(frame_ms)
+			previous_draw = drawn
+			draw_calls = maxi(draw_calls, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
+			primitives = maxi(primitives, int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
+			if not viewer.last_error.is_empty():
+				_fail(viewer.last_error)
+				return
+			if mode == "paused" and (drawn - started) / 1000000.0 >= duration:
+				break
+			if (drawn - started) / 1000000.0 > duration * 5.0 + 30.0:
+				_fail("Route timed out or stopped advancing")
+				return
+	var seconds: float = (Time.get_ticks_usec() - started) / 1000000.0
+	if EngineDebugger.is_active():
+		EngineDebugger.send_message("terrain:measurement_end", [Engine.get_process_frames()])
+	viewer.playing = false
+	var final: RunSnapshot = viewer.run.snapshot()
+	var diver: bool = scenario.tick_limit == 1255
+	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (bool(final.flags & 8) if diver else final.current_entity_index == -1 and final.cell == Vector2i(10, 7) and not bool(final.flags & 8))
+	var fps: float = frames.size() / seconds
+	var frame_stats: Dictionary = _stats(frames)
+	var cadence_ok: bool = absf(final.tick_index - seconds * 30.0) <= 1.0
+	var p99: float = frame_stats["p99_ms"]
+	var accepted: bool = mode == "full" and viewer.smoothing and outcome_ok and cadence_ok and fps > 200.0 and p99 <= 5.0
+	var report: Dictionary = {
+		"schema": "terrain-performance-v1", "mode": mode, "smoothing": viewer.smoothing,
+		"engine": Engine.get_version_info(), "cpu": OS.get_processor_name(),
+		"gpu": RenderingServer.get_video_adapter_name(), "renderer": RenderingServer.get_current_rendering_method(),
+		"window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y],
+		"render_target_size": [root.get_texture().get_width(), root.get_texture().get_height()],
+		"vsync": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
+		"route": "diver" if diver else "round-trip", "tick_limit": scenario.tick_limit,
+		"load_ms": load_ms, "reset_ms": reset_ms, "seconds": seconds, "fps": fps,
+		"frames": frame_stats, "tick_frames": _stats(tick_frames), "host_work": _stats(host_work),
+		"simulation": _stats(simulation), "ticks": final.tick_index, "ticks_per_second": final.tick_index / seconds,
+		"outcome_ok": outcome_ok, "cadence_ok": cadence_ok, "accepted": accepted,
+		"draw_calls_max": draw_calls, "primitives_max": primitives,
+		"resources_before": resources_before, "resources_after": _resources(),
+		"frame_ms": frames, "tick_frame_ms": tick_frames,
+	}
+	var file := FileAccess.open(output, FileAccess.WRITE)
+	if file == null:
+		_fail("Cannot write performance report: " + output)
 		return
-	# Use the frozen normal-hop commands on the real host frame clock.
-	# Trace recording stays off, as in the user's interactive demo.
-	for tick: int in [0, 12, 34, 46]:
-		var command := TickCommand.new()
-		command.tick_index = tick
-		command.pressed_mask = TickCommand.NORTH if tick < 34 else TickCommand.SOUTH
-		command.held_mask = command.pressed_mask
-		viewer.scenario.commands[tick] = command
-	viewer.scenario.tick_limit = 730
-	viewer.replay_commands = true
-	viewer.playing = true
-	viewer.set_process(true)
-	start = Time.get_ticks_usec()
-	var frames: int = 0
-	while Time.get_ticks_usec() - start < 8000000:
-		await process_frame
-		frames += 1
-	viewer.set_process(false)
-	var seconds: float = (Time.get_ticks_usec() - start) / 1000000.0
-	var ticks: int = viewer.run.snapshot().tick_index
-	var returned: bool = ticks >= 52 and viewer._current.current_entity_index == -1 and viewer._current.cell == Vector2i(10, 7) and not bool(viewer._current.flags & 8)
-	if not returned and viewer.last_error.is_empty():
-		viewer.last_error = "Round trip did not return alive to the bank"
-	print(JSON.stringify({"simulation_us_per_tick": simulation_us, "draw_us_per_call": draw_us, "wall_seconds": seconds, "frames": frames, "fps": frames / seconds, "ticks": ticks, "ticks_per_second": ticks / seconds, "returned_alive": returned, "error": viewer.last_error}))
-	quit(0 if viewer.last_error.is_empty() else 1)
+	file.store_string(JSON.stringify(report))
+	var write_error: Error = file.get_error()
+	file.close()
+	if write_error != OK:
+		_fail("Cannot finish performance report: " + output)
+		return
+	print("terrain_performance: %s %s %.2f FPS p99 %.3f ms ticks %d accepted=%s" % [mode, report["route"], fps, frame_stats["p99_ms"], final.tick_index, accepted])
+	quit(0 if outcome_ok or mode == "paused" else 1)
+
+func _stats(samples: PackedFloat64Array) -> Dictionary:
+	var sorted: PackedFloat64Array = samples.duplicate()
+	sorted.sort()
+	var sum: float = 0.0
+	var over_5: int = 0
+	var over_10: int = 0
+	var over_16: int = 0
+	for value: float in sorted:
+		sum += value
+		over_5 += int(value > 5.0)
+		over_10 += int(value > 10.0)
+		over_16 += int(value > 16.7)
+	return {"count": sorted.size(), "mean_ms": sum / maxi(1, sorted.size()),
+		"median_ms": _percentile(sorted, 0.5), "p95_ms": _percentile(sorted, 0.95),
+		"p99_ms": _percentile(sorted, 0.99), "max_ms": _percentile(sorted, 1.0),
+		"over_5_ms": over_5, "over_10_ms": over_10, "over_16_7_ms": over_16}
+
+func _percentile(sorted: PackedFloat64Array, fraction: float) -> float:
+	return 0.0 if sorted.is_empty() else sorted[maxi(0, ceili(sorted.size() * fraction) - 1)]
+
+func _resources() -> Dictionary:
+	return {"objects": Performance.get_monitor(Performance.OBJECT_COUNT),
+		"resources": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT),
+		"nodes": Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		"static_bytes": Performance.get_monitor(Performance.MEMORY_STATIC),
+		"video_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)}
+
+func _fail(message: String) -> void:
+	push_error(message)
+	quit(1)
