@@ -45,7 +45,7 @@ ordered outcomes. Projection scaling reaches terrain, frog and animated texture
 frame materials after resize; see [gameplay projection](../rendering/gameplay-projection.md).
 
 `tools/run_terrain.py` runs either driver with an isolated profile, hidden awaited
-processes and external logs. `--viewer --render-rate=30|60|144` uses explicit
+processes and external logs. `--viewer --render-rate=30|60|144|200|240` uses explicit
 scheduled presentation deltas with one awaited draw per frame. These are render
 schedule tests, not measurements of host FPS. JSONL records initial start/camera metadata, complete typed commands and every
 represented phase/snapshot, ordered outcome and RNG consumer. Full trace equality checks
@@ -69,6 +69,11 @@ to avoid Windows work-area clamping. It derives the native extent from the
 logical viewport and stretch transform: Godot 4.5.1's viewport texture size
 accessor applies that stretch twice.
 Loading and reset costs are separate. Reports and logs stay outside the repository.
+The current Windows driver globally forces VSync on; the `Godot.exe` profile
+inherits it. Paused rendering remains near the 144 Hz display rate even with
+engine VSync disabled, in both windowed and exclusive modes. Engine-reported
+VSync/cap values cannot prove a driver override is absent. The 200+ FPS gate
+requires an application-controlled Godot driver profile before acceptance.
 
 Use `--resolution 640x480 --sync default --smoothing false` to reproduce the older
 configuration; `--route round-trip --repetitions 1` shortens diagnostic iteration.
@@ -200,7 +205,12 @@ python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-d
 
 The verifier streams complete six-phase records externally, checks independent
 source phase facts and ordered entity-update digests, then compares every
-represented field and outcome at rendered 30/60/144 schedules. Inspect each
+represented field and outcome at rendered 30/60/144/200/240 and irregular
+schedules. Reference captures explicitly select `--smoothing=false`.
+Use `run_terrain.py --viewer --smoothing=true` to inspect interpolated motion;
+add `--motion-capture --tick-limit 90` to save a short external PNG sequence.
+`--frame-schedule=irregular` supplies a repeating mix of 240/60/200/30/144 Hz
+intervals. These schedules measure correctness, not achievable throughput. Inspect each
 transfer, bank return and visible attached dive/death at 640×480. Audio playback
 and splash rendering remain deferred. Entity action/cel, colour and ambient
 state come from committed snapshots; materials are instance-local.

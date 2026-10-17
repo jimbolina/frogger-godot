@@ -15,7 +15,10 @@ def main():
     parser.add_argument('--data-dir', type=Path, help='Optional player data for the rendered frog')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--tick-limit', type=int)
-    parser.add_argument('--render-rate', type=int, choices=(30, 60, 144), default=60)
+    parser.add_argument('--render-rate', type=int, choices=(30, 60, 144, 200, 240), default=60)
+    parser.add_argument('--frame-schedule', choices=('regular', 'irregular'), default='regular')
+    parser.add_argument('--smoothing', choices=('true', 'false'), default='false', help='Reference captures default to exact committed poses')
+    parser.add_argument('--motion-capture', action='store_true', help='Save every rendered frame externally; diagnostic only')
     parser.add_argument('--level', help='Optional single-player map code for terrain inspection')
     parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
@@ -67,6 +70,11 @@ def main():
         if value is not None:
             selected.append('--' + key + '=' + str(value))
     selected.append('--render-rate=' + str(args.render_rate))
+    selected += ['--smoothing=' + args.smoothing, '--frame-schedule=' + args.frame_schedule]
+    if args.motion_capture:
+        if not args.viewer:
+            parser.error('--motion-capture requires --viewer')
+        selected.append('--motion-capture')
     if args.data_dir:
         selected += ['--data-dir=' + str(args.data_dir.resolve())]
     if args.level:

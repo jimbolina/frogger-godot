@@ -6,7 +6,12 @@ var auto_open: bool = true
 var scenario: TerrainScenario
 var run: TerrainRun
 var playing: bool = false
-var smoothing: bool = false
+var smoothing: bool = false:
+	set(value):
+		if smoothing == value:
+			return
+		smoothing = value
+		reset_interpolation()
 var replay_commands: bool = true
 ## Capture is opt-in so an interactive session does not accumulate an unbounded trace.
 var record_trace: bool = false
@@ -45,6 +50,7 @@ var _worker: TerrainTickWorker
 var _pending_command: TickCommand
 var _render_elapsed: float = 0.0
 var last_tick_usec: int = 0
+var _motion := TerrainMotion.new()
 
 func _ready() -> void:
 	_build_scene()
@@ -80,6 +86,9 @@ func _exit_tree() -> void:
 ## Direct map exploration uses live controls; explicit fixtures and captures replay.
 func configure_input(arguments: PackedStringArray) -> void:
 	threaded_playback = not ViewerArguments.has_flag(arguments, "--run-scenario") and ViewerArguments.value(arguments, "--threaded=") != "false"
+	smoothing = ViewerArguments.value(arguments, "--smoothing=") != "false" and not ViewerArguments.has_flag(arguments, "--run-scenario")
+	if ViewerArguments.value(arguments, "--smoothing=") == "true":
+		smoothing = true
 	replay_commands = ViewerArguments.value(arguments, "--level=").is_empty() \
 		or ViewerArguments.has_flag(arguments, "--run-scenario") \
 		or ViewerArguments.has_prefix(arguments, "--scenario=") \
@@ -136,6 +145,7 @@ func open_data(selected: GameData, take_ownership: bool = false) -> String:
 	_frog_model = AnimatedModelInstance.new()
 	add_child(_frog_model)
 	_frog_model.setup(frog_assets.mesh, frog_assets.player)
+	_frog_model.smoothing_enabled = smoothing
 	for mesh: ArrayMesh in frog_assets.mesh.part_meshes:
 		if mesh != null:
 			for surface: int in mesh.get_surface_count():
@@ -177,6 +187,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 	_sampled_held = 0
 	_current = run.snapshot()
 	_previous = _current
+	_motion.capture(_current, _current)
 	_frog_pose_tick = -1
 	_entity_pose_tick = -1
 	_outcomes.clear()
@@ -214,11 +225,7 @@ func _accept_result(command: TickCommand, result: TickResult) -> void:
 		for slot: int in _entity_models.size():
 			var model: AnimatedModelInstance = _entity_models[slot]
 			if model != null and not created.has(slot):
-				var entity: EntitySnapshot = _current.entities.entities[slot]
-				if entity.animation != null and entity.animation.action >= 0:
-					model.player.advance_tick()
-				else:
-					model.advance_tick()
+				model.player.advance_tick()
 		if record_trace:
 			trace.append_result(scenario.scenario_index, command, result)
 	else:
@@ -226,7 +233,8 @@ func _accept_result(command: TickCommand, result: TickResult) -> void:
 	if _current.completed:
 		playing = false
 	if not playing:
-		_previous = _current
+		reset_interpolation()
+	_motion.capture(_previous, _current)
 	_render_elapsed = 0.0
 	if not _host_step:
 		_elapsed = 0.0
@@ -254,16 +262,31 @@ func _live_command() -> TickCommand:
 func reset_scenario() -> String:
 	return open_scenario(scenario)
 
+## Collapses all presentation histories after pause, seek, teleport or source replacement.
+func reset_interpolation() -> void:
+	if _current == null:
+		return
+	_previous = _current
+	_motion.capture(_current, _current)
+	_render_elapsed = 0.0
+	if _frog_model != null:
+		_frog_model.smoothing_enabled = smoothing
+		_frog_model.apply_exact()
+	for model: AnimatedModelInstance in _entity_models:
+		if model != null:
+			model.smoothing_enabled = smoothing
+			model.apply_exact()
+
 ## Draws only detached state; changing interpolation never advances rules.
 func draw_state(fraction: float) -> void:
 	if _current == null or _frog == null:
 		return
 	_update_projection()
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing else 1.0
-	_frog.position = GameSpace.fixed_position(_previous.position_16).lerp(GameSpace.fixed_position(_current.position_16), weight) + Vector3(0, 0.12, 0)
+	var frog_transform: Transform3D = _motion.frog(weight)
+	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
 	if _frog_model != null:
-		_frog_model.transform = GameSpace.transform(_current.matrix12)
-		_frog_model.position = GameSpace.fixed_position(_previous.position_16).lerp(GameSpace.fixed_position(_current.position_16), weight)
+		_frog_model.transform = frog_transform
 		if _current.animation != null and _frog_pose_tick != _current.tick_index:
 			var player: ModelAnimationPlayer = frog_assets.player
 			if _frog_pose_tick < 0:
@@ -273,17 +296,18 @@ func draw_state(fraction: float) -> void:
 			if player.action_index != _current.animation.action:
 				player.set_action(_current.animation.action)
 			player.frame = _current.animation.cel
-			_frog_model.apply_exact()
+			_frog_model.capture_pose(not playing)
 			_frog_pose_tick = _current.tick_index
+		_frog_model.render(weight)
 	if _current.camera != null:
-		_camera.transform = GameplayProjection.camera_transform(_current.camera)
+		_camera.transform = _motion.camera(weight)
 	if _map_instance != null:
 		if _map_instance.tick != _current.tick_index - 1:
 			if _map_instance.tick == _current.tick_index - 2:
 				_map_instance.step()
 			else:
 				_map_instance.set_tick(_current.tick_index - 1)
-		_map_instance.set_camera_position(_current.camera.source_world)
+		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
 		_map_instance.set_cave_frog(_current.world_position)
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
 	if update_entities and _entity_inspection != null and _current.entities != null:
@@ -296,20 +320,26 @@ func draw_state(fraction: float) -> void:
 				hit_contact = reaction.contact
 				break
 		_entity_inspection.set_contact(_current.world_position, hit_contact)
-	if update_entities and _current.entities != null:
+	if smoothing and _entity_inspection != null and _entity_inspection.visible and _current.entities != null:
+		_entity_inspection.draw_motion(_motion, weight)
+	if _current.entities != null:
 		_entity_pose_tick = _current.tick_index
 		for index: int in mini(_entity_models.size(), _current.entities.entities.size()):
 			if _entity_models[index] != null:
 				var entity: EntitySnapshot = _current.entities.entities[index]
 				var model: AnimatedModelInstance = _entity_models[index]
-				model.transform = GameSpace.transform(entity.matrix12)
-				if _entity_lighting != null:
+				var transform_now: Transform3D = _motion.entity(index, weight)
+				if model.transform != transform_now:
+					model.transform = transform_now
+				if update_entities and _entity_lighting != null:
 					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
-				if entity.animation != null and entity.animation.action >= 0:
-					if model.player.action_index != entity.animation.action:
-						model.player.set_action(entity.animation.action)
-					model.player.frame = entity.animation.cel
-					model.apply_exact()
+				if update_entities:
+					if entity.animation != null and entity.animation.action >= 0:
+						if model.player.action_index != entity.animation.action:
+							model.player.set_action(entity.animation.action)
+						model.player.frame = entity.animation.cel
+					model.capture_pose(not playing)
+				model.render(weight)
 				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.background == null or not entity.background.model_hidden)
 	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size]
 	if overlay_key == _overlay_key:
@@ -377,7 +407,7 @@ func _process(delta: float) -> void:
 			_host_step = true
 			if replay_commands and _current.tick_index >= scenario.tick_limit:
 				playing = false
-				_previous = _current
+				reset_interpolation()
 			elif threaded_playback and not record_trace:
 				_pending_command = scenario.command_at(_current.tick_index) if replay_commands else _live_command()
 				if _worker == null:
@@ -439,7 +469,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_SPACE:
 			_finish_pending()
 			playing = not playing and not _current.completed
-			_previous = _current
+			reset_interpolation()
 			_elapsed = 0.0
 		KEY_PERIOD:
 			_finish_pending()
@@ -604,6 +634,7 @@ func _sync_entity_models() -> PackedInt32Array:
 		var model := AnimatedModelInstance.new()
 		add_child(model)
 		model.setup(_entity_meshes[slot], ModelAnimationPlayer.new(_entity_files[slot]))
+		model.smoothing_enabled = smoothing
 		_set_model_projection(_entity_meshes[slot], GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
 		_entity_models[slot] = model
 		_entity_generations[slot] = entity.generation
@@ -647,11 +678,14 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 		return
 	var rate_text: String = ViewerArguments.value(arguments, "--render-rate=")
 	var render_rate: int = 60 if rate_text.is_empty() else rate_text.to_int()
-	if not render_rate in [30, 60, 144]:
-		push_error("Render rate must be 30, 60 or 144")
+	if not render_rate in [30, 60, 144, 200, 240]:
+		push_error("Render rate must be 30, 60, 144, 200 or 240")
 		get_tree().quit(1)
 		return
 	Engine.max_fps = render_rate
+	var irregular: bool = ViewerArguments.value(arguments, "--frame-schedule=") == "irregular"
+	var frame_index: int = 0
+	var intervals := PackedFloat64Array([1.0 / 240.0, 1.0 / 60.0, 1.0 / 200.0, 1.0 / 30.0, 1.0 / 144.0])
 	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
 	if not folder.is_empty():
 		last_error = ViewerCapture.prepare_folder(folder)
@@ -679,12 +713,19 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 		return
 	playing = true
 	while _current.tick_index < scenario.tick_limit and not _current.completed:
-		_process(1.0 / render_rate)
+		_process(intervals[frame_index % intervals.size()] if irregular else 1.0 / render_rate)
+		frame_index += 1
 		if not last_error.is_empty():
 			push_error(last_error)
 			get_tree().quit(1)
 			return
 		await RenderingServer.frame_post_draw
+		if ViewerArguments.has_flag(arguments, "--motion-capture") and not folder.is_empty():
+			last_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("motion-%06d.png" % frame_index))
+			if not last_error.is_empty():
+				push_error(last_error)
+				get_tree().quit(1)
+				return
 		if scenario.entity_lifecycle and not folder.is_empty() and _current.entities != null:
 			var lifecycle_stages: Array[String] = []
 			for event: String in _current.entities.lifecycle_events:

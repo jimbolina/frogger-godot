@@ -119,6 +119,15 @@ hides the part. Keep raw observations, but exclude that part from visible
 landmark acceptance. Compare start, airborne and landed poses with the same
 per-vertex bounds and radius-three silhouette rule.
 
+## High-refresh camera presentation
+
+Terrain playback interpolates the committed camera basis and translation with
+the same fraction as frog and entity motion. Exact endpoints preserve the
+fixed12 basis; singular bases use component interpolation. Camera-dependent
+environment UVs and sky translation receive floating source coordinates from
+this rendered camera. Projection and aspect scaling are unchanged. Interactive
+smoothing defaults on; reference capture launchers explicitly select exact mode.
+
 ## Animated lighting limitation
 
 The current frog renderer appears brighter and more uniformly green than the

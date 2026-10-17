@@ -61,6 +61,9 @@ class Instance extends Node3D:
 	var _show_hidden: bool = false
 	var _configured: Dictionary[ShaderMaterial, bool] = {}
 	var _animation_values: Dictionary[ShaderMaterial, Vector3i] = {}
+	var _camera_materials: Dictionary[ShaderMaterial, bool] = {}
+	var _cave_materials: Dictionary[ShaderMaterial, bool] = {}
+	var _camera_presentation: Vector3 = Vector3.ZERO
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -126,14 +129,19 @@ class Instance extends Node3D:
 
 	## Environment UVs and sky backdrop camera translation use raw game position.
 	func set_camera_position(value: Vector3i) -> void:
-		if camera_position == value:
-			return
 		camera_position = value
-		for material: ShaderMaterial in _material_copies.values():
-			material.set_shader_parameter("camera_game", Vector3(value))
+		set_camera_presentation(Vector3(value))
+
+	## Floating source coordinates keep environment UVs and sky on the render timeline.
+	func set_camera_presentation(value: Vector3) -> void:
+		if _camera_presentation == value:
+			return
+		_camera_presentation = value
+		for material: ShaderMaterial in _camera_materials:
+			material.set_shader_parameter("camera_game", value)
 		if _sky_node != null:
 			var drift: Vector3i = sky.translation()
-			_sky_node.position = GameSpace.position(value.x + drift.x, value.y + drift.y, value.z + drift.z)
+			_set_sky_position(drift)
 
 	## Reference-only C viewport aspect matrix; ordinary cameras keep Vector2.ONE.
 	func set_projection_scale(value: Vector2) -> void:
@@ -171,7 +179,7 @@ class Instance extends Node3D:
 		if cave_frog == value:
 			return
 		cave_frog = value
-		for material: ShaderMaterial in _material_copies.values():
+		for material: ShaderMaterial in _cave_materials:
 			material.set_shader_parameter("cave_frog", Vector3(value))
 
 	## Changes cached shader variants; textures and geometry are retained.
@@ -215,12 +223,16 @@ class Instance extends Node3D:
 					var texture: Texture2D = material.get_shader_parameter("image") if image != null else null
 					material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
 					material.set_shader_parameter("environment_uv", spec.environment)
-					material.set_shader_parameter("camera_game", Vector3(camera_position))
+					material.set_shader_parameter("camera_game", _camera_presentation)
+					if spec.environment:
+						_camera_materials[material] = true
 					material.set_shader_parameter("projection_scale", projection_scale)
 					material.set_shader_parameter("reference_projection", reference_projection)
 					material.set_shader_parameter("water_enabled", water.enabled)
 					material.set_shader_parameter("cave_enabled", spec.cave)
 					material.set_shader_parameter("cave_frog", Vector3(cave_frog))
+					if spec.cave:
+						_cave_materials[material] = true
 					material.set_shader_parameter("cave_min_r2", float(source.scene.cave_min_r2))
 					material.set_shader_parameter("cave_max_r2", float(source.scene.cave_max_r2))
 					_configured[material] = true
@@ -236,16 +248,21 @@ class Instance extends Node3D:
 					_nodes[index].set_surface_override_material(surface_index, material)
 		if _sky_node != null:
 			var drift: Vector3i = sky.translation()
-			_sky_node.position = GameSpace.position(camera_position.x + drift.x,
-				camera_position.y + drift.y, camera_position.z + drift.z)
+			_set_sky_position(drift)
 			for index: int in source.sky_mesh.get_surface_count():
 				var original: ShaderMaterial = source.sky_mesh.surface_get_material(index)
 				var material: ShaderMaterial = _material_copies[original]
-				material.shader = MapShaders.sky_shader(_linear_filter)
-				material.set_shader_parameter("projection_scale", projection_scale)
-				material.set_shader_parameter("reference_projection", reference_projection)
-				material.set_shader_parameter("sky_backdrop", true)
+				if not _configured.has(material):
+					material.shader = MapShaders.sky_shader(_linear_filter)
+					material.set_shader_parameter("projection_scale", projection_scale)
+					material.set_shader_parameter("reference_projection", reference_projection)
+					material.set_shader_parameter("sky_backdrop", true)
+					_configured[material] = true
 				material.set_shader_parameter("sky_drift", Vector3(drift))
+
+	func _set_sky_position(drift: Vector3i) -> void:
+		var position_game: Vector3 = _camera_presentation + Vector3(drift)
+		_sky_node.position = Vector3(position_game.x, -position_game.y, -position_game.z) / GameSpace.UNITS_PER_SQUARE
 
 	func _update_visibility() -> void:
 		var chosen: PackedInt32Array = _selection

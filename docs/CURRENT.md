@@ -34,7 +34,7 @@ rendering remain deferred. See [inspection](reference/testing/terrain-inspection
 [PORTING](PORTING.md) owns the other remaining P8 dependencies;
 [architecture](reference/architecture.md) owns transaction boundaries.
 ORG1 uses prepared scripts, private transactions and asynchronous playback.
-Next: smoothing and sustained performance acceptance; progression remains unfinished.
+Coherent smoothing is implemented; sustained performance acceptance remains open.
 
 Animated per-part lighting remains a
 [renderer limitation](reference/rendering/gameplay-projection.md).

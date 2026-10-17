@@ -41,9 +41,10 @@ per instance; shared meshes and materials remain unchanged. The shader applies
 map parallel lights to transformed normals, source colour-matrix scaling and
 custom ambient narrowing before polygon modulation. This bounded path does not
 close animated frog per-part lighting or establish full retail pixel equality.
-The terrain viewer applies entity poses once per committed tick and invalidates
-that cache on reset, replacement and resize. Lighting uniforms update when
-their inputs change; map camera/cave setters update only their own uniforms.
+The terrain viewer samples entity poses once per committed tick, then interpolates
+continuous transforms and morph weights per rendered frame. Reset and replacement
+collapse history; resize refreshes projection bindings. Lighting uniforms update
+when their inputs change; camera/cave setters visit only affected materials.
 Inspector markers share selection materials, and unchanged FORM outlines/cells
 retain their meshes. These caches never advance simulation or hide entities.
 

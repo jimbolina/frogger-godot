@@ -87,6 +87,7 @@ func _run() -> void:
 	await _tap(KEY_SPACE)
 	for unused: int in 3:
 		_viewer._process(1.0 / 30.0)
+		_viewer._finish_pending()
 	_check(_viewer.playing and _viewer.run.snapshot().tick_index == 3, "live input has no replay tick limit")
 	await _tap(KEY_R)
 	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")

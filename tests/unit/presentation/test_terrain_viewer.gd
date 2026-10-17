@@ -30,11 +30,11 @@ func test_rendered_step_driver_matches_all_component_facts() -> void:
 
 func test_render_schedules_pause_and_reset_do_not_change_executed_ticks() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("buffer")
-	for delta: float in [1.0 / 120.0, 1.0 / 30.0, 0.2]:
+	for delta: float in [1.0 / 240.0, 1.0 / 200.0, 1.0 / 144.0, 1.0 / 60.0, 1.0 / 30.0, 0.2]:
 		assert_eq(_viewer.open_scenario(scenario), "")
 		_viewer.smoothing = true
 		_viewer.playing = true
-		for frame: int in 100:
+		for frame: int in 1000:
 			if _viewer.run.snapshot().tick_index == scenario.tick_limit:
 				break
 			_viewer._process(delta)
@@ -259,12 +259,31 @@ func test_pause_step_reset_and_optional_smoothing_have_no_native_interpolation()
 	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.position_16) + Vector3(0, 0.12, 0))
 	assert_eq(_viewer._frog.get_global_transform_interpolated().origin, _viewer._frog.global_position)
 	_viewer.playing = true
-	assert_eq(_viewer.step_scenario().error, "")
 	_viewer.smoothing = true
+	assert_eq(_viewer.step_scenario().error, "")
 	_viewer.draw_state(0.5)
 	var midpoint: Vector3 = GameSpace.fixed_position(_viewer._previous.position_16).lerp(GameSpace.fixed_position(_viewer._current.position_16), 0.5) + Vector3(0, 0.12, 0)
 	assert_eq(_viewer._frog.position, midpoint)
+	assert_ne(_viewer._previous.position_16, _viewer._current.position_16)
 	assert_eq(_viewer._frog.get_global_transform_interpolated().origin, _viewer._frog.global_position)
 	assert_eq(_viewer.reset_scenario(), "")
 	assert_eq(_viewer._frog.position, initial)
 	assert_eq(_viewer._frog.get_global_transform_interpolated().origin, _viewer._frog.global_position)
+
+func test_interactive_smoothing_default_capture_override_and_rejection_reset() -> void:
+	_viewer.configure_input(PackedStringArray())
+	assert_true(_viewer.smoothing)
+	_viewer.configure_input(PackedStringArray(["--run-scenario"]))
+	assert_false(_viewer.smoothing)
+	_viewer.configure_input(PackedStringArray(["--run-scenario", "--smoothing=true"]))
+	assert_true(_viewer.smoothing)
+	assert_eq(_viewer.open_scenario(TerrainScenario.builtin("normal")), "")
+	_viewer.playing = true
+	assert_eq(_viewer.step_scenario().error, "")
+	_viewer.draw_state(0.5)
+	var rejected := TickCommand.new()
+	rejected.tick_index = -1
+	assert_ne(_viewer.step_command(rejected).error, "")
+	assert_false(_viewer.playing)
+	_viewer.draw_state(0.0)
+	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.position_16) + Vector3(0, 0.12, 0))

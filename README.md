@@ -31,6 +31,10 @@ Tab switches input mode, Shift requests a super hop and Q/E turn the gameplay
 camera. Reset pauses and retains the selected input mode. Explicit scenario
 fixtures and automated captures still replay their bounded command sequence.
 Pause and reset also reset drawing interpolation.
+Interactive terrain playback enables smoothing by default. Use `--smoothing=false`
+after `--` for exact committed poses, or `--smoothing=true` for smooth captures.
+The `run_terrain.py` reference launcher explicitly defaults to exact mode.
+Rendering frequency does not change the 30 Hz game clock.
 Optional POP and SAFE-platform interactions are available below;
 level progression remains deferred. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).

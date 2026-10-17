@@ -34,6 +34,7 @@ var _custom: bool = false
 var _blend_values: Array[PackedFloat32Array] = []
 var _active_blends: Array[PackedInt32Array] = []
 var _static_pose: bool = false
+var _static_drawn: bool = false
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -46,6 +47,7 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 	_blend_values.clear()
 	_active_blends.clear()
 	_materials.clear()
+	_static_drawn = false
 	_lighting = null
 	model_mesh = mesh
 	player = animation_player
@@ -113,16 +115,24 @@ func _update_lighting(material: ShaderMaterial, original: ShaderMaterial) -> voi
 func advance_tick() -> void:
 	if player == null:
 		return
-	_previous = _current
 	player.advance_tick()
+	capture_pose()
+	render(1.0 if not smoothing_enabled else 0.0)
+
+## Samples a committed player pose without advancing its tick or drawing twice.
+func capture_pose(collapse: bool = false) -> void:
+	if player == null:
+		return
+	_previous = _current
 	if _static_pose and player.revision == _revision:
 		return
 	_current = player.sample_pose()
-	if player.wrapped or player.revision != _revision or _previous == null:
+	var textures_changed: bool = _previous == null or _current.texture_entries != _previous.texture_entries
+	if collapse or player.wrapped or player.revision != _revision or _previous == null:
 		_previous = _current
 	_revision = player.revision
-	refresh_materials()
-	render(1.0 if not smoothing_enabled else 0.0)
+	if textures_changed:
+		refresh_materials()
 
 
 ## Resets interpolation after a seek, action change, pause, step or restart.
@@ -132,6 +142,7 @@ func apply_exact() -> void:
 	_current = player.sample_pose()
 	_previous = _current
 	_revision = player.revision
+	_static_drawn = false
 	refresh_materials()
 	render(1.0)
 
@@ -145,11 +156,17 @@ func render(fraction: float) -> void:
 		return
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing_enabled else 1.0
 	visible = _current.visible
+	if _static_pose and _static_drawn:
+		return
+	_static_drawn = true
 	for index: int in part_nodes.size():
 		var node: MeshInstance3D = part_nodes[index]
 		var now: Transform3D = _current.transforms[index] if index < _current.transforms.size() else Transform3D.IDENTITY
 		var before: Transform3D = _previous.transforms[index] if _previous != null and index < _previous.transforms.size() else now
-		if weight == 0.0:
+		if before == now:
+			if node.transform != now:
+				node.transform = now
+		elif weight == 0.0:
 			node.transform = before
 		elif weight == 1.0:
 			node.transform = now

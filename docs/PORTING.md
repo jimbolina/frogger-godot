@@ -85,7 +85,8 @@ from schedule correctness. Smooth 200+ FPS at 1440p on the owner's machine is th
 current optimization target; see [inspection](reference/testing/terrain-inspection.md).
 Prepared scripts, transaction ownership and rendering caches reduce repeated work;
 the presentation worker keeps ordered simulation off the rendering thread.
-The frame-time target and coherent smoothing remain open until measured acceptance.
+Coherent frog, camera, platform and model smoothing is implemented, with exact
+capture mode retained. The frame-time target remains open until measured acceptance.
 
 ## Infrastructure
 

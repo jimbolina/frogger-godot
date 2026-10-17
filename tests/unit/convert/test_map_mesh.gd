@@ -4,6 +4,7 @@ extends GutTest
 
 func test_material_settings_invalidate_inactive_animation_frames() -> void:
 	var scene: MapSceneData = _scene()
+	scene.map.polygons[0].flags = 2
 	var track := MapAnimation.new()
 	track.type = 2
 	track.frames_per_texture = 1
@@ -136,6 +137,9 @@ func test_map_strip_corner_order_uvs_and_polygon_blend_flag() -> void:
 
 func test_animation_updates_materials_without_rebuilding_shared_meshes() -> void:
 	var scene: MapSceneData = _scene()
+	scene.cave_enabled = true
+	scene.map.polygons[0].type_index = 7
+	scene.map.polygons[0].flags = 2
 	var track := MapAnimation.new()
 	track.type = 3
 	track.delta_u = 1
@@ -159,7 +163,9 @@ func test_animation_updates_materials_without_rebuilding_shared_meshes() -> void
 	var material_id: int = material.get_instance_id()
 	first.set_camera_position(Vector3i(500, -200, 900))
 	first.set_cave_frog(Vector3i(100, -64, 200))
-	for prepared: ShaderMaterial in first._material_copies.values():
+	for tick: int in 4:
+		first.set_tick(tick)
+		var prepared: ShaderMaterial = node.get_surface_override_material(0)
 		var camera: Vector3 = prepared.get_shader_parameter("camera_game")
 		var frog: Vector3 = prepared.get_shader_parameter("cave_frog")
 		assert_eq(camera, Vector3(500, -200, 900))
@@ -242,6 +248,10 @@ func test_environment_cave_water_attributes_and_affine_shader() -> void:
 	var cave_frog: Vector3 = material.get_shader_parameter("cave_frog")
 	var projection_scale: Vector2 = material.get_shader_parameter("projection_scale")
 	assert_eq(camera_game, Vector3(500, -200, 900))
+	instance.set_camera_presentation(Vector3(500.25, -200.5, 900.75))
+	camera_game = material.get_shader_parameter("camera_game")
+	assert_eq(camera_game, Vector3(500.25, -200.5, 900.75))
+	assert_eq(instance.camera_position, Vector3i(500, -200, 900), "presentation does not change the committed camera")
 	assert_eq(cave_frog, Vector3(0, 1100, 0))
 	assert_eq(projection_scale, Vector2(1, 0.9375))
 	assert_true(material.shader.code.contains("affine_uv / affine_weight"))
@@ -272,6 +282,11 @@ func test_sky_rotations_camera_translation_and_fixed_height() -> void:
 	instance.set_camera_position(Vector3i(256, 512, 768))
 	var sky_node: MeshInstance3D = instance.get_child(instance.get_child_count() - 1)
 	assert_eq(sky_node.position, Vector3(1, -2, -3))
+	instance.set_camera_presentation(Vector3(256.5, 512.25, 768.75))
+	assert_eq(sky_node.position, Vector3(256.5, -512.25, -768.75) / 256.0)
+	instance.set_tick(0)
+	var drift: Vector3 = Vector3(instance.sky.translation())
+	assert_eq(sky_node.position, Vector3(256.5 + drift.x, -512.25 - drift.y, -768.75 - drift.z) / 256.0)
 	instance.free()
 
 

@@ -95,9 +95,11 @@ def run(args):
     baseline=evidence/'headless.jsonl'
     stage('headless',['-s','res://tools/run_terrain_scenario.gd','--','--trace-jsonl='+str(baseline),*selected])
     count=check_source(baseline,repo,name,ticks);print(f'Headless source agreement: {count} phases and {ticks*64} ordered updates',flush=True)
-    for rate in (30,60,144):
+    rates = (30,60,144,200,240,'irregular')
+    for rate in rates:
         rendered=evidence/f'rendered-{rate}.jsonl';captures=evidence/f'captures-{rate}'
-        stage(f'rendered-{rate}',['res://scenes/tools/terrain_viewer.tscn','--','--run-scenario',f'--render-rate={rate}','--trace-jsonl='+str(rendered),'--screenshot-dir='+str(captures),*selected],False)
+        schedule = ['--render-rate=240', '--frame-schedule=irregular'] if rate == 'irregular' else [f'--render-rate={rate}']
+        stage(f'rendered-{rate}',['res://scenes/tools/terrain_viewer.tscn','--','--run-scenario','--smoothing=false',*schedule,'--trace-jsonl='+str(rendered),'--screenshot-dir='+str(captures),*selected],False)
         with baseline.open() as a,rendered.open() as b:
             for index,(left,right) in enumerate(itertools.zip_longest(a,b)):
                 if left is None or right is None or json.loads(left)!=json.loads(right):raise ValueError(f'{rate} FPS full trace mismatch at record {index}')
@@ -106,5 +108,5 @@ def run(args):
         for label in (*required, 'org1-diving', 'org1-rising'):check_png(captures/f'entity-{label}.png')
         print(f'{rate} FPS complete trace and captures match',flush=True)
     if identities()!=before:raise ValueError('Source or proof changed during verification')
-    (evidence/'comparison.json').write_text(json.dumps(dict(passed=True,phases=count,ordered_updates=ticks*64,rates=[30,60,144],scope='Full represented state and ordered outcomes; scheduled frame deltas, not measured host FPS'),indent=2))
+    (evidence/'comparison.json').write_text(json.dumps(dict(passed=True,phases=count,ordered_updates=ticks*64,rates=rates,scope='Full represented state and ordered outcomes; scheduled frame deltas, not measured host FPS'),indent=2))
     print('ORG1 schedule verification passed: '+str(evidence),flush=True)

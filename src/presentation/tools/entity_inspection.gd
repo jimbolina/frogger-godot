@@ -108,6 +108,19 @@ func set_snapshot(snapshot: EntityRunSnapshot) -> void:
 			_contact_outline.transform = GameSpace.transform(snapshot.entities[_selected].matrix12)
 			_contact_cell.transform = _contact_outline.transform
 
+## Moves existing geometry with the same render samples as its inspected entity.
+func draw_motion(motion: TerrainMotion, fraction: float) -> void:
+	for index: int in _axes.size():
+		if _axes[index] == null:
+			continue
+		var pose: Transform3D = motion.entity(index, fraction)
+		_positions[index].position = pose.origin
+		var axes := Basis(pose.basis.x.normalized(), -pose.basis.y.normalized(), -pose.basis.z.normalized())
+		_axes[index].transform = Transform3D(axes, pose.origin)
+		if index == _selected and _contact_outline != null:
+			_contact_outline.transform = pose
+			_contact_cell.transform = pose
+
 ## Highlights one source-ordered definition slot while retaining all markers.
 func set_selected(index: int) -> void:
 	if _selected == index:

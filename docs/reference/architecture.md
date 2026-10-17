@@ -59,6 +59,15 @@ uses the last completed samples while a transaction runs. Pause/step drains the
 pending command; reset, source replacement and exit join the worker before
 replacing or releasing the run. Deterministic trace captures execute synchronously.
 Timing instrumentation belongs to this presentation worker, never gameplay classes.
+`TerrainMotion` converts previous/current committed transforms once per tick.
+Frog, entities and camera use one render fraction; a rider retained on one
+platform interpolates in that platform's local frame. Transfers use continuous
+world transforms. Generation changes collapse entity history. Reset, source
+replacement, pause/step, rejection and explicit `reset_interpolation()` for
+seek/teleport collapse all histories. Rendering never mutates committed samples.
+Part transforms and compatible morph cels share this fraction; texture frames,
+visibility and action changes use the current tick. Environment UVs and sky
+translation follow the interpolated camera while gameplay retains its integer camera.
 Snapshots are detached, including nested entity/path and camera/animation state.
 Component fixtures explicitly omit unrelated systems; integrated inspection
 supplies camera defaults and copied high-detail frog action lengths. Entity
