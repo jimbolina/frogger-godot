@@ -47,16 +47,18 @@ default does not reproduce.
 `EntityCollisionDefinition.lifecycle` opts an integrated run into bounded
 single-player live-entity creation. Null preserves all-attached inspection.
 Ordinary retail terrain setup admits zero-zone maps and script-free generic STATIC/MOVING entities.
-Script-bearing records retain source identity and inspection poses but never
-enter the supported live set. Custom/immortal behaviors, scripts and
-selective checkpoint/death resets remain deferred. Existing FORM/model and
+Ordinary inspection retains unsupported script-bearing records as dormant
+source identities. The separately admitted [ORG1 scripted visibility
+route](#scripted-visibility-route) supplies validated programs and the required
+custom/immortal behaviors. Selective checkpoint/death resets remain deferred. Existing FORM/model and
 collision-callback exclusions still govern collision; bonus callbacks remain
 unexecuted diagnostics.
 
 `TerrainRun` advances persistent paths, culls/updates live entities, runs frog
 and camera/animation phases, then selects and expands visible groups before
-the aggregate commit (`gamesys.C:1322–1350`). Reset has no ordinary live
-instances and does not prewarm visibility. End-of-tick creation first becomes
+the aggregate commit (`gamesys.C:1322–1350`). Reset has no mortal live
+instances and does not prewarm visibility; admitted immortals are constructed
+in authored order before the first tick. End-of-tick creation first becomes
 eligible for updates and collision on the following tick. Paths continue while
 their live instances are absent. Recreation uses the current path pose and
 increments a generation; a full reset restores generation zero.
@@ -121,8 +123,8 @@ state between them; it performs no frog movement or contact. Camera, selection
 and entity state commit atomically, including at that sequence boundary.
 Presentation creates/releases log instances from committed generations.
 
-This does not lift ordinary retail terrain's zero-zone guard or guarded
-exploration's all-attached restriction. Script/custom/immortal behavior and
+This does not lift ordinary retail terrain's zero-zone guard or change
+the existing JUN1 and ORG1 all-attached presets. Script/custom/immortal behavior and
 selective resets remain outside this admission. Reproduction and evidence
 fields belong to the [golden specification](../../../tests/golden/specs/entities.md#combined-camera-zones-and-lifecycle);
 launch commands belong to [inspection](../testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection).
@@ -487,6 +489,54 @@ following callback. Facts and reproduction live in the
 [golden specification](../../../tests/golden/specs/entities.md); viewer commands
 live in [inspection](../testing/terrain-inspection.md#guarded-org1-road-to-river).
 
+## Scripted visibility route
+
+`org1-turtle-log-bank-visibility` is a separate high-detail v3.0e admission for
+ORG1's existing bank/turtle/log corridor. The all-attached presets keep their
+original proofs. The new manifest pins supplied map, form/name, script and
+model dependencies; changed inputs reject. This is guarded exploration, not a
+complete level or general mod admission.
+
+`EntityDefinition` resolves immortal and moving-group capabilities by supported
+behavior name from frozen `ENTLIB.C`. Moving-group membership includes turtles,
+the fly and baby frog; it is not equivalent to generic `MOVING` or path ownership.
+All 64 authored slots persist. Mortal instances start dormant; noise, boundary
+markers, baby and bonus fly are immortal and initialize in authored order.
+Checkpoints are mortal statics. Persistent paths advance even without a live
+instance. Group linking uses path position for path owners, authored position
+for statics and the current transform for other dynamic entities.
+
+Each live-list visit decides retirement before custom/script updates. Later
+visits see earlier retirement and transform changes, while earlier visits still
+see the previous pose of a parent that has not updated. Source callbacks consume
+previous HIT/CARRY flags and shared RNG in that order. Camera-selected creation
+happens after animation, so new objects first update and collide next tick.
+Recreation resets script cursors, registers, callbacks, deviation, timer,
+animation, tint, hit/carry flags and logical moving-sound ownership. Retirement
+releases that ownership. Prepared immutable programs and persistent paths
+survive instances. Generation changes replace presentation instances and clear
+interpolation history. Failures discard the entire aggregate and all requests.
+
+The uncollected baby follows frozen `ent_org.c` search/wait, parent loss,
+attachment and autonomous six-tick FORM hops. Its parent may retire and recreate;
+the former permanent-parent assumption does not apply. Collection remains
+unsupported. After entity updates, before frog control, a dynamic guard requires
+the baby's XZ origin to remain more than 640 units from every integer point of
+the admitted rectangle. This excludes its smaller contact sphere and tongue
+reach for every allowed frog position, including while the model is hidden.
+Failure rejects and pauses the whole tick. Consequently extended waiting or
+other live camera/input sequences can reach an explicit admission boundary.
+No neighbor is silently removed to preserve a successful trace.
+
+The independent round trip retains the existing movement commands and returns
+to the bank. A separately timed attached-diver route verifies drowning before
+control under the new script lifetime. Full reset reconstructs immortal state,
+paths and dormant mortals; selective game-flow reset, collection, new FORM
+callbacks, active zones, road traversal, audio playback and effects remain
+outside this preset. The [golden specification](../../../tests/golden/specs/entities.md#scripted-visibility)
+owns schedules and independent evidence; [inspection](../testing/terrain-inspection.md#scripted-org1-visibility)
+owns launch commands.
+
 ## Bounded script components
 
 `EntityScriptSetup` resolves supplied programs and the `CallbackNames` bank,
@@ -516,7 +566,7 @@ The aggregate runs admitted custom/script updates before frog control, using
 previous-tick hit/carry flags. Drowning reaches that tick's control phase.
 Ordered observations retain each visit before transient flags clear; entity
 animation advances after frog animation scripts. Failed later phases discard
-requests, clocks, colours, RNG and checkpoint covered bits together. The bounded
+requests, clocks, colours, RNG and checkpoint covered bits together. The all-attached
 background branches preserve bonus-fly timing/RNG and the baby frog's permanent
 live-parent invariant; checkpoint croak/contact and parent retirement reject.
 Presentation reads committed entity actions/cels and hidden state.

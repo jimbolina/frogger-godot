@@ -46,7 +46,7 @@ static func _indices_validated(definition: EntityCollisionDefinition, snapshot: 
 
 
 static func _moving(entity: EntityDefinition) -> bool:
-	return entity.entity_name in ["MOVING", "SUB_TURTLE", "ORG_FLY", "ORG_BABY_FROG"]
+	return entity.is_group_moving()
 
 static func _group_x(definition: EntityCollisionDefinition, coordinate: int) -> int:
 	return clampi(_source_div(_signed32(coordinate - definition.group_base.x), definition.group_size.x), 0, definition.group_dimensions.x - 1)

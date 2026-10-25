@@ -75,6 +75,7 @@ class Route:
                 for moving in (True,False):
                     for r in reversed(self.records):
                         if moving and r['entity_index'] in self.hidden:continue
+                        if hasattr(self,'live') and r['entity_index'] not in self.live:continue
                         is_moving=r['entity_type'] in ('MOVING','SUB_TURTLE','ORG_BABY_FROG','ORG_FLY')
                         if is_moving==moving and self.group(self.poses[r['entity_index']][9:])==(x,z):result.append(r['entity_index'])
         return result
@@ -153,6 +154,7 @@ class Route:
         self.hits=set()
         if self.mode==2:return
         for index in self.scan():
+            if hasattr(self,'live') and index not in self.live:continue
             if index not in self.geometry['included_FORM_indices'] or index in (self.attached,self.forbidden):continue
             r=self.records[index];form=self.forms[r['form_grid_id']];matrix=self.poses[index]
             delta=[contacts.s16(self.world()[k]-matrix[9+k]) for k in range(3)]

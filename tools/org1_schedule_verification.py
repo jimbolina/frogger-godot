@@ -17,7 +17,7 @@ def phase_facts(record):
     for prefix,key in [('camera','tracked_world'),('source','source_world'),('target','target_world')]:result.update(zip((prefix+'_'+axis for axis in 'xyz'),c[key]))
     result.update((f'controller_{i}',v) for i,v in enumerate(c['controller_directions']))
     result.update((f'camera_mod{i//3}{i%3}',v) for i,v in enumerate(c['mod_matrix12'][:9]))
-    result.update(action=s['animation']['action'],cel=s['animation']['cel'],diver_y=d['script_state']['deviation'],diver_timer=d['script_state']['timer'],diver_action=d['animation']['action'])
+    result.update(action=s['animation']['action'],cel=s['animation']['cel'],diver_y=d['script_state']['deviation'] if d['script_state'] else 0,diver_timer=d['script_state']['timer'] if d['script_state'] else 0,diver_action=d['animation']['action'] if d['animation'] else 0)
     return result
 
 
@@ -32,6 +32,9 @@ def entity_facts(visit,fly,tick):
     result.update(zip('xyz',p['matrix12'][9:]))
     for slot in range(2):result[f'callback{slot}']=':'.join(map(str,s['callbacks'][slot])) if s else '-1:0:0:0'
     result.update(zip(('sound_id','sound_min','sound_max'),s['moving_sound'] if s and s['moving_sound'] else (-1,-1,-1)))
+    if p['background'] and p['background']['moving_sound']:
+        result['moving_sound']=1
+        result.update(zip(('sound_id','sound_min','sound_max'),p['background']['moving_sound']))
     return result
 
 
@@ -40,11 +43,11 @@ def check_source(path,repo,name,ticks,preset='org1-turtle-log-bank'):
     with (directory/(name+'.tsv')).open(newline='') as stream:expected=list(csv.DictReader(stream,delimiter='\t'))
     with (directory/(name+'_entities.tsv')).open(newline='') as stream:digests=list(csv.DictReader(stream,delimiter='\t'))
     fields=json.loads((directory/'org1_entity_update_fields.json').read_text())
-    fly=dict(mode=0,timer=60,checkpoint_index=-1);count=0
+    fly=dict(mode=0,timer=60,checkpoint_index=-1);count=0;updates=0
     with path.open() as stream:
         metadata=json.loads(next(stream))
         if metadata['exploration']!=preset or metadata['tick_limit']!=ticks:raise ValueError('wrong ORG1 metadata')
-        manifest='org1_road_river_admission.json' if preset=='org1-road-river' else 'org1_exploration_admission.json'
+        manifest='org1_visibility_admission.json' if preset.endswith('-visibility') else 'org1_road_river_admission.json' if preset=='org1-road-river' else 'org1_exploration_admission.json'
         admission=json.loads((repo/'src/presentation/setup'/manifest).read_text())
         x,z=admission['admitted_x'],admission['admitted_z']
         if metadata['exploration_guard']['world_bounds']!=[x[0],z[0],x[1]-x[0],z[1]-z[0]]:raise ValueError('admission bounds changed')
@@ -62,7 +65,8 @@ def check_source(path,repo,name,ticks,preset='org1-turtle-log-bank'):
                 if str(value)!=source[key]:raise ValueError(f'{record["tick"]}/{record["phase"]}: {key} runtime={value}, source={source[key]}')
             if record['phase']=='control':
                 visits=record['state']['entities']['updates']
-                if [v['entity']['entity_index'] for v in visits]!=list(range(63,-1,-1)):raise ValueError('ordered visits incomplete')
+                updates+=len(visits)
+                if not preset.endswith('-visibility') and [v['entity']['entity_index'] for v in visits]!=list(range(63,-1,-1)):raise ValueError('ordered visits incomplete')
                 canonical='\t'.join(fields)+'\n'
                 for visit in visits:
                     if visit['entity']['entity_index']==55:fly=visit['entity']['background']
@@ -72,7 +76,7 @@ def check_source(path,repo,name,ticks,preset='org1-turtle-log-bank'):
                 if digest!=digests[record['tick']]['ordered_entity_updates_sha256']:raise ValueError(f'tick {record["tick"]} ordered source updates differ')
             count+=1
     if count!=ticks*6:raise ValueError('wrong complete phase count')
-    return count
+    return count,updates
 
 
 def run(args):
@@ -80,7 +84,10 @@ def run(args):
     for protected in (repo,(repo.parent/'froggy').resolve()):
         if output==protected or protected in output.parents:raise ValueError('Evidence must be external')
     fixture=json.loads(args.scenario_file.read_text());ticks=fixture['tick_limit']
-    if args.exploration=='org1-road-river':
+    if args.exploration.endswith('-visibility'):
+        names=('org1_visibility_round_trip','org1_visibility_diver')
+        name=next((candidate for candidate in names if fixture==json.loads((repo/'tests/golden/fixtures'/(candidate+'.json')).read_text())),None)
+    elif args.exploration=='org1-road-river':
         names=('org1_road_river','org1_road_vehicle_death')
         name=next((candidate for candidate in names if fixture==json.loads((repo/'tests/golden/fixtures'/(candidate+'.json')).read_text())),None)
     else:
@@ -109,8 +116,8 @@ def run(args):
     stage('import',['--import']);stage('check',['-s','res://tools/check_scripts.gd'])
     baseline=evidence/'headless.jsonl'
     stage('headless',['-s','res://tools/run_terrain_scenario.gd','--','--trace-jsonl='+str(baseline),*selected])
-    count=check_source(baseline,repo,name,ticks,args.exploration);print(f'Headless source agreement: {count} phases and {ticks*64} ordered updates',flush=True)
-    rates = (30,60,144,200,240,'irregular')
+    count,updates=check_source(baseline,repo,name,ticks,args.exploration);print(f'Headless source agreement: {count} phases and {updates} ordered updates',flush=True)
+    rates = (30,60,144) if args.exploration.endswith('-visibility') else (30,60,144,200,240,'irregular')
     for rate in rates:
         rendered=evidence/f'rendered-{rate}.jsonl';captures=evidence/f'captures-{rate}'
         schedule = ['--render-rate=240', '--frame-schedule=irregular'] if rate == 'irregular' else [f'--render-rate={rate}']
@@ -127,5 +134,5 @@ def run(args):
         for label in required:check_png(captures/f'entity-{label}.png')
         print(f'{rate} FPS complete trace and captures match',flush=True)
     if identities()!=before:raise ValueError('Source or proof changed during verification')
-    (evidence/'comparison.json').write_text(json.dumps(dict(passed=True,phases=count,ordered_updates=ticks*64,rates=rates,scope='Full represented state and ordered outcomes; scheduled frame deltas, not measured host FPS'),indent=2))
+    (evidence/'comparison.json').write_text(json.dumps(dict(passed=True,phases=count,ordered_updates=updates,rates=rates,scope='Full represented state and ordered outcomes; scheduled frame deltas, not measured host FPS'),indent=2))
     print('ORG1 schedule verification passed: '+str(evidence),flush=True)

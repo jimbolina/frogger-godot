@@ -811,6 +811,7 @@ int main(int argc, char **argv) {
     if(!strcmp(argv[2],"--org1-background")) return org1_background_run(argv[3]);
     if(!strcmp(argv[2],"--moving-sound-state")) return moving_sound_state_run(argv[3]);
     if(!strcmp(argv[2],"--frog-probes")) return frog_probe_run(argv[3]);
+    if(!strcmp(argv[2],"--org1-visibility")) {org_visibility=1;return org1_route_run(argv[3]);}
     if(!strcmp(argv[2],"--org1-route")) return org1_route_run(argv[3]);
     if(!strcmp(argv[2],"--org1-road")) {org_road=1;return org1_route_run(argv[3]);}
     if(!strcmp(argv[2],"--entity-script")) return entity_script_run(argv[3]);

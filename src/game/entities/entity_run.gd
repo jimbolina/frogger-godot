@@ -24,7 +24,7 @@ func copy() -> EntityRun:
 	return result
 
 ## Builds the next independent tick directly, avoiding a redundant pre-step deep copy.
-func advanced_copy(tick_index: int, attached_entity_index: int = -1) -> EntityRun:
+func advanced_copy(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> EntityRun:
 	var result := EntityRun.new()
 	result._ready = _ready
 	result._lifecycle = _lifecycle
@@ -32,7 +32,7 @@ func advanced_copy(tick_index: int, attached_entity_index: int = -1) -> EntityRu
 	result._scripts.assign(_scripts)
 	result._runners.assign(_runners)
 	result._state = _state
-	result.error = result.step(tick_index, attached_entity_index)
+	result.error = result.step(tick_index, attached_entity_index, deferred_updates)
 	if not result.error.is_empty():
 		result._runners.clear()
 		result._state = null
@@ -66,9 +66,6 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & (EntityDefinition.LOCAL_ALIGN | EntityDefinition.PROJECT_ON_LAND):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
-		if definition.background_admitted and lifecycle != null:
-			result.error = "Custom background entities require all-attached lifetime"
-			return result
 		if definition.entity_name == "STATIC" or (definition.background_admitted and definition.entity_name in ["CHECKPOINT", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "ORG_BABY_FROG", "ORG_FLY"]):
 			if definition.path_definition != null or definition.path_start != null:
 				result.error = "Static entity %d cannot attach a path" % definition.entity_index
@@ -88,10 +85,10 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 			if length <= 0:
 				result.error = "Entity animation lengths must be positive"
 				return result
+		if lifecycle != null and definition.is_immortal() and definition.script_id != 0 and definition.script_definition == null:
+			result.error = "Immortal scripted entity requires a validated program"
+			return result
 		if definition.script_definition != null:
-			if lifecycle != null:
-				result.error = "Script entities require explicit all-attached lifetime"
-				return result
 			result.error = definition.script_definition.validate(definition.action_lengths, definition.form_id, definition.path_definition != null)
 			if not result.error.is_empty():
 				return result
@@ -126,32 +123,23 @@ func reset() -> String:
 	var next_state: EntityRunSnapshot = _make_snapshot(candidates, 0)
 	for index: int in next_state.entities.size():
 		var definition: EntityDefinition = _definitions[index]
-		next_state.entities[index].animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
-		next_state.entities[index].live_flags = 4098 if not definition.action_lengths.is_empty() else 0
-		if definition.script_definition != null:
-			next_state.entities[index].script_state = EntityScriptState.create(definition.script_definition.root_id)
-		if definition.background_admitted:
-			var entity: EntitySnapshot = next_state.entities[index]
-			entity.background = EntityBackgroundState.new()
-			if definition.entity_name == "ORG_FLY":
-				entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
-				entity.background.model_hidden = true
-			elif definition.entity_name == "ORG_BABY_FROG":
-				entity.background.timer = 0
-				entity.background.model_hidden = true
-			elif definition.entity_name == "CHECKPOINT":
-				entity.ambient = Vector3i(160, 160, 160)
+		var entity: EntitySnapshot = next_state.entities[index]
+		entity.lifecycle_supported = definition.script_id == 0 or definition.script_definition != null
+		if _lifecycle == null or definition.is_immortal():
+			_initialize_instance(entity, definition)
+			if _lifecycle != null:
+				entity.generation = 1
+				next_state.live_order.insert(0, entity.entity_index)
+		else:
+			entity.live = false
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
-		for entity: EntitySnapshot in next_state.entities:
-			entity.lifecycle_supported = _definitions[_slot_for_id(entity.entity_index)].script_id == 0
-			entity.live = false
 	_runners = candidates
 	_state = next_state
 	return ""
 
 ## Advances all paths, then updates moving transforms, with aggregate rollback.
-func step(tick_index: int, attached_entity_index: int = -1) -> String:
+func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> String:
 	if _state == null:
 		return "Entity run has no valid start"
 	if tick_index < 0 or tick_index != _state.tick_index:
@@ -184,7 +172,7 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].entity_name == "ORG_FLY":
+		if _definitions[index].entity_name in ["ORG_FLY", "ORG_BABY_FROG"] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
@@ -203,12 +191,11 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 			if slot < 0:
 				return "Entity live-list identity is invalid"
 			var entity: EntitySnapshot = next_state.entities[slot]
-			if entity.destroy_pending and entity_id != attached_entity_index:
-				entity.live = false
-				entity.destroy_pending = false
-				next_state.lifecycle_events.append("destroy:%d:%d" % [entity_id, entity.generation])
+			if not deferred_updates and entity.destroy_pending and entity_id != attached_entity_index:
+				_retire_instance(next_state, entity)
 			else:
-				entity.destroy_pending = true
+				if not deferred_updates:
+					entity.destroy_pending = not _definitions[slot].is_immortal()
 				survivors.append(entity_id)
 		next_state.live_order = survivors
 	_runners = candidates
@@ -225,7 +212,7 @@ func update_script(entity_index: int, context: EntityUpdateContext, random: Sour
 	return _update_script(slot, context, random, false)
 
 func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool) -> EntityUpdateResult:
-	if slot < 0 or _state == null or _definitions[slot].script_definition == null:
+	if slot < 0 or _state == null or not _state.entities[slot].live or _definitions[slot].script_definition == null:
 		var failed := EntityUpdateResult.new()
 		failed.error = "Entity has no script state"
 		return failed
@@ -264,6 +251,8 @@ func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds:
 		observation.environment = environment.copy() if environment != null else null
 		_state.updates.append(observation)
 	_state.entities[slot].live_flags &= ~25596
+	if _lifecycle != null:
+		_state.entities[slot].destroy_pending = not _definitions[slot].is_immortal()
 
 ## Publishes this tick's frog contact flags for the following entity update.
 func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array) -> void:
@@ -277,11 +266,11 @@ func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array) -> voi
 ## Advances authoritative entity clocks once at the aggregate pose phase.
 func advance_animations() -> void:
 	for entity: EntitySnapshot in _state.entities:
-		if entity.animation != null:
+		if entity.live and entity.animation != null:
 			entity.animation.advance()
 
 ## Updates one admitted custom neighbor on detached candidate state.
-func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool) -> EntityBackgroundResult:
+func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = []) -> EntityBackgroundResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
 		var failed := EntityBackgroundResult.new()
@@ -289,12 +278,18 @@ func update_background(entity_index: int, environment: EntityEnvironmentState, r
 		return failed
 	var definition: EntityDefinition = _definitions[slot]
 	var parent_live: bool = false
+	var parent: EntitySnapshot = null
+	var parent_form: FormContactDefinition = null
 	if definition.entity_name == "ORG_BABY_FROG":
 		for candidate: EntitySnapshot in _state.entities:
 			if candidate.unique_id == definition.parent_unique_id:
 				parent_live = candidate.live
+				parent = candidate
+				var parent_slot: int = _slot_for_id(candidate.entity_index)
+				if parent_slot < contacts.size():
+					parent_form = contacts[parent_slot]
 				break
-	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live)
+	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form)
 	if result.error.is_empty():
 		_state.entities[slot] = result.entity.copy()
 	return result
@@ -312,20 +307,26 @@ func apply_visibility(camera: GameplayCameraSnapshot) -> String:
 		for pass_index: int in 2:
 			for slot: int in range(_definitions.size() - 1, -1, -1):
 				var definition: EntityDefinition = _definitions[slot]
-				if (definition.entity_name == "MOVING") != (pass_index == 0):
+				if definition.is_group_moving() != (pass_index == 0):
 					continue
-				if _group_for(next_state.entities[slot].matrix12[9], next_state.entities[slot].matrix12[11]) != group_index:
+				var pose: EntitySnapshot = next_state.entities[slot]
+				var group_point := Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
+				if pose.path != null:
+					group_point = pose.path.position
+				elif not definition.is_group_moving():
+					group_point = Vector3i(definition.matrix12[9], definition.matrix12[10], definition.matrix12[11])
+				if _group_for(group_point.x, group_point.z) != group_index:
 					continue
-				if definition.flags & EntityDefinition.HIDDEN:
+				if next_state.entities[slot].entity_flags & EntityDefinition.HIDDEN:
 					continue
 				var entity: EntitySnapshot = next_state.entities[slot]
 				if not entity.lifecycle_supported:
 					continue
 				if entity.live:
 					entity.destroy_pending = false
+					entity.live_flags &= ~1
 				else:
-					entity.live = true
-					entity.destroy_pending = false
+					_initialize_instance(entity, definition)
 					entity.generation += 1
 					next_state.live_order.insert(0, entity.entity_index)
 					next_state.lifecycle_events.append("create:%d:%d" % [entity.entity_index, entity.generation])
@@ -370,3 +371,62 @@ func _make_snapshot(runners: Array[PathRunner], tick_index: int) -> EntityRunSna
 		entity.path = runner.snapshot()
 		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[index].flags)
 	return result
+
+func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) -> void:
+	entity.live = true
+	if entity.path != null:
+		entity.matrix12 = EntityTransform.moving(entity.path, definition.flags)
+	entity.destroy_pending = false
+	entity.animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
+	entity.live_flags = 4098 if not definition.action_lengths.is_empty() else 0
+	entity.script_state = EntityScriptState.create(definition.script_definition.root_id) if definition.script_definition != null else null
+	entity.colour_scale = Vector3i.ZERO
+	entity.ambient = Vector3i.ZERO
+	entity.requests.clear()
+	if definition.background_admitted:
+		entity.background = EntityBackgroundState.new()
+		if definition.entity_name == "ORG_FLY":
+			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
+			entity.background.model_hidden = true
+		elif definition.entity_name == "ORG_BABY_FROG":
+			entity.background.timer = 0
+			entity.background.model_hidden = true
+		elif definition.entity_name == "CHECKPOINT":
+			entity.ambient = Vector3i(160, 160, 160)
+
+func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
+	entity.live = false
+	entity.destroy_pending = false
+	entity.script_state = null
+	entity.animation = null
+	entity.background = null
+	entity.live_flags = 0
+	entity.requests.clear()
+	entity.colour_scale = Vector3i.ZERO
+	entity.ambient = Vector3i.ZERO
+	state.lifecycle_events.append("destroy:%d:%d" % [entity.entity_index, entity.generation])
+
+## Returns detached slots in actual live-list order, or the original all-attached order.
+func update_slots() -> PackedInt32Array:
+	var result := PackedInt32Array()
+	if _lifecycle != null:
+		for entity_id: int in _state.live_order:
+			result.append(_slot_for_id(entity_id))
+	else:
+		for slot: int in range(_definitions.size() - 1, -1, -1):
+			result.append(slot)
+	return result
+
+## Applies retirement and base update at the source visit, before custom/script work.
+func begin_update(slot: int, attached: int) -> bool:
+	if _lifecycle == null:
+		return true
+	var entity: EntitySnapshot = _state.entities[slot]
+	if entity.destroy_pending and entity.entity_index != attached:
+		_retire_instance(_state, entity)
+		_state.live_order.remove_at(_state.live_order.find(entity.entity_index))
+		return false
+	entity.live_flags = (entity.live_flags & ~1) | int(entity.destroy_pending)
+	if entity.path != null:
+		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[slot].flags)
+	return true

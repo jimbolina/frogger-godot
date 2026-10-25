@@ -18,6 +18,9 @@ static ENTITY_HEADER org_entity_header;
 static MR_LONG *org_programs[256];
 static int org_program_lengths[256];
 static int org_road;
+static int org_visibility;
+static int org_live[64],org_generation[64],org_order[64],org_order_count;
+static int org_polygon_counts[4096];
 static int org_first_killer=-1;
 static char org_primitive_contacts[2048];
 extern MR_BOOL __real_MRCollisionCheck(MR_COLLCHECK*,MR_ULONG,MR_ULONG,MR_ULONG);
@@ -145,6 +148,7 @@ static void org_emit(int tick,const char *phase) {
     for(int z=MAX(0,fz-1);z<=MIN(Map_view_znum-1,fz+1);z++)
       for(int x=MAX(0,fx-1);x<=MIN(Map_view_xnum-1,fx+1);x++)
         for(ENTITY *e=Map_groups[z*Map_view_xnum+x].mg_entity_root_ptr->en_next;e;e=e->en_next) {
+            if(org_visibility && !org_live[org_index(e)])continue;
             if(!first) putchar(';'); first=0;printf("%d",org_index(e));
         }
     if(first) putchar('-');
@@ -164,6 +168,41 @@ static void org_emit(int tick,const char *phase) {
         printf(",%s",*org_primitive_contacts?org_primitive_contacts:"-");
     }
     putchar('\n');
+}
+static void org_create_instance(int i) {
+    LIVE_ENTITY *l=&org_lives[i];ENTITY *e=org_entities[i];
+    l->le_flags=l->le_api_item0 ? LIVE_ENTITY_ANIMATED|LIVE_ENTITY_FLIPBOOK : 0;
+    memset(&org_scripts[i],0,sizeof(SCRIPT_INFO));
+    memset(&org_mesh_instances[i],0,sizeof(MR_MESH_INST));
+    if(l->le_api_item0)MRAnimEnvFlipbookSetAction(&org_envs[i],0);
+    if(e->en_path_runner)ENTSTRUpdateMovingMOF(l);
+    if(ENTITY_GET_FORM_BOOK(e)->fb_script) {
+        StartScript(&org_scripts[i],ENTITY_GET_FORM_BOOK(e)->fb_script,l);
+        if(org_types[i]==ENTITY_TYPE_SUB_TURTLE){decoded_model_factory=1;ENTSTRSubCreateTurtle(l);decoded_model_factory=0;}
+    }
+    if(org_types[i]==ENTITY_TYPE_CHECKPOINT){decoded_model_factory=1;Game_total_viewports=1;ENTSTRGenCreateCheckPoint(l);Game_total_viewports=0;decoded_model_factory=0;}
+    e->en_live_entity=l;org_live[i]=1;org_generation[i]++;
+    memmove(org_order+1,org_order,org_order_count*sizeof(int));org_order[0]=i;org_order_count++;
+}
+static int org_visibility_tail(int tick,FILE *out) {
+    Game_total_viewports=1;CreateMapViewList(0);Game_total_viewports=0;
+    int total=0;
+    fprintf(out,"%d,",tick);
+    for(MR_SHORT *p=Map_group_view_list[0];*p>=0;p++) {
+        total+=org_polygon_counts[*p];if(p!=Map_group_view_list[0])fputc(';',out);fprintf(out,"%d",*p);
+        for(ENTITY *e=Map_groups[*p].mg_entity_root_ptr->en_next;e;e=e->en_next) {
+            int i=org_index(e);if(i<0)return 3;
+            if(e->en_flags&ENTITY_HIDDEN)continue;
+            if(org_live[i])org_lives[i].le_flags&=~LIVE_ENTITY_DESTROY;
+            else org_create_instance(i);
+        }
+    }
+    if(total>=2500)return 3;
+    fprintf(out,",%d,",total);
+    for(int j=0;j<org_order_count;j++)fprintf(out,"%s%d",j?";":"",org_order[j]);
+    fprintf(out,",%d,%d,%d",org_baby.bf_mode,org_baby.bf_search_count,org_index(org_baby.bf_entity));
+    for(int i=0;i<64;i++)fprintf(out,",%d:%d:%d:%d:%d",org_live[i],!!(org_lives[i].le_flags&LIVE_ENTITY_DESTROY),org_generation[i],org_scripts[i].si_timer,(org_lives[i].le_flags&LIVE_ENTITY_FLIPBOOK)?org_flips[i].ae_cel_number:-1);
+    fputc('\n',out);return 0;
 }
 static int org1_route_run(const char *file) {
     FILE *in=fopen(file,"r");if(!in) return 2;
@@ -326,6 +365,21 @@ static int org1_route_run(const char *file) {
         decoded_model_factory=1;Game_total_viewports=1;ENTSTRGenCreateCheckPoint(&org_lives[i]);Game_total_viewports=0;decoded_model_factory=0;
     }
     if(org_road)org_read_road(in);
+    FILE *life=NULL;
+    if(org_visibility) {
+        for(int j=0;j<Map_view_xnum*Map_view_znum;j++)org_polygon_counts[j]=route_int(in);
+        static MR_VIEWPORT viewport;Game_viewports[0]=&viewport;Game_total_viewports=1;Game_perspective=256;InitialiseMapView();Game_total_viewports=0;
+        for(int i=0;i<64;i++) {
+            org_entities[i]->en_live_entity=NULL;
+            if(Entity_library[org_types[i]].eb_flags&ENTITY_BOOK_IMMORTAL) {
+                org_live[i]=1;org_generation[i]=1;org_entities[i]->en_live_entity=&org_lives[i];
+                memmove(org_order+1,org_order,org_order_count*sizeof(int));org_order[0]=i;org_order_count++;
+            }
+        }
+        char life_path[4096];snprintf(life_path,sizeof(life_path),"%s.lifecycle.csv",file);life=fopen(life_path,"w");if(!life)return 2;
+        fputs("tick,groups,polygons,order,baby_mode,baby_search,baby_parent",life);
+        for(int i=0;i<64;i++)fprintf(life,",entity%d",i);fputc('\n',life);
+    }
     fclose(in);f->fr_lives=3;Cheat_collision_toggle=FALSE;Cheat_infinite_lives_toggle=FALSE;
     Cameras[0].ca_matrix=&camera_matrix;ResetCamera(Cameras);Cameras[0].ca_mode=CAMERA_MODE_FOLLOW_FROG;Cameras[0].ca_move_timer=0;
     Cameras[0].ca_current_source_ofs=general_header.gh_default_camera_source_ofs;Cameras[0].ca_current_target_ofs=general_header.gh_default_camera_target_ofs;
@@ -342,8 +396,15 @@ static int org1_route_run(const char *file) {
             key=d==0?f->fr_control_method->fc_up_control:d==1?f->fr_control_method->fc_right_control:d==2?f->fr_control_method->fc_down_control:f->fr_control_method->fc_left_control;
         MRInput[0].in_pad_down=MRInput[0].in_pad_new=key;MRFrame_number=tick;
         UpdatePathRunners();
-        for(int i=63;i>=0;i--) {
+        for(int visit=0;visit<(org_visibility?org_order_count:64);visit++) {
+            int i=org_visibility?org_order[visit]:63-visit;
             LIVE_ENTITY *l=&org_lives[i];ENTITY *e=org_entities[i];
+            if(org_visibility && (l->le_flags&LIVE_ENTITY_DESTROY) && f->fr_entity!=e) {
+                if(l->le_moving_sound)KillMovingSound(l);
+                org_live[i]=0;e->en_live_entity=NULL;l->le_flags&=~LIVE_ENTITY_DESTROY;
+                memset(&org_scripts[i],0,sizeof(SCRIPT_INFO));
+                memmove(org_order+visit,org_order+visit+1,(org_order_count-visit-1)*sizeof(int));org_order_count--;visit--;continue;
+            }
             MR_ULONG previous_flags=l->le_flags;
             request_capture=1;captured_requests[0]=0;
             if(e->en_path_runner) ENTSTRUpdateMovingMOF(l);
@@ -351,8 +412,8 @@ static int org1_route_run(const char *file) {
             if(org_types[i]==ENTITY_TYPE_CHECKPOINT) ENTSTRGenUpdateCheckPoint(l);
             if(i==53) {
                 ENTSTROrgUpdateBabyFrog(l);
-                if(org_baby.bf_mode!=ORG_BABY_FROG_WAIT_TO_SEARCH_AGAIN || org_baby.bf_search_count!=1 ||
-                   org_baby.bf_entity || !(org_flips[i].ae_object->ob_flags&MR_OBJ_NO_DISPLAY)) return 3;
+                if(!org_visibility && (org_baby.bf_mode!=ORG_BABY_FROG_WAIT_TO_SEARCH_AGAIN || org_baby.bf_search_count!=1 ||
+                   org_baby.bf_entity || !(org_flips[i].ae_object->ob_flags&MR_OBJ_NO_DISPLAY))) return 3;
             }
             if(l->le_script) {Game_total_viewports=1;UpdateScriptInfo(l);Game_total_viewports=0;}
             SCRIPT_INFO *s=&org_scripts[i];int program,cursor,lp,ls,le;
@@ -374,17 +435,24 @@ static int org1_route_run(const char *file) {
             fprintf(side,",%d,%d,%d\n",sound?sound->ms_sound:-1,sound?sound->ms_min_radius:-1,sound?sound->ms_max_radius:-1);
             request_capture=0;
             l->le_flags &= ~LIVE_ENTITY_CLEAR_MASK;
+            if(org_visibility && !(Entity_library[org_types[i]].eb_flags&ENTITY_BOOK_IMMORTAL))l->le_flags|=LIVE_ENTITY_DESTROY;
         }
         for(int i=0;i<64;i++) if(!(Entity_library[org_types[i]].eb_flags & ENTITY_BOOK_STATIC)) {
             ENTITY *e=org_entities[i];if(e->en_prev) {e->en_prev->en_next=e->en_next;if(e->en_next)e->en_next->en_prev=e->en_prev;e->en_prev=e->en_next=NULL;}
             if(!(e->en_flags & ENTITY_HIDDEN)) EntityLinkToMapGroup(e,e->en_path_runner ? (MR_VEC*)&e->en_path_runner->pr_position : (MR_VEC*)org_lives[i].le_lwtrans->t);
         }
         ControlFrog(f);org_emit(tick,"control");MoveFrog(f);org_emit(tick,"move");
+        if(org_visibility)for(int i=0;i<64;i++)if(!org_contact[i])org_entities[i]->en_live_entity=NULL;
         CollideFrog(f);
+        if(org_visibility)for(int i=0;i<64;i++)org_entities[i]->en_live_entity=org_live[i]?&org_lives[i]:NULL;
         org_emit(tick,"collision");UpdateCamera(Cameras);org_emit(tick,"camera");
         UpdateFrogAnimationScripts();org_emit(tick,"scripts");
-        MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=saved;org_store_frog_pose();org_emit(tick,"pose");
+        MR_USHORT entity_flags[64];
+        if(org_visibility)for(int i=0;i<64;i++){entity_flags[i]=org_envs[i].ae_flags;if(!org_live[i])org_envs[i].ae_flags&=~MR_ANIM_ENV_STEP;}
+        MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=saved;org_store_frog_pose();
+        if(!org_visibility)org_emit(tick,"pose");
+        if(org_visibility){for(int i=0;i<64;i++)org_envs[i].ae_flags=entity_flags[i];if(org_visibility_tail(tick,life))return 3;org_emit(tick,"pose");}
         if(Game_mode!=GAME_MODE_LEVEL_PLAY) break;
     }
-    fclose(side);return 0;
+    if(life)fclose(life);fclose(side);return 0;
 }

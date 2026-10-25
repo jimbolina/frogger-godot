@@ -114,6 +114,18 @@ R resets after a death. The exact successful replay is
 boundary restrictions apply. See the
 [road contract](docs/reference/gameplay/entities.md#org1-road-and-vehicle-primitives).
 
+To explore the bank/turtle/log corridor with scripted visibility, use:
+
+```sh
+godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1 --exploration=org1-turtle-log-bank-visibility
+```
+
+This separate v3.0e preset creates and retires entities with camera visibility.
+It opens LIVE and paused with the same movement controls. A moving baby frog
+can invalidate the collection exclusion during extended play; the viewer then
+rejects the tick and pauses with a diagnostic. R restores the complete
+inspection. See the [scripted visibility contract](docs/reference/gameplay/entities.md#scripted-visibility-route).
+
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file
 tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility

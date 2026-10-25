@@ -28,6 +28,38 @@ func _scenario(preset: String = Org1ExplorationSetup.PRESET) -> TerrainScenario:
 func test_round_trip_and_complete_dive_cycles_match_source() -> void:
 	_route("org1_round_trip", 730, {0: 1, 12: 1, 34: 4, 46: 4})
 
+func test_visibility_round_trip_and_background_lifetimes_match_source() -> void:
+	_route("org1_visibility_round_trip", 730, {0: 1, 12: 1, 34: 4, 46: 4}, Org1ExplorationSetup.VISIBILITY_PRESET)
+
+func test_visibility_attached_diver_matches_source() -> void:
+	_route("org1_visibility_diver", 203, {170: 1}, Org1ExplorationSetup.VISIBILITY_PRESET)
+	var scenario: TerrainScenario = _scenario(Org1ExplorationSetup.VISIBILITY_PRESET)
+	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var command := TickCommand.new()
+	command.tick_index = 0
+	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	run._entities._lifecycle.polygon_counts.fill(2500)
+	var rejected: TickResult = run.step(command)
+	assert_false(rejected.error.is_empty())
+	assert_null(rejected.control_snapshot)
+	assert_null(rejected.final_snapshot)
+	assert_true(rejected.events.is_empty())
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+	run._entities._lifecycle.polygon_counts = scenario.level.entity_collision.lifecycle.polygon_counts.duplicate()
+	assert_eq(run.step(command).error, "")
+	command.tick_index = 1
+	run._entities._state.entities[0].script_state.cursor = 999999
+	before = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	rejected = run.step(command)
+	assert_false(rejected.error.is_empty())
+	assert_true(rejected.events.is_empty())
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+	assert_eq(run.reset(scenario.initial), "")
+	assert_eq(run.snapshot().entities.live_order, PackedInt32Array([63, 62, 61, 60, 59, 58, 57, 56, 55, 53]))
+
 func test_attached_diver_drowns_before_control_matches_source() -> void:
 	_route("org1_attached_diver", 1255, {1230: 1})
 
@@ -148,6 +180,10 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 	assert_eq(rows.size(), ticks * 6 + 1)
 	assert_eq(digests.size(), ticks + 1)
 	var fly: EntityBackgroundState = run.snapshot().entities.entities[55].background
+	var lifecycle_rows: Array = []
+	if preset == Org1ExplorationSetup.VISIBILITY_PRESET:
+		lifecycle_rows = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/" + name + "_lifecycle.json"))
+		assert_eq(lifecycle_rows.size(), ticks)
 	var reached_river: bool = false
 	var vehicle_death: bool = false
 	for tick: int in ticks:
@@ -191,6 +227,26 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		if canonical.sha256_text() != digests[tick + 1][1].strip_edges():
 			fail_test("tick %d ordered entity updates differ: %s" % [tick, canonical])
 			return
+		if not lifecycle_rows.is_empty():
+			var expected_life: Dictionary = lifecycle_rows[tick]
+			var actual_life: EntityRunSnapshot = result.final_snapshot.entities
+			var expected_order: Array = expected_life.order
+			var expected_groups: Array = expected_life.groups
+			assert_eq(actual_life.live_order, PackedInt32Array(expected_order), "live order at %d" % tick)
+			assert_eq(actual_life.selected_groups, PackedInt32Array(expected_groups), "groups at %d" % tick)
+			var baby: EntityBackgroundState = actual_life.entities[53].background
+			assert_eq(baby.mode, _number(expected_life.baby_mode))
+			assert_eq(baby.search_count, _number(expected_life.baby_search))
+			assert_eq(baby.parent_entity_index, _number(expected_life.baby_parent))
+			for slot: int in 64:
+				var pose: EntitySnapshot = actual_life.entities[slot]
+				var expected_pose: Array = expected_life.entities[slot]
+				assert_eq(int(pose.live), _number(expected_pose[0]))
+				assert_eq(int(pose.destroy_pending), _number(expected_pose[1]))
+				assert_eq(pose.generation, _number(expected_pose[2]))
+				if pose.live:
+					assert_eq(pose.script_state.timer if pose.script_state != null else 0, _number(expected_pose[3]))
+					assert_eq(pose.animation.cel if pose.animation != null else -1, _number(expected_pose[4]))
 		assert_true(worker.submit(command))
 		var live_result: TickResult = worker.finish()
 		assert_eq(live_result.error, "", "live tick %d" % tick)
@@ -214,3 +270,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 			assert_false(vehicle_death)
 		else:
 			assert_true(vehicle_death, "The intentional contact reaches a traffic primitive death")
+
+func _number(value: Variant) -> int:
+	var number: float = value
+	return int(number)

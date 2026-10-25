@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
                         help='Select entity lifetime for an integrated FORM scenario')
-    parser.add_argument('--exploration', choices=('jun1-log-bank','org1-turtle-log-bank','org1-road-river'), help='Select an audited guarded retail preset')
+    parser.add_argument('--exploration', choices=('jun1-log-bank','org1-turtle-log-bank','org1-road-river','org1-turtle-log-bank-visibility'), help='Select an audited guarded retail preset')
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()

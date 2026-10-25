@@ -18,7 +18,7 @@ func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
 	_entity_lifecycle = scenario.entity_lifecycle
 	_guarded_exploration = scenario.level.exploration_guard != null
-	_scripted_exploration = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]
+	_scripted_exploration = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
 	_primitive_exploration = scenario.level.entity_collision != null and scenario.level.entity_collision.frog_collision != null
 	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
@@ -45,6 +45,9 @@ func configure(scenario: TerrainScenario) -> void:
 		metadata["omitted"] = ["scripts", "active_camera_zones", "custom_behaviors", "primitives", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
 		if _scripted_exploration:
 			metadata["omitted"] = ["unsupported_scripts_and_custom_behaviors", "active_camera_zones", "primitives", "audio_playback", "splash_rendering", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
+		if _entity_lifecycle:
+			var omissions: Array = metadata["omitted"]
+			omissions.erase("visibility_driven_lifecycle")
 		if _primitive_exploration:
 			var omissions: Array = metadata["omitted"]
 			omissions.erase("primitives")

@@ -87,7 +87,9 @@ Optional visibility lifecycle adds a final camera-to-group selection and live
 creation/renewal phase after animation, before commit. Its pure selector and
 owned live-list state depend only on detached group facts and camera snapshots.
 Late selection or polygon-budget rejection rolls back the same aggregate.
-Persistent paths outlive live instances. Authored slots never compact when
+Persistent paths outlive live instances. Admitted scripted lifetimes initialize
+immortals before the first tick and run retirement/custom/script visits in live
+order, retaining previous parent poses until their own visit. Authored slots never compact when
 instances disappear; live membership gates collision and attachment lookup.
 The [entity contract](gameplay/entities.md#visibility-lifecycle) owns eligibility,
 source ordering, attachment retention and reset semantics. Presentation consumes

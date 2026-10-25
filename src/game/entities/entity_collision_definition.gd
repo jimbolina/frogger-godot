@@ -36,8 +36,6 @@ func validate() -> String:
 		if not probe_issue.is_empty():
 			return probe_issue
 	if environment != null:
-		if lifecycle != null:
-			return "Entity background requires all-attached lifetime"
 		var issue: String = environment.validate()
 		if not issue.is_empty():
 			return issue

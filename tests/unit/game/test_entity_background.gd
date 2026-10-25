@@ -75,3 +75,24 @@ func test_custom_failure_discards_candidate_and_baby_requires_live_parent() -> v
 	assert_eq(next.entity.background.search_count, 1)
 	assert_ne(EntityBackground.update(_entity("ORG_BABY_FROG"), next.entity, environment, random, Vector3i.ZERO, false, false).error, "")
 	assert_ne(EntityBackground.update(_entity("CHECKPOINT"), state, environment, random, Vector3i.ZERO, false, true).error, "")
+
+func test_dynamic_collection_exclusion_uses_half_open_corridor_and_copies() -> void:
+	var guard := ExplorationGuard.new()
+	guard.world_bounds = Rect2i(-512, -128, 1024, 608)
+	guard.collectable_indices = PackedInt32Array([53])
+	var state := EntityRunSnapshot.new()
+	var baby := EntitySnapshot.new()
+	baby.entity_index = 53
+	baby.matrix12[9] = 1152
+	baby.matrix12[11] = 0
+	state.entities.append(baby)
+	assert_eq(guard.check_entities(state), "")
+	baby.matrix12[9] = 1151
+	assert_string_contains(guard.check_entities(state), "collection radius")
+	baby.live = false
+	assert_eq(guard.check_entities(state), "")
+	var copied: ExplorationGuard = guard.copy()
+	guard.collectable_indices.clear()
+	assert_eq(copied.collectable_indices, PackedInt32Array([53]))
+	state.entities.clear()
+	assert_string_contains(copied.check_entities(state), "missing")

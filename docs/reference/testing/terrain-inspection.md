@@ -222,6 +222,23 @@ with the same level/exploration/data arguments and an external screenshot
 directory, using the isolated-profile, hidden/awaited process rules in the
 [testing guide](README.md). Check its log for errors as well as its exit code.
 
+## Scripted ORG1 visibility
+
+The separate `org1-turtle-log-bank-visibility` preset uses the existing river
+corridor with source live-list updates and immortal initialization. Its dynamic
+collection exclusion can reject extended play; see the
+[contract](../gameplay/entities.md#scripted-visibility-route).
+
+```sh
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_round_trip.json --output-directory <external-output>
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_diver.json --output-directory <external-output>
+```
+
+These compare headless state and 30/60/144 Hz rendered schedules. The existing
+`probe_org1_keyboard.gd` also accepts this preset to exercise input dispatch,
+round-trip movement, pause, rejection and complete reset. Use the same isolated
+profile, explicit log and hidden awaited process rules as other keyboard probes.
+
 ## Guarded ORG1 road to river
 
 `--level=ORG1 --exploration=org1-road-river` opens LIVE and paused at the

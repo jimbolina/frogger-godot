@@ -14,8 +14,8 @@ static func phase(state: RunSnapshot, tick: int, name: String, definition: Entit
 		"first_killer": state.death_entity_index,
 		"count": state.remaining_ticks, "old_y": state.old_y, "direction": state.direction,
 		"action": state.animation.action, "cel": state.animation.cel, "rng": state.rng_state,
-		"sounds": state.sound_requests, "diver_y": diver.script_state.deviation,
-		"diver_timer": diver.script_state.timer, "diver_action": diver.animation.action,
+		"sounds": state.sound_requests, "diver_y": diver.script_state.deviation if diver.script_state != null else 0,
+		"diver_timer": diver.script_state.timer if diver.script_state != null else 0, "diver_action": diver.animation.action if diver.animation != null else 0,
 		"scan": joined(EntityContactOrder.indices(definition, state.entities, state.world_position), ";")}
 	if state.frog_collision_pose != null:
 		result["stored_action"] = state.frog_collision_pose.action
@@ -67,6 +67,10 @@ static func entity(visit: EntityUpdateObservation, fly: EntityBackgroundState, t
 		result["callback%d" % slot] = joined(state.callbacks[slot], ":") if state != null else "-1:0:0:0"
 	for index: int in 3:
 		result[["sound_id", "sound_min", "sound_max"][index]] = state.moving_sound[index] if state != null and not state.moving_sound.is_empty() else -1
+	if pose.background != null and not pose.background.moving_sound.is_empty():
+		result.moving_sound = 1
+		for index: int in 3:
+			result[["sound_id", "sound_min", "sound_max"][index]] = pose.background.moving_sound[index]
 	return result
 
 ## Renders ordered decimal facts without JSON float conversion.

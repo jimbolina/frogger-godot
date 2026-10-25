@@ -32,7 +32,7 @@ var path_start: PathStart = null
 var script_definition: EntityScriptDefinition = null
 var action_lengths: PackedInt32Array = PackedInt32Array()
 var animation_one_shot: bool = false
-## Enables only the source-proved all-attached background branches.
+## Enables only the source-proved background branches.
 var background_admitted: bool = false
 var parent_unique_id: int = -1
 
@@ -62,3 +62,11 @@ func copy() -> EntityDefinition:
 	result.background_admitted = background_admitted
 	result.parent_unique_id = parent_unique_id
 	return result
+
+## Resolves the frozen entity-book immortal capability by supported behavior name.
+func is_immortal() -> bool:
+	return entity_name in ["ORG_BABY_FROG", "ORG_FLY", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT"]
+
+## Resolves nonstatic map-group membership independently of path ownership.
+func is_group_moving() -> bool:
+	return entity_name in ["MOVING", "SUB_TURTLE", "ORG_BABY_FROG", "ORG_FLY"]

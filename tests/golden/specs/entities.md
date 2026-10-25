@@ -660,3 +660,40 @@ fail, restore and rerun successfully. Both text corpora run asset-free; the name
 retail test additionally checks supplied setup, probe execution and changed
 behavior rejection. [Inspection](../../../docs/reference/testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection)
 owns the complete headless/rendered schedule and capture commands.
+
+## Scripted visibility
+
+`org1_visibility_round_trip` observes 730 ticks with NORTH at 0/12 and SOUTH
+at 34/46, returning detached and alive at tick 51. `org1_visibility_diver`
+observes 203 ticks with NORTH at 170, attachment at 173 and drowning at 202.
+These are separate from the all-attached schedules.
+
+The existing ORG1 generator composes independent Python path, script, frog,
+animation and camera models with `org1_visibility.py`. The latter implements
+source lifetime ordering and uncollected baby search/parent/hop state. The C
+transport calls unchanged path, custom, script, camera, frog and animation
+functions and `CreateMapViewList`, with decoded model storage and explicit
+source-ordered lifetime allocation/retirement transport. Logical sound ownership
+uses the real sound allocator; rendered effects and audio playback remain
+outside the oracle. Neither model derives expectations from Godot output.
+
+Phase TSVs retain the existing columns; the final pose includes tail visibility
+creation. Entity TSVs hash variable-length live-update lists using
+`org1_entity_update_fields.json`. Lifecycle JSON records one object per tick:
+selected groups, polygon total, live order, baby mode/search/parent and 64
+source-ordered `[live,pending,generation,timer,cel]` entries. Dormant script/cel
+values are diagnostic placeholders; tests compare their membership and generation,
+and compare timer/cel only while live. No retail bytes are stored.
+
+```sh
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round> --visibility --ticks 730 --golden-name org1_visibility_round_trip --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-diver> --visibility --ticks 203 --commands 170:0 --expected-death-tick 202 --golden-name org1_visibility_diver
+```
+
+Build with `tools/build_platform_oracle.ps1`; append `--write-goldens` only to
+regenerate. The admission retains independent geometry/root checks, replaces the
+static baby exclusion with a runtime 640-unit corridor-distance guard and pins
+all source dependencies. The golden round trip verifies the dynamic exclusion;
+it does not establish unrestricted lifetime or collection support. Perform the
+deliberate-break check by changing a phase fact, ordered-update digest or live
+generation, running the matching retail test and restoring the exact original.

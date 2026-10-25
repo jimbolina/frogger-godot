@@ -381,12 +381,12 @@ func draw_state(fraction: float) -> void:
 		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
 	if scenario.level.exploration_guard != null:
 		var bounds: Rect2i = scenario.level.exploration_guard.world_bounds
-		var org1: bool = scenario.exploration_preset == Org1ExplorationSetup.PRESET
+		var org1: bool = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
 		var road: bool = scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET
 		var title: String = "ORG1 ROAD / RIVER EXPLORATION" if road else "ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION"
 		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
-		_label.text += "All-attached lifetime | active camera zones unsupported\n"
+		_label.text += "Visibility lifetime | dynamic collectable proximity guard\n" if scenario.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
 		if road:
 			_label.text += "Cross traffic north to the bank, then turtle and log.\n"
 			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.death_equate, _current.death_entity_index, _current.entity_hit_indices]
@@ -594,7 +594,7 @@ func _build_entity_visuals() -> void:
 		_entity_generations.append(-1)
 	if data == null or not data.is_valid() or scenario.map_scene == null:
 		return
-	if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
+	if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scenario.map_scene.map.lights)
 	var meshes: Dictionary[int, ModelMesh] = {}
@@ -770,8 +770,11 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				return
 		if scenario.platforms_enabled and not folder.is_empty():
 			var platform_stages: Array[String] = []
-			if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+			if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 				var stages: Dictionary[int, String] = {4: "org1-turtle-out", 19: "org1-log", 40: "org1-turtle-return", 52: "org1-bank-return", 60: "org1-diving", 90: "org1-rising", 1234: "org1-diver-attachment", 1255: "org1-diver-drowning"}
+				if scenario.entity_lifecycle:
+					stages[174] = "org1-diver-attachment"
+					stages[203] = "org1-diver-drowning"
 				if stages.has(_current.tick_index):
 					platform_stages.append(stages[_current.tick_index])
 			elif scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET:

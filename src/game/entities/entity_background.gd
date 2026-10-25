@@ -3,7 +3,7 @@ extends RefCounted
 ## Source-proved background branches; unsupported interactions reject explicitly.
 
 ## Advances an excluded neighbor without suppressing its logical global effects.
-static func update(definition: EntityDefinition, previous: EntitySnapshot, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, parent_live: bool) -> EntityBackgroundResult:
+static func update(definition: EntityDefinition, previous: EntitySnapshot, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, parent_live: bool, parent: EntitySnapshot = null, parent_form: FormContactDefinition = null) -> EntityBackgroundResult:
 	var result := EntityBackgroundResult.new()
 	if not definition.background_admitted or environment == null or not environment.validate().is_empty():
 		result.error = "Custom background update lacks admitted environment"
@@ -42,6 +42,11 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 					custom.timer = 60
 					entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 		"ORG_BABY_FROG":
+			if parent != null:
+				var issue: String = EntityBaby.update(entity, parent, parent_form)
+				if not issue.is_empty():
+					return _failed(issue)
+				return result
 			if not parent_live or entity.background.mode not in [0, 5]:
 				return _failed("Baby parent lifetime no longer satisfies admission")
 			if entity.background.mode == 0:

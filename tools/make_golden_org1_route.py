@@ -83,14 +83,14 @@ def golden_text(phases,entities):
     phase_output=io.StringIO(newline='');writer=csv.DictWriter(phase_output,fieldnames=list(phases[0]),delimiter='\t',lineterminator='\n')
     writer.writeheader();writer.writerows(phases)
     fields=list(entities[0]);lines=['tick\tordered_entity_updates_sha256']
-    for tick in range(len(entities)//64):
-        rows=entities[tick*64:(tick+1)*64]
+    for tick in range(len(phases)//6):
+        rows=[r for r in entities if r['tick']==tick]
         canonical='\t'.join(fields)+'\n'+''.join('\t'.join(str(row[field]) for field in fields)+'\n' for row in rows)
         lines.append(f'{tick}\t'+hashlib.sha256(canonical.encode('ascii')).hexdigest())
     return phase_output.getvalue(),'\n'.join(lines)+'\n',fields
 
 
-def transport(root, ticks, commands, road=False):
+def transport(root, ticks, commands, road=False, visibility=False):
     """Decode complete terrain, paths, script closure and all authored identities."""
     facts, c = admission.retail_counterexamples(root, True)
     data = c['data']; read = admission.contacts.read
@@ -163,6 +163,9 @@ def transport(root, ticks, commands, road=False):
     if road:
         import org1_traffic
         values += org1_traffic.transport_footer(c,geometry)
+    if visibility:
+        from org1_visibility import groups_from_map
+        values += groups_from_map(data)['counts'];geometry['visibility']=True
     return ' '.join(map(str,values))+'\n',geometry,c
 
 
@@ -172,10 +175,11 @@ def run(args):
     if any(output.is_relative_to(p.resolve()) for p in (project,project.parent/'froggy')):
         raise ValueError('route evidence must be outside both repositories')
     output.mkdir(parents=True,exist_ok=True)
+    if args.road and args.visibility:raise ValueError('road visibility is not admitted')
     commands={int(t):int(d) for t,d in (item.split(':') for item in args.commands.split(','))}
-    fixture,geometry,context=transport(args.data_dir,args.ticks,commands,args.road)
+    fixture,geometry,context=transport(args.data_dir,args.ticks,commands,args.road,args.visibility)
     source=output/'org1-route-input.txt';source.write_text(fixture,encoding='ascii')
-    result=subprocess.run([str(args.oracle.resolve()),str(args.acos_table.resolve()),'--org1-road' if args.road else '--org1-route',str(source)],
+    result=subprocess.run([str(args.oracle.resolve()),str(args.acos_table.resolve()),'--org1-visibility' if args.visibility else '--org1-road' if args.road else '--org1-route',str(source)],
         capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
     (output/'org1-route.csv').write_text(result.stdout,encoding='utf-8')
     (output/'org1-route-stderr.txt').write_text(result.stderr,encoding='utf-8')
@@ -185,12 +189,16 @@ def run(args):
     from org1_route_verification import verify
     side=list(csv.DictReader(Path(str(source)+'.entities.csv').open()))
     phases,entities=verify(context,geometry,args.ticks,commands,rows,side,args.expected_death_tick)
+    outputs={}
     if args.golden_name:
-        schedules={'org1_round_trip':(730,{0:0,12:0,34:2,46:2},None),
+        schedules={'org1_visibility_round_trip':(730,{0:0,12:0,34:2,46:2},None),
+                   'org1_visibility_diver':(203,{170:0},202),
+                   'org1_round_trip':(730,{0:0,12:0,34:2,46:2},None),
                    'org1_attached_diver':(1255,{1230:0},1254),
                    'org1_road_river':(180,{t:0 for t in (0,12,24,36,102,114,126,138)},None),
                    'org1_road_vehicle_death':(60,{t:0 for t in (0,12,24,36,48)},50)}
         if args.golden_name not in schedules:raise ValueError('unknown ORG1 golden family')
+        if args.visibility!=args.golden_name.startswith('org1_visibility_'):raise ValueError('golden visibility mode differs from route')
         if args.road!=args.golden_name.startswith('org1_road_'):raise ValueError('golden mode differs from route')
         expected=schedules[args.golden_name]
         if (args.ticks,commands,args.expected_death_tick)!=expected:raise ValueError('golden schedule differs from frozen route')
@@ -198,9 +206,6 @@ def run(args):
         directory=project/'tests/golden/pc-retail-v3.0e'
         outputs={directory/(args.golden_name+'.tsv'):phase_text,directory/(args.golden_name+'_entities.tsv'):entity_text,
                  directory/'org1_entity_update_fields.json':json.dumps(fields,indent=2)+'\n'}
-        for path,content in outputs.items():
-            if args.write_goldens:path.write_text(content,encoding='ascii')
-            elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError(f'golden mismatch: {path.name}')
     if args.admission:
         if args.road:
             if args.golden_name!='org1_road_river':raise ValueError('road admission requires successful crossing')
@@ -212,9 +217,8 @@ def run(args):
                     raise ValueError('road frog root escaped the independently closed pose set')
             (output/'org1-road-admission-proof.json').write_text(json.dumps(dict(admission=proof,neighbors=geometry),indent=2)+'\n',encoding='ascii')
             path=project/'src/presentation/setup/org1_road_river_admission.json';content=json.dumps(proof,indent=2)+'\n'
-            if args.write_goldens:path.write_text(content,encoding='ascii')
-            elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError('road admission manifest differs')
-        elif args.golden_name!='org1_round_trip':raise ValueError('admission requires the complete frozen round trip')
+            outputs[path]=content
+        elif args.golden_name!=('org1_visibility_round_trip' if args.visibility else 'org1_round_trip'):raise ValueError('admission requires the complete frozen round trip')
     if args.admission and not args.road:
         probes=hilite.check_reachable_probes(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
         roots={tuple(r) for r in probes['roots']}
@@ -222,9 +226,38 @@ def run(args):
             if int(row['mode'])!=2 and tuple(int(row[f'm{r}{c}']) for r in range(3) for c in range(3)) not in roots:
                 raise ValueError('integrated frog root escaped the independently closed pose set')
         proof=admission_manifest(context,geometry,probes)
-        path=project/'src/presentation/setup/org1_exploration_admission.json';content=json.dumps(proof,indent=2)+'\n'
+        if args.visibility:
+            proof['schema']='org1-visibility-admission-v1';proof['lifetime']='visibility'
+            proof['conditions']=[v for v in proof['conditions'] if not v.startswith(('All 64','Checkpoint croak'))]
+            proof['conditions'] += ['All 64 authored identities retain paths and source-ordered applicable live updates, including immortal initialization.',
+                'Dynamic baby sphere and tongue exclusion requires XZ distance greater than 640 from every integer point in the corridor at each entity phase; otherwise reject the entire tick.',
+                'Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically.']
+            proof['attached_diver']=dict(commands=[[170,1]],observation_ticks=203,death_tick=202)
+            for r in proof['contact_exclusions']:
+                if r['index']==53:r['reason']='excluded_by_dynamic_collection_radius_guard'
+            if any(max(-512-int(r['x']),0,int(r['x'])-511)**2+max(-128-int(r['z']),0,int(r['z'])-479)**2<=640**2 for r in entities if r['index']==53):raise ValueError('baby exclusion failed')
+        path=project/'src/presentation/setup'/('org1_visibility_admission.json' if args.visibility else 'org1_exploration_admission.json');content=json.dumps(proof,indent=2)+'\n'
+        outputs[path]=content
+    if args.visibility:
+        frozen=list(csv.DictReader(open(str(source)+'.lifecycle.csv')))
+        expected=geometry['lifecycle_facts']
+        if len(frozen)!=len(expected):raise ValueError('incomplete lifecycle trace')
+        for a,b in zip(expected,frozen):
+            for k in ('tick','polygons','baby_mode','baby_search','baby_parent'):
+                if str(a[k])!=b[k]:raise ValueError(f"Lifecycle {a['tick']} {k}: {a[k]} != {b[k]}")
+            for k in ('groups','order'):
+                if ';'.join(map(str,a[k]))!=b[k]:raise ValueError(f"Lifecycle {a['tick']} {k} differs")
+            for i in range(64):
+                if not a['entities'][i][0]:continue
+                if ':'.join(map(str,a['entities'][i]))!=b['entity'+str(i)]:raise ValueError(f"Lifecycle {a['tick']} entity {i} differs: {a['entities'][i]} {b['entity'+str(i)]}")
+        content=json.dumps(expected,separators=(',',':'))+'\n'
+        (output/'lifecycle-expected.json').write_text(content)
+        if args.golden_name:
+            path=project/'tests/golden/pc-retail-v3.0e'/f'{args.golden_name}_lifecycle.json'
+            outputs[path]=content
+    for path,content in outputs.items():
         if args.write_goldens:path.write_text(content,encoding='ascii')
-        elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError('admission manifest differs')
+        elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError(f'golden mismatch: {path.name}')
     changes=[];previous=None
     for row in rows:
         if row['phase']!='pose':continue
@@ -246,4 +279,5 @@ if __name__=='__main__':
     parser.add_argument('--write-goldens',action='store_true')
     parser.add_argument('--admission',action='store_true')
     parser.add_argument('--road',action='store_true')
+    parser.add_argument('--visibility',action='store_true')
     run(parser.parse_args())

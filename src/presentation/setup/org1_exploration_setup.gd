@@ -4,20 +4,23 @@ extends RefCounted
 
 const PRESET: String = "org1-turtle-log-bank"
 const MANIFEST_PATH: String = "res://src/presentation/setup/org1_exploration_admission.json"
+const VISIBILITY_PRESET: String = "org1-turtle-log-bank-visibility"
+const VISIBILITY_MANIFEST_PATH: String = "res://src/presentation/setup/org1_visibility_admission.json"
 const ROAD_PRESET: String = "org1-road-river"
 const ROAD_MANIFEST_PATH: String = "res://src/presentation/setup/org1_road_river_admission.json"
 
 ## Validates proof inputs before enabling any custom update or contact exclusion.
 static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	var road: bool = scenario.exploration_preset == ROAD_PRESET
-	var preset: String = ROAD_PRESET if road else PRESET
-	if scenario.level_code.to_upper() != "ORG1" or scenario.entity_lifecycle:
+	var visibility: bool = scenario.exploration_preset == VISIBILITY_PRESET
+	var preset: String = VISIBILITY_PRESET if visibility else ROAD_PRESET if road else PRESET
+	if scenario.level_code.to_upper() != "ORG1" or (scenario.entity_lifecycle and not visibility):
 		return preset + " requires high-detail ORG1 and all-attached lifetime"
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(ROAD_MANIFEST_PATH if road else MANIFEST_PATH))
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(VISIBILITY_MANIFEST_PATH if visibility else ROAD_MANIFEST_PATH if road else MANIFEST_PATH))
 	if not parsed is Dictionary:
 		return "ORG1 admission manifest is unavailable"
 	var proof: Dictionary = parsed
-	var schema: String = "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
+	var schema: String = "org1-visibility-admission-v1" if visibility else "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
 	if proof.get("schema") != schema or data.version.internal_name != proof.get("build"):
 		return "ORG1 exploration requires audited pc-retail-v3.0e inputs"
 	var map: MapFile = scenario.map_scene.map
@@ -82,6 +85,12 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if not contacts.error.is_empty():
 		return contacts.error
 	var collision := EntityCollisionDefinition.new()
+	if visibility:
+		var lifecycle: EntityLifecycleSetup = EntityLifecycleSetup.from_map(map)
+		if not lifecycle.error.is_empty():
+			return lifecycle.error
+		collision.lifecycle = lifecycle.definition
+		scenario.entity_lifecycle = true
 	if road:
 		var probes: FrogCollisionSetup = FrogCollisionSetup.from_model(scenario.frog_assets.model)
 		if not probes.error.is_empty():
@@ -128,6 +137,8 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	var bottom: PackedInt32Array = setup.definitions[60].matrix12
 	scenario.level.collision_bounds = Rect2i(top[9], bottom[11], bottom[9] - top[9], top[11] - bottom[11])
 	var guard := ExplorationGuard.new()
+	if visibility:
+		guard.collectable_indices = PackedInt32Array([53])
 	var x: Array = proof.admitted_x
 	var z: Array = proof.admitted_z
 	guard.world_bounds = Rect2i(_integer(x[0]), _integer(z[0]), _integer(x[1]) - _integer(x[0]), _integer(z[1]) - _integer(z[0]))
@@ -158,7 +169,9 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 		scenario.tick_limit = _integer(proof.default_ticks) if road else 730
 	if not scenario.authored_fixture:
 		scenario.commands.clear()
-	if road:
+	if visibility:
+		scenario.diagnostics.append("ORG1 guarded scripted visibility; dynamic baby collection-radius guard; ten river FORMs; active zones and primitive execution unsupported")
+	elif road:
 		scenario.diagnostics.append("ORG1 audited road-to-river exploration; all-attached lifetime; 64 logical updates; 24 primitive traffic contacts and ten river FORMs; active zones unsupported")
 	else:
 		scenario.diagnostics.append("ORG1 audited all-attached exploration; 64 logical updates; ten contact entities; active zones and primitive execution unsupported")

@@ -7,6 +7,8 @@ var zones: Array[ZoneDefinition] = []
 ## Optional complete stored-root and live-action closure for primitive exclusion.
 var frog_roots: Array[PackedInt32Array] = []
 var frog_actions: PackedInt32Array = PackedInt32Array()
+## Authored moving collectables whose excluded sphere must stay beyond the corridor.
+var collectable_indices: PackedInt32Array = PackedInt32Array()
 
 ## Validates a half-open world rectangle and every supported zone definition.
 func validate() -> String:
@@ -36,6 +38,7 @@ func validate() -> String:
 func copy() -> ExplorationGuard:
 	var result := ExplorationGuard.new()
 	result.world_bounds = world_bounds
+	result.collectable_indices = collectable_indices.duplicate()
 	for root: PackedInt32Array in frog_roots:
 		result.frog_roots.append(root.duplicate())
 	result.frog_actions = frog_actions.duplicate()
@@ -75,3 +78,28 @@ func check_cell(cell: Vector2i) -> String:
 
 static func _location(zone: ZoneDefinition) -> String:
 	return "%s build %s resource %d ZONE[%d] offset %d" % [zone.source_id, zone.build_id, zone.resource_id, zone.zone_index, zone.source_offset]
+
+## Rejects loss of a dynamic collection/contact exclusion before frog control.
+func check_entities(entities: EntityRunSnapshot) -> String:
+	if collectable_indices.is_empty():
+		return ""
+	if entities == null:
+		return "Dynamic collectable admission requires entity state"
+	for identity: int in collectable_indices:
+		var found: bool = false
+		for entity: EntitySnapshot in entities.entities:
+			if entity.entity_index != identity:
+				continue
+			found = true
+			if not entity.live:
+				break
+			var x: int = entity.matrix12[9]
+			var z: int = entity.matrix12[11]
+			var dx: int = maxi(maxi(world_bounds.position.x - x, 0), x - world_bounds.end.x + 1)
+			var dz: int = maxi(maxi(world_bounds.position.y - z, 0), z - world_bounds.end.y + 1)
+			if dx * dx + dz * dz <= 640 * 640:
+				return "Dynamic collectable %d entered the guarded corridor's collection radius; tick rolled back" % identity
+			break
+		if not found:
+			return "Dynamic collectable admission identity is missing"
+	return ""

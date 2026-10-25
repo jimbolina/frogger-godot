@@ -103,7 +103,7 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
 	if entity_reactions:
-		if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
+		if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 			return Org1ExplorationSetup.apply(self, data)
 		else:
 			var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled, entity_lifecycle)
@@ -258,7 +258,7 @@ func command_at(tick: int) -> TickCommand:
 ## Applies explicit command-line seed and duration overrides in both driver surfaces.
 func apply_arguments(arguments: PackedStringArray) -> String:
 	exploration_preset = ViewerArguments.value(arguments, "--exploration=")
-	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
+	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 		return "exploration must be jun1-log-bank, org1-turtle-log-bank or org1-road-river"
 	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
 	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
@@ -267,8 +267,8 @@ func apply_arguments(arguments: PackedStringArray) -> String:
 	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
 		return "entity-lifecycle must be all-attached or visibility"
 	if not exploration_preset.is_empty():
-		var required_level: String = "ORG1" if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET] else "JUN1"
-		if lifetime == "visibility" or (entity_collision != null and entity_collision.lifecycle != null):
+		var required_level: String = "ORG1" if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET] else "JUN1"
+		if exploration_preset != Org1ExplorationSetup.VISIBILITY_PRESET and (lifetime == "visibility" or (entity_collision != null and entity_collision.lifecycle != null)):
 			return exploration_preset + " cannot be combined with visibility lifecycle"
 		if not reaction.is_empty() and reaction != "platforms":
 			return exploration_preset + " requires platform reactions"
@@ -277,7 +277,9 @@ func apply_arguments(arguments: PackedStringArray) -> String:
 		if not ViewerArguments.has_prefix(arguments, "--data-dir=") and OS.get_environment("FROGGER_DATA_DIR").is_empty():
 			return exploration_preset + " requires player data"
 		reaction = "platforms"
-		lifetime = "all-attached"
+		if exploration_preset == Org1ExplorationSetup.VISIBILITY_PRESET and lifetime == "all-attached":
+			return exploration_preset + " requires visibility lifecycle"
+		lifetime = "visibility" if exploration_preset == Org1ExplorationSetup.VISIBILITY_PRESET else "all-attached"
 	entity_reactions = reaction in ["pop", "platforms"] or not lifetime.is_empty() or (entity_collision != null and entity_collision.lifecycle != null)
 	platforms_enabled = entity_reactions and (reaction == "platforms" or (reaction.is_empty() and entity_collision != null and entity_collision.platforms_enabled))
 	entity_lifecycle = lifetime == "visibility" or (lifetime.is_empty() and entity_collision != null and entity_collision.lifecycle != null)

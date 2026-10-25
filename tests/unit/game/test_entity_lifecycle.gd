@@ -190,3 +190,70 @@ func test_destroy_and_recreate_share_tick_in_source_event_order() -> void:
 	assert_eq(run.apply_visibility(_camera()), "")
 	assert_eq(run.snapshot().lifecycle_events, ["destroy:5:1", "create:5:2"])
 	assert_eq(run.snapshot().live_order, PackedInt32Array([5]))
+
+func _scripted(index: int) -> EntityDefinition:
+	var definition: EntityDefinition = _moving(index)
+	definition.script_id = 1
+	definition.action_lengths = PackedInt32Array([4])
+	var script := EntityScriptDefinition.new()
+	script.root_id = 1
+	script.names[1] = "SCRIPT_LOG_SPLASH"
+	script.programs[1] = PackedInt32Array([38])
+	definition.script_definition = script
+	return definition
+
+func test_script_instance_restarts_and_dormant_path_continues() -> void:
+	var run: EntityRun = EntityRun.create([_scripted(5)], _lifecycle())
+	assert_eq(run.error, "")
+	assert_null(run.snapshot().entities[0].script_state)
+	run.advance_animations()
+	assert_null(run.snapshot().entities[0].animation)
+	assert_eq(run.apply_visibility(_camera()), "")
+	var context := EntityUpdateContext.new()
+	context.entity_index = 5
+	context.has_path = true
+	context.base_matrix = EntityTransform.IDENTITY.duplicate()
+	var random := SourceRandom.new()
+	var update: EntityUpdateResult = run.update_script(5, context, random)
+	assert_eq(update.error, "")
+	assert_eq(run.snapshot().entities[0].script_state.timer, 1)
+	run._state.entities[0].script_state.moving_sound = PackedInt32Array([19, 256, 1024])
+	run._state.entities[0].live_flags |= 64
+	run.advance_animations()
+	assert_eq(run.step(0), "")
+	assert_eq(run.apply_visibility(_camera(100000)), "")
+	assert_eq(run.step(1), "")
+	assert_null(run.snapshot().entities[0].script_state)
+	assert_null(run.snapshot().entities[0].animation)
+	assert_false(run.update_script(5, context, random).error.is_empty())
+	assert_eq(run.step(2), "")
+	assert_eq(run.apply_visibility(_camera()), "")
+	var recreated: EntitySnapshot = run.snapshot().entities[0]
+	assert_eq(recreated.generation, 2)
+	assert_eq(recreated.path.position, Vector3i(30, 0, 0))
+	assert_eq(recreated.script_state.timer, 0)
+	assert_true(recreated.script_state.moving_sound.is_empty())
+	assert_eq(recreated.animation.cel, -1)
+	assert_eq(recreated.live_flags, 4098)
+
+func test_immortal_initialization_and_deferred_retirement_order() -> void:
+	var marker: EntityDefinition = _static(8)
+	marker.entity_name = "GEN_TOP_LEFT"
+	marker.background_admitted = true
+	var run: EntityRun = EntityRun.create([_scripted(5), marker], _lifecycle())
+	assert_eq(run.error, "")
+	assert_eq(run.snapshot().live_order, PackedInt32Array([8]))
+	assert_eq(run.apply_visibility(_camera()), "")
+	assert_eq(run.snapshot().live_order, PackedInt32Array([5, 8]))
+	assert_eq(run.step(0), "")
+	assert_eq(run.apply_visibility(_camera(100000)), "")
+	var candidate: EntityRun = run.advanced_copy(1, -1, true)
+	assert_eq(candidate.error, "")
+	assert_true(candidate.snapshot().entities[0].live)
+	assert_false(candidate.begin_update(0, -1))
+	assert_eq(candidate.snapshot().live_order, PackedInt32Array([8]))
+	assert_true(candidate.begin_update(1, -1))
+	assert_true(run.snapshot().entities[0].live)
+	assert_eq(candidate.reset(), "")
+	assert_eq(candidate.snapshot().live_order, PackedInt32Array([8]))
+	assert_eq(candidate.snapshot().entities[1].generation, 1)

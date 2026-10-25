@@ -80,7 +80,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 		run.error = level.exploration_guard.validate()
 		if not run.error.is_empty():
 			return run
-		if level.entity_collision != null and level.entity_collision.lifecycle != null:
+		if level.entity_collision != null and level.entity_collision.lifecycle != null and level.exploration_guard.collectable_indices.is_empty():
 			run.error = "Guarded exploration requires all-attached entity lifetime"
 			return run
 		run._exploration_guard = level.exploration_guard.copy()
@@ -275,7 +275,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_candidate_random = _random.copy()
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
-	_candidate_entities = _entities.advanced_copy(command.tick_index, _state.current_entity_index) if _entities != null else null
+	_candidate_entities = _entities.advanced_copy(command.tick_index, _state.current_entity_index, _has_entity_updates) if _entities != null else null
 	var next: RunSnapshot = _state.copy(false)
 	if _candidate_entities != null:
 		result.error = _candidate_entities.error
@@ -285,6 +285,10 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	var entity_issue: String = _update_entity_scripts(next, result.events)
 	if not entity_issue.is_empty():
 		return _failed_tick(result, entity_issue)
+	if _exploration_guard != null:
+		var exclusion_issue: String = _exploration_guard.check_entities(next.entities)
+		if not exclusion_issue.is_empty():
+			return _failed_tick(result, exclusion_issue)
 	next.entity_hit_indices = PackedInt32Array()
 	next.entity_carry_indices = PackedInt32Array()
 	if next.current_entity_index >= 0 and (_platform_pose(next) == null or _platform_definition(next) == null):
@@ -404,7 +408,9 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 func _update_entity_scripts(state: RunSnapshot, events: Array[String]) -> String:
 	if _candidate_entities == null or not _has_entity_updates:
 		return ""
-	for slot: int in range(_entity_collision.entities.size() - 1, -1, -1):
+	for slot: int in _candidate_entities.update_slots():
+		if not _candidate_entities.begin_update(slot, state.current_entity_index):
+			continue
 		var previous_flags: int = state.entities.entities[slot].live_flags
 		var was_alive: bool = state.mode != 2 and not state.flags & 8
 		var issue: String = _visit_entity(slot, previous_flags, state, events)
@@ -421,7 +427,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	var definition: EntityDefinition = _entity_collision.entities[slot]
 	if definition.background_admitted:
 		var frog_position := Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
-		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index))
+		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts)
 		if not background.error.is_empty():
 			return background.error
 		state.entity_environment = background.environment
@@ -429,6 +435,8 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 		_candidate_random.draw_count = background.random.draw_count
 		_candidate_random.consumers.assign(background.random.consumers)
 		state.entities.entities[slot] = _candidate_entities._state.entities[slot]
+		for request: String in background.entity.requests:
+			events.append("entity:%d:%s" % [definition.entity_index, request])
 	if definition.script_definition == null:
 		return ""
 	var context := EntityUpdateContext.new()
