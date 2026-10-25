@@ -55,3 +55,42 @@ generation verification or its Godot comparison to fail, restore and pass.
 The [terrain component contract](../../../docs/reference/testing/terrain-trace-oracle.md)
 documents frozen linkage/provenance and omitted broader systems. These camera
 updates are separate component fixtures, not a coupled full gameplay step.
+
+## Active camera zones
+
+`synthetic/camera_zones.json` and `pc-retail-v3.0e/camera_zones.json` use
+`camera-zones-v1`: ordered cases contain source/target defaults, initial yaw,
+startup mode, ordered zone records, prescribed per-tick cell/world inputs and
+expected camera/selection facts. The fixtures contain decoded numbers only.
+Frames supply freeze-selection, manual-turn, fixed-mode and start-timer stimuli.
+Expected fields include frog zone/region, consumed camera zone, timers/twist,
+entity angle, tracked/source world positions, current/next offsets, fixed12 basis,
+controller directions and modification rotation. No rendered transform supplies
+expected values.
+
+`make_golden_camera_zones.py` independently implements frozen zone retention,
+integer camera transitions, absolute Y and manual controls. It compares every
+represented field with `camera_zone_oracle.h`, linked through the existing
+terrain adapter to unchanged frozen `UpdateFrogCameraZone`, `ControlFrog` and
+`UpdateCamera`. The adapter starts with no prior controller mapping during START;
+FOLLOW fixtures initialize cardinal mappings. Manual-turn fixtures exercise all
+four offset pairs through real control, including the frozen build's pointer-
+stride compatibility fix described in the [camera contract](../../../docs/reference/gameplay/gameplay-camera.md#frozen-build-compatibility).
+
+Synthetic cases cover overlap/region retention, gaps and signed/inverted bounds,
+absolute transfer/exit, forced turns, startup, frozen selection, fixed mode,
+manual and semiforced controls. Retail generation independently reads the
+player's archive and JUN1 GENE/ZONE records. Its two probe sequences use Y=0,
+40 ticks per cell, and a fresh camera per sequence. The second starts with a
+180-degree modification matrix. These are camera stimuli, not admitted frog routes.
+
+```powershell
+tools/build_terrain_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --verify
+python -B tools/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --data-dir <game-folder> --output tests/golden/pc-retail-v3.0e/camera_zones.json --verify
+```
+
+Omit `--verify` to regenerate. For each file, increment an expected source-world
+X fact, require verification to fail, restore the original and verify again.
+Both text corpora run asset-free; a separately named retail test also compares
+supplied setup and the complete inspection against the retail facts.

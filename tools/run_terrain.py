@@ -12,6 +12,7 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario', choices=('normal', 'blocked', 'buffer'), default='normal')
     parser.add_argument('--scenario-file', type=Path)
+    parser.add_argument('--camera-inspection', choices=('jun1-camera-zones',), help='Prescribed retail camera probe, without gameplay route admission')
     parser.add_argument('--data-dir', type=Path, help='Optional player data for the rendered frog')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--tick-limit', type=int)
@@ -27,6 +28,8 @@ def main():
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()
+    if args.camera_inspection and (not args.data_dir or args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.entity_lifecycle or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
+        parser.error('Camera inspection requires --data-dir and excludes gameplay scenario, entity, tick-limit and motion-capture options')
     repo = Path(__file__).resolve().parents[1]
     output = args.output_directory.resolve()
     for protected in (repo, (repo.parent / 'froggy').resolve()):
@@ -85,6 +88,13 @@ def main():
         selected += ['--entity-lifecycle=' + args.entity_lifecycle]
     if args.exploration:
         selected += ['--exploration=' + args.exploration]
+    if args.camera_inspection:
+        capture = ['--screenshot-dir=' + str(evidence)] if args.viewer else []
+        stage('camera-zones', ['res://scenes/tools/camera_zone_viewer.tscn', '--', '--run-scenario', *capture, *selected], headless=not args.viewer)
+        if not (evidence / 'trace.jsonl').is_file():
+            raise RuntimeError('Camera inspection did not produce its trace')
+        print('Camera inspection succeeded: ' + str(evidence / 'trace.jsonl'))
+        return
     if args.viewer:
         stage('viewer', ['res://scenes/tools/terrain_viewer.tscn', '--', '--run-scenario',
                          '--screenshot-dir=' + str(evidence), *selected], headless=False)

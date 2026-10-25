@@ -58,13 +58,14 @@ rejects the entire zone set on unsafe storage or unknown semantics.
 Known flags use FrogLord's mask `0x1f`: bit 0 selects per-direction offsets in
 the editor. Frozen C does not read that bit; it already indexes the eight
 stored vectors by camera direction. Retain it as known storage metadata,
-without adding active-zone behavior or treating retail flag 1 as unknown.
+without treating retail flag 1 as unknown. Active-zone setup copies all eight
+vectors, direction and flags without changing the decoded record.
 FrogLord stores signed bounds; frozen `ZONE.H` interprets the outer four words
 as unsigned and child words as signed. This difference is preserved at query
 time, without rewriting decoded values. High-detail JUN1 zone 12 has inverted
 Z bounds `(12,40,15,39)` and therefore never matches. The
 [camera contract](../gameplay/gameplay-camera.md#zone-boundaries) owns queries
-and their current use as inspection restrictions; active zones remain deferred.
+and active selection/transitions. Exploration restrictions remain separate.
 
 ## Rendering
 

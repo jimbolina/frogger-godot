@@ -40,8 +40,12 @@ func test_setup_keeps_inverted_bounds_and_detaches_nested_regions() -> void:
 	assert_eq(setup.definitions[1].bounds, PackedInt32Array([12, 40, 15, 39]))
 	map.zones[0].bounds[0] = 99
 	map.zones[0].regions[0].bounds[0] = 99
+	map.zones[0].camera_offsets[0] = Vector3i.ONE
+	map.zones[0].camera_flags = 8
 	assert_eq(setup.definitions[0].bounds[0], 13)
 	assert_eq(setup.definitions[0].regions[0][0], 15)
+	assert_eq(setup.definitions[0].camera_offsets[0], Vector3i.ZERO)
+	assert_eq(setup.definitions[0].camera_flags, 0)
 
 func test_unknown_or_malformed_record_rejects_all_definitions() -> void:
 	var map: MapFile = _map()

@@ -11,8 +11,8 @@ var freefall: bool = false
 var superjump: bool = false
 var start_timer: int = 0
 var ignore_frog_y: bool = false
-## Unsupported branches are explicit instead of silently approximated.
-var has_camera_zone: bool = false
+## Selected after frog movement; null denotes no zone.
+var camera_zone: ZoneDefinition = null
 var on_entity: bool = false
 var entity_matrix12: PackedInt32Array = PackedInt32Array()
 var shaking: bool = false

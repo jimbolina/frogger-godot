@@ -120,9 +120,11 @@ static int camera_trace(void) {
     }
     return 0;
 }
+#include "camera_zone_oracle.h"
 int main(int argc,char** argv) {
     setvbuf(stdout,NULL,_IONBF,0);
     SetErrorMode(1|2); /* Windows: suppress unattended critical-error/crash dialogs. */
+    if(argc==3 && strcmp(argv[1],"--camera-zones")==0) return camera_zone_trace(argv[2]);
     if(argc==2 && strcmp(argv[1],"--camera")==0) return camera_trace();
     puts("scenario,tick,component,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,animation_requests,sound_requests,score_requests,buffered_keys,buffered_input_count,pad_pressed,pad_held");
     for(int scenario=0;scenario<3;scenario++) {

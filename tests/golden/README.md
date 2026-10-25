@@ -30,7 +30,7 @@ commands run from the repository root; generated facts live in
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
 | Synthetic frog controller/mover, collision and terrain callback records | [Terrain components](specs/terrain-components.md) |
-| Synthetic default camera component records | [Default camera](specs/camera-components.md) |
+| Default camera and active-zone transition/control records, including JUN1 probes | [Camera components](specs/camera-components.md) |
 | Synthetic gameplay projection and source-rendered geometry | [Gameplay projection](specs/gameplay-projection.md) |
 | Synthetic frog animation catalog and component records | [Frog animation](specs/frog-animation.md) |
 | Synthetic ordered terrain/camera/animation component records | [Integrated terrain](specs/integrated-terrain.md) |

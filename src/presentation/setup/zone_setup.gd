@@ -49,6 +49,9 @@ static func from_map(map: MapFile, source_id: String = "", resource_id: int = -1
 		definition.zone_index = index
 		definition.source_offset = zone.source_offset
 		definition.zone_type = zone.zone_type
+		definition.camera_flags = zone.camera_flags
+		definition.camera_direction = zone.camera_direction
+		definition.camera_offsets.assign(zone.camera_offsets)
 		definition.bounds = zone.bounds.duplicate()
 		for region_index: int in zone.regions.size():
 			var region: MapZoneRegion = zone.regions[region_index]
@@ -58,7 +61,7 @@ static func from_map(map: MapFile, source_id: String = "", resource_id: int = -1
 			definition.regions.append(region.bounds.duplicate())
 		if not result.error.is_empty():
 			break
-		var validation: String = definition.validate()
+		var validation: String = definition.validate_camera()
 		if not validation.is_empty():
 			result._reject("%s: %s" % [location, validation])
 			break

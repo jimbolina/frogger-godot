@@ -177,6 +177,64 @@ func _tick(run: TerrainRun, pressed: int = 0, held: int = 0) -> TickResult:
 	command.held_mask = held
 	return run.step(command)
 
+func _active_zone(level: LevelDefinition) -> void:
+	var zone := ZoneDefinition.new()
+	zone.zone_index = 9
+	zone.bounds = PackedInt32Array([0, 0, 1, 1])
+	for unused: int in 4:
+		zone.camera_offsets.append(Vector3i(0, -800, -500))
+		zone.camera_offsets.append(Vector3i.ZERO)
+	level.camera_zones.append(zone)
+
+func test_active_zone_survives_mount_carry_departure_and_reset() -> void:
+	var level: LevelDefinition = _level(1)
+	level.entity_collision.contacts[0].form_book_flags = 4
+	_active_zone(level)
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	for unused: int in 3:
+		var carried: TickResult = _tick(run)
+		assert_eq(carried.error, "")
+		assert_eq(carried.final_snapshot.current_entity_index, 4)
+		assert_eq(carried.final_snapshot.camera.zone_index, 9)
+	var departed: TickResult = _tick(run, TickCommand.EAST)
+	assert_eq(departed.error, "")
+	assert_eq(departed.move_snapshot.camera_zone_index, 9)
+	assert_eq(departed.collision_snapshot.camera_zone_index, 9)
+	for unused: int in 5:
+		assert_eq(_tick(run).error, "")
+	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().camera.zone_index, 9)
+	assert_eq(run.reset(), "")
+	assert_eq(run.snapshot().camera_zone_index, 9)
+	assert_eq(run.snapshot().camera.zone_index, -1)
+
+func test_active_zone_landing_shake_and_platform_pop_are_atomic() -> void:
+	var level: LevelDefinition = _level()
+	_active_zone(level)
+	level.entity_collision.contacts[0].grid_flags[0] = SAFE
+	var run: TerrainRun = TerrainRun.create(level)
+	run._state.old_y = -600
+	var stunned: TickResult = _tick(run)
+	assert_eq(stunned.error, "")
+	assert_true(stunned.events.has("camera_stun_shake"))
+	assert_eq(stunned.final_snapshot.camera.zone_index, 9)
+	assert_eq(stunned.final_snapshot.camera.shake_timer, 44)
+	assert_eq(stunned.final_snapshot.rng_draw_count, 2)
+	level.entity_collision.contacts[0].grid_flags[0] = SAFE | SOFT
+	level.entity_collision.contacts[0].grid_flags[1] = 1 | 4096
+	run = TerrainRun.create(level)
+	for unused: int in 3:
+		assert_eq(_tick(run).error, "")
+	assert_eq(_tick(run, TickCommand.EAST).error, "")
+	for unused: int in 3:
+		assert_eq(_tick(run).error, "")
+	var killed: TickResult = _tick(run)
+	assert_eq(killed.error, "")
+	assert_true(bool(killed.final_snapshot.flags & 8))
+	assert_eq(killed.final_snapshot.camera.mode, GameplayCamera.FIXED)
+	assert_eq(killed.final_snapshot.camera.zone_index, 9)
+
 func _second_platform(level: LevelDefinition) -> void:
 	var entity: EntityDefinition = level.entity_collision.entities[0].copy()
 	entity.entity_index = 7

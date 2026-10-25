@@ -18,6 +18,8 @@ var next_target_offset: Vector3i = Vector3i.ZERO
 var mode: int = 0
 var move_timer: int = 0
 var twist_counter: int = 0
+var twist_quadrants: int = 1
+var zone_index: int = -1
 var rotation_angle: int = 0
 var mod_matrix12: PackedInt32Array = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
 var current_ytheta: int = 0
@@ -47,6 +49,8 @@ func copy() -> GameplayCameraSnapshot:
 	value.mode = mode
 	value.move_timer = move_timer
 	value.twist_counter = twist_counter
+	value.twist_quadrants = twist_quadrants
+	value.zone_index = zone_index
 	value.rotation_angle = rotation_angle
 	value.mod_matrix12 = mod_matrix12.duplicate()
 	value.current_ytheta = current_ytheta

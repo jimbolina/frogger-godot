@@ -27,6 +27,11 @@ func configure(scenario: TerrainScenario) -> void:
 		"action_lengths": Array(scenario.level.frog_action_lengths),
 		"omitted": ["platforms", "scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle"] if scenario.entity_reactions else ["entities", "forms", "zones", "audio", "effects", "game_flow"],
 		"diagnostics": Array(scenario.diagnostics)}
+	if not scenario.level.camera_zones.is_empty():
+		var zone_facts: Array[Dictionary] = []
+		for zone: ZoneDefinition in scenario.level.camera_zones:
+			zone_facts.append(facts(zone))
+		metadata["camera_zones"] = zone_facts
 	if scenario.entity_reactions:
 		if scenario.platforms_enabled:
 			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
@@ -44,6 +49,10 @@ func configure(scenario: TerrainScenario) -> void:
 			var omissions: Array = metadata["omitted"]
 			omissions.erase("primitives")
 			omissions.append("unsupported_primitive_shapes_and_reactions")
+	if not scenario.level.camera_zones.is_empty():
+		var active_omissions: Array = metadata["omitted"]
+		active_omissions.erase("zones")
+		active_omissions.erase("active_camera_zones")
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.

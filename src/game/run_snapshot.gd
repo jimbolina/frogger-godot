@@ -3,6 +3,9 @@ extends RefCounted
 ## Detached authoritative terrain state. Positions and velocities use integer 16.16.
 
 var tick_index: int = 0
+var camera_zone_index: int = -1
+## -1 denotes the outer rectangle when camera_zone_index is present.
+var camera_zone_region_index: int = -1
 var entities: EntityRunSnapshot = null
 var entity_environment: EntityEnvironmentState = null
 var entity_hit_indices: PackedInt32Array = PackedInt32Array()
@@ -80,6 +83,8 @@ var rng_draw_count: int = 0
 func copy(include_entities: bool = true) -> RunSnapshot:
 	var result := RunSnapshot.new()
 	result.tick_index = tick_index
+	result.camera_zone_index = camera_zone_index
+	result.camera_zone_region_index = camera_zone_region_index
 	result.entities = entities.copy() if include_entities and entities != null else null
 	result.entity_environment = entity_environment.copy() if entity_environment != null else null
 	result.entity_hit_indices = entity_hit_indices.duplicate()

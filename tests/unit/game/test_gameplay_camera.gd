@@ -88,7 +88,7 @@ func test_snapshot_is_detached_and_unsupported_input_preserves_camera() -> void:
 	snapshot.source_offset = Vector3i.ONE
 	snapshot.controller_directions[0] = 3
 	var input: GameplayCameraTick = _camera_tick(Vector3i(100, -100, 100))
-	input.has_camera_zone = true
+	input.camera_zone = ZoneDefinition.new()
 	assert_false(camera.step(input).is_empty())
 	assert_eq(camera.snapshot().source_offset, Vector3i(0, -500, -500))
 	assert_eq(camera.snapshot().tracked_world, Vector3i.ZERO)

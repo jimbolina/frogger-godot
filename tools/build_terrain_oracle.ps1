@@ -23,10 +23,11 @@ Copy-Item -LiteralPath "$build/_deps/sdl2-build/SDL2.dll" -Destination "$out/SDL
 $objects += "$build/real_source/libfrogger_real_source.a","$build/asset_pipeline/libasset_pipeline.a"
 $metadata=[ordered]@{
     adapter_source_sha256=(Get-FileHash "$PSScriptRoot/terrain_oracle_adapter.c").Hash.ToLowerInvariant()
+    camera_zone_source_sha256=(Get-FileHash "$PSScriptRoot/camera_zone_oracle.h").Hash.ToLowerInvariant()
     adapter_binary_sha256=(Get-FileHash "$out/terrain_oracle.exe").Hash.ToLowerInvariant()
     reference_build=$build
     reference_inputs=@($objects | ForEach-Object { [ordered]@{path=$_;sha256=(Get-FileHash $_).Hash.ToLowerInvariant()} })
-    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA)\.C$'} | ForEach-Object {
+    reference_sources=@($commands | Where-Object {$_.file -match '[\\/](FROG|GRID|COLLIDE|CAMERA|ZONE|MISC)\.C$'} | ForEach-Object {
         [ordered]@{path=$_.file;sha256=(Get-FileHash $_.file).Hash.ToLowerInvariant();object=$_.output}
     })
     components=@('ControlFrog','MoveFrog')

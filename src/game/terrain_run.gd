@@ -35,6 +35,7 @@ var _candidate_entities: EntityRun = null
 var _source_id: String = ""
 var _resource_id: int = -1
 var _exploration_guard: ExplorationGuard = null
+var _camera_zones: Array[ZoneDefinition] = []
 var _callback_error: String = ""
 var _has_entity_updates: bool = false
 
@@ -59,6 +60,22 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._theme_name = level.theme_name
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
+	if not level.camera_zones.is_empty():
+		if level.camera == null or (level.entity_collision != null and level.entity_collision.lifecycle != null):
+			run.error = "Active zones require an integrated camera and exclude visibility lifecycle"
+			return run
+		var identities: Dictionary[int, bool] = {}
+		for zone: ZoneDefinition in level.camera_zones:
+			if zone == null:
+				run.error = "Active zones contain a null definition"
+				return run
+			run.error = zone.validate_camera()
+			if identities.has(zone.zone_index):
+				run.error = "Active zones contain duplicate authored identities"
+			if not run.error.is_empty():
+				return run
+			identities[zone.zone_index] = true
+			run._camera_zones.append(zone.copy())
 	if level.exploration_guard != null:
 		run.error = level.exploration_guard.validate()
 		if not run.error.is_empty():
@@ -176,6 +193,7 @@ func reset(initial: RunStart = null) -> String:
 			guard_error = _exploration_guard.check_cell(state.cell)
 		if not guard_error.is_empty():
 			return guard_error
+	_update_camera_zone(state)
 	_sync_facts(state)
 	var random: SourceRandom = SourceRandom.create(initial.seed if initial != null else 1)
 	var camera: GameplayCamera = null
@@ -224,6 +242,11 @@ func reset(initial: RunStart = null) -> String:
 ## Returns detached state; changing it has no effect on the run.
 func snapshot() -> RunSnapshot:
 	return _state.copy() if _state != null else null
+
+func _update_camera_zone(state: RunSnapshot) -> void:
+	var selected: Vector2i = ZoneQueries.update_camera_match(_camera_zones, state.cell, Vector2i(state.camera_zone_index, state.camera_zone_region_index), state.flags)
+	state.camera_zone_index = selected.x
+	state.camera_zone_region_index = selected.y
 
 ## Commits one atomic tick. Optional phase capture affects diagnostics only; final state is always detached.
 func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
@@ -286,6 +309,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if next.flags & 4 and next.current_entity_index >= 0 and next.mode != 2:
 		_mark_carry(next, next.current_entity_index)
 	# MoveFrog updates the camera zone here, before modifiers and collision.
+	_update_camera_zone(next)
 	if _exploration_guard != null:
 		var guard_error: String = _exploration_guard.check_cell(next.cell)
 		if guard_error.is_empty():
@@ -324,6 +348,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		camera_input.freefall = next.flags & 128 != 0
 		camera_input.superjump = next.flags & 32 != 0
 		camera_input.start_timer = next.start_timer
+		camera_input.camera_zone = ZoneQueries.definition_for(_camera_zones, next.camera_zone_index)
 		camera_input.on_entity = next.current_entity_index >= 0
 		if camera_input.on_entity:
 			camera_input.entity_matrix12 = _platform_pose(next).matrix12.duplicate()
@@ -536,8 +561,11 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[String]) -
 			var held_direction: int = _first_direction(command.held_mask)
 			if held_direction != NO_INPUT:
 				input = held_direction
-		if input & 96:
-			var failure: String = _candidate_camera.request_turn(1 if input & 32 else -1)
+		if input & 96 and _candidate_camera.allows_manual_turn():
+			var entity_matrix: PackedInt32Array = PackedInt32Array()
+			if state.current_entity_index >= 0:
+				entity_matrix = _platform_pose(state).matrix12
+			var failure: String = _candidate_camera.request_turn(1 if input & 32 else -1, state.camera_zone_index >= 0, entity_matrix)
 			if not failure.is_empty():
 				return failure
 			state.mode = 3
@@ -546,7 +574,7 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[String]) -
 	var is_super: bool = input & 8 != 0
 	if is_super:
 		input = (state.direction - (state.entity_angle if state.flags & 4 else _controller_directions[0])) & 3
-	if input != NO_INPUT:
+	if not input & NO_INPUT:
 		state.no_input_timer = 0
 		var failure: String = _jump(state, input, events, is_super)
 		if not failure.is_empty():

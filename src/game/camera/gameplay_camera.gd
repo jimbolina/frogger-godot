@@ -10,6 +10,7 @@ var error: String = ""
 var _definition: GameplayCameraDefinition = null
 var _state: GameplayCameraSnapshot = null
 var _base_angle: int = 0
+var _zone: ZoneDefinition = null
 
 ## Copies validated map defaults and creates a follow or original level-start camera.
 static func create(definition: GameplayCameraDefinition, frog_world: Vector3i, startup: bool = false) -> GameplayCamera:
@@ -28,6 +29,7 @@ static func create(definition: GameplayCameraDefinition, frog_world: Vector3i, s
 func reset(frog_world: Vector3i, startup: bool = false) -> void:
 	_state = GameplayCameraSnapshot.new()
 	_base_angle = 0
+	_zone = null
 	_state.next_source_offset = _definition.source_offset
 	_state.next_target_offset = _definition.target_offset
 	_state.tracked_world = frog_world if not startup else Vector3i.ZERO
@@ -48,21 +50,51 @@ func copy() -> GameplayCamera:
 	camera._definition = _definition.copy()
 	camera._state = _state.copy()
 	camera._base_angle = _base_angle
+	camera._zone = _zone.copy() if _zone != null else null
 	return camera
 
 ## Starts the source eight-tick quarter turn; caller owns frog WAIT_FOR_CAMERA transition.
-func request_turn(direction: int) -> String:
+func request_turn(direction: int, frog_zone_present: bool = false, entity_matrix12: PackedInt32Array = PackedInt32Array()) -> String:
 	if _state == null or _state.mode != FOLLOW:
 		return "Camera turn requires follow mode"
 	if direction != -1 and direction != 1:
 		return "Camera turn direction must be -1 or 1"
 	if _state.twist_counter != 0:
 		return "Camera turn is already active"
+	if not allows_manual_turn():
+		return "Camera zone forces its direction"
+	var source: Vector3i = _definition.source_offset
+	var target: Vector3i = _definition.target_offset
+	if frog_zone_present:
+		if _zone == null:
+			return "Manual zone turn requires a consumed camera zone; tick rolled back"
+		if not entity_matrix12.is_empty() and not PlatformMath.valid(entity_matrix12):
+			return "Manual zone turn requires a valid entity matrix"
+		var matrix: PackedInt32Array = _state.mod_matrix12
+		if not entity_matrix12.is_empty():
+			matrix = PlatformMath.multiply(matrix, PlatformMath.project(entity_matrix12))
+		var quadrant: int = (world_quadrant(matrix) + direction) & 3
+		# Frozen build sanitizes vendor FROG.C's sizeof(ZONE) stride to SVEC[2*q].
+		# Verified through actual ControlFrog, including quadrant three.
+		var offset_index: int = quadrant * 2
+		if offset_index + 1 >= _zone.camera_offsets.size():
+			return "ZONE[%d] manual turn quadrant %d reads outside the camera payload; tick rolled back" % [_zone.zone_index, quadrant]
+		source = _zone.camera_offsets[offset_index]
+		target = _zone.camera_offsets[offset_index + 1]
 	_state.twist_counter = direction
+	_state.twist_quadrants = 1
 	_state.move_timer = 8
-	_state.next_source_offset = _definition.source_offset
-	_state.next_target_offset = _definition.target_offset
+	_state.next_source_offset = source
+	_state.next_target_offset = target
 	return ""
+
+## Source control ignores manual turns in a forced, non-semiforced camera zone.
+func allows_manual_turn() -> bool:
+	return _zone == null or _zone.camera_direction < 0 or _zone.camera_flags & 4 != 0
+
+## Source GetWorldYQuadrantFromMatrix uses strict Z dominance, with ties on X.
+static func world_quadrant(matrix: PackedInt32Array) -> int:
+	return (0 if matrix[8] > 0 else 2) if absi(matrix[8]) > absi(matrix[2]) else (1 if matrix[2] > 0 else 3)
 
 ## Freezes source camera processing as FrogKill does; post-update shake still runs.
 func request_fixed() -> void:
@@ -130,8 +162,10 @@ func align_y() -> void:
 func step(input: GameplayCameraTick) -> String:
 	if _state == null or input == null:
 		return "Camera and tick input must be initialized"
-	if input.has_camera_zone:
-		return "Terrain camera does not yet support camera zones"
+	if input.camera_zone != null:
+		var zone_issue: String = input.camera_zone.validate_camera()
+		if not zone_issue.is_empty():
+			return zone_issue
 	if input.on_entity and not PlatformMath.valid(input.entity_matrix12):
 		return "Camera entity transforms require a valid source matrix"
 	if input.remaining_ticks < 0 or input.start_timer < 0:
@@ -141,6 +175,13 @@ func step(input: GameplayCameraTick) -> String:
 		START:
 			if input.start_timer <= _state.move_timer:
 				_state.mode = FIXED_SWEEP
+				if input.camera_zone != null:
+					_set_zone(input.camera_zone)
+					_state.next_source_offset = _zone.camera_offsets[0]
+					_state.next_target_offset = _zone.camera_offsets[1]
+				else:
+					_state.next_source_offset = _definition.source_offset
+					_state.next_target_offset = _definition.target_offset
 			_compose(input.frog_world, true, false)
 		FIXED_SWEEP:
 			_state.move_timer -= 1
@@ -156,6 +197,7 @@ func step(input: GameplayCameraTick) -> String:
 	return ""
 
 func _follow(input: GameplayCameraTick) -> void:
+	_update_zone(input)
 	if _state.move_timer > 0:
 		_sweep_offsets(_state.move_timer)
 		_state.move_timer -= 1
@@ -164,6 +206,8 @@ func _follow(input: GameplayCameraTick) -> void:
 		var duration: int = 15 if input.superjump else 6
 		desired_y = input.old_y + _divide((duration - input.remaining_ticks) * (input.target_y - input.old_y), duration)
 	desired_y = mini(desired_y, 0)
+	if _absolute_y():
+		desired_y = _state.next_source_offset.y
 	if not input.ignore_frog_y:
 		_state.tracked_world.y = _approach_y(_state.tracked_world.y, desired_y)
 	_state.tracked_world.x = _approach_horizontal(_state.tracked_world.x, input.frog_world.x)
@@ -173,10 +217,10 @@ func _follow(input: GameplayCameraTick) -> void:
 	if _state.twist_counter != 0:
 		twist_angle = _divide(_state.twist_counter * 1024, 8)
 		_state.twist_counter += 1 if _state.twist_counter > 0 else -1
-		if absi(_state.twist_counter) > 8:
+		if absi(_state.twist_counter) > 8 * _state.twist_quadrants:
 			_state.twist_counter = 0
 			_base_angle = (_base_angle + twist_angle) & 4095
-			_state.entity_angle_delta = 1 if twist_angle > 0 else -1
+			_state.entity_angle_delta = _state.twist_quadrants * (1 if twist_angle > 0 else -1)
 			twist_end = true
 	if _state.delta_ytheta != 0:
 		_state.current_ytheta += _state.delta_ytheta
@@ -195,6 +239,45 @@ func _follow(input: GameplayCameraTick) -> void:
 	_state.rotation_angle = (_base_angle + twist_angle) & 4095
 	_compose(input.frog_world, false, true, composed)
 
+func _set_zone(zone: ZoneDefinition) -> void:
+	_zone = zone.copy() if zone != null else null
+	_state.zone_index = zone.zone_index if zone != null else -1
+
+func _absolute_y() -> bool:
+	return _zone != null and _zone.camera_flags & 8 != 0
+
+func _update_zone(input: GameplayCameraTick) -> void:
+	var identity: int = input.camera_zone.zone_index if input.camera_zone != null else -1
+	if identity == _state.zone_index:
+		return
+	_state.move_timer = 30
+	if input.camera_zone == null:
+		if _absolute_y():
+			_state.tracked_world.y = input.frog_world.y
+			_state.source_offset = _definition.source_offset
+			_state.target_offset = _definition.target_offset
+		_set_zone(null)
+		_state.next_source_offset = _definition.source_offset
+		_state.next_target_offset = _definition.target_offset
+		return
+	if _absolute_y():
+		_state.tracked_world.y = 0
+	_set_zone(input.camera_zone)
+	if _absolute_y():
+		_state.tracked_world.y = _state.source_world.y
+	var matrix: PackedInt32Array = _state.mod_matrix12
+	if input.on_entity:
+		matrix = PlatformMath.multiply(matrix, PlatformMath.project(input.entity_matrix12))
+	var quadrant: int = world_quadrant(matrix)
+	if _zone.camera_direction >= 0:
+		var difference: int = (_zone.camera_direction - quadrant) & 3
+		if difference != 0:
+			_state.twist_counter = -1 if difference == 3 else 1
+			_state.twist_quadrants = 2 if difference == 2 else 1
+		quadrant = _zone.camera_direction
+	_state.next_source_offset = _zone.camera_offsets[quadrant * 2]
+	_state.next_target_offset = _zone.camera_offsets[quadrant * 2 + 1]
+
 func _sweep_offsets(divisor: int) -> void:
 	_state.source_offset = _offset_step(_state.source_offset, _state.next_source_offset, divisor)
 	_state.target_offset = _offset_step(_state.target_offset, _state.next_target_offset, divisor)
@@ -205,6 +288,9 @@ func _compose(origin: Vector3i, use_origin: bool, update_controls: bool, rotatio
 	var target_offset: Vector3i = _rotate(_state.target_offset, _state.rotation_angle) if rotation.is_empty() else PlatformMath.apply(rotation, _state.target_offset)
 	_state.source_world = anchor + (_state.source_offset if use_origin else source_offset)
 	_state.target_world = anchor + (_state.target_offset if use_origin else target_offset)
+	if not use_origin and _absolute_y():
+		_state.source_world.y = _state.tracked_world.y
+		_state.target_world.y = _state.target_offset.y
 	_state.axis_z_12 = _normalize(_state.target_world - _state.source_world)
 	_state.axis_x_12 = _normalize(_cross_12(Vector3i(0, 4096, 0), _state.axis_z_12))
 	_state.axis_y_12 = _cross_12(_state.axis_z_12, _state.axis_x_12)

@@ -292,3 +292,41 @@ The complete-trace comparator requires ticks starting at zero and Control,
 Move, Collision, Camera and Final in order. A trace must reach `tick_limit` or
 end in explicit completion; a zero limit permits metadata only. Missing,
 reordered, truncated, error and post-completion records fail comparison.
+
+## Active camera zone inspection
+
+`--camera-inspection jun1-camera-zones` selects a separate prescribed camera
+probe through the existing terrain launcher. It requires v3.0e player data and
+uses the supplied high-detail JUN1 map, camera defaults and zone records.
+Gameplay scenarios, entity switches and tick-limit overrides cannot be combined
+with it. No entity collision or playable-route admission is implied.
+
+The first sequence holds each cell `(10,3)`, `(11,3)`, `(11,4)`, `(11,5)` for
+40 ticks, entering and exiting zone 15. The second resets camera state, starts
+with the opposite camera quadrant, and holds `(14,22)`, `(15,22)`, `(14,23)`,
+`(14,24)` for 40 ticks each. It enters zone 0, forces a half-turn, changes child
+region while retaining the zone, and exits. Probe world Y is explicitly zero.
+The pink probe is drawn through geometry because its prescribed Y=0 can lie
+below terrain. The overlay distinguishes frog zone/region, camera-consumed zone,
+offset timer and twist counter/quadrants. Both sequences together contain 320 source updates.
+
+```powershell
+python tools/run_terrain.py --godot <executable> --data-dir <game-folder> --camera-inspection jun1-camera-zones --viewer --output-directory <external-folder>
+python tools/verify_camera_zone_schedules.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+```
+
+The verifier requires complete JSONL traces, checks independent reference fields
+and compares every published field across headless and rendered 30/60/144 Hz.
+`camera-zone-inspection-v1` metadata records definitions and the prescribed tick
+count; each row records its sequence, cell/world position, frog selection and
+full camera snapshot. Captures include entry, mid-turn, settled offsets, region
+change and exit. Inspect both map framing and the probe; trace equality alone
+is not visual acceptance.
+
+For manual inspection, open `scenes/tools/camera_zone_viewer.tscn` with the data
+folder argument and without `--run-scenario`. It starts paused. Space toggles
+playback, Period steps, and R clears the clock, selection and both sequences,
+then pauses. This is inspection reset, not checkpoint/death recovery.
+The [camera contract](../gameplay/gameplay-camera.md#zone-boundaries) owns runtime
+semantics and [golden specification](../../../tests/golden/specs/camera-components.md#active-camera-zones)
+owns the independent generators and known frozen-build source difference.

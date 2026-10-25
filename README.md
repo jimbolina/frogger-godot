@@ -123,6 +123,16 @@ default to all-attached lifetime. Visibility mode supports only script-free
 generic entities on zero-zone maps within its polygon-budget limit; it does not
 make a level playable. See [inspection](docs/reference/testing/terrain-inspection.md#visibility-lifecycle-inspection).
 
+Active camera zones have a separate JUN1 inspection. It moves a visible probe
+through prescribed cells and shows zone selection, offset transitions and a
+forced half-turn; it does not establish a playable route. Run
+`python tools/run_terrain.py --godot <executable> --data-dir <game-folder>
+--camera-inspection jun1-camera-zones --viewer --output-directory <external-folder>`
+for deterministic playback and captures. Open `scenes/tools/camera_zone_viewer.tscn`
+with `--data-dir=<game-folder>` for paused interactive inspection: Space plays or
+pauses, Period advances one tick, and R resets both sequences. See
+[zone inspection](docs/reference/testing/terrain-inspection.md#active-camera-zone-inspection).
+
 ## No game data is included
 
 This repository contains **no part of the original game**: no executable, no

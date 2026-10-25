@@ -114,7 +114,10 @@ checked there, before each FORM query, after each FORM reaction/correction and
 before aggregate commit. A rejection discards the frog, entity/path, camera,
 animation, RNG and every candidate outcome. It neither clamps nor publishes a
 partial contact. `ZoneSetup` converts legacy records; pure `ZoneQueries` owns
-matching. No mutable active-zone state exists. The JUN1 setup adapter verifies
+matching. Active zones are separately supplied through `LevelDefinition.camera_zones`.
+Frog selection (zone and region) and camera-consumed identity are detached
+transaction state; selection occurs here once, not again after contact correction.
+Empty active definitions preserve existing runs. The JUN1 setup adapter verifies
 the independent admission manifest before enabling its all-attached preset.
 ORG1 additionally pins supplied behavior names and the animated frog collision
 point closure; its guard validates admitted actions, roots and unpowered state
