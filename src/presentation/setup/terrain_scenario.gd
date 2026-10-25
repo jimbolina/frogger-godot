@@ -100,7 +100,6 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.camera.source_offset = map_scene.map.general.camera_source_offset
 	level.camera.target_offset = map_scene.map.general.camera_target_offset
 	level.collision_enabled = true
-	# mapload.C establishes these limits before any P8 entity boundary markers run.
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
 	if entity_reactions:

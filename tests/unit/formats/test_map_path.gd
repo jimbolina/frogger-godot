@@ -46,7 +46,7 @@ func _one_path(segment_type: int, segment_size: int) -> PackedByteArray:
 	_tag(b, 520, "PATH")
 	b.encode_u32(524, 1)
 	b.encode_u32(528, 532)
-	b.encode_u32(532, 0xFFFFFFF0) # External GROU entity-list address is metadata only.
+	b.encode_u32(532, 0xFFFFFFF0)
 	b.encode_u32(536, 1)
 	b.encode_u32(540, 544)
 	b.encode_u32(544, segment_type)

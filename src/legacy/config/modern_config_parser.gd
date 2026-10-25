@@ -29,7 +29,7 @@ func parse(source: String, root_name: String = "") -> FrogLordConfig:
 	error = ""
 	_lines = source.replace("\r\n", "\n").replace("\r", "\n").split("\n")
 	if _lines.size() > 0 and _lines[_lines.size() - 1].is_empty():
-		_lines.resize(_lines.size() - 1) # A final newline ends the last line; it does not start another.
+		_lines.resize(_lines.size() - 1)
 	_next = 0
 	var root: FrogLordConfig = _read_section(0, root_name, "")
 	return null if not error.is_empty() else root
@@ -48,7 +48,7 @@ func _read_section(layer: int, section_name: String, section_comment: String) ->
 			var comment_at: int = header.find("#")
 			if comment_at >= 0:
 				if comment_at + 1 < header.length() and header[comment_at + 1] == "#":
-					pass # FrogLord stops looking for a header comment after an escaped '#'.
+					pass
 				else:
 					header_comment = header.substr(comment_at + 1).strip_edges(true, false)
 					header = header.substr(0, comment_at).strip_edges(false, true)
@@ -76,7 +76,7 @@ func _read_section(layer: int, section_name: String, section_comment: String) ->
 				var child: FrogLordConfig = _read_section(left, child_name, header_comment)
 				config.add_child(child)
 			else:
-				_next -= 1 # An ancestor section owns this header.
+				_next -= 1
 				return config
 			continue
 		_read_body_line(config, trimmed, line_number)

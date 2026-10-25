@@ -173,8 +173,6 @@ def row(data_dir, version):
     _, initial_position, initial_tangent = paths.sample(segment, distance, False)
     initial_matrix = entities.moving_matrix([0] * 9 + initial_position + initial_tangent,
                                              entity_flags)
-    # Explicit water-cell inspection start. GRID top square vertices supply
-    # the actual source height; no invented terrain height enters the oracle.
     grap = contacts.read(data, 80, '<I')
     grid = contacts.read(data, grap + 20, '<I')
     grid_width, grid_depth = struct.unpack_from('<2H', data, grid + 4)
@@ -370,8 +368,6 @@ def route_fixture(data_dir, version, return_context=False):
         cfg.values.get('scriptList', '1997-09-18-psx-build63'), False)
     scripts = exe_tables.read_scripts(image, exe_tables.java_int(cfg.values['scripts']),
                                       len(script_names))
-    # Conservatively pin every decoded instruction stream. This includes the
-    # HIPPO and CROCODILE programs, their transitive targets and callback refs.
     script_facts = [(index, script['stream']) for index, script in enumerate(scripts)]
     script_digest = hashlib.sha256(json.dumps(script_facts, separators=(',', ':')).encode()).hexdigest()
     if script_digest != '0d084966e0ab96c67a3421f4ac26ff3068a7d23efad878dcadc6bee71bb1c512':
@@ -393,8 +389,6 @@ def route_fixture(data_dir, version, return_context=False):
                        else wads[level['high_wad']][b['id']][0]
                        for _i, _at, _grid, _uid, _fid, _flags, b in records]
     model_ids = set(resolved_models) - {-1}
-    # GENERAL checkpoint models 207–210 are incomplete MOFs using 206 as their
-    # preceding complete counterpart; it must stay in the proof input closure.
     if not {206, 207, 208, 209, 210}.issubset(model_ids):
         raise ValueError('JUN1 GENERAL model counterpart closure changed')
     model_facts = sorted((model_id, hashlib.sha256(resource(files, entries, mwd, model_id)).hexdigest())

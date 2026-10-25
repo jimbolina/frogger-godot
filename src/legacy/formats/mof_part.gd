@@ -347,7 +347,6 @@ func _read_collprims(reader: ByteReader) -> void:
 			return
 
 
-# The first section that starts after [param at], out of the ones that can follow it.
 func _section_after(at: int, candidates: PackedInt32Array) -> int:
 	var found: int = -1
 	for candidate: int in candidates:
@@ -366,7 +365,6 @@ func _read_matrices(reader: ByteReader) -> void:
 	matrix_count = (end - _matrices_at) / 32
 
 
-# Read lists consecutively, retaining raw counts and resolving target pointers.
 func _read_texture_animations(reader: ByteReader) -> void:
 	if _texture_animation_at == 0:
 		return

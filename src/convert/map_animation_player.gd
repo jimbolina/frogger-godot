@@ -96,7 +96,6 @@ func step() -> void:
 				track.offset = 0
 				track.uv_count = 0
 			else:
-				# C deliberately adds the u/v bytes as one little-endian ushort.
 				track.offset = (track.offset + (source.delta_u & 255) + ((source.delta_v & 255) << 8)) & 65535
 		if source.type & 2 and not track.cels.is_empty():
 			track.cel_count = (track.cel_count + 1) & 65535

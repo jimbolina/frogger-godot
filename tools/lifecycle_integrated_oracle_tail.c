@@ -1,6 +1,3 @@
-/* Appended after the existing integrated_entity_oracle.c translation unit at
- * build time. Its tested setup/control/animation transport is reused; only
- * the invented 24x4 flat grid, commands and observations differ. */
 static MR_SVEC life_vertices[96*4];
 static MAP_F4 life_polygons[96];
 static GRID_SQUARE life_squares[96];

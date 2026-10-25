@@ -132,7 +132,6 @@ def expected():
         directions = DIRECTIONS
         source_x_shift = 0
         for tick in range(ticks):
-            # UpdateLiveEntities clears previous-frame carry observations.
             carry = '-'
             entity_x = -149 + tick if scenario == 0 else 0 if scenario in (1, 6, 9, 10) else -149 if scenario == 2 else -158 if scenario == 8 else -128
             entity_z = -128
@@ -170,7 +169,6 @@ def expected():
                 rows.append([facts[field] for field in FIELDS])
 
             if (scenario == 0 and tick == 12) or (scenario in (5, 7) and tick == 3):
-                # North leaves the one-cell form for terrain cell (1, 2).
                 duration = 15 if scenario == 7 else 6
                 key, direction, mode, count, flags = 0, 0, 1, duration, (2113 if scenario == 5 else 2161 if scenario == 7 else 2129)
                 forbidden = 0
@@ -183,9 +181,6 @@ def expected():
                 no_input = 0
                 animation.request(17 if scenario == 7 else 16)
             elif scenario in (11, 12) and tick == 3:
-                # Terrain WATER excludes a grid landing. A normal-angle form
-                # carries local fixed-point XZ until the jump ends; NO_ENTITY_ANGLE
-                # detaches at command time and uses world fixed-point XZ.
                 key, direction, mode, count = 0, 0, 1, 6
                 flags = 2065 if scenario == 11 else 2049
                 forbidden = 0
@@ -200,7 +195,6 @@ def expected():
                 no_input = 0
                 animation.request(16)
             elif scenario in (1, 6, 9, 10) and tick == 3:
-                # East enters the adjacent usable cell on the same form.
                 duration = 3 if scenario == 6 else 6
                 key, direction, mode, count, flags = 1, 1, 1, duration, 2067
                 cellx = 1
@@ -283,13 +277,10 @@ def expected():
                 count = distance // 15 + 1
                 vx = cdiv((target_x - local_x) << 16, count)
                 if scenario == 4:
-                    # Camera mod becomes the inverse projected platform yaw.
                     camera_mod = ANGLED_INVERSE
                     theta = math.floor(math.acos(ANGLED[8] / 4096) * 2048 / math.pi)
                     camera_dest, camera_theta, camera_delta = 4096, 4096 - theta, 32
             if scenario == 10 and tick == 7:
-                # The final airborne collision re-reacts with the destination
-                # FORM while fr_count is one, before the next movement tick.
                 flags = 27
                 vx = vy = vz = 0
                 pgens += 1
@@ -307,9 +298,6 @@ def expected():
                 angle = camera_theta * 2 * math.pi / 4096
                 cosine, sine = rounded(math.cos(angle) * 4096), rounded(math.sin(angle) * 4096)
                 camera_mod = (cosine, 0, sine, 0, 4096, 0, -sine, 0, cosine, 0, 0, 0)
-                # CAMERA.C combines mod yaw with platform yaw before the
-                # source offset. The source's 500-unit backward vector is
-                # transformed in fixed12, then its projected view normalized.
                 projected_x = (cosine * ANGLED[2] + sine * ANGLED[8]) >> 12
                 source_x_shift = (projected_x * -500) >> 12
                 length = math.hypot(-source_x_shift, 500)

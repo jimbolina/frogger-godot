@@ -1,8 +1,3 @@
-/* ORG1 route research. Included by platform_oracle.c after its shared setup.
- * Input is an external decoded numeric transport. All 64 scan identities are
- * retained. The river mode makes ten candidate FORMs collision-live; the road
- * mode additionally executes all 24 decoded traffic cuboids and stored frog
- * probes. Independent neighbor/probe proof admits each preset separately. */
 #include "ent_sub.h"
 static ENTITY *org_entities[64];
 static LIVE_ENTITY org_lives[64];
@@ -41,9 +36,6 @@ MR_BOOL __wrap_MRCollisionCheck(MR_COLLCHECK *check,MR_ULONG a,MR_ULONG b,MR_ULO
 static MR_MAT org_frog_stored[16];
 static int org_stored_action,org_stored_cel;
 static void org_read_matrix(FILE *in,MR_MAT *m);
-/* Use unchanged frozen animation update, including its STATIC-owner cache.
- * Reset primes action 0/cel 0 explicitly; later refreshes follow the source
- * environment cel advance. Decoded quaternion records remain external facts. */
 static void org_store_frog_pose(void) {
     if(org_road){MRAnimEnvUpdateLWTransforms(&env);org_stored_action=single.ae_last_action_number;org_stored_cel=single.ae_last_cel_number;}
 }
@@ -113,7 +105,6 @@ static void org_read_matrix(FILE *in,MR_MAT *m) {
     for(int r=0;r<3;r++) for(int c=0;c<3;c++) m->m[r][c]=route_int(in);
     for(int r=0;r<3;r++) m->t[r]=route_int(in);
 }
-/* Exact root transitions for the independent finite reachability closure. */
 static int org1_roots_run(const char *file) {
     FILE *in=fopen(file,"r");if(!in)return 2;int count=route_int(in);
     if(count<1 || count>100000)return 2;puts("case,m00,m01,m02,m10,m11,m12,m20,m21,m22");
@@ -160,7 +151,6 @@ static void org_emit(int tick,const char *phase) {
     CAMERA *camera=Cameras;
     for(int j=0;j<3;j++)printf(",%ld",(long)(&camera->ca_current.vx)[j]);
     for(int j=0;j<3;j++)printf(",%ld",(long)camera_matrix.t[j]);
-    /* The follow target is independently reconstructed from source fields. */
     MR_MAT projected,mod;MR_VEC target;MR_MAT *active=&camera->ca_mod_matrix;
     if(f->fr_entity){ProjectMatrixOntoWorldXZ(f->fr_entity->en_live_entity->le_lwtrans,&projected);MRMulMatrixABC(active,&projected,&mod);active=&mod;}
     MRApplyMatrix(active,&camera->ca_current_target_ofs,&target);
@@ -216,9 +206,6 @@ static int org1_route_run(const char *file) {
     UpdateFrogOldPositionalInfo(f);UpdateFrogMatrix(f);
     for(int i=0;i<34;i++) cels[i].ac_no_of_virtual_cels=route_int(in);
     FrogInitialiseAnimation(f,FROG_ANIMATION_PANT,0);
-    /* Candidate models are independently checked primitive-free. Empty frog
-     * mesh metadata permits the unchanged primitive precheck to traverse;
-     * animated probe exclusion is a separate admission obligation. */
     static MR_ANIM_HEADER frog_header;static MR_ANIM_MODEL_SET frog_set;
     static MR_MOF frog_mof,*frog_statics[1];static MR_OBJECT frog_object;
     frog_statics[0]=&frog_mof;frog_header.ah_static_files=frog_statics;

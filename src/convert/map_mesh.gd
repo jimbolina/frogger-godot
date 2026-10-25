@@ -280,7 +280,6 @@ class Instance extends Node3D:
 		for index: int in map.groups.size():
 			if map.groups[index].visible:
 				indices.append(index)
-		# Frozen map_slice driver sorts only maps exceeding the active-group cap.
 		if indices.size() > 128:
 			indices.sort_custom(func(a: int, b: int) -> bool:
 				var distance_a: int = _group_distance(a)
@@ -292,7 +291,7 @@ class Instance extends Node3D:
 	## Entire oversized groups are skipped; later smaller groups may still fit.
 	static func reference_budget(map_groups: Array[MapGroup], ordered: PackedInt32Array) -> PackedInt32Array:
 		var selected := PackedInt32Array()
-		var remaining: int = 2500 # MAP_MAX_POLYS_RENDERED, mapdisp.H:36.
+		var remaining: int = 2500
 		for index: int in ordered:
 			if remaining <= 0:
 				break

@@ -1,6 +1,3 @@
-/* Transport for the unchanged frozen CreateMapViewList implementation.
- * Arguments are geometry followed by source XYZ and row-major fixed12 axes.
- * The program prints only selected map-group indices. */
 #include "MR_ALL.H"
 #include "gamesys.H"
 #include "MAPVIEW.H"

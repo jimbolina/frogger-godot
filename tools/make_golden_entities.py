@@ -82,7 +82,6 @@ def decode_entity_map(data, forms, entity_names, overrides):
         form = forms.get(owner, [])[local_id] if local_id < len(forms.get(owner, [])) else None
         form_name = "" if form is None else form["name"]
         entity_name = "" if form is None else form["entity"]
-        # Identity includes source order and form resolution facts, never payload bytes.
         identity.extend((index, start, end, grid_id, unique_id, form_id, flags,
                          -1 if form is None else form["entity_type"],
                          -1 if form is None else form["script"],
@@ -210,7 +209,6 @@ def main():
         with open("tests/golden/fixtures/paths.json", encoding="utf-8") as source:
             path_cases = {case["name"]: case for case in json.load(source)}
         rows = synthetic_rows(cases, path_cases)
-        # The adapter independently calls frozen PATH.C and source matrix math.
         import subprocess
         input_rows = []
         for case in cases:

@@ -157,7 +157,6 @@ func test_bad_files_are_refused() -> void:
 	assert_string_contains(MofFile.parse(wrong_kind).error, "kind 16")
 
 	var page_word: PackedByteArray = good.duplicate()
-	# FT4: 4 vertices, 1 normal, image id, u v, clut, u v, page word.
 	page_word.encode_u16(polygons_at + 4 + 10 + 2 + 2 + 2 + 2, 3)
 	assert_string_contains(MofFile.parse(page_word).error, "texture page word")
 

@@ -73,8 +73,6 @@ static func query(definition: FormContactDefinition, entity_snapshot: EntitySnap
 		result.status = FormContactResult.MISS
 		result.reason = "Outside strict form-book bounding sphere"
 		return result
-	# MRTransposeMatrix followed by MRApplyMatrix applies matrix columns to the
-	# signed-short displacement. The source returns arithmetic-shifted 4.12 products.
 	result.local_position = Vector3i(
 		_signed32(matrix[0] * delta.x + matrix[3] * delta.y + matrix[6] * delta.z) >> 12,
 		_signed32(matrix[1] * delta.x + matrix[4] * delta.y + matrix[7] * delta.z) >> 12,

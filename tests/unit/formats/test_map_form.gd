@@ -55,7 +55,7 @@ func _map() -> PackedByteArray:
 	bytes.encode_u32(564, 558)
 	for index: int in 3:
 		bytes.encode_u16(568 + index * 2, 3)
-	bytes.encode_u16(574, 0xA341) # Exporter scratch is permitted.
+	bytes.encode_u16(574, 0xA341)
 	bytes.encode_s16(588, -32768)
 	bytes.encode_s16(590, 32767)
 	return bytes
@@ -93,7 +93,7 @@ func test_bad_form_pointers_fail_without_crossing_record_boundaries() -> void:
 func test_unsupported_height_mode_remains_decoded() -> void:
 	var bytes: PackedByteArray = _map()
 	bytes.encode_u16(556, 2)
-	bytes.encode_u32(564, 555) # Metadata only; never dereferenced in GRID mode.
+	bytes.encode_u32(564, 555)
 	var map: MapFile = MapFile.read(bytes)
 	assert_eq(map.error, "")
 	assert_eq(map.forms[0].data[0].height_type, 2)

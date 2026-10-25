@@ -59,8 +59,6 @@ def pp20_unpack(data):
     offset_bits = list(data[4:8])
     skip = data[-1]
     out_len = (data[-4] << 16) | (data[-3] << 8) | data[-2]
-    # Bit string in read order: the reader starts at virtual byte position 4,
-    # i.e. real index len-5, and walks towards the start of the buffer.
     body = data[:-4]
     bits = "".join(format(b, "08b")[::-1] for b in reversed(body))
     total_bits = len(bits)

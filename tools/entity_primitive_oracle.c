@@ -1,5 +1,3 @@
-/* Invented numeric frog part/root and static cuboid facts only. No retail data.
- * Linked unchanged frozen matrix operations and collision checker own outputs. */
 #define main frozen_main_unused
 #include "FROG.H"
 #undef main
@@ -51,7 +49,6 @@ int main(int argc,char **argv) {
         lw.t[0]=rotated.vx+root.t[0];lw.t[1]=rotated.vy+root.t[1];lw.t[2]=rotated.vz+root.t[2];
         MRApplyMatrixSVEC(&lw,&vertex,&world);
         world.vx+=lw.t[0];world.vy+=lw.t[1];world.vz+=lw.t[2];
-        /* The checker caches by pointer, while stack addresses repeat here. */
         MRColl_lw_ptr=NULL;MRColl_matrix_ptr=NULL;
         r=MRCheckCollPrimWithWorldPoint(&primitive,&world,&owner,NULL);
         printf("%d,%d,%d,%d,%d\n",index,world.vx,world.vy,world.vz,r?1:0);

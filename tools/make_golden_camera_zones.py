@@ -69,7 +69,6 @@ def select(zones, cell, current, frozen=False):
 
 
 def zone(bounds=(1, 1, 3, 3), direction=-1, flags=0, regions=()):
-    # Distinct signed vectors expose wrong per-direction and manual-turn addressing.
     return dict(bounds=list(bounds), regions=list(regions), direction=direction, flags=flags,
                 offsets=[[10*i, -800-20*i, -700-30*i] if i % 2 == 0 else
                          [5*i, -100-10*i, 20*i] for i in range(8)])
@@ -116,7 +115,6 @@ def cases():
 
 
 def retail_cases(data_dir):
-    # Independent archive/MAP readers; no GDScript output or committed expected input.
     import make_golden_retail_platform as reader
     exe = reader.exe_tables
     cfg = exe.parse_cfg(str(Path(exe.CFG_ROOT)/'versions/pc-retail-v3.0e.cfg'))
@@ -124,7 +122,6 @@ def retail_cases(data_dir):
         exe.java_int(cfg.values['mwiOffset']), exe.java_int(cfg.values['mwiLength']))
     blob = reader.resource(files, entries, (data_dir/'FROGPSX.MWD').read_bytes(), 656)
     general = struct.unpack_from('<I', blob, 76)[0]
-    # GENE tag precedes its payload: camera vectors are at packet +24 and +32.
     source = list(struct.unpack_from('<3h', blob, general+24))
     target = list(struct.unpack_from('<3h', blob, general+32))
     packet = struct.unpack_from('<I', blob, 92)[0]

@@ -1,16 +1,4 @@
 #!/usr/bin/env bash
-# Runs every test headless with GUT in an isolated temporary Godot profile.
-#
-#   GODOT=/path/to/godot tools/run_tests.sh [extra GUT options, e.g. -gselect=test_pp20]
-#
-# GODOT defaults to "godot" on the PATH. Set FROGGER_DATA_DIR to run retail-file
-# tests. Without it they skip by name. Logs remain in the printed temp folder.
-#
-# Exit codes:
-#   0  every test ran and passed
-#   1  a test failed, or a script failed to load / had a script error
-#   2  setup problem (Godot not found)
-#   3  only validated named asset-free skips (a skip is never a pass)
 set -u
 cd "$(dirname "$0")/.." || exit 2
 GODOT="${GODOT:-godot}"
@@ -27,7 +15,6 @@ export XDG_CONFIG_HOME="$run_directory/config"
 export TMPDIR="$run_directory/temp"
 export TEMP="$run_directory/temp"
 export TMP="$run_directory/temp"
-# Windows Godot needs native environment paths when launched through Git Bash.
 case "$(uname -s)" in
     MINGW*|MSYS*|CYGWIN*)
         if command -v cygpath >/dev/null 2>&1; then
@@ -46,7 +33,6 @@ run_stage() {
     "$GODOT" --headless --disable-crash-handler --path . --log-file "$run_directory/$stage.log" "$@" >"$run_directory/$stage.console.log" 2>&1
 }
 
-# Refresh the class cache so new class_name types resolve (quick when nothing changed).
 run_stage import --import
 import_rc=$?
 if [ "$import_rc" -ne 0 ] || [ ! -s "$run_directory/import.log" ] || grep -Eq "$script_errors" "$run_directory/import.log"; then
@@ -55,7 +41,6 @@ if [ "$import_rc" -ne 0 ] || [ ! -s "$run_directory/import.log" ] || grep -Eq "$
     exit 1
 fi
 
-# Compile every script first: tests only compile what they reach.
 run_stage check -s res://tools/check_scripts.gd
 check_rc=$?
 grep -E 'SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:' "$run_directory/check.log" 2>/dev/null
@@ -86,7 +71,6 @@ run_stage tests -s res://addons/gut/gut_cmdln.gd "$@"
 rc=$?
 tests_rc=$rc
 cat "$run_directory/tests.log" 2>/dev/null
-# GUT keeps going when a script cannot be loaded; treat that as a failure.
 if grep -Eq "$script_errors" "$run_directory/tests.log"; then
     echo "run_tests: script errors found; see $run_directory/tests.log" >&2
     rc=1

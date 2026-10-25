@@ -54,15 +54,12 @@ func unpack(data: PackedByteArray) -> PackedByteArray:
 	var out := PackedByteArray()
 	out.resize(out_size)
 
-	# Bit reader state: `acc` holds `bits` unread bits in its low end, the
-	# next bit to read being the highest of them. Bytes are fed from the end.
 	var src: int = data.size() - _TRAILER_SIZE - 1
 	var src_end: int = _HEADER_SIZE
 	var acc: int = 0
 	var bits: int = 0
 	var out_pos: int = out_size
 
-	# Discard the padding bits recorded in the last byte.
 	var skip: int = data[data.size() - 1]
 	while bits < skip:
 		if src < src_end:
@@ -74,7 +71,6 @@ func unpack(data: PackedByteArray) -> PackedByteArray:
 	bits -= skip
 
 	while out_pos > 0:
-		# One flag bit: 0 means a run of literal bytes comes first.
 		if bits < 1:
 			if src < src_end:
 				break
@@ -114,7 +110,6 @@ func unpack(data: PackedByteArray) -> PackedByteArray:
 			if out_pos == 0:
 				break
 
-		# A copy of earlier-produced (higher-addressed) bytes.
 		while bits < 16 and src >= src_end:
 			acc = ((acc & 0xFFFFFFFFFF) << 8) | rev[data[src]]
 			src -= 1
@@ -158,7 +153,6 @@ func unpack(data: PackedByteArray) -> PackedByteArray:
 			return PackedByteArray()
 		var distance: int = offset + 1
 		if distance >= 4:
-			# Source and destination do not overlap within a word: copy 4 bytes at a time.
 			while length >= 4:
 				out_pos -= 4
 				out.encode_u32(out_pos, out.decode_u32(out_pos + distance))

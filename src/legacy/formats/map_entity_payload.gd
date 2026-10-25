@@ -21,8 +21,6 @@ static func read_matrix(span: MapEntitySpan) -> MapEntityPayload:
 		return result
 	for index: int in 9:
 		result.matrix12.append(span.payload.decode_s16(index * 2))
-	# The source matrix carries a 16-bit pad at byte 18. FrogLord reads it
-	# without requiring zero, including older maps with other pad values.
 	for index: int in 3:
 		result.matrix12.append(span.payload.decode_s32(20 + index * 4))
 	return result

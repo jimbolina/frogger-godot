@@ -1,6 +1,3 @@
-/* Invented SAFE platform trace. Frozen path, frog, collision, camera and
- * animation functions own each phase. Rendering/audio factories are counted
- * or omitted; no renderer geometry or whole-engine RNG parity is claimed. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "CAMERA.H"
@@ -52,9 +49,6 @@ static void capture_request(const char *format,...) {
 extern MR_VOID __real_ENTSTRCreateMovingMOF(LIVE_ENTITY*);
 extern MR_VOID __real_ENTSTRCreateDynamicMOF(LIVE_ENTITY*);
 extern MR_VOID __real_ENTSTRCreateStationaryMOF(LIVE_ENTITY*);
-/* Keep the real path-transform creation and custom creator. Decoded model
- * metadata is already installed by the ORG transport; omit renderer allocation
- * only, restoring the book before the custom creator resumes. */
 MR_VOID __wrap_ENTSTRCreateMovingMOF(LIVE_ENTITY *live) {
     if(!decoded_model_factory) {__real_ENTSTRCreateMovingMOF(live);return;}
     FORM_BOOK *book=ENTITY_GET_FORM_BOOK(live->le_entity);MR_ULONG flags=book->fb_flags;
@@ -73,8 +67,6 @@ MR_VOID __wrap_ENTSTRCreateStationaryMOF(LIVE_ENTITY *live) {
     book->fb_flags|=FORM_BOOK_FLAG_NO_MODEL;
     __real_ENTSTRCreateStationaryMOF(live);book->fb_flags=flags;
 }
-/* Rendering-only factories provide writable result storage; no behavior is replaced.
- * Mainloop setup is explicitly omitted, while its requested mode remains observable. */
 static MR_OBJECT pgen_object,particle_object;
 static MR_PGEN pgen;
 MR_OBJECT* __wrap_MRCreatePgen(MR_PGEN_INIT* init,MR_FRAME* frame,MR_ULONG flags,MR_SVEC* offset) { (void)init;(void)frame;(void)flags;(void)offset;pgens++;capture_request("death_pgen");pgen_object.ob_extra.ob_extra_pgen=&pgen;return &pgen_object; }
@@ -118,8 +110,6 @@ static PATH_SEGMENT *moving_segment;
 static PATH_SEGMENT *moving_segments[1];
 static int entity_count;
 
-/* Retail route input contains decoded numeric facts only. Keep the existing
- * synthetic corpus intact; this mode uses the same frozen gameplay functions. */
 static GRID_STACK *route_stacks;
 static GRID_SQUARE *route_squares;
 static MAP_F4 *route_polygons;
@@ -146,9 +136,6 @@ static ENTITY *route_group_roots;
 static MR_MAT camera_matrix;
 static int route_int(FILE *stream);
 
-/* Admission counterexample, not a script interpreter or route simulation.
- * Execute the actual frozen random-branch instruction with no hit/carry flags.
- * An invented target is only a pointer marker; it is never executed. */
 static int script_rng_run(const char *fixture) {
     FILE *stream=fopen(fixture,"r");
     if(!stream) { perror(fixture); return 2; }
@@ -181,9 +168,6 @@ static int script_rng_run(const char *fixture) {
     return 0;
 }
 
-/* Background behavior component, not a route oracle. Supplied programs are
- * decoded numeric transports outside the repo. No collision or sound playback
- * occurs: all frog slots are inactive and traffic hit/carry flags stay zero. */
 static int org1_background_run(const char *fixture) {
     FILE *stream=fopen(fixture,"r");
     if(!stream) {perror(fixture);return 2;}
@@ -254,7 +238,6 @@ static int org1_background_run(const char *fixture) {
     return 0;
 }
 
-/* Execute real allocation/owner clearing without a voice/playback update. */
 static int moving_sound_state_run(const char *fixture) {
     FILE *stream=fopen(fixture,"r");if(!stream) return 2;
     int sound=route_int(stream),minimum=route_int(stream),maximum=route_int(stream);
@@ -331,8 +314,6 @@ static int route_int(FILE *stream) {
     return value;
 }
 
-/* Exact stored-part arithmetic used by MR_ANIM and MR_COLL. The transport
- * contains decoded integer transforms/vertices, never executable data. */
 static int frog_probe_run(const char *file) {
     FILE *stream=fopen(file,"r"); if(!stream) return 2;
     int count=route_int(stream); if(count<1 || count>2000000) return 2;
@@ -850,8 +831,6 @@ int main(int argc, char **argv) {
   ResetCamera(Cameras);Cameras[0].ca_mode=CAMERA_MODE_FOLLOW_FROG;Cameras[0].ca_move_timer=0;
   Cameras[0].ca_current_source_ofs=general_header.gh_default_camera_source_ofs;
   Cameras[0].ca_current_target_ofs=general_header.gh_default_camera_target_ofs;
-  /* Explicit follow component start, matching RunStart.camera_startup=false.
-   * Original ResetCamera's level-start sweep is covered by the camera corpus. */
   Cameras[0].ca_current.vx=matrix.t[0];Cameras[0].ca_current.vy=matrix.t[1];Cameras[0].ca_current.vz=matrix.t[2];
   UpdateCamera(Cameras);
   setup_entities(scenario);
@@ -863,8 +842,6 @@ int main(int argc, char **argv) {
    MRInput[0].in_pad_down=((scenario==3 && tick==12) || ((scenario==8 || scenario==14 || scenario==15) && tick==3)) ? up :
                             ((scenario==4 || scenario==9 || scenario==12 || scenario==13) && tick==3 ? right : scenario==10 && tick==3 ? super : 0);
    MRInput[0].in_pad_new=MRInput[0].in_pad_down;
-   /* Mirrors UpdateLiveEntities before UpdateFrogs: carry is reasserted by
-    * MoveFrog only while ON_ENTITY, or by a fresh SAFE contact. */
    for(int i=0;i<entity_count;i++) lives[i].le_flags &= ~LIVE_ENTITY_CLEAR_MASK;
    UpdatePathRunners();
    if(scenario==3) ENTSTRUpdateMovingMOF(&lives[0]);

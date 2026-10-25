@@ -1,7 +1,3 @@
-/* Synthetic component trace. Real frozen ControlFrog/MoveFrog own every step.
- * Real animation and camera execute; score/audio/render factories are omitted.
- * Caller-authored grid and virtual cel metadata, six explicit logic phases.
- * No renderer geometry or whole-engine RNG parity claim. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "CAMERA.H"
@@ -30,8 +26,6 @@ __declspec(dllimport) unsigned long __stdcall SetErrorMode(unsigned long);
 extern FROG_CONTROL_METHOD Frog_control_methods[];
 extern MR_BOOL Recording_demo;
 static int animations,sounds,scores,pgens;
-/* Rendering-only factories provide writable result storage; no behavior is replaced.
- * Mainloop setup is explicitly omitted, while its requested mode remains observable. */
 static MR_OBJECT pgen_object,sprite_object,particle_object;
 static MR_PGEN pgen;
 static MR_3DSPRITE sprite;
@@ -233,8 +227,6 @@ int main(void) {
   ResetCamera(Cameras);Cameras[0].ca_mode=CAMERA_MODE_FOLLOW_FROG;Cameras[0].ca_move_timer=0;
   Cameras[0].ca_current_source_ofs=general_header.gh_default_camera_source_ofs;
   Cameras[0].ca_current_target_ofs=general_header.gh_default_camera_target_ofs;
-  /* Explicit follow component start, matching RunStart.camera_startup=false.
-   * Original ResetCamera's level-start sweep is covered by the camera corpus. */
   Cameras[0].ca_current.vx=matrix.t[0];Cameras[0].ca_current.vy=matrix.t[1];Cameras[0].ca_current.vz=matrix.t[2];
   UpdateCamera(Cameras);
   setup_entities(scenario);

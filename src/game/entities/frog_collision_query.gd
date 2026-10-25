@@ -50,8 +50,6 @@ static func sample(definition: FrogCollisionDefinition, action: int, cel: int, r
 		var vertex: Vector3i = probe.vertex
 		var point := Vector3i.ZERO
 		for axis: int in 3:
-			# ApplyMatrixSV narrows before adding the stored 32-bit translation;
-			# MRCollisionCheck then stores the sum back into the world SVEC.
 			var rotated: int = signed16(signed32(lw[axis * 3] * vertex.x + lw[axis * 3 + 1] * vertex.y + lw[axis * 3 + 2] * vertex.z) >> 12)
 			point[axis] = signed16(rotated + lw[9 + axis])
 		result.points.append(point)

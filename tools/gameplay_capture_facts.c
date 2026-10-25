@@ -1,5 +1,3 @@
-/* Link-only scalar tap around existing frog_slice screenshot calls.
- * Draws, updates, assets and PNG writer remain the frozen engine's own. */
 #define main frozen_game_main
 #include "FROG.H"
 #include "CAMERA.H"
@@ -23,8 +21,6 @@ void __wrap_save_screenshot(const char* path) {
     const char* foreground=getenv("GAMEPLAY_SOURCE_FOREGROUND");
     const char* match=getenv("GAMEPLAY_SOURCE_FOREGROUND_MATCH");
     if(foreground && *foreground && (!match || !*match || strstr(path,match))) {
-        /* One terminal observation: original live environment, new viewport,
-         * frozen renderer, no subsequent logic/animation update or game tick. */
         MR_VIEWPORT* original=Game_viewports[0];
         MR_VIEWPORT* vp=MRCreateViewport(NULL,NULL,MR_VP_SIZE_4096,0);
         MR_FRAME frame;memset(&frame,0,sizeof(frame));
@@ -35,7 +31,6 @@ void __wrap_save_screenshot(const char* path) {
         vp->vp_back_colour=original->vp_back_colour;
         vp->vp_flags &= ~(MR_VP_REBUILD_LIGHT_MATRIX|MR_VP_REBUILD_COLOUR_MATRIX);
         MRAnimAddEnvToViewport(env,vp,0);
-        /* Only this new viewport participates in the terminal display. */
         static MR_VIEWPORT root;
         root.vp_next_node=vp;vp->vp_next_node=NULL;vp->vp_prev_node=&root;
         MRViewport_root_ptr=&root;

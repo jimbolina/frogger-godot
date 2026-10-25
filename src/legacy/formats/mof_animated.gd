@@ -239,7 +239,7 @@ func _read_sets(reader: ByteReader) -> void:
 		var model_count: int = reader.read_u8()
 		var cel_sets: int = reader.read_u8()
 		var bbox_sets: int = reader.read_u8()
-		reader.skip(1) # FrogLord preserves a padding byte with no known meaning.
+		reader.skip(1)
 		var models_at: int = reader.read_u32()
 		var cels_at: int = reader.read_u32()
 		var boxes_at: int = reader.read_u32()

@@ -43,8 +43,6 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		if not model.error.is_empty():
 			unresolved_by_grid[span.form_grid_id] = "Determining model is invalid"
 			continue
-		# mapload.C tests the loaded MOF, even for NO_MODEL forms. A known dummy
-		# does not write max_y; a missing lookup stays conservative above.
 		if model.kind == MofFile.Kind.DUMMY:
 			continue
 		var maximum: Array[int] = _maximum_y(form, model)

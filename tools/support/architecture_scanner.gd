@@ -175,8 +175,6 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 		if not member and _is_tree_type(token.value):
 			into.append(Violation.new(path, token.line, "tree",
 				"node/tree dependency %s" % token.value, origin))
-		# Generic names such as add_child/get_parent also belong to plain data
-		# classes. Node bases/types catch those engine APIs without name guessing.
 		elif token.value == "$" or _is_unique_node_path(record.tokens, index) \
 				or (invoked and TREE_CALLS.has(token.value)):
 			into.append(Violation.new(path, token.line, "tree",
@@ -197,7 +195,6 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 			if layer == "game" and token.value == "load":
 				into.append(Violation.new(path, token.line, "environment",
 					"gameplay cannot perform runtime resource loading", origin))
-		# Inner classes also have to use resolved RefCounted bases.
 		if token.value == "extends" and token.column > 1 \
 				and index + 1 < record.tokens.size():
 			var base: Token = record.tokens[index + 1]
@@ -222,8 +219,6 @@ func _base_is_refcounted(path: String, base: String, is_path: bool,
 		return _is_refcounted(_resolve_path(path, base), records, names, seen)
 	if names.has(base):
 		return _is_refcounted(names[base], records, names, seen)
-	# Resource and other engine RefCounted subclasses carry engine lifecycle;
-	# foundation data classes use RefCounted itself, or a project data base.
 	return base == "RefCounted"
 
 

@@ -32,8 +32,6 @@ static func from_map(map: MapFile, source_id: String = "", resource_id: int = -1
 			break
 		if zone.zone_type != 0:
 			result._reject("%s has unknown zone type %d" % [location, zone.zone_type])
-		# FrogLord stores ENABLE_PER_DIRECTION_OFFSETS in bit 0; frozen C
-		# names bits 1..4 and ignores bit 0 while reading the eight offsets.
 		elif zone.camera_flags & ~0x1f:
 			result._reject("%s has unknown camera flags 0x%X" % [location, zone.camera_flags])
 		elif zone.camera_direction < -1 or zone.camera_direction > 3:

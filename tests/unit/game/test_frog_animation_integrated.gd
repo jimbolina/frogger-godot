@@ -75,15 +75,10 @@ func test_all_represented_integration_fields_match_frozen_c() -> void:
 				var expected: PackedStringArray = lines[row_index].strip_edges().split(",")
 				assert_eq(expected[0].to_int(), scenario)
 				assert_eq(expected[1].to_int(), tick)
-				# The public run records the post-pose final phase; isolated animation
-				# tests independently compare its intermediate scripts phase too.
 				if phase != 4:
 					var values: Array[int] = _fields(snapshots[phase])
 					for field: int in values.size():
 						assert_eq(values[field], expected[field + 3].to_int(), "scenario %d tick %d %s field %d" % [scenario, tick, expected[2], field])
-					# MRrand is a source macro, not a linkable function. These counts
-					# follow its two ShakeCamera expressions and one idle IF expression;
-					# the independent C seed columns constrain their actual results.
 					var draws: int = 0
 					if scenario == 2:
 						if tick > 12 or (tick == 12 and phase >= 2):

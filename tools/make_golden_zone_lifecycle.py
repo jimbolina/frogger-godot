@@ -43,7 +43,6 @@ def synthetic():
                 x, y = target, 0
         frames.append(dict(cell=[(x >> 16)+512 >> 8,1], world=[x >> 16,y >> 16,-128],
                            freeze=0,turn=0,fixed=0,start_timer=0,key=key))
-    # Follow camera starts at the actual spawn, while the component oracle uses zero.
     case = dict(name=authored['name'], zones=[dict(bounds=zone['bounds'],regions=[],flags=0,
                 direction=-1,offsets=zone['camera_offsets'])], frames=frames,
                 startup=False,yaw=0,source=[0,-512,-512],target=[0,0,0],initial=[-128,0,-128],grounded_hops=True)

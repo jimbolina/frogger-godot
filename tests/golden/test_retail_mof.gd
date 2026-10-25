@@ -50,8 +50,6 @@ func _part_row(resource_id: int, static_index: int, part: MofPart) -> PackedStri
 	var by_type := PackedStringArray()
 	for count: int in part.polygons_by_type():
 		by_type.append(str(count))
-	# What the golden facts describe is what the file itself holds, so nothing
-	# a part borrows from another model is counted.
 	var own: bool = not part.borrows
 	var hilites := PackedInt32Array()
 	if own:
@@ -138,8 +136,6 @@ func test_summary_facts() -> void:
 
 func _form_rows(level: int, code: String, theme: int, multiplayer_general: bool) -> Array[PackedStringArray]:
 	var rows: Array[PackedStringArray] = []
-	# A level that stands for "the GENERAL forms on their own": any single-player
-	# or multiplayer level gives the same GENERAL WAD.
 	var as_level: int = level if level >= 0 else (5 if multiplayer_general else 0)
 	for form: FormBookEntry in _data.theme_book_entry(theme).forms:
 		var row := PackedStringArray([str(level), code, FroggerIds.theme_name(theme), str(form.local_id),

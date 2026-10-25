@@ -115,7 +115,6 @@ def odd_fixture():
     for i in range(9):
         x,z=-384+(i%3)*256,-384+(i//3)*256
         squares.append([[x,0,z+256],[x+256,128,z+256],[x,-64,z],[x+256,32,z]])
-    # Legal signed16 corners exercise source MR_SVEC centre narrowing separately.
     squares.append([[32767,32767,32767]]*4)
     stacks=[[1,i] for i in range(9)];stacks[8]=[2,8]
     queries=[[x,0,z] for x,z in [(-384,-384),(-256,-256),(-129,-129),(-128,-128),(-1,-1),(0,0),(128,128),(383,383)]]

@@ -49,7 +49,6 @@ func test_music_list_ends_at_ff_and_keeps_unknown_tracks() -> void:
 
 
 func test_music_list_without_end_inside_the_program_is_an_error() -> void:
-	# 255 bytes, so the length FrogLord appends starts with the byte 0xFF.
 	var s := SyntheticExe.new(0xFF)
 	for i: int in range(0xF0, 0xFF):
 		s.bytes[i] = 4
@@ -194,9 +193,7 @@ func test_scripts_decode_until_a_final_command() -> void:
 	s.u32(0x700, 0)
 	s.u32(0x704, P + 0x800)
 	s.u32(0x708, P + 0x840)
-	# SET_TIMER 1 2; PLAY_SOUND 9; RESTART; (not read) END
 	s.s32s(0x800, [7, 1, 2, 4, 9, 5, 6])
-	# DEVIATE with five arguments, then an unknown opcode ends the script.
 	s.s32s(0x840, [8, 1, 2, 3, 4, 5, 999])
 	var names: GameNameLists = SyntheticExe.name_lists("", "", "SCRIPT_NONE\nSCRIPT_A\nSCRIPT_B\n[CallbackNames]\nCB_A\n")
 	var table: ScriptTable = ScriptTable.read(s.image(), names.scripts)
@@ -217,8 +214,6 @@ func test_scripts_decode_until_a_final_command() -> void:
 
 
 func test_opcode_table_matches_the_original_command_lengths() -> void:
-	# Script_command_lengths from the released original source (scripter.c),
-	# which counts the opcode word as well as the arguments.
 	var lengths: Array[int] = [3, 1, 1, 2, 2, 1, 1, 3, 6, 1, 3, 1, 1, 5, 3, 1, 1, 5, 1, 4, 2, 4, 1, 1, 1, 2, 2, 2,
 		2, 1, 1, 3, 1, 4, 5, 2, 6, 5, 1, 1, 1, 1, 3, 2, 2, 7, 1, 1, 1]
 	assert_eq(ScriptOpcodes.count(), lengths.size())
@@ -287,7 +282,6 @@ func test_demo_lists_must_name_the_same_levels() -> void:
 
 func test_demo_table_address_from_froglord_build_information() -> void:
 	var s := _demo_exe()
-	# A modded executable whose table was moved: the recorded address wins over the search.
 	s.s32s(0xB00, [6, 2, 6, -1, -1, -1])
 	var bytes: PackedByteArray = s.with_trailer("demoTableAddress=0xB00\n")
 	var table: DemoTable = DemoTable.read(ExeImage.create(bytes, s.version), s.mwi())

@@ -60,7 +60,6 @@ func test_strict_sphere_and_signed_short_displacement() -> void:
 	var wrapped: FormContactResult = FormContactQuery.query(form, pose, Vector3i(-32768, 0, 0))
 	assert_eq(wrapped.status, FormContactResult.CONTACT)
 	assert_eq(wrapped.local_position, Vector3i(1, 0, 0))
-	# An overflowed signed-32 squared sum still follows the frozen comparison.
 	form.radius_squared = 1
 	pose.matrix12[9] = 0
 	var far: FormContactResult = FormContactQuery.query(form, pose, Vector3i(32767, 32767, 32767))

@@ -166,7 +166,6 @@ func test_independent_animation_counter_samples() -> void:
 			if file == null:
 				continue
 			player.configure([], file.animations, _data.remap_for_resource(cached_id), TextureLibrary.new())
-		# Facts count completed updates; seek uses a zero-based post-update tick.
 		player.seek(int(row[3]) - 1)
 		var animation: int = int(row[2])
 		var offset: Vector2i = player.track_offset(animation)

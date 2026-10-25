@@ -86,7 +86,6 @@ func interpolate(next: MofTransform, amount: int) -> PackedInt32Array:
 			q.append(_short(int(sign_value) * b[i]))
 		else:
 			q.append(_short(floori(start_weight * a[i] + sign_value * end_weight * b[i])))
-	# C's byte-quaternion path clamps the normalization divisor to its tolerance.
 	if amount > 0 and (code == 2 or code == 4):
 		var magnitude_squared: int = 0
 		for value: int in q:
@@ -128,7 +127,6 @@ static func quaternion_matrix(q: PackedInt32Array) -> PackedInt32Array:
 	var values := PackedInt32Array([4096 - ((yy + zz) >> 12), (xy + wz) >> 12, (xz - wy) >> 12,
 		(xy - wz) >> 12, 4096 - ((xx + zz) >> 12), (yz + wx) >> 12,
 		(xz + wy) >> 12, (yz - wx) >> 12, 4096 - ((xx + yy) >> 12)])
-	# The engine writes each result into a signed short.
 	for i: int in 9:
 		values[i] = ((values[i] + 32768) & 65535) - 32768
 	return values

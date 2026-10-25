@@ -198,8 +198,6 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 			return
 		assert_null(live_result.control_snapshot)
 		assert_true(live_result.final_snapshot.entities.updates.is_empty())
-		# Only diagnostic observations are omitted. Compare all authoritative
-		# fields, ordered contacts, outcomes and RNG consumers to the golden run.
 		result.final_snapshot.entities.updates.clear()
 		result.control_snapshot = null
 		result.move_snapshot = null

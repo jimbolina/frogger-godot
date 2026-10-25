@@ -8,8 +8,6 @@ static func indices(definition: EntityCollisionDefinition, snapshot: EntityRunSn
 		return PackedInt32Array()
 	return _indices_validated(definition, snapshot, point)
 
-# The aggregate owns a validated immutable definition. Classify each pose once,
-# then visit buckets in source Z/X, moving-before-static and reverse entity order.
 static func _indices_validated(definition: EntityCollisionDefinition, snapshot: EntityRunSnapshot, point: Vector3i) -> PackedInt32Array:
 	var result := PackedInt32Array()
 	if snapshot.entities.size() != definition.entities.size():

@@ -20,7 +20,6 @@ func _map() -> PackedByteArray:
 		b.encode_u32(76 + i * 4, offsets[i])
 		b.encode_u32(152 + i * 4, offsets[i + 6])
 	b.encode_u32(188, 12)
-	# One invisible group; all zero visible dimensions are legal for this fixture.
 	b[242] = 1
 	b.encode_u32(260, 372)
 	b.encode_u16(320, 1)
@@ -29,7 +28,7 @@ func _map() -> PackedByteArray:
 	b.encode_u16(372, 2)
 	b.encode_u16(374, 0)
 	b.encode_u16(376, 1)
-	b.encode_u16(378, 65535) # Inactive triangle fourth vertex may be garbage.
+	b.encode_u16(378, 65535)
 	b[396] = 20
 	b[397] = 40
 	b[398] = 60
@@ -60,7 +59,6 @@ func test_corner_identity_and_inactive_padding() -> void:
 
 func test_ordered_grid_records_and_invalid_polygon_pointer() -> void:
 	var bytes: PackedByteArray = _map()
-	# Append GRID after all other packets; dimensions 2x2 and two layers in cell zero.
 	bytes.resize(568)
 	bytes.encode_u32(4, bytes.size())
 	bytes.encode_u32(168, 524)
@@ -110,7 +108,6 @@ func test_ordered_grid_records_and_invalid_polygon_pointer() -> void:
 	assert_string_contains(TerrainGridSetup.from_map(map).error, "256-unit")
 	bytes.encode_u16(532, 256)
 	bytes.encode_u16(528, 1)
-	# Two cells means the authored square records now start at 544.
 	bytes.encode_u16(542, 2)
 	bytes.encode_u32(548, 372)
 	bytes.encode_u32(556, 372)

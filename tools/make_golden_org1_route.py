@@ -115,7 +115,6 @@ def transport(root, ticks, commands, road=False):
     xar = hilite.animation.parse_xar(raw)
     values += [a['frames'] for a in hilite.discrete_actions(xar,16)]
     general = read(data,76,'<I')
-    # FrogLord GENERAL layout: default camera source and target SVECs.
     values += struct.unpack_from('<3h',data,general+24)
     values += struct.unpack_from('<3h',data,general+32)
     ids = {r['script_id'] for r in geometry['neighbors'] if r['script_id']}

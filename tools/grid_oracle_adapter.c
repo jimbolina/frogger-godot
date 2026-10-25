@@ -1,9 +1,7 @@
-/* Thin transport only: all answers come from frozen GRID.C and math objects. */
 #include "GRID.H"
 #include <stdio.h>
 #include <stdlib.h>
 MR_SVEC *Map_vertices;
-/* Unused trig dependency of the frozen math object; no queried function reads it. */
 MR_COSSIN rcossin_tbl[4096];
 int main(void) {
     int n, q, count, index, x, y, z;
@@ -36,7 +34,6 @@ int main(void) {
         if(scanf("%d %d %d",&x,&y,&z)!=3) return 2;
         int gx=GET_GRID_X_FROM_WORLD_X(x),gz=GET_GRID_Z_FROM_WORLD_Z(z);
         if(gx<0 || gx>=Grid_xnum || gz<0 || gz>=Grid_znum) {
-            /* Only source macro arithmetic is observed outside the board. */
             printf("W %d %d %d\n",i,gx,gz);continue;
         }
         GRID_SQUARE *square=NULL; GRID_INFO info;

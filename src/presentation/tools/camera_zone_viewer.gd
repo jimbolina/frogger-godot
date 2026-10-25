@@ -57,7 +57,6 @@ func _ready() -> void:
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.albedo_color = Color(1.0, 0.3, 0.8)
-	# This positional probe must remain visible even at the prescribed Y=0 below terrain.
 	material.no_depth_test = true
 	material.render_priority = 127
 	_probe.material_override = material

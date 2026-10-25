@@ -71,7 +71,6 @@ static func square(type: int, colour: Color = Color8(128, 128, 128), image_id: i
 	var uvs: Array[int] = []
 	if MofPolygonType.is_textured(type):
 		uvs = [0, 0, 255, 0, 255, 255, 0, 255]
-	# Going round the edge, clockwise as seen from the game's camera (y is down).
 	return part([0, 0, 0, 256, 0, 0, 256, 256, 0, 0, 256, 0], [0, 0, -4096],
 		[polygon(type, [0, 1, 2, 3], normals, colour, image_id, uvs)])
 

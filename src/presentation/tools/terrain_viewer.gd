@@ -418,8 +418,6 @@ func _process(delta: float) -> void:
 	if playing:
 		_elapsed += delta
 		if _elapsed >= period and (_worker == null or not _worker.pending):
-			# The original pacer schedules at most one tick and drops accumulated
-			# time after a large stall, including a slow worker transaction.
 			var remainder: float = 0.0 if _elapsed > period * 2.0 else _elapsed - period
 			_host_step = true
 			if replay_commands and _current.tick_index >= scenario.tick_limit:

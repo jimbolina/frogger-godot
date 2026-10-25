@@ -152,8 +152,6 @@ static func prepare_jump(state: RunSnapshot, definition: FormContactDefinition, 
 	return result
 
 static func _supported_destination(flags: int, death_type: int) -> bool:
-	# FORM checkpoint wins first; terrain completion gives cliff-roll priority
-	# over SAFE. Plain usable and existing POP reactions need no new behavior.
 	if flags & (64 | 2048):
 		return false
 	if flags & 2 or flags & 4096:

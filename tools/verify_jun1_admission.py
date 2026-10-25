@@ -6,8 +6,6 @@ import argparse
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--data-dir', required=True, type=Path)
 ROOT = parser.parse_args().data_dir
-# The runtime guard pins these same MAP, form, script, WAD and model inputs.
-# Fail before geometry work if any determining input changed.
 rp.route_fixture(ROOT, 'pc-retail-v3.0e', return_context=True)
 cfg=ex.parse_cfg(str(Path(ex.CFG_ROOT)/'versions/pc-retail-v3.0e.cfg'));im=ex.Exe((ROOT/'FROGGER.EXE').read_bytes(),ex.java_int(cfg.values['ramOffset']));levels,_=ex.read_map_book(im,ex.java_int(cfg.values['mapBook']),ex.java_int(cfg.values['themeBook']));_,entries,wads,files=mo.load_archive(str(ROOT),ex.java_int(cfg.values['mwiOffset']),ex.java_int(cfg.values['mwiLength']));mwd=(ROOT/'FROGPSX.MWD').read_bytes();level=levels[ex.LEVEL_CODES.index('JUN1')];data=rp.resource(files,entries,mwd,level['high_map']);theme=co.read(data,co.read(data,76,'<I')+10,'<H');emtp=co.read(data,88,'<I');forms=co.parse_forms(data)
 names,sections,_=ex.name_list('forms',cfg.values.get('formList','1997-09-12-psx-build57'));ens,_,_=ex.name_list('entities',cfg.values.get('entityList','1997-09-12-psx-build57'));lib=ex.read_forms(im,ex.read_theme_book(im,ex.java_int(cfg.values['themeBook'])),sections,[])
@@ -107,8 +105,6 @@ for e in entities:
 assert possible=={0,16,18,20,21,22,23,24,25,26,27,31,109,110}, ('unproved contact candidates',sorted(possible))
 
 from fractions import Fraction
-# All non-scripted supported models are handled by existing setup, but retain
-# the fixed exceptions to document the complete rectangle audit.
 for idx,minx in [(109,2561),(110,2570)]:
  e=entities[idx];m=list(struct.unpack_from('<9h2x3i',e['payload']));f=forms[e['grid']]
  assert m[:9]==[4096,0,0,0,4096,0,0,0,4096]
@@ -116,9 +112,6 @@ for idx,minx in [(109,2561),(110,2570)]:
  assert sum(p['collprims'] for s in e['model']['statics'] for p in s['parts'])==0
 print('FIXED_FORM_EXCLUSIONS tree109_minX=2561 mushroom110_minX=2570')
 
-# Crocodile has no primitives in any static component; SET_ACTION never changes
-# its generic moving root transform. Invert the exact quantized transpose,
-# using inclusive real bounds that conservatively contain integer floor tests.
 e=entities[0];f=forms[e['grid']];_,_,_,_,nx,nz,ox,oz,items=f
 assert sum(p['collprims'] for s in e['model']['statics'] for p in s['parts'])==0
 bestz=None;bestzw=None;crocposes=0
@@ -134,9 +127,6 @@ for si,s in enumerate(paths[1]):
 assert bestz < -5376
 print('CROC0_EXACT_INVERSE_MAX_Z',str(bestz),float(bestz),'POSES',crocposes,'WITNESS',bestzw)
 
-# The HIPPO program changes only root Y. The entire cycle is therefore bounded
-# in XZ independently of script timer and vertical deviation. All authored
-# runners repeat forward; enumerate a superset: every integer segment distance.
 e=entities[23];f=forms[e['grid']];_,_,_,_,nx,nz,ox,oz,items=f;r=e['radius2']
 assert r==119457 and [q['index'] for q in entities if q['grid']==e['grid']]==[18,20,21,22,23]
 assert all(struct.unpack_from('<6H',entities[i]['payload'])[3]==8 for i in [18,20,21,22,23])
@@ -165,7 +155,6 @@ for si,s in enumerate(paths[2]):
 assert best[0]==1888 and tiltedcap==1789 and max(best[0],tiltedcap)<1900
 print('HIPPO_EXACT_MAX_X',best,'POSES',count,'TILTED',tiltedcount,'TILTED_X_CAP',tiltedcap)
 
-# Pin the failure at the original proposed west edge through a reachable runner.
 row=pa.python_trace({'segments':paths[2],'start':{'segment_index':2,'distance':171,'speed':30,'flags':9},'tick_limit':27})[-1]
 pos=row[9:12];tan=row[12:15];m=en.moving_matrix([0]*9+pos+tan,0);frog=[1856,-256,-4924];delta=[a-b for a,b in zip(frog,pos)]
 local=[sum(m[rr*3+cc]*delta[rr] for rr in range(3))>>12 for cc in range(3)]
@@ -173,16 +162,12 @@ assert pos==[1655,-256,-4691] and local==[112,0,-287] and sum(v*v for v in delta
 print('ORIGINAL_RECTANGLE_FAILED',{'entity_index':23,'uid':entities[23]['unique'],'offset':entities[23]['at'],'advanced_tick':27,'frog':frog,'entity_position':pos,'local':local,'distance2':94690,'radius2':119457})
 
 
-# Explicit NO_MODEL rejection and arithmetic closure. A null collision callback
-# takes COLLIDE.C's next_entity branch before primitives/FORM.
 nomodel=[]
 for e in entities:
  if e['book']['flags']&1:
   assert e['book']['collision']==0, ('unproved NO_MODEL callback',e['index'])
   nomodel.append(e['index'])
 print('NO_MODEL_NULL_CALLBACK_EXCLUDED',nomodel)
-# Maximal XZ contribution bounds signed32 squared-distance arithmetic for ANY
-# signed16 Y, even if the unbounded mathematical Y difference wraps on cast.
 maxxz=(-1,None);delta_min=[10**20,10**20];delta_max=[-10**20,-10**20]
 def check_origin(p,label):
  global maxxz

@@ -1,4 +1,3 @@
-/* Transport for unchanged frozen PATH.C and MR_SPLIN.C objects. */
 #include "PATH.H"
 #include <stddef.h>
 #include <stdint.h>
@@ -6,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Backend initialization builds the exact rcossin table used by arc sampling. */
 extern void MRStub_GpuInit(void *renderer, int use_gl);
 
 static int scan_long(MR_LONG *v) { return scanf("%ld", v) == 1; }
@@ -35,7 +33,6 @@ int main(void) {
     for (int i = 0; i < n; ++i) {
         MR_LONG kind, length;
         if (!scan_long(&kind) || !scan_long(&length) || kind < 0 || kind > 2 || length <= 0) return 2;
-        /* Frozen code casts the address of ps_segment_ptr to the inline body. */
         segments[i] = calloc(1, offsetof(PATH_SEGMENT, ps_segment_ptr) + sizeof(PATH_SPLINE));
         if (!segments[i]) return 2;
         segments[i]->ps_type = (MR_ULONG)kind;

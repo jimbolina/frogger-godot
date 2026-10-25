@@ -94,7 +94,6 @@ class NeighborAdmissionTests(unittest.TestCase):
     def test_sphere_width_closure_includes_signed32_sum(self):
         self.assertTrue(admission.sphere_width_closed([4224,0,-128]))
         self.assertFalse(admission.sphere_width_closed([32768,0,0]))
-        # Both XZ differences fit signed16, but adding squared Y can overflow.
         self.assertFalse(admission.sphere_width_closed([24000,0,24000]))
 
     def test_geometry_closure_rejects_unknown_callback(self):
@@ -114,7 +113,6 @@ class NeighborAdmissionTests(unittest.TestCase):
     def test_exact_inverse_contains_independent_source_gate(self):
         form = (0, 20, 1, 256, 1, 2, -10, -20,
                 [(24, 0, -100, 30, 0, [3,3])])
-        # Includes rounded, nonorthonormal yaw; transposition is not inversion.
         for yaw in ((4096,0), (0,4096), (2896,2896), (-4087,275)):
             a, b = yaw
             matrix = [a,0,b,0,4096,0,-b,0,a,11,0,-33]

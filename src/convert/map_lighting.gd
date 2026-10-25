@@ -30,7 +30,6 @@ func configure(lights: Array[MapLight]) -> void:
 					roundi(direction.y * 4096.0 / length), roundi(direction.z * 4096.0 / length))
 			directions.append(GameSpace.normal(fixed_direction.x, fixed_direction.y, fixed_direction.z))
 			colours.append(rgb * 16.0)
-	# Viewport ambient is MR_CVEC: registration adds into unsigned RGB bytes.
 	ambient = Vector3((int(ambient.x) >> 4) & 255,
 		(int(ambient.y) >> 4) & 255, (int(ambient.z) >> 4) & 255) * 16.0
 

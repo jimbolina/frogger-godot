@@ -28,4 +28,3 @@ static func apply(definition: EntityScriptDefinition, context: EntityUpdateConte
 					state.colours = Vector3i(packed & 255, (packed >> 8) & 255, (packed >> 16) & 255)
 					state.ambient = Vector3i(64, 64, 192)
 				result.drown = context.previous_carry and state.deviation >= 128
-		# Source ONCE deliberately does not write SCRIPT_CALLBACK_CALLED.

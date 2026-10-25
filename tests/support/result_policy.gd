@@ -98,7 +98,6 @@ static func validate_report(value: Variant, log_text: String, process_exit: int,
 			errors.append("malformed result problem")
 	var records: Array = report["records"]
 	var expected: Dictionary = evaluate(records, supplied)
-	# Hook problems include fixture/logger/input failures beyond per-test statuses.
 	if not source_problems.is_empty():
 		expected["exit"] = 1
 	for key: String in ["pass", "fail", "skip", "exit"]:

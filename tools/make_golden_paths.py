@@ -214,7 +214,6 @@ def parse_paths(data):
             if kind == 0:
                 values.extend(struct.unpack_from("<12i4i12i", data, offset + 8))
             elif kind == 1:
-                # Three padded short vectors, followed by radius and pitch.
                 for at in (8, 16, 24):
                     values.extend(struct.unpack_from("<3h", data, offset + at))
                 values.extend(struct.unpack_from("<2i", data, offset + 32))

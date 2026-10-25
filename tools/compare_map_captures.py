@@ -69,11 +69,7 @@ def shape_mask(size, shapes, reasons=False):
 
 
 def reference_edges(eligible):
-    # One-pixel inner silhouette, then radius2 on either side. Internal polygon
-    # seams disappear in the union and remain fully compared. Image borders do
-    # not invent edges when eligible geometry continues beyond the viewport.
     edges = ImageChops.subtract(eligible, eligible.filter(ImageFilter.MinFilter(3)))
-    # Square dilation is a fixed Chebyshev-distance two-pixel edge band.
     return edges.filter(ImageFilter.MaxFilter(5))
 
 

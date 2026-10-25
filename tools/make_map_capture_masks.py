@@ -84,7 +84,7 @@ def main():
         data = stream.read(entry['packed'] if archive.is_compressed(entry['flags']) else entry['unpacked'])
     if archive.is_compressed(entry['flags']):
         data = archive.pp20_unpack(data)[0]
-    maps.parse_map(data)  # Independent structural validation before projection.
+    maps.parse_map(data)
     grap = maps.read(data, 80, '<I')[0]
     _, group, _, vert, _, _ = maps.read(data, grap + 4, '<6I')
     vertices = [maps.read(data, vert + 8 + i * 8, '<3h') for i in range(maps.read(data, vert + 4, '<H')[0])]
@@ -121,9 +121,6 @@ def main():
             for ordinal in range(count):
                 record = maps.read(data, pointer + ordinal * size, '<%dH' % (size // 2))
                 projected = [projection.project(vertices[vi], camera) for vi in record[:corners]]
-                # MRStub NCLIP uses raw SXY FIFO coordinates before gte_stsxy
-                # narrows them. mapdisp.c accepts positive first triangle;
-                # a quad also accepts its negative (1,2,3) second triangle.
                 raw_screen = [[p[7], p[8]] for p in projected]
                 first_area = signed_area(*raw_screen[:3])
                 if first_area <= 0 and (corners == 3 or signed_area(*raw_screen[1:]) >= 0):

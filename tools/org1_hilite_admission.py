@@ -27,7 +27,7 @@ import make_golden_paths as path_math
 SHORT = (-32768, 32767)
 CANDIDATE_X = (-512, 512)
 CANDIDATE_Z = (-224, 480)
-THROAT = 15  # frozen gen_frog.h GEN_FROG_PARTS; imported croak transform
+THROAT = 15
 ROOTS = (
     ('north', (4096, 0, 0, 0, 4096, 0, 0, 0, 4096)),
     ('east', (0, 0, 4096, 0, 4096, 0, -4096, 0, 0)),
@@ -35,8 +35,6 @@ ROOTS = (
     ('west', (0, 0, -4096, 0, 4096, 0, 4096, 0, 0)),
 )
 
-# Source closure for an unpowered, single frog on SAFE bank/platforms or WATER.
-# DYING returns before primitive queries. Idle PANT selects the four look actions.
 LIVE_ACTIONS = (5, 6, 11, 13, 14, 15, 16, 17, 28, 29, 30, 31)
 
 
@@ -115,8 +113,6 @@ def check_reachable_probes(context, neighbors, oracle, acos, output):
     import make_golden_entities as entities
     definitions=neighbor.decode_paths(context['data'])
     supports=set()
-    # Include the whole support paths: airborne departures retain their entity
-    # link outside its FORM, so contact-only poses are not a sufficient closure.
     for pid in (6,8):
         for segment in definitions[pid]:
             for distance in range(segment['length']+1):
@@ -345,8 +341,6 @@ def model_reach(raw, mesh_raw, label):
         for frame in range(action['frames']):
             for part, hilite, partcel, vertex in probes:
                 matrix = animation.sampled_matrix(xar, action, frame, part)
-                # flags==1 has already been enforced: sampled_matrix only
-                # selects the exact decoded integer transform in this branch.
                 envelope.append(affine_probe_envelope(matrix, vertex))
                 points.append(transformed_probe(matrix, vertex, ROOTS[0][1]))
                 for direction, root in ROOTS:
@@ -415,9 +409,6 @@ def traffic_hilite_admission(context, geometry):
             raise ValueError('traffic geometry no longer establishes the audited southern separation')
     overlaps = [e['entity_index'] for e in traffic
                 if e['primitive_point_z'][1] >= world['z'][0]]
-    # Even a disjoint enclosure here still requires proving that stored LW
-    # transforms have this root-origin range at every collision scan.  No
-    # route, update-phase or low-poly selection contract is supplied here.
     reasons = ['No route/update-phase contract proves that stored per-part LW origins '
                'remain inside the candidate at every collision scan.',
                'The high-poly selection prerequisite (single player) is not admitted by this diagnostic.']

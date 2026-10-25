@@ -56,7 +56,6 @@ def catalog():
         entries.append(dict(flags=value(parts[2],names),program=program,words=programs[program]))
     ids=sorted((v,k.removeprefix('FROG_ANIMATION_')) for k,v in names.items() if k.startswith('FROG_ANIMATION_') and k!='FROG_ANIMATION_MAX')
     actions=sorted((v,k) for k,v in names.items() if k.startswith('GEN_FROG_') and k not in ('GEN_FROG_KEYFRAME_SET',))
-    # Only the source action enum, not generated transform-set enum names.
     action_body=re.search(r'enum GEN_FROG_KEYFRAME_SET_ACTION\s*\{(.*?)\}',clean((SOURCE/'gen_frog.h').read_text()),re.S).group(1)
     action_names=[p.strip() for p in action_body.split(',') if p.strip()]
     if len(entries)!=35 or len(ids)!=35 or len(action_names)!=34: raise ValueError('Source animation census changed')

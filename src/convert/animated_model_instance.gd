@@ -103,7 +103,6 @@ func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector
 		refresh_materials()
 
 func _prepare_materials() -> void:
-	# Reset owns this work: later texture frames must not allocate render resources.
 	for mesh: ArrayMesh in model_mesh.part_meshes:
 		if mesh != null:
 			for surface: int in mesh.get_surface_count():
@@ -212,7 +211,6 @@ func render(fraction: float) -> void:
 		elif weight == 1.0:
 			node.transform = now
 		elif absf(before.basis.determinant()) < 0.000001 or absf(now.basis.determinant()) < 0.000001:
-			# A stored zero scale cannot be decomposed into a rotation quaternion.
 			node.transform = Transform3D(Basis(before.basis.x.lerp(now.basis.x, weight),
 				before.basis.y.lerp(now.basis.y, weight), before.basis.z.lerp(now.basis.z, weight)), before.origin.lerp(now.origin, weight))
 		else:

@@ -41,8 +41,6 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 					custom.mode = 0
 					custom.timer = 60
 					entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
-					# The source timeout hides through ENTITY_HIDDEN; the object
-					# flag itself is not restored here.
 		"ORG_BABY_FROG":
 			if not parent_live or entity.background.mode not in [0, 5]:
 				return _failed("Baby parent lifetime no longer satisfies admission")

@@ -47,7 +47,6 @@ static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: Packed
 		result.status = "disabled"
 		result.reason = "MR_COLL_DISABLED"
 		return result
-	# MRApplyMatrix rotates cp_offset before the signed-short displacement store.
 	var centre := Vector3i.ZERO
 	for axis: int in 3:
 		centre[axis] = FrogCollisionQuery.signed32(matrix12[axis * 3] * primitive.offset.x + matrix12[axis * 3 + 1] * primitive.offset.y + matrix12[axis * 3 + 2] * primitive.offset.z) >> 12

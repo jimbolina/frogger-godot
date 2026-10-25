@@ -47,13 +47,12 @@ import struct
 import sys
 import zlib
 
-sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_golden_manifest import read_mwi  # noqa: E402  (the independent MWI reader)
+from make_golden_manifest import read_mwi
 
 CFG_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "third_party", "froglord_cfg")
 
-# FroggerMapLevelID order (the map book is indexed by these).
 LEVEL_CODES = [
     "CAV1", "CAV2", "CAV3", "CAV4", "CAV5", "CAVM",
     "DES1", "DES2", "DES3", "DES4", "DES5", "DESM",
@@ -67,18 +66,15 @@ LEVEL_CODES = [
     "VOL1", "VOL2", "VOL3", "VOL4", "VOL5", "VOLM",
     "ISLAND", "QB",
 ]
-# FroggerMapTheme order (the theme book is indexed by these).
 THEMES = ["GENERAL", "CAVE", "DESERT", "FOREST", "JUNGLE", "ORIGINAL", "RUINS", "SWAMP", "SKY", "SUBURBIA", "VOLCANO"]
 WORLDS = ["SUBURBIA", "ORIGINAL", "SEWER", "SKY", "FOREST", "VOLCANO", "DESERT", "CAVES", "JUNGLE_RIVER", "RUINED_CITY"]
 DEATH_TYPES = ["SQUISHED", "DIE_ON_BACK", "DROWN", "BITTEN", "FLOP", "POP", "CRASH", "MOWED"]
 FLY_TYPES = ["SCORE_10", "SCORE_25", "SCORE_50", "SCORE_100", "SCORE_200", "SCORE_500", "SCORE_1000", "SCORE_5000",
              "LIGHT_BOOST", "SUPER_LIGHT", "TIME_MIN", "TIME_MED", "TIME_MAX", "REDUCE_SCORE_100", "FAST_TIMER_SPEED",
              "ADD_EXTRA_LIFE", "FROG_SUPER_TONGUE", "FROG_QUICK_JUMP", "FROG_AUTO_HOP"]
-# FroggerMusicTrack: name -> CD track number on the retail PC disc.
 MUSIC_TRACKS = {2: "CAVE1", 3: "CAVE2", 4: "DESERT1", 5: "DESERT2", 6: "FOREST1", 7: "FOREST2", 8: "VOLCANO1",
                 9: "VOLCANO2", 10: "JUNGLE1", 11: "JUNGLE2", 12: "JUNGLE3", 13: "LEVEL_SELECT", 14: "ORIGINAL1",
                 15: "ORIGINAL2", 16: "SWAMP1", 17: "SWAMP2", 18: "SKY1", 19: "SKY2", 20: "SUBURBIA1", 21: "SUBURBIA2"}
-# FroggerScriptCommandType: (name, argument count), in opcode order.
 OPCODES = [
     ("WAIT_UNTIL_TIMER", 2), ("WAIT_UNTIL_ACTION_FINISHED", 0), ("WAIT_UNTIL_PATH_END", 0), ("SET_ACTION", 1),
     ("PLAY_SOUND", 1), ("RESTART", 0), ("END", 0), ("SET_TIMER", 2), ("DEVIATE", 5), ("WAIT_DEVIATED", 0),
@@ -95,7 +91,6 @@ OPCODES = [
 ]
 FINAL_OPCODES = {"STOP", "RESTART", "END"}
 
-# What the C port of the game documents for pc-retail-v3.0e, found independently of FrogLord.
 RETAIL_V30E_CRC = 378672750
 RETAIL_V30E_FACTS = {
     "map_book": (0x70100, 2160), "bmp_pointers": (0x77858, 7432), "remaps": (0x79560, 7874),
@@ -109,7 +104,6 @@ def digest(values):
     return hashlib.sha256(",".join(str(v) for v in values).encode("ascii")).hexdigest()
 
 
-# ---- FrogLord's older config dialect, just enough for version files and name lists.
 
 class Cfg:
     def __init__(self, name, layer):
@@ -194,14 +188,11 @@ def java_int(text):
     return int(text, 16) if text.lower().startswith("0x") else int(text)
 
 
-# ---- The tables.
 
 class Exe:
     def __init__(self, data, ram_offset):
         self.data = data
         self.ram = ram_offset
-        # A FrogLord-saved executable carries build information after the program;
-        # tables are read from the program part only.
         self.length = len(data)
         if data.endswith(b"FROGLORD") and len(data) >= 16:
             self.length = struct.unpack_from("<i", data, len(data) - 12)[0]
@@ -452,7 +443,6 @@ def read_pickups(exe, start):
     return pickups
 
 
-# ---- Cross-checks against the C port's generated files (optional).
 
 def c_array(text, name):
     m = re.search(r"%s\[(\d+)\]\s*=\s*\{(.*?)\};" % re.escape(name), text, re.S)

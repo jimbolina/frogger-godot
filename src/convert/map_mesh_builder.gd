@@ -99,7 +99,6 @@ func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
 						if replacement != null and blend != ModelShaders.Blend.OPAQUE:
 							frame_blend = ModelShaders.blend_for_mode(replacement.blend_mode())
 						surface.spec.frames[global_id] = _material(scene, replacement, frame_blend, linear_filter, layer, "%s/%d" % [key, global_id])
-					# Before the first threshold C keeps the last target's image.
 					var initial_id: int = animation.track_image_id(track)
 					var initial_image: VloImage = scene.library.image_for_id(initial_id, scene.preferred) if surface.spec.textured else null
 					var initial_blend: ModelShaders.Blend = blend
@@ -146,7 +145,6 @@ func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
 			mesh.surface_set_material(mesh.get_surface_count() - 1, surface.spec.original)
 			specifications.append(surface.spec)
 			result.surface_count += 1
-		# Water displacement is small, but culling must include it.
 		if mesh.get_surface_count() > 0:
 			mesh.custom_aabb = mesh.get_aabb().grow(0.1)
 	for id: int in missing:
@@ -196,7 +194,6 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 		var page: int = image.page() if image != null else -1
 		if not pages.has(page):
 			pages[page] = pages.size()
-	# Each physical page clamps filtering independently; duplicate edge rows.
 	var atlas: Image = Image.create(256, 258 * maxi(1, pages.size()), false, Image.FORMAT_RGBA8)
 	atlas.fill(Color.MAGENTA)
 	for page: int in pages:
@@ -221,8 +218,6 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 		var image: VloImage = tile_images[tile]
 		if image == null:
 			result.diagnostics.append("Sky texture %d is unavailable; rendered magenta" % id)
-		# RenderSkyLand links every tile in row-major order without depth sorting.
-		# Preserve that order: clamped near-camera tiles can overlap on screen.
 		@warning_ignore("integer_division")
 		var row: int = tile / sky.dimensions.x
 		var col: int = tile % sky.dimensions.x

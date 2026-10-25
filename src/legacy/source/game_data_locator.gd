@@ -115,6 +115,6 @@ func saved_directory() -> String:
 ## Saves [param dir] as the folder to use when nothing else is given.
 func remember_directory(dir: String) -> Error:
 	var settings := ConfigFile.new()
-	settings.load(settings_path) # A missing file just starts empty.
+	settings.load(settings_path)
 	settings.set_value(_SETTINGS_SECTION, _SETTINGS_KEY, dir)
 	return settings.save(settings_path)

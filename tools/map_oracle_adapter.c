@@ -1,7 +1,3 @@
-/* External read-only adapter for the frozen engine's existing compiled readers.
- * Link its libasset_pipeline.a without rebuilding or changing the reference tree.
- * Input is one decompressed MAP on stdin; output is decoded decimal facts only.
- */
 #include "map_reader.h"
 #include <stdio.h>
 #include <stdlib.h>

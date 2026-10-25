@@ -281,8 +281,6 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		result.error = _candidate_entities.error
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
-	# Both aggregate views own the same unpublished entity candidate. Public
-	# snapshots and phase observations still detach at their existing boundaries.
 	next.entities = _candidate_entities._state if _candidate_entities != null else null
 	var entity_issue: String = _update_entity_scripts(next, result.events)
 	if not entity_issue.is_empty():
@@ -308,7 +306,6 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		return _failed_tick(result, _callback_error)
 	if next.flags & 4 and next.current_entity_index >= 0 and next.mode != 2:
 		_mark_carry(next, next.current_entity_index)
-	# MoveFrog updates the camera zone here, before modifiers and collision.
 	_update_camera_zone(next)
 	if _exploration_guard != null:
 		var guard_error: String = _exploration_guard.check_cell(next.cell)
@@ -372,7 +369,6 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			return _failed_tick(result, result.error)
 		next.animation = _candidate_animation.state.copy()
 		next.animation_condition_counter = _candidate_animation.context.if_counter
-	# gamesys.C creates/renews visible live entities only after camera and animation.
 	if next.frog_collision_pose != null:
 		var pose_issue: String = next.frog_collision_pose.refresh(_entity_collision.frog_collision, next.animation.action, next.animation.cel, next.matrix12)
 		if not pose_issue.is_empty():
@@ -380,7 +376,6 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if _candidate_entities != null:
 		_candidate_entities.advance_animations()
 		next.entities = _candidate_entities._state
-	# A failure here discards the entire candidate, including earlier frog requests.
 	if _candidate_entities != null and _entity_collision.lifecycle != null:
 		var visibility_error: String = _candidate_entities.apply_visibility(next.camera)
 		if not visibility_error.is_empty():
@@ -449,8 +444,6 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	var update: EntityUpdateResult = _candidate_entities._update_script(slot, context, _candidate_random, true)
 	if not update.error.is_empty():
 		return "Entity %d script: %s" % [definition.entity_index, update.error]
-	# Keep the shared candidate object: the frog animation context owns this
-	# same stream and must observe every preceding entity draw.
 	if update.random != _candidate_random:
 		_candidate_random.state = update.random.state
 		_candidate_random.draw_count = update.random.draw_count
@@ -634,7 +627,6 @@ func _jump(state: RunSnapshot, direction: int, events: Array[String], is_super: 
 					height = GridQueries.square_height(_grid.squares[candidate])
 					break
 	if stack != null and stack.square_count > 0 and index < 0 and forced:
-		# Source backward search leaves a pointer before the selected stack.
 		index = stack.first_square_index - 1
 		if index < 0 or index >= _grid.squares.size():
 			return "Source forced-hop leftover layer pointer lies outside authored global storage"
@@ -723,8 +715,6 @@ func _move(state: RunSnapshot, events: Array[String]) -> void:
 	if state.mode == 2:
 		var continuing_jump: bool = state.remaining_ticks != 0
 		if state.current_entity_index >= 0 and state.flags & 4:
-			# FrogModeMovementDying retains the attachment and carries before
-			# applying death velocity, without reasserting live CARRY flags.
 			state.position_16 = PlatformMath.world(_platform_pose(state).matrix12, state.entity_offset_16) * 65536
 		state.death_count -= 1
 		if state.death_count == 0:
@@ -739,7 +729,6 @@ func _move(state: RunSnapshot, events: Array[String]) -> void:
 		else:
 			state.position_16 += state.velocity_16
 			if _map_index == 2:
-				# Source signed32 multiplication wraps before the arithmetic shift.
 				var product: Vector3i = state.velocity_16 * 14
 				state.velocity_16 = Vector3i(product.x >> 4, product.y >> 4, product.z >> 4)
 		_update_world(state)
@@ -991,8 +980,6 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 					_kill(state, FrogAnimationCatalog.SQUISHED, false, result.events)
 					state.death_entity_index = pose.entity_index
 					result.events.append("entity_squish")
-				# Arcade ReactFrogWithCollPrim clears the matrix's Y row even
-				# when another contact already requested death this tick.
 				for component: int in range(3, 6):
 					state.matrix12[component] = 0
 				continue
@@ -1035,8 +1022,6 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		var issue: String = _apply_form_reaction(state, definition, pose, reaction, result)
 		if not issue.is_empty():
 			return issue
-		# COLLIDE.C reasserts HIT outside ReactFrogWithForm in this special path,
-		# including a geometric/vertical rejection by the FORM reaction itself.
 		reaction.hit = true
 		if not state.entity_hit_indices.has(pose.entity_index):
 			state.entity_hit_indices.append(pose.entity_index)
@@ -1228,7 +1213,6 @@ func _move_platform_jumping(state: RunSnapshot, events: Array[String], react_on_
 			_react(state, _grid.squares[state.square_index].flags, events)
 		state.old_position_16 = state.position_16
 		return
-	# At the last no-land departure tick C integrates once more before detaching.
 	_platform_freefall(state, pose, events)
 	_detach_platform(state, events)
 	if state.square_index < 0:
@@ -1280,8 +1264,6 @@ func _sync_facts(state: RunSnapshot) -> void:
 	state.map_index = _map_index
 	state.destination_cell = GridQueries.world_to_cell(_grid, state.target_16.x >> 16, state.target_16.z >> 16)
 	if _entity_collision != null and _entity_collision.platforms_enabled and (state.flags & 128 or (state.current_entity_index < 0 and state.mode != MODE_JUMPING)):
-		# After angled departure the source retains a stale local target. Freefall
-		# has no active horizontal target; inspect the current world cell instead.
 		state.destination_cell = state.cell
 	elif state.current_entity_index >= 0 and not state.flags & 64:
 		var target: Vector3i = PlatformMath.world(_platform_pose(state).matrix12, state.target_16)

@@ -75,8 +75,6 @@ class Route:
                 for moving in (True,False):
                     for r in reversed(self.records):
                         if moving and r['entity_index'] in self.hidden:continue
-                        # Entity book MOVING includes the fly; its remote cycle
-                        # positions never enter this route's visited 3x3 groups.
                         is_moving=r['entity_type'] in ('MOVING','SUB_TURTLE','ORG_BABY_FROG','ORG_FLY')
                         if is_moving==moving and self.group(self.poses[r['entity_index']][9:])==(x,z):result.append(r['entity_index'])
         return result

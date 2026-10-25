@@ -70,9 +70,7 @@ void vertex() {
 const _TEMPLATE: String = """shader_type spatial;
 render_mode unshaded, %s, %s, %s;
 %s
-%s// The renderer turns ALBEDO into linear light and back with two formulas
-// that do not quite undo each other, which darkens dark colours. This gives
-// the ALBEDO that comes out of that as the colour wanted.
+%s
 vec3 through_renderer(vec3 wanted) {
 	vec3 linear = pow((wanted + 0.055) / 1.055, vec3(2.4));
 	vec3 a = wanted;

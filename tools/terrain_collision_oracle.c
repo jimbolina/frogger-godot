@@ -1,7 +1,3 @@
-/* Synthetic component traces call frozen frog/grid/collision callbacks.
- * Families select their declared component sequence; no assets are loaded.
- * Animation/audio/score requests are counted; animation and score mutation
- * are omitted. Effect factories provide storage and omit their possible RNG. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "CAMERA.H"
@@ -24,8 +20,6 @@ __declspec(dllimport) unsigned long __stdcall SetErrorMode(unsigned long);
 extern FROG_CONTROL_METHOD Frog_control_methods[];
 extern MR_BOOL Recording_demo;
 static int animations,sounds,scores,last_animation;
-/* Rendering-only factories provide writable result storage; no behavior is replaced.
- * Mainloop setup is explicitly omitted, while its requested mode remains observable. */
 static MR_OBJECT pgen_object,sprite_object,particle_object;
 static MR_PGEN pgen;
 static MR_3DSPRITE sprite;
@@ -94,7 +88,6 @@ static void emit(int scenario,int tick,const char* component) {
         f->fr_grid_x,f->fr_grid_z,f->fr_count,f->fr_flags,f->fr_mode,f->fr_current_key,f->fr_direction,animations,sounds,scores,
         f->fr_num_buffered_keys,f->fr_buffered_input_count,logical_down,logical_held);
 }
-/* Authored power flags are fixture state, not pickup/timer behavior. */
 static void emit_collision(int scenario,int tick,const char* phase) {
     FROG* f=&Frogs[0];
     printf("%d,%d,%s,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%lu,%ld,%ld,%ld,%d,%d,%d,%ld,%ld,%ld,%ld,%ld,%ld,%lu\n",scenario,tick,phase,
@@ -128,7 +121,6 @@ static int collision_trace(void) {
     }
     return 0;
 }
-/* Pure terrain matrix fixtures: actual UpdateFrogMatrix, no entity/scaling. */
 static int matrix_trace(void) {
     puts("scenario,direction,flags,square,m00,m01,m02,m10,m11,m12,m20,m21,m22,tx,ty,tz");
     int heights[5][4]={{0,0,0,0},{0,256,0,256},{-3,257,-131,121},{100,120,80,80},{300,-200,-100,400}};
@@ -150,7 +142,6 @@ static int matrix_trace(void) {
     }
     return 0;
 }
-/* Setup plus actual MoveFrog only: controller/camera coupling is separate. */
 static void emit_special(int scenario,int tick) {
     FROG* f=&Frogs[0];
     printf("%d,%d,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%lu,%ld,%ld,%ld,%ld,%ld,%ld,%d,%d,%d",scenario,tick,
@@ -269,7 +260,6 @@ static int bounds_trace(void) {
         f->fr_pos.vx=((i%4)*256-384)<<16;f->fr_pos.vz=((i/4)*256-384)<<16;
         matrix.t[0]=f->fr_pos.vx>>16;matrix.t[2]=f->fr_pos.vz>>16;
         JumpFrog(f,scenario,0,1,6);emit_special(scenario,-1);
-        /* Stop before source's final unbounded stack lookup: no UB facts claimed. */
         for(int tick=0;tick<5;tick++) { MoveFrog(f);emit_special(scenario,tick); }
     }
     return 0;
@@ -355,7 +345,6 @@ static int narrow_trace(void) {
             SetFrogUserMode(f,FROGUSER_MODE_SLIPPING_LAND_NONGRID);
         }
         emit_special(scenario,-1);
-        /* Both prefixes avoid final stack lookup/landing; no padded cell is used. */
         for(int tick=0;tick<5;tick++) { MoveFrog(f);emit_special(scenario,tick); }
     }
     return 0;

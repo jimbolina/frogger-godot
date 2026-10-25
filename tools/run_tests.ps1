@@ -1,10 +1,3 @@
-# Runs every test headless with GUT in an isolated temporary Godot profile.
-#
-#   $env:GODOT = "C:\path\to\Godot.exe"; .\tools\run_tests.ps1 [extra GUT options]
-#
-# Logs and the named-skip summary are retained in the printed temporary folder.
-# Exit codes: 0 all passed; 1 a failure or a script that does not compile;
-# 2 setup problem; 3 validated named asset-free skips.
 $ErrorActionPreference = "Stop"
 $gutArguments = @($args)
 $godot = if ($env:GODOT) { $env:GODOT } else { "godot" }
@@ -17,8 +10,6 @@ $godotExecutable = $godotCommand.Source
 $projectDirectory = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path
 $scriptErrorPattern = "SCRIPT ERROR|Parse Error|Failed to load script|Failed loading resource|Could not load|CHECK FAILED"
 
-# Start-Process joins its arguments into one Windows command line. Quote each
-# one using native escaping rules, including embedded quotes and final '\'.
 function ConvertTo-NativeArgument([string] $value) {
     $quoted = '"'
     $slashes = 0
@@ -69,7 +60,6 @@ try {
         exit 1
     }
 
-    # Compile first: GUT otherwise continues past scripts it could not load.
     $check = Invoke-GodotStage "check" @("-s", "res://tools/check_scripts.gd")
     $check.Output -split "`n" | Where-Object { $_ -match "SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:" }
     if ($check.ExitCode -ne 0 -or $check.Output -match $scriptErrorPattern -or $check.Output -notmatch "(?m)^check_scripts: \d+ scripts, 0 failed\s*$") {

@@ -50,7 +50,6 @@ func test_all_entity_identity_base_records_and_setup_census() -> void:
 				static_count += 1
 			elif form.entity_name == "MOVING":
 				var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
-				# The generator retains raw PATH_INFO even when a malformed pad is rejected.
 				records.append_array(PackedInt64Array([index, 1, info.path_index,
 					info.segment_index, info.segment_distance, info.motion_flags, info.speed]))
 				moving_count += 1

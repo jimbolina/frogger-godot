@@ -183,7 +183,6 @@ func test_moving_post_step_pose_and_late_failure_retry() -> void:
 	var run: TerrainRun = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	assert_eq(run.snapshot().entities.entities[0].matrix12[9], -138)
-	# The forced animation error happens after path motion and POP are queued.
 	run._animation.error = "forced late failure"
 	var command := TickCommand.new()
 	var failed: TickResult = run.step(command)

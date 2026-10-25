@@ -67,7 +67,6 @@ def expected():
                     twist+=1 if twist>0 else -1
                     if abs(twist)>8: twist=0
                 current=[damp(current[0],origin[0]),damp(current[1],min(origin[1],0),True),damp(current[2],origin[2])]
-            # Sweep's final call uses origin directly; current is copied on transition.
             if mode==0 and not (scenario==0 and tick==90):
                 cos=trig(angle,True);sin=trig(angle)
                 rotated=[(cos*source[0]+sin*source[2]) >> 12,source[1],(-sin*source[0]+cos*source[2]) >> 12]

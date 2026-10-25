@@ -436,8 +436,6 @@ func _read_retained() -> void:
 		for i: int in p.count:
 			var ptr: int = _bytes.decode_u32(o + 4 + i * 4)
 			if name == "ZONE":
-				# Keep an otherwise usable map when one zone record is malformed.
-				# Zone setup rejects the diagnostic before any gameplay admission.
 				p.offsets.append(ptr)
 				continue
 			if p.offsets.has(ptr) or ptr < o + 4 + p.count * 4 or not _range(ptr, 4, name + " record", p.end_offset):

@@ -71,7 +71,6 @@ def observe(pid: int, exe: Path, output: Path, duration: float, interval: float)
                                          ctypes.c_void_p, ctypes.c_size_t,
                                          ctypes.POINTER(ctypes.c_size_t)]
     kernel.ReadProcessMemory.restype = wintypes.BOOL
-    # Read-only: no VM operation/write, debug privilege, injection or attach.
     handle = kernel.OpenProcess(0x0010 | 0x1000, False, pid)
     if not handle:
         raise ctypes.WinError(ctypes.get_last_error())
@@ -84,8 +83,6 @@ def observe(pid: int, exe: Path, output: Path, duration: float, interval: float)
         if not os.path.samefile(actual, expected):
             raise ValueError("PID image path differs from explicitly supplied executable")
         verify_identity(actual)
-        # PE image base is pinned; refuse relocation by checking the in-memory
-        # PE header's ImageBase before accessing counters. No memory dump.
         def read(address: int, length: int) -> bytes:
             data = ctypes.create_string_buffer(length)
             count = ctypes.c_size_t()

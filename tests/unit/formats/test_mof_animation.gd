@@ -121,11 +121,11 @@ func test_static_model_metadata_and_part_mismatch_disable_action() -> void:
 	var file: MofFile = MofFile.parse(bytes)
 	assert_eq(file.error, "")
 	assert_ne(file.animated.actions_for(0)[0].error, "")
-	bytes.encode_u16(54, 10) # Stored static model index.
+	bytes.encode_u16(54, 10)
 	file = MofFile.parse(bytes)
 	assert_eq(file.error, "")
 	assert_ne(file.animated.actions_for(10)[0].error, "")
-	bytes.encode_u16(48, 10) # Unsupported animation type.
+	bytes.encode_u16(48, 10)
 	assert_ne(MofFile.parse(bytes).error, "")
 
 
@@ -141,10 +141,10 @@ func test_structural_counts_and_pointers_are_bounded() -> void:
 	broken.encode_u32(shared_at + 12, good.decode_u32(24))
 	assert_ne(MofFile.parse(broken).error, "")
 	broken = good.duplicate()
-	broken.encode_u32(88, good.size() + 100) # action virtual frame pointer
+	broken.encode_u32(88, good.size() + 100)
 	assert_ne(MofFile.parse(broken).error, "")
 	broken = good.duplicate()
-	broken.encode_u16(80, 65535) # unique cel count
+	broken.encode_u16(80, 65535)
 	assert_ne(MofFile.parse(broken).error, "")
 
 
@@ -276,7 +276,6 @@ func test_byte_quaternion_interpolation_preserves_authored_magnitudes() -> void:
 	var last: MofTransform = SyntheticMofAnimation.transform(2, [64, 0, 0, 32, 100, 0, 0])
 	assert_eq(first.interpolate(last, 0), first.matrix_values(), "C's zero endpoint uses authored byte quaternion directly")
 	var halfway: PackedInt32Array = first.interpolate(last, 2048)
-	# C clamps normalization divisor to 4128 for this non-unit quaternion.
 	assert_eq(halfway[0], 2080)
 	assert_eq(halfway[1], 4032)
 	assert_eq(halfway[9], 50)

@@ -50,16 +50,12 @@ func test_a_quad_becomes_two_triangles_in_the_stored_direction() -> void:
 	var d := Vector3(0, -1, 0)
 	assert_eq(corners, PackedVector3Array([a, b, d, b, c, d]))
 	assert_eq(built.bounds, AABB(Vector3(0, -1, 0), Vector3(1, 1, 0)))
-	# The square faces the game's camera, which looks along plus z: in Godot
-	# that is a viewer on the plus z side, who must see the corners go round
-	# clockwise (Godot's front).
 	var around: Vector3 = (corners[1] - corners[0]).cross(corners[2] - corners[0])
 	assert_lt(around.z, 0.0, "clockwise seen from plus z")
 	var colours: PackedColorArray = built.part_meshes[0].surface_get_arrays(0)[Mesh.ARRAY_COLOR]
 	assert_eq(colours[0].r8, 10)
 	assert_eq(colours[5].b8, 30)
 	var normals: PackedVector3Array = built.part_meshes[0].surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
-	# Godot stores normals packed, so they come back very slightly changed.
 	assert_almost_eq(normals[0], Vector3(0, 0, 1), Vector3.ONE * 0.001, "the stored normal, towards the viewer")
 
 

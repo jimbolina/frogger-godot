@@ -61,7 +61,6 @@ def samples():
     ]
     for z in range(22808,22819):
         cases.append(('ot_boundary_%d'%z,(0,0,0),(7,0,z)))
-    # These straddle unsigned-short depth storage without changing projection SZ.
     for z in range(27153,27161):
         cases.append(('depth_word_%d'%z,(0,-32767,-32767),(-7,0,z)))
     return cases

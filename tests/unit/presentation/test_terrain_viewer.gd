@@ -156,7 +156,6 @@ func test_detaching_data_clears_retail_scene_and_run_but_keeps_synthetic_inputs(
 	assert_eq(_viewer.open_data(null), "")
 	assert_not_null(_viewer.run)
 	assert_same(_viewer.scenario, synthetic)
-	# The authored source attachment identifies data-derived scene/run lifetime.
 	synthetic.map_scene = MapSceneData.new()
 	synthetic.level_code = "ORG3"
 	assert_eq(_viewer.open_data(null), "")

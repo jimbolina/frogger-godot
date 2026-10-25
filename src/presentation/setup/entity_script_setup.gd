@@ -24,8 +24,6 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, entit
 		if decoded.payload_registers[2] not in [0, 1]:
 			result.error = "Unsupported turtle payload type"
 			return result
-		# CreateLiveEntity starts the form's script first; the custom creator
-		# replaces it with a freshly reset named script for non-diving turtles.
 		if decoded.payload_registers[2] == 1:
 			decoded.root_id = names.index_of("SCRIPT_TURTLE_NO_DIVE")
 			roots.append(decoded.root_id)

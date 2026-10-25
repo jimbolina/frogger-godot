@@ -149,7 +149,6 @@ def check_oracle(oracle, acos, output, divisors):
     (output / 'script-rng-stderr.txt').write_text(run.stderr, encoding='utf-8')
     if run.returncode:
         raise ValueError(f'linked C instruction check failed: exit {run.returncode}; {run.stderr[:500]}')
-    # Frozen archive initialization emits a WAD-selection diagnostic first.
     header = 'case,seed,divisor,sound_disabled,seed_after,branch_taken,continues'
     lines = run.stdout.splitlines()
     if lines.count(header) != 1:
@@ -286,11 +285,10 @@ def background_expected(facts, programs, points, fly_position, ticks, seed, reve
                             break
                     elif name == 'ENDLOOP':
                         state['cursor'] = state['start']
-                        break  # Linked frozen port yields at ENDLOOP.
+                        break
                     elif name == 'PLAY_SOUND_DISTANCE':
-                        pass  # No active frogs in this component fixture.
+                        pass
                     elif name == 'RESTART':
-                        # NEW_SCRIPT changes the cursor, not si_type.
                         state.update(program=state['root'], cursor=0)
                         continue
                     else:
@@ -444,7 +442,6 @@ def traffic_geometry(context, point_bounds=None):
                 matrix=entities.moving_matrix([0]*9+position+tangent,0)
                 if matrix[0]!=0 or matrix[3]!=0 or abs(matrix[6])!=4096:
                     raise ValueError('traffic cuboid local X no longer equals signed world Z')
-                # World XZ differences stay signed16 even for any point in the candidate.
                 dx=max(abs(position[0]-x) for x in point_bounds[0])
                 dz=max(abs(position[2]-z) for z in point_bounds[1])
                 if max(dx,dz)>=32768 or dx*dx+dz*dz+32768**2>=2**31:

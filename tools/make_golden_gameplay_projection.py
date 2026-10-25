@@ -26,15 +26,12 @@ def rows():
         for q,vertex in enumerate(POINTS):
             view=[(sum(a*b for a,b in zip(row,vertex))>>12)+t for row,t in zip(r,translation)]
             depth=max(128,view[2]);screen=[320+div(view[0]*256,depth),240+div(view[1]*256,depth)]
-            # Float renderer reference uses exact unit axes, before rasterization.
             relative=[a-b for a,b in zip(vertex,source)]
             ideal=[sum(a*b for a,b in zip(axis,relative))*aspect for axis,aspect in zip((ix,iy,iz),(2,1.875,1))]
             ideal_depth=max(128,ideal[2]);ideal_screen=[320+ideal[0]*256/ideal_depth,240+ideal[1]*256/ideal_depth]
-            # Ratio perturbation bound plus one pixel for C truncation, separately X/Y.
             dz=abs(depth-ideal_depth);low=min(depth,ideal_depth)
             bounds=[256*(abs(view[a]-ideal[a])/low+abs(ideal[a])*dz/(low*ideal_depth))+1 for a in (0,1)]
             facts=[p,q,640,480,256,8192,7680]+list(source)+list(vertex)+sum(r,[])+translation+view+[depth]+screen+[axis[a] for a in range(3) for axis in (x,y,z)]
-            # Native Camera3D performs this exact Gram-Schmidt order.
             gx=normal([v/4096 for v in x],False)
             gy0=[v/4096 for v in y];dot=sum(a*b for a,b in zip(gx,gy0))
             gy=normal([b-a*dot for a,b in zip(gx,gy0)],False)
@@ -42,9 +39,6 @@ def rows():
             dotx=sum(a*b for a,b in zip(gx,gz0));doty=sum(a*b for a,b in zip(gy,gz0))
             gz=normal([c-a*dotx-b*doty for a,b,c in zip(gx,gy,gz0)],False)
             native=[sum(a*b for a,b in zip(axis,relative))*aspect for axis,aspect in zip((gx,gy,gz),(2,1.875,1))]
-            # 27 normalization ops + 33 projection/subtraction ops in GS;
-            # 21 view ops + 28 homogeneous projection ops + 11 viewport ops,
-            # and 8 setup roundings: at most128 rounded scalar operations.
             gamma128=(128*2**-24)/(1-128*2**-24)
             rounding=gamma128*sum(abs(v) for v in relative)
             errors=[abs(a-b)+rounding*aspect for a,b,aspect in zip(native,ideal,(2,1.875,1))]

@@ -20,7 +20,6 @@ func test_s32_wraps_like_a_32_bit_register() -> void:
 
 
 func test_the_game_rng_step_wraps_to_32_bits() -> void:
-	# The original generator: seed = seed * 0x41c64e6d + 0x3039 in a 32-bit register.
 	var s: int = 0
 	var outputs: Array[int] = []
 	for _i: int in 3:

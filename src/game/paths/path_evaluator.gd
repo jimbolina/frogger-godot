@@ -12,7 +12,6 @@ static func validate_segment(segment: PathSegmentDefinition) -> String:
 	if segment.length <= 0 or segment.length > I32_MAX:
 		return "Path segment length must be positive signed32"
 	if segment.segment_type == PathSegmentDefinition.LINE:
-		# The frozen backend normalizes a zero direction to a zero tangent.
 		pass
 	elif segment.segment_type == PathSegmentDefinition.ARC:
 		if segment.radius <= 0:
@@ -32,8 +31,6 @@ static func sample(segment: PathSegmentDefinition, distance: int, backwards: boo
 	result.error = validate_segment(segment)
 	if not result.error.is_empty():
 		return result
-	# PATH.C evaluates the result of just one segment transition even when its
-	# speed leaves the distance beyond that segment. Keep that extrapolation.
 	match segment.segment_type:
 		PathSegmentDefinition.LINE:
 			var delta: Vector3i = segment.end - segment.start

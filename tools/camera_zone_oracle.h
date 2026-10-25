@@ -1,4 +1,3 @@
-/* Decoded numeric stimuli only. Link unchanged frozen zone, control and camera code. */
 #include "ZONE.H"
 #include "MISC.H"
 #include <stddef.h>
@@ -19,7 +18,6 @@ static int cz_id(ZONE **zones,int count,ZONE *zone) {
 static void cz_print_svec(MR_SVEC *v) {printf(",%d,%d,%d",v->vx,v->vy,v->vz);}
 static int camera_zone_trace(const char *path) {
     FILE *stream=fopen(path,"r");if(!stream)return 2;
-    /* Frozen sanitized FROG.C repairs the vendor expression's sizeof(ZONE) stride. */
     if(sizeof(ZONE)!=24 || sizeof(MR_SVEC)!=8 || sizeof(ZONE_CAMERA)!=68)return 3;
     setup(0);MRStub_GpuInit(NULL,0);
     int startup=cz_read(stream),yaw=cz_read(stream),count=cz_read(stream),ticks=cz_read(stream);

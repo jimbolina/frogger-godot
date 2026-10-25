@@ -136,8 +136,6 @@ func _run() -> void:
 	var final: RunSnapshot = viewer.run.snapshot()
 	var diver: bool = scenario.tick_limit == 1255
 	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.current_entity_index == -1 and final.cell == Vector2i(10, 7) and final.mode != 2)
-	# ViewportTexture.get_size double-applies canvas stretch in Godot 4.5.1.
-	# The visible logical extent times the stretch is the native render extent.
 	var native_size := Vector2i(root.get_visible_rect().size * root.get_stretch_transform().get_scale())
 	var fps: float = frames.size() / seconds
 	var frame_stats: Dictionary = _stats(frames)

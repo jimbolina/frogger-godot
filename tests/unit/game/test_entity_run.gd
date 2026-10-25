@@ -157,7 +157,6 @@ func test_failed_step_and_reset_preserve_all_cursors() -> void:
 	assert_eq(run.snapshot().tick_index, before.tick_index)
 	assert_eq(run.snapshot().entities[0].path.segment_distance, before.entities[0].path.segment_distance)
 	assert_eq(run.snapshot().entities[1].path.segment_distance, before.entities[1].path.segment_distance)
-	# Exercise a late reset failure after the first candidate runner was built.
 	run._definitions[1].path_start.distance = 101
 	assert_false(run.reset().is_empty())
 	assert_eq(run.snapshot().tick_index, before.tick_index)

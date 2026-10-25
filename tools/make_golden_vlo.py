@@ -42,9 +42,9 @@ import struct
 import sys
 import time
 
-sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_golden_manifest import FLAG_GROUP_ACCESS, SECTOR_SIZE, is_compressed, pp20_unpack, read_mwi  # noqa: E402
+from make_golden_manifest import FLAG_GROUP_ACCESS, SECTOR_SIZE, is_compressed, pp20_unpack, read_mwi
 
 FLAG_BLACK_IS_TRANSPARENT = 1 << 5
 PAGE_HEIGHT = 256
@@ -61,7 +61,7 @@ def decode_rgba(raw, flags):
     words = array.array("I")
     words.frombytes(raw)
     if sys.byteorder == "little":
-        words.byteswap()  # little-endian word A|B<<8|G<<16|R<<24 -> bytes R,G,B,A
+        words.byteswap()
     else:
         words = array.array("I", [((w & 0xFF) << 24) | ((w >> 8 & 0xFF) << 16) | ((w >> 16 & 0xFF) << 8) | (w >> 24) for w in words])
     out = bytearray(words.tobytes())
@@ -158,7 +158,7 @@ def main():
     entries = read_mwi(exe[mwi_offset:mwi_offset + mwi_length])
     started = time.time()
 
-    banks = {}  # resource id -> (where, bytes)
+    banks = {}
     for e in entries:
         if e["flags"] & FLAG_GROUP_ACCESS:
             continue

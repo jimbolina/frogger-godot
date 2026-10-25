@@ -1,6 +1,3 @@
-/* Synthetic component trace. Real frozen ControlFrog/MoveFrog own every step.
- * Animation/audio/score calls are counted, not executed; no assets are loaded.
- * Flat safe ground, no entities/collision/camera tick, no special input powers. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "CAMERA.H"
@@ -74,7 +71,7 @@ static void emit(int scenario,int tick,const char* component) {
 }
 static int camera_trace(void) {
     MR_MAT camera_matrix;
-    MRStub_GpuInit(NULL,0); /* Frozen trig-table initialization, no display. */
+    MRStub_GpuInit(NULL,0);
     puts("scenario,tick,mode,move_timer,twist_counter,current_x,current_y,current_z,source_ofs_x,source_ofs_y,source_ofs_z,target_ofs_x,target_ofs_y,target_ofs_z,source_x,source_y,source_z,target_x,target_y,target_z,controller_up,current_ytheta,delta_ytheta,dest_ytheta,flags,shake_timer,shake_amp_x,shake_amp_y,shake_freq_x,shake_freq_y,rng_seed,shake_draw_1,shake_draw_2");
     for(int scenario=0;scenario<8;scenario++) {
         setup(0); matrix.t[0]=matrix.t[1]=matrix.t[2]=0;
@@ -123,7 +120,7 @@ static int camera_trace(void) {
 #include "camera_zone_oracle.h"
 int main(int argc,char** argv) {
     setvbuf(stdout,NULL,_IONBF,0);
-    SetErrorMode(1|2); /* Windows: suppress unattended critical-error/crash dialogs. */
+    SetErrorMode(1|2);
     if(argc==3 && strcmp(argv[1],"--camera-zones")==0) return camera_zone_trace(argv[2]);
     if(argc==2 && strcmp(argv[1],"--camera")==0) return camera_trace();
     puts("scenario,tick,component,x16,y16,z16,vx16,vy16,vz16,grid_x,grid_z,count,flags,mode,input,direction,animation_requests,sound_requests,score_requests,buffered_keys,buffered_input_count,pad_pressed,pad_held");
@@ -132,7 +129,6 @@ int main(int argc,char** argv) {
         for(int tick=0;tick<16;tick++) {
             MRInput[0].in_pad_down=tick==0 ? Frogs[0].fr_control_method->fc_up_control : 0;
             MRInput[0].in_pad_new=MRInput[0].in_pad_down;
-            /* In-flight E press at tick 2, held through tick 8, release at 9. */
             if(scenario==2 && tick>=2 && tick<=8) {
                 MRInput[0].in_pad_down=tick==2 ? Frogs[0].fr_control_method->fc_right_control : 0;
                 MRInput[0].in_pad_new=Frogs[0].fr_control_method->fc_right_control;
@@ -140,7 +136,6 @@ int main(int argc,char** argv) {
             MRFrame_number=tick;
             ControlFrog(&Frogs[0]);emit(scenario,tick,"control");
             MoveFrog(&Frogs[0]);emit(scenario,tick,"move");
-            /* Hand-derived narrow positive controls, independent of trace output. */
             FROG* f=&Frogs[0];
             if(scenario==0 && tick==0 && (f->fr_count!=5 || f->fr_pos.vy!=-40*65536 || f->fr_velocity.vz!=2796202)) return 1;
             if(scenario==0 && tick>=5 && (f->fr_mode!=FROG_MODE_STATIONARY || f->fr_pos.vx!=-128*65536 || f->fr_pos.vy!=0 || f->fr_pos.vz!=128*65536)) return 1;

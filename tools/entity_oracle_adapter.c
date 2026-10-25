@@ -1,4 +1,3 @@
-/* Test transport: frozen PATH.C and source matrix primitives remain unchanged. */
 #include "PATH.H"
 #include "ENTITY.H"
 #include "CAMERA.H"
@@ -59,8 +58,6 @@ static int read_segment(PATH_SEGMENT **out) {
 }
 
 static void update_matrix(TEST_ENTITY *e) {
-    /* Component reset starts with an identity live transform and evaluates
-       the first tangent through frozen update logic. */
     ENTSTRUpdateMovingMOF(&e->live);
 }
 
@@ -90,7 +87,7 @@ int main(void) {
     MR_INIT_MAT(&camera_matrix);
     Cameras[0].ca_matrix = &camera_matrix;
     static FORM_BOOK form;
-    form.fb_entity_type = 1; /* ENTITY_TYPE_MOVING */
+    form.fb_entity_type = 1;
     Form_library_ptrs[0] = &form;
     int ticks, count;
     while (scan_int(&ticks)) {

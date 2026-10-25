@@ -37,7 +37,6 @@ func _map() -> PackedByteArray:
 	b.encode_u16(478, 1)
 	b.encode_u32(484, 488)
 	b.encode_u32(488, 372)
-	# Two source-ordered camera records; the second has an inverted empty bound.
 	b.encode_u32(524, 2)
 	b.encode_u32(528, 540)
 	b.encode_u32(532, 640)

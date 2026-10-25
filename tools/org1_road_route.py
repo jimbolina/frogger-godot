@@ -25,9 +25,6 @@ class RoadRoute(Route):
         key=(action,self.decoded[2][action]['cels'][cel])
         if key==self.stored_key:return
         self.stored_key=key
-        # Once the stored root reaches the old bank, the already C-verified
-        # full root/animation envelope excludes every traffic cuboid. Before
-        # then, use the exact road or target-bank terrain normal.
         self.points=[] if self.world()[2]>=-128 else traffic.stored_points(self.root,self.world(),action,cel,self.decoded)
 
     def control(self,direction):
@@ -70,7 +67,6 @@ class RoadRoute(Route):
                 self.primitive_contacts.append((index,*contact));self.hits.add(index)
                 if self.first_killer<0:
                     self.first_killer=index;self.flags=(self.flags&~2048)|8;self.animations.append(2)
-                    # Frozen FrogKill preserves airborne JUMP_TO_LAND velocity.
                     if self.mode!=1 or not self.flags&64:self.velocity=[0,0,0]
         if not self.flags&8:super().collide()
 

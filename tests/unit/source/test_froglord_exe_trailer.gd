@@ -8,8 +8,8 @@ const BUILD_INFO: String = "[BuildInfo]\ngameType=frogger\ngameVersion=pc-retail
 static func fake_program(size: int) -> PackedByteArray:
 	var exe := PackedByteArray()
 	exe.resize(size)
-	exe[0] = 0x4D # 'M'
-	exe[1] = 0x5A # 'Z'
+	exe[0] = 0x4D
+	exe[1] = 0x5A
 	for i: int in range(2, size):
 		exe[i] = (i * 7) & 0xFF
 	return exe

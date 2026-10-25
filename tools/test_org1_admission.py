@@ -19,9 +19,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import verify_org1_admission as admission
 
 
-# Literal opcode words pin the transport format independently of OPCODES.
-# REGISTER_CALLBACK, SETLOOP, SCRIPT_IF NEW_SCRIPT/RANDOM, SET_TIMER,
-# WAIT_UNTIL_TIMER, ENDLOOP, RESTART. The target plays a distance sound.
 ROOT = [34, 0, 0, 0, 0, 11, 13, 0, 6, 2, 4, 7, 0, 0, 0, 0, 10, 12, 5]
 TARGET = [36, 0, 20, 9, 2, 256, 5]
 POINTS = [[10 * n, -100 * n, 1000 + 10 * n] for n in range(5)]
@@ -59,8 +56,6 @@ class DecoderTests(unittest.TestCase):
 
 class BackgroundClosureTests(unittest.TestCase):
     def setUp(self):
-        # Enough authored identities to put the fly at 55; all byte contents
-        # and coordinates are invented. General forms exercise the high bit.
         packet = 64
         data = bytearray(4096)
         for index in range(56):
@@ -205,7 +200,6 @@ class BackgroundSemanticsTests(unittest.TestCase):
         self.assertEqual(row[-1], 0)
 
     def test_timer_increment_wraps_at_unsigned16_boundary(self):
-        # This small invented program starts at 65535 and waits one update.
         program = [7, 0, 65535, 0, 0, 65536, 5]
         rows = background(2, traffic=[24], programs={1: program})[::2]
         self.assertEqual([row[6] for row in rows], [0, 1])
@@ -218,7 +212,6 @@ class BackgroundSemanticsTests(unittest.TestCase):
                          [3554416254, 1, 120, 3, 8, 0, 30, -556, 980])
         self.assertEqual(rows[180][11:16], [1, 0, 3, 8, 0])
         self.assertEqual(rows[181][10:16], [3554416254, 0, 60, -1, 0, 9])
-        # Hiding preserves the last checkpoint position, rather than teleporting.
         self.assertEqual(rows[181][16:19], [30, -556, 980])
         self.assertEqual(rows[242][10:16], [2802067423, 1, 120, 3, 8, 0])
 
@@ -239,8 +232,6 @@ class BackgroundSemanticsTests(unittest.TestCase):
         self.assertEqual(row[16:19], [40000, 32520, 32746])
 
     def test_explicit_order_assigns_the_same_draws_to_different_entities(self):
-        # Every traffic turn draws exactly once; the first fly draw coincides
-        # with traffic on update 60. This isolates order from branch re-entry.
         def run(reverse):
             draws = iter((n, 0) for n in range(1, 1000))
             root = ROOT[:]
@@ -278,8 +269,6 @@ class MovingSoundEvidenceTests(unittest.TestCase):
             [4, 1, 1, 300, 900, 1, 12345]]
 
     def setUp(self):
-        # Keep transport capture in memory: neither assets nor processes nor
-        # writable temporary-directory configuration are needed for these tests.
         self.output = Path('invented-output')
         self.files = {}
         writer = patch.object(Path, 'write_text', autospec=True,
@@ -346,7 +335,6 @@ class MovingSoundEvidenceTests(unittest.TestCase):
 
 class TrafficGeometryTests(unittest.TestCase):
     def setUp(self):
-        # One invented entity, one horizontal path, one synthetic MOF primitive.
         self.data = bytearray(512)
         struct.pack_into('<I', self.data, 96, 256)
         struct.pack_into('<H', self.data, 132, 0)

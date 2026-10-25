@@ -19,7 +19,6 @@ func before_each() -> void:
 	_viewer.open_data(_data, true)
 
 
-# Triangles of the first static model of each file, from the golden polygon counts.
 func _golden_triangles() -> Dictionary[String, int]:
 	var by_resource: Dictionary[int, int] = {}
 	for row: PackedStringArray in GoldenFiles.rows("mof_parts.tsv"):
@@ -133,9 +132,6 @@ func test_every_high_poly_model_builds_with_its_textures() -> void:
 						wad_entry.display_name(), str(mesh.missing_image_ids)])
 	print("TIMING: built %d models (%d triangles) in %.0f ms" % [built, triangles, (Time.get_ticks_usec() - started) / 1000.0])
 	assert_eq(problems.size(), 0, ", ".join(problems))
-	# The one exception in the retail data: the multiplayer jungle WAD carries
-	# the eight plinths of the single-player levels, and some of their
-	# textures are not in the multiplayer jungle bank.
 	var unexpected := PackedStringArray()
 	for line: String in missing:
 		if not (line.begins_with("JUN_PLINTH") and line.contains(" in THEME_JUNM.WAD: ")):

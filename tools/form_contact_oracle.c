@@ -1,4 +1,3 @@
-/* Transport for the unchanged frozen CollideFrog geometry gate. */
 #define main frozen_main_unused
 #include "COLLIDE.H"
 #include "ENTITY.H"
@@ -46,7 +45,6 @@ int main(void) {
             frog_xyz[2] < -30000 || frog_xyz[2] > 30000 ||
             (form_data_count != 0 && form_data_count != 1)) return 2;
 
-        /* FORM's trailing word is treated as a pointer slot by resolved C. */
         FORM *form = calloc(1, offsetof(FORM, fo_formdata_ptrs) + sizeof(FORM_DATA *));
         MR_USHORT *grid_flags = calloc((size_t)(xnum * znum), sizeof(*grid_flags));
         if (!form || !grid_flags) return 2;
@@ -112,7 +110,7 @@ int main(void) {
         frog.fr_frog_id = 0;
         frog.fr_mode = FROG_MODE_STATIONARY;
         frog.fr_lwtrans = &frog_matrix;
-        frog.fr_api_item = &frog_matrix; /* Non-null for the collprim assertion. */
+        frog.fr_api_item = &frog_matrix;
         frog.fr_entity = current_entity ? &entity : NULL;
         frog.fr_forbid_entity = forbidden_entity ? &entity : NULL;
         MR_SVEC displacement = {0};

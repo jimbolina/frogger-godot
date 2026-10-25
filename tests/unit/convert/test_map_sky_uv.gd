@@ -54,7 +54,6 @@ func test_full_page_sky_quad_keeps_distinct_uv_corners() -> void:
 	arrays = built.sky_mesh.surface_get_arrays(0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	assert_eq(vertices.size(), 35 * 39 * 6)
-	# A second physical page must never bleed into the first page's edge taps.
 	var second := VloImage.new()
 	second.texture_id = 8
 	second.vram_y = 256

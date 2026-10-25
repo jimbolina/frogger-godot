@@ -90,7 +90,6 @@ func update_scripts(no_input_timer: int) -> int:
 	state.no_input_timer = no_input_timer
 	var captured_cel: int = state.cel
 	var captured_total: int = state.total_cels
-	# C captures these once, even when queue/restore immediately reruns a script.
 	for _rerun: int in 128:
 		var result: int = 0
 		var commands: int = 0

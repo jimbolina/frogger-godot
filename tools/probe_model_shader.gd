@@ -28,8 +28,6 @@ func _run() -> void:
 	camera.size = 8.0
 	camera.position = Vector3(0, 0, 5)
 	root.add_child(camera)
-	# Name, texture colour (alpha 0 = a transparent pixel), polygon colour,
-	# blend, what the screen should show.
 	var cases: Array[Array] = [
 		["textured, polygon colour 128", Color8(200, 120, 40), Color8(128, 128, 128), ModelShaders.Blend.OPAQUE, Color8(200, 120, 40)],
 		["textured, polygon colour 64", Color8(200, 120, 40), Color8(64, 64, 64), ModelShaders.Blend.OPAQUE, Color8(100, 60, 20)],
@@ -103,7 +101,6 @@ func _square(centre: Vector3, texture_colour: Variant, polygon_colour: Color, bl
 	var corners := PackedVector3Array()
 	var colours := PackedColorArray()
 	var uvs := PackedVector2Array()
-	# Clockwise as seen by the camera: Godot's front.
 	for corner: Vector2 in [Vector2(-1, 1), Vector2(1, 1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 		corners.append(centre + Vector3(corner.x, corner.y, 0) * 0.6)
 		colours.append(polygon_colour)

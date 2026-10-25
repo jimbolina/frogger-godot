@@ -106,7 +106,6 @@ func test_animated_hilites_use_part_matrices_and_two_short_stores() -> void:
 	assert_eq(sample.points[1], Vector3i(-32767, -1, 3))
 	assert_eq(sample.part_indices, PackedInt32Array([0, 1]))
 	assert_eq(sample.hilite_indices, PackedInt32Array([0, 0]))
-	# Matrix composition narrows 40000 to -25536 before applying vertex x=2.
 	definition.actions[0].frames[0][0] = 20000
 	definition.probes[0].vertex = Vector3i(2, 0, 0)
 	root = IDENTITY.duplicate()
@@ -114,7 +113,6 @@ func test_animated_hilites_use_part_matrices_and_two_short_stores() -> void:
 	root[9] = 10
 	sample = FrogCollisionQuery.sample(definition, 0, 0, root)
 	assert_eq(sample.points[0], Vector3i(-3, 0, 0))
-	# Arithmetic shifts round a negative fractional world unit down.
 	root = IDENTITY.duplicate()
 	root[4] = 2048
 	definition.probes[0].vertex = Vector3i(2, -1, 0)

@@ -58,7 +58,6 @@ func test_border_normalization_retains_final_ray_y() -> void:
 	camera.source_world = Vector3i(-128, -512, -640)
 	var result: MapGroupVisibilityResult = MapGroupVisibility.query(grid, camera)
 	assert_eq(result.error, "")
-	# Exact unchanged CreateMapViewList output; flattening the border to Y=0 adds 556.
 	assert_eq(result.groups, PackedInt32Array([430, 431, 432, 433, 462, 463, 464, 465,
 		493, 494, 495, 496, 497, 525, 526, 527, 528, 529, 530, 557, 558, 559, 560,
 		561, 562, 588, 589, 590, 591, 592, 593, 594]))

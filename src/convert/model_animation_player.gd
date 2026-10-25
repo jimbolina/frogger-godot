@@ -251,9 +251,6 @@ func _validate_action(index: int) -> String:
 			return action.error
 		if count <= 0 or action.start < 0:
 			return "flipbook action has no valid partcel range"
-		# MRAnimUpdateEnvironments writes one shared sm_partcel from part zero.
-		# Every part must be able to use that index; other action tables do not
-		# override it. This safely rejects edited multipart ranges that cannot.
 		for part_index: int in _model.parts.size():
 			var part: MofPart = _model.parts[part_index]
 			if action.start + count > part.partcels.size():

@@ -370,7 +370,6 @@ func _complete_model_before(resource_id: int, problems: PackedStringArray) -> Mo
 	return read_model(id, problems)
 
 
-# A theme's bank for the given kind, falling back to its single-player bank.
 func _theme_bank(theme: ThemeBookEntry, multiplayer: bool, low_poly: bool) -> int:
 	var bank: int = theme.vlo_id(multiplayer, low_poly)
 	return bank if bank != 0 else theme.vlo_id(false, low_poly)

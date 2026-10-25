@@ -114,8 +114,6 @@ def select(geometry: dict, camera: dict) -> list[int]:
     centre_z = sum(p[1] for p in points) >> 2
     expanded = []
     for x,z in points:
-        # MAPVIEW.C leaves vec.vy from the final ray when it overwrites only
-        # centre X/Z; the border delta therefore has Y=-last_ray_y.
         nx,nz = normal(x-centre_x,z-centre_z,-last_ray_y)
         expanded.append((x+((nx*768)>>12),z+((nz*768)>>12)))
     expanded.append((source[0],source[2]))
@@ -298,9 +296,6 @@ def generate(mapview_oracle: Path, entity_oracle: Path) -> str:
                     events.append(f'destroy:{entity}:{generation[entity]}')
                 else:
                     pending[entity] = True
-            # Moving links are inserted after static setup; each group prepends.
-            # ExpandMapGroup traverses the linked order, then each live create
-            # prepends to the independent live list.
             for selected_group in groups:
                 for entity in (9,2):
                     x = 0 if entity == 2 else -256+distance

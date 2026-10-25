@@ -1,4 +1,3 @@
-/* Invented asset-free programs, executed by unchanged frozen functions. */
 static int entity_script_run(const char *file) {
     FILE *in=fopen(file,"r");if(!in)return 2;
     setup();animation_setup(0);Game_map_theme=THEME_ORG;
@@ -52,7 +51,6 @@ static int entity_script_run(const char *file) {
         int program,cursor,lp,start,end;org_cursor(s.si_script,&program,&cursor);
         org_cursor(s.si_script_loop_start,&lp,&start);org_cursor(s.si_script_loop_end,&lp,&end);
         int drown=(Frogs[0].fr_flags&FROG_MUST_DIE)!=0;
-        /* Particle creation belongs to the aggregate FrogKill reaction. */
         char *death=strstr(captured_requests,";death_pgen");if(death)*death=0;
         if(!strcmp(captured_requests,"death_pgen"))captured_requests[0]=0;
         MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=saved;

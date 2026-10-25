@@ -18,7 +18,7 @@ var _bits: Array[int] = []
 ## stored as a literal (exercises the literal path alone).
 func pack(data: PackedByteArray, window: int = 700, literals_only: bool = false) -> PackedByteArray:
 	_bits.clear()
-	var pos: int = data.size() # Bytes [pos, size) are already described.
+	var pos: int = data.size()
 	var literals: Array[int] = []
 	while pos > 0:
 		var best_length: int = 0
@@ -31,7 +31,7 @@ func pack(data: PackedByteArray, window: int = 700, literals_only: bool = false)
 						and data[pos - 1 - length] == data[pos - 1 - length + distance]:
 					length += 1
 				if length < 5 and length >= 2 and distance > (1 << OFFSET_WIDTHS[length - 2]):
-					length = 0 # Too far for a short copy's offset field.
+					length = 0
 				if length > best_length:
 					best_length = length
 					best_distance = distance
@@ -91,7 +91,7 @@ func _assemble(unpacked_size: int) -> PackedByteArray:
 	var skip: int = (8 - _bits.size() % 8) % 8
 	var stream: Array[int] = []
 	for _i: int in skip:
-		stream.append(1) # Padding bits the decoder discards.
+		stream.append(1)
 	stream.append_array(_bits)
 	var body := PackedByteArray()
 	body.resize(stream.size() / 8)
@@ -99,7 +99,7 @@ func _assemble(unpacked_size: int) -> PackedByteArray:
 		var value: int = 0
 		for j: int in 8:
 			value |= stream[k * 8 + j] << j
-		body[body.size() - 1 - k] = value # The first byte read is the last one stored.
+		body[body.size() - 1 - k] = value
 	var out: PackedByteArray = "PP20".to_ascii_buffer()
 	for width: int in OFFSET_WIDTHS:
 		out.append(width)

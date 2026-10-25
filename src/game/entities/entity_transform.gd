@@ -15,7 +15,6 @@ static func moving(path: PathSnapshot, flags: int) -> PackedInt32Array:
 	var axis_z: Vector3i = path.tangent
 	var axis_x: Vector3i = _normalise(_cross12(Vector3i(0, 4096, 0), axis_z))
 	var axis_y: Vector3i = _cross12(axis_z, axis_x)
-	# WriteAxesAsMatrix stores columns in signed 16-bit matrix fields.
 	result[0] = _signed16(axis_x.x)
 	result[1] = _signed16(axis_y.x)
 	result[2] = _signed16(axis_z.x)

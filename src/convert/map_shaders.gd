@@ -34,9 +34,6 @@ vec3 short_wrap(vec3 value) {
 	return mod(value + vec3(32768.0), vec3(65536.0)) - vec3(32768.0);
 }
 
-// map_slice cam_rot{-512,0,0}; MR_VIEW.C left-multiplies PAL viewport
-// aspect. MRStub gte_rtps floors R*V and camera TR separately, then uses
-// signed integer division for the screen coordinates (mr_stub_gpu.c:523).
 ivec3 reference_rotate(ivec3 value) {
 	return ivec3((8192 * value.x) >> 12,
 		(5430 * value.y - 5430 * value.z) >> 12,
@@ -54,7 +51,6 @@ void vertex() {
 	if (animated) {
 		pixel = mod(pixel + image_origin + animation_offset, vec2(256.0)) - image_origin;
 	} else if (environment_uv) {
-		// C narrows negative camera to SVEC, then subtracts in a long.
 		vec3 negative_camera = short_wrap(-camera_game);
 		vec3 difference = game + negative_camera;
 		pixel = mod(floor(difference.xz / 32.0) + vec2(128.0), vec2(256.0)) - image_origin;
@@ -90,10 +86,7 @@ void vertex() {
 		int depth = max(view.z, 500);
 		ivec2 screen = ivec2(320 + (view.x * 1000) / depth,
 			240 + (view.y * 1000) / depth);
-		// gte_stsxy packs each screen coordinate into a signed short.
 		screen = ((screen + ivec2(32768)) & ivec2(65535)) - ivec2(32768);
-		// SubViewport may flip the projection Y row. Follow its matrix sign
-		// while using C's clamped positive depth for a valid clip-space W/Z.
 		POSITION = PROJECTION_MATRIX * vec4(0.0, 0.0, -float(depth) / 256.0, 1.0);
 		POSITION.xy = vec2(float(screen.x) / 320.0 - 1.0,
 			1.0 - float(screen.y) / 240.0) * POSITION.w
@@ -110,8 +103,6 @@ void vertex() {
 	if (far_layer >= 0.0) {
 		POSITION.z = POSITION.w * (CLIP_SPACE_FAR + (far_layer + 1.0) * 0.00001);
 	}
-	// Divide these perspective interpolants by the weight in fragment to
-	// recover the original affine, screen-space interpolation.
 	affine_weight = POSITION.w;
 	affine_uv = (pixel * pixel_scale + pixel_padding) * POSITION.w;
 	affine_colour = colour * POSITION.w;
@@ -129,14 +120,11 @@ static func shader(textured: bool, blend: ModelShaders.Blend, linear_filter: boo
 		code = code.replace("void fragment() {", "void fragment() {\n\tif (reference_visible < 0.5) { discard; }")
 		code = code.replace("UV * uv_scale + uv_offset", "affine_uv / affine_weight")
 		if linear_filter:
-			# Frozen sample_bilinear taps at floor(pageUV - 1), while GPU
-			# linear filtering taps at floor(texelUV - 0.5).
 			code = code.replace("texture(image, affine_uv / affine_weight)",
 				"texture(image, affine_uv / affine_weight - pixel_scale * 0.5)")
 		code = code.replace("COLOR.rgb", "(affine_colour / affine_weight)")
 		code = code.replace("if (texel.a < 0.5)", "if (texel.a < 0.5 && !missing_image)")
 		code = code.replace("ALBEDO = through_renderer", "if (missing_image) { shown = vec3(1.0, 0.0, 1.0); }\n\tALBEDO = through_renderer")
-		# Replacement above also touched vertex COLOR; restore its source read.
 		code = code.replace("vec3 colour = (affine_colour / affine_weight);", "vec3 colour = COLOR.rgb;")
 		if far_layer and blend == ModelShaders.Blend.OPAQUE:
 			code = code.replace("depth_draw_opaque", "depth_draw_never")

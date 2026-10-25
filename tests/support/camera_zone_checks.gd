@@ -64,7 +64,6 @@ func _check_corpus(path: String) -> void:
 			actual["mod_rotation"] = Array(snapshot.mod_matrix12.slice(0, 9))
 			var expected: Dictionary = fixture.expected[tick]
 			for key: String in expected:
-				# JSON numbers are floats, so compare canonical JSON numeric values.
 				assert_eq(_canonical(actual[key]), _canonical(expected[key]), "%s/%d %s" % [fixture.name, tick, key])
 
 func _canonical(value: Variant) -> String:

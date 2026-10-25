@@ -40,7 +40,6 @@ func test_stored_alpha_is_ignored_and_order_is_kept() -> void:
 	for i: int in 16:
 		var got := PackedByteArray([b.pixels[4 * i], b.pixels[4 * i + 1], b.pixels[4 * i + 2], b.pixels[4 * i + 3]])
 		assert_eq(got, PackedByteArray([i, 100 + i, 200 + i, 255]), "pixel %d" % i)
-	# Rows 1-2, columns 1-2 of the padded 4x4 image: pixels 5, 6, 9, 10.
 	var inner: PackedByteArray = b.unpadded_pixels()
 	assert_eq(inner.size(), 16)
 	assert_eq([inner[0], inner[4], inner[8], inner[12]], [5, 6, 9, 10])

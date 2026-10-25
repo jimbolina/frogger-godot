@@ -31,7 +31,7 @@ static func sha256_hex(data: PackedByteArray) -> String:
 	var ctx := HashingContext.new()
 	ctx.start(HashingContext.HASH_SHA256)
 	if not data.is_empty():
-		ctx.update(data) # Updating with nothing is an engine error.
+		ctx.update(data)
 	return ctx.finish().hex_encode()
 
 

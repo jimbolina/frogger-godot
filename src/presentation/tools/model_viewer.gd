@@ -395,7 +395,6 @@ func _place_camera() -> void:
 		_camera.position = GameSpace.position(0, -100, -350)
 		_camera.position.y *= 240.0 / 256.0
 		_camera.rotation = Vector3.ZERO
-		# MR_VIEW's PAL aspect matrix uses 320x256: focal lengths are 2000,1875.
 		_camera.fov = rad_to_deg(2.0 * atan(120.0 / 1000.0))
 		_camera.h_offset = 0.0
 		_camera.v_offset = 0.0
@@ -409,7 +408,6 @@ func _place_camera() -> void:
 	var direction: Vector3 = Vector3.BACK.rotated(Vector3.RIGHT, deg_to_rad(-_tilt)).rotated(Vector3.UP, deg_to_rad(_turn))
 	_camera.position = centre + direction * _distance
 	_camera.look_at(centre, Vector3.UP)
-	# Shift the picture to the middle of the space right of the lists.
 	var half_width: float = _distance * tan(deg_to_rad(FIELD_OF_VIEW * 0.5)) * VIEW_ASPECT
 	_camera.h_offset = -half_width * LIST_WIDTH / VIEW_WIDTH
 	var half_height: float = _distance * tan(deg_to_rad(FIELD_OF_VIEW * 0.5))
@@ -490,7 +488,6 @@ func _bank(resource_id: int) -> VloFile:
 	return _banks[resource_id]
 
 
-# The textures a WAD's models can use: the GENERAL bank, then the WAD's own.
 func _use_banks_of(wad_id: int) -> void:
 	_library = TextureLibrary.new()
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)

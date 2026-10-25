@@ -20,7 +20,6 @@ def verify_identity(path: Path) -> str:
 
 def audit(path: Path, objdump: str) -> dict:
     digest = verify_identity(path)
-    # Disassembly remains in memory and is reduced to assertions/scalar facts.
     result = subprocess.run([objdump, "-d", str(path)], check=True,
                             capture_output=True, text=True)
     instructions = {}
@@ -30,7 +29,6 @@ def audit(path: Path, objdump: str) -> dict:
             operation = match[2].split()[0]
             numeric_operands = tuple(int(value, 16) for value in re.findall(r"0x([0-9a-f]+)", match[2]))
             instructions[int(match[1], 16)] = (operation, numeric_operands)
-    # Semantic categories and scalar operands only; no instruction excerpts.
     checks = {0x4234EB: ("push", (20,)), 0x4234E6: ("push", (0x4238C0,)),
               0x4234ED: ("call", (0x457B50,)), 0x457B8D: ("call", (0x4AD5BC,)),
               0x4238E1: ("incl", (0x475918,)), 0x4238ED: ("test", (1,)),

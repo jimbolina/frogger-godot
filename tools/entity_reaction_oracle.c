@@ -1,5 +1,3 @@
-/* Offline entity reaction oracle.  The collision and kill functions are the
- * unchanged frozen implementations; only display/audio factories are caught. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "COLLIDE.H"
@@ -91,8 +89,6 @@ int main(void) {
             entities[i].en_flags=(MR_USHORT)eflags; entities[i].en_live_entity=&lives[i];
             lives[i].le_entity=&entities[i]; lives[i].le_lwtrans=m; lives[i].le_api_item0=NULL;
         }
-        /* Map load links STATIC records in authored order.  On each frame
-         * the moving pass inserts MOVING records at the group head. */
         for(int i=0;i<n;i++) if(entity_kinds[i]==0)
             EntityLinkToMapGroup(&entities[i], (MR_VEC *)entity_matrices[i].t);
         for(int i=0;i<n;i++) if(entity_kinds[i]==1 && !(entities[i].en_flags & ENTITY_HIDDEN))

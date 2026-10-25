@@ -30,7 +30,6 @@ func advanced_copy(tick_index: int, attached_entity_index: int = -1) -> EntityRu
 	result._lifecycle = _lifecycle
 	result._definitions.assign(_definitions)
 	result._scripts.assign(_scripts)
-	# step reads these inputs and replaces them only after complete success.
 	result._runners.assign(_runners)
 	result._state = _state
 	result.error = result.step(tick_index, attached_entity_index)
@@ -198,8 +197,6 @@ func step(tick_index: int, attached_entity_index: int = -1) -> String:
 			entity.live = current.live
 			entity.destroy_pending = current.destroy_pending
 			entity.generation = current.generation
-		# The C live list is traversed from its head. A prior DESTROY flag is
-		# checked before this tick's update; an attached frog pins that live object.
 		var survivors := PackedInt32Array()
 		for entity_id: int in next_state.live_order:
 			var slot: int = _slot_for_id(entity_id)
@@ -227,8 +224,6 @@ func update_script(entity_index: int, context: EntityUpdateContext, random: Sour
 	var slot: int = _slot_for_id(entity_index)
 	return _update_script(slot, context, random, false)
 
-# Only TerrainRun's unpublished candidate uses this path. Any error discards
-# the entire aggregate, including RNG and effects from earlier entities.
 func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool) -> EntityUpdateResult:
 	if slot < 0 or _state == null or _definitions[slot].script_definition == null:
 		var failed := EntityUpdateResult.new()

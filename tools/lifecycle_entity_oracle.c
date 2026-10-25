@@ -1,6 +1,3 @@
-/* Invented two-entity lifecycle through unchanged frozen path/entity/group C.
- * Models are marked NO_MODEL, and polygon payloads are empty: this transport
- * observes entity expansion and lifetime, not renderer allocation. */
 #define main frozen_main_unused
 #include "MR_ALL.H"
 #include "gamesys.H"

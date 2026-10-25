@@ -1,16 +1,13 @@
-# Godot's generated cache and import data
 .godot/
 *.translation
 /tests/golden/synthetic/*.csv.import
 
-# Export output and presets that may hold local paths or credentials
 /export/
 /build/
 export_presets.cfg
 *.pck
 *.zip
 
-# Game data must never enter the repository: the player supplies it.
 *.EXE
 *.exe
 *.MWD
@@ -20,7 +17,6 @@ export_presets.cfg
 *.RPL
 *.rpl
 
-# Editor and OS clutter
 __pycache__/
 .DS_Store
 Thumbs.db

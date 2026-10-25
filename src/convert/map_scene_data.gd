@@ -61,8 +61,6 @@ static func load_level(data: GameData, level_number: int, use_low_poly: bool = f
 	scene.preferred = scene._load_bank(data, theme, multiplayer)
 	if not scene.error.is_empty():
 		return scene
-	# This pointer is for model environment mapping. Terrain always uses its
-	# own remapped polygon texture, including polygons with ENVMAP UVs.
 	if row.environment_texture_pointer != 0:
 		scene.environment_image = scene.library.image_for_pointer(data.tables.bmp_pointers(), row.environment_texture_pointer, scene.preferred)
 	scene.cave_enabled = row.use_cave_lights

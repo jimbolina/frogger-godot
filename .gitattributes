@@ -1,6 +1,5 @@
 * text=auto eol=lf
 
-# Binary third-party assets (GUT's fonts and icons)
 *.png binary
 *.ttf binary
 *.otf binary

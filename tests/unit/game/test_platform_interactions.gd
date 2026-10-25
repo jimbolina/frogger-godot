@@ -977,7 +977,6 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 	assert_true(failed.events.is_empty())
 	assert_true(failed.entity_contacts.is_empty())
 	assert_true(failed.rng_consumers.is_empty())
-	# Widen only the test-owned guard to allow retrying the same unconsumed tick.
 	run._exploration_guard.world_bounds = Rect2i(-256, -256, 512, 512)
 	var retry: TickResult = _tick(run)
 	assert_eq(retry.error, "")

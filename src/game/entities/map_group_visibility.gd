@@ -54,8 +54,6 @@ static func query(lifecycle: EntityLifecycleDefinition, camera: GameplayCameraSn
 	var centre := Vector2i(_s32(intersections[0].x + intersections[1].x + intersections[2].x + intersections[3].x) >> 2,
 		_s32(intersections[0].y + intersections[1].y + intersections[2].y + intersections[3].y) >> 2)
 	for index: int in 4:
-		# MAPVIEW replaces only centre X/Z: its final ray Y survives into the
-		# border normalization, while the static intersection vectors have Y=0.
 		var delta: Vector3i = _normalize(Vector3i(_s32(intersections[index].x - centre.x), -border_centre_y, _s32(intersections[index].y - centre.y)))
 		intersections[index] += Vector2i(_s32(delta.x * BORDER) >> 12, _s32(delta.z * BORDER) >> 12)
 	intersections.append(Vector2i(camera.source_world.x, camera.source_world.z))

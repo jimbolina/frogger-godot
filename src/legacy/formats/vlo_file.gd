@@ -96,15 +96,13 @@ static func parse(bytes: PackedByteArray, decode_pixels: bool = true) -> VloFile
 ## Converts [param width] x [param height] stored pixels (A, B, G, R) to RGBA8
 ## by the rule in this class's description.
 static func decode_rgba(stored: PackedByteArray, width: int, height: int, black_is_transparent: bool) -> PackedByteArray:
-	# Reversing the whole buffer turns every A,B,G,R into R,G,B,A but also
-	# reverses the pixel order, which flipping both ways undoes. All native.
 	var swapped: PackedByteArray = stored.duplicate()
 	swapped.reverse()
 	var image: Image = Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, swapped)
 	image.flip_x()
 	image.flip_y()
-	image.convert(Image.FORMAT_RGB8) # Drops the stored alpha ...
-	image.convert(Image.FORMAT_RGBA8) # ... and makes every pixel opaque.
+	image.convert(Image.FORMAT_RGB8)
+	image.convert(Image.FORMAT_RGBA8)
 	var rgba: PackedByteArray = image.get_data()
 	if black_is_transparent:
 		var words: PackedInt32Array = rgba.to_int32_array()
@@ -145,7 +143,6 @@ static func _read_header(reader: ByteReader, i: int) -> VloImage:
 	return image
 
 
-# The checks FrogLord makes when loading an image header.
 static func _check_header(image: VloImage) -> String:
 	if image.padded_width < image.width or image.padded_height < image.height:
 		return "padded size %dx%d is smaller than %dx%d" % [image.padded_width, image.padded_height, image.width, image.height]
@@ -159,7 +156,7 @@ func _read_names(reader: ByteReader) -> void:
 	if not reader.expect_signature(NAMES_SIGNATURE):
 		error = "unexpected data after the pixels: %s" % reader.error
 		return
-	reader.read_u8() # Format version (FrogLord reads any, warning about newer ones).
+	reader.read_u8()
 	var count: int = reader.read_u16()
 	for _i: int in count:
 		var image_index: int = reader.read_u16()

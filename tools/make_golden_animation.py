@@ -45,7 +45,6 @@ def matrix_from_transform(code, values):
               (xz+wy) >> shift, (yz-wx) >> shift, 4096-((xx+yy) >> shift)]
     matrix = [signed_short(v) for v in matrix]
     if code >= 4 and values[10] & 1:
-        # MR_SCALE_MATRIX left-multiplies by the diagonal scale matrix.
         matrix = [(v * (values[7+i // 3] << 7)) >> 12 for i, v in enumerate(matrix)]
     return [signed_short(v) for v in matrix] + values[4:7]
 
@@ -99,12 +98,9 @@ def sampled_matrix(xar, action, frame, part):
     if action['flags'] == 1:
         cel = cells[frame] - (0 if xar['zero'] else 1)
         return xar['transforms'][indices[cel*action['parts']+part]]
-    # Authored quaternion interpolation. Retail only uses standard tables.
     previous, following, weight = cells[frame*3:frame*3+3]
     a = xar['raw'][indices[previous*action['parts']+part]]
     b = xar['raw'][indices[following*action['parts']+part]]
-    # MRInterpolateQuaternions starts with the authored dot product, not unit
-    # versions of the inputs. Floating trig approximates the C lookup tables.
     byte_quaternion = xar['code'] in (2, 4)
     qa = [v << 6 if byte_quaternion else v for v in a[:4]]
     qb = [v << 6 if byte_quaternion else v for v in b[:4]]
@@ -123,8 +119,6 @@ def sampled_matrix(xar, action, frame, part):
             end = math.sin(u*angle)/math.sin(angle)
             start = math.cos(u*angle)-cosine*end
         q = [signed_short(math.floor(start*x+flip*end*y)) for x,y in zip(qa,qb)]
-    # MRInterpolateQuaternionsBToMatrix applies MRNormaliseQuaternion with a
-    # divisor clamped to 0x1000 +/- 0x20; this is not full unit normalization.
     if weight and byte_quaternion:
         divisor = min(4128, max(4064, math.isqrt(sum(v*v for v in q))))
         factor = (1 << 24) // divisor

@@ -58,7 +58,6 @@ def source_math(case):
     m, p = case["matrix12"], case["frog"]
     delta = [s16(p[i] - m[9 + i]) for i in range(3)]
     distance = s32(sum(v * v for v in delta))
-    # TransposeMatrix then ApplyMatrix: signed32 sum, arithmetic shift once.
     local = [s32(sum(m[row * 3 + axis] * delta[row] for row in range(3))) >> 12
              for axis in range(3)]
     return distance, local
@@ -121,7 +120,7 @@ def write_synthetic(path, cases, oracle):
 def parse_forms(data):
     if data[:4] != b"FROG" or data[8:12] != b"2.00":
         raise ValueError("unsupported final PC map")
-    packet = read(data, 84, "<I")  # FORM pointer in FROG header.
+    packet = read(data, 84, "<I")
     if data[packet:packet + 4] != b"FORM":
         raise ValueError("missing FORM packet")
     count = read(data, packet + 4, "<H")
@@ -210,7 +209,7 @@ def write_retail_contacts(path, data_dir, version):
                 box = cel["box"]
                 for i in range(0, len(box), 3):
                     radius = max(radius, sum(v * v for v in box[i:i + 3]))
-        radius = s32(radius + 100)  # MAPLOAD_MOF_RADIUS_EXTEND.
+        radius = s32(radius + 100)
     first_box = parts[0]["partcel_list"][0]["box"]
     max_y = 32767 if book["flags"] & 32 else (256 if book["flags"] & 512 else first_box[22])
     data = next(content for rid, _name, content in retail_maps(data_dir, version)
@@ -223,7 +222,7 @@ def write_retail_contacts(path, data_dir, version):
     _, kind, height, _flag_ptr, _height_ptr, flags = items[0]
     if kind != 0:
         raise ValueError("ORG1 small-log height type is not GRID")
-    packet = read(data, 88, "<I")  # EMTP pointer.
+    packet = read(data, 88, "<I")
     if data[packet:packet + 4] != b"EMTP":
         raise ValueError("missing ORG1 EMTP")
     count = read(data, packet + 8, "<H")

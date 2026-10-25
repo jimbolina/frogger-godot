@@ -80,7 +80,7 @@ func _authored(map: MapFile, form_id: int, unique_id: int) -> EntityDefinition:
 func test_shared_last_writer_includes_omitted_neighbor_and_identity_gaps() -> void:
 	var map: MapFile = _map()
 	var first: EntityDefinition = _authored(map, 0, 7)
-	_authored(map, 1, 7) # Absent from base setup, but still writes shared max Y.
+	_authored(map, 1, 7)
 	var book: ThemeBook = _book()
 	var models: Dictionary[int, MofFile] = {0: _model(20), 1: _model(40)}
 	var setup: FormContactSetup = FormContactSetup.from_map(map, book, [first], models, "ORG1", 658, "pc-retail-v3.0e")

@@ -211,7 +211,6 @@ func test_forbidden_identity_without_current_link_does_not_pin() -> void:
 	if not run.error.is_empty():
 		return
 	assert_eq(_tick(run).error, "")
-	# Represent a prior offscreen update with only the departure exclusion left.
 	run._entities._state.entities[0].destroy_pending = true
 	run._state.forbidden_entity_index = 9
 	assert_eq(run.snapshot().current_entity_index, -1)
@@ -233,7 +232,6 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 		return
 	assert_eq(_tick(run).error, "")
 	var before: RunSnapshot = run.snapshot()
-	# Fault injection is confined to the owned candidate definition, never player data.
 	run._entities._lifecycle.polygon_counts.fill(2500)
 	var failed: TickResult = _tick(run)
 	_assert_failed(failed)

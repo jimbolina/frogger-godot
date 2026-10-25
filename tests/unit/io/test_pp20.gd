@@ -6,7 +6,6 @@ var _unpacker := Pp20.new()
 
 
 func _sample(size: int, seed_value: int) -> PackedByteArray:
-	# Text-like data: repeated words with some noise, so copies of every length occur.
 	var words: Array[String] = ["frog ", "log ", "turtle ", "lorry ", "croak ", "hop ", "the "]
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
@@ -85,7 +84,6 @@ func test_not_pp20() -> void:
 
 func test_truncated_stream_fails_cleanly() -> void:
 	var packed: PackedByteArray = _packer.pack(_sample(800, 4))
-	# Drop bytes from the middle of the bit stream, keeping header and trailer.
 	var cut: PackedByteArray = packed.slice(0, 8)
 	cut.append_array(packed.slice(packed.size() - 40))
 	var out: PackedByteArray = _unpacker.unpack(cut)
@@ -95,6 +93,6 @@ func test_truncated_stream_fails_cleanly() -> void:
 
 func test_size_field_larger_than_the_stream() -> void:
 	var packed: PackedByteArray = _packer.pack("tiny".to_ascii_buffer(), 0, true)
-	packed[packed.size() - 3] = 0x40 # claim 16 KB of output
+	packed[packed.size() - 3] = 0x40
 	assert_eq(_unpacker.unpack(packed), PackedByteArray())
 	assert_ne(_unpacker.error, "")

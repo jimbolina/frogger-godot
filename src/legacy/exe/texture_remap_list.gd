@@ -101,8 +101,6 @@ func _register(found: Dictionary[int, TextureRemap], offset: int, remap_name: St
 	found[offset] = remap
 
 
-# Reads ids until a terminator or the next remap; returns where the remap's
-# space ends (after any zero padding).
 func _read_ids(exe: ExeImage, remap: TextureRemap, next_start: int) -> int:
 	var reader: ByteReader = exe.reader_at(remap.file_offset)
 	if reader.has_error():

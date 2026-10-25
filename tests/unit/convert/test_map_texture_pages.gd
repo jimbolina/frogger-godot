@@ -36,7 +36,7 @@ func test_byte_wrap_samples_neighbour_image_on_the_same_page() -> void:
 
 func test_later_theme_uploads_override_and_colour_key_covers_the_page() -> void:
 	var first: VloImage = _image(1, 10, 0, 2, 1, Color8(7, 6, 5))
-	first.pixels[3] = 0 # P3 FrogLord decoding keyed near-black; map runtime restores opaque.
+	first.pixels[3] = 0
 	var exact_black: VloImage = _image(3, 9, 0, 1, 1, Color.BLACK)
 	var later: VloImage = _image(2, 11, 0, 1, 1, Color.BLUE)
 	later.flags = VloImage.FLAG_BLACK_IS_TRANSPARENT

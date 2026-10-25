@@ -272,7 +272,6 @@ func test_collision_landing_deferred_death_and_completion_corpus() -> void:
 					state = result.collision_snapshot
 				var values: Array[int] = _fields(state)
 				values.resize(16)
-				# C mutates lives/mainloop; P7 represents only their requested outcomes.
 				var requested_lives: int = state.fixture_lives - (1 if state.life_decrement_requested else 0)
 				var requested_game_mode: int = state.game_mode_request if state.game_mode_request >= 0 else 10
 				values.append_array([state.old_y, state.target_y, requested_lives, state.death_count, state.death_equate, state.world_position.y, requested_game_mode])
@@ -285,7 +284,5 @@ func test_collision_landing_deferred_death_and_completion_corpus() -> void:
 				after.tick_index = tick + 1
 				assert_string_contains(run.step(after).error, "completed")
 				assert_eq(_fields(run.snapshot()), finished)
-				# Frozen adapter omits mainloop setup and keeps invoking dead components.
-				# Gameplay stops at the first completion request; these later rows are outside scope.
 				row += (89 - tick) * 3
 				break

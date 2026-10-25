@@ -25,8 +25,6 @@ HEADER = ('case', 'mode', 'flags', 'death_animation', 'vx16', 'vy16', 'vz16',
           'camera_mode', 'pgen_requests', 'sound_requests', 'hit_indices',
           'contact_indices', 'reaction_statuses', 'death_entity_index')
 IDENTITY = [4096, 0, 0, 0, 4096, 0, 0, 0, 4096]
-# Independent expected retail observation; derived again below from map
-# geometry and the frozen JumpFrog/MoveFrog arithmetic before writing facts.
 DES2_PROBE = (4, 46, (-683, -1576, 2176), (47, -21, 5), 2675)
 
 
@@ -59,8 +57,6 @@ def authored_moving(index, flags=4097, entity_flags=16, speed=10):
     entity['path_definition'] = dict(path_index=0, segments=[dict(segment_type=2,
         length=20, start=[-138, 0, -128], end=[-118, 0, -128])])
     entity['path_start'] = dict(segment_index=0, distance=0, speed=speed, flags=8)
-    # The authored tick-zero collision pose is also a C transport input.
-    # Source path movement is checked separately by the integrated adapter.
     entity['matrix12'] = IDENTITY + [-128 if speed == 10 else -138, 0, -128]
     return entity, contact
 

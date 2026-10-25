@@ -27,6 +27,8 @@ FrogLord names, warn/fall back/report unknown entries.
   and record its commit. The project licence remains the owner's decision.
 - `src/legacy/` classes extend `RefCounted`, without nodes/tree dependencies.
   Keep one responsibility per class; document classes/public methods with `##`.
+- Keep only genuine docstrings in project code, plus required directives and
+  licence notices. Omit ordinary comments.
 - Write plainly. Do not import reference-repository milestone/ruling bookkeeping.
 - Commits use descriptive summaries, no attribution trailers. Never push.
 

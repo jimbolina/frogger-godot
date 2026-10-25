@@ -116,7 +116,6 @@ class Script:
                     self.colours=[(packed>>shift)&255 for shift in (0,8,16)]
                     self.ambient=[64,64,192]
                 drown=carry and self.deviation>=128
-            # Frozen sound.h GENERIC enum: splat, splash2, thud/splash1.
             else:
                 ids={0:[13],1:[19],8:[14,15]}[callback];sounds.extend(ids)
                 self.requests += [f'sound:{i}:0:0:0' for i in ids]

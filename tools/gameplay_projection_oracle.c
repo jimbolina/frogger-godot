@@ -1,5 +1,3 @@
-/* Asset-free scalar projection fixture using frozen camera/view/GTE functions.
- * No renderer, retail data or copied implementation is embedded here. */
 #include "MR_ALL.H"
 #include "gpu/mr_stub_gpu.h"
 #include "gpu/mr_stub_gte.h"

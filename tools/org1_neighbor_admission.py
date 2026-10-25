@@ -111,8 +111,6 @@ def model_facts(context, resource_id, cache):
     counterpart_id = -1
     counterpart = None
     if raw[:4] == b'\x02FOM' and contacts.read(raw, 28, '<I') == 0x40:
-        # FrogLord uses the nearest earlier complete model, not the preceding
-        # entity. GENERAL checkpoint variants 207..210 borrow model 206.
         candidates = sorted({rid for children in context['wads'].values()
                              for rid, kind in children if kind in (3, 4) and rid < resource_id}, reverse=True)
         for rid in candidates:
@@ -187,8 +185,6 @@ def form_xz_bounds(matrix, form):
     corners = [(Fraction(d*x-b*z, determinant)+matrix[9],
                 Fraction(a*z-c*x, determinant)+matrix[11]) for x in xs for z in zs]
     ceil = lambda value: -(-value.numerator // value.denominator)
-    # Integer world coordinates inside the parallelogram must lie in these
-    # closed bounds. Correlation is deliberately discarded (over-approximation).
     return [ceil(min(p[0] for p in corners)), max(p[0] for p in corners).__floor__(),
             ceil(min(p[1] for p in corners)), max(p[1] for p in corners).__floor__()]
 
@@ -288,8 +284,6 @@ def neighbor_admission(facts, context, candidate=CANDIDATE):
         grid_id, uid, form_id, flags = struct.unpack_from('<4H', data, at)
         owner = 0 if form_id & 0x8000 else context['theme']
         book = context['forms'][owner][form_id & 0x7fff]
-        # Resolve actual EXE book fields afresh: the inventory is provenance,
-        # not authority for a possibly repointed script/type/form association.
         for value, names in ((book['global'],context['names']),
                              (book['entity_type'],context['entity_names']),
                              (book['script'],context['script_names'])):
@@ -351,8 +345,6 @@ def neighbor_admission(facts, context, candidate=CANDIDATE):
                     for distance in range(segment['length']+1):
                         _param, position, tangent = paths.sample(segment, distance, False)
                         matrix = entities.moving_matrix([0]*9+position+tangent, item['flags'])
-                        # X/Z differences and X/Z dot products cannot wrap in
-                        # source signed16/signed32 for any admitted origin.
                         dx = max(abs(candidate[0]-position[0]), abs(candidate[1]-1-position[0]))
                         dz = max(abs(candidate[2]-position[2]), abs(candidate[3]-1-position[2]))
                         if max(dx,dz) >= 32768 or any(abs(matrix[k])*dx+abs(matrix[k+6])*dz >= 2**31
@@ -398,7 +390,6 @@ def neighbor_admission(facts, context, candidate=CANDIDATE):
             if item['flags'] & 8:
                 item['contact_status'] = 'excluded_no_collision_authored_flag'
             elif item['entity_type'] == 'ORG_FLY':
-                # Real fly update relocates to each checkpoint, then adds -50 Z.
                 points = [other['source_offset'] for other in records if other['entity_type']=='CHECKPOINT']
                 positions = [matrix[9:]] + [list(struct.unpack_from('<3i',data,p+44)) for p in points]
                 for point in positions[1:]:
@@ -417,8 +408,6 @@ def neighbor_admission(facts, context, candidate=CANDIDATE):
                 dx = max(candidate[0]-matrix[9], 0, matrix[9]-(candidate[1]-1))
                 dz = max(candidate[2]-matrix[11], 0, matrix[11]-(candidate[3]-1))
                 item['minimum_candidate_xz_distance_squared'] = dx*dx+dz*dz
-                # Y is converted to signed16 before squaring. For these static
-                # positions the sum stays signed32 even at |Y| = 32768.
                 safe_width = sphere_width_closed(matrix[9:],candidate)
                 item['sphere_source_widths_closed'] = safe_width
                 item['contact_status'] = ('excluded_by_origin_sphere' if safe_width and dx*dx+dz*dz >= item['radius_squared']

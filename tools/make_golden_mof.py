@@ -45,10 +45,10 @@ import struct
 import sys
 import time
 
-sys.dont_write_bytecode = True  # keep tools/ free of __pycache__
+sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_golden_manifest import FLAG_GROUP_ACCESS, SECTOR_SIZE, is_compressed, pp20_unpack, read_mwi  # noqa: E402
-from make_golden_exe_tables import (  # noqa: E402
+from make_golden_manifest import FLAG_GROUP_ACCESS, SECTOR_SIZE, is_compressed, pp20_unpack, read_mwi
+from make_golden_exe_tables import (
     CFG_ROOT, LEVEL_CODES, THEMES, Exe, digest, java_int, name_list, parse_cfg, read_forms, read_map_book,
     read_theme_book)
 
@@ -62,7 +62,6 @@ COLLPRIM_LAST_IN_LIST = 1 << 1
 FORM_FLAG_NO_MODEL = 1 << 0
 FIRST_GENERAL_MODEL = 128
 
-# MRMofPolygonType: name, vertices, environment normals, normals, textured.
 POLYGON_TYPES = [
     ("F3", 3, 0, 1, False), ("F4", 4, 0, 1, False), ("FT3", 3, 0, 1, True), ("FT4", 4, 0, 1, True),
     ("G3", 3, 0, 3, False), ("G4", 4, 0, 4, False), ("GT3", 3, 0, 3, True), ("GT4", 4, 0, 4, True),
@@ -370,8 +369,6 @@ def parse_model(data, label, counterpart, warnings):
             end = pointers[i + 1] if i + 1 < static_count else table_ptr
             other = counterpart["statics"][i] if counterpart is not None and i < len(counterpart["statics"]) else None
             static = parse_static(data[start:end], "%s model %d" % (label, i), other, warnings)
-            # The reference engine takes the extent from the model's own length; parse_static
-            # has just checked that this equals FrogLord's pointer-to-pointer extent.
             model["statics"].append(static)
     else:
         model["kind"] = "static"
@@ -385,8 +382,8 @@ def load_archive(data_dir, mwi_offset, mwi_length):
     exe = open(os.path.join(data_dir, "FROGGER.EXE"), "rb").read()
     mwd = open(os.path.join(data_dir, "FROGPSX.MWD"), "rb").read()
     entries = read_mwi(exe[mwi_offset:mwi_offset + mwi_length])
-    wads = {}     # WAD resource id -> [(resource id, type id)]
-    files = {}    # resource id -> bytes of the first copy
+    wads = {}
+    files = {}
     for e in entries:
         if e["type"] != -1 or (e["flags"] & FLAG_GROUP_ACCESS):
             continue
@@ -437,7 +434,6 @@ def main():
     for rid in model_ids:
         label = "%d %s" % (rid, file_name(entries, rid))
         data = files[rid]
-        # SCUtils.makeModel: the nearest earlier model that is not incomplete.
         previous = -1
         for other in range(rid - 1, -1, -1):
             if other in models and not models[other]["incomplete"]:
@@ -514,7 +510,6 @@ def main():
             if rid in models:
                 child_kinds[models[rid]["kind"]] += 1
 
-    # Which model each form of each level uses (FroggerFormEntry.getModel).
     exe = Exe(exe_bytes, cfg["ramOffset"])
     _names, form_sections, _cfg = name_list("forms", ver.values.get("formList", "1997-09-12-psx-build57"))
     map_rows, _end = read_map_book(exe, cfg["mapBook"], cfg["themeBook"])

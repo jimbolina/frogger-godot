@@ -57,8 +57,6 @@ func form_count() -> int:
 	return all_forms.size()
 
 
-# Themes are read in order; a theme without a library is skipped and does not
-# end the previous theme's library (FroggerGameInstance.readFormLibrary).
 func _read_forms(exe: ExeImage, names: GameNameLists) -> void:
 	var order: Array[int] = []
 	var last: int = 0

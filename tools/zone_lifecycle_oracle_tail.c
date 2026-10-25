@@ -1,6 +1,3 @@
-/* Numeric transport appended to the existing frog/animation and flat-grid adapters.
- * Executes unchanged frozen zone, camera, path, live-entity and map-view code.
- * NO_MODEL and empty terrain polygon payloads omit only rendering allocation. */
 #include "ZONE.H"
 #include "MISC.H"
 #include "ENTLIB.H"

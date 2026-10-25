@@ -73,7 +73,6 @@ func test_jun1_zone_lifecycle_matches_independent_reference() -> void:
 		assert_eq(ZoneLifecycleChecks._integer(inspection.row.polygon_total), ZoneLifecycleChecks._integer(row.polygon_total))
 	assert_eq(inspection.reset(), "")
 	assert_true(inspection.entities.snapshot().live_order.is_empty())
-	# Changing a supported named binding still invalidates this particular retail proof.
 	var form: FormBookEntry = data.tables.theme_book().get_form(inspection.map_scene.map.general.theme, inspection.entity_definitions[0].form_id)
 	var saved_script: int = form.script_id
 	form.script_id = 1

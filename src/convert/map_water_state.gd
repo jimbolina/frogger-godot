@@ -38,7 +38,6 @@ func configure(source_vertices: Array[Vector3i], polygons: Array[MapPolygon], pl
 	_table.clear()
 	var previous: int = 0
 	for index: int in 32:
-		# Frozen portable engine synthesizes rsin by lround(sin * 4096).
 		var current: int = roundi(sin(float(index + 1) * TAU / 32.0) * 4096.0) >> 9
 		_table.append(current - previous)
 		previous = current

@@ -31,7 +31,6 @@ static func control(state: RunSnapshot, command: TickCommand, directions: Packed
 			result.animation_ids.append(animation_id)
 			result.start_slipping_sound = theme == 7
 	elif relative == 0:
-		# Caller supplies terrain average normal to this branch below.
 		result.forward_steering = true
 	else:
 		state.velocity_16.x = _brake(state.velocity_16.x, speed.x)

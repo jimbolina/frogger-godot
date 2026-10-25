@@ -1,5 +1,3 @@
-/* Frozen froganim.C + MR_ANIM.C component oracle, with authored action metadata.
- * No renderer, retail model bytes, animation-rule wrappers or fake dispatch. */
 #define main frozen_main_unused
 #include "FROG.H"
 #include "froganim.h"
@@ -70,7 +68,6 @@ int main(int argc,char** argv) {
             if(scenario==4) {if(tick==0) FrogRequestAnimation(Frogs,FROG_ANIMATION_SLIPLEFT,0,0);if(tick==2) FrogRequestAnimation(Frogs,FROG_ANIMATION_SLIPRIGHT,0,0);}
             Frogs[0].fr_no_input_timer=scenario==3 ? 30 : 0;
             UpdateFrogAnimationScripts();emit(scenario,tick,"scripts");
-            /* Omit only LW pose construction; real MR_ANIM.C owns cel stepping. */
             MR_USHORT flags=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=flags;
             emit(scenario,tick,"pose");
         }

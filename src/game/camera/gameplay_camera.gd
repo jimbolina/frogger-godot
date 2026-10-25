@@ -74,8 +74,6 @@ func request_turn(direction: int, frog_zone_present: bool = false, entity_matrix
 		if not entity_matrix12.is_empty():
 			matrix = PlatformMath.multiply(matrix, PlatformMath.project(entity_matrix12))
 		var quadrant: int = (world_quadrant(matrix) + direction) & 3
-		# Frozen build sanitizes vendor FROG.C's sizeof(ZONE) stride to SVEC[2*q].
-		# Verified through actual ControlFrog, including quadrant three.
 		var offset_index: int = quadrant * 2
 		if offset_index + 1 >= _zone.camera_offsets.size():
 			return "ZONE[%d] manual turn quadrant %d reads outside the camera payload; tick rolled back" % [_zone.zone_index, quadrant]

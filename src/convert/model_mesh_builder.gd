@@ -47,7 +47,6 @@ func _init(library: TextureLibrary, preferred_bank: VloFile = null) -> void:
 	_preferred = preferred_bank
 
 
-# The corners of one surface being collected.
 class _Surface:
 	extends RefCounted
 	var image: VloImage
@@ -98,7 +97,6 @@ func build_animated(file: MofFile, static_index: int = 0) -> ModelMesh:
 			for part_index: int in result.part_bounds.size():
 				var pose: Transform3D = GameSpace.transform(file.animated.sample_matrix(static_index, action_index, frame, part_index))
 				var local: AABB = result.part_bounds[part_index]
-				# A sphere around the part origin also covers rotations between two samples.
 				var radius: float = 0.0
 				for corner: int in 8:
 					radius = maxf(radius, local.get_endpoint(corner).length())
@@ -113,7 +111,6 @@ func build_animated(file: MofFile, static_index: int = 0) -> ModelMesh:
 
 
 static func _basis_extent(basis: Basis) -> float:
-	# Gershgorin's bound on B^T B covers nonuniform scales and edited shears.
 	var xy: float = absf(basis.x.dot(basis.y))
 	var xz: float = absf(basis.x.dot(basis.z))
 	var yz: float = absf(basis.y.dot(basis.z))

@@ -81,8 +81,6 @@ func step(tick_index: int) -> String:
 		candidate.segment_length = segment.length
 		if candidate.segment_distance < 0:
 			candidate.segment_distance = _signed32(candidate.segment_distance + candidate.segment_length)
-		# PATH.C only changes one segment per update; do not iterate or clamp
-		# an overshoot that lies outside this new segment.
 		if candidate.total_distance < 0:
 			candidate.total_distance = _total_distance(candidate.segment_index, candidate.segment_distance)
 		var sample_result: PathSample = PathEvaluator.sample(segment, candidate.segment_distance, bool(candidate.flags & PathStart.BACKWARDS))

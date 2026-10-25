@@ -21,7 +21,6 @@ static func update_camera_match(definitions: Array[ZoneDefinition], cell: Vector
 		var region: PackedInt32Array = zone.bounds if current.y == -1 and zone.regions.is_empty() else PackedInt32Array()
 		if current.y >= 0 and current.y < zone.regions.size():
 			region = zone.regions[current.y]
-		# C aliases a zero-child outer rectangle as signed ZONE_REGION words.
 		if _contains(region, cell, false):
 			return current
 		var retained: int = _region_in_zone(zone, cell)
