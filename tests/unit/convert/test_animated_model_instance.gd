@@ -73,6 +73,17 @@ func test_source_appearance_is_instance_local_and_preserves_shared_materials() -
 	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
 	changed_colour = b.get_shader_parameter("source_colour0")
 	assert_eq(changed_colour, lighting.colours[0], "in-place edits invalidate the lighting cache")
+	lighting.directions[0] = Vector3.FORWARD
+	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	var changed_direction: Vector3 = b.get_shader_parameter("source_direction0")
+	assert_eq(changed_direction, Vector3.FORWARD, "direction-only changes invalidate their uniforms")
+	lighting.directions.clear()
+	lighting.colours.clear()
+	second.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	changed_direction = b.get_shader_parameter("source_direction0")
+	changed_colour = b.get_shader_parameter("source_colour0")
+	assert_eq(changed_direction, Vector3.ZERO)
+	assert_eq(changed_colour, Vector3.ZERO, "removed lights clear previously populated slots")
 
 
 func test_flipbook_geometry_is_prebuilt_and_bounds_cover_all_cels() -> void:
@@ -112,6 +123,42 @@ func test_smoothing_reset_avoids_blending_across_loop_seek_and_toggle() -> void:
 	instance.render(0.0)
 	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
 	assert_eq(instance.physics_interpolation_mode, Node.PHYSICS_INTERPOLATION_MODE_OFF)
+
+func test_skipped_pose_drawing_clears_previously_displayed_morph_weights() -> void:
+	var file: MofFile = _flipbook()
+	var part: MofPart = file.static_models[0].parts[0]
+	part.partcels.append(part.partcels[0])
+	part.partcel_count = 3
+	part.flipbook_actions[0].frame_count = 3
+	var instance: AnimatedModelInstance = _instance(file)
+	instance.smoothing_enabled = true
+	instance.advance_tick()
+	instance.render(1.0)
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
+	instance.player.frame = 2
+	instance.capture_pose()
+	instance.player.frame = 0
+	instance.capture_pose()
+	instance.render(0.5)
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.0)
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(1), 0.5)
+
+func test_unchanged_geometry_settles_interpolation_and_keeps_visibility_tick_driven() -> void:
+	var instance: AnimatedModelInstance = _instance(_flipbook())
+	instance.smoothing_enabled = true
+	instance.advance_tick()
+	instance.render(0.5)
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.5)
+	var retained: ModelPose = instance._current
+	instance.player.end_mode = ModelAnimationPlayer.EndMode.HIDE
+	instance.advance_tick()
+	assert_same(instance._current, retained, "unchanged geometry does not allocate another pose")
+	assert_false(instance.visible, "same-cel hiding still changes on its authoritative tick")
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0, "holding settles the previous interpolation")
+	for fraction: float in [0.25, 0.75, 1.0]:
+		instance.render(fraction)
+	assert_eq(instance.player.tick, 2)
+	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
 
 
 func test_skeletal_smoothing_retains_exact_endpoints_and_authoritative_state() -> void:
@@ -221,6 +268,30 @@ func test_animated_texture_keeps_original_pixel_offsets_and_uses_current_blend_r
 	assert_same(instance.part_nodes[0].get_surface_override_material(track.surface), track.original)
 	assert_same(other.part_nodes[0].get_surface_override_material(track.surface), other_material, "each instance owns its surface override state")
 	print("animated render: 300 ticks and draws in %d us, resource count %d unchanged" % [Time.get_ticks_usec() - start, int(resources)])
+	var lighting := MapLighting.new()
+	lighting.ambient = Vector3(1024, 1024, 1024)
+	instance.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	var prepared: Dictionary[ShaderMaterial, ShaderMaterial] = instance._materials.duplicate()
+	for original: ShaderMaterial in track.frames:
+		assert_true(prepared.has(original), "even unseen texture frames are prepared before playback")
+		assert_ne(prepared[original], original)
+	instance.player.texture_animation_enabled = true
+	resources = Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT)
+	for _tick: int in 300:
+		instance.advance_tick()
+	assert_eq(instance._materials, prepared, "cycling texture frames reuses all prepared materials")
+	assert_eq(Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), resources)
+	lighting.ambient *= 2.0
+	instance.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	for original: ShaderMaterial in track.frames:
+		var updated: Vector3 = prepared[original].get_shader_parameter("source_ambient")
+		assert_eq(updated, lighting.ambient, "inactive variants receive lighting invalidation")
+	track.original.set_shader_parameter("projection_scale", Vector2(2.0, 3.0))
+	instance.player.texture_animation_enabled = false
+	instance.apply_exact()
+	var projection: Vector2 = prepared[track.original].get_shader_parameter("projection_scale")
+	assert_eq(projection, Vector2(2.0, 3.0), "prepared materials follow projection changes when bound")
+	assert_same(other.part_nodes[0].get_surface_override_material(track.surface), other_material)
 	var missing_original: VloFile = _texture_bank(false)
 	var missing_library := TextureLibrary.new()
 	missing_library.add_bank(missing_original, "replacement only")

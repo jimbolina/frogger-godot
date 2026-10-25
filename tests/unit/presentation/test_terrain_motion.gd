@@ -51,13 +51,23 @@ func test_rotating_platform_carries_rider_in_its_interpolated_frame() -> void:
 
 func test_recreated_or_disappearing_entities_collapse_and_reset_discards_history() -> void:
 	var before: RunSnapshot = _sample()
+	before.current_entity_index = 7
 	var current: RunSnapshot = before.copy()
+	current.position_16 = Vector3i(512, 0, 0) * 65536
+	current.camera.source_world = Vector3i(512, 0, 0)
 	current.entities.entities[0].matrix12[9] = 512
 	current.entities.entities[0].generation += 1
 	var motion := TerrainMotion.new()
 	motion.capture(before, current)
 	assert_eq(motion.entity(0, 0.0), motion.entity(0, 1.0))
+	assert_eq(motion.frog(0.0), motion.frog(1.0), "a recreated attachment cannot carry old rider history")
+	assert_eq(motion.camera(0.0), motion.camera(1.0))
 	current.entities.entities[0].generation = 0
+	current.entities.entities[0].unique_id += 1
+	motion.capture(before, current)
+	assert_eq(motion.entity(0, 0.0), motion.entity(0, 1.0), "changed identity collapses even with the same generation")
+	assert_eq(motion.frog(0.0), motion.frog(1.0))
+	current.entities.entities[0].unique_id = before.entities.entities[0].unique_id
 	current.entities.entities[0].live = false
 	motion.capture(before, current)
 	assert_eq(motion.entity(0, 0.0), motion.entity(0, 1.0))

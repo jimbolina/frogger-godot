@@ -73,11 +73,15 @@ func _run() -> void:
 		return
 	await process_frame
 	await RenderingServer.frame_post_draw
+	if mode == "no-inspector":
+		viewer._entity_inspection.hide()
+		viewer._label.hide()
 	var resources_before: Dictionary = _resources()
 	var frames := PackedFloat64Array()
 	var tick_frames := PackedFloat64Array()
 	var host_work := PackedFloat64Array()
 	var simulation := PackedFloat64Array()
+	var tick_intervals := PackedFloat64Array()
 	var draw_calls: int = 0
 	var primitives: int = 0
 	viewer.playing = mode != "paused"
@@ -86,6 +90,7 @@ func _run() -> void:
 	started = Time.get_ticks_usec()
 	previous = started
 	var previous_draw: int = started
+	var previous_tick: int = started
 	var duration: float = scenario.tick_limit / 30.0
 	if mode == "simulation":
 		for tick: int in scenario.tick_limit:
@@ -110,6 +115,8 @@ func _run() -> void:
 			if viewer._current.tick_index != before_tick:
 				tick_frames.append(frame_ms)
 				simulation.append(viewer.last_tick_usec / 1000.0)
+				tick_intervals.append((drawn - previous_tick) / 1000.0)
+				previous_tick = drawn
 			previous_draw = drawn
 			draw_calls = maxi(draw_calls, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 			primitives = maxi(primitives, int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
@@ -139,6 +146,10 @@ func _run() -> void:
 	var accepted: bool = mode == "full" and viewer.smoothing and outcome_ok and cadence_ok and fps > 200.0 and p99 <= 5.0
 	var report: Dictionary = {
 		"schema": "terrain-performance-v1", "mode": mode, "smoothing": viewer.smoothing,
+		"high_detail": not scenario.map_scene.low_poly and viewer.frog_assets != null,
+		"entity_count": final.entities.entities.size(), "overlay_visible": viewer._label.visible,
+		"inspector_visible": viewer._entity_inspection.visible,
+		"profiler_active": EngineDebugger.is_active(), "trace_active": viewer.record_trace,
 		"engine": Engine.get_version_info(), "cpu": OS.get_processor_name(),
 		"gpu": RenderingServer.get_video_adapter_name(), "renderer": RenderingServer.get_current_rendering_method(),
 		"window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y],
@@ -152,6 +163,7 @@ func _run() -> void:
 		"load_ms": load_ms, "reset_ms": reset_ms, "seconds": seconds, "fps": fps,
 		"frames": frame_stats, "tick_frames": _stats(tick_frames), "host_work": _stats(host_work),
 		"simulation": _stats(simulation), "ticks": final.tick_index, "ticks_per_second": final.tick_index / seconds,
+		"tick_intervals": _stats(tick_intervals),
 		"outcome_ok": outcome_ok, "cadence_ok": cadence_ok, "accepted": accepted,
 		"draw_calls_max": draw_calls, "primitives_max": primitives,
 		"resources_before": resources_before, "resources_after": _resources(),

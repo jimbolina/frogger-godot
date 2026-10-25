@@ -1,18 +1,16 @@
 # Current checkpoint
 
 Terrain movement, collision/deaths, gameplay camera and animation control
-follow the frozen C port at 30 Hz. Direct retail terrain-viewer launches use
-live keyboard input without diagnostic phase capture. See
+follow the frozen C port at 30 Hz. Retail terrain exploration uses live input. See
 [launch and controls](../README.md) and the [domain index](reference/domain.md).
 
 POP and SAFE interactions advance detached entity/path, frog, camera,
 animation and RNG state atomically. Platforms support landing, centring,
 carrying, local/departing hops and camera attachment. The opt-in JUN1 bank/log
-preset connects safe terrain to a moving log and back. It opens LIVE and
-paused, assumes all-attached lifetime, and rejects entire ticks that leave its
-audited world boundary or enter a camera zone. Its proof depends on pinned
-retail inputs; changed dependencies and visibility mode are rejected. R resets
-the inspection and presentation clocks. Water-start inspection remains available.
+preset connects bank, moving log and return. It opens LIVE and
+paused, and rejects entire ticks that leave its
+audited world boundary or enter a camera zone. Pinned retail inputs and
+all-attached lifetime are required. R resets the inspection and presentation clocks.
 See the
 [entity contract](reference/gameplay/entities.md#guarded-jun1-bank-route).
 
@@ -34,7 +32,9 @@ rendering remain deferred. See [inspection](reference/testing/terrain-inspection
 [PORTING](PORTING.md) owns the other remaining P8 dependencies;
 [architecture](reference/architecture.md) owns transaction boundaries.
 ORG1 uses prepared scripts, private transactions and asynchronous playback.
-Coherent smoothing is implemented; sustained performance acceptance remains open.
+Coherent smoothing, cached pose/morph updates and prepared lighting materials are
+implemented. Next, measure sustained performance on an idle system using the
+inspection procedure; acceptance remains open.
 
 Animated per-part lighting remains a
 [renderer limitation](reference/rendering/gameplay-projection.md).

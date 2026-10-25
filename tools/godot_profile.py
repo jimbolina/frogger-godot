@@ -70,9 +70,30 @@ def decode(raw):
     return result
 
 
+def visual_frames(messages, begin, end):
+    """Derive adjacent timestamp intervals only inside the measured route."""
+    rows = []
+    for message in messages:
+        if message[0] != 'visual:profile_frame' or not begin < message[2][0] <= end:
+            continue
+        frame = message[2]
+        if len(frame) < 8 or frame[1] != len(frame) - 2 or frame[1] % 3:
+            raise ValueError('Incomplete visual profiler timestamps')
+        points = [frame[index:index + 3] for index in range(2, len(frame), 3)]
+        intervals = [dict(stage=first[0], cpu_ms=second[1] - first[1],
+                          gpu_ms=second[2] - first[2])
+                     for first, second in zip(points, points[1:])]
+        rows.append(dict(frame=frame[0], cpu_ms=points[-1][1] - points[0][1],
+                         gpu_ms=points[-1][2] - points[0][2], intervals=intervals))
+    if not rows:
+        raise ValueError('No visual profiler frames inside the measurement interval')
+    return rows
+
+
 class ProfileCapture:
-    def __init__(self, output):
+    def __init__(self, output, kind='script'):
         self.output = output
+        self.kind = kind
         self.messages = []
         self.error = None
         self.listener = socket.socket()
@@ -99,8 +120,8 @@ class ProfileCapture:
                         message = decode(buffer[4:size + 4])
                         self.messages.append(message)
                         if message[0] == 'set_pid':
-                            for command in [['profiler:servers', message[1], [True, [2048, True]]],
-                                            ['profiler:visual', message[1], [True]]]:
+                            commands = [['profiler:servers', message[1], [True, [2048, True]]]] if self.kind == 'script' else [['profiler:visual', message[1], [True]]]
+                            for command in commands:
                                 packet = encode(command)
                                 peer.sendall(struct.pack('<I', len(packet)) + packet)
                         del buffer[:size + 4]
@@ -114,11 +135,16 @@ class ProfileCapture:
         self.output.write_text(json.dumps(self.messages))
         if self.thread.is_alive() or self.error:
             raise RuntimeError('Profiler capture failed: ' + str(self.error))
-        if not any(message[0] == 'servers:profile_frame' for message in self.messages):
-            raise RuntimeError('Godot did not return script profiler data')
+        expected = 'servers:profile_frame' if self.kind == 'script' else 'visual:profile_frame'
+        if not any(message[0] == expected for message in self.messages):
+            raise RuntimeError('Godot did not return ' + self.kind + ' profiler data')
         names = {m[2][1]: m[2][0] for m in self.messages if m[0] == 'servers:function_signature'}
         begin = next((m[2][0] for m in self.messages if m[0] == 'terrain:measurement_begin'), 0)
         end = next((m[2][0] for m in self.messages if m[0] == 'terrain:measurement_end'), 2**63)
+        if self.kind == 'visual':
+            rows = visual_frames(self.messages, begin, end)
+            self.output.with_suffix('.summary.json').write_text(json.dumps(dict(frames=len(rows), rendering=rows), indent=2))
+            return
         totals = defaultdict(lambda: [0, 0.0, 0.0, 0.0])
         count = 0
         for message in self.messages:

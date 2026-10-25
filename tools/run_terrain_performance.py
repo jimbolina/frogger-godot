@@ -13,8 +13,18 @@ from godot_profile import ProfileCapture
 def meets_target(report):
     """Require the actual workload and display state, not just requested CLI flags."""
     return (report['accepted'] and report['window_size'] == [2560, 1440]
+            and report['render_target_size'] == [1920, 1440] and report['bars'] == [320, 0]
             and report['renderer'] == 'gl_compatibility' and report['vsync'] == 0
-            and report['max_fps'] == 0 and report['draw_calls_max'] > 0)
+            and report['max_fps'] == 0 and report['draw_calls_max'] > 0
+            and report['mode'] == 'full' and report['smoothing']
+            and report['high_detail'] and report['entity_count'] == 64
+            and report['overlay_visible'] and report['inspector_visible']
+            and not report['profiler_active'] and not report['trace_active']
+            and report['outcome_ok'] and report['cadence_ok']
+            and report['fps'] > 200 and report['frames']['p99_ms'] <= 5
+            and report['ticks'] == report['tick_limit']
+            and [report['engine'][key] for key in ('major', 'minor', 'patch')] == [4, 5, 1]
+            and 'i7-10700K' in report['cpu'] and 'RTX 4070 Ti SUPER' in report['gpu'])
 
 
 def main():
@@ -32,6 +42,7 @@ def main():
     parser.add_argument('--smoothing', choices=('true', 'false'), default='true')
     parser.add_argument('--require-target', action='store_true')
     parser.add_argument('--profile', action='store_true', help='Separate diagnostic run with Godot script profiler')
+    parser.add_argument('--profile-kind', choices=('script', 'visual'), default='script', help='Select one profiler per diagnostic run')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     output = args.output_directory.resolve()
@@ -62,7 +73,7 @@ def main():
         command = [args.godot, '--disable-crash-handler', '--path', str(repo), '--log-file', str(log)]
         if headless:
             command.append('--headless')
-        capture = ProfileCapture(evidence / (name + '-profile.json')) if args.profile and not headless else None
+        capture = ProfileCapture(evidence / (name + '-profile.json'), args.profile_kind) if args.profile and not headless else None
         if capture:
             command += ['--remote-debug', f'tcp://127.0.0.1:{capture.port}']
         command += arguments

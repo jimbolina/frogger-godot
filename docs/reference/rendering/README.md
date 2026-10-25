@@ -13,8 +13,9 @@
 Map instances cache static material settings separately from animated UVs,
 water offsets and texture bindings. Filtering, projection and reference-mode
 changes invalidate settings for inactive animation frames too. Model instances
-retain material bindings and update only changed morph weights; static poses
-keep their animation clocks without rebuilding their drawing state. Terrain
+retain material bindings and prepare changed morph-weight lists per tick;
+unchanged animation samples and constant geometry skip redundant work without
+stopping their animation clocks. Terrain
 playback draws once per host frame and refreshes its overlay when displayed
 state changes. None of these caches selects or suppresses gameplay entities.
 
@@ -37,7 +38,9 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 
 Guarded ORG1 flipbooks consume committed colour scaling and custom ambient,
 including the diving turtle's blue tint. `AnimatedModelInstance` clones materials
-per instance; shared meshes and materials remain unchanged. The shader applies
+per instance, preparing every texture-frame variant during initial lighting setup
+so playback never allocates those materials. Shared meshes and materials remain
+unchanged. The shader applies
 map parallel lights to transformed normals, source colour-matrix scaling and
 custom ambient narrowing before polygon modulation. This bounded path does not
 close animated frog per-part lighting or establish full retail pixel equality.

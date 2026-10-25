@@ -69,19 +69,19 @@ to avoid Windows work-area clamping. It derives the native extent from the
 logical viewport and stretch transform: Godot 4.5.1's viewport texture size
 accessor applies that stretch twice.
 Loading and reset costs are separate. Reports and logs stay outside the repository.
-The current Windows driver globally forces VSync on; the `Godot.exe` profile
-inherits it. Paused rendering remains near the 144 Hz display rate even with
-engine VSync disabled, in both windowed and exclusive modes. Engine-reported
-VSync/cap values cannot prove a driver override is absent. The 200+ FPS gate
-requires an application-controlled Godot driver profile before acceptance.
+Run acceptance on an otherwise idle system: another game or profiler makes the
+results unsuitable for comparison. Engine-reported VSync/cap values cannot prove
+a driver override is absent. A forced driver VSync override is a known local
+blocker; the 200+ FPS gate requires an application-controlled Godot driver profile.
 
 Use `--resolution 640x480 --sync default --smoothing false` to reproduce the older
 configuration; `--route round-trip --repetitions 1` shortens diagnostic iteration.
 `--mode paused|simulation|no-inspector` isolates rendering, pure simulation, or
 inspection drawing respectively. `--profile` enables Godot's script profiler in a
 separate diagnostic run; `--threaded false` compares synchronous simulation and
-`--window-mode exclusive` isolates window-compositor effects. Script and visual
-profiler packets are retained together with a readable script timing summary.
+`--window-mode exclusive` isolates window-compositor effects. Add
+`--profile-kind visual` for a separate rendering profile. Raw profiler packets
+and readable script or per-stage CPU/GPU timing summaries are retained externally.
 These are not acceptance modes. `--require-target` requires
 both routes three times, smooth uncapped 1440p, average above 200 FPS, p99 at most
 5 ms, correct outcome and 30 Hz cadence within one tick. The target is specific to

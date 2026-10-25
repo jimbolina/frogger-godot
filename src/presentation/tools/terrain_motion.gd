@@ -29,10 +29,13 @@ func capture(previous: RunSnapshot, current: RunSnapshot) -> void:
 		var now: EntitySnapshot = current.entities.entities[slot]
 		var before: EntitySnapshot = previous.entities.entities[slot] if previous.entities != null and slot < previous.entities.entities.size() else null
 		var transform_now: Transform3D = GameSpace.transform(now.matrix12)
-		var continuous: bool = before != null and before.entity_index == now.entity_index and before.generation == now.generation and before.live and now.live
+		var continuous: bool = before != null and before.entity_index == now.entity_index and before.unique_id == now.unique_id and before.generation == now.generation and before.live and now.live
 		var transform_before: Transform3D = GameSpace.transform(before.matrix12) if continuous else transform_now
 		_entities.append(transform_now)
 		_before_entities.append(transform_before)
+		if not continuous and now.entity_index == previous.current_entity_index and now.entity_index == current.current_entity_index:
+			_before_frog = _frog
+			_before_camera = _camera
 		if continuous and now.entity_index == previous.current_entity_index and now.entity_index == current.current_entity_index and absf(transform_before.basis.determinant()) > 0.000001 and absf(transform_now.basis.determinant()) > 0.000001:
 			_attached_slot = slot
 			_before_local_frog = transform_before.affine_inverse() * _before_frog

@@ -62,7 +62,8 @@ Timing instrumentation belongs to this presentation worker, never gameplay class
 `TerrainMotion` converts previous/current committed transforms once per tick.
 Frog, entities and camera use one render fraction; a rider retained on one
 platform interpolates in that platform's local frame. Transfers use continuous
-world transforms. Generation changes collapse entity history. Reset, source
+world transforms. Identity or generation changes collapse entity history and
+the history of a retained rider and camera. Reset, source
 replacement, pause/step, rejection and explicit `reset_interpolation()` for
 seek/teleport collapse all histories. Rendering never mutates committed samples.
 Part transforms and compatible morph cels share this fraction; texture frames,

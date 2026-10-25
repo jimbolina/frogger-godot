@@ -86,7 +86,10 @@ current optimization target; see [inspection](reference/testing/terrain-inspecti
 Prepared scripts, transaction ownership and rendering caches reduce repeated work;
 the presentation worker keeps ordered simulation off the rendering thread.
 Coherent frog, camera, platform and model smoothing is implemented, with exact
-capture mode retained. The frame-time target remains open until measured acceptance.
+capture mode retained. The [renderer](reference/rendering/README.md) now caches
+animation and lighting work. Performance workload checks and separate visual
+profiling are implemented. The frame-time target remains open until measured
+acceptance on an idle system with application-controlled driver VSync.
 
 ## Infrastructure
 
