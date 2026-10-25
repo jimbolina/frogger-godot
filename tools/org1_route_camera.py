@@ -16,8 +16,8 @@ def projected(matrix):
 
 class Camera:
     """No zones, twist, shake or fixed-camera modes are used by this fixture."""
-    def __init__(self,source,target):
-        self.mod=ROOTS[0][1];self.current=[128,-256,-128]
+    def __init__(self,source,target,origin=(128,-256,-128)):
+        self.mod=ROOTS[0][1];self.current=list(origin)
         self.source_offset=source;self.target_offset=target
         self.source=[a+b for a,b in zip(self.current,source)]
         self.target=[a+b for a,b in zip(self.current,target)];self.controller=0

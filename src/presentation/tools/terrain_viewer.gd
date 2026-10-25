@@ -40,6 +40,7 @@ var _entity_files: Array[MofFile] = []
 var _entity_generations: Array[int] = []
 var _entity_inspection: EntityInspection
 var _last_contacts: Array[FormReactionResult] = []
+var _last_primitive_contacts: Array[EntityPrimitiveContact] = []
 var _entity_pose_tick: int = -1
 var _entity_lighting: MapLighting = null
 var _full_trace_destination: String = ""
@@ -192,6 +193,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 	_entity_pose_tick = -1
 	_outcomes.clear()
 	_last_contacts.clear()
+	_last_primitive_contacts.clear()
 	if _ground != null:
 		_build_terrain()
 		_build_entity_visuals()
@@ -221,6 +223,9 @@ func _accept_result(command: TickCommand, result: TickResult) -> void:
 		_last_contacts.clear()
 		for contact: FormReactionResult in result.entity_contacts:
 			_last_contacts.append(contact.copy())
+		_last_primitive_contacts.clear()
+		for contact: EntityPrimitiveContact in result.primitive_contacts:
+			_last_primitive_contacts.append(contact.copy())
 		var created: PackedInt32Array = _sync_entity_models()
 		for slot: int in _entity_models.size():
 			var model: AnimatedModelInstance = _entity_models[slot]
@@ -365,6 +370,9 @@ func draw_state(fraction: float) -> void:
 		for reaction: FormReactionResult in _last_contacts:
 			if reaction.status != FormReactionResult.NONE or (reaction.contact != null and reaction.contact.status == FormContactResult.CONTACT):
 				contact_lines.append("%s #%d %s" % [reaction.status, reaction.contact.entity_index if reaction.contact != null else -1, reaction.reason])
+		for contact: EntityPrimitiveContact in _last_primitive_contacts:
+			if contact.status == EntityPrimitiveQuery.CONTACT:
+				contact_lines.append("cuboid #%d | frog part %d point %d" % [contact.entity_index, contact.frog_part_index, contact.hilite_index])
 		var visible: PackedStringArray = contact_lines.slice(0, 2)
 		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.entity_hit_indices, _current.death_entity_index, nearby_count, "; ".join(visible)]
 		if contact_lines.size() > visible.size():
@@ -374,10 +382,19 @@ func draw_state(fraction: float) -> void:
 	if scenario.level.exploration_guard != null:
 		var bounds: Rect2i = scenario.level.exploration_guard.world_bounds
 		var org1: bool = scenario.exploration_preset == Org1ExplorationSetup.PRESET
-		_label.text = ("ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION") + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
+		var road: bool = scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET
+		var title: String = "ORG1 ROAD / RIVER EXPLORATION" if road else "ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION"
+		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
 		_label.text += "All-attached lifetime | active camera zones unsupported\n"
-		_label.text += "Hop Up to turtle, Up to log; return Down twice.\n" if org1 else "From reset: Left onto log, then Right after centring.\n"
+		if road:
+			_label.text += "Cross traffic north to the bank, then turtle and log.\n"
+			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.death_equate, _current.death_entity_index, _current.entity_hit_indices]
+			for contact: EntityPrimitiveContact in _last_primitive_contacts:
+				if contact.status == EntityPrimitiveQuery.CONTACT:
+					_label.text += "cuboid #%d | frog part %d point %d\n" % [contact.entity_index, contact.frog_part_index, contact.hilite_index]
+		else:
+			_label.text += "Hop Up to turtle, Up to log; return Down twice.\n" if org1 else "From reset: Left onto log, then Right after centring.\n"
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
@@ -579,7 +596,7 @@ func _build_entity_visuals() -> void:
 		_entity_generations.append(-1)
 	if data == null or not data.is_valid() or scenario.map_scene == null:
 		return
-	if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+	if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scenario.map_scene.map.lights)
 	var meshes: Dictionary[int, ModelMesh] = {}
@@ -759,6 +776,17 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				var stages: Dictionary[int, String] = {4: "org1-turtle-out", 19: "org1-log", 40: "org1-turtle-return", 52: "org1-bank-return", 60: "org1-diving", 90: "org1-rising", 1234: "org1-diver-attachment", 1255: "org1-diver-drowning"}
 				if stages.has(_current.tick_index):
 					platform_stages.append(stages[_current.tick_index])
+			elif scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET:
+				if _current.tick_index == 1:
+					platform_stages.append("org1-road-start")
+				if _current.cell.y >= 2 and _current.cell.y <= 6:
+					platform_stages.append("org1-road-traffic")
+				if _current.cell.y == 7 and _current.mode == 0:
+					platform_stages.append("org1-road-bank")
+				if _current.current_entity_index >= 0 and _current.current_entity_index < 24:
+					platform_stages.append("org1-road-river")
+				if _current.death_entity_index >= 24 and _current.death_entity_index <= 47:
+					platform_stages.append("org1-road-vehicle-death")
 			elif scenario.level.exploration_guard != null:
 				if _current.tick_index == 3:
 					platform_stages.append("platform-approach")

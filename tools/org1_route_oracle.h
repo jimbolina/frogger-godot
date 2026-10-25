@@ -1,7 +1,8 @@
 /* ORG1 route research. Included by platform_oracle.c after its shared setup.
  * Input is an external decoded numeric transport. All 64 scan identities are
- * retained. Only the ten candidate FORMs are collision-live; this mode DOES
- * NOT certify their neighbors' exclusion or admit a preset by itself. */
+ * retained. The river mode makes ten candidate FORMs collision-live; the road
+ * mode additionally executes all 24 decoded traffic cuboids and stored frog
+ * probes. Independent neighbor/probe proof admits each preset separately. */
 #include "ent_sub.h"
 static ENTITY *org_entities[64];
 static LIVE_ENTITY org_lives[64];
@@ -21,6 +22,81 @@ static ORG_RT_BABY_FROG org_baby;
 static ENTITY_HEADER org_entity_header;
 static MR_LONG *org_programs[256];
 static int org_program_lengths[256];
+static int org_road;
+static int org_first_killer=-1;
+static char org_primitive_contacts[2048];
+extern MR_BOOL __real_MRCollisionCheck(MR_COLLCHECK*,MR_ULONG,MR_ULONG,MR_ULONG);
+MR_BOOL __wrap_MRCollisionCheck(MR_COLLCHECK *check,MR_ULONG a,MR_ULONG b,MR_ULONG c) {
+    MR_BOOL hit=__real_MRCollisionCheck(check,a,b,c);
+    if(org_road && hit)for(int i=24;i<48;i++)if(check->mc_b_owner==org_lives[i].le_api_item0) {
+        if(org_first_killer<0 && !(Frogs[0].fr_flags&FROG_MUST_DIE))org_first_killer=i;
+        int part_id=-1,hilite_id=-1;MR_MOF *frog=env.ae_header->ah_static_files[0];
+        for(int p=0;p<16;p++){MR_PART *part=(MR_PART*)(frog+1)+p;for(int h=0;h<part->mp_hilites;h++)if(check->mc_c_item_a==part->mp_hilite_ptr+h){part_id=p;hilite_id=h;}}
+        char item[80];snprintf(item,sizeof(item),"%s%d:%d:%d:%d",*org_primitive_contacts?";":"",i,
+            part_id,hilite_id,0);
+        strncat(org_primitive_contacts,item,sizeof(org_primitive_contacts)-strlen(org_primitive_contacts)-1);
+    }
+    return hit;
+}
+static MR_MAT org_frog_stored[16];
+static int org_stored_action,org_stored_cel;
+static void org_read_matrix(FILE *in,MR_MAT *m);
+/* Use unchanged frozen animation update, including its STATIC-owner cache.
+ * Reset primes action 0/cel 0 explicitly; later refreshes follow the source
+ * environment cel advance. Decoded quaternion records remain external facts. */
+static void org_store_frog_pose(void) {
+    if(org_road){MRAnimEnvUpdateLWTransforms(&env);org_stored_action=single.ae_last_action_number;org_stored_cel=single.ae_last_cel_number;}
+}
+static void org_read_road(FILE *in) {
+    int count=route_int(in);if(count!=24)exit(2);
+    for(int j=0;j<count;j++) {
+        int i=route_int(in);if(i<24 || i>47)exit(2);
+        LIVE_ENTITY *l=&org_lives[i];ENTITY *e=org_entities[i];
+        MR_MOF *mof=calloc(1,sizeof(MR_MOF)+sizeof(MR_PART));mof->mm_extra=1;
+        MR_PART *part=(MR_PART*)(mof+1);MR_COLLPRIM *cp=calloc(1,sizeof(MR_COLLPRIM));part->mp_collprim_ptr=cp;
+        cp->cp_type=MR_COLLPRIM_CUBOID;cp->cp_flags=MR_COLL_LAST_IN_LIST;
+        cp->cp_offset.vx=route_int(in);cp->cp_offset.vy=route_int(in);cp->cp_offset.vz=route_int(in);
+        cp->cp_xlen=route_int(in);cp->cp_ylen=route_int(in);cp->cp_zlen=route_int(in);cp->cp_user=route_int(in);
+        ENTITY_GET_FORM_BOOK(e)->fb_type_of_death=route_int(in);
+        MR_OBJECT *object=calloc(1,sizeof(MR_OBJECT));MR_MESH *mesh=calloc(1,sizeof(MR_MESH));MR_STATIC_MESH *stat=calloc(1,sizeof(MR_STATIC_MESH));
+        object->ob_flags=MR_OBJ_STATIC;object->ob_frame=(MR_FRAME*)l->le_lwtrans;object->ob_extra.ob_extra_mesh=mesh;
+        mesh->me_extra.me_extra_static_mesh=stat;stat->sm_mof_ptr=mof;l->le_api_item0=object;
+        e->en_live_entity=l;org_contact[i]=1;
+    }
+    MR_MOF *frog=calloc(1,sizeof(MR_MOF)+16*sizeof(MR_PART));frog->mm_extra=16;
+    env.ae_header->ah_static_files[0]=frog;
+    int n=route_int(in);if(n<1 || n>1024)exit(2);
+    int counts[16]={0};MR_HILITE *hilites[16]={0};
+    for(int i=0;i<16;i++)hilites[i]=calloc(n,sizeof(MR_HILITE));
+    for(int j=0;j<n;j++) {
+        int p=route_int(in);if(p<0 || p>=16)exit(2);
+        MR_SVEC *v=calloc(1,sizeof(MR_SVEC));v->vx=route_int(in);v->vy=route_int(in);v->vz=route_int(in);
+        MR_HILITE *h=&hilites[p][counts[p]++];h->mh_flags=MR_HILITE_VERTEX;h->mh_target_ptr=(MR_ULONG*)v;
+    }
+    for(int i=0;i<16;i++){MR_PART *p=(MR_PART*)(frog+1)+i;p->mp_hilites=counts[i];p->mp_hilite_ptr=hilites[i];}
+    ((MR_UBYTE*)env.ae_header)[0]=route_int(in)?'1':'0';
+    ((MR_UBYTE*)env.ae_header)[1]='2';
+    int transforms=route_int(in);if(transforms<1 || transforms>32767)exit(2);
+    MR_ANIM_COMMON_DATA *common=calloc(1,sizeof(MR_ANIM_COMMON_DATA));
+    MR_QUATB_TRANS *data=calloc(transforms,sizeof(MR_QUATB_TRANS));
+    common->ac_flags=9;common->ac_no_of_transforms=transforms;common->ac_transforms=(MR_MAT34*)data;env.ae_header->ah_common_data=common;
+    for(int j=0;j<transforms;j++) {
+        for(int k=0;k<4;k++)((MR_BYTE*)&data[j].q)[k]=route_int(in);
+        for(int k=0;k<3;k++)data[j].t[k]=route_int(in);
+    }
+    if(route_int(in)!=34)exit(2);
+    for(int a=0;a<34;a++) {
+        int length=route_int(in),unique=route_int(in);if(length<1 || length>1000 || unique<1)exit(2);
+        cels[a].ac_no_of_cels=unique;cels[a].ac_no_of_parts=16;cels[a].ac_flags=1;
+        cels[a].ac_cel_numbers=calloc(length,sizeof(MR_USHORT));
+        for(int j=0;j<length;j++)cels[a].ac_cel_numbers[j]=route_int(in);
+        cels[a].ac_transforms.ac_indices=calloc(unique*16,sizeof(MR_SHORT));
+        for(int j=0;j<unique*16;j++)cels[a].ac_transforms.ac_indices[j]=route_int(in);
+    }
+    model.am_no_of_parts=16;single.ae_last_action_number=-1;single.ae_last_cel_number=-1;
+    env.ae_special_flags|=MR_ANIM_ENV_STORE_LW_TRANSFORMS;single.ae_lw_transforms=org_frog_stored;
+    org_store_frog_pose();
+}
 static void org_cursor(MR_LONG *cursor,int *program,int *offset) {
     *program=*offset=-1;if(!cursor)return;
     for(int i=0;i<256;i++)if(org_programs[i] && (uintptr_t)cursor>=(uintptr_t)org_programs[i] &&
@@ -91,6 +167,12 @@ static void org_emit(int tick,const char *phase) {
     for(int j=0;j<3;j++)printf(",%ld",(long)(&camera->ca_current.vx)[j]+(&target.vx)[j]);
     for(int j=0;j<4;j++)printf(",%ld",(long)camera->ca_frog_controller_directions[j]);
     for(int r=0;r<3;r++)for(int c=0;c<3;c++)printf(",%d",camera->ca_mod_matrix.m[r][c]);
+    if(org_road) {
+        printf(",%ld,%ld,%ld,%ld,%ld,%d,%d,%d,",(long)f->fr_velocity.vx,(long)f->fr_velocity.vy,(long)f->fr_velocity.vz,
+            (long)f->fr_death_equate,(long)f->fr_lives,org_first_killer,org_stored_action,org_stored_cel);
+        int found=0;for(int i=24;i<48;i++)if(org_lives[i].le_flags&LIVE_ENTITY_HIT_FROG_0){if(found++)putchar(';');printf("%d",i);}if(!found)putchar('-');
+        printf(",%s",*org_primitive_contacts?org_primitive_contacts:"-");
+    }
     putchar('\n');
 }
 static int org1_route_run(const char *file) {
@@ -256,6 +338,7 @@ static int org1_route_run(const char *file) {
     for(int i=0;i<64;i++)if(org_types[i]==ENTITY_TYPE_CHECKPOINT) {
         decoded_model_factory=1;Game_total_viewports=1;ENTSTRGenCreateCheckPoint(&org_lives[i]);Game_total_viewports=0;decoded_model_factory=0;
     }
+    if(org_road)org_read_road(in);
     fclose(in);f->fr_lives=3;Cheat_collision_toggle=FALSE;Cheat_infinite_lives_toggle=FALSE;
     Cameras[0].ca_matrix=&camera_matrix;ResetCamera(Cameras);Cameras[0].ca_mode=CAMERA_MODE_FOLLOW_FROG;Cameras[0].ca_move_timer=0;
     Cameras[0].ca_current_source_ofs=general_header.gh_default_camera_source_ofs;Cameras[0].ca_current_target_ofs=general_header.gh_default_camera_target_ofs;
@@ -263,8 +346,10 @@ static int org1_route_run(const char *file) {
     char side_path[4096];snprintf(side_path,sizeof(side_path),"%s.entities.csv",file);
     FILE *side=fopen(side_path,"w");if(!side)return 2;
     fputs("tick,index,root,program,cursor,loop_start,loop_end,timer,deviation,delta,destination,remaining,action,cel,rng,sounds,previous_flags,live_flags,moving_sound,red,green,blue,ambient_red,ambient_green,ambient_blue,requests,x,y,z,fly_mode,fly_timer,fly_checkpoint,covered,callback0,callback1,sound_id,sound_min,sound_max\n",side);
-    puts("tick,phase,x16,y16,z16,flags,mode,attached,count,direction,old_y,action,cel,rng,diver_y,diver_timer,diver_action,sounds,m00,m01,m02,m10,m11,m12,m20,m21,m22,scan,camera_x,camera_y,camera_z,source_x,source_y,source_z,target_x,target_y,target_z,controller_0,controller_1,controller_2,controller_3,camera_mod00,camera_mod01,camera_mod02,camera_mod10,camera_mod11,camera_mod12,camera_mod20,camera_mod21,camera_mod22");
+    fputs("tick,phase,x16,y16,z16,flags,mode,attached,count,direction,old_y,action,cel,rng,diver_y,diver_timer,diver_action,sounds,m00,m01,m02,m10,m11,m12,m20,m21,m22,scan,camera_x,camera_y,camera_z,source_x,source_y,source_z,target_x,target_y,target_z,controller_0,controller_1,controller_2,controller_3,camera_mod00,camera_mod01,camera_mod02,camera_mod10,camera_mod11,camera_mod12,camera_mod20,camera_mod21,camera_mod22",stdout);
+    if(org_road)fputs(",vx16,vy16,vz16,death_equate,lives,first_killer,stored_action,stored_actual_cel,primitive_hit_indices,primitive_contacts",stdout);putchar('\n');
     for(int tick=0;tick<ticks;tick++) {
+        org_primitive_contacts[0]=0;
         MR_ULONG key=0;int desired=commands[tick];
         if(desired>=0) for(int d=0;d<4;d++) if(Cameras[0].ca_frog_controller_directions[d]==desired)
             key=d==0?f->fr_control_method->fc_up_control:d==1?f->fr_control_method->fc_right_control:d==2?f->fr_control_method->fc_down_control:f->fr_control_method->fc_left_control;
@@ -308,9 +393,10 @@ static int org1_route_run(const char *file) {
             if(!(e->en_flags & ENTITY_HIDDEN)) EntityLinkToMapGroup(e,e->en_path_runner ? (MR_VEC*)&e->en_path_runner->pr_position : (MR_VEC*)org_lives[i].le_lwtrans->t);
         }
         ControlFrog(f);org_emit(tick,"control");MoveFrog(f);org_emit(tick,"move");
-        CollideFrog(f);org_emit(tick,"collision");UpdateCamera(Cameras);org_emit(tick,"camera");
+        CollideFrog(f);
+        org_emit(tick,"collision");UpdateCamera(Cameras);org_emit(tick,"camera");
         UpdateFrogAnimationScripts();org_emit(tick,"scripts");
-        MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=saved;org_emit(tick,"pose");
+        MR_USHORT saved=env.ae_flags;env.ae_flags&=~MR_ANIM_ENV_UPDATE;MRAnimUpdateEnvironments();env.ae_flags=saved;org_store_frog_pose();org_emit(tick,"pose");
         if(Game_mode!=GAME_MODE_LEVEL_PLAY) break;
     }
     fclose(side);return 0;

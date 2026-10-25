@@ -46,6 +46,8 @@ var game_mode_request: int = -1
 var completed: bool = false
 var camera: GameplayCameraSnapshot = null
 var animation: FrogAnimationState = null
+## Source stored-LW collision pose, refreshed after animation and retained across equal actual cels.
+var frog_collision_pose: FrogCollisionPose = null
 var rng_state: int = 1
 var animation_condition_counter: int = 0
 var no_input_timer: int = 0
@@ -117,6 +119,7 @@ func copy(include_entities: bool = true) -> RunSnapshot:
 	result.completed = completed
 	result.camera = camera.copy() if camera != null else null
 	result.animation = animation.copy() if animation != null else null
+	result.frog_collision_pose = frog_collision_pose.copy() if frog_collision_pose != null else null
 	result.rng_state = rng_state
 	result.animation_condition_counter = animation_condition_counter
 	result.no_input_timer = no_input_timer

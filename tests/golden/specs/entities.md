@@ -54,6 +54,29 @@ endpoints. Generic forms can also have scripts and callbacks; this component
 leaves them unexecuted and does not claim complete entity behavior. Local
 alignment and land projection are outside this component's scope.
 
+## Animated probes and vehicle cuboids
+
+`synthetic/entity_primitives.json` uses schema `entity-primitives-v1`. Each
+invented case supplies root/part/owner matrix12 arrays, a vertex, cuboid offset,
+half extents, flags and reaction; expected fields are the signed16 world point
+and hit boolean. Cases cover strict faces, zero extent, rotated offsets,
+negative fractions, short wrapping, composed-matrix stores and disabled shapes.
+They contain no retail data.
+
+An independent Python implementation must agree with linked frozen C point
+sampling and `MRCheckCollPrimWithWorldPoint` before expected facts are written.
+Build and retain numeric transport outside the repository:
+
+```powershell
+& tools/build_entity_primitive_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/make_golden_entity_primitives.py --oracle <external-oracle>/entity_primitive_oracle.exe --work-directory <external-work>
+```
+
+`test_entity_primitives.gd` compares runtime samples and hits to every case.
+Invert the origin case's expected hit, require the intended failure, then
+restore it and rerun. Stored action/actual-cel cache and transaction semantics
+also have synthetic unit tests and the integrated road source comparisons below.
+
 ## Guarded JUN1 route and zones
 
 `fixtures/jun1_log_bank.json` supplies logical WEST `8` at command tick 0 and
@@ -189,6 +212,50 @@ and checks dependency rejection and complete reset. The
 compares complete represented state across headless and rendered schedules.
 The manifest also retains each excluded identity's reason and the supplied
 script/callback names; geometry alone never suppresses logical neighbor updates.
+
+### ORG1 road-to-river traffic
+
+`org1_road_river.tsv` and `org1_road_vehicle_death.tsv` use the same six phases
+and `_entities.tsv` ordered-update digest schema. Their matching JSON fixtures
+hold authored stimuli. The road families also record all three fixed16 velocity
+components, death equate, first winning vehicle index, requested remaining
+lives, stored collision action/actual cel, vehicle HIT indices and ordered
+primitive contacts. `lives` observes `fixture_lives` minus the pending decrement
+request; applying that request remains outside the terrain component.
+`primitive_hit_indices` is ascending authored order, separated by semicolons,
+or `-`. `primitive_contacts` retains collision traversal order as
+`entity:part:hilite:primitive`, separated by semicolons, or `-`.
+
+The independent road transport calls the frozen static cuboid collision and
+reaction functions using decoded vehicle primitives and the previous stored
+frog pose. Python separately calculates the same source arithmetic. Golden
+generation requires their agreement before writing any text fact. Retail
+tests compare every phase, ordered update digest and diagnostic/worker result;
+they also verify primitive admission, rejection rollback and reset. The
+road preset has its own determining-resource manifest; the existing bank
+route keeps its narrower manifest and contact exclusions.
+The five traffic models have primitives and no FORM_DATA records. Admission
+preserves that absence; a missed primitive cannot invent a FORM fallback.
+
+The source animation function receives independently decoded quaternion,
+action-cel and transform-index facts in external numeric transport. Its real
+STATIC-owner cache retains the previous LW matrices when action and actual cel
+are unchanged. The inspection reset explicitly primes action 0/cel 0 once;
+later refreshes occur after the final animation advance. The returned collision
+item pointers identify the first frog part/hilite and the single primitive;
+the source does not reliably populate every numeric diagnostic index.
+
+Build with `tools/build_platform_oracle.ps1` into an external directory, then
+verify both families and the separate road manifest:
+
+```powershell
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-crossing> --road --ticks 180 --commands 0:0,12:0,24:0,36:0,102:0,114:0,126:0,138:0 --golden-name org1_road_river --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-death> --road --ticks 60 --commands 0:0,12:0,24:0,36:0,48:0 --expected-death-tick 50 --golden-name org1_road_vehicle_death
+```
+
+Append `--write-goldens` only to intentionally regenerate reviewed expected
+facts. Corrupt a phase fact and ordered-update digest in each family, require
+its focused retail test to fail, restore both and require the test to pass.
 
 ## ORG1 admission counterexample
 
@@ -340,8 +407,11 @@ Cases also pin source integer division for negative group coordinates,
 out-of-bounds group rejection, shared paths and gaps in authored indices with
 duplicate unique IDs. Moving collision poses are authored transport facts in
 this component; path advancement is checked by the integrated trace below.
-The bounded game deliberately reports unsupported non-POP death types and
-omits their effects; only supported reactions are compared to frozen effects.
+The bounded game supports POP and SQUISHED deaths; other death types remain
+unsupported and omit their effects. Frozen particle counts remain unchanged;
+only POP compares an explicit particle request. SQUISHED compares its winning
+death notification. Squish particle creation and removal remain deferred
+presentation/effect behavior.
 
 `entity_reaction_oracle.c` calls unchanged frozen `EntityLinkToMapGroup`,
 `CollideFrog`, `ReactFrogWithForm` and `FrogKill`. Its wrappers count only

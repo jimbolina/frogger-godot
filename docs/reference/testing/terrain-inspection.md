@@ -222,6 +222,26 @@ with the same level/exploration/data arguments and an external screenshot
 directory, using the isolated-profile, hidden/awaited process rules in the
 [testing guide](README.md). Check its log for errors as well as its exit code.
 
+## Guarded ORG1 road to river
+
+`--level=ORG1 --exploration=org1-road-river` opens LIVE and paused at the
+southern road edge. The [vehicle contract](../gameplay/entities.md#org1-road-and-vehicle-primitives)
+defines its separate admission and source collision timing. The overlay shows
+the first death entity and accepted frog part/hilite; external full traces
+include ordered primitive diagnostics and the stored collision-pose cache.
+
+Run the successful crossing and deliberate vehicle-death fixtures separately:
+
+```powershell
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_river.json --output-directory <external-output>
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_vehicle_death.json --output-directory <external-output>
+```
+
+Both use the six scheduled render cadences and complete source comparisons
+described above. Inspect captures of the start, traffic, bank, river platform
+and vehicle death. Use 640×480 for correctness checks; these are not performance
+measurements. Reset and boundary rollback remain atomic.
+
 ## Visibility lifecycle inspection
 
 `--entity-lifecycle visibility` requires integrated entity reactions and a

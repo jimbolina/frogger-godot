@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE, guarded JUN1 and scripted ORG1 exploration, decoded zone queries and script-free visibility lifecycle |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE/SQUISHED, guarded JUN1 and ORG1 road/river exploration, vehicle cuboids, decoded zones and script-free visibility lifecycle |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -45,8 +45,9 @@ the visible color difference remains explicit.
 
 The [bounded entity reactions](reference/gameplay/entities.md) include POP,
 platform landing, centring, carrying, local hops, departure and camera attachment.
-Other lethal reactions, entity-specific sliding/bouncing and primitive collision
-remain unimplemented. P8 remains in progress; complete level play is unfinished.
+ORG1 vehicle cuboids now use stored animated frog points and source squish deaths.
+Other lethal reactions, entity-specific sliding/bouncing and broader primitive
+shapes remain unimplemented. P8 remains in progress; complete level play is unfinished.
 Live keyboard terrain exploration is available through the [terrain viewer](../README.md).
 Opt-in visibility lifecycle now covers script-free generic entities on zero-zone
 maps within its selected-group budget guard; the demonstrated camera sequence
@@ -64,8 +65,11 @@ components, source-ordered atomic integration and guarded live exploration are
 implemented, with independent retail goldens and rendered/keyboard checks.
 Interactive playback omits diagnostic phase capture and reuses draw resources;
 the [inspection probe](reference/testing/terrain-inspection.md) checks host pacing.
+The separate guarded road preset adds all 24 traffic cuboids, a timed crossing
+to the turtle/log corridor and an independently verified vehicle death with the
+following traffic-splat callback. The original river preset remains available.
 Remaining work includes broader instruction/custom-behavior coverage, active
-zones, verified form callbacks, selective reset, primitives and lifecycle workloads.
+zones, verified form callbacks, selective reset, other primitive shapes and lifecycle workloads.
 A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;
 preserve source ordering and test unknown mappings. Per-build form callback

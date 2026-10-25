@@ -90,11 +90,12 @@ def golden_text(phases,entities):
     return phase_output.getvalue(),'\n'.join(lines)+'\n',fields
 
 
-def transport(root, ticks, commands):
+def transport(root, ticks, commands, road=False):
     """Decode complete terrain, paths, script closure and all authored identities."""
     facts, c = admission.retail_counterexamples(root, True)
     data = c['data']; read = admission.contacts.read
-    geometry = neighbor.neighbor_admission(facts, c)
+    geometry = neighbor.neighbor_admission(facts, c,(-512,512,-1792,480)) if road else neighbor.neighbor_admission(facts,c)
+    if road: geometry['road']=True
     grap = read(data,80,'<I'); grid = read(data,grap+20,'<I'); vertices = read(data,grap+16,'<I')
     width,depth = struct.unpack_from('<2H',data,grid+4)
     group = read(data,grap+8,'<I')
@@ -102,7 +103,7 @@ def transport(root, ticks, commands):
     stacks = [struct.unpack_from('<BBH',data,grid+12+i*4) for i in range(width*depth)]
     total = max(first+count for count,avg,first in stacks)
     values = [ticks,*[commands.get(i,-1) for i in range(ticks)],width,depth,-width*128,-depth*128,
-              128,-256,-128,gx,gz,nx,nz,sx,sz,admission.exe_tables.LEVEL_CODES.index('ORG1'),256,total]
+              128,-256,-1664 if road else -128,gx,gz,nx,nz,sx,sz,admission.exe_tables.LEVEL_CODES.index('ORG1'),256,total]
     for count,avg,first in stacks:
         values += [count,avg]
         for i in range(count):
@@ -160,6 +161,9 @@ def transport(root, ticks, commands):
         if actions:
             raw = admission.platform.resource(c['files'],c['entries'],c['mwd'],model_id)
             values += [read(raw,parts[0]['flipbook_ptr']+4+j*4,'<H') for j in range(actions)]
+    if road:
+        import org1_traffic
+        values += org1_traffic.transport_footer(c,geometry)
     return ' '.join(map(str,values))+'\n',geometry,c
 
 
@@ -170,9 +174,9 @@ def run(args):
         raise ValueError('route evidence must be outside both repositories')
     output.mkdir(parents=True,exist_ok=True)
     commands={int(t):int(d) for t,d in (item.split(':') for item in args.commands.split(','))}
-    fixture,geometry,context=transport(args.data_dir,args.ticks,commands)
+    fixture,geometry,context=transport(args.data_dir,args.ticks,commands,args.road)
     source=output/'org1-route-input.txt';source.write_text(fixture,encoding='ascii')
-    result=subprocess.run([str(args.oracle.resolve()),str(args.acos_table.resolve()),'--org1-route',str(source)],
+    result=subprocess.run([str(args.oracle.resolve()),str(args.acos_table.resolve()),'--org1-road' if args.road else '--org1-route',str(source)],
         capture_output=True,text=True,timeout=30,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
     (output/'org1-route.csv').write_text(result.stdout,encoding='utf-8')
     (output/'org1-route-stderr.txt').write_text(result.stderr,encoding='utf-8')
@@ -183,8 +187,13 @@ def run(args):
     side=list(csv.DictReader(Path(str(source)+'.entities.csv').open()))
     phases,entities=verify(context,geometry,args.ticks,commands,rows,side,args.expected_death_tick)
     if args.golden_name:
-        if args.golden_name not in ('org1_round_trip','org1_attached_diver'):raise ValueError('unknown ORG1 golden family')
-        expected=(730,{0:0,12:0,34:2,46:2},None) if args.golden_name=='org1_round_trip' else (1255,{1230:0},1254)
+        schedules={'org1_round_trip':(730,{0:0,12:0,34:2,46:2},None),
+                   'org1_attached_diver':(1255,{1230:0},1254),
+                   'org1_road_river':(180,{t:0 for t in (0,12,24,36,102,114,126,138)},None),
+                   'org1_road_vehicle_death':(60,{t:0 for t in (0,12,24,36,48)},50)}
+        if args.golden_name not in schedules:raise ValueError('unknown ORG1 golden family')
+        if args.road!=args.golden_name.startswith('org1_road_'):raise ValueError('golden mode differs from route')
+        expected=schedules[args.golden_name]
         if (args.ticks,commands,args.expected_death_tick)!=expected:raise ValueError('golden schedule differs from frozen route')
         phase_text,entity_text,fields=golden_text(phases,entities)
         directory=project/'tests/golden/pc-retail-v3.0e'
@@ -194,7 +203,20 @@ def run(args):
             if args.write_goldens:path.write_text(content,encoding='ascii')
             elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError(f'golden mismatch: {path.name}')
     if args.admission:
-        if args.golden_name!='org1_round_trip':raise ValueError('admission requires the complete frozen round trip')
+        if args.road:
+            if args.golden_name!='org1_road_river':raise ValueError('road admission requires successful crossing')
+            import org1_traffic
+            proof=org1_traffic.admission_manifest(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
+            roots={tuple(r) for r in proof['frog_roots']}
+            for row in rows:
+                if int(row['mode'])!=2 and not int(row['flags'])&8 and tuple(int(row[f'm{r}{c}']) for r in range(3) for c in range(3)) not in roots:
+                    raise ValueError('road frog root escaped the independently closed pose set')
+            (output/'org1-road-admission-proof.json').write_text(json.dumps(dict(admission=proof,neighbors=geometry),indent=2)+'\n',encoding='ascii')
+            path=project/'src/presentation/setup/org1_road_river_admission.json';content=json.dumps(proof,indent=2)+'\n'
+            if args.write_goldens:path.write_text(content,encoding='ascii')
+            elif not path.exists() or path.read_text(encoding='ascii')!=content:raise ValueError('road admission manifest differs')
+        elif args.golden_name!='org1_round_trip':raise ValueError('admission requires the complete frozen round trip')
+    if args.admission and not args.road:
         probes=hilite.check_reachable_probes(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
         roots={tuple(r) for r in probes['roots']}
         for row in rows:
@@ -224,4 +246,5 @@ if __name__=='__main__':
     parser.add_argument('--golden-name')
     parser.add_argument('--write-goldens',action='store_true')
     parser.add_argument('--admission',action='store_true')
+    parser.add_argument('--road',action='store_true')
     run(parser.parse_args())

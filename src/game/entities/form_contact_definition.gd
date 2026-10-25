@@ -18,12 +18,16 @@ var height: int = 0
 var max_y: int = 0
 var radius_squared: int = 0
 var grid_flags: PackedInt32Array = PackedInt32Array()
+## False only when the source FORM contains no FORM_DATA fallback.
+var has_form_data: bool = true
 var unsupported_reason: String = ""
 var death_type: int = 0
 var form_book_flags: int = 0
 var reaction_unsupported_reason: String = ""
 ## Nonempty only after a complete guarded neighbor proof; logical updates remain live.
 var admission_exclusion: String = ""
+## Optional admitted primitives checked before this FORM's fallback grid.
+var primitives: Array[EntityPrimitiveDefinition] = []
 
 ## Returns an independently owned definition, including grid square flags.
 func copy() -> FormContactDefinition:
@@ -44,9 +48,12 @@ func copy() -> FormContactDefinition:
 	result.max_y = max_y
 	result.radius_squared = radius_squared
 	result.grid_flags = grid_flags.duplicate()
+	result.has_form_data = has_form_data
 	result.unsupported_reason = unsupported_reason
 	result.death_type = death_type
 	result.form_book_flags = form_book_flags
 	result.reaction_unsupported_reason = reaction_unsupported_reason
 	result.admission_exclusion = admission_exclusion
+	for primitive: EntityPrimitiveDefinition in primitives:
+		result.primitives.append(primitive.copy() if primitive != null else null)
 	return result

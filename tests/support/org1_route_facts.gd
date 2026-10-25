@@ -3,17 +3,34 @@ extends RefCounted
 ## Observation transport only; expected facts come from independent Python/frozen C.
 
 ## Selects represented source phase fields without deriving expected behavior.
-static func phase(state: RunSnapshot, tick: int, name: String, definition: EntityCollisionDefinition) -> Dictionary:
+static func phase(state: RunSnapshot, tick: int, name: String, definition: EntityCollisionDefinition, contacts: Array[EntityPrimitiveContact] = []) -> Dictionary:
 	var camera: GameplayCameraSnapshot = state.camera
 	var diver: EntitySnapshot = state.entities.entities[0]
 	var result: Dictionary = {"tick": tick, "phase": name,
 		"x16": state.position_16.x, "y16": state.position_16.y, "z16": state.position_16.z,
+		"vx16": state.velocity_16.x, "vy16": state.velocity_16.y, "vz16": state.velocity_16.z,
 		"flags": state.flags, "mode": state.mode, "attached": state.current_entity_index,
+		"death_equate": state.death_equate, "lives": state.fixture_lives - int(state.life_decrement_requested),
+		"first_killer": state.death_entity_index,
 		"count": state.remaining_ticks, "old_y": state.old_y, "direction": state.direction,
 		"action": state.animation.action, "cel": state.animation.cel, "rng": state.rng_state,
 		"sounds": state.sound_requests, "diver_y": diver.script_state.deviation,
 		"diver_timer": diver.script_state.timer, "diver_action": diver.animation.action,
 		"scan": joined(EntityContactOrder.indices(definition, state.entities, state.world_position), ";")}
+	if state.frog_collision_pose != null:
+		result["stored_action"] = state.frog_collision_pose.action
+		result["stored_actual_cel"] = state.frog_collision_pose.actual_cel
+	var primitive_hits := PackedInt32Array()
+	for pose: EntitySnapshot in state.entities.entities:
+		if pose.entity_index >= 24 and pose.entity_index <= 47 and pose.live_flags & 64:
+			primitive_hits.append(pose.entity_index)
+	result["primitive_hit_indices"] = joined(primitive_hits, ";") if not primitive_hits.is_empty() else "-"
+	var primitive_records := PackedStringArray()
+	if name not in ["control", "move"]:
+		for contact: EntityPrimitiveContact in contacts:
+			if contact.status == EntityPrimitiveQuery.CONTACT:
+				primitive_records.append("%d:%d:%d:%d" % [contact.entity_index, contact.frog_part_index, contact.hilite_index, contact.primitive_index])
+	result["primitive_contacts"] = ";".join(primitive_records) if not primitive_records.is_empty() else "-"
 	for pair: Array in [["camera", camera.tracked_world], ["source", camera.source_world], ["target", camera.target_world]]:
 		var point: Vector3i = pair[1]
 		result[str(pair[0]) + "_x"] = point.x

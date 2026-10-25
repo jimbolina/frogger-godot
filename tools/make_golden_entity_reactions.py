@@ -188,6 +188,7 @@ def python_row(case):
                     continue
                 hits.append(entity['entity_index'])
                 statuses.append('pop' if flags & 4096 or flags & 4 and contact['death_type'] == 5
+                                else 'squish' if flags & 4 and contact['death_type'] == 0
                                 else 'unsupported' if flags & 4 else 'hit')
                 if first_kill < 0:
                     if flags & 4096:

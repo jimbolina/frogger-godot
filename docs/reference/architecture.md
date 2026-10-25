@@ -97,7 +97,7 @@ live set. Existing all-attached inspection remains the default.
 Opt-in platform execution requires an integrated camera. The order is paths,
 source-ordered entity transforms and admitted custom/script updates, frog
 control, movement, modifiers, terrain collision,
-sequential FORM reactions, camera, animation scripts, pose, then aggregate commit.
+sequential primitive/FORM reactions, camera, animation scripts, pose, then aggregate commit.
 The scan caches its neighborhood and forbidden authored identity; each candidate
 uses the current attachment and position, so a SAFE transfer affects later
 candidates. Camera transitions and fall requests belong to that same candidate
@@ -122,6 +122,13 @@ before contacts and commit. Excluded contacts require that guard, while their
 admitted logical updates remain live. Setup rejects changed proof dependencies.
 The viewer pauses on rejection. R reconstructs the whole inspection, including
 input buffers and presentation clocks, while retaining the selected input mode.
+
+The ORG1 road preset additionally owns detached frog collision definitions and
+`FrogCollisionPose` in `RunSnapshot`. Previous stored probes are read during
+collision; action/actual-cel changes refresh them at the final pose phase.
+Definitions, cached samples and primitive diagnostics are deeply copied across
+publication boundaries. Late failure discards them with every other candidate
+field. Rendered and interpolated model transforms never drive collision.
 
 `RunSnapshot.entity_cell` and `entity_offset_16` are platform-local. `target_16`
 is local while attached or jumping within the entity frame, and world-space

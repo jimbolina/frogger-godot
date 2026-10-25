@@ -7,6 +7,8 @@ var platforms_enabled: bool = false
 var contacts: Array[FormContactDefinition] = []
 var lifecycle: EntityLifecycleDefinition = null
 var environment: EntityEnvironmentState = null
+## Detached animated frog probes required by admitted primitive contacts.
+var frog_collision: FrogCollisionDefinition = null
 var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
 var group_size: Vector2i = Vector2i.ZERO
@@ -21,6 +23,7 @@ func copy() -> EntityCollisionDefinition:
 		result.contacts.append(contact.copy() if contact != null else null)
 	result.lifecycle = lifecycle.copy() if lifecycle != null else null
 	result.environment = environment.copy() if environment != null else null
+	result.frog_collision = frog_collision.copy() if frog_collision != null else null
 	result.group_base = group_base
 	result.group_dimensions = group_dimensions
 	result.group_size = group_size
@@ -28,6 +31,10 @@ func copy() -> EntityCollisionDefinition:
 
 ## Checks paired authored identities and positive group geometry.
 func validate() -> String:
+	if frog_collision != null:
+		var probe_issue: String = frog_collision.validate()
+		if not probe_issue.is_empty():
+			return probe_issue
 	if environment != null:
 		if lifecycle != null:
 			return "Entity background requires all-attached lifetime"
@@ -55,6 +62,25 @@ func validate() -> String:
 		var contact: FormContactDefinition = contacts[index]
 		if entity == null or contact == null:
 			return "Entity collision pair %d is null" % index
+		if not contact.primitives.is_empty():
+			if contact.primitives.size() != 1:
+				return "Entity primitive admission requires exactly one cuboid"
+			if contact.radius_squared < -2147483648 or contact.radius_squared > 2147483647:
+				return "Entity primitive squared radius must fit signed32"
+			if frog_collision == null:
+				return "Entity primitives require detached animated frog probes"
+			if not contact.unsupported_reason.is_empty() or not contact.admission_exclusion.is_empty():
+				return "Entity primitives require supported contact and FORM fallback"
+			if contact.death_type != 0:
+				return "Entity primitive reaction currently requires SQUISHED death"
+			for primitive: EntityPrimitiveDefinition in contact.primitives:
+				if primitive == null:
+					return "Entity primitive definition is null"
+				var primitive_issue: String = primitive.validate()
+				if not primitive_issue.is_empty():
+					return primitive_issue
+				if primitive.reaction not in [0, 1]:
+					return "Entity primitive reaction is unsupported"
 		if entity.background_admitted and environment == null:
 			return "Admitted custom background requires its shared environment"
 		if entity.entity_index <= previous_index:

@@ -10,9 +10,9 @@ no_collision	0	2049	0	0	0	0	0	0	0	-	-	-	-1
 sphere_edge	0	2049	0	0	0	0	0	0	0	-	-	-	-1
 outside_form	0	2049	0	0	0	0	0	0	0	-	-	-	-1
 two_overlapping_pop	0	9	23	0	0	0	4	1	0	1,0	1,0	pop,pop	1
-reverse_authored_first_kill	0	9	23	0	0	0	4	1	0	1,0	1,0	pop,unsupported	1
+reverse_authored_first_kill	0	9	23	0	0	0	4	1	0	1,0	1,0	pop,squish	1
 unusable_then_pop	0	9	23	0	0	0	4	1	0	1	1,0	pop,none	1
-death_type_squished	0	9	2	0	0	0	4	1	0	0	0	unsupported	0
+death_type_squished	0	9	2	0	0	0	4	1	0	0	0	squish	0
 pop_over_deadly	0	9	23	0	0	0	4	1	0	0	0	pop	0
 moving_before_static	0	9	23	0	0	0	4	1	0	0,1	0,1	pop,pop	0
 hidden_moving_unlinked	0	2049	0	0	0	0	0	0	0	-	-	-	-1

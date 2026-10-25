@@ -7,7 +7,7 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Resolves all authored model writers before attaching contact to accepted entities.
-static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "") -> FormContactSetup:
+static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", primitive_contacts: bool = false) -> FormContactSetup:
 	var result := FormContactSetup.new()
 	if map == null or theme_book == null:
 		result.error = "Form contact setup requires a map and theme book"
@@ -80,6 +80,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			definition.dimensions = grid.dimensions
 			definition.offsets = grid.offsets
 		var form: FormBookEntry = theme_book.get_form(map.general.theme, span.form_id)
+		var selected_model: MofFile = models_by_form.get(span.form_id)
 		if form != null:
 			definition.death_type = form.death_type
 		var reason: String = ""
@@ -95,6 +96,18 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			reason = "Form collision callback address has no verified mapping"
 		elif form.has_flag(FormBookEntry.FLAG_NO_MODEL):
 			reason = "Form has no model"
+		elif primitive_contacts and grid.data_count == 0 and grid.data.is_empty() and _primitive_model(selected_model):
+			var model: MofFile = models_by_form[span.form_id]
+			var primitives: EntityPrimitiveSetup = EntityPrimitiveSetup.from_model(model)
+			var radius: Array[int] = _radius_squared(form, model)
+			if not primitives.error.is_empty():
+				reason = primitives.error
+			elif radius.is_empty():
+				reason = "Model has no usable bounding radius"
+			else:
+				definition.radius_squared = radius[0]
+				definition.primitives = primitives.primitives
+				definition.has_form_data = false
 		elif grid.data_count < 1 or grid.data.size() != grid.data_count:
 			reason = "FORM grid has no usable data record"
 		elif grid.dimensions.x <= 0 or grid.dimensions.y <= 0:
@@ -111,7 +124,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			var model: MofFile = models_by_form.get(span.form_id)
 			if model == null or not model.error.is_empty() or model.kind != MofFile.Kind.STATIC or model.static_models.size() != 1:
 				reason = "Contact requires a static or flipbook model"
-			elif _has_collprims(model):
+			elif _has_collprims(model) and not primitive_contacts:
 				reason = "Model collision primitives take precedence over FORM"
 			else:
 				var radius: Array[int] = _radius_squared(form, model)
@@ -122,6 +135,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 					definition.max_y = max_y_by_grid[span.form_grid_id]
 					definition.height = grid.data[0].height
 					definition.grid_flags = grid.data[0].grid_flags.duplicate()
+					if _has_collprims(model):
+						var primitives: EntityPrimitiveSetup = EntityPrimitiveSetup.from_model(model)
+						if not primitives.error.is_empty():
+							reason = primitives.error
+						else:
+							definition.primitives = primitives.primitives
 		definition.unsupported_reason = reason
 		result.definitions.append(definition)
 		if not reason.is_empty():
@@ -129,6 +148,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		elif grid.data_count > 1:
 			result._issue("Additional FORM_DATA records are retained; contact uses the first", entity, definition, "additional_form_data")
 	return result
+
+static func _primitive_model(model: MofFile) -> bool:
+	return model != null and model.error.is_empty() and model.kind == MofFile.Kind.STATIC and model.static_models.size() == 1 and _has_collprims(model)
 
 ## Reads the selected map and all authored form models, including omitted entities.
 static func from_data(data: GameData, level: int, low_poly: bool, entities: Array[EntityDefinition]) -> FormContactSetup:

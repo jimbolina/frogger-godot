@@ -1,19 +1,24 @@
 class_name Org1ExplorationSetup
 extends RefCounted
-## Strict supplied-data admission for the independently proved ORG1 round trip.
+## Strict supplied-data admission for independently proved guarded ORG1 routes.
 
 const PRESET: String = "org1-turtle-log-bank"
 const MANIFEST_PATH: String = "res://src/presentation/setup/org1_exploration_admission.json"
+const ROAD_PRESET: String = "org1-road-river"
+const ROAD_MANIFEST_PATH: String = "res://src/presentation/setup/org1_road_river_admission.json"
 
 ## Validates proof inputs before enabling any custom update or contact exclusion.
 static func apply(scenario: TerrainScenario, data: GameData) -> String:
+	var road: bool = scenario.exploration_preset == ROAD_PRESET
+	var preset: String = ROAD_PRESET if road else PRESET
 	if scenario.level_code.to_upper() != "ORG1" or scenario.entity_lifecycle:
-		return "org1-turtle-log-bank requires high-detail ORG1 and all-attached lifetime"
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
+		return preset + " requires high-detail ORG1 and all-attached lifetime"
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(ROAD_MANIFEST_PATH if road else MANIFEST_PATH))
 	if not parsed is Dictionary:
 		return "ORG1 admission manifest is unavailable"
 	var proof: Dictionary = parsed
-	if proof.get("schema") != "org1-route-admission-v1" or data.version.internal_name != proof.get("build"):
+	var schema: String = "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
+	if proof.get("schema") != schema or data.version.internal_name != proof.get("build"):
 		return "ORG1 exploration requires audited pc-retail-v3.0e inputs"
 	var map: MapFile = scenario.map_scene.map
 	var issue: String = RetailExplorationInputs.validate(data, map, proof, scenario.map_scene.level)
@@ -73,10 +78,15 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 				return issue
 	if not problems.is_empty():
 		return "; ".join(problems)
-	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, setup.definitions, models)
+	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, setup.definitions, models, "", -1, "", road)
 	if not contacts.error.is_empty():
 		return contacts.error
 	var collision := EntityCollisionDefinition.new()
+	if road:
+		var probes: FrogCollisionSetup = FrogCollisionSetup.from_model(scenario.frog_assets.model)
+		if not probes.error.is_empty():
+			return "ORG1 frog collision points: " + probes.error
+		collision.frog_collision = probes.definition
 	collision.platforms_enabled = true
 	collision.group_base = map.group_base
 	collision.group_dimensions = map.group_dimensions
@@ -134,16 +144,24 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	scenario.level.exploration_guard = guard
 	scenario.entity_collision = collision
 	scenario.level.entity_collision = collision.copy()
-	scenario.initial.spawn_cell = Vector2i(10, 7)
-	scenario.initial.spawn_direction = 0
+	if road:
+		var spawn: Array = proof.spawn_cell
+		scenario.initial.spawn_cell = Vector2i(_integer(spawn[0]), _integer(spawn[1]))
+		scenario.initial.spawn_direction = _integer(proof.spawn_direction)
+	else:
+		scenario.initial.spawn_cell = Vector2i(10, 7)
+		scenario.initial.spawn_direction = 0
 	scenario.initial.controller_directions = PackedInt32Array()
 	scenario.initial.camera_startup = false
-	scenario.identifier = PRESET
+	scenario.identifier = preset
 	if not scenario.tick_limit_override and not scenario.authored_fixture:
-		scenario.tick_limit = 730
+		scenario.tick_limit = _integer(proof.default_ticks) if road else 730
 	if not scenario.authored_fixture:
 		scenario.commands.clear()
-	scenario.diagnostics.append("ORG1 audited all-attached exploration; 64 logical updates; ten contact entities; active zones and primitive execution unsupported")
+	if road:
+		scenario.diagnostics.append("ORG1 audited road-to-river exploration; all-attached lifetime; 64 logical updates; 24 primitive traffic contacts and ten river FORMs; active zones unsupported")
+	else:
+		scenario.diagnostics.append("ORG1 audited all-attached exploration; 64 logical updates; ten contact entities; active zones and primitive execution unsupported")
 	return ""
 
 static func _integer(value: Variant) -> int:

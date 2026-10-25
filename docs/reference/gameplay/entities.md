@@ -117,9 +117,10 @@ its authored MOF is loaded, so setup checks that model before excluding contact.
 
 The form-book radius is used when nonzero. Otherwise, for a static model,
 setup takes the largest signed 32-bit squared distance among all partcel box
-corners and adds 100, matching frozen `mapload.C`. Contact supports a static
-MOF, including flipbooks, with no collision primitives; the C primitive test
-would otherwise take priority. It uses the first FORM_DATA in GRID height mode
+corners and adds 100, matching frozen `mapload.C`. Default contact supports a static
+MOF, including flipbooks, with no collision primitives. The road preset below
+explicitly admits vehicle cuboids before any optional FORM fallback. Ordinary
+FORM contact uses the first FORM_DATA in GRID height mode
 zero. Additional entries are retained and reported. `NO_COLLISION`, `NO_MODEL`,
 missing bounds, unsupported models or modes, and nonzero collision callback
 addresses produce source-located exclusions. Scripts and bonus callbacks remain
@@ -166,7 +167,7 @@ Authored indices, not unique IDs or compacted array offsets, identify outcomes.
 
 `ReactFrogWithForm` requires `USABLE` and selects CHECKPOINT, SAFE, POPDEATH,
 DEADLY, SLIPPY, then BOUNCY in that order. The default mode implements POPDEATH and
-DEADLY with form-book death type POP. Higher-priority unsupported branches never
+DEADLY with form-book death type POP or SQUISHED. Higher-priority unsupported branches never
 fall through to POP. Other deaths, checkpoint and bounce reactions are diagnosed
 and omitted; SAFE requires the platform capability below. Unusable squares do
 nothing; supported usable no-op
@@ -405,6 +406,59 @@ Root/probe math is checked separately; no GDScript output defines expectations.
 [Golden reproduction](../../../tests/golden/specs/entities.md#org1-route-proof)
 owns commands and schemas. Active zones, selective reset, primitive execution,
 checkpoint collection and full-level flow remain outside this slice.
+
+## ORG1 road and vehicle primitives
+
+`org1-road-river` is a separate opt-in inspection for high-detail v3.0e ORG1.
+Its manifest pins supplied inputs and admits X `[-512,512)`, Z `[-1792,480)`,
+starting at cell `(10,1)`, facing north. All 64 logical updates remain active.
+It adds all 24 vehicles to the ten river FORM candidates; each remaining
+neighbor has its own exclusion proof for the expanded rectangle. The original
+bank preset retains its narrower admission. Neither preset completes P8.
+
+The five vehicle types have one first-part cuboid, no primitive matrix and
+the SQUISHED death type. `EntityPrimitiveSetup` detaches half extents, local
+offset, flags and reaction. `FrogCollisionSetup` detaches every collision
+hilite in part/hilite order from partcel zero and all exact discrete action
+transforms. It rejects incomplete/interpolated models and collision points on
+the imported throat transform. Gameplay retains no legacy or scene objects.
+
+Collision first applies the current frog-origin sphere gate and source group,
+live, hidden, forbidden and NO_COLLISION rules. `EntityPrimitiveQuery` then
+tests the stored animated points. It rotates the cuboid offset in owner axes,
+narrows the displacement to signed16, applies the transposed owner rotation,
+and requires `abs(local) < half_extent` on every axis (`MR_COLL.C:225–274,525–531`).
+Fixed12 products use source signed32 accumulation and signed16 matrix/point
+stores. LAST/STATIC/DISABLED flags are admitted; disabled or missed primitives
+continue to the ordinary FORM fallback when data exists. Retail traffic has no
+FORM_DATA records: `has_form_data=false` preserves that absence as a miss,
+without inventing a grid. General shapes, primitive matrices,
+multiple cuboids and bounce reactions reject explicitly.
+
+The frog is created with `MR_OBJ_STATIC`. Frozen `MR_ANIM.C:1998–2014` retains
+stored world transforms when both action and actual cel match, even if the root
+moved. `FrogCollisionPose` preserves that cache in each run snapshot. Collision
+reads the previous stored pose; refresh happens after final animation stepping
+(`gamesys.C:1326–1333`). Inspection reset explicitly primes action 0/cel 0 at
+the selected start; it does not claim uninitialized full-engine startup parity.
+
+The first accepted primitive marks HIT, skips that entity's FORM and requests
+SQUISHED. Source scanning continues, retaining the first killer. Arcade squish
+zeros the root matrix's Y row, including on a later hit in the same scan.
+The next entity update observes HIT and requests the named traffic splat sound.
+FORM fallback SQUISHED does not apply primitive-only flattening. All hits,
+cached points, death, camera, animation, scripts and RNG commit together or
+roll back together. Primitive contacts identify the entity, part and hilite.
+Jump-from-primitive state is outside this admission and rejects atomically.
+Squish particle creation and removal, tyre sprites, local ordering tables and
+audio playback remain presentation/effect boundaries; no race-mode or full
+effect simulation is claimed.
+
+The independent successful route crosses traffic into the existing turtle/log
+corridor. A separate lorry-death route proves narrow-phase contact and the
+following callback. Facts and reproduction live in the
+[golden specification](../../../tests/golden/specs/entities.md); viewer commands
+live in [inspection](../testing/terrain-inspection.md#guarded-org1-road-to-river).
 
 ## Bounded script components
 

@@ -57,6 +57,8 @@ unset the variable explicitly for asset-free mode.
   safe bank/log/return, decoded zone guards and complete six-phase comparisons.
 - [Guarded ORG1 exploration](terrain-inspection.md#guarded-org1-turtlelog-exploration):
   turtle/log round trip, diving neighbor, all logical updates and keyboard checks.
+- [ORG1 road crossing](terrain-inspection.md#guarded-org1-road-to-river):
+  animated frog points, vehicle cuboids, squish/callback timing and river entry.
 - [Visibility lifecycle](terrain-inspection.md#visibility-lifecycle-inspection):
   opt-in source camera selection and atomic live-instance creation/retirement,
   with synthetic headless/rendered parity and external visual captures.

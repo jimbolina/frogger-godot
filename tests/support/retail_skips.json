@@ -64,5 +64,8 @@
   "res://tests/golden/test_retail_exploration.gd::test_all_jun1_zone_records_and_source_queries_match": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_org1.gd::test_round_trip_and_complete_dive_cycles_match_source": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_org1.gd::test_attached_diver_drowns_before_control_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_org1.gd::test_admission_dependencies_and_complete_reset": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_org1.gd::test_admission_dependencies_and_complete_reset": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_road_to_river_crossing_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_road_vehicle_death_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_road_admission_and_rejected_tick_are_atomic": "SKIP: FROGGER_DATA_DIR is not set"
 }

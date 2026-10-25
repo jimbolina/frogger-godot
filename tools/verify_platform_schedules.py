@@ -224,7 +224,7 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario-file', type=Path)
     parser.add_argument('--data-dir', type=Path)
-    parser.add_argument('--exploration', choices=('jun1-log-bank', 'org1-turtle-log-bank'))
+    parser.add_argument('--exploration', choices=('jun1-log-bank', 'org1-turtle-log-bank', 'org1-road-river'))
     parser.add_argument('--case-index', type=int, default=0,
                         help='Case inside a scenario file with a cases array (default: 0)')
     parser.add_argument('--level', default='JUN1', help='Retail level code (default: JUN1)')
@@ -232,9 +232,9 @@ def main():
                         help='Override selected scenario duration (retail default: 90)')
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
-    if args.exploration == 'org1-turtle-log-bank':
+    if args.exploration in ('org1-turtle-log-bank', 'org1-road-river'):
         if args.scenario_file is None or args.data_dir is None or args.level.upper() != 'ORG1':
-            parser.error('org1-turtle-log-bank requires --scenario-file, --data-dir and --level=ORG1')
+            parser.error(args.exploration + ' requires --scenario-file, --data-dir and --level=ORG1')
         from org1_schedule_verification import run
         run(args)
         return

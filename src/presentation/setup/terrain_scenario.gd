@@ -104,7 +104,7 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
 	if entity_reactions:
-		if exploration_preset == Org1ExplorationSetup.PRESET:
+		if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
 			return Org1ExplorationSetup.apply(self, data)
 		else:
 			var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled, entity_lifecycle)
@@ -259,8 +259,8 @@ func command_at(tick: int) -> TickCommand:
 ## Applies explicit command-line seed and duration overrides in both driver surfaces.
 func apply_arguments(arguments: PackedStringArray) -> String:
 	exploration_preset = ViewerArguments.value(arguments, "--exploration=")
-	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET]:
-		return "exploration must be jun1-log-bank or org1-turtle-log-bank"
+	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
+		return "exploration must be jun1-log-bank, org1-turtle-log-bank or org1-road-river"
 	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
 	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
 		return "entity-reactions must be pop or platforms"
@@ -268,7 +268,7 @@ func apply_arguments(arguments: PackedStringArray) -> String:
 	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
 		return "entity-lifecycle must be all-attached or visibility"
 	if not exploration_preset.is_empty():
-		var required_level: String = "ORG1" if exploration_preset == Org1ExplorationSetup.PRESET else "JUN1"
+		var required_level: String = "ORG1" if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET] else "JUN1"
 		if lifetime == "visibility" or (entity_collision != null and entity_collision.lifecycle != null):
 			return exploration_preset + " cannot be combined with visibility lifecycle"
 		if not reaction.is_empty() and reaction != "platforms":

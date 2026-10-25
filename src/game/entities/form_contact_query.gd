@@ -47,6 +47,10 @@ static func query(definition: FormContactDefinition, entity_snapshot: EntitySnap
 		result.status = FormContactResult.UNSUPPORTED
 		result.reason = definition.unsupported_reason
 		return result
+	if not definition.has_form_data:
+		result.status = FormContactResult.MISS
+		result.reason = "FORM has no FORM_DATA fallback"
+		return result
 	if definition.dimensions.x <= 0 or definition.dimensions.y <= 0 or not _fits_signed(definition.dimensions.x, 16) or not _fits_signed(definition.dimensions.y, 16) or definition.grid_flags.size() != definition.dimensions.x * definition.dimensions.y:
 		result.reason = "FORM dimensions or square count are invalid"
 		return result

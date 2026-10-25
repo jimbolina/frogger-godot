@@ -9,6 +9,7 @@ var _entity_reactions: bool = false
 var _entity_lifecycle: bool = false
 var _guarded_exploration: bool = false
 var _scripted_exploration: bool = false
+var _primitive_exploration: bool = false
 var _full_stream: FileAccess = null
 var _full_path: String = ""
 
@@ -17,7 +18,8 @@ func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.entity_reactions
 	_entity_lifecycle = scenario.entity_lifecycle
 	_guarded_exploration = scenario.level.exploration_guard != null
-	_scripted_exploration = scenario.exploration_preset == Org1ExplorationSetup.PRESET
+	_scripted_exploration = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]
+	_primitive_exploration = scenario.level.entity_collision != null and scenario.level.entity_collision.frog_collision != null
 	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
@@ -36,8 +38,12 @@ func configure(scenario: TerrainScenario) -> void:
 		metadata["exploration"] = scenario.exploration_preset
 		metadata["exploration_guard"] = facts(scenario.level.exploration_guard)
 		metadata["omitted"] = ["scripts", "active_camera_zones", "custom_behaviors", "primitives", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
-		if scenario.exploration_preset == Org1ExplorationSetup.PRESET:
+		if _scripted_exploration:
 			metadata["omitted"] = ["unsupported_scripts_and_custom_behaviors", "active_camera_zones", "primitives", "audio_playback", "splash_rendering", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
+		if _primitive_exploration:
+			var omissions: Array = metadata["omitted"]
+			omissions.erase("primitives")
+			omissions.append("unsupported_primitive_shapes_and_reactions")
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
@@ -58,6 +64,8 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}
 			if _entity_reactions:
 				record["entity_contacts"] = _value(result.entity_contacts) if phase == "final" else []
+				if _primitive_exploration:
+					record["primitive_contacts"] = _value(result.primitive_contacts) if phase == "final" else []
 				if _entity_lifecycle:
 					record["entity_lifecycle"] = facts(snapshot.entities, true) if snapshot.entities != null else null
 			var line: String = JSON.stringify(record)

@@ -105,6 +105,15 @@ sound and splash sprites remain ordered requests. See the
 [ORG1 contract](docs/reference/gameplay/entities.md#org1-admission) and
 [verification instructions](docs/reference/testing/terrain-inspection.md#guarded-org1-turtlelog-exploration).
 
+For the guarded road crossing into that corridor, use
+`--exploration=org1-road-river` instead. It starts south of traffic and adds
+vehicle cuboid collision and squish deaths. Wait for gaps before hopping north;
+R resets after a death. The exact successful replay is
+`tests/golden/fixtures/org1_road_river.json`; the deliberate lorry collision is
+`tests/golden/fixtures/org1_road_vehicle_death.json`. The same supplied-data and
+boundary restrictions apply. See the
+[road contract](docs/reference/gameplay/entities.md#org1-road-and-vehicle-primitives).
+
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file
 tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility
@@ -196,8 +205,8 @@ Dragging switches to a custom inspection pose; R restores the preset.
 Maps include stored terrain colours, cave illumination, animated textures,
 water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
 and can inspect one entity's FORM contact against a fixed point. The separate
-terrain inspector supports bounded POP and SAFE-platform interactions, plus the
-admitted ORG1 script closure; HUD and
+terrain inspector supports bounded POP, SAFE-platform and SQUISHED interactions,
+plus the admitted ORG1 scripts and vehicle cuboids; HUD and
 complete level play remain deferred.
 The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.

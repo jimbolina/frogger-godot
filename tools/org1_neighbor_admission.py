@@ -199,14 +199,14 @@ def intersects(bounds, candidate=CANDIDATE):
             and bounds[2] < candidate[3] and bounds[3] >= candidate[2])
 
 
-def sphere_width_closed(position):
+def sphere_width_closed(position,candidate=CANDIDATE):
     """Prove unwrapped XZ subtraction and signed32 squared sum for every Y."""
-    dx = max(abs(position[0]-CANDIDATE[0]),abs(position[0]-CANDIDATE[1]+1))
-    dz = max(abs(position[2]-CANDIDATE[2]),abs(position[2]-CANDIDATE[3]+1))
+    dx = max(abs(position[0]-candidate[0]),abs(position[0]-candidate[1]+1))
+    dz = max(abs(position[2]-candidate[2]),abs(position[2]-candidate[3]+1))
     return max(dx,dz) < 32768 and dx*dx+dz*dz+32768**2 < 2**31
 
 
-def terrain_facts(data):
+def terrain_facts(data,candidate=CANDIDATE):
     """Decode every terrain layer touched by the rectangle, including bank."""
     grap = contacts.read(data, 80, '<I')
     grid = contacts.read(data, grap + 20, '<I')
@@ -216,7 +216,7 @@ def terrain_facts(data):
     for cz in range(depth):
         for cx in range(width):
             x, z = -width*128+cx*256, -depth*128+cz*256
-            if not intersects([x, x+255, z, z+255]):
+            if not intersects([x, x+255, z, z+255],candidate):
                 continue
             count, _average, first = struct.unpack_from('<BBH', data, grid+12+(cz*width+cx)*4)
             layers = []
@@ -267,7 +267,7 @@ def geometry_script_closure(context):
     return result
 
 
-def neighbor_admission(facts, context):
+def neighbor_admission(facts, context, candidate=CANDIDATE):
     """Close FORM writers and classify all authored identities without admission."""
     data = context['data']
     if (facts['entity_count'] != len(AUTHORED_FORMS)
@@ -353,8 +353,8 @@ def neighbor_admission(facts, context):
                         matrix = entities.moving_matrix([0]*9+position+tangent, item['flags'])
                         # X/Z differences and X/Z dot products cannot wrap in
                         # source signed16/signed32 for any admitted origin.
-                        dx = max(abs(CANDIDATE[0]-position[0]), abs(CANDIDATE[1]-1-position[0]))
-                        dz = max(abs(CANDIDATE[2]-position[2]), abs(CANDIDATE[3]-1-position[2]))
+                        dx = max(abs(candidate[0]-position[0]), abs(candidate[1]-1-position[0]))
+                        dz = max(abs(candidate[2]-position[2]), abs(candidate[3]-1-position[2]))
                         if max(dx,dz) >= 32768 or any(abs(matrix[k])*dx+abs(matrix[k+6])*dz >= 2**31
                                                      for k in (0,2)):
                             raise ValueError('ORG1 contact source-width closure failed')
@@ -384,7 +384,7 @@ def neighbor_admission(facts, context):
             if item['primitive_count']:
                 item['contact_status'] = 'primitive_exclusion_requires_frog_hilite_bound'
                 unresolved.append(index)
-            elif form[2] and intersects(item['geometry']['form_xz_bounds']):
+            elif form[2] and intersects(item['geometry']['form_xz_bounds'],candidate):
                 item['contact_status'] = 'include_possible_FORM_contact'
             else:
                 item['contact_status'] = 'excluded_by_complete_path_FORM_bounds'
@@ -405,21 +405,21 @@ def neighbor_admission(facts, context):
                     point[1] = contacts.s16(point[1]-256)
                     point[2] = contacts.s16(point[2]-50)
                 z_positions = [p[2] for p in positions]
-                gap = min(z-CANDIDATE[3]+1 for z in z_positions)
+                gap = min(z-candidate[3]+1 for z in z_positions)
                 item['all_cycle_positions'] = positions
-                item['sphere_source_widths_closed'] = all(sphere_width_closed(p) for p in positions)
+                item['sphere_source_widths_closed'] = all(sphere_width_closed(p,candidate) for p in positions)
                 item['minimum_candidate_xz_distance_squared'] = gap*gap if gap > 0 else 0
                 item['contact_status'] = ('excluded_by_all_cycle_origin_sphere' if item['sphere_source_widths_closed'] and gap > 0 and gap*gap >= item['radius_squared']
                                           else 'unresolved_custom_contact')
             elif item['book_flags'] & 1 and not item['collision_callback']:
                 item['contact_status'] = 'excluded_NO_MODEL_without_collision_callback'
             else:
-                dx = max(CANDIDATE[0]-matrix[9], 0, matrix[9]-(CANDIDATE[1]-1))
-                dz = max(CANDIDATE[2]-matrix[11], 0, matrix[11]-(CANDIDATE[3]-1))
+                dx = max(candidate[0]-matrix[9], 0, matrix[9]-(candidate[1]-1))
+                dz = max(candidate[2]-matrix[11], 0, matrix[11]-(candidate[3]-1))
                 item['minimum_candidate_xz_distance_squared'] = dx*dx+dz*dz
                 # Y is converted to signed16 before squaring. For these static
                 # positions the sum stays signed32 even at |Y| = 32768.
-                safe_width = sphere_width_closed(matrix[9:])
+                safe_width = sphere_width_closed(matrix[9:],candidate)
                 item['sphere_source_widths_closed'] = safe_width
                 item['contact_status'] = ('excluded_by_origin_sphere' if safe_width and dx*dx+dz*dz >= item['radius_squared']
                                           else 'unresolved_custom_contact')
@@ -435,8 +435,8 @@ def neighbor_admission(facts, context):
         if item['bonus_callback'] and item['contact_status'] not in (
                 'excluded_by_origin_sphere','excluded_by_all_cycle_origin_sphere'):
             raise ValueError(f'ORG1 entity {index} bonus callback is not excluded by a certified origin sphere')
-    return dict(schema='org1-neighbor-admission-v1', candidate_x=list(CANDIDATE[:2]),
-                candidate_z=list(CANDIDATE[2:]), route_admitted=False,
+    return dict(schema='org1-neighbor-admission-v1', candidate_x=list(candidate[:2]),
+                candidate_z=list(candidate[2:]), route_admitted=False,
                 build=facts['build'], map_sha256=facts['map_sha256'], executable_sha256=facts['executable_sha256'],
                 authored_count=len(records), form_writer_closure_complete=True,
                 behavior_binding_closure_complete=True,
@@ -445,7 +445,7 @@ def neighbor_admission(facts, context):
                 form_grids=grids, neighbors=records,
                 models=[{k:v for k,v in value.items() if k != '_model'} for _,value in sorted(cache.items())],
                 zone_count=contacts.read(data,contacts.read(data,92,'<I')+4,'<I'),
-                terrain=terrain_facts(data),
+                terrain=terrain_facts(data,candidate),
                 included_FORM_indices=[r['entity_index'] for r in records if r['contact_status']=='include_possible_FORM_contact'],
                 unresolved_contact_indices=unresolved,
                 conditions=['Every authored identity participates in ResolveMapEntities FORM writes, in source order.',

@@ -51,7 +51,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		var expected_indices: PackedStringArray = fields[11].split(",")
 		var expected_statuses: PackedStringArray = fields[12].split(",")
 		for contact_index: int in expected_statuses.size():
-			if expected_statuses[contact_index] in ["hit", "pop"]:
+			if expected_statuses[contact_index] in ["hit", "pop", "squish"]:
 				supported_hits.append(expected_indices[contact_index])
 		assert_eq(",".join(observed_hits) if not observed_hits.is_empty() else "-",
 			",".join(supported_hits) if not supported_hits.is_empty() else "-", name + " bounded hits")
@@ -70,7 +70,12 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		assert_eq(snapshot.velocity_16.x, int(fields[4]), name + " vx")
 		assert_eq(snapshot.velocity_16.y, int(fields[5]), name + " vy")
 		assert_eq(snapshot.velocity_16.z, int(fields[6]), name + " vz")
-		assert_eq(result.events.count("entity_pop_explosion_request"), int(fields[8]), name + " pgen request")
+		# Only POP exposes a particle request. SQUISH is a death notification;
+		# its expected count comes from the source winning death and killer.
+		var pop_requests: int = int(fields[8]) if int(fields[3]) == 23 else 0
+		var squish_notifications: int = 1 if int(fields[3]) == 2 and int(fields[13]) >= 0 else 0
+		assert_eq(result.events.count("entity_pop_explosion_request"), pop_requests, name + " POP request")
+		assert_eq(result.events.count("entity_squish"), squish_notifications, name + " SQUISH notification")
 		assert_eq(snapshot.sound_requests, int(fields[9]), name + " sound request")
 		if snapshot.camera != null:
 			assert_eq(snapshot.camera.mode, int(fields[7]), name + " camera mode")

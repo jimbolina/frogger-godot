@@ -14,3 +14,4 @@ var final_snapshot: RunSnapshot = null
 var events: Array[String] = []
 var rng_consumers: Array[String] = []
 var entity_contacts: Array[FormReactionResult] = []
+var primitive_contacts: Array[EntityPrimitiveContact] = []

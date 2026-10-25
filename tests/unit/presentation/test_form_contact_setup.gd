@@ -165,6 +165,31 @@ func test_unsupported_grid_and_invalid_source_identity_are_visible() -> void:
 	first.source_offset += 1
 	assert_string_contains(FormContactSetup.from_map(map, _book(), [first], models).error, "identity")
 
+func test_primitive_opt_in_keeps_form_fallback_and_rejects_unsupported_shape() -> void:
+	var map: MapFile = _map()
+	var entity: EntityDefinition = _authored(map, 0, 9)
+	var model: MofFile = _model(20, true)
+	var source: MofPart.Collprim = model.static_models[0].parts[0].collprims[0]
+	source.flags = MofPart.COLLPRIM_LAST
+	source.size = Vector3i(80, 50, 100)
+	source.user = 1
+	var models: Dictionary[int, MofFile] = {0: model}
+	var setup: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
+	var contact: FormContactDefinition = setup.definitions[0]
+	assert_eq(contact.unsupported_reason, "")
+	assert_eq(contact.primitives.size(), 1)
+	assert_eq(contact.radius_squared, 500)
+	assert_eq(contact.max_y, 20)
+	assert_true(contact.has_form_data)
+	assert_eq(contact.height, -90)
+	assert_eq(contact.grid_flags, PackedInt32Array([3, 3]))
+	source.size.x = 1
+	assert_eq(contact.primitives[0].half_size.x, 80)
+	source.type = 4
+	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
+	assert_false(setup.definitions[0].unsupported_reason.is_empty())
+	assert_true(setup.definitions[0].primitives.is_empty())
+
 func test_invalid_grid_id_excludes_one_contact_without_hiding_neighbor() -> void:
 	var map: MapFile = _map()
 	var invalid: EntityDefinition = _authored(map, 0, 3)
@@ -178,3 +203,30 @@ func test_invalid_grid_id_excludes_one_contact_without_hiding_neighbor() -> void
 	assert_string_contains(setup.definitions[0].unsupported_reason, "invalid FORM")
 	assert_eq(setup.definitions[1].unsupported_reason, "")
 	assert_eq(setup.definitions[1].entity_index, 1)
+
+func test_primitive_only_model_admits_absent_form_data_but_not_malformed_records() -> void:
+	var map: MapFile = _map()
+	var entity: EntityDefinition = _authored(map, 0, 9)
+	var model: MofFile = _model(20, true)
+	var primitive: MofPart.Collprim = model.static_models[0].parts[0].collprims[0]
+	primitive.flags = MofPart.COLLPRIM_LAST
+	primitive.size = Vector3i(80, 50, 100)
+	primitive.user = 1
+	var models: Dictionary[int, MofFile] = {0: model}
+	map.forms[0].data_count = 0
+	map.forms[0].data.clear()
+	var setup: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
+	var contact: FormContactDefinition = setup.definitions[0]
+	assert_eq(contact.unsupported_reason, "")
+	assert_false(contact.has_form_data)
+	assert_eq(contact.primitives.size(), 1)
+	assert_eq(contact.radius_squared, 500)
+	assert_true(contact.grid_flags.is_empty())
+	assert_false(contact.copy().has_form_data)
+	map.forms[0].data_count = 1
+	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
+	assert_string_contains(setup.definitions[0].unsupported_reason, "no usable data")
+	map.forms[0].data_count = 0
+	models.clear()
+	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
+	assert_false(setup.definitions[0].unsupported_reason.is_empty())

@@ -224,6 +224,23 @@ func test_integrated_lifecycle_fixture_decodes_and_selects_visibility() -> void:
 	assert_not_null(scenario.level.entity_collision)
 	assert_eq(scenario.level.entity_collision.lifecycle.polygon_counts.size(), 1024)
 
+func test_org1_presets_require_org1_all_attached_platforms() -> void:
+	for preset: String in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
+		var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+		var arguments := PackedStringArray(["--exploration=" + preset, "--level=ORG1", "--data-dir=player-owned"])
+		assert_eq(scenario.apply_arguments(arguments), "")
+		assert_true(scenario.entity_reactions)
+		assert_true(scenario.platforms_enabled)
+		assert_false(scenario.entity_lifecycle)
+		arguments.append("--entity-lifecycle=visibility")
+		assert_string_contains(scenario.apply_arguments(arguments), "cannot be combined")
+		arguments.remove_at(arguments.size() - 1)
+		arguments.append("--entity-reactions=pop")
+		assert_string_contains(scenario.apply_arguments(arguments), "requires platform reactions")
+		arguments.remove_at(arguments.size() - 1)
+		arguments[1] = "--level=JUN1"
+		assert_string_contains(scenario.apply_arguments(arguments), "requires --level=ORG1")
+
 func test_lifecycle_model_allocation_resets_animation_on_new_generation() -> void:
 	var viewer := TerrainViewer.new()
 	viewer.auto_open = false

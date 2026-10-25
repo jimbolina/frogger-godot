@@ -1,0 +1,46 @@
+{
+  "builtin": "normal",
+  "tick_limit": 180,
+  "commands": [
+    {
+      "tick": 0,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 12,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 24,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 36,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 102,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 114,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 126,
+      "pressed": 1,
+      "held": 1
+    },
+    {
+      "tick": 138,
+      "pressed": 1,
+      "held": 1
+    }
+  ]
+}

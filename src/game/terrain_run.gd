@@ -85,6 +85,15 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 		if not run.error.is_empty():
 			return run
 		run._entity_collision = level.entity_collision.copy()
+		if run._entity_collision.frog_collision != null:
+			var actions: Array[FrogCollisionDefinition.Action] = run._entity_collision.frog_collision.actions
+			if actions.size() != run._action_lengths.size():
+				run.error = "Frog collision and animation action inventories differ"
+				return run
+			for action: int in actions.size():
+				if actions[action].frames.size() != run._action_lengths[action]:
+					run.error = "Frog collision and animation cel counts differ"
+					return run
 		for entity: EntityDefinition in run._entity_collision.entities:
 			run._has_entity_updates = run._has_entity_updates or entity.script_definition != null or entity.background_admitted
 		run._entities = EntityRun.create(run._entity_collision.entities, run._entity_collision.lifecycle)
@@ -182,6 +191,13 @@ func reset(initial: RunStart = null) -> String:
 		if not animation.error.is_empty():
 			return animation.error
 		state.animation = animation.state.copy()
+	if _entity_collision != null and _entity_collision.frog_collision != null:
+		if state.animation == null:
+			return "Entity primitives require authoritative frog animation"
+		state.frog_collision_pose = FrogCollisionPose.new()
+		var pose_issue: String = state.frog_collision_pose.refresh(_entity_collision.frog_collision, state.animation.action, state.animation.cel, state.matrix12)
+		if not pose_issue.is_empty():
+			return pose_issue
 	if _exploration_guard != null:
 		var animated_issue: String = _exploration_guard.check_frog(state)
 		if not animated_issue.is_empty():
@@ -332,6 +348,10 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		next.animation = _candidate_animation.state.copy()
 		next.animation_condition_counter = _candidate_animation.context.if_counter
 	# gamesys.C creates/renews visible live entities only after camera and animation.
+	if next.frog_collision_pose != null:
+		var pose_issue: String = next.frog_collision_pose.refresh(_entity_collision.frog_collision, next.animation.action, next.animation.cel, next.matrix12)
+		if not pose_issue.is_empty():
+			return _failed_tick(result, pose_issue)
 	if _candidate_entities != null:
 		_candidate_entities.advance_animations()
 		next.entities = _candidate_entities._state
@@ -900,6 +920,8 @@ func _collision(state: RunSnapshot, events: Array[String]) -> bool:
 	return true
 
 func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
+	if _entity_collision.frog_collision != null and state.flags & 65536:
+		return "Primitive admission does not support a jump from a collision primitive"
 	if state.entities == null or state.entities.entities.size() != _entity_collision.entities.size():
 		return "Entity collision snapshot does not match validated definitions"
 	for index: int in _entity_collision.entities.size():
@@ -927,8 +949,27 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 			return "Entity contact order produced an unknown authored index"
 		if state.entities.lifecycle_enabled and not state.entities.entities[index].live:
 			return "Entity contact order produced a dormant identity"
-		var contact: FormContactResult = FormContactQuery.query(_entity_collision.contacts[index], state.entities.entities[index], state.world_position)
-		var reaction: FormReactionResult = FormReaction.evaluate(_entity_collision.contacts[index], contact, _entity_collision.platforms_enabled)
+		var definition: FormContactDefinition = _entity_collision.contacts[index]
+		var pose: EntitySnapshot = state.entities.entities[index]
+		if not definition.primitives.is_empty():
+			var primitive: EntityPrimitiveContact = _contact_primitive(state, definition, pose)
+			result.primitive_contacts.append(primitive)
+			if primitive.status in [EntityPrimitiveQuery.INVALID, EntityPrimitiveQuery.UNSUPPORTED]:
+				return primitive.reason
+			if primitive.status == EntityPrimitiveQuery.CONTACT:
+				if not state.entity_hit_indices.has(pose.entity_index):
+					state.entity_hit_indices.append(pose.entity_index)
+				if state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
+					_kill(state, FrogAnimationCatalog.SQUISHED, false, result.events)
+					state.death_entity_index = pose.entity_index
+					result.events.append("entity_squish")
+				# Arcade ReactFrogWithCollPrim clears the matrix's Y row even
+				# when another contact already requested death this tick.
+				for component: int in range(3, 6):
+					state.matrix12[component] = 0
+				continue
+		var contact: FormContactResult = FormContactQuery.query(definition, pose, state.world_position)
+		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact, _entity_collision.platforms_enabled)
 		if reaction.status == FormReactionResult.INVALID:
 			return reaction.reason
 		result.entity_contacts.append(reaction)
@@ -973,6 +1014,36 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 			state.entity_hit_indices.append(pose.entity_index)
 	return ""
 
+func _contact_primitive(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot) -> EntityPrimitiveContact:
+	var result := EntityPrimitiveContact.new()
+	result.entity_index = pose.entity_index
+	result.unique_id = pose.unique_id
+	if not pose.live or (definition.entity_flags | pose.entity_flags) & EntityDefinition.NO_COLLISION:
+		result.status = EntityPrimitiveQuery.DISABLED
+		result.reason = "Entity has no collision-live instance"
+		return result
+	if not PlatformMath.valid(pose.matrix12) or state.frog_collision_pose == null:
+		result.status = EntityPrimitiveQuery.INVALID
+		result.reason = "Primitive contact requires an entity matrix and stored frog pose"
+		return result
+	var delta := Vector3i(PlatformMath.s16(state.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.world_position.z - pose.matrix12[11]))
+	var distance: int = PlatformMath.s32(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z)
+	if distance >= definition.radius_squared:
+		result.status = EntityPrimitiveQuery.MISS
+		result.reason = "Outside strict form-book bounding sphere"
+		return result
+	var hit: EntityPrimitiveQuery.Result = EntityPrimitiveQuery.query(definition.primitives, pose.matrix12, state.frog_collision_pose.probes)
+	result.status = hit.status
+	result.reason = hit.reason
+	result.frog_part_index = hit.part_index
+	result.hilite_index = hit.hilite_index
+	result.primitive_part_index = hit.primitive_part_index
+	result.primitive_index = hit.primitive_index
+	result.reaction = hit.reaction
+	result.world_point = hit.world_point
+	result.local_position = hit.local_position
+	return result
+
 func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, result: TickResult) -> String:
 	if reaction.status == FormReactionResult.SAFE:
 		var issue: String = _mount_platform(state, definition, pose, reaction, result.events)
@@ -980,10 +1051,10 @@ func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition,
 			return issue
 	if reaction.hit and not state.entity_hit_indices.has(pose.entity_index):
 		state.entity_hit_indices.append(pose.entity_index)
-	if reaction.status == FormReactionResult.POP and state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
+	if reaction.status in [FormReactionResult.POP, FormReactionResult.SQUISH] and state.death_entity_index < 0 and state.mode != 2 and not state.flags & 8:
 		_kill(state, reaction.kill_animation, false, result.events)
 		state.death_entity_index = pose.entity_index
-		result.events.append("entity_pop_explosion_request")
+		result.events.append("entity_pop_explosion_request" if reaction.status == FormReactionResult.POP else "entity_squish")
 	if _exploration_guard != null:
 		return _exploration_guard.check_world(state.world_position)
 	return ""
@@ -997,6 +1068,7 @@ func _failed_tick(result: TickResult, issue: String) -> TickResult:
 	result.scripts_snapshot = null
 	result.final_snapshot = null
 	result.entity_contacts.clear()
+	result.primitive_contacts.clear()
 	result.events.clear()
 	result.rng_consumers.clear()
 	return result

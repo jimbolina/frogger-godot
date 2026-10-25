@@ -42,7 +42,11 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		result.kill_animation = 23
 		result.hit = true
 	elif flags & 4:
-		if definition.death_type == 5:
+		if definition.death_type == 0:
+			result.status = FormReactionResult.SQUISH
+			result.kill_animation = FrogAnimationCatalog.SQUISHED
+			result.hit = true
+		elif definition.death_type == 5:
 			result.status = FormReactionResult.POP
 			result.kill_animation = 23
 			result.hit = true

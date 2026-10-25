@@ -20,8 +20,8 @@ disagreements in the relevant technical reference; do not invent rules.
 facts. **Live play** describes one running game's state and rules.
 Setup translates between these meanings; presentation and inspection tools
 are consumers. `TerrainRun` now owns the first frog component rules and detached
-snapshots, optionally including atomic entity advancement and bounded POP/SAFE FORM
-reactions. A one-entity fixed-point probe remains available; complete level play
+snapshots, optionally including atomic entity advancement, bounded POP/SAFE/SQUISHED
+reactions and vehicle cuboids. A one-entity fixed-point probe remains available; complete level play
 is not implemented. See [architecture](architecture.md)
 for dependencies and ownership.
 

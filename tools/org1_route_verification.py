@@ -13,9 +13,13 @@ from org1_route_camera import Camera
 
 def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_tick=None):
     """Require all phase movement/scans and every ordered script state to agree."""
-    if len(actual)!=ticks*6 or len(entity_actual)!=ticks*64:raise ValueError('incomplete ORG1 oracle trace')
+    if actual is not None and (len(actual)!=ticks*6 or len(entity_actual)!=ticks*64):raise ValueError('incomplete ORG1 oracle trace')
     programs={i:s['stream'] for i,s in context['scripts'].items()} if isinstance(context['scripts'],dict) else {i:s['stream'] for i,s in enumerate(context['scripts'])}
-    route=Route(context,geometry,ticks);scripts={};actions={};cels={};cache={}
+    if geometry.get('road'):
+        from org1_road_route import RoadRoute
+        route=RoadRoute(context,geometry,ticks)
+    else:route=Route(context,geometry,ticks)
+    scripts={};actions={};cels={};cache={}
     for r in geometry['neighbors']:
         index=r['entity_index'];mid=r['model_resource_id'];m=neighbor.model_facts(context,mid,cache)['_model']
         if m['incomplete']:mid=cache[mid]['counterpart_resource_id'];m=cache[mid]['_model']
@@ -34,13 +38,14 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
     data=animation.catalog();data['action_lengths']=[a['frames'] for a in hilite.discrete_actions(hilite.animation.parse_xar(raw),16)]
     frog_anim=animation.State(data);seed=1;sounds=0;hits=set();carried=-1
     general=admission.contacts.read(context['data'],76,'<I')
-    camera=Camera(struct.unpack_from('<3h',context['data'],general+24),struct.unpack_from('<3h',context['data'],general+32))
+    camera=Camera(struct.unpack_from('<3h',context['data'],general+24),struct.unpack_from('<3h',context['data'],general+32),route.world())
     fly_mode=0;fly_timer=60;fly_checkpoint=-1;fly_position=geometry['neighbors'][55]['initial_position'][:]
     markers={r['entity_type']:r['initial_position'] for r in geometry['neighbors'] if r['entity_type'].startswith('GEN_')}
     top=markers['GEN_TOP_LEFT'];bottom=markers['GEN_BOTTOM_RIGHT'];fade=[top[0],bottom[0],bottom[2],top[2]]
     compared=0;death_tick=None;expected_phases=[];expected_entities=[]
     def compare(row,wanted,where):
         nonlocal compared
+        if row is None:return
         for key,value in wanted.items():
             if row[key]!=str(value):raise ValueError(f'{where}: {key}: C={row[key]}, Python={value}')
             compared+=1
@@ -84,7 +89,7 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             wanted.update(fly_mode=fly_mode,fly_timer=fly_timer,fly_checkpoint=fly_checkpoint,covered=0 if fly_checkpoint<0 else 1<<fly_checkpoint)
             for cb in range(2):wanted['callback'+str(cb)]=':'.join(map(str,s.callbacks.get(cb,(-1,0,0,0)) if s else (-1,0,0,0)))
             wanted.update(zip(('sound_id','sound_min','sound_max'),s.moving_sound if s and s.moving_sound else (-1,-1,-1)))
-            compare(entity_actual[tick*64+visit],wanted,f'tick {tick} entity {index}')
+            compare(entity_actual[tick*64+visit] if entity_actual is not None else None,wanted,f'tick {tick} entity {index}')
             expected_entities.append(wanted)
         route.scripted_poses=True
         route.hidden={55} if fly_mode==0 else set()
@@ -99,14 +104,16 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
                 if route.flags&4 and route.mode!=2:carried=route.attached
             elif phase=='collision':
                 route.collide();hits=route.hits.copy()
+                if geometry.get('road') and route.flags&8 and death_tick is None:death_tick=tick
                 if route.flags&4 and route.mode!=2:carried=route.attached
             camera.transfer(previous,route.attached,route.poses,route.mode==0)
-            if phase=='camera' and route.mode!=2:camera.update(route)
+            if phase=='camera' and route.mode!=2 and not route.flags&8:camera.update(route)
             for request in route.animations[event_cursor:]:frog_anim.request(request)
             event_cursor=len(route.animations)
             if phase=='scripts':frog_anim.seed=seed;frog_anim.scripts();seed=frog_anim.seed
             elif phase=='pose':
                 frog_anim.pose()
+                if geometry.get('road'):route.store_pose(frog_anim.action,frog_anim.cel)
                 for index in range(64):
                     s=scripts.get(index)
                     if s:s.advance_animation()
@@ -116,10 +123,10 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             wanted.update(action=frog_anim.action,cel=frog_anim.cel,rng=seed,sounds=sounds,
                           diver_y=scripts[0].deviation,diver_timer=scripts[0].timer,diver_action=scripts[0].action,
                           scan=';'.join(map(str,route.scan())))
-            compare(actual[tick*6+phase_index],wanted,f'tick {tick} phase {phase}')
-            if not (-512<=route.world()[0]<512 and -128<=route.world()[2]<480):
+            compare(actual[tick*6+phase_index] if actual is not None else None,wanted,f'tick {tick} phase {phase}')
+            if not (-512<=route.world()[0]<512 and (-1792 if geometry.get('road') else -128)<=route.world()[2]<480):
                 raise ValueError(f'candidate escapes bounds at {tick} {phase}')
             expected_phases.append(wanted)
     if death_tick!=expected_death_tick:raise ValueError('expected attached diver death did not occur')
-    print(f'Independent Python/C agreement: {compared} values, {ticks*6} phases, {ticks*64} ordered entity updates.')
+    if actual is not None:print(f'Independent Python/C agreement: {compared} values, {ticks*6} phases, {ticks*64} ordered entity updates.')
     return expected_phases,expected_entities
