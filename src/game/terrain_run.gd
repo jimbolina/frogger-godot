@@ -61,8 +61,8 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 	run._source_id = level.source_id
 	run._resource_id = level.resource_id
 	if not level.camera_zones.is_empty():
-		if level.camera == null or (level.entity_collision != null and level.entity_collision.lifecycle != null):
-			run.error = "Active zones require an integrated camera and exclude visibility lifecycle"
+		if level.camera == null:
+			run.error = "Active zones require an integrated camera"
 			return run
 		var identities: Dictionary[int, bool] = {}
 		for zone: ZoneDefinition in level.camera_zones:

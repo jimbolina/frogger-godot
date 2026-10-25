@@ -74,9 +74,6 @@ func test_active_zone_validation_and_nested_ownership() -> void:
 	scenario.level.camera_zones.append(zone.copy())
 	assert_string_contains(TerrainRun.create(scenario.level).error, "duplicate")
 	scenario.level.camera_zones.pop_back()
-	scenario.level.entity_collision = EntityCollisionDefinition.new()
-	scenario.level.entity_collision.lifecycle = EntityLifecycleDefinition.new()
-	assert_string_contains(TerrainRun.create(scenario.level).error, "visibility lifecycle")
 
 func test_move_selects_zone_before_camera_and_failed_late_guard_rolls_back() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")

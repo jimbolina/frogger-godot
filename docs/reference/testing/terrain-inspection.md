@@ -247,7 +247,8 @@ measurements. Reset and boundary rollback remain atomic.
 `--entity-lifecycle visibility` requires integrated entity reactions and a
 camera. Authored JSON may supply `level.entity_collision.lifecycle` with
 `polygon_counts`, one total per authored map group; the enclosing collision geometry
-defines the group base, dimensions and size. Setup rejects zone-bearing maps.
+defines the group base, dimensions and size. Ordinary retail terrain setup
+rejects zone-bearing maps; authored scenarios can combine zones and lifecycle.
 The [entity contract](../gameplay/entities.md#visibility-lifecycle) owns the
 supported behavior, polygon guard and delayed creation/culling rules.
 
@@ -298,8 +299,9 @@ reordered, truncated, error and post-completion records fail comparison.
 `--camera-inspection jun1-camera-zones` selects a separate prescribed camera
 probe through the existing terrain launcher. It requires v3.0e player data and
 uses the supplied high-detail JUN1 map, camera defaults and zone records.
-Gameplay scenarios, entity switches and tick-limit overrides cannot be combined
-with it. No entity collision or playable-route admission is implied.
+Gameplay scenarios, entity-reaction switches and tick-limit overrides cannot be
+combined with it. `--entity-lifecycle visibility` opts into the bounded log probe
+below. No entity collision or playable-route admission is implied.
 
 The first sequence holds each cell `(10,3)`, `(11,3)`, `(11,4)`, `(11,5)` for
 40 ticks, entering and exiting zone 15. The second resets camera state, starts
@@ -330,3 +332,33 @@ then pauses. This is inspection reset, not checkpoint/death recovery.
 The [camera contract](../gameplay/gameplay-camera.md#zone-boundaries) owns runtime
 semantics and [golden specification](../../../tests/golden/specs/camera-components.md#active-camera-zones)
 owns the independent generators and known frozen-build source difference.
+
+## Combined zone and lifecycle inspection
+
+`lifecycle_zones.json` adds active-zone entry/exit to the synthetic out-and-back
+terrain scenario. Authored JSON accepts `level.camera_zones`: ordered objects
+with `zone_index`, four `bounds`, optional `regions`, `camera_flags`,
+`camera_direction` and eight XYZ `camera_offsets`. Omitted scalar values use
+`ZoneDefinition` defaults. Existing scenarios without this field are unchanged.
+
+The JUN1 camera probe accepts `--entity-lifecycle visibility`, admitting only
+the eleven verified logs. Its camera/path/lifecycle state resets between the
+two existing sequences, and R resets everything to dormant tick zero. The
+overlay shows live count, selected-group count and lifecycle events. Models
+and markers disappear/reappear according to committed generations. Metadata
+lists every omitted authored entity. No frog movement or contact runs here.
+
+```powershell
+python tools/run_terrain.py --godot <executable> --scenario-file tests/golden/fixtures/lifecycle_zones.json --entity-lifecycle visibility --viewer --output-directory <external-folder>
+python tools/run_terrain.py --godot <executable> --data-dir <game-folder> --camera-inspection jun1-camera-zones --entity-lifecycle visibility --viewer --output-directory <external-folder>
+python tools/verify_zone_lifecycle_schedules.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+```
+
+The verifier checks independent facts and complete headless/30/60/144 Hz
+snapshots for both demonstrations. Synthetic traces retain `entity-lifecycle-v1`;
+retail uses `camera-zone-lifecycle-v1`, adding admitted definitions, diagnostics,
+complete lifecycle state and selected polygon total to the camera probe trace.
+Captures include lifecycle transitions and zone transitions; inspect map framing,
+log placement and retirement/recreation. The camera-only command/schema remains
+unchanged. Input admission and remaining limitations belong to the
+[entity contract](../gameplay/entities.md#combined-camera-zones-and-lifecycle).

@@ -67,6 +67,10 @@ static func apply(scenario: TerrainScenario, object: Dictionary) -> String:
 					return "camera %s must contain three integers" % key
 				var coordinates: Array = camera[key]
 				scenario.level.camera.set(key, Vector3i(_number(coordinates[0]), _number(coordinates[1]), _number(coordinates[2])))
+	if level.has("camera_zones"):
+		var zone_issue: String = _zones(scenario, level.camera_zones)
+		if not zone_issue.is_empty():
+			return zone_issue
 	if not object.has("grid"):
 		return ""
 	var authored: Dictionary = object.grid
@@ -110,6 +114,48 @@ static func apply(scenario: TerrainScenario, object: Dictionary) -> String:
 				square.set(key, _number(row[key]))
 		grid.squares.append(square)
 	scenario.level.grid = grid
+	return ""
+
+static func _zones(scenario: TerrainScenario, value: Variant) -> String:
+	if not value is Array:
+		return "camera_zones must be an array"
+	var definitions: Array[ZoneDefinition] = []
+	var identities: Dictionary[int, bool] = {}
+	for item: Variant in value:
+		if not item is Dictionary:
+			return "Each camera zone must be an object"
+		var record: Dictionary = item
+		var zone := ZoneDefinition.new()
+		for key: String in ["zone_index", "zone_type", "camera_flags", "camera_direction"]:
+			if record.has(key):
+				if not _integer(record[key]):
+					return "Camera zone %s must be an integer" % key
+				zone.set(key, _number(record[key]))
+		if not record.has("zone_index") or not _vector(record.get("bounds"), 4):
+			return "Camera zone requires zone_index and four bounds"
+		for coordinate: Variant in record.bounds:
+			zone.bounds.append(_number(coordinate))
+		if not record.get("regions", []) is Array or not record.get("camera_offsets") is Array:
+			return "Camera zone regions and camera_offsets must be arrays"
+		for region: Variant in record.get("regions", []):
+			if not _vector(region, 4):
+				return "Camera zone region requires four integers"
+			var coordinates := PackedInt32Array()
+			for coordinate: Variant in region:
+				coordinates.append(_number(coordinate))
+			zone.regions.append(coordinates)
+		for offset: Variant in record.camera_offsets:
+			if not _vector(offset, 3):
+				return "Camera zone offset requires three integers"
+			zone.camera_offsets.append(Vector3i(_number(offset[0]), _number(offset[1]), _number(offset[2])))
+		var issue: String = zone.validate_camera()
+		if not issue.is_empty():
+			return issue
+		if identities.has(zone.zone_index):
+			return "Duplicate camera zone identity"
+		identities[zone.zone_index] = true
+		definitions.append(zone)
+	scenario.level.camera_zones = definitions
 	return ""
 
 static func _vector(value: Variant, count: int) -> bool:

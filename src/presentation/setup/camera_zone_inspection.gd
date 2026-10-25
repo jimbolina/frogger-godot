@@ -16,9 +16,13 @@ var tick: int = 0
 var cell: Vector2i = CELLS[0]
 var world: Vector3i = Vector3i.ZERO
 var row: Dictionary = {}
+var entity_definitions: Array[EntityDefinition] = []
+var lifecycle: EntityLifecycleDefinition = null
+var entities: EntityRun = null
+var diagnostics: PackedStringArray = PackedStringArray()
 
 ## Resolves high-detail JUN1 through the supplied executable and copies its camera data.
-static func from_data(data: GameData) -> CameraZoneInspection:
+static func from_data(data: GameData, visibility_enabled: bool = false) -> CameraZoneInspection:
 	var result := CameraZoneInspection.new()
 	if data == null or data.version.internal_name != "pc-retail-v3.0e":
 		result.error = "jun1-camera-zones inspection is verified only for pc-retail-v3.0e"
@@ -42,47 +46,86 @@ static func from_data(data: GameData) -> CameraZoneInspection:
 	result.definition = GameplayCameraDefinition.new()
 	result.definition.source_offset = result.map_scene.map.general.camera_source_offset
 	result.definition.target_offset = result.map_scene.map.general.camera_target_offset
+	if visibility_enabled:
+		var logs: Jun1ZoneLifecycleSetup = Jun1ZoneLifecycleSetup.from_data(data, result.map_scene)
+		if not logs.error.is_empty():
+			result.error = logs.error
+			return result
+		result.entity_definitions = logs.definitions
+		result.lifecycle = logs.lifecycle
+		result.diagnostics = logs.diagnostics
 	result.error = result.reset()
 	return result
 
 ## Rewinds both prescribed sequences and their camera/selection state.
 func reset() -> String:
+	var next_camera: GameplayCamera = _new_camera(0)
+	if not next_camera.error.is_empty():
+		return next_camera.error
+	var next_entities: EntityRun = EntityRun.create(entity_definitions, lifecycle) if lifecycle != null else null
+	if next_entities != null and not next_entities.error.is_empty():
+		return next_entities.error
+	camera = next_camera
+	entities = next_entities
+	selected = Vector2i(-1, -1)
 	tick = 0
 	cell = CELLS[0]
 	world = _world(cell)
 	row = {}
-	return _reset_sequence(0)
+	return ""
 
 ## Advances one exact source camera update, publishing a detached inspection row.
 func step() -> String:
 	if tick >= TICK_LIMIT:
 		return "Camera inspection is complete; reset to replay"
-	if tick == 160:
-		var reset_issue: String = _reset_sequence(2048)
-		if not reset_issue.is_empty():
-			return reset_issue
+	var next_camera: GameplayCamera = _new_camera(2048) if tick == 160 else camera.copy()
+	if not next_camera.error.is_empty():
+		return next_camera.error
+	var next_entities: EntityRun = entities
+	if tick == 160 and lifecycle != null:
+		next_entities = EntityRun.create(entity_definitions, lifecycle)
+	if next_entities != null:
+		if not next_entities.error.is_empty():
+			return next_entities.error
+		next_entities = next_entities.advanced_copy(tick % 160)
+		if not next_entities.error.is_empty():
+			return next_entities.error
 	@warning_ignore("integer_division")
 	var segment: int = tick / 40
-	cell = CELLS[segment]
-	world = _world(cell)
-	var pending: Vector2i = ZoneQueries.update_camera_match(zones, cell, selected)
+	var next_cell: Vector2i = CELLS[segment]
+	var next_world: Vector3i = _world(next_cell)
+	var pending: Vector2i = ZoneQueries.update_camera_match(zones, next_cell, Vector2i(-1, -1) if tick == 160 else selected)
 	var input := GameplayCameraTick.new()
-	input.frog_world = world
+	input.frog_world = next_world
 	input.camera_zone = ZoneQueries.definition_for(zones, pending.x)
-	var issue: String = camera.step(input)
+	var issue: String = next_camera.step(input)
 	if not issue.is_empty():
 		return issue
+	if next_entities != null:
+		next_entities.advance_animations()
+		issue = next_entities.apply_visibility(next_camera.snapshot())
+		if not issue.is_empty():
+			return issue
+	camera = next_camera
+	entities = next_entities
+	cell = next_cell
+	world = next_world
 	selected = pending
 	row = {"tick": tick, "sequence": 0 if tick < 160 else 1, "cell": [cell.x, cell.y], "world": [world.x, world.y, world.z], "frog_zone": selected.x, "frog_region": selected.y, "camera": TerrainTrace.facts(camera.snapshot())}
+	if entities != null:
+		row["entity_lifecycle"] = TerrainTrace.facts(entities.snapshot(), true)
+		var total: int = 0
+		for group: int in entities.snapshot().selected_groups:
+			total += lifecycle.polygon_counts[group]
+		row["polygon_total"] = total
 	tick += 1
 	return ""
 
-func _reset_sequence(angle: int) -> String:
-	selected = Vector2i(-1, -1)
-	camera = GameplayCamera.create(definition, Vector3i.ZERO)
-	if not camera.error.is_empty():
-		return camera.error
-	return camera.transition_attachment(PlatformMath.yaw(angle), PackedInt32Array(), false)
+func _new_camera(angle: int) -> GameplayCamera:
+	var result: GameplayCamera = GameplayCamera.create(definition, Vector3i.ZERO)
+	if result.error.is_empty():
+		result.error = result.transition_attachment(PlatformMath.yaw(angle), PackedInt32Array(), false)
+	return result
 
 func _world(at: Vector2i) -> Vector3i:
 	return Vector3i(grid_base.x + at.x * 256 + 128, 0, grid_base.y + at.y * 256 + 128)

@@ -16,7 +16,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE/SQUISHED, guarded JUN1 and ORG1 road/river exploration, vehicle cuboids, active camera zones with JUN1 probe inspection and script-free visibility lifecycle |
+| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE/SQUISHED, guarded JUN1 and ORG1 road/river exploration, vehicle cuboids, combined active zones/script-free visibility with synthetic gameplay and a JUN1 log probe |
 | P9 | The remaining seven themes | XL | A checklist per level | |
 | P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
 | P11 | Effects and particles | L | By eye | |
@@ -49,11 +49,12 @@ ORG1 vehicle cuboids now use stored animated frog points and source squish death
 Other lethal reactions, entity-specific sliding/bouncing and broader primitive
 shapes remain unimplemented. P8 remains in progress; complete level play is unfinished.
 Live keyboard terrain exploration is available through the [terrain viewer](../README.md).
-Opt-in visibility lifecycle now covers script-free generic entities on zero-zone
-maps within its selected-group budget guard; the demonstrated camera sequence
-is synthetic. Guarded JUN1 exploration connects safe terrain to a moving log
+Opt-in visibility lifecycle covers script-free generic entities within its
+selected-group budget guard. Combined active-zone coverage includes synthetic
+gameplay and a prescribed JUN1 log probe; ordinary retail terrain setup still
+requires zero-zone maps. Guarded JUN1 exploration connects safe terrain to a moving log
 and back, with all-attached lifetime and transactional world/zone restrictions.
-Complete level collision still needs scripts, combined zone/lifecycle coverage, custom and
+Complete level collision still needs scripted visibility, custom and
 immortal behaviors, selective game-flow reset and broader visibility workloads.
 FOR1's automatic retail lifecycle sequence remains unverified.
 The ORG1 bank/turtle/log proof now closes the animated frog-probe and
@@ -68,11 +69,11 @@ the [inspection probe](reference/testing/terrain-inspection.md) checks host paci
 The separate guarded road preset adds all 24 traffic cuboids, a timed crossing
 to the turtle/log corridor and an independently verified vehicle death with the
 following traffic-splat callback. The original river preset remains available.
-Active camera zones now have independent transition/control facts, transactional
-synthetic gameplay coverage and a prescribed JUN1 camera inspection. This does
-not extend the guarded playable routes or lift the zero-zone lifecycle guard.
-Remaining work includes broader instruction/custom-behavior coverage, combined
-zone/lifecycle workloads, verified form callbacks, selective reset and other
+Active camera zones have independent transition/control facts and combined
+visibility coverage through synthetic gameplay and the prescribed JUN1 log
+inspection. This does not extend guarded playable routes or ordinary retail
+terrain admission. Remaining work includes broader instruction/custom-behavior
+coverage, playable zone routes, scripted visibility, verified form callbacks, selective reset and other
 primitive shapes.
 A complete playable level is still required.
 Resolve callbacks through verified names and supported implementations;

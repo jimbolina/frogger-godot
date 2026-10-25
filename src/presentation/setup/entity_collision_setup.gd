@@ -35,16 +35,11 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 	assembled.group_dimensions = map.group_dimensions
 	assembled.group_size = map.group_size
 	if visibility_enabled:
-		var lifecycle := EntityLifecycleDefinition.new()
-		lifecycle.group_base = map.group_base
-		lifecycle.group_dimensions = map.group_dimensions
-		lifecycle.group_size = map.group_size
-		for group_index: int in map.group_dimensions.x * map.group_dimensions.y:
-			var count: int = 0
-			for polygon_type: int in 8:
-				count += map.groups[group_index].counts[polygon_type]
-			lifecycle.polygon_counts.append(count)
-		assembled.lifecycle = lifecycle
+		var lifecycle: EntityLifecycleSetup = EntityLifecycleSetup.from_map(map)
+		if not lifecycle.error.is_empty():
+			result.error = lifecycle.error
+			return result
+		assembled.lifecycle = lifecycle.definition
 	for index: int in entities.definitions.size():
 		var entity: EntityDefinition = entities.definitions[index]
 		var contact: FormContactDefinition = contacts.definitions[index].copy()

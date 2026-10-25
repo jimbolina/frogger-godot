@@ -14,9 +14,11 @@ setup; debug-only CAMERA.H defaults are not an authority for each map.
 
 Opt-in [entity visibility lifecycle](entities.md#visibility-lifecycle) consumes
 the post-update camera source and fixed12 axes inside the same run transaction.
-Rendering interpolation and host window size do not change selection. The
-visibility mode rejects zone-bearing maps until combined zone/lifecycle behavior
-is verified; it does not silently use default offsets for them.
+Rendering interpolation and host window size do not change selection. Active
+zones and lifecycle can run together on authored definitions. Ordinary retail
+terrain setup retains its zero-zone guard; the bounded JUN1 log probe separately
+verifies authored zones and visibility. See the
+[combined contract](entities.md#combined-camera-zones-and-lifecycle).
 
 The following anchors are under the frozen source directory in
 [sources](../sources.md):

@@ -28,7 +28,7 @@ def main():
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()
-    if args.camera_inspection and (not args.data_dir or args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.entity_lifecycle or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
+    if args.camera_inspection and (not args.data_dir or args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
         parser.error('Camera inspection requires --data-dir and excludes gameplay scenario, entity, tick-limit and motion-capture options')
     repo = Path(__file__).resolve().parents[1]
     output = args.output_directory.resolve()

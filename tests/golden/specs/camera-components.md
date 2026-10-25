@@ -94,3 +94,5 @@ Omit `--verify` to regenerate. For each file, increment an expected source-world
 X fact, require verification to fail, restore the original and verify again.
 Both text corpora run asset-free; a separately named retail test also compares
 supplied setup and the complete inspection against the retail facts.
+Combined zone-driven visibility has a separate
+[entity integration family](entities.md#combined-camera-zones-and-lifecycle).

@@ -93,6 +93,11 @@ The [entity contract](gameplay/entities.md#visibility-lifecycle) owns eligibilit
 source ordering, attachment retention and reset semantics. Presentation consumes
 generations to allocate/release instances; it cannot select the authoritative
 live set. Existing all-attached inspection remains the default.
+Active zones can participate in this transaction: visibility consumes the
+updated candidate camera, and a late rejection restores the prior zone and
+camera along with the entity state. Prescribed retail camera probes use the
+same detached camera/entity components with private candidates; they do not
+add teleport commands or bypass gameplay admission in `TerrainRun`.
 
 Opt-in platform execution requires an integrated camera. The order is paths,
 source-ordered entity transforms and admitted custom/script updates, frog

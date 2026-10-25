@@ -1,4 +1,5 @@
 {
+  "res://tests/golden/test_retail_camera_zones.gd::test_jun1_zone_lifecycle_matches_independent_reference": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_camera_zones.gd::test_jun1_zone_inspection_matches_independent_reference": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_grid.gd::test_all_grid_records_geometry_and_surface_averages": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_entities.gd::test_all_entity_identity_base_records_and_setup_census": "SKIP: FROGGER_DATA_DIR is not set",

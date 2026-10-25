@@ -46,9 +46,9 @@ default does not reproduce.
 
 `EntityCollisionDefinition.lifecycle` opts an integrated run into bounded
 single-player live-entity creation. Null preserves all-attached inspection.
-Setup admits zero-zone maps and script-free generic STATIC/MOVING entities.
+Ordinary retail terrain setup admits zero-zone maps and script-free generic STATIC/MOVING entities.
 Script-bearing records retain source identity and inspection poses but never
-enter the supported live set. Custom/immortal behaviors, scripts, zones and
+enter the supported live set. Custom/immortal behaviors, scripts and
 selective checkpoint/death resets remain deferred. Existing FORM/model and
 collision-callback exclusions still govern collision; bonus callbacks remain
 unexecuted diagnostics.
@@ -99,6 +99,33 @@ automatic retail camera/lifecycle sequence is not verified. A manually selected
 group is only a component stimulus. Reproduction and independent facts belong
 in the [entity golden specification](../../../tests/golden/specs/entities.md);
 inspection commands belong in the [testing guide](../testing/terrain-inspection.md).
+
+## Combined camera zones and lifecycle
+
+Authored `LevelDefinition.camera_zones` may coexist with visibility lifecycle.
+Movement selects the frog zone before collision; the camera consumes that
+selection, then visibility uses its updated source position and fixed12 basis
+after animation. Creation is still at the tail, with update/contact eligibility
+on the following tick. Current attachment protects an offscreen live instance;
+the forbidden identity alone does not. A visibility failure discards zone
+selection, camera transitions, paths, lifecycle events/generations and all
+other candidate state. Reset leaves entities dormant without prewarming.
+
+The synthetic out-and-back scenario verifies automatic zone entry/exit and
+entity recreation. The separate v3.0e high-detail JUN1 probe admits eleven
+script-free `JUN_LOG` entities, retaining authored indices. It pins supplied
+map bytes by digest, resolved behavior/model bindings and log model digests
+against independent text facts. Omitted records receive explicit diagnostics.
+It uses the existing prescribed camera sequences with fresh camera/entity
+state between them; it performs no frog movement or contact. Camera, selection
+and entity state commit atomically, including at that sequence boundary.
+Presentation creates/releases log instances from committed generations.
+
+This does not lift ordinary retail terrain's zero-zone guard or guarded
+exploration's all-attached restriction. Script/custom/immortal behavior and
+selective resets remain outside this admission. Reproduction and evidence
+fields belong to the [golden specification](../../../tests/golden/specs/entities.md#combined-camera-zones-and-lifecycle);
+launch commands belong to [inspection](../testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection).
 
 ## FORM contact inspection
 

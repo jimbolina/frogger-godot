@@ -11,18 +11,17 @@ bounds. ORG1 keeps all 64 authored logical updates, pinned supplied inputs and
 all-attached lifetime. Unsupported poses and boundary failures reject whole
 ticks. Complete level play remains unfinished.
 
-Active camera zones now support retained zone/region selection, directional
-offsets, forced and semiforced turns, absolute-height transitions and platform
-camera composition. Independent Python/frozen-C facts cover camera transitions
-and actual manual control. Synthetic gameplay checks cover selection timing,
-reset and rollback. The `jun1-camera-zones` inspection demonstrates authored
-v3.0e zones using prescribed probe positions; it does not expand playable routes.
-Existing exploration admission and zero-zone visibility-lifecycle guards remain.
-See the [camera contract](reference/gameplay/gameplay-camera.md).
+Active camera zones and script-free visibility lifecycle now share the same
+transaction. Independent Python/frozen-C facts cover synthetic out-and-back
+gameplay and a prescribed v3.0e JUN1 camera probe with eleven audited logs.
+Checks cover creation/retirement/recreation, reset, attachment and rollback;
+rendered schedules match headless state. Ordinary retail terrain's zero-zone
+guard and existing exploration admission remain. The probe does not expand
+playable routes. See the [combined contract](reference/gameplay/entities.md#combined-camera-zones-and-lifecycle).
 
 [PORTING](PORTING.md) owns remaining P8 work: broader behaviors/reactions,
-verified FORM callbacks, selective reset, playable zone routes and combined
-zone/lifecycle workloads. Script-free visibility has a synthetic demonstration;
+verified FORM callbacks, selective reset, playable zone routes and scripted
+visibility workloads. Script-free visibility has a retail log probe;
 FOR1 remains an unverified retail candidate. Audio playback, splash/particle
 effects and [animated per-part lighting](reference/rendering/gameplay-projection.md)
 remain deferred.

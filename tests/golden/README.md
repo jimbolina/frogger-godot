@@ -28,6 +28,7 @@ commands run from the repository root; generated facts live in
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
+| Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
 | Synthetic frog controller/mover, collision and terrain callback records | [Terrain components](specs/terrain-components.md) |
 | Default camera and active-zone transition/control records, including JUN1 probes | [Camera components](specs/camera-components.md) |

@@ -61,6 +61,85 @@ func _assert_failed(result: TickResult) -> void:
 	assert_true(result.entity_contacts.is_empty())
 	assert_true(result.rng_consumers.is_empty())
 
+func _active_zone() -> ZoneDefinition:
+	var zone := ZoneDefinition.new()
+	zone.bounds = PackedInt32Array([0, 0, 3, 3])
+	for unused: int in 4:
+		zone.camera_offsets.append(Vector3i(0, -768, -768))
+		zone.camera_offsets.append(Vector3i.ZERO)
+	return zone
+
+func test_zone_transition_visibility_failure_rolls_back_every_component_and_retries() -> void:
+	var level: LevelDefinition = _level()
+	level.camera_zones.append(_active_zone())
+	var run: TerrainRun = TerrainRun.create(level)
+	var clean: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	assert_eq(_tick(run).error, "")
+	assert_eq(_tick(clean).error, "")
+	var before: String = ZoneLifecycleChecks.canonical(TerrainTrace.facts(run.snapshot(), true))
+	run._entities._lifecycle.polygon_counts.fill(2500)
+	var failure: TickResult = _tick(run)
+	_assert_failed(failure)
+	assert_string_contains(failure.error, "2500")
+	assert_eq(ZoneLifecycleChecks.canonical(TerrainTrace.facts(run.snapshot(), true)), before)
+	run._entities._lifecycle.polygon_counts.fill(1)
+	assert_eq(_tick(run).error, "")
+	assert_eq(_tick(clean).error, "")
+	assert_eq(ZoneLifecycleChecks.canonical(TerrainTrace.facts(run.snapshot(), true)), ZoneLifecycleChecks.canonical(TerrainTrace.facts(clean.snapshot(), true)))
+	assert_eq(run.snapshot().death_entity_index, 9)
+	assert_eq(run.snapshot().camera.zone_index, 0)
+
+func test_active_zone_safe_attachment_and_departure_keep_live_generation() -> void:
+	var level: LevelDefinition = _level(3 | 256)
+	level.camera_zones.append(_active_zone())
+	var run: TerrainRun = TerrainRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	assert_eq(_tick(run).error, "")
+	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(_tick(run).error, "")
+	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(run.snapshot().camera.zone_index, 0)
+	assert_eq(_tick(run, TickCommand.EAST).error, "")
+	for unused: int in 5:
+		assert_eq(_tick(run).error, "")
+	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(_tick(run, TickCommand.EAST).error, "")
+	for unused: int in 6:
+		assert_eq(_tick(run).error, "")
+	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().entities.entities[0].generation, 1)
+
+func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
+	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_safe_moving.json")
+	assert_eq(scenario.error, "")
+	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "")
+	scenario.level.camera_zones.append(_active_zone())
+	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var attached: bool = false
+	var departed: bool = false
+	for tick: int in scenario.tick_limit:
+		var result: TickResult = run.step(scenario.command_at(tick))
+		assert_eq(result.error, "")
+		if not result.error.is_empty():
+			return
+		var state: RunSnapshot = result.final_snapshot
+		if state.current_entity_index >= 0:
+			attached = true
+			assert_eq(state.camera.zone_index, 0)
+			assert_true(state.entities.live_order.has(state.current_entity_index))
+		elif attached:
+			departed = true
+	assert_true(attached)
+	assert_true(departed)
+
 func test_tail_creation_defers_pop_until_following_tick() -> void:
 	var run: TerrainRun = TerrainRun.create(_level())
 	assert_eq(run.error, "")

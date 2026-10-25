@@ -612,3 +612,51 @@ first advance, destroys it at tick 19 and recreates it at tick 94. Group 83 has
 74 polygons. That manual
 selection is not an automatic retail camera sequence. A rendered retail
 visibility demonstration remains unverified.
+
+## Combined camera zones and lifecycle
+
+`synthetic/zone_lifecycle.json` and `pc-retail-v3.0e/zone_lifecycle.json` use
+`zone-lifecycle-facts-v1`. Each case contains numeric workload inputs and ordered
+expected rows: frog world, retained zone/region, complete camera fields, ordered
+selected groups, polygon total, live-list order, lifecycle events, authored
+entity identity/live/pending/generation, position and complete path cursor.
+Path arrays use the existing path trace order: tick, segment index/type/distance/
+length/parameter, total distance, speed, flags, position XYZ and tangent XYZ.
+
+The synthetic input `fixtures/lifecycle_zones.json` extends the flat lifecycle
+out-and-back workload with a relative-height camera zone. It crosses zone
+boundaries during real normal hops. Retail cases reuse the prescribed JUN1
+zone camera stimuli, with independent source decoding of eleven script-free
+logs, their paths and all group counts. Each sequence starts dormant and resets
+paths. `src/presentation/setup/jun1_zone_lifecycle_admission.json` is generated
+from the same supplied inputs: map digest, named bindings and log-model digests.
+Neither file contains retail bytes or executable code.
+
+`make_golden_zone_lifecycle.py` independently computes frog hops, zone/camera
+transitions, paths, group selection and source-ordered mortal lifetime. It
+compares every represented camera field, path cursor, position, selected group,
+live state/order and event against `zone_lifecycle_oracle_tail.c` before writing
+facts. Polygon totals are sums of independently decoded eight-type group counts;
+they must remain below 2500. The C transport uses empty polygon payloads and
+NO_MODEL forms, so it does not claim renderer allocation/effect equivalence.
+
+The adapter reuses the existing integrated frog/animation setup and flat-grid
+transport, linking unchanged frozen objects. Each tick calls path/live updates,
+then actual frog control/movement/collision for synthetic gameplay or prescribed
+zone selection for retail, then camera, animation and map-view/group expansion.
+No group-selection list is injected. Retail probes do not execute frog contact.
+Game theme CAV suppresses model fade plumbing in this model-free transport;
+synthetic terrain death thresholds remain inactive. Binaries and provenance
+stay outside both repositories.
+
+```powershell
+tools/build_zone_lifecycle_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/make_golden_zone_lifecycle.py --c-oracle <external-oracle>/zone_lifecycle_oracle.exe --data-dir <game-folder> --evidence <external-evidence> --verify
+```
+
+Omit `--verify` to deliberately regenerate. Increment one expected selected-group
+index in each corpus, require its focused `test_zone_lifecycle` comparison to
+fail, restore and rerun successfully. Both text corpora run asset-free; the named
+retail test additionally checks supplied setup, probe execution and changed
+behavior rejection. [Inspection](../../../docs/reference/testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection)
+owns the complete headless/rendered schedule and capture commands.

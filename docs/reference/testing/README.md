@@ -65,6 +65,9 @@ unset the variable explicitly for asset-free mode.
 - [Visibility lifecycle](terrain-inspection.md#visibility-lifecycle-inspection):
   opt-in source camera selection and atomic live-instance creation/retirement,
   with synthetic headless/rendered parity and external visual captures.
+- [Combined zones and lifecycle](terrain-inspection.md#combined-zone-and-lifecycle-inspection):
+  synthetic gameplay and prescribed JUN1 logs, independent coupled reference
+  facts, transaction failures and complete schedule parity.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-admission-counterexample):

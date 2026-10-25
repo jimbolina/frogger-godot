@@ -119,8 +119,10 @@ For the synthetic visibility lifecycle demonstration, use
 tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility
 --viewer --output-directory <external-folder>`. The frog walks out and back;
 the camera controls entity creation, retirement and recreation. Existing modes
-default to all-attached lifetime. Visibility mode supports only script-free
-generic entities on zero-zone maps within its polygon-budget limit; it does not
+default to all-attached lifetime. Use `lifecycle_zones.json` in the same fixture
+folder to include active camera zones. Visibility supports script-free generic
+entities within its polygon-budget limit; ordinary retail terrain setup still
+requires zero-zone maps. These demonstrations do not
 make a level playable. See [inspection](docs/reference/testing/terrain-inspection.md#visibility-lifecycle-inspection).
 
 Active camera zones have a separate JUN1 inspection. It moves a visible probe
@@ -132,6 +134,9 @@ for deterministic playback and captures. Open `scenes/tools/camera_zone_viewer.t
 with `--data-dir=<game-folder>` for paused interactive inspection: Space plays or
 pauses, Period advances one tick, and R resets both sequences. See
 [zone inspection](docs/reference/testing/terrain-inspection.md#active-camera-zone-inspection).
+Add `--entity-lifecycle visibility` to the JUN1 camera command to show its
+eleven audited logs appearing, retiring and returning as the zone camera changes.
+Other entities are omitted and the probe does not execute frog contact.
 
 ## No game data is included
 

@@ -155,7 +155,7 @@ def model(case):
     src = [200,-400,400] if case['startup'] else case['source'].copy()
     dst = [0,100,0] if case['startup'] else case['target'].copy()
     ns, nt = case['source'].copy(), case['target'].copy()
-    current = [0,0,0]; world_source = src.copy(); mod = yaw(case['yaw'])
+    current = case.get('initial', [0,0,0]).copy(); world_source = [a+b for a,b in zip(current,src)]; mod = yaw(case['yaw'])
     twist = 0; quadrants = 1; entity_angle = 0; controls = [0]*4 if case['startup'] else [0,1,2,3]
     axes = [[4096,0,0],[0,4096,0],[0,0,4096]]
     rows = []
@@ -211,7 +211,7 @@ def model(case):
                 direction = 1 if twist > 0 else -1; twist += direction
                 if abs(twist) > 8*quadrants:
                     twist=0; mod=composed; entity_angle=(entity_angle+direction*quadrants)&3
-            desired = f['world'].copy(); desired[1] = ns[1] if active and active['flags'] & 8 else min(desired[1],0)
+            desired = f['world'].copy(); desired[1] = ns[1] if active and active['flags'] & 8 else (0 if case.get('grounded_hops') else min(desired[1],0))
             current = [damp(a,b,24 if i==1 else None) for i,(a,b) in enumerate(zip(current,desired))]
             world_source = [a+b for a,b in zip(current,apply(composed,src))]
             world_target = [a+b for a,b in zip(current,apply(composed,dst))]

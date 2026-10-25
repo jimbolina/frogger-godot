@@ -11,6 +11,9 @@ var _map: MapMesh.Instance
 var _elapsed: float = 0.0
 var _automated: bool = false
 var _failure: String = ""
+var _entities: CameraZoneEntities
+var _entity_markers: EntityInspection
+var _last_tick: int = -1
 
 func _ready() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
@@ -20,12 +23,27 @@ func _ready() -> void:
 		_fail(found.error)
 		return
 	_data = GameData.open(found.source, found.version)
-	inspection = CameraZoneInspection.from_data(_data)
+	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
+	if lifetime not in ["", "all-attached", "visibility"]:
+		_fail("Camera probe entity-lifecycle must be all-attached or visibility")
+		return
+	inspection = CameraZoneInspection.from_data(_data, lifetime == "visibility")
 	if not inspection.error.is_empty():
 		_fail(inspection.error)
 		return
 	_map = MapMeshBuilder.new().build(inspection.map_scene).create_instance()
 	add_child(_map)
+	if inspection.entities != null:
+		_entities = CameraZoneEntities.new()
+		add_child(_entities)
+		var model_issue: String = _entities.configure(_data, inspection)
+		if not model_issue.is_empty():
+			_fail(model_issue)
+			return
+		_entity_markers = EntityInspection.new()
+		add_child(_entity_markers)
+		_entity_markers.configure(inspection.entity_definitions)
+		_entity_markers.visible = true
 	_camera = Camera3D.new()
 	_camera.near = 0.05
 	_camera.far = 1000.0
@@ -107,6 +125,12 @@ func _present() -> void:
 	_camera.transform = GameplayProjection.camera_transform(snapshot)
 	_probe.position = GameSpace.position(inspection.world.x, inspection.world.y, inspection.world.z)
 	_label.text = "JUN1 camera inspection — prescribed probe, not a playable route\nSpace: play/pause   Period: step   R: reset\n%s  Tick %d/320  Cell %s\nFrog zone/region %s   Camera zone %d   Transition %d   Twist %d × %d\n%s" % ["PLAYING" if playing else "PAUSED", inspection.tick, inspection.cell, inspection.selected, snapshot.zone_index, snapshot.move_timer, snapshot.twist_counter, snapshot.twist_quadrants, _failure]
+	if _entities != null:
+		var state: EntityRunSnapshot = inspection.entities.snapshot()
+		_entities.present(state, GameplayProjection.clip_scale(size), inspection.tick < _last_tick or (_last_tick <= 160 and inspection.tick == 161))
+		_entity_markers.set_snapshot(state)
+		_label.text += "\nLog-only visibility probe: %d/11 live; %d groups\n%s\nOther authored entities omitted; no frog contact" % [state.live_order.size(), state.selected_groups.size(), ", ".join(state.lifecycle_events)]
+	_last_tick = inspection.tick
 
 func _capture(arguments: PackedStringArray) -> void:
 	var output: String = ViewerArguments.value(arguments, "--trace-jsonl=")
@@ -122,7 +146,15 @@ func _capture(arguments: PackedStringArray) -> void:
 	var zone_facts: Array[Dictionary] = []
 	for zone: ZoneDefinition in inspection.zones:
 		zone_facts.append(TerrainTrace.facts(zone))
-	stream.store_line(JSON.stringify({"schema": "camera-zone-inspection-v1", "preset": CameraZoneInspection.PRESET, "tick_limit": 320, "zones": zone_facts, "camera_definition": TerrainTrace.facts(inspection.definition)}))
+	var metadata: Dictionary = {"schema": "camera-zone-lifecycle-v1" if inspection.entities != null else "camera-zone-inspection-v1", "preset": CameraZoneInspection.PRESET, "tick_limit": 320, "zones": zone_facts, "camera_definition": TerrainTrace.facts(inspection.definition)}
+	if inspection.entities != null:
+		metadata["diagnostics"] = Array(inspection.diagnostics)
+		metadata["lifecycle"] = TerrainTrace.facts(inspection.lifecycle)
+		var identities: Array[Dictionary] = []
+		for entity: EntityDefinition in inspection.entity_definitions:
+			identities.append(TerrainTrace.facts(entity))
+		metadata["entities"] = identities
+	stream.store_line(JSON.stringify(metadata))
 	var rate: int = int(ViewerArguments.value(arguments, "--render-rate="))
 	if rate not in [30, 60, 144, 200, 240]:
 		stream.close()
@@ -145,7 +177,8 @@ func _capture(arguments: PackedStringArray) -> void:
 				stream.close()
 				return
 			stream.store_line(JSON.stringify(inspection.row))
-			if not capture_folder.is_empty() and inspection.tick % 160 in [1, 41, 55, 80, 81, 120, 121, 159]:
+			var lifecycle_event: bool = inspection.entities != null and not inspection.entities.snapshot().lifecycle_events.is_empty()
+			if not capture_folder.is_empty() and (lifecycle_event or inspection.tick % 160 in [1, 41, 55, 80, 81, 120, 121, 159]):
 				await RenderingServer.frame_post_draw
 				issue = ViewerCapture.save_image(get_viewport().get_texture().get_image(), capture_folder.path_join("zone-%03d.png" % inspection.tick))
 				if not issue.is_empty():
