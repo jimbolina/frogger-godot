@@ -20,16 +20,17 @@ handoff; map inspection retains its independent seek clock and capture workflow.
 [PORTING](PORTING.md) owns remaining work. P8b provides player-data demo
 resolution, raw-action control, atomic duration/input counters and isolated
 reference-layout traces with comparison reporting. Duration completion does
-not establish complete gameplay. Native reference validation remains pending;
-unsupported actions, whole-map zones and corridor admission report incomplete
-playback. Next is complete ORG1 in P8c. Bounded JUN1/ORG1 presets remain
+not establish complete gameplay. Reference traces now export natively on this
+Mac from the sibling engine's arm64 build; validating a run awaits a complete
+playback, and unsupported actions, whole-map zones and corridor admission report
+incomplete playback. Next is complete ORG1 in P8c. Bounded JUN1/ORG1 presets remain
 inspection scaffolding. Ordinary retail terrain still requires zero-zone maps;
 combined zones/visibility retain synthetic gameplay and the prescribed JUN1
 probe. FOR1 remains an unverified retail candidate.
 
 Audio playback, splash/particle effects and [animated per-part lighting](reference/rendering/gameplay-projection.md)
 remain deferred. Performance acceptance requires an idle-system measurement.
-Hosted CI awaits a repository host. Packaged exports and native C-reference
+Hosted CI awaits a repository host. Packaged exports and native C oracle
 builders remain open. The licence remains the owner's decision before publication.
 Never push. [Mac source setup](../README.md#macos-setup) uses Godot 4.5.1 and isolated
 automated profiles.

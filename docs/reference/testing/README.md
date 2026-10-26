@@ -139,12 +139,13 @@ is three little-endian signed integers (duration, start X, start Z), then action
 bytes. These supplied fixtures are inputs, never expected-data goldens. Rendered
 runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect it.
 
-Use the unchanged frozen export described in `../froggy/engine/docs/REFERENCE.md`:
-`python engine/tools/reference_export.py traces --out <external-folder>` from
-that repository. Never rebuild or modify it. The available driver in this macOS
-environment is a Windows PE executable and no Wine runtime is available, so
-native reference validation remains blocked. Supply externally exported attract
-CSVs to the comparator; no local run claims reference validation.
+Use the frozen export described in `../froggy/engine/docs/REFERENCE.md`:
+`python3 engine/tools/reference_export.py traces --build-dir engine/build_mac --out <external-folder>`
+from that repository, whose M57 arm64 build runs natively on this Mac and writes
+the same 3,273 frog and 116,122 entity rows the Windows export records. Never
+modify its sources. Reference validation of a run is still a comparison the
+comparator must pass; the ORG1 attract playback itself is incomplete until P8c
+(the demo start cell lies outside the admitted corridor), so no run claims it yet.
 
 ## Focused iteration and guardrails
 

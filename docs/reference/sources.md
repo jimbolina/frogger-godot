@@ -44,12 +44,14 @@ File names in that folder are mixed case. Use the exact spelling; it matters on 
 
 ### Exporting reference material from the engine
 
-The engine is built in `../froggy/engine/build/`. Do not rebuild or modify that tree.
+The engine's native macOS tree is `../froggy/engine/build_mac/` (its M57 arm64
+port; `engine/build/` may be a copied Windows tree). Build it as the
+[README](../../README.md#macos-setup) shows; do not modify the engine's sources.
 
 | Want | How |
 |---|---|
-| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --out <folder outside any repository>` |
-| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --out <folder>` |
+| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir ../froggy/engine/build_mac --out <folder outside any repository>` |
+| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir ../froggy/engine/build_mac --out <folder>` |
 | A trace of any run | Start the `frogger` driver with `--trace-csv=<file>` |
 
 A trace has one row per frog per call: `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`. A second file, `<file>.entities.csv`, has one row per live entity. Positions are whole world units; a grid square is 256 units. One call is one logic tick, except the call after a level ends, which covers up to three. Output is identical on Windows and Linux.
