@@ -128,7 +128,7 @@ static func _instruction_boundary(words: PackedInt32Array, wanted: int) -> bool:
 	return false
 
 static func _value(state: EntityScriptState, mode: int, operand: int) -> int:
-	return state.registers[operand] if mode == 1 else operand
+	return state.registers[operand] if mode == EntityScriptDefinition.OperandMode.REGISTER else operand
 
 static func _advance_deviation(state: EntityScriptState) -> void:
 	if state.remaining == 0:

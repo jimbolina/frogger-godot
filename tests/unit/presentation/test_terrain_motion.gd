@@ -85,11 +85,11 @@ func test_degenerate_basis_stays_finite_and_keeps_exact_endpoints() -> void:
 
 func test_pink_frog_pickup_collapses_previous_parent_history() -> void:
 	var before: GameplayState = _sample()
-	before.entities.entities[0].background = EntityCustomState.new()
-	before.entities.entities[0].background.parent_entity_index = 15
+	before.entities.entities[0].custom_state = EntityCustomState.new()
+	before.entities.entities[0].custom_state.parent_entity_index = 15
 	var current: GameplayState = before.copy()
-	current.entities.entities[0].background.carrier_index = 0
-	current.entities.entities[0].background.parent_entity_index = -1
+	current.entities.entities[0].custom_state.carrier_index = 0
+	current.entities.entities[0].custom_state.parent_entity_index = -1
 	current.entities.entities[0].matrix12[9] = 256
 	var motion := TerrainMotion.new()
 	motion.capture(before, current)

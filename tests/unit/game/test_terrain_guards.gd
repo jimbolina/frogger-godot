@@ -75,13 +75,16 @@ func test_null_guard_preserves_existing_movement() -> void:
 		assert_eq(run.step(scenario.command_at(tick)).error, "")
 	assert_eq(run.snapshot().frog.cell, Vector2i(1, 2))
 
+## Exercises the detached guard observation boundary.
 class MutatingGuard:
 	extends TickGuard
 	var phases: Array[Phase] = []
 
+	## Gives the run a separately owned observation log.
 	func copy() -> TickGuard:
 		return MutatingGuard.new()
 
+	## Mutates only the supplied detached observation.
 	func check(phase: Phase, candidate: TickGuardCandidate) -> String:
 		phases.append(phase)
 		if candidate.state != null:

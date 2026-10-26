@@ -3,10 +3,10 @@ extends GutTest
 
 func _pink() -> EntitySnapshot:
 	var entity := EntitySnapshot.new()
-	entity.background = EntityCustomState.new()
-	entity.background.mode = 1
-	entity.background.parent_entity_index = 7
-	entity.background.delay = 30
+	entity.custom_state = EntityCustomState.new()
+	entity.custom_state.mode = 1
+	entity.custom_state.parent_entity_index = 7
+	entity.custom_state.delay = 30
 	entity.animation = EntityAnimationState.create(PackedInt32Array([6, 1]), true)
 	return entity
 
@@ -34,22 +34,22 @@ func test_pickup_consumes_prior_hit_and_keeps_carrier_after_parent_loss() -> voi
 	var parent: EntitySnapshot = _parent()
 	var frog: GameplayState = _frog()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
-	assert_eq(entity.background.carrier_index, -1)
+	assert_eq(entity.custom_state.carrier_index, -1)
 	parent.live = false
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog, true), "")
-	assert_eq(entity.background.mode, 3)
-	assert_eq(entity.background.parent_entity_index, -1)
-	assert_eq(entity.background.carrier_index, 0)
+	assert_eq(entity.custom_state.mode, 3)
+	assert_eq(entity.custom_state.parent_entity_index, -1)
+	assert_eq(entity.custom_state.carrier_index, 0)
 	assert_eq(entity.matrix12.slice(9), PackedInt32Array([100, -276, 108]))
-	assert_false(entity.background.model_hidden)
+	assert_false(entity.custom_state.model_hidden)
 	entity.animation.advance()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog, true), "")
 	assert_eq(entity.animation.cel, 0, "Repeated contact does not restart pickup")
 	var detached: EntitySnapshot = entity.copy()
-	entity.background.carrier_index = -1
-	entity.background.dead = true
-	assert_eq(detached.background.carrier_index, 0)
-	assert_false(detached.background.dead)
+	entity.custom_state.carrier_index = -1
+	entity.custom_state.dead = true
+	assert_eq(detached.custom_state.carrier_index, 0)
+	assert_false(detached.custom_state.dead)
 
 func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	var entity: EntitySnapshot = _pink()
@@ -61,20 +61,20 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	frog.frog.mode = 1
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_eq(entity.matrix12.slice(9), PackedInt32Array([80, -20, 0]))
-	assert_eq(entity.background.carried_jump_ticks, 6)
+	assert_eq(entity.custom_state.carried_jump_ticks, 6)
 	entity.animation.advance()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
-	assert_eq(entity.background.carried_jump_ticks, 5)
+	assert_eq(entity.custom_state.carried_jump_ticks, 5)
 	assert_eq(entity.animation.cel, 0)
 	frog.frog.mode = 2
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
-	assert_true(entity.background.dead)
-	assert_true(entity.background.model_hidden)
-	assert_eq(entity.background.mode, 4)
+	assert_true(entity.custom_state.dead)
+	assert_true(entity.custom_state.model_hidden)
+	assert_eq(entity.custom_state.mode, 4)
 	assert_eq(TickEvent.trace_lines(entity.requests), ["death_pgen"])
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_true(entity.requests.is_empty())
-	assert_true(entity.background.model_hidden)
+	assert_true(entity.custom_state.model_hidden)
 
 func test_contact_requires_admitted_context_and_preserves_caller_state() -> void:
 	var definition := EntityDefinition.new()
@@ -92,8 +92,8 @@ func test_contact_requires_admitted_context_and_preserves_caller_state() -> void
 	result = EntityCustomUpdate.update(definition, state, environment, SourceRandom.create(1), Vector3i.ZERO, true, true, _parent(), _form())
 	assert_string_contains(result.error, "carrier")
 	assert_null(result.entity)
-	assert_eq(state.background.mode, 1)
-	assert_eq(state.background.delay, 30)
+	assert_eq(state.custom_state.mode, 1)
+	assert_eq(state.custom_state.delay, 30)
 
 func test_usable_contact_keeps_strict_edges_and_does_not_mount() -> void:
 	var form := FormContactDefinition.new()

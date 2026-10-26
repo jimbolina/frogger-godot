@@ -2,10 +2,14 @@ class_name EntityPrimitiveDefinition
 extends RefCounted
 ## Detached static vehicle cuboid; lengths are source half extents.
 
+const STATIC: int = 1 << 0
+const LAST_IN_LIST: int = 1 << 1
+const DISABLED: int = 1 << 8
+
 var part_index: int = 0
 var primitive_index: int = 0
 var shape: int = 0
-var flags: int = 2
+var flags: int = LAST_IN_LIST
 var offset: Vector3i = Vector3i.ZERO
 var half_size: Vector3i = Vector3i.ONE
 var reaction: int = 1
@@ -17,7 +21,7 @@ func validate() -> String:
 		return "Vehicle collision requires the first part and one primitive"
 	if shape != 0 or matrix_index != -1:
 		return "Vehicle collision requires a cuboid without a primitive matrix"
-	if flags & ~0x103 != 0 or flags & 2 == 0:
+	if flags & ~(STATIC | LAST_IN_LIST | DISABLED) != 0 or flags & LAST_IN_LIST == 0:
 		return "Vehicle cuboid flags are unsupported or lack the list terminator"
 	if reaction not in [0, 1]:
 		return "Vehicle cuboid reaction is unsupported"

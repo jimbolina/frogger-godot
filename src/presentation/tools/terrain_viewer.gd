@@ -336,7 +336,7 @@ func draw_state(fraction: float) -> void:
 						model.player.frame = entity.animation.cel
 					model.capture_pose(not playing)
 				model.render(weight)
-				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.background == null or not entity.background.model_hidden)
+				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
 	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size]
 	if overlay_key == _overlay_key:
 		return

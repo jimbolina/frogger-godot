@@ -72,7 +72,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> Gameplay
 		if not run.error.is_empty():
 			return run
 	elif requirements.restricted_contacts:
-		run.error = "Contact exclusion requires animated inspection admission"
+		run.error = "Disabled contacts require a tick guard"
 		return run
 	if level.entity_collision != null:
 		if level.entity_collision.lifecycle != null and level.camera == null:
@@ -362,7 +362,7 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 	var definition: EntityDefinition = _entity_collision.entities[slot]
 	if definition.behavior.has_custom_update():
 		var frog_position := Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
-		var background: EntityCustomResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
+		var background: EntityCustomResult = _candidate_entities.update_custom(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
 		if not background.error.is_empty():
 			return background.error
 		state.entity_environment = background.environment

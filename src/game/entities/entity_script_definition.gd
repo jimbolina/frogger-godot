@@ -6,6 +6,8 @@ const WIDTHS: Dictionary[int, int] = {0: 3, 3: 2, 5: 1, 7: 3, 8: 6, 9: 1, 11: 1,
 const SUPPORTED_NAMES: PackedStringArray = ["SCRIPT_TURTLE", "SCRIPT_TURTLE_NO_DIVE", "SCRIPT_LOG_SPLASH", "SCRIPT_ORG_CAR_BLUE", "SCRIPT_ORG_CAR_PURPLE", "SCRIPT_ORG_LORRY", "SCRIPT_ORG_TRUCK", "SCRIPT_ORG_BULL_DOZER", "SCRIPT_ORG_CAR_BLUE_SFX", "SCRIPT_ORG_CAR_PURPLE_SFX", "SCRIPT_ORG_LORRY_SFX", "SCRIPT_ORG_TRUCK_SFX", "SCRIPT_ORG_BULL_DOZER_SFX", "SCRIPT_ORG_ROAD_NOISE", "SCRIPT_ORG_WATER_NOISE"]
 const CALLBACK_NAMES: PackedStringArray = ["SCRIPT_CB_FROG_TRAFFIC_SPLAT", "SCRIPT_CB_LOG_SPLASH", "SCRIPT_CB_DIVE_COLOUR_CHANGE", "SCRIPT_CB_HIT_TURTLE"]
 
+enum OperandMode { LITERAL, REGISTER }
+
 var root_id: int = -1
 var programs: Dictionary[int, PackedInt32Array] = {}
 var names: Dictionary[int, String] = {}
@@ -95,4 +97,4 @@ func validate(action_lengths: PackedInt32Array, form_id: int, has_path: bool) ->
 	return ""
 
 func _operand(mode: int, value: int) -> bool:
-	return mode == 0 or (mode == 1 and value >= 0 and value < payload_registers.size())
+	return mode == OperandMode.LITERAL or (mode == OperandMode.REGISTER and value >= 0 and value < payload_registers.size())

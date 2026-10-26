@@ -1,6 +1,6 @@
 class_name EntityPrimitiveQuery
 extends RefCounted
-## Frozen static cuboid narrow phase; sphere admission remains the caller's job.
+## Frozen static cuboid narrow phase; sphere gating remains the caller's job.
 
 const CONTACT: String = "contact"
 const MISS: String = "miss"
@@ -8,7 +8,7 @@ const DISABLED: String = "disabled"
 const UNSUPPORTED: String = "unsupported"
 const INVALID: String = "invalid"
 
-## First source-ordered frog hilite accepted by the admitted primitive.
+## First source-ordered frog hilite accepted by the supported primitive.
 class Result:
 	extends RefCounted
 	var status: String = "invalid"
@@ -43,7 +43,7 @@ static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: Packed
 	if not result.reason.is_empty():
 		result.status = "unsupported"
 		return result
-	if primitive.flags & 256:
+	if primitive.flags & EntityPrimitiveDefinition.DISABLED:
 		result.status = "disabled"
 		result.reason = "MR_COLL_DISABLED"
 		return result

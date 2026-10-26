@@ -88,7 +88,7 @@ func request_turn(direction: int, frog_zone_present: bool = false, entity_matrix
 
 ## Source control ignores manual turns in a forced, non-semiforced camera zone.
 func allows_manual_turn() -> bool:
-	return _zone == null or _zone.camera_direction < 0 or _zone.camera_flags & 4 != 0
+	return _zone == null or _zone.camera_direction < 0 or _zone.camera_flags & ZoneDefinition.SEMIFORCED != 0
 
 ## Source GetWorldYQuadrantFromMatrix uses strict Z dominance, with ties on X.
 static func world_quadrant(matrix: PackedInt32Array) -> int:
@@ -242,7 +242,7 @@ func _set_zone(zone: ZoneDefinition) -> void:
 	_state.zone_index = zone.zone_index if zone != null else -1
 
 func _absolute_y() -> bool:
-	return _zone != null and _zone.camera_flags & 8 != 0
+	return _zone != null and _zone.camera_flags & ZoneDefinition.ABSOLUTE_Y != 0
 
 func _update_zone(input: GameplayCameraTick) -> void:
 	var identity: int = input.camera_zone.zone_index if input.camera_zone != null else -1

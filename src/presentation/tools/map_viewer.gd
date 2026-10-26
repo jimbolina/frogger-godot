@@ -730,9 +730,10 @@ func _setup_entities() -> void:
 		if not contact_setup.error.is_empty():
 			scene_data.diagnostics.append("FORM contact setup: " + contact_setup.error)
 		else:
-			if source_id == "ORG1":
+			var preferred_entity_id: int = MapInspectionDefaults.preferred_entity_id(source_id)
+			if preferred_entity_id >= 0:
 				for item: int in _entity_choice.item_count:
-					if _entity_choice.get_item_id(item) == 12:
+					if _entity_choice.get_item_id(item) == preferred_entity_id:
 						_entity_choice.select(item)
 						_on_entity_selected(item)
 						break

@@ -158,7 +158,7 @@ bank cell `(22,10)`, LIVE and paused, with no automatic commands or live tick
 limit. The preset supplies platform reactions, all-attached lifetime and a
 half-open world boundary, X `[1900,2304)`, Z `[-5376,-4864)`. It rejects active
 camera-zone entry and cannot be combined with visibility lifetime. The
-[entity contract](../gameplay/entities.md#guarded-jun1-bank-route) owns the
+[entity contract](../../../tests/golden/specs/entities.md#guarded-jun1-route-and-zones) owns the
 admission proof and limitations; the existing water-start inspection is separate.
 
 For the reproducible route, use the explicit fixture: logical WEST mask `8`
@@ -188,7 +188,7 @@ limitations remain those of the existing renderer.
 ## Guarded ORG1 turtle/log exploration
 
 `--level=ORG1 --exploration=org1-turtle-log-bank` opens LIVE and paused with no
-automatic commands or live tick limit. The [entity contract](../gameplay/entities.md#org1-admission)
+automatic commands or live tick limit. The [entity contract](../../../tests/golden/specs/entities.md#org1-route-proof)
 owns the source proof, bounds, supported closure and frozen route schedules.
 Setup pins the supplied resources, named bindings and every neighbor exclusion.
 Changed dependencies and visibility lifetime reject; boundary/animated-pose
@@ -227,7 +227,7 @@ directory, using the isolated-profile, hidden/awaited process rules in the
 The separate `org1-turtle-log-bank-visibility` preset uses the existing river
 corridor with source live-list updates, immortal initialization and pink frog
 pickup/riding. Bounds and other exclusions remain; see the
-[contract](../gameplay/entities.md#scripted-visibility-route).
+[contract](../gameplay/entities.md#pink-frog-behavior).
 
 ```sh
 python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_round_trip.json --output-directory <external-output>
@@ -244,7 +244,7 @@ profile, explicit log and hidden awaited process rules as other keyboard probes.
 ## Guarded ORG1 road to river
 
 `--level=ORG1 --exploration=org1-road-river` opens LIVE and paused at the
-southern road edge. The [vehicle contract](../gameplay/entities.md#org1-road-and-vehicle-primitives)
+southern road edge. The [vehicle contract](../gameplay/entities.md#vehicle-primitive-contacts)
 defines its separate admission and source collision timing. The overlay shows
 the first death entity and accepted frog part/hilite; external full traces
 include ordered primitive diagnostics and the stored collision-pose cache.

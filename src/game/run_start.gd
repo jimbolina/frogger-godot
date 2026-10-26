@@ -2,6 +2,8 @@ class_name RunStart
 extends RefCounted
 ## Explicit stationary component start. It does not imply C's level-start bounce.
 
+enum Mode { COMPONENT, FAST_RESET, SINGLE_START }
+
 var spawn_cell: Vector2i = Vector2i(-1, -1)
 var spawn_direction: int = -1
 ## Run-owned camera-relative control mapping; empty selects identity for this component start.
@@ -17,4 +19,4 @@ var seed: int = 1
 var camera_startup: bool = false
 var start_timer: int = 0
 ## 0 isolates stationary components; 1 matches fast/play reset wait; 2 single-start bounce.
-var start_mode: int = 0
+var start_mode: int = Mode.COMPONENT

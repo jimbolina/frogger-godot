@@ -6,7 +6,7 @@ enum Mode { SEARCHING, ON_ENTITY, JUMPING, ON_FROG, NOTHING, WAIT_TO_SEARCH_AGAI
 
 ## Advances one privately owned baby against the parent's pose at this live-list visit.
 static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: GameplayState = null, hit: bool = false) -> String:
-	var state: EntityCustomState = entity.background
+	var state: EntityCustomState = entity.custom_state
 	if parent == null or form == null or form.dimensions.x <= 0 or form.dimensions.y <= 0:
 		return "Baby requires a resolved authored parent and FORM"
 	entity.requests.clear()
@@ -92,7 +92,7 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 	return ""
 
 static func _hop(entity: EntitySnapshot, form: FormContactDefinition) -> String:
-	var state: EntityCustomState = entity.background
+	var state: EntityCustomState = entity.custom_state
 	var directions: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
 	var destination: Vector2i = state.cell + directions[state.direction]
 	var bounds := Rect2i(Vector2i.ZERO, form.dimensions)
@@ -122,10 +122,10 @@ static func update_custom(definition: EntityDefinition, entity: EntitySnapshot, 
 		if not issue.is_empty():
 			return issue
 		return ""
-	if not parent_live or entity.background.mode not in [Mode.SEARCHING, Mode.WAIT_TO_SEARCH_AGAIN]:
-		return "Baby parent lifetime no longer satisfies admission"
-	if entity.background.mode == Mode.SEARCHING:
-		entity.background.search_count += 1
-		entity.background.mode = Mode.WAIT_TO_SEARCH_AGAIN
-	entity.background.model_hidden = true
+	if not parent_live or entity.custom_state.mode not in [Mode.SEARCHING, Mode.WAIT_TO_SEARCH_AGAIN]:
+		return "Baby parent must remain live in transform-only mode"
+	if entity.custom_state.mode == Mode.SEARCHING:
+		entity.custom_state.search_count += 1
+		entity.custom_state.mode = Mode.WAIT_TO_SEARCH_AGAIN
+	entity.custom_state.model_hidden = true
 	return ""

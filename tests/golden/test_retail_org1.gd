@@ -55,7 +55,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 		if tick == 445:
 			var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 			assert_true(run.snapshot().attachment.entity_hit_indices.has(53))
-			assert_eq(run.snapshot().entities.entities[53].background.carrier_index, -1)
+			assert_eq(run.snapshot().entities.entities[53].custom_state.carrier_index, -1)
 			run._entities._lifecycle.polygon_counts.fill(2500)
 			var rejected: TickResult = run.step(command)
 			assert_ne(rejected.error, "")
@@ -67,7 +67,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 		assert_eq(result.error, "", "tick %d" % tick)
 		if not result.error.is_empty():
 			return
-	assert_eq(run.snapshot().entities.entities[53].background.carrier_index, 0)
+	assert_eq(run.snapshot().entities.entities[53].custom_state.carrier_index, 0)
 	assert_eq(run.reset(scenario.initial), "")
 	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), initial)
 
@@ -193,7 +193,7 @@ func test_admission_dependencies_and_complete_reset() -> void:
 	assert_string_contains(GameplayRun.create(scenario.level, scenario.initial).error, "unpowered")
 	scenario.initial.powerup_flags = 0
 	scenario.level.tick_guard = null
-	assert_string_contains(GameplayRun.create(scenario.level, scenario.initial).error, "admission")
+	assert_eq(GameplayRun.create(scenario.level, scenario.initial).error, "Disabled contacts require a tick guard")
 
 func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org1ExplorationSetup.PRESET) -> void:
 	var scenario: TerrainScenario = _scenario(preset)
@@ -219,7 +219,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		header[index] = header[index].strip_edges()
 	assert_eq(rows.size(), ticks * 6 + 1)
 	assert_eq(digests.size(), ticks + 1)
-	var fly: EntityCustomState = run.snapshot().entities.entities[55].background
+	var fly: EntityCustomState = run.snapshot().entities.entities[55].custom_state
 	var lifecycle_rows: Array = []
 	if preset == Org1ExplorationSetup.VISIBILITY_PRESET:
 		lifecycle_rows = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/" + name + "_lifecycle.json"))
@@ -258,7 +258,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		var canonical: String = "\t".join(field_names) + "\n"
 		for visit: EntityUpdateObservation in result.control_snapshot.entities.updates:
 			if visit.entity.entity_index == 55:
-				fly = visit.entity.background
+				fly = visit.entity.custom_state
 			var observed: Dictionary = Org1RouteFacts.entity(visit, fly, tick)
 			var values := PackedStringArray()
 			for field: String in fields:
@@ -274,7 +274,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 			var expected_groups: Array = expected_life.groups
 			assert_eq(actual_life.live_order, PackedInt32Array(expected_order), "live order at %d" % tick)
 			assert_eq(actual_life.selected_groups, PackedInt32Array(expected_groups), "groups at %d" % tick)
-			var baby: EntityCustomState = actual_life.entities[53].background
+			var baby: EntityCustomState = actual_life.entities[53].custom_state
 			assert_eq(baby.mode, _number(expected_life.baby_mode))
 			assert_eq(baby.search_count, _number(expected_life.baby_search))
 			assert_eq(baby.parent_entity_index, _number(expected_life.baby_parent))

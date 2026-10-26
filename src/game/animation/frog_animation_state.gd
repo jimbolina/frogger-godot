@@ -15,7 +15,7 @@ var delay_timer: int = 0
 var action: int = 0
 var cel: int = 0
 var total_cels: int = 0
-var environment_flags: int = 7168
+var environment_flags: int = FrogAnimationFlags.ENV_DEFAULT
 var update_count: int = 0
 var no_input_timer: int = 0
 var loop_start_program: int = -1
@@ -29,7 +29,7 @@ var previous_offset: int = -1
 
 ## True when the source environment holds the last virtual cel instead of looping.
 func is_one_shot() -> bool:
-	return (environment_flags & 256) != 0
+	return (environment_flags & FrogAnimationFlags.ENV_ONE_SHOT) != 0
 
 ## Returns an independent snapshot with no shared mutable animation state.
 func copy() -> FrogAnimationState:

@@ -6,7 +6,7 @@ extends RefCounted
 static func update(definition: EntityDefinition, previous: EntitySnapshot, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, parent_live: bool, parent: EntitySnapshot = null, parent_form: FormContactDefinition = null, frog: GameplayState = null) -> EntityCustomResult:
 	var result := EntityCustomResult.new()
 	if not definition.behavior.has_custom_update() or environment == null or not environment.validate().is_empty():
-		result.error = "Custom background update lacks admitted environment"
+		result.error = "Custom update requires a valid entity environment"
 		return result
 	if hit and definition.behavior.execution != EntityBehavior.Execution.CONTACT:
 		result.error = "Contact with an excluded custom neighbor is unsupported"

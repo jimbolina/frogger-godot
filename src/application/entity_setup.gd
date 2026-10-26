@@ -8,7 +8,7 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Resolves source-ordered entity spans and attaches validated source paths.
-static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "", admitted_org1: bool = false) -> EntitySetup:
+static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "", custom_behaviors_enabled: bool = false) -> EntitySetup:
 	var result := EntitySetup.new()
 	if map == null or theme_book == null:
 		result.error = "Entity setup requires a map and theme book"
@@ -60,16 +60,16 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
 		definition.flags = span.flags
-		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or admitted_org1):
+		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or custom_behaviors_enabled):
 			var matrix: MapEntityPayload = MapEntityPayload.read_matrix(span)
 			if not matrix.error.is_empty():
 				result._issue("invalid_payload", matrix.error, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.matrix12 = matrix.matrix12.duplicate()
-			definition.behavior.execution = EntityBehavior.Execution.UPDATE if admitted_org1 else EntityBehavior.Execution.TRANSFORM
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE if custom_behaviors_enabled else EntityBehavior.Execution.TRANSFORM
 			if definition.behavior.kind == EntityBehavior.Kind.BABY_FROG and span.payload.size() >= 36:
 				definition.parent_unique_id = span.payload.decode_s16(32)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (admitted_org1 and definition.behavior.kind == EntityBehavior.Kind.TURTLE):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind == EntityBehavior.Kind.TURTLE):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)

@@ -2,7 +2,7 @@ extends GutTest
 ## Architecture checks use synthetic sources, independent of retail files.
 
 const Scanner = preload("res://tools/support/architecture_scanner.gd")
-const LEGACY: String = "res://src/source/example.gd"
+const SOURCE: String = "res://src/source/example.gd"
 const GAME: String = "res://src/game/example.gd"
 
 
@@ -17,7 +17,7 @@ func _has_rule(violations: Array[Scanner.Violation], rule: String) -> bool:
 	return false
 
 
-func test_legacy_io_and_unrelated_text_are_allowed() -> void:
+func test_source_io_and_unrelated_text_are_allowed() -> void:
 	var source: String = "extends RefCounted\n" \
 		+ "# Node, get_tree(), Input, preload('res://src/convert/bad.gd')\n" \
 		+ "const TEXT = \"Node Time FileAccess get_tree()\"\n" \
@@ -25,23 +25,23 @@ func test_legacy_io_and_unrelated_text_are_allowed() -> void:
 		+ "func read_file():\n\tvar f = FileAccess.open(\"user://data\", FileAccess.READ)\n" \
 		+ "\tvar env = OS.get_environment(\"DATA\")\n\tvar cfg = ConfigFile.new()\n" \
 		+ "\tcfg.load(env)\n\treturn f\n"
-	assert_eq(_check({LEGACY: source}).size(), 0)
+	assert_eq(_check({SOURCE: source}).size(), 0)
 
 
 func test_project_class_name_dependencies_are_resolved() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends RefCounted\nvar renderer: RenderBridge\n",
+		SOURCE: "extends RefCounted\nvar renderer: RenderBridge\n",
 		"res://src/convert/render.gd": "class_name RenderBridge\nextends RefCounted\n",
 	}
 	var violations: Array[Scanner.Violation] = _check(sources)
 	assert_true(_has_rule(violations, "layer"))
-	assert_eq(violations[0].path, LEGACY)
+	assert_eq(violations[0].path, SOURCE)
 	assert_eq(violations[0].line, 2)
 
 
 func test_plain_data_child_methods_are_not_node_dependencies() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends RefCounted\nvar config: ConfigData\n" \
+		SOURCE: "extends RefCounted\nvar config: ConfigData\n" \
 			+ "func read():\n\tconfig.add_child(config)\n\tconfig.get_parent()\n",
 		"res://src/shared/config.gd": "class_name ConfigData\nextends RefCounted\n" \
 			+ "func add_child(child):\n\tpass\nfunc get_parent():\n\treturn null\n",
@@ -51,7 +51,7 @@ func test_plain_data_child_methods_are_not_node_dependencies() -> void:
 
 func test_literal_relative_preload_is_resolved() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends RefCounted\nconst VIEW = preload(\"../presentation/view.gd\")\n",
+		SOURCE: "extends RefCounted\nconst VIEW = preload(\"../presentation/view.gd\")\n",
 		"res://src/presentation/view.gd": "extends RefCounted\n",
 	}
 	assert_true(_has_rule(_check(sources), "layer"))
@@ -63,7 +63,7 @@ func test_literal_global_and_resource_loader_loads_are_resolved() -> void:
 		"ResourceLoader.load(\"res://src/convert/bad.gd\", \"GDScript\")",
 	]:
 		var sources: Dictionary[String, String] = {
-			LEGACY: "extends RefCounted\nvar bad = " + expression + "\n",
+			SOURCE: "extends RefCounted\nvar bad = " + expression + "\n",
 			"res://src/convert/bad.gd": "extends RefCounted\n",
 		}
 		assert_true(_has_rule(_check(sources), "layer"), expression)
@@ -71,7 +71,7 @@ func test_literal_global_and_resource_loader_loads_are_resolved() -> void:
 
 func test_named_and_path_inheritance_resolve_to_refcounted() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends DataBase\n",
+		SOURCE: "extends DataBase\n",
 		"res://src/shared/base.gd": "class_name DataBase\nextends \"middle.gd\"\n",
 		"res://src/shared/middle.gd": "extends RefCounted\n",
 	}
@@ -80,7 +80,7 @@ func test_named_and_path_inheritance_resolve_to_refcounted() -> void:
 
 func test_inherited_node_base_is_rejected() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends DataBase\n",
+		SOURCE: "extends DataBase\n",
 		"res://src/shared/base.gd": "class_name DataBase\nextends \"middle.gd\"\n",
 		"res://src/shared/middle.gd": "extends Node3D\n",
 	}
@@ -97,12 +97,12 @@ func test_missing_unknown_resource_and_cyclic_bases_are_rejected() -> void:
 		"class_name Example\nextends Example\n",
 		"extends \"missing.gd\"\n",
 	]:
-		assert_true(_has_rule(_check({LEGACY: source}), "base"), source)
+		assert_true(_has_rule(_check({SOURCE: source}), "base"), source)
 
 
 func test_inner_node_class_is_rejected() -> void:
 	var source: String = "extends RefCounted\nclass Inner:\n\textends Node\n"
-	var violations: Array[Scanner.Violation] = _check({LEGACY: source})
+	var violations: Array[Scanner.Violation] = _check({SOURCE: source})
 	assert_true(_has_rule(violations, "base"))
 	assert_true(_has_rule(violations, "tree"))
 
@@ -110,21 +110,21 @@ func test_inner_node_class_is_rejected() -> void:
 func test_indirect_helper_dependency_reports_origin_and_line() -> void:
 	var helper: String = "res://src/shared/helper.gd"
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends RefCounted\nvar helper: Helper\n",
+		SOURCE: "extends RefCounted\nvar helper: Helper\n",
 		helper: "class_name Helper\nextends RefCounted\nvar renderer: Renderer\n",
 		"res://src/presentation/renderer.gd": "class_name Renderer\nextends RefCounted\n",
 	}
 	var violations: Array[Scanner.Violation] = _check(sources)
 	assert_eq(violations.size(), 1)
-	assert_eq(violations[0].origin, LEGACY)
+	assert_eq(violations[0].origin, SOURCE)
 	assert_eq(violations[0].path, helper)
 	assert_eq(violations[0].line, 3)
 	assert_true(violations[0].format().contains("required by"))
 
 
-func test_legacy_cannot_depend_on_gameplay() -> void:
+func test_source_cannot_depend_on_gameplay() -> void:
 	var sources: Dictionary[String, String] = {
-		LEGACY: "extends RefCounted\nconst GAME = preload(\"res://src/game/model.gd\")\n",
+		SOURCE: "extends RefCounted\nconst GAME = preload(\"res://src/game/model.gd\")\n",
 		"res://src/game/model.gd": "extends RefCounted\n",
 	}
 	assert_true(_has_rule(_check(sources), "layer"))
@@ -180,7 +180,7 @@ func test_gameplay_indirect_environment_dependency_is_rejected() -> void:
 
 func test_scene_resources_are_rejected_outside_scenes_folder() -> void:
 	assert_true(_has_rule(_check({
-		LEGACY: "extends RefCounted\nconst SCENE = preload(\"res://assets/example.tscn\")\n",
+		SOURCE: "extends RefCounted\nconst SCENE = preload(\"res://assets/example.tscn\")\n",
 	}), "layer"))
 
 
@@ -189,13 +189,13 @@ func test_tree_calls_and_node_path_syntax_are_rejected() -> void:
 		"get_tree()", "Engine.get_main_loop()", "$Child", "%Child", "get_node(\"Child\")",
 	]:
 		assert_true(_has_rule(_check({
-			LEGACY: "extends RefCounted\nfunc f():\n\treturn " + expression + "\n",
+			SOURCE: "extends RefCounted\nfunc f():\n\treturn " + expression + "\n",
 		}), "tree"), expression)
 
 
 func test_remainder_operator_is_not_a_node_dependency() -> void:
 	assert_eq(_check({
-		LEGACY: "extends RefCounted\nfunc f(value):\n\treturn value % count\n",
+		SOURCE: "extends RefCounted\nfunc f(value):\n\treturn value % count\n",
 	}).size(), 0)
 
 
@@ -206,20 +206,20 @@ func test_computed_loads_and_dynamic_calls_require_review() -> void:
 		"ClassDB.instantiate(\"Node\")", "Engine.get_singleton(name)",
 	]:
 		assert_true(_has_rule(_check({
-			LEGACY: "extends RefCounted\nfunc f():\n\treturn " + expression + "\n",
+			SOURCE: "extends RefCounted\nfunc f():\n\treturn " + expression + "\n",
 		}), "review"), expression)
 
 
 func test_unresolved_literal_script_dependency_requires_review() -> void:
 	assert_true(_has_rule(_check({
-		LEGACY: "extends RefCounted\nconst DATA = preload(\"res://outside/data.gd\")\n",
+		SOURCE: "extends RefCounted\nconst DATA = preload(\"res://outside/data.gd\")\n",
 	}), "review"))
 
 
 func test_escaped_strings_preserve_next_token_line_numbers() -> void:
 	var source: String = "extends RefCounted\nconst TEXT = \"escaped \\\"Node\\\" text\"\n" \
 		+ "var forbidden: Node\n"
-	var violations: Array[Scanner.Violation] = _check({LEGACY: source})
+	var violations: Array[Scanner.Violation] = _check({SOURCE: source})
 	assert_eq(violations.size(), 1)
 	assert_eq(violations[0].line, 3)
 

@@ -1,6 +1,6 @@
 class_name EntityCustomState
 extends RefCounted
-## Owned custom continuation for the admitted fly and pink frog.
+## Owned custom continuation for the supported fly and pink frog.
 
 var mode: int = 0
 var timer: int = 60

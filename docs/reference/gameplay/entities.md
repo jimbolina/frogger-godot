@@ -4,8 +4,8 @@
 book, retaining its source/build/resource identity, authored entity index,
 unique id, form, flags, script id and callback addresses. The authored index is
 the run identity; it may have gaps after unsupported neighbors are omitted.
-Duplicate unique ids remain distinct. Setup accepts resolved `STATIC` and
-`MOVING` names. A static entity copies the 32-byte PSXMatrix prefix. A moving
+Duplicate unique ids remain distinct. Default transform setup accepts resolved static and path-follower behaviors;
+custom execution is enabled explicitly. A static entity copies the 32-byte PSXMatrix prefix. A moving
 entity reads the 12-byte PATH_INFO prefix and attaches a supported
 [path](paths.md) by authored path index. Subtype payload bytes remain in the
 decoded map record for later behavior work.
@@ -16,7 +16,7 @@ entity. Diagnostics include source/build/resource, authored index, form and
 offset with the reason and fallback. `HIDDEN`, `NO_DISPLAY` and `NO_COLLISION`
 are retained as flags; the default component attaches every supported
 record. The opt-in visibility lifetime below narrows that set. Script and callback
-ids are retained but unexecuted, with an `unexecuted_hooks` warning.
+ids remain diagnostic-only in transform inspection, with an `unexecuted_hooks` warning.
 
 `EntityRun` owns copies of definitions and one independent `PathRunner` per
 moving entity, even when they share path geometry. Reset applies PATH_INFO
@@ -46,10 +46,9 @@ default does not reproduce.
 
 `EntityCollisionDefinition.lifecycle` opts an integrated run into bounded
 single-player live-entity creation. Null preserves all-attached inspection.
-Ordinary retail terrain setup admits zero-zone maps and script-free generic STATIC/MOVING entities.
+Ordinary retail terrain setup supports zero-zone maps and script-free generic STATIC/MOVING entities.
 Ordinary inspection retains unsupported script-bearing records as dormant
-source identities. The separately admitted [ORG1 scripted visibility
-route](#scripted-visibility-route) supplies validated programs and the required
+source identities. The separate [scripted custom behavior](#custom-entity-behaviors) supplies validated programs and the required
 custom/immortal behaviors. Selective checkpoint/death resets remain deferred. Existing FORM/model and
 collision-callback exclusions still govern collision; bonus callbacks remain
 unexecuted diagnostics.
@@ -57,7 +56,7 @@ unexecuted diagnostics.
 `GameplayRun` advances persistent paths, culls/updates live entities, runs frog
 and camera/animation phases, then selects and expands visible groups before
 the aggregate commit (`gamesys.C:1322–1350`). Reset has no mortal live
-instances and does not prewarm visibility; admitted immortals are constructed
+instances and does not prewarm visibility; supported immortals are constructed
 in authored order before the first tick. End-of-tick creation first becomes
 eligible for updates and collision on the following tick. Paths continue while
 their live instances are absent. Recreation uses the current path pose and
@@ -71,7 +70,7 @@ candidate camera frame, including shake, never Godot culling or an interpolated
 camera. Signed source arithmetic, the rasterizer's small-Z branch and the final
 view ray's retained Y component during border normalization are preserved. The
 selected groups' eight-type polygon counts must sum to less than 2500. This
-conservative guard proves `CreateMapGroups` visits the whole list without
+conservative limit ensures `CreateMapGroups` visits the whole list without
 reproducing renderer allocation history; equality is unsupported. Selection or
 budget failure rejects the entire tick rather than approximating the live set.
 `mapdisp.c:413–435,454–478,962–977` owns this boundary.
@@ -114,7 +113,7 @@ selection, camera transitions, paths, lifecycle events/generations and all
 other candidate state. Reset leaves entities dormant without prewarming.
 
 The synthetic out-and-back scenario verifies automatic zone entry/exit and
-entity recreation. The separate v3.0e high-detail JUN1 probe admits eleven
+entity recreation. The separate v3.0e high-detail JUN1 probe selects eleven
 script-free `JUN_LOG` entities, retaining authored indices. It pins supplied
 map bytes by digest, resolved behavior/model bindings and log model digests
 against independent text facts. Omitted records receive explicit diagnostics.
@@ -125,7 +124,7 @@ Presentation creates/releases log instances from committed generations.
 
 This does not lift ordinary retail terrain's zero-zone guard or change
 the existing JUN1 and ORG1 all-attached presets. Script/custom/immortal behavior and
-selective resets remain outside this admission. Reproduction and evidence
+selective resets remain unsupported. Reproduction and evidence
 fields belong to the [golden specification](../../../tests/golden/specs/entities.md#combined-camera-zones-and-lifecycle);
 launch commands belong to [inspection](../testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection).
 
@@ -148,7 +147,7 @@ The form-book radius is used when nonzero. Otherwise, for a static model,
 setup takes the largest signed 32-bit squared distance among all partcel box
 corners and adds 100, matching frozen `mapload.C`. Default contact supports a static
 MOF, including flipbooks, with no collision primitives. The road preset below
-explicitly admits vehicle cuboids before any optional FORM fallback. Ordinary
+supports vehicle cuboids before any optional FORM fallback. Ordinary
 FORM contact uses the first FORM_DATA in GRID height mode
 zero. Additional entries are retained and reported. `NO_COLLISION`, `NO_MODEL`,
 missing bounds, unsupported models or modes, and nonzero collision callback
@@ -222,14 +221,8 @@ frog, camera, animation and RNG state together; failures publish no partial
 snapshots, hits or requests. Hit observations clear on the next successful tick.
 See [architecture](../architecture.md) for ownership.
 
-The retail demonstration uses high-detail DES2 and its primitive-free cactus
-forms. An explicit inspection start at terrain cell `(17,30)` presses EAST at
-command tick zero. Entity 46, `DES_STAT_CACTUS`, is first contacted while airborne
-at command tick four, before the destination terrain's own POPDEATH reaction.
-Its source facts and reproduction belong in the
-[entity golden specification](../../../tests/golden/specs/entities.md).
-Runtime verification is against v3.0e, not an assertion of equivalent runs on
-the other supported builds.
+The [DES2 golden specification](../../../tests/golden/specs/entities.md#entity-form-reactions-and-des2-cactus)
+owns the retail probe and its source comparisons. Runtime evidence is v3.0e.
 
 ## Bounded SAFE platforms
 
@@ -276,181 +269,56 @@ until jump completion, whereas NO_ENTITY_ANGLE detaches immediately. Departure
 caches the forbidden identity; terrain landing clears it. The
 [camera contract](gameplay-camera.md) owns projection and correction behavior.
 
-The high-detail JUN1 inspection starts explicitly on water cell `(18,5)`, facing
-NORTH and pressing NORTH at command tick zero. It is not a verified route from
-safe terrain. Its independently predicted first JUN_LOG contact is command tick
-3 / advanced entity tick 4 and is verified through the complete ordered scan.
-The [golden specification](../../../tests/golden/specs/entities.md) owns the
-retail facts and reproduction. Runtime evidence is specifically v3.0e.
+The [JUN1 golden specification](../../../tests/golden/specs/entities.md#jun1-safe-platform)
+owns the retail probe and source comparisons. Entity-specific sliding/bouncing,
+FORM callback dispatch and multiplayer stacking remain unsupported. Bonus
+callbacks remain diagnostic-only without independently blocking collision.
 
-Outside the opt-in visibility mode above, this inspection still assumes
-all-attached lifetime. Scripts, active zones, primitives, checkpoints,
-entity-specific sliding/bouncing, callback dispatch and multiplayer stacking
-remain outside this slice. Bonus callbacks remain unexecuted diagnostics without
-independently blocking collision. This does not complete P8 or make a level playable.
+## Custom entity behaviors
 
-## Guarded JUN1 bank route
+`EntityBehaviorCatalog` resolves names once in application setup. Definitions
+carry typed kind, payload layout, immortality, group membership and animation
+policy. Recognition alone does not enable custom execution: transform, update
+and contact modes are explicit. Unknown names retain source diagnostics and
+are omitted from supported execution. Gameplay dispatches only on typed kinds.
 
-The opt-in `jun1-log-bank` preset uses audited high-detail v3.0e resource 656.
-It starts safely at cell `(22,10)`, world `(2176,-324,-4992)`, facing west.
-The independently calculated route uses logical WEST mask 8 at command tick 0
-and EAST mask 2 at tick 12. Contact at tick 3/entity tick 4 mounts JUN_LOG
-authored index 24, unique ID 11, offset 13532, FORM 45/grid 1. Eight ticks of
-centring/carry lead to departure and a detached, alive terrain landing at
-`(22,9)`, height -180, on tick 17. Observation continues through tick 59.
-The original PC input masks are LEFT 1/RIGHT 2; `TickCommand` uses its existing
-normalized cardinal encoding. The camera mapping is independently verified.
+`EntityCustomUpdate` sequences detached updates through `EntityFly`,
+`EntityCheckpoint` and `EntityBaby`. The fly waits 61 updates, chooses a
+checkpoint with shared RNG and appears for 121 updates; position, visibility,
+collision and checkpoint bits belong to the transaction. Static noises own
+logical moving-sound allocations. Retirement releases sound ownership and
+recreation can allocate it again without inventing RNG draws. Checkpoint croak
+and collection are not implemented.
 
-World admission is X `[1900,2304)`, Z `[-5376,-4864)`. The initially proposed
-west edge 1856 is unsafe: hippo 23 can contact `(1856,-256,-4924)` at advanced
-entity tick 27. Exhaustive integer path/FORM evaluation bounds hippo contacts
-in this Z band at X 1888. The revised boundary excludes them without changing
-retail collision. Complete path cycles, transformed FORM extents, sphere and
-primitive precedence, shared FORM writers and custom movement determine the
-other exclusions. Only logs 16,24,25,26,27,31 can contact this rectangle.
-All 18 zones are decoded; the demonstrated cells activate none.
+Moving-group membership includes turtles, flies and the baby frog; it is
+independent of path ownership. Immortal noise, boundary, baby and fly instances
+initialize in authored order. Checkpoints are mortal statics. During each live
+visit, retirement precedes custom/script updates. Later visits see earlier
+changes; earlier visits see the prior state of a parent not yet visited.
+Recreation clears instance scripts, registers, callbacks, deviation, timers,
+animation, tint, HIT/CARRY and sound ownership. Persistent paths and immutable
+programs survive instance recreation.
 
-The exclusion proof covers ordinary inspection controls from a fresh run, with
-no tongue pickup or external outro transition. `ENTITY.C:1018–1056` land
-projection changes Y/orientation, preserving the rhino/monkey path XZ. Scorpion
-creation delegates generic movement (`ent_jun.c:1149`). Hippo dive/rise changes
-only Y (`ent_jun.c:354–367,372+`); all five share the same primitive-free model,
-FORM and repeat path. All 17,398 integer path poses bound flat-pose contact X
-at 1888; the 932 nearby tilted poses have Y-independent local X, bounded at
-1789. Crocodile 0 has no primitives in any animated component; its action,
-timer and sound script does not move the root (`ent_jun.c:542–557`). All 6,105
-path poses bound its FORM Z below -5632.28. Crocodile 19 is sphere-excluded.
+## Inspection compatibility
 
-Plants change animation/timer/audio only (`ent_jun.c:59–179`); bridge collapse
-changes animation/collision enablement, retaining the root. Plinths, stone
-frogs and doors have null updates (`ENTlib.C:415–461`). Outro gold frogs start
-SITTING, whose update is a no-op (`ent_jun.c:783–794,841–870`). Checkpoints and
-markers stay at authored origins. Those fixed records are sphere-excluded;
-tree 109 and mushroom 110 instead have identity roots, no primitives and
-strict FORM minimum X of 2561 and 2570. Animated primitives are tested only
-after the bounding sphere, so excluded models need no primitive simulation.
-Shared FORM writers resolve to the audited matching models.
+`src/inspection` owns bounded JUN1/ORG1 presets, dependency manifests and
+`ExplorationGuard`. These restrictions validate available behavior; they are
+not walls or map rules. The generic tick guard rejects and rolls back a
+candidate at the relevant phase without changing collision or clamping position.
+Ordinary terrain inspection still requires zero-zone retail maps. The presets
+remain until complete ORG1 play replaces them, as tracked in [PORTING](../../PORTING.md).
+[Golden specifications](../../../tests/golden/specs/entities.md) own route
+coordinates, exclusion geometry, schedules and source comparisons;
+[inspection instructions](../testing/terrain-inspection.md) own launch commands.
 
-Every NO_MODEL record has a null collision callback, taking the early skip in
-`COLLIDE.C:272–286`; the flag alone is insufficient. Bonus flies bob only in Y
-and cannot collect themselves (`ent_gen.c:257,329`). Complete path and fixed
-origin checks keep XZ differences within signed16 and their squared sum at
-most 152,901,121. Adding any signed16 Y square remains below signed32 overflow
-(1,226,642,945), making sphere exclusions valid even for wrapped source Y.
-
-The frozen adapter retains all 115 authored scan identities. Six potentially
-contacting logs execute normally; other identities are explicit proof-excluded
-null-live shells, justified by the exhaustive geometry/behavior proof. This
-does not simulate their custom scripts or RNG/audio. The runtime still scans
-every admitted generic entity in source order. Its independent admission
-manifest pins determining map, form/behavior, script and model facts, including
-WAD mappings and incomplete-model counterparts. Changed dependencies reject
-this preset; ordinary inspection remains available for mods.
-
-All-attached lifetime is explicit and visibility mode is rejected. Guards
-roll back and pause attempts to leave the world rectangle or activate a zone.
-R restores the entire inspection; it does not implement checkpoint/death reset.
-Scripts, active zones, custom/immortal behavior, verified form callbacks,
-selective reset, additional reactions, primitives and broader lifecycle work
-remain P8 work. Scoring, progression and win conditions are not part of this
-demonstration. Reproduction belongs to the existing
-[golden specification](../../../tests/golden/specs/entities.md).
-
-## ORG1 admission
-
-The independent proof admits high-detail v3.0e ORG1 (resource 658) within
-X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
-all-attached lifetime. The guarded `org1-turtle-log-bank` preset validates the
-proof before enabling scripts or excluding contact. The proof pins map, source-ordered form/behavior rows, script
-streams, model mappings, counterpart models and the selected frog resource in
-`src/inspection/org1_exploration_admission.json`.
-
-Starting at cell `(10,7)`, world `(128,-256,-128)`, north, normal NORTH commands
-at ticks 0 and 12 and SOUTH commands at 34 and 46 connect turtle 1, small log
-13 and turtle 2. Contacts occur at 3, 18 and 39; the frog returns detached and
-alive to the starting bank cell at 51. Observation through 729 includes
-repeated dive/rise cycles. A separate bank wait and NORTH at 1230 attaches to
-diver 0 at 1233; its depth callback kills the carried frog at 1254, before
-that tick's control phase. Neither route edits paths or forces attachment.
-
-All four first-lane turtles and six small logs remain contact candidates.
-Complete integer path/FORM bounds exclude second-lane turtles and larger
-logs. Shared FORM writers agree; THICK_FORM precedes UNIT_FORM. Static
-neighbors have explicit sphere, NO_COLLISION or null-callback NO_MODEL
-exclusions. The baby frog's actual creation and first update leave it hidden
-in WAIT_TO_SEARCH_AGAIN with search count 1. Its parent log remains live
-forever under this lifetime contract. The five checkpoints remain outside
-the 512-unit croak trigger and 640-unit tongue radius. Their complete-model
-counterparts supply their real flipbook lengths.
-
-Traffic requires animated collision-point exclusion. The old research
-minimum Z `-224` is not admitted. For the narrower rectangle, every integer
-orientation on both support paths generates a finite closure of 36 frog
-roots, including terrain normals, four headings, inherited up axes, snapping,
-centring/carry and linked departures. All generating transitions match frozen
-`UpdateFrogMatrix`, `SnapFrogRotationToMatrix` and projection operations.
-Every hilite on every collision-bearing part and reachable action cel of
-`GEN_FROG.XAR` (214), including initial action 0/cel 0, is composed with those
-roots using source fixed-point and short stores. The southernmost world probe
-is -294; the nearest cuboid accepts points only through -316. Expanded probe
-XZ differences and squared-distance sums stay within source widths even
-with any signed16 Y difference. Croak's imported throat part has no hilites.
-SAFE landing-height differences stay below the stun threshold; death and
-MUST_DIE return before primitive scans. No nearby collectable can introduce a
-powerup or tongue scaling. Stored root origins must stay inside the rectangle
-at every collision scan; escaping candidates must reject before contact.
-
-Geometric exclusion never removes a global update. All 64 identities retain
-their paths and logical custom/script state, with descending live updates
-from ascending all-attached creation. Contact scans retain every authored
-identity in source group order, with hidden moving records unlinked. The ten
-admitted FORMs are collision-live in
-the C transport; other identities are explicit contact exclusions.
-
-Traffic indices 24–47 execute their five root and five named `_SFX` programs.
-`SCRIPT_IF RANDOM` consumes shared RNG before its branch; NEW_SCRIPT preserves
-the original root for RESTART and clears loop pointers. The linked port's
-ENDLOOP yields, unlike the vendored reconstruction's CONTINUE. STOP retains
-callbacks and unsigned16 timer increments; ONCE never gains an invented
-called write. Resolve script callbacks by FrogLord names, separately from
-form-callback executable addresses. The closure adds SCRIPT_IF and
-SCRIPT_CB_FROG_TRAFFIC_SPLAT to the turtle/log subset.
-
-The bonus fly retains its 61-update wait, random checkpoint selection,
-121-update appearance, position, visibility/collision flags and covered-bit
-writes. Static noises retain logical moving-sound allocations. The real
-allocation component verifies suppression, reuse, owner clearing and
-recreation without RNG draws. Audio playback and splash rendering remain
-ordered requests, with sound IDs/radii and sprite offsets/flags verified.
-They do not claim full engine voice/effect RNG equivalence.
-
-The route adapter executes unchanged path, script, custom creation/update,
-frog, collision, camera and animation functions. Decoded model metadata
-replaces renderer allocation; distinct sprite storage prevents fly/splash
-aliasing. A mesh instance records actual colour writes. Retail action lengths
-replace synthetic animation lengths. Independent Python compares the six
-frog phases and every ordered entity update, including previous-tick HIT/
-CARRY flags, callback slots, deviations, requests, colours, animation and RNG.
-Root/probe math is checked separately; no GDScript output defines expectations.
-[Golden reproduction](../../../tests/golden/specs/entities.md#org1-route-proof)
-owns commands and schemas. Active zones, selective reset, primitive execution,
-checkpoint collection and full-level flow remain outside this slice.
-
-## ORG1 road and vehicle primitives
-
-`org1-road-river` is a separate opt-in inspection for high-detail v3.0e ORG1.
-Its manifest pins supplied inputs and admits X `[-512,512)`, Z `[-1792,480)`,
-starting at cell `(10,1)`, facing north. All 64 logical updates remain active.
-It adds all 24 vehicles to the ten river FORM candidates; each remaining
-neighbor has its own exclusion proof for the expanded rectangle. The original
-bank preset retains its narrower admission. Neither preset completes P8.
+## Vehicle primitive contacts
 
 The five vehicle types have one first-part cuboid, no primitive matrix and
 the SQUISHED death type. `EntityPrimitiveSetup` detaches half extents, local
 offset, flags and reaction. `FrogCollisionSetup` detaches every collision
 hilite in part/hilite order from partcel zero and all exact discrete action
 transforms. It rejects incomplete/interpolated models and collision points on
-the imported throat transform. Gameplay retains no legacy or scene objects.
+the imported throat transform. Gameplay retains no source or scene objects.
 
 Collision first applies the current frog-origin sphere gate and source group,
 live, hidden, forbidden and NO_COLLISION rules. `EntityPrimitiveQuery` then
@@ -458,7 +326,7 @@ tests the stored animated points. It rotates the cuboid offset in owner axes,
 narrows the displacement to signed16, applies the transposed owner rotation,
 and requires `abs(local) < half_extent` on every axis (`MR_COLL.C:225–274,525–531`).
 Fixed12 products use source signed32 accumulation and signed16 matrix/point
-stores. LAST/STATIC/DISABLED flags are admitted; disabled or missed primitives
+stores. LAST/STATIC/DISABLED flags are supported; disabled or missed primitives
 continue to the ordinary FORM fallback when data exists. Retail traffic has no
 FORM_DATA records: `has_form_data=false` preserves that absence as a miss,
 without inventing a grid. General shapes, primitive matrices,
@@ -478,50 +346,17 @@ The next entity update observes HIT and requests the named traffic splat sound.
 FORM fallback SQUISHED does not apply primitive-only flattening. All hits,
 cached points, death, camera, animation, scripts and RNG commit together or
 roll back together. Primitive contacts identify the entity, part and hilite.
-Jump-from-primitive state is outside this admission and rejects atomically.
+Jump-from-primitive state is unsupported and rejects atomically.
 Squish particle creation and removal, tyre sprites, local ordering tables and
 audio playback remain presentation/effect boundaries; no race-mode or full
 effect simulation is claimed.
 
-The independent successful route crosses traffic into the existing turtle/log
-corridor. A separate lorry-death route proves narrow-phase contact and the
-following callback. Facts and reproduction live in the
-[golden specification](../../../tests/golden/specs/entities.md); viewer commands
-live in [inspection](../testing/terrain-inspection.md#guarded-org1-road-to-river).
-
-## Scripted visibility route
-
-`org1-turtle-log-bank-visibility` is a separate high-detail v3.0e admission for
-ORG1's existing bank/turtle/log corridor. The all-attached presets keep their
-original proofs. The new manifest pins supplied map, form/name, script and
-model dependencies; changed inputs reject. This is guarded exploration, not a
-complete level or general mod admission.
-
-`EntityDefinition` resolves immortal and moving-group capabilities by supported
-behavior name from frozen `ENTLIB.C`. Moving-group membership includes turtles,
-the fly and baby frog; it is not equivalent to generic `MOVING` or path ownership.
-All 64 authored slots persist. Mortal instances start dormant; noise, boundary
-markers, baby and bonus fly are immortal and initialize in authored order.
-Checkpoints are mortal statics. Persistent paths advance even without a live
-instance. Group linking uses path position for path owners, authored position
-for statics and the current transform for other dynamic entities.
-
-Each live-list visit decides retirement before custom/script updates. Later
-visits see earlier retirement and transform changes, while earlier visits still
-see the previous pose of a parent that has not updated. Source callbacks consume
-previous HIT/CARRY flags and shared RNG in that order. Camera-selected creation
-happens after animation, so new objects first update and collide next tick.
-Recreation resets script cursors, registers, callbacks, deviation, timer,
-animation, tint, hit/carry flags and logical moving-sound ownership. Retirement
-releases that ownership. Prepared immutable programs and persistent paths
-survive instances. Generation changes replace presentation instances and clear
-interpolation history. Failures discard the entire aggregate and all requests.
+## Pink frog behavior
 
 The pink frog (`ORG_BABY_FROG`, distinct from the five checkpoint frogs) follows
 frozen `ent_org.c` search/wait, parent loss, attachment and six-tick FORM hops.
-Her parent may retire and recreate. The v2 admission adds her primitive-free
-flipbook model and USABLE-only FORM to the ten river contacts, with no collision
-or bonus callback. Source sphere and strict FORM bounds record HIT without
+Her parent may retire and recreate. Her supported contact model is a primitive-free flipbook
+with a USABLE-only FORM and no collision or bonus callback. Source sphere and strict FORM bounds record HIT without
 mounting Frogger on her. Hidden presentation does not suppress source contact.
 
 The next entity visit consumes HIT and replaces the log parent with player 0,
@@ -533,21 +368,12 @@ next visit, records the dead flag and emits one logical `death_pgen` request.
 The inactive state remains hidden. All continuation fields and requests share
 the run transaction; pickup and parent changes collapse presentation history.
 
-Explicit scripted-visibility admission replaces reliance on a nonempty dynamic
-exclusion list. Only the pink frog's proximity exclusion is removed; world bounds,
-animated frog closure, other neighbor exclusions and polygon limits remain.
+Delivery rewards, tongue pickup, selective resets and full checkpoint flow remain
+unimplemented. [Independent evidence](../../../tests/golden/specs/entities.md#scripted-visibility)
+and [inspection commands](../testing/terrain-inspection.md#scripted-org1-visibility)
+cover the supported pickup, riding and death behavior.
 
-The independent round trip retains the existing movement commands and returns
-to the bank. A separately timed attached-diver route verifies drowning before
-control under the new script lifetime. Full reset reconstructs immortal state,
-paths and dormant mortals, clearing pickup/death state. Checkpoint collection,
-pink frog delivery rewards, tongue pickup, selective game-flow reset, new FORM
-callbacks, active zones, road traversal, audio playback and effects remain
-outside this preset. The [golden specification](../../../tests/golden/specs/entities.md#scripted-visibility)
-owns schedules and independent evidence; [inspection](../testing/terrain-inspection.md#scripted-org1-visibility)
-owns launch commands.
-
-## Bounded script components
+## Supported script components
 
 `EntityScriptSetup` resolves supplied programs and the `CallbackNames` bank,
 copies only the supported branch closure and validates both the authored
@@ -558,9 +384,16 @@ the matrix. Neither callback numbers nor executable addresses dispatch code.
 
 `EntityScriptDefinition` validates instruction widths, operand modes, register
 indices, action indices, callback names, branch targets and balanced single
-loops. The supported closure is the turtle/log programs plus the five traffic
-program/SFX pairs and two noise programs. Unsupported instructions and malformed
-or non-yielding programs fail explicitly. Definitions retain no legacy data.
+loops. Supported programs include turtle/log behavior, five traffic program/SFX pairs
+and two noise programs. Unsupported instructions and malformed
+or non-yielding programs fail explicitly. Definitions retain no source data.
+
+`SCRIPT_IF RANDOM` consumes shared RNG before branching. NEW_SCRIPT retains
+the original root for RESTART and clears loop pointers. The frozen linked C
+ENDLOOP yields, while the vendored reconstruction returns CONTINUE; gameplay
+follows the frozen C behavior. STOP retains callbacks and unsigned16 timer
+increments. ONCE does not invent a called-bit write. Script callback names and
+per-build FORM callback addresses remain separate namespaces.
 
 `EntityRun` owns `EntityScriptState` and `EntityAnimationState`, including
 cursors, six registers, callback slots, signed16 deviations, unsigned16 timer,
@@ -572,13 +405,12 @@ Existing script-free APIs remain available. Audio and splash rendering stay
 deferred. [Component goldens](../../../tests/golden/specs/entities.md#entity-script-components)
 cover interpreter edge cases independently of the retail route.
 
-The aggregate runs admitted custom/script updates before frog control, using
+The aggregate runs custom/script updates before frog control, using
 previous-tick hit/carry flags. Drowning reaches that tick's control phase.
 Ordered observations retain each visit before transient flags clear; entity
 animation advances after frog animation scripts. Failed later phases discard
-requests, clocks, colours, RNG and checkpoint covered bits together. The all-attached
-background branches preserve bonus-fly timing/RNG and the baby frog's permanent
-live-parent invariant; checkpoint croak/contact and parent retirement reject.
+requests, clocks, colours, RNG and checkpoint covered bits together. Transform-only baby updates require a live parent; scripted visibility uses the
+full parent loss/search behavior. Unsupported checkpoint interaction rejects.
 Presentation reads committed entity actions/cels and hidden state.
 ORG1 draws the diving callback's blue tint through the bounded
 [model lighting](../rendering/README.md#model-lighting) path.

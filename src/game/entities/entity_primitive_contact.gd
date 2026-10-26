@@ -1,6 +1,6 @@
 class_name EntityPrimitiveContact
 extends RefCounted
-## Detached diagnostic of one admitted primitive scan, including its source identities.
+## Detached diagnostic of one supported primitive scan, including its source identities.
 
 var entity_index: int = -1
 var unique_id: int = 0

@@ -44,7 +44,7 @@ static func before_contact(scenario: TerrainScenario, state: GameplayState) -> b
 
 ## Whether entity lighting is part of the selected inspection contract.
 static func entity_lighting(scenario: TerrainScenario) -> bool:
-	return scenario.options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
+	return scenario.options.scripted_entities
 
 ## Route-specific overlay wording for the bounded inspection.
 static func overlay(scenario: TerrainScenario) -> Dictionary[String, String]:

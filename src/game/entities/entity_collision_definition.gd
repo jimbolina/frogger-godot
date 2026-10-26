@@ -7,7 +7,7 @@ var platforms_enabled: bool = false
 var contacts: Array[FormContactDefinition] = []
 var lifecycle: EntityLifecycleDefinition = null
 var environment: EntityEnvironmentState = null
-## Detached animated frog probes required by admitted primitive contacts.
+## Detached animated frog probes required by supported primitive contacts.
 var frog_collision: FrogCollisionDefinition = null
 var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
@@ -62,7 +62,7 @@ func validate() -> String:
 			return "Entity collision pair %d is null" % index
 		if not contact.primitives.is_empty():
 			if contact.primitives.size() != 1:
-				return "Entity primitive admission requires exactly one cuboid"
+				return "Entity primitive collision requires exactly one cuboid"
 			if contact.radius_squared < -2147483648 or contact.radius_squared > 2147483647:
 				return "Entity primitive squared radius must fit signed32"
 			if frog_collision == null:
@@ -85,7 +85,7 @@ func validate() -> String:
 			return "Admitted custom background requires its shared environment"
 		if (entity.behavior.execution == EntityBehavior.Execution.CONTACT):
 			if entity.behavior.kind != EntityBehavior.Kind.BABY_FROG or not entity.behavior.has_custom_update() or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
-				return "Pink frog pickup requires admitted scripted visibility and callback-free behavior"
+				return "Pink frog pickup requires scripted visibility and callback-free behavior"
 			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty() or not contact.primitives.is_empty() or contact.grid_flags != PackedInt32Array([1]):
 				return "Pink frog pickup requires its primitive-free usable FORM"
 		if entity.entity_index <= previous_index:

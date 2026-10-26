@@ -18,11 +18,11 @@ P8 is split into exit-sized pieces, and P10 (level loop and HUD) runs before P9 
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8a | Behaviour catalog and typed tick outbox | M | Every existing golden unchanged; architecture scanner rejects entity-name string dispatch in `src/game` | Next |
+| P8a | Behaviour catalog and typed tick outbox | M | Every existing golden unchanged; architecture scanner rejects entity-name string dispatch in `src/game` | Done |
 | P8b | Demo playback harness | S–M | This project's per-tick trace in the reference CSV layout compared with the reference engine's attract-demo traces | |
 | P8c | ORG1 complete: every original-theme and general form, all script opcodes and callbacks, per-build FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Bounded corridors only: 9 of 121 entity types, 16 of 49 opcodes, 15 of 125 scripts, 4 of 24 script callbacks, 2 of 8 death types, no FORM callbacks |
-| P8d | Inspection module split: guards, presets, scenario options and manifests leave the gameplay and setup layers | S | Scanner and both test modes | |
-| P10 | Level loop and HUD: shared gameplay host, game scene, HUD/score/timer/lives/font, checkpoint flow, level complete, game over, selective reset, generic camera zones | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
+| P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
+| P10 | Level loop and HUD: game scene, HUD/score/timer/lives/font, checkpoint flow, level complete, game over, selective reset, generic camera zones | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | |
 | P11 | Effects and particles | L | By eye against reference pictures | |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | |
@@ -45,27 +45,14 @@ Network play is deferred. Multiplayer levels belong to P15.
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: DDD refactor, then P8b and P8c
+## Next: P8b demo playback, then P8c ORG1
 
-Complete the DDD refactor before feature expansion: ownership/copy contracts,
-named constants and typed events, behavior resolution, source/application/inspection
-boundaries, composed gameplay state, frog extraction, reusable host and reference
-cleanup. Each part has a separate commit and full verification gate.
-The entity candidate API, discovered value-copy contracts, named source
-constants, typed tick events and behavior resolution are implemented; the
-source/application/inspection boundaries are separated. Composed state, Frog/contact components and the GameplayRun/GameplayState
-renames are implemented; the gameplay host and map inspection/capture sessions are extracted. Reference
-cleanup remains. P8d moves into this refactor rather than waiting
-for ORG1 completion.
-
-P8a resolves each entity to one behaviour value in setup, from FrogLord names,
-with a documented fallback and diagnostic for unknown names; the game layer
-dispatches on that value instead of name strings. Tick requests and events
-become typed values with a text projection so existing goldens stay identical.
-Named mode and flag catalogs replace raw bit tests. `EntityRun` gets a
-candidate/commit API and one test checks every state copy is complete.
-This is behaviour-preserving and is what makes "mods repoint behaviours"
-possible.
+The DDD refactor is complete: candidate ownership and discovered copy contracts,
+named constants, typed events, resolved behaviors, source/application/inspection
+boundaries, composed GameplayState, Frog/contact components and GameplayRun,
+a reusable GameplayHost, independent map inspection sessions and capture workflow.
+Existing trace schemas and independent golden expectations are preserved.
+P8d is complete ahead of feature expansion; P10 can consume the shared host.
 
 P8b parses the demo input files already located by the demo table, feeds them
 as tick commands and compares this project's trace with the reference engine's
@@ -76,4 +63,4 @@ P8c completes ORG1 as listed in the table. The guarded JUN1 and ORG1 corridor
 presets and their admission manifests are scaffolding: they proved the
 transaction, ordering and visibility rules on bounded routes, and they retire
 when ORG1 plays whole. Route facts stay in the
-[entity contract](reference/gameplay/entities.md) and the golden specifications.
+[golden specifications](../tests/golden/specs/entities.md).

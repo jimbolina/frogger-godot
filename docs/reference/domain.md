@@ -18,10 +18,11 @@ disagreements in the relevant technical reference; do not invent rules.
 
 **Source compatibility** describes the player's selected files and decoded
 facts. **Live play** describes one running game's state and rules.
-Setup translates between these meanings; presentation and inspection tools
-are consumers. `GameplayRun` now owns the first frog component rules and detached
-snapshots, optionally including atomic entity advancement, bounded POP/SAFE/SQUISHED
-reactions and vehicle cuboids. A one-entity fixed-point probe remains available; complete level play
+Application adapters translate between these meanings. Inspection owns scenarios,
+presets and verification restrictions; presentation owns host input and drawing.
+`GameplayRun` coordinates `Frog`, contacts and system candidates, publishing
+detached `GameplayState` values after an atomic commit. Supported reactions
+include POP/SAFE/SQUISHED and vehicle cuboids. A one-entity fixed-point probe remains available; complete level play
 is not implemented. See [architecture](architecture.md)
 for dependencies and ownership.
 

@@ -8,13 +8,13 @@ enum Mode { WAITING, APPEARED }
 static func update(definition: EntityDefinition, result: EntityCustomResult) -> String:
 	var entity: EntitySnapshot = result.entity
 	var environment: EntityEnvironmentState = result.environment
-	var custom: EntityCustomState = entity.background
+	var custom: EntityCustomState = entity.custom_state
 	var expired: bool = custom.timer == 0
 	custom.timer -= 1
 	if expired:
 		if custom.mode == Mode.WAITING:
 			if result.environment.covered != 0:
-				result.error = "Fly requires the admitted uncollected checkpoint state"
+				result.error = "Fly requires uncollected checkpoint state"
 				return result.error
 			custom.checkpoint_index = result.random.next_value("entity:%d:checkpoint" % definition.entity_index) % 5
 			var point: Vector3i = environment.checkpoint_positions[custom.checkpoint_index]

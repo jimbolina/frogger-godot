@@ -54,14 +54,14 @@ func request(animation_id: int) -> bool:
 	if not _valid(animation_id):
 		return false
 	var flags: int = FrogAnimationCatalog.FLAGS[animation_id]
-	if state.flags & 32:
+	if state.flags & FrogAnimationFlags.DO_NOT_OVERRIDE:
 		return true
-	if state.flags & 16:
+	if state.flags & FrogAnimationFlags.RESTORE_AFTER:
 		state.previous_type = state.script_type
 		state.previous_flags = state.flags
 		state.previous_program = state.program_id
 		state.previous_offset = state.word_offset
-	if flags & 2:
+	if flags & FrogAnimationFlags.QUEUE:
 		if state.delay_timer != 0:
 			_set_script(animation_id, flags)
 		else:
@@ -70,14 +70,14 @@ func request(animation_id: int) -> bool:
 			state.queue_program = animation_id
 			state.queue_offset = 0
 		state.delay_timer = 0
-	elif flags & 4:
+	elif flags & FrogAnimationFlags.BIN_IF_ANIM_PLAYING:
 		if state.script_type == FrogAnimationCatalog.PANT:
 			state.queued_type = animation_id
 			state.queued_flags = flags
 			state.queue_program = animation_id
 			state.queue_offset = 0
 			state.delay_timer = 0
-	elif flags & 8:
+	elif flags & FrogAnimationFlags.OVERRIDE_PREV_ANIM:
 		_set_script(animation_id, flags)
 		_clear_queue()
 		state.delay_timer = 0
@@ -117,7 +117,7 @@ func update_scripts(no_input_timer: int) -> int:
 
 ## Advances one source logic-call virtual cel; presentation must only sample it.
 func advance_pose() -> void:
-	if not error.is_empty() or (state.environment_flags & 1024) == 0:
+	if not error.is_empty() or (state.environment_flags & FrogAnimationFlags.ENV_STEP) == 0:
 		return
 	state.update_count += 1
 	if state.update_count >= 1 or state.cel == -1:
@@ -163,11 +163,11 @@ func _command() -> int:
 			state.action = words[at + 3]
 			state.cel = -1
 			state.total_cels = _action_lengths[state.action]
-			state.environment_flags |= 7168
+			state.environment_flags |= FrogAnimationFlags.ENV_DEFAULT
 			if playback == 0:
-				state.environment_flags |= 256
+				state.environment_flags |= FrogAnimationFlags.ENV_ONE_SHOT
 			else:
-				state.environment_flags &= ~256
+				state.environment_flags &= ~FrogAnimationFlags.ENV_ONE_SHOT
 			state.delay_timer = 0
 			state.word_offset = at + 4
 		1:

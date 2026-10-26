@@ -2,6 +2,11 @@ class_name FormContactDefinition
 extends RefCounted
 ## Detached collision facts for one authored entity and its first FORM grid.
 
+const NO_ROTATION_SNAPPING: int = 2
+const NO_ENTITY_ANGLE: int = 4
+const DONT_CENTER_X: int = 64
+const DONT_CENTER_Z: int = 128
+
 var source_id: String = ""
 var build_id: String = ""
 var resource_id: int = -1
@@ -24,9 +29,9 @@ var unsupported_reason: String = ""
 var death_type: int = 0
 var form_book_flags: int = 0
 var reaction_unsupported_reason: String = ""
-## Nonempty only after a complete guarded neighbor proof; logical updates remain live.
+## Optional explicit contact disabling reason; logical entity updates remain active.
 var disabled_reason: String = ""
-## Optional admitted primitives checked before this FORM's fallback grid.
+## Optional supported primitives checked before this FORM's fallback grid.
 var primitives: Array[EntityPrimitiveDefinition] = []
 
 ## Returns an independently owned definition, including grid square flags.

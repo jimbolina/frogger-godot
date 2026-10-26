@@ -1,11 +1,11 @@
 class_name EntityLifecycleSetup
 extends RefCounted
-## Copies map-group facts shared by gameplay admission and prescribed camera probes.
+## Copies map-group facts shared by gameplay visibility and prescribed camera probes.
 
 var error: String = ""
 var definition: EntityLifecycleDefinition = null
 
-## Detaches every visible group's eight source polygon counts without admitting gameplay.
+## Detaches every visible group's eight source polygon counts without enabling gameplay.
 static func from_map(map: MapFile) -> EntityLifecycleSetup:
 	var result := EntityLifecycleSetup.new()
 	if map == null or not map.error.is_empty():

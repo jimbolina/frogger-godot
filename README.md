@@ -82,7 +82,7 @@ tick and pauses with a reason. It does not create a wall or clamp the frog.
 This preset admits only the audited high-detail `pc-retail-v3.0e` map, behavior,
 script and model inputs; it rejects changed proof dependencies and visibility
 mode. Ordinary inspection remains available for edited data. See the
-[bounded route contract](docs/reference/gameplay/entities.md#guarded-jun1-bank-route).
+[bounded route contract](tests/golden/specs/entities.md#guarded-jun1-route-and-zones).
 
 The guarded ORG1 inspection connects safe bank, turtle, small log, turtle and
 bank, including the diving turtle's behavior:
@@ -102,7 +102,7 @@ unsupported-pose rejection pauses and rolls back the tick. The preset requires
 audited high-detail v3.0e inputs and all-attached lifetime; visibility mode is
 rejected. Scripts, diving animation/colour and logical neighbor effects run;
 sound and splash sprites remain ordered requests. See the
-[ORG1 contract](docs/reference/gameplay/entities.md#org1-admission) and
+[ORG1 contract](tests/golden/specs/entities.md#org1-route-proof) and
 [verification instructions](docs/reference/testing/terrain-inspection.md#guarded-org1-turtlelog-exploration).
 
 For the guarded road crossing into that corridor, use
@@ -112,7 +112,7 @@ R resets after a death. The exact successful replay is
 `tests/golden/fixtures/org1_road_river.json`; the deliberate lorry collision is
 `tests/golden/fixtures/org1_road_vehicle_death.json`. The same supplied-data and
 boundary restrictions apply. See the
-[road contract](docs/reference/gameplay/entities.md#org1-road-and-vehicle-primitives).
+[road contract](docs/reference/gameplay/entities.md#vehicle-primitive-contacts).
 
 To explore the bank/turtle/log corridor with scripted visibility, use:
 
@@ -124,7 +124,7 @@ This separate v3.0e preset creates and retires entities with camera visibility.
 It opens LIVE and paused with the same movement controls. Touch the pink frog
 to pick her up; she rides on Frogger and disappears if he dies. R restores the
 complete inspection. Checkpoint delivery and tongue pickup are not implemented;
-the corridor bounds still apply. See the [scripted visibility contract](docs/reference/gameplay/entities.md#scripted-visibility-route).
+the corridor bounds still apply. See the [scripted visibility contract](docs/reference/gameplay/entities.md#pink-frog-behavior).
 
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file

@@ -5,7 +5,7 @@ extends RefCounted
 ## Scans source-ordered contacts and applies supported reactions.
 func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> String:
 	if frog.entity_collision.frog_collision != null and state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM:
-		return "Primitive admission does not support a jump from a collision primitive"
+		return "Jumping from a collision primitive is unsupported"
 	if state.entities == null or state.entities.entities.size() != frog.entity_collision.entities.size():
 		return "Entity collision snapshot does not match validated definitions"
 	for index: int in frog.entity_collision.entities.size():

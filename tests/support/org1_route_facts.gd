@@ -67,10 +67,10 @@ static func entity(visit: EntityUpdateObservation, fly: EntityCustomState, tick:
 		result["callback%d" % slot] = joined(state.callbacks[slot], ":") if state != null else "-1:0:0:0"
 	for index: int in 3:
 		result[["sound_id", "sound_min", "sound_max"][index]] = state.moving_sound[index] if state != null and not state.moving_sound.is_empty() else -1
-	if pose.background != null and not pose.background.moving_sound.is_empty():
+	if pose.custom_state != null and not pose.custom_state.moving_sound.is_empty():
 		result.moving_sound = 1
 		for index: int in 3:
-			result[["sound_id", "sound_min", "sound_max"][index]] = pose.background.moving_sound[index]
+			result[["sound_id", "sound_min", "sound_max"][index]] = pose.custom_state.moving_sound[index]
 	return result
 
 ## Renders ordered decimal facts without JSON float conversion.

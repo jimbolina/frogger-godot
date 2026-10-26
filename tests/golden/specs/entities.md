@@ -85,8 +85,7 @@ the player's MAP 656, EXE tables and resolved models. Its frozen-C transport
 extends `platform_oracle.c`, retaining all 115 authored scan identities and
 all six potentially contacting generic logs. Explicit proof-excluded null-live
 shells retain the other identities and group order; this adapter does not claim
-to execute their custom behavior. The [entity contract](../../../docs/reference/gameplay/entities.md#guarded-jun1-bank-route)
-owns the boundary, exclusion conditions and route outcome.
+to execute their custom behavior. The corridor bounds and exclusion conditions are recorded below.
 
 `pc-retail-v3.0e/platform_jun1_route.tsv` contains 360 ordered rows: Control,
 Move, Collision, Camera, Scripts and Pose for each command tick. Columns retain
@@ -137,9 +136,67 @@ owns full 30/60/144 schedule and keyboard/capture acceptance.
 The admission helper enumerates every integer distance on complete authored
 paths, checks exact unresolved broad-phase identities, transformed FORM bounds,
 the hippo's integer contact maximum and signed arithmetic closure. The source
-behavior exclusions are documented in the helper and entity contract. Its
+behavior exclusions are documented in the helper and corridor conditions below. Its
 input dependency manifest contains hashes and decoded numeric facts, never
 retail bytes; changing determining inputs requires a fresh source proof.
+
+### JUN1 corridor bounds and exclusion conditions
+
+The opt-in `jun1-log-bank` preset uses audited high-detail v3.0e resource 656.
+It starts safely at cell `(22,10)`, world `(2176,-324,-4992)`, facing west.
+The independently calculated route uses logical WEST mask 8 at command tick 0
+and EAST mask 2 at tick 12. Contact at tick 3/entity tick 4 mounts JUN_LOG
+authored index 24, unique ID 11, offset 13532, FORM 45/grid 1. Eight ticks of
+centring/carry lead to departure and a detached, alive terrain landing at
+`(22,9)`, height -180, on tick 17. Observation continues through tick 59.
+The original PC input masks are LEFT 1/RIGHT 2; `TickCommand` uses its existing
+normalized cardinal encoding. The camera mapping is independently verified.
+
+World admission is X `[1900,2304)`, Z `[-5376,-4864)`. The initially proposed
+west edge 1856 is unsafe: hippo 23 can contact `(1856,-256,-4924)` at advanced
+entity tick 27. Exhaustive integer path/FORM evaluation bounds hippo contacts
+in this Z band at X 1888. The revised boundary excludes them without changing
+retail collision. Complete path cycles, transformed FORM extents, sphere and
+primitive precedence, shared FORM writers and custom movement determine the
+other exclusions. Only logs 16,24,25,26,27,31 can contact this rectangle.
+All 18 zones are decoded; the demonstrated cells activate none.
+
+The exclusion proof covers ordinary inspection controls from a fresh run, with
+no tongue pickup or external outro transition. `ENTITY.C:1018–1056` land
+projection changes Y/orientation, preserving the rhino/monkey path XZ. Scorpion
+creation delegates generic movement (`ent_jun.c:1149`). Hippo dive/rise changes
+only Y (`ent_jun.c:354–367,372+`); all five share the same primitive-free model,
+FORM and repeat path. All 17,398 integer path poses bound flat-pose contact X
+at 1888; the 932 nearby tilted poses have Y-independent local X, bounded at
+1789. Crocodile 0 has no primitives in any animated component; its action,
+timer and sound script does not move the root (`ent_jun.c:542–557`). All 6,105
+path poses bound its FORM Z below -5632.28. Crocodile 19 is sphere-excluded.
+
+Plants change animation/timer/audio only (`ent_jun.c:59–179`); bridge collapse
+changes animation/collision enablement, retaining the root. Plinths, stone
+frogs and doors have null updates (`ENTlib.C:415–461`). Outro gold frogs start
+SITTING, whose update is a no-op (`ent_jun.c:783–794,841–870`). Checkpoints and
+markers stay at authored origins. Those fixed records are sphere-excluded;
+tree 109 and mushroom 110 instead have identity roots, no primitives and
+strict FORM minimum X of 2561 and 2570. Animated primitives are tested only
+after the bounding sphere, so excluded models need no primitive simulation.
+Shared FORM writers resolve to the audited matching models.
+
+Every NO_MODEL record has a null collision callback, taking the early skip in
+`COLLIDE.C:272–286`; the flag alone is insufficient. Bonus flies bob only in Y
+and cannot collect themselves (`ent_gen.c:257,329`). Complete path and fixed
+origin checks keep XZ differences within signed16 and their squared sum at
+most 152,901,121. Adding any signed16 Y square remains below signed32 overflow
+(1,226,642,945), making sphere exclusions valid even for wrapped source Y.
+
+The frozen adapter retains all 115 authored scan identities. Six potentially
+contacting logs execute normally; other identities are explicit proof-excluded
+null-live shells, justified by the exhaustive geometry/behavior proof. This
+does not simulate their custom scripts or RNG/audio. The runtime still scans
+every admitted generic entity in source order. Its independent admission
+manifest pins determining map, form/behavior, script and model facts, including
+WAD mappings and incomplete-model counterparts. Changed dependencies reject
+this preset; ordinary inspection remains available for mods.
 
 ## Entity script components
 
@@ -178,8 +235,7 @@ old Y, camera current/source/target/modification matrix and controller mapping,
 actual retail frog action/cel, shared RNG, diver state, sound count and the
 complete authored contact-scan order. All listed fields are independently
 calculated in Python and compared with unchanged frozen C before writing.
-The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
-owns route coordinates and source-proof conditions.
+The route coordinates and source-proof conditions are recorded below.
 
 Each matching `_entities.tsv` stores one SHA-256 per tick over all 64 live
 updates, in descending authored order. Canonical input is the tab-separated
@@ -212,6 +268,50 @@ and checks dependency rejection and complete reset. The
 compares complete represented state across headless and rendered schedules.
 The manifest also retains each excluded identity's reason and the supplied
 script/callback names; geometry alone never suppresses logical neighbor updates.
+
+### ORG1 corridor bounds and animated exclusions
+
+The independent proof admits high-detail v3.0e ORG1 (resource 658) within
+X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
+all-attached lifetime. The guarded `org1-turtle-log-bank` preset validates the
+proof before enabling scripts or excluding contact. The proof pins map, source-ordered form/behavior rows, script
+streams, model mappings, counterpart models and the selected frog resource in
+`src/inspection/org1_exploration_admission.json`.
+
+Starting at cell `(10,7)`, world `(128,-256,-128)`, north, normal NORTH commands
+at ticks 0 and 12 and SOUTH commands at 34 and 46 connect turtle 1, small log
+13 and turtle 2. Contacts occur at 3, 18 and 39; the frog returns detached and
+alive to the starting bank cell at 51. Observation through 729 includes
+repeated dive/rise cycles. A separate bank wait and NORTH at 1230 attaches to
+diver 0 at 1233; its depth callback kills the carried frog at 1254, before
+that tick's control phase. Neither route edits paths or forces attachment.
+
+All four first-lane turtles and six small logs remain contact candidates.
+Complete integer path/FORM bounds exclude second-lane turtles and larger
+logs. Shared FORM writers agree; THICK_FORM precedes UNIT_FORM. Static
+neighbors have explicit sphere, NO_COLLISION or null-callback NO_MODEL
+exclusions. The baby frog's actual creation and first update leave it hidden
+in WAIT_TO_SEARCH_AGAIN with search count 1. Its parent log remains live
+forever under this lifetime contract. The five checkpoints remain outside
+the 512-unit croak trigger and 640-unit tongue radius. Their complete-model
+counterparts supply their real flipbook lengths.
+
+Traffic requires animated collision-point exclusion. The old research
+minimum Z `-224` is not admitted. For the narrower rectangle, every integer
+orientation on both support paths generates a finite closure of 36 frog
+roots, including terrain normals, four headings, inherited up axes, snapping,
+centring/carry and linked departures. All generating transitions match frozen
+`UpdateFrogMatrix`, `SnapFrogRotationToMatrix` and projection operations.
+Every hilite on every collision-bearing part and reachable action cel of
+`GEN_FROG.XAR` (214), including initial action 0/cel 0, is composed with those
+roots using source fixed-point and short stores. The southernmost world probe
+is -294; the nearest cuboid accepts points only through -316. Expanded probe
+XZ differences and squared-distance sums stay within source widths even
+with any signed16 Y difference. Croak's imported throat part has no hilites.
+SAFE landing-height differences stay below the stun threshold; death and
+MUST_DIE return before primitive scans. No nearby collectable can introduce a
+powerup or tongue scaling. Stored root origins must stay inside the rectangle
+at every collision scan; escaping candidates must reject before contact.
 
 ### ORG1 road-to-river traffic
 
@@ -263,7 +363,7 @@ its focused retail test to fail, restore both and require the test to pass.
 ORG1 identities, form/entity/script mappings and unconditional traffic script
 prefixes using the existing Python EXE/MAP readers and FrogLord names. It is
 a counterexample verifier, not an admission manifest or new golden family.
-The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
+The [entity contract](entities.md#org1-route-proof)
 owns the failed three-program assumption and expanded behavior closure.
 
 Build the platform oracle outside both repositories, then run:
@@ -317,7 +417,7 @@ external `org1-admission-proof.json` includes all authored identities, shared
 FORM writers, model hashes, complete path bounds, candidate terrain layers,
 per-action frog probe bounds and authored pose examples. It keeps
 `route_admitted` false and exits 3 for known remaining obligations. Unsupported
-inputs or failed comparisons exit 1. The [entity contract](../../../docs/reference/gameplay/entities.md#org1-admission)
+inputs or failed comparisons exit 1. The [entity contract](entities.md#org1-route-proof)
 owns the interpretation and limitations; these reports are not new goldens.
 
 Run the asset-free verifier regressions separately from the required Godot gates:

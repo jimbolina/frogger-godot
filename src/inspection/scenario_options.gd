@@ -11,6 +11,9 @@ var collision_enabled_authored: bool = false
 var authored_fixture: bool = false
 var tick_limit_override: bool = false
 var exploration_preset: String = ""
+## Whether this inspection supplies custom/script execution rather than transform-only facts.
+var scripted_entities: bool:
+	get: return exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
 var entity_reactions: bool:
 	get: return reactions != Reaction.NONE
 var platforms_enabled: bool:

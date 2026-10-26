@@ -18,7 +18,7 @@ func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.options.entity_reactions
 	_entity_lifecycle = scenario.options.entity_lifecycle
 	_guarded_exploration = scenario.level.tick_guard != null
-	_scripted_exploration = scenario.options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
+	_scripted_exploration = scenario.options.scripted_entities
 	_primitive_exploration = scenario.level.entity_collision != null and scenario.level.entity_collision.frog_collision != null
 	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.options.entity_lifecycle else "entity-platform-v1" if scenario.options.platforms_enabled else "entity-pop-v1" if scenario.options.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
@@ -161,7 +161,7 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 				continue
 			if not include_lifecycle and _lifecycle_key(record, key):
 				continue
-			values["fixture_lives" if record is FrogState and key == "lives" else "admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
+			values["background" if record is EntitySnapshot and key == "custom_state" else "fixture_lives" if record is FrogState and key == "lives" else "admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
 	return values
 
 static func _lifecycle_key(record: RefCounted, key: String) -> bool:

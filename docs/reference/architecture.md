@@ -92,13 +92,7 @@ once, retaining bounded runtime cursor and instruction-budget checks. Standalone
 script calls validate supplied definitions on every call. A dependency mismatch
 uses that safe validation path. Private candidate script execution may update its
 owned state and RNG directly; any subsequent failure discards the whole candidate.
-Interactive playback assigns the run to a dedicated `TerrainTickWorker`.
-The scene host retains the 30 Hz input pacer and original stall policy, permits
-one outstanding command, and consumes only detached completed results. Drawing
-uses the last completed samples while a transaction runs. Pause/step drains the
-pending command; reset, source replacement and exit join the worker before
-replacing or releasing the run. Deterministic trace captures execute synchronously.
-Timing instrumentation belongs to this presentation worker, never gameplay classes.
+The [host contract](#presentation-hosts) defines scheduling and worker ownership.
 `TerrainMotion` converts previous/current committed transforms once per tick.
 Frog, entities and camera use one render fraction; a rider retained on one
 platform interpolates in that platform's local frame. Transfers use continuous
@@ -237,7 +231,7 @@ their owned carrier/timer/death state commits with the same aggregate. Presentat
 consumes the resulting pose and hides the dead frog without deciding pickup.
 Snapshot and contact-scan order stay
 separate from the source live-update order.
-The [entity contract](gameplay/entities.md#org1-admission) owns the
+The [entity contract](../../tests/golden/specs/entities.md#org1-route-proof) owns the
 expanded behavior closure and source proof. General inspection remains
 script-free; admitted definitions opt into these updates.
 

@@ -15,10 +15,10 @@ static func land(state: GameplayState, definition: FormContactDefinition, contac
 	state.attachment.entity_offset_16 = Vector3i(local.x, contact.height, local.z) * 65536
 	var target := Vector3i(local.x, contact.height, local.z)
 	var centring: bool = false
-	if not definition.form_book_flags & 64 or absi(local.x) > (definition.dimensions.x - 1) * 128:
+	if not definition.form_book_flags & FormContactDefinition.DONT_CENTER_X or absi(local.x) > (definition.dimensions.x - 1) * 128:
 		target.x = definition.offsets.x + contact.cell.x * 256 + 128
 		centring = true
-	if not definition.form_book_flags & 128 or absi(local.z) > (definition.dimensions.y - 1) * 128:
+	if not definition.form_book_flags & FormContactDefinition.DONT_CENTER_Z or absi(local.z) > (definition.dimensions.y - 1) * 128:
 		target.z = definition.offsets.y + contact.cell.y * 256 + 128
 		centring = true
 	state.frog.target_16 = target * 65536
@@ -33,7 +33,7 @@ static func land(state: GameplayState, definition: FormContactDefinition, contac
 	state.frog.world_position = Vector3i(state.frog.position_16.x >> 16, state.frog.position_16.y >> 16, state.frog.position_16.z >> 16)
 	state.frog.target_y = state.frog.world_position.y
 	state.frog.old_y = state.frog.target_y
-	if not definition.form_book_flags & 2:
+	if not definition.form_book_flags & FormContactDefinition.NO_ROTATION_SNAPPING:
 		var forward: Vector3i = PlatformMath.apply(inverse, Vector3i(state.frog.matrix12[2], state.frog.matrix12[5], state.frog.matrix12[8]))
 		forward.y = 0
 		state.frog.direction = PlatformMath.quadrant(EntityTransform._normalise(forward))
@@ -43,13 +43,13 @@ static func land(state: GameplayState, definition: FormContactDefinition, contac
 		var y := Vector3i(matrix[1], matrix[4], matrix[7])
 		var x: Vector3i = EntityTransform._normalise(EntityTransform._cross12(y, z))
 		_replace_rotation(state, PackedInt32Array([x.x, y.x, z.x, x.y, y.y, z.y, x.z, y.z, z.z, 0, 0, 0]))
-	if not definition.form_book_flags & 4:
+	if not definition.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
 		state.attachment.entity_angle = PlatformMath.quadrant(PlatformMath.apply(inverse, camera.snapshot().direction_vectors_12[0]))
 	state.frog.flags = (state.frog.flags & ~LANDED_CLEAR) | FrogFlags.ON_ENTITY
 	state.attachment.entity_transform12 = PlatformMath.project(PlatformMath.multiply(state.frog.matrix12, inverse))
 	if state.attachment.current_entity_index != pose.entity_index:
-		result.error = camera.transition_attachment(previous, matrix, not definition.form_book_flags & 2)
-	elif not definition.form_book_flags & 2:
+		result.error = camera.transition_attachment(previous, matrix, not definition.form_book_flags & FormContactDefinition.NO_ROTATION_SNAPPING)
+	elif not definition.form_book_flags & FormContactDefinition.NO_ROTATION_SNAPPING:
 		camera.align_y()
 	state.attachment.current_entity_index = pose.entity_index
 	return result
@@ -89,7 +89,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	var world_direction: int = directions[input]
 	var target_cell: Vector2i
 	state.frog.flags &= ~FrogFlags.ON_ENTITY
-	if definition.form_book_flags & 4:
+	if definition.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
 		var step_vector: Vector3i = DIRECTIONS[world_direction] * distance / 16
 		state.frog.target_16 = (state.frog.world_position + step_vector) * 65536
 		state.frog.direction = world_direction
@@ -143,7 +143,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	state.frog.square_index = -1
 	state.frog.flags = (state.frog.flags | FrogFlags.JUMP_FROM_ENTITY) & ~(FrogFlags.JUMP_TO_LAND | FrogFlags.JUMP_TO_ENTITY)
 	state.frog.target_y = state.frog.world_position.y
-	if definition.form_book_flags & 4:
+	if definition.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
 		result.detach = true
 		state.frog.flags &= ~FrogFlags.JUMP_FROM_ENTITY
 	else:

@@ -2,6 +2,9 @@ class_name ZoneDefinition
 extends RefCounted
 ## Detached authored camera-zone bounds. Stored coordinates retain signed16 bits.
 
+const SEMIFORCED: int = 1 << 2
+const ABSOLUTE_Y: int = 1 << 3
+
 var source_id: String = ""
 var build_id: String = ""
 var resource_id: int = -1

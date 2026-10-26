@@ -14,7 +14,7 @@ var script_state: EntityScriptState = null
 var animation: EntityAnimationState = null
 var requests: Array[TickEvent] = []
 var entity_flags: int = 0
-var background: EntityCustomState = null
+var custom_state: EntityCustomState = null
 var live_flags: int = 0
 var colour_scale: Vector3i = Vector3i.ZERO
 var ambient: Vector3i = Vector3i.ZERO
@@ -34,7 +34,7 @@ func copy() -> EntitySnapshot:
 	result.animation = animation.copy() if animation != null else null
 	result.requests = TickEvent.copy_all(requests)
 	result.entity_flags = entity_flags
-	result.background = background.copy() if background != null else null
+	result.custom_state = custom_state.copy() if custom_state != null else null
 	result.live_flags = live_flags
 	result.colour_scale = colour_scale
 	result.ambient = ambient

@@ -38,7 +38,7 @@ Follow FrogLord for these format rules; they agree on retail values.
 `EntityScriptSetup` resolves the bounded supplied script closure and opcode
 callbacks through FrogLord names. Unknown names or unsupported instructions
 reject execution; general inspection can still display their decoded facts.
-The [entity contract](../gameplay/entities.md#bounded-script-components) owns
+The [entity contract](../gameplay/entities.md#supported-script-components) owns
 the implemented subset and turtle creation's named script replacement.
 Guarded ORG1 admission pins both the numeric program facts and named
 entity/form/script/callback bindings; changed names cannot silently reinterpret

@@ -598,7 +598,7 @@ func prepare_start(initial: RunStart, default_cell: Vector2i, default_direction:
 			return prepared
 	var stack: GridStackDefinition = grid.stack_at(cell)
 	if powers & ~7 or direction < 0 or direction > 3 or stack == null or stack.square_count == 0:
-		prepared.error = "Terrain run start requires a bounded terrain cell, direction 0..3 and supported fixture powers"
+		prepared.error = "Terrain run start requires a bounded terrain cell, direction 0..3 and supported powerups"
 		return prepared
 	var index: int = stack.first_square_index + stack.square_count - 1
 	var state := GameplayState.new()
@@ -629,14 +629,14 @@ func prepare_start(initial: RunStart, default_cell: Vector2i, default_direction:
 		prepared.error = "Start mode must select component, fast reset or single-start bounce"
 		return prepared
 	state.frog.start_target_16 = state.frog.position_16.y
-	if state.frog.start_mode == 2:
+	if state.frog.start_mode == RunStart.Mode.SINGLE_START:
 		state.frog.position_16.y -= 6400 << 12
 		state.frog.mode = FrogMode.LEVEL_START_BOUNCE
 		update_world(state)
 		state.frog.old_position_16 = state.frog.position_16
 		state.frog.old_y = state.frog.world_position.y
 		state.frog.target_y = state.frog.old_y
-	elif state.frog.start_mode == 1:
+	elif state.frog.start_mode == RunStart.Mode.FAST_RESET:
 		state.frog.mode = FrogMode.WAIT_FOR_CAMERA
 	prepared.state = state
 	prepared.directions = directions

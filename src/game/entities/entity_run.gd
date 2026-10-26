@@ -191,7 +191,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].script_state = previous.script_state.copy() if previous.script_state != null else null
 		next_state.entities[index].animation = previous.animation.copy() if previous.animation != null else null
 		next_state.entities[index].entity_flags = previous.entity_flags
-		next_state.entities[index].background = previous.background.copy() if previous.background != null else null
+		next_state.entities[index].custom_state = previous.custom_state.copy() if previous.custom_state != null else null
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
@@ -292,8 +292,8 @@ func advance_animations() -> void:
 		if entity.live and entity.animation != null:
 			entity.animation.advance()
 
-## Updates one admitted custom neighbor on detached candidate state.
-func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null) -> EntityCustomResult:
+## Updates one supported custom neighbor on detached candidate state.
+func update_custom(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
 		var failed := EntityCustomResult.new()
@@ -407,13 +407,13 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) 
 	entity.ambient = Vector3i.ZERO
 	entity.requests.clear()
 	if definition.behavior.has_custom_update():
-		entity.background = EntityCustomState.new()
+		entity.custom_state = EntityCustomState.new()
 		if definition.behavior.kind == EntityBehavior.Kind.BONUS_FLY:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
-			entity.background.model_hidden = true
+			entity.custom_state.model_hidden = true
 		elif definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
-			entity.background.timer = 0
-			entity.background.model_hidden = true
+			entity.custom_state.timer = 0
+			entity.custom_state.model_hidden = true
 		elif definition.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			entity.ambient = Vector3i(160, 160, 160)
 
@@ -422,7 +422,7 @@ func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
 	entity.destroy_pending = false
 	entity.script_state = null
 	entity.animation = null
-	entity.background = null
+	entity.custom_state = null
 	entity.live_flags = 0
 	entity.requests.clear()
 	entity.colour_scale = Vector3i.ZERO
