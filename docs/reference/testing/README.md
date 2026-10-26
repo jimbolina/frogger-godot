@@ -100,7 +100,7 @@ entities or zones report the missing admission. No corridor restriction is remov
 
 ```text
 python tools/run_demo.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
-python tools/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24
+python tools/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24 --segment 0
 python tools/verify_demo_schedules.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
 python -m unittest discover -s tools -p test_demo_trace.py
 ```
@@ -122,13 +122,19 @@ translations. Existing terrain trace formats are unchanged.
 
 The comparator validates LF-terminated integer CSVs, ordered calls and per-call
 identities. `--segment <index>` selects a contiguous reference visit to the map;
-the candidate must contain one visit. It checks declared duration, committed row
+a nonempty candidate must contain one visit. It checks declared duration, committed row
 count and consumed-input count before accepting completion and matching terminal
 frog state. Route cells and consumed-input differences are diagnostic, with no
 invented distance tolerance. Reference hook calls may include multiple logic
 ticks after level transitions, so their global counters are not aligned to local
-ticks. An identically truncated run is not a passing schedule check: zero-tick
-runs are rejected, and complete status must match its declared duration.
+ticks. A correctly formatted header-only candidate is a valid incomplete
+comparison only when playback status records zero committed ticks and consumed
+inputs, a matching map and an explicit reason. It reports `complete: false`,
+`accepted: false`, `terminal_comparable: false`, `terminal_differences: null`
+and the original reason, with exit 1. It cannot establish a reference match or passing schedule check.
+Missing or malformed status, an empty reference, or an empty completed run
+fails as invalid input (exit 2). Complete status must match its declared
+duration.
 
 The schedule verifier compares both CSVs and playback provenance byte for byte
 across headless and rendered 30/60/144 Hz and irregular frames. To exercise a
@@ -139,13 +145,11 @@ is three little-endian signed integers (duration, start X, start Z), then action
 bytes. These supplied fixtures are inputs, never expected-data goldens. Rendered
 runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect it.
 
-Use the frozen export described in `../froggy/engine/docs/REFERENCE.md`:
-`python3 engine/tools/reference_export.py traces --build-dir engine/build_mac --out <external-folder>`
-from that repository, whose M57 arm64 build runs natively on this Mac and writes
-the same 3,273 frog and 116,122 entity rows the Windows export records. Never
-modify its sources. Reference validation of a run is still a comparison the
-comparator must pass; the ORG1 attract playback itself is incomplete until P8c
-(the demo start cell lies outside the admitted corridor), so no run claims it yet.
+Use the [verified external native build](../sources.md#exporting-reference-material-from-the-engine)
+and export traces to a folder outside the repositories. The ORG1 reference is
+map 24, segment 0. The current playback stops before any committed tick at its
+admission boundary. Its structured incomplete comparison exercises the harness;
+complete playback and reference end-state acceptance remain P8c.
 
 ## Focused iteration and guardrails
 

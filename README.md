@@ -201,20 +201,11 @@ The last command expects exit 3 for the approved retail-only skips. See the
 [testing guide](docs/reference/testing/README.md) for isolated Mac profiles.
 Use `python3` for Python commands on macOS.
 
-The frozen sibling C engine builds natively on Apple Silicon since its M57
-(no Rosetta). Install `brew install cmake ninja gnu-sed grep bash`, then from
-`../froggy`:
-
-```sh
-cmake -S engine -B engine/build_mac -G Ninja
-cmake --build engine/build_mac
-python3 engine/tools/reference_export.py traces --build-dir engine/build_mac --out <folder outside any repository>
-```
-
-Its configure refuses `/bin/bash` 3.2 and a PATH without GNU grep by name, and
-finds Homebrew's bash by hint. `engine/build` there may be a copied Windows tree,
-so pass `--build-dir engine/build_mac` to its tools. The PowerShell oracle
-builders remain Windows-only. Packaged exports remain future work.
+For reference comparisons on this Mac, reuse the verified native arm64 build
+outside the frozen source tree. The [reference source instructions](docs/reference/sources.md#exporting-reference-material-from-the-engine)
+provide its location, export commands, provenance and comparison limits.
+The PowerShell oracle builders remain Windows-only. Packaged exports remain
+future work.
 
 ## No game data is included
 

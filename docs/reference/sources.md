@@ -1,6 +1,8 @@
 # Reference sources
 
-External material is read-only. All external paths below are relative to the repository root, not this document. Read only the sources needed for the current task.
+External material is read-only. Relative external paths below are relative to
+the repository root, not this document. The verified build has an absolute path.
+Read only the sources needed for the current task.
 
 The owner explicitly selected frozen `froggy` C-port behavior, including its
 30 Hz pacing. Original retail executable timing does not
@@ -44,17 +46,22 @@ File names in that folder are mixed case. Use the exact spelling; it matters on 
 
 ### Exporting reference material from the engine
 
-The engine's native macOS tree is `../froggy/engine/build_mac/` (its M57 arm64
-port; `engine/build/` may be a copied Windows tree). Build it as the
-[README](../../README.md#macos-setup) shows; do not modify the engine's sources.
+The verified native macOS arm64 binary is
+`/Users/cybertron/Desktop/frogger-reference-build/verify-m57/build/mr_stub/frogger`.
+Its build directory is the parent `build/` folder, outside the frozen source
+tree. Its sibling `../verification.json` (relative to the build directory)
+records a clean source HEAD of
+`fbf8351925b84816b1d8ab67025dd43c9bc0950f`, native execution without
+Rosetta, allocations above 4 GB and passing driver checks. Reuse this build;
+do not modify or rebuild the frozen sources. Keep exports outside repositories.
 
 | Want | How |
 |---|---|
-| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir ../froggy/engine/build_mac --out <folder outside any repository>` |
-| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir ../froggy/engine/build_mac --out <folder>` |
+| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
+| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
 | A trace of any run | Start the `frogger` driver with `--trace-csv=<file>` |
 
-A trace has one row per frog per call: `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`. A second file, `<file>.entities.csv`, has one row per live entity. Positions are whole world units; a grid square is 256 units. One call is one logic tick, except the call after a level ends, which covers up to three. Output is identical on Windows and Linux.
+A trace has one row per frog per call: `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`. A second file, `<file>.entities.csv`, has one row per live entity. Positions are whole world units; a grid square is 256 units. One call is one logic tick, except the call after a level ends, which covers up to three. The verified native export covers four attract demos and four map screenshots. SUB1 traces match the retained pre-port Windows baseline byte for byte; older full Windows baselines for the other three demos are unavailable, so their cross-platform parity is unverified.
 
 ## FrogLord: `../froggy/resources/FrogLord`
 

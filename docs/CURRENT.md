@@ -17,13 +17,13 @@ Typed events retain the existing trace format. Candidate APIs and discovered
 copy contracts protect transaction ownership. GameplayHost owns pacing and worker
 handoff; map inspection retains its independent seek clock and capture workflow.
 
-[PORTING](PORTING.md) owns remaining work. P8b provides player-data demo
-resolution, raw-action control, atomic duration/input counters and isolated
-reference-layout traces with comparison reporting. Duration completion does
-not establish complete gameplay. Reference traces now export natively on this
-Mac from the sibling engine's arm64 build; validating a run awaits a complete
-playback, and unsupported actions, whole-map zones and corridor admission report
-incomplete playback. Next is complete ORG1 in P8c. Bounded JUN1/ORG1 presets remain
+[PORTING](PORTING.md) owns remaining work. P8b's demo playback and comparison
+harness is complete: it resolves player-data demos, consumes recorded input
+atomically and reports reference-layout traces and explicit incomplete results.
+The verified external arm64 reference build exports traces and screenshots on
+this Mac. Current ORG1 playback stops at its admission boundary before a
+committed tick; it does not match the reference. Complete ORG1 playback and
+end-state comparison belong to P8c. Bounded JUN1/ORG1 presets remain
 inspection scaffolding. Ordinary retail terrain still requires zero-zone maps;
 combined zones/visibility retain synthetic gameplay and the prescribed JUN1
 probe. FOR1 remains an unverified retail candidate.

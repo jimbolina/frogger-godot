@@ -72,14 +72,36 @@ def segments(rows, map_id, frog=0):
 
 def compare(reference, actual, status, map_id, segment=0):
     """Report exact diagnostics and require declared completion for acceptance."""
+    if not isinstance(status, dict) or status.get('schema') != 'demo-playback-v1':
+        raise ValueError('Unexpected playback status schema')
+    state = status.get('status')
+    if state not in ('complete', 'incomplete'):
+        raise ValueError('Playback status must be complete or incomplete')
+    for key in ('duration', 'elapsed_ticks', 'consumed_inputs'):
+        value = status.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise ValueError(f'Playback status requires a nonnegative {key}')
+    if state == 'complete' and status['elapsed_ticks'] != status['duration']:
+        raise ValueError('Complete playback has not elapsed its declared duration')
     expected_segments = segments(reference, map_id)
-    actual_segments = segments(actual, map_id)
-    if segment < 0 or segment >= len(expected_segments) or len(actual_segments) != 1:
-        raise ValueError('Requested map segment absent or actual contains multiple visits')
+    if segment < 0 or segment >= len(expected_segments):
+        raise ValueError('Requested map segment absent')
     expected = expected_segments[segment]
-    observed = actual_segments[0]
-    end_differences = {key: {'reference': expected[-1][key], 'actual': observed[-1][key]}
-                       for key in STATE_COLUMNS if expected[-1][key] != observed[-1][key]}
+    if not actual:
+        if (state != 'incomplete' or status['elapsed_ticks'] != 0 or
+                status['consumed_inputs'] != 0 or
+                not isinstance(status.get('reason'), str) or not status['reason'].strip() or
+                type(status.get('map')) is not int or status['map'] != map_id):
+            raise ValueError('Empty actual CSV requires zero-tick incomplete playback for the requested map')
+        observed = []
+    else:
+        actual_segments = segments(actual, map_id)
+        if len(actual_segments) != 1:
+            raise ValueError('Actual contains no or multiple requested map visits')
+        observed = actual_segments[0]
+    end_differences = None if not observed else {
+        key: {'reference': expected[-1][key], 'actual': observed[-1][key]}
+        for key in STATE_COLUMNS if expected[-1][key] != observed[-1][key]}
     expected_inputs = [row['input'] for row in expected if row['input'] >= 0]
     actual_inputs = [row['input'] for row in observed if row['input'] >= 0]
     first_input = next((i for i, pair in enumerate(zip(expected_inputs, actual_inputs))
@@ -91,20 +113,15 @@ def compare(reference, actual, status, map_id, segment=0):
         return [value for i, value in enumerate(values) if i == 0 or value != values[i - 1]]
     expected_route, actual_route = compress(route(expected)), compress(route(observed))
     route_equal = expected_route == actual_route
-    duration = status.get('duration')
-    if not isinstance(duration, int) or isinstance(duration, bool) or duration < 0:
-        raise ValueError('Playback status requires a nonnegative duration')
-    if status.get('status') == 'complete' and status.get('elapsed_ticks') != duration:
-        raise ValueError('Complete playback has not elapsed its declared duration')
-    complete = status.get('schema') == 'demo-playback-v1' and status.get('status') == 'complete'
-    if not isinstance(status.get('elapsed_ticks'), int) or status['elapsed_ticks'] != len(observed):
+    complete = state == 'complete'
+    if status['elapsed_ticks'] != len(observed):
         raise ValueError('Playback status elapsed_ticks does not match actual CSV rows')
-    if status.get('consumed_inputs') != len(actual_inputs):
+    if status['consumed_inputs'] != len(actual_inputs):
         raise ValueError('Playback status consumed_inputs does not match actual CSV')
     return {'schema': 'demo-comparison-v1', 'map': map_id, 'reference_segment': segment,
             'complete': complete, 'termination_reason': status.get('reason', ''),
             'accepted': complete and not end_differences,
-            'terminal_differences': end_differences,
+            'terminal_comparable': bool(observed), 'terminal_differences': end_differences,
             'input_equal': first_input is None, 'first_input_divergence': first_input,
             'reference_input_count': len(expected_inputs), 'actual_input_count': len(actual_inputs),
             'route_equal': route_equal, 'reference_route': expected_route, 'actual_route': actual_route,
@@ -120,8 +137,9 @@ def main():
     parser.add_argument('--map', required=True, type=int)
     parser.add_argument('--segment', default=0, type=int)
     args = parser.parse_args()
-    report = compare(read_csv(args.reference), read_csv(args.actual),
-                     json.loads(args.status.read_text()), args.map, args.segment)
+    status = json.loads(args.status.read_text())
+    report = compare(read_csv(args.reference), read_csv(args.actual, allow_empty=True),
+                     status, args.map, args.segment)
     print(json.dumps(report, indent=2))
     return 0 if report['accepted'] else 1
 

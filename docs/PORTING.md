@@ -19,7 +19,7 @@ P8 is split into exit-sized pieces, and P10 (level loop and HUD) runs before P9 
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
 | P8a | Behaviour catalog and typed tick outbox | M | Every existing golden unchanged; architecture scanner rejects entity-name string dispatch in `src/game` | Done |
-| P8b | Demo playback harness | S–M | Recorded input decoding, atomic playback and reference-layout comparison reporting | Implemented; reference traces export natively (engine M57); run validation awaits a complete playback (P8c) |
+| P8b | Demo playback harness | S–M | Recorded input decoding, atomic playback and reference-layout comparison reporting, including incomplete runs against native reference traces | Done; complete ORG1 acceptance belongs to P8c |
 | P8c | ORG1 complete: every original-theme and general form, all script opcodes and callbacks, per-build FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Bounded corridors only: 9 of 121 entity types, 16 of 49 opcodes, 15 of 125 scripts, 4 of 24 script callbacks, 2 of 8 death types, no FORM callbacks |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Level loop and HUD: game scene, HUD/score/timer/lives/font, checkpoint flow, level complete, game over, selective reset, generic camera zones | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
@@ -45,7 +45,7 @@ Network play is deferred. Multiplayer levels belong to P15.
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: P8c ORG1; P8b reference validation pending
+## Next: P8c ORG1
 
 The DDD refactor is complete: candidate ownership and discovered copy contracts,
 named constants, typed events, resolved behaviors, source/application/inspection
@@ -58,11 +58,12 @@ P8b resolves detail-specific demo resources through the supplied executable,
 decodes recorded actions and advances the input cursor only on committed
 consumption. Its isolated launcher exports reference-layout frog/entity CSVs
 and playback provenance. The comparator reports incomplete runs, terminal
-state differences and route/input diagnostics. Completion and end state are
-the gameplay acceptance criteria for P8c, P10 and every theme in P9; path
-differences remain diagnostics. Whole-map admission and unsupported actions
-remain explicit playback boundaries. Native reference validation is pending;
-externally generated frozen-reference traces can be supplied to the comparator.
+state differences and route/input diagnostics. An incomplete ORG1 run against
+the verified native export reports its admission reason without claiming a
+reference match. Completion and end state are the gameplay acceptance criteria
+for P8c, P10 and every theme in P9; path differences remain diagnostics.
+Whole-map admission and unsupported actions remain explicit playback boundaries.
+The reusable external build and export commands are in [sources](reference/sources.md#exporting-reference-material-from-the-engine).
 
 P8c completes ORG1 as listed in the table. The guarded JUN1 and ORG1 corridor
 presets and their admission manifests are scaffolding: they proved the
