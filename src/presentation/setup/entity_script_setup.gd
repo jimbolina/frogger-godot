@@ -6,7 +6,7 @@ var error: String = ""
 var definition: EntityScriptDefinition = null
 
 ## Copies only the reachable supported closure, with explicit turtle creation replacement.
-static func from_tables(table: ScriptTable, names: NameBank, root_id: int, entity_name: String, payload: PackedByteArray) -> EntityScriptSetup:
+static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behavior: EntityBehavior, payload: PackedByteArray) -> EntityScriptSetup:
 	var result := EntityScriptSetup.new()
 	if table == null or names == null or not table.error.is_empty():
 		result.error = "Script setup requires valid supplied tables and names"
@@ -14,25 +14,20 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, entit
 	var decoded := EntityScriptDefinition.new()
 	decoded.root_id = root_id
 	var roots: Array[int] = [root_id]
-	if entity_name == "SUB_TURTLE":
-		if payload.size() < 24:
-			result.error = "Turtle payload requires PATH_INFO and three register words"
+	if behavior.payload_register_count > 0:
+		if payload.size() < behavior.payload_offset + behavior.payload_register_count * 4:
+			result.error = "Turtle payload requires PATH_INFO and three register words" if behavior.kind == EntityBehavior.Kind.TURTLE else "Static noise payload requires matrix and two register words"
 			return result
-		decoded.payload_offset = 12
-		for index: int in 3:
-			decoded.payload_registers.append(payload.decode_s32(12 + index * 4))
+		decoded.payload_offset = behavior.payload_offset
+		for index: int in behavior.payload_register_count:
+			decoded.payload_registers.append(payload.decode_s32(behavior.payload_offset + index * 4))
+	if behavior.kind == EntityBehavior.Kind.TURTLE:
 		if decoded.payload_registers[2] not in [0, 1]:
 			result.error = "Unsupported turtle payload type"
 			return result
 		if decoded.payload_registers[2] == 1:
 			decoded.root_id = names.index_of("SCRIPT_TURTLE_NO_DIVE")
 			roots.append(decoded.root_id)
-	elif entity_name == "STATIC_NOISE":
-		if payload.size() < 40:
-			result.error = "Static noise payload requires matrix and two register words"
-			return result
-		decoded.payload_offset = 32
-		decoded.payload_registers = PackedInt32Array([payload.decode_s32(32), payload.decode_s32(36)])
 	var callback_names: NameBank = names.get_sub_bank("CallbackNames")
 	while not roots.is_empty():
 		var id: int = roots.pop_back()

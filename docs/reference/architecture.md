@@ -215,6 +215,14 @@ script-free APIs retain their behavior.
 4. Connect the setup adapter and named supported implementation.
 5. Compare independent reference facts/traces and expose actionable diagnostics.
 
+`EntityBehaviorCatalog` resolves FrogLord names in setup into a detached
+`EntityBehavior`. Gameplay dispatches on its kind and uses its layout,
+immortality, map-group movement and animation capabilities. Execution selection
+keeps transform-only inspection separate from enabled updates and contacts.
+Unknown names retain the existing diagnostic-and-omission fallback; recognizing
+a supported kind does not enable unsupported interactions. Fly, baby-frog and
+checkpoint updates have separate modules behind the typed dispatcher.
+
 Implementing another original behavior is a code change. A mod only repoints
 data to already supported behavior. Keep raw identifiers for diagnostics;
 never dispatch executable addresses directly.
@@ -227,6 +235,9 @@ checks protected code and its statically discoverable dependencies, including
 project class names, literal script paths and inherited bases. It reports
 computed loads and dynamic calls for review. Gameplay runtime resource loading
 is file I/O; literal preloads of permitted script definitions are allowed.
+
+The scanner also rejects entity-name comparisons, membership tests and match
+dispatch in gameplay, while permitting raw names in diagnostics.
 
 This is a conservative static check, not a complete GDScript parser or proof of
 runtime purity. It does not resolve local type scopes, inner-class aliases or

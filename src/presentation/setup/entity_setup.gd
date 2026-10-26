@@ -55,20 +55,21 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.form_id = span.form_id
 		definition.form_name = form.form_name
 		definition.entity_name = form.entity_name
+		definition.behavior = EntityBehaviorCatalog.resolve(form.entity_name)
 		definition.script_id = form.script_id
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
 		definition.flags = span.flags
-		if form.entity_name == "STATIC" or (admitted_org1 and form.entity_name in ["CHECKPOINT", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "ORG_BABY_FROG", "ORG_FLY"]):
+		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or admitted_org1):
 			var matrix: MapEntityPayload = MapEntityPayload.read_matrix(span)
 			if not matrix.error.is_empty():
 				result._issue("invalid_payload", matrix.error, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.matrix12 = matrix.matrix12.duplicate()
-			definition.background_admitted = admitted_org1 and form.entity_name != "STATIC"
-			if form.entity_name == "ORG_BABY_FROG" and span.payload.size() >= 36:
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE if admitted_org1 else EntityBehavior.Execution.TRANSFORM
+			if definition.behavior.kind == EntityBehavior.Kind.BABY_FROG and span.payload.size() >= 36:
 				definition.parent_unique_id = span.payload.decode_s16(32)
-		elif form.entity_name == "MOVING" or (admitted_org1 and form.entity_name == "SUB_TURTLE"):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (admitted_org1 and definition.behavior.kind == EntityBehavior.Kind.TURTLE):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)

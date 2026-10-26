@@ -4,6 +4,7 @@ extends GutTest
 func _static(index: int, x: int = 0, z: int = 0, flags: int = 0) -> EntityDefinition:
 	var entity := EntityDefinition.new()
 	entity.entity_name = "STATIC"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.entity_index = index
 	entity.unique_id = 7
 	entity.form_grid_id = 2
@@ -95,13 +96,16 @@ func test_reaction_precedence_and_detached_results() -> void:
 func test_group_order_negative_division_clamping_and_flags() -> void:
 	var moving_a: EntityDefinition = _static(2, 0, 0)
 	moving_a.entity_name = "MOVING"
+	moving_a.behavior = EntityBehaviorCatalog.resolve(moving_a.entity_name)
 	var moving_b: EntityDefinition = _static(4, 0, 0)
 	moving_b.entity_name = "MOVING"
+	moving_b.behavior = EntityBehaviorCatalog.resolve(moving_b.entity_name)
 	var static_a: EntityDefinition = _static(5, 0, 0)
 	var hidden_static: EntityDefinition = _static(9, 0, 0, EntityDefinition.HIDDEN)
 	var static_next_group: EntityDefinition = _static(11, 256, 0)
 	var moving_hidden: EntityDefinition = _static(12, 0, 0, EntityDefinition.HIDDEN)
 	moving_hidden.entity_name = "MOVING"
+	moving_hidden.behavior = EntityBehaviorCatalog.resolve(moving_hidden.entity_name)
 	var static_far: EntityDefinition = _static(15, 9999, 9999, EntityDefinition.NO_DISPLAY)
 	var definition: EntityCollisionDefinition = _collision([moving_a, moving_b, static_a, hidden_static, static_next_group, moving_hidden, static_far])
 	assert_eq(definition.validate(), "")
@@ -168,6 +172,7 @@ func test_moving_post_step_pose_and_late_failure_retry() -> void:
 	path.segments.append(segment)
 	var moving: EntityDefinition = _static(4)
 	moving.entity_name = "MOVING"
+	moving.behavior = EntityBehaviorCatalog.resolve(moving.entity_name)
 	moving.flags = EntityDefinition.ALIGN_TO_WORLD
 	moving.path_definition = path
 	moving.path_start = PathStart.new()
@@ -336,6 +341,7 @@ func test_moving_path_enters_scanned_group_before_contact() -> void:
 	path.segments.append(segment)
 	var mover: EntityDefinition = _static(6)
 	mover.entity_name = "MOVING"
+	mover.behavior = EntityBehaviorCatalog.resolve(mover.entity_name)
 	mover.flags = EntityDefinition.ALIGN_TO_WORLD
 	mover.path_definition = path
 	mover.path_start = PathStart.new()

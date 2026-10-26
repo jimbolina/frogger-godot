@@ -52,7 +52,8 @@ named constants and typed events, behavior resolution, source/application/inspec
 boundaries, composed gameplay state, frog extraction, reusable host and reference
 cleanup. Each part has a separate commit and full verification gate.
 The entity candidate API, discovered value-copy contracts, named source
-constants and typed tick events are implemented; the remaining parts are pending. P8d moves into this refactor rather than waiting
+constants, typed tick events and behavior resolution are implemented; the
+remaining structural parts are pending. P8d moves into this refactor rather than waiting
 for ORG1 completion.
 
 P8a resolves each entity to one behaviour value in setup, from FrogLord names,

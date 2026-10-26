@@ -79,10 +79,12 @@ func validate() -> String:
 					return primitive_issue
 				if primitive.reaction not in [0, 1]:
 					return "Entity primitive reaction is unsupported"
-		if entity.background_admitted and environment == null:
+		if entity.behavior == null:
+			return "Entity collision requires a resolved behavior"
+		if entity.behavior.has_custom_update() and environment == null:
 			return "Admitted custom background requires its shared environment"
-		if entity.pink_frog_pickup:
-			if entity.entity_name != "ORG_BABY_FROG" or not entity.background_admitted or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
+		if (entity.behavior.execution == EntityBehavior.Execution.CONTACT):
+			if entity.behavior.kind != EntityBehavior.Kind.BABY_FROG or not entity.behavior.has_custom_update() or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
 				return "Pink frog pickup requires admitted scripted visibility and callback-free behavior"
 			if not contact.unsupported_reason.is_empty() or not contact.admission_exclusion.is_empty() or not contact.primitives.is_empty() or contact.grid_flags != PackedInt32Array([1]):
 				return "Pink frog pickup requires its primitive-free usable FORM"

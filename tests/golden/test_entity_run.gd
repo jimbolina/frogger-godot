@@ -58,8 +58,9 @@ func _definition(raw: Dictionary, path_cases: Dictionary) -> EntityDefinition:
 	definition.entity_index = _integer(raw["entity_index"])
 	definition.unique_id = _integer(raw["unique_id"])
 	definition.entity_name = str(raw["entity_name"])
+	definition.behavior = EntityBehaviorCatalog.resolve(definition.entity_name)
 	definition.flags = _integer(raw["flags"])
-	if definition.entity_name == "STATIC":
+	if definition.behavior.kind == EntityBehavior.Kind.STATIC:
 		var matrix: Array = raw["matrix12"]
 		definition.matrix12 = _ints(matrix)
 	else:

@@ -222,3 +222,15 @@ func test_escaped_strings_preserve_next_token_line_numbers() -> void:
 	var violations: Array[Scanner.Violation] = _check({LEGACY: source})
 	assert_eq(violations.size(), 1)
 	assert_eq(violations[0].line, 3)
+
+func test_entity_name_dispatch_is_rejected_but_diagnostics_are_allowed() -> void:
+	for expression: String in [
+		"if definition.entity_name == \"MOVING\":\n\t\tpass",
+		"if \"MOVING\" != definition.entity_name:\n\t\tpass",
+		"if definition.entity_name in [\"STATIC\", \"MOVING\"]:\n\t\tpass",
+		"match definition.entity_name:\n\t\t_:\n\t\t\tpass",
+	]:
+		var source: String = "extends RefCounted\nfunc update(definition):\n\t" + expression + "\n"
+		assert_true(_has_rule(_check({GAME: source}), "behavior"), expression)
+	var diagnostic: String = "extends RefCounted\nfunc describe(definition):\n\treturn \"Unknown behavior %s\" % definition.entity_name\n"
+	assert_eq(_check({GAME: diagnostic}).size(), 0)

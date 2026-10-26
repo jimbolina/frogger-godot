@@ -12,6 +12,7 @@ func _level(flags: int = 4097) -> LevelDefinition:
 	entity.entity_index = 9
 	entity.unique_id = 77
 	entity.entity_name = "STATIC"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.form_name = "TEST"
 	entity.matrix12[9] = -128
 	entity.matrix12[11] = -128

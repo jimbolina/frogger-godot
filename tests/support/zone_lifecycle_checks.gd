@@ -70,6 +70,7 @@ static func inspection(raw_workload: Variant) -> CameraZoneInspection:
 		var entity := EntityDefinition.new()
 		entity.entity_index = _integer(record.index)
 		entity.entity_name = record.kind
+		entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 		entity.flags = _integer(record.flags)
 		entity.path_definition = PathDefinition.new()
 		entity.path_definition.path_index = entity.entity_index

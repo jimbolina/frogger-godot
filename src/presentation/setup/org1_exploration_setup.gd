@@ -70,9 +70,9 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 				return "ORG1 model lacks admitted animation data"
 			for action: MofPart.FlipbookAction in model.static_models[0].parts[0].flipbook_actions:
 				entity.action_lengths.append(action.frame_count)
-			entity.animation_one_shot = entity.entity_name == "ORG_BABY_FROG"
+			entity.behavior.one_shot = entity.behavior.kind == EntityBehavior.Kind.BABY_FROG
 		if entity.script_id != 0:
-			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.tables.names.scripts, entity.script_id, entity.entity_name, map.entities[entity.entity_index].payload)
+			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.tables.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
 			if not scripts.error.is_empty():
 				return scripts.error
 			entity.script_definition = scripts.definition
@@ -82,7 +82,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if not problems.is_empty():
 		return "; ".join(problems)
 	if visibility:
-		setup.definitions[53].pink_frog_pickup = true
+		setup.definitions[53].behavior.execution = EntityBehavior.Execution.CONTACT
 	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, setup.definitions, models, "", -1, "", road)
 	if not contacts.error.is_empty():
 		return contacts.error
@@ -125,7 +125,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 					contact.admission_exclusion = item.reason
 			if contact.admission_exclusion.is_empty():
 				return "ORG1 missing exclusion evidence for entity %d" % slot
-		if entity.entity_name == "CHECKPOINT":
+		if entity.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			var checkpoint: int = entity.form_id & 32767
 			if checkpoint < 0 or checkpoint >= 5:
 				return "ORG1 checkpoint identity changed"

@@ -110,7 +110,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 					run.error = "Frog collision and animation cel counts differ"
 					return run
 		for entity: EntityDefinition in run._entity_collision.entities:
-			run._has_entity_updates = run._has_entity_updates or entity.script_definition != null or entity.background_admitted
+			run._has_entity_updates = run._has_entity_updates or entity.script_definition != null or entity.behavior.has_custom_update()
 		run._entities = EntityRun.create(run._entity_collision.entities, run._entity_collision.lifecycle)
 		if not run._entities.error.is_empty():
 			run.error = run._entities.error
@@ -427,9 +427,9 @@ func _update_entity_scripts(state: RunSnapshot, events: Array[TickEvent]) -> Str
 
 func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: Array[TickEvent]) -> String:
 	var definition: EntityDefinition = _entity_collision.entities[slot]
-	if definition.background_admitted:
+	if definition.behavior.has_custom_update():
 		var frog_position := Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
-		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
+		var background: EntityCustomResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
 		if not background.error.is_empty():
 			return background.error
 		state.entity_environment = background.environment

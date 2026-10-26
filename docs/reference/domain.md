@@ -53,12 +53,13 @@ FrogLord's named entity overrides. `GameData` resolves the selected model/WAD
 for existing tools. Parser examples live in the executable-table unit tests;
 retail facts live in the corresponding golden tests.
 
-Entity setup selects supported STATIC/MOVING base transforms by resolved name.
+Entity setup resolves FrogLord names through `EntityBehaviorCatalog` into
+typed implementation and payload capabilities. Unknown names retain the
+diagnostic-and-omission fallback.
 The [FORM contact contract](gameplay/entities.md#form-contact-inspection) copies
 the selected grid and checks one detached entity pose against a world point.
 Bounded POP and SAFE-platform reactions use source map-group order and a shared
-run transaction. Other entity reactions remain deferred. No general behavior
-registry exists yet. Form callback
+run transaction. Other entity reactions remain deferred. Form callback
 addresses need verified per-build name mappings before callback execution; the script
 list's `CallbackNames` is a separate opcode callback namespace. Unknown entries
 must retain their source identity and diagnostics and use a documented fallback;

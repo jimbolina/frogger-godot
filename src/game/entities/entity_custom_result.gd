@@ -1,4 +1,4 @@
-class_name EntityBackgroundResult
+class_name EntityCustomResult
 extends RefCounted
 ## Private custom-update outputs for the aggregate entity visit.
 

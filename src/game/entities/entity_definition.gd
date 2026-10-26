@@ -31,11 +31,8 @@ var path_start: PathStart = null
 ## Null preserves the earlier script-free transform API.
 var script_definition: EntityScriptDefinition = null
 var action_lengths: PackedInt32Array = PackedInt32Array()
-var animation_one_shot: bool = false
-## Enables only the source-proved background branches.
-var background_admitted: bool = false
+var behavior: EntityBehavior = EntityBehavior.new()
 var parent_unique_id: int = -1
-var pink_frog_pickup: bool = false
 
 ## Returns a copy with independently owned matrix and path records.
 func copy() -> EntityDefinition:
@@ -59,16 +56,14 @@ func copy() -> EntityDefinition:
 	result.path_start = path_start.copy() if path_start != null else null
 	result.script_definition = script_definition.copy() if script_definition != null else null
 	result.action_lengths = action_lengths.duplicate()
-	result.animation_one_shot = animation_one_shot
-	result.background_admitted = background_admitted
+	result.behavior = behavior.copy() if behavior != null else null
 	result.parent_unique_id = parent_unique_id
-	result.pink_frog_pickup = pink_frog_pickup
 	return result
 
-## Resolves the frozen entity-book immortal capability by supported behavior name.
+## Resolves the frozen entity-book immortal capability from the resolved behavior.
 func is_immortal() -> bool:
-	return entity_name in ["ORG_BABY_FROG", "ORG_FLY", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT"]
+	return behavior.immortal
 
 ## Resolves nonstatic map-group membership independently of path ownership.
 func is_group_moving() -> bool:
-	return entity_name in ["MOVING", "SUB_TURTLE", "ORG_BABY_FROG", "ORG_FLY"]
+	return behavior.group_moving

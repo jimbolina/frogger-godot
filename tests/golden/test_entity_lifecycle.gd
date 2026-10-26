@@ -41,8 +41,9 @@ func _definition(raw: Dictionary) -> EntityDefinition:
 	entity.entity_index = _integer(raw["entity_index"])
 	entity.unique_id = _integer(raw["unique_id"])
 	entity.entity_name = str(raw["entity_name"])
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
-	if entity.entity_name == "STATIC":
+	if entity.behavior.kind == EntityBehavior.Kind.STATIC:
 		var position: Array = raw["position"]
 		entity.matrix12[9] = _integer(position[0])
 		entity.matrix12[10] = _integer(position[1])

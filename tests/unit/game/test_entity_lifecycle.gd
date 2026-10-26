@@ -21,6 +21,7 @@ func _camera(x: int = 0) -> GameplayCameraSnapshot:
 func _static(index: int, flags: int = 0, script_id: int = 0) -> EntityDefinition:
 	var result := EntityDefinition.new()
 	result.entity_name = "STATIC"
+	result.behavior = EntityBehaviorCatalog.resolve(result.entity_name)
 	result.entity_index = index
 	result.unique_id = 8
 	result.flags = flags
@@ -30,6 +31,7 @@ func _static(index: int, flags: int = 0, script_id: int = 0) -> EntityDefinition
 func _moving(index: int) -> EntityDefinition:
 	var result := _static(index)
 	result.entity_name = "MOVING"
+	result.behavior = EntityBehaviorCatalog.resolve(result.entity_name)
 	result.flags = EntityDefinition.ALIGN_TO_WORLD
 	var path := PathDefinition.new()
 	var segment := PathSegmentDefinition.new()
@@ -239,7 +241,8 @@ func test_script_instance_restarts_and_dormant_path_continues() -> void:
 func test_immortal_initialization_and_deferred_retirement_order() -> void:
 	var marker: EntityDefinition = _static(8)
 	marker.entity_name = "GEN_TOP_LEFT"
-	marker.background_admitted = true
+	marker.behavior = EntityBehaviorCatalog.resolve(marker.entity_name)
+	marker.behavior.execution = EntityBehavior.Execution.UPDATE
 	var run: EntityRun = EntityRun.create([_scripted(5), marker], _lifecycle())
 	assert_eq(run.error, "")
 	assert_eq(run.snapshot().live_order, PackedInt32Array([8]))

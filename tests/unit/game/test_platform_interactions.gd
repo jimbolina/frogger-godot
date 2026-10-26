@@ -91,6 +91,7 @@ func test_diver_callback_death_reaches_same_control_phase() -> void:
 	var level: LevelDefinition = _level()
 	var entity: EntityDefinition = level.entity_collision.entities[0]
 	entity.entity_name = "SUB_TURTLE"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	var segment := PathSegmentDefinition.new()
 	segment.segment_type = PathSegmentDefinition.LINE
 	segment.start = Vector3i(-100, 0, -128)
@@ -141,6 +142,7 @@ func _level(width: int = 2) -> LevelDefinition:
 		level.grid.squares.append(square)
 	var entity := EntityDefinition.new()
 	entity.entity_name = "STATIC"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.entity_index = 4
 	entity.unique_id = 7
 	entity.form_grid_id = 2
@@ -740,6 +742,7 @@ func test_moving_platform_pose_precedes_carry() -> void:
 	var level: LevelDefinition = _level(1)
 	var entity: EntityDefinition = level.entity_collision.entities[0]
 	entity.entity_name = "MOVING"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.flags = EntityDefinition.ALIGN_TO_WORLD
 	entity.path_definition = PathDefinition.new()
 	var segment := PathSegmentDefinition.new()
@@ -914,6 +917,7 @@ func _guarded_mover() -> LevelDefinition:
 	var level: LevelDefinition = _level()
 	var entity: EntityDefinition = level.entity_collision.entities[0]
 	entity.entity_name = "MOVING"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.flags = EntityDefinition.ALIGN_TO_WORLD
 	entity.path_definition = PathDefinition.new()
 	var segment := PathSegmentDefinition.new()

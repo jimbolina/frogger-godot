@@ -34,6 +34,7 @@ static func builtin(selected: String) -> EntityScenario:
 	anchor.unique_id = 10
 	anchor.form_name = "SYNTHETIC_STATIC"
 	anchor.entity_name = "STATIC"
+	anchor.behavior = EntityBehaviorCatalog.resolve(anchor.entity_name)
 	anchor.matrix12[9] = -150
 	scenario.definitions.append(anchor)
 	for index: int in 3:
@@ -43,6 +44,7 @@ static func builtin(selected: String) -> EntityScenario:
 		moving.unique_id = 11 + index
 		moving.form_name = "SYNTHETIC_MOVING"
 		moving.entity_name = "MOVING"
+		moving.behavior = EntityBehaviorCatalog.resolve(moving.entity_name)
 		moving.path_definition = path.copy()
 		moving.path_start = PathStart.new()
 		moving.path_start.speed = 10 + index * 2

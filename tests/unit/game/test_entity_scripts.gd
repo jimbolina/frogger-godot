@@ -176,6 +176,7 @@ func test_entity_run_owns_script_and_animation_snapshots() -> void:
 	var definition := EntityDefinition.new()
 	definition.entity_index = 0
 	definition.entity_name = "STATIC"
+	definition.behavior = EntityBehaviorCatalog.resolve(definition.entity_name)
 	definition.action_lengths = PackedInt32Array([3, 4])
 	definition.script_definition = _definition([3, 1, 38])
 	var run: EntityRun = EntityRun.create([definition])

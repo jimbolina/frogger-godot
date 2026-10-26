@@ -1,4 +1,4 @@
-class_name EntityBackgroundState
+class_name EntityCustomState
 extends RefCounted
 ## Owned custom continuation for the admitted fly and pink frog.
 
@@ -21,8 +21,8 @@ var carried_jump_ticks: int = 0
 var dead: bool = false
 
 ## Copies every custom continuation value.
-func copy() -> EntityBackgroundState:
-	var result := EntityBackgroundState.new()
+func copy() -> EntityCustomState:
+	var result := EntityCustomState.new()
 	result.mode = mode
 	result.timer = timer
 	result.checkpoint_index = checkpoint_index

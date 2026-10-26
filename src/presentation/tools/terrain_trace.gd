@@ -147,6 +147,12 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 		var usage: int = property.usage
 		if usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			var key: String = property.name
+			if record is EntityDefinition and key == "behavior":
+				var entity: EntityDefinition = record
+				values["animation_one_shot"] = entity.behavior.one_shot
+				values["background_admitted"] = entity.behavior.has_custom_update()
+				values["pink_frog_pickup"] = entity.behavior.execution == EntityBehavior.Execution.CONTACT
+				continue
 			if not include_lifecycle and _lifecycle_key(record, key):
 				continue
 			values[key] = _value(record.get(key), include_lifecycle)

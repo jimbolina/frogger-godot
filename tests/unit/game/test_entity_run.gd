@@ -14,6 +14,7 @@ func _path(start_x: int = 0, end_x: int = 100) -> PathDefinition:
 func _moving(index: int, path: PathDefinition, speed: int = 10, flags: int = 0) -> EntityDefinition:
 	var result := EntityDefinition.new()
 	result.entity_name = "MOVING"
+	result.behavior = EntityBehaviorCatalog.resolve(result.entity_name)
 	result.entity_index = index
 	result.unique_id = 7
 	result.flags = flags
@@ -25,6 +26,7 @@ func _moving(index: int, path: PathDefinition, speed: int = 10, flags: int = 0) 
 func _static(index: int) -> EntityDefinition:
 	var result := EntityDefinition.new()
 	result.entity_name = "STATIC"
+	result.behavior = EntityBehaviorCatalog.resolve(result.entity_name)
 	result.entity_index = index
 	result.unique_id = 7
 	result.matrix12[9] = 73
@@ -141,6 +143,7 @@ func test_invalid_definitions_and_failed_create_reset() -> void:
 	assert_false(EntityRun.create([bad]).error.is_empty())
 	bad.path_start.distance = 0
 	bad.entity_name = "UNKNOWN"
+	bad.behavior = EntityBehaviorCatalog.resolve(bad.entity_name)
 	assert_false(EntityRun.create([bad]).error.is_empty())
 	var first: EntityDefinition = _static(2)
 	var duplicate: EntityDefinition = _static(2)
@@ -178,3 +181,12 @@ func test_candidate_commit_consumes_candidate_and_detaches_observations() -> voi
 	assert_eq(run.snapshot().entities[0].matrix12[9], 10)
 	assert_eq(run.step(1), "")
 	assert_eq(run.snapshot().entities[0].matrix12[9], 20)
+
+func test_resolved_behavior_is_independent_of_diagnostic_name_and_setup_mutation() -> void:
+	var definition: EntityDefinition = _moving(0, _path())
+	definition.entity_name = "diagnostic alias"
+	var run: EntityRun = EntityRun.create([definition])
+	assert_eq(run.error, "")
+	definition.behavior.layout = EntityBehavior.Layout.MATRIX
+	assert_eq(run.step(0), "")
+	assert_eq(run.snapshot().entities[0].path.position.x, 10)

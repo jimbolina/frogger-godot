@@ -73,6 +73,9 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition == null:
 			result.error = "Entity %d is null" % index
 			return result
+		if definition.behavior == null or definition.behavior.kind == EntityBehavior.Kind.UNKNOWN:
+			result.error = "Entity %d has unsupported name %s" % [definition.entity_index, definition.entity_name]
+			return result
 		if definition.entity_index <= previous_entity_index:
 			result.error = "Entity index %d is not strictly increasing" % definition.entity_index
 			return result
@@ -86,11 +89,11 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & (EntityDefinition.LOCAL_ALIGN | EntityDefinition.PROJECT_ON_LAND):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
-		if definition.entity_name == "STATIC" or (definition.background_admitted and definition.entity_name in ["CHECKPOINT", "STATIC_NOISE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "ORG_BABY_FROG", "ORG_FLY"]):
+		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or definition.behavior.has_custom_update()):
 			if definition.path_definition != null or definition.path_start != null:
 				result.error = "Static entity %d cannot attach a path" % definition.entity_index
 				return result
-		elif definition.entity_name in ["MOVING", "SUB_TURTLE"]:
+		elif definition.behavior.layout == EntityBehavior.Layout.PATH:
 			if definition.path_definition == null or definition.path_start == null:
 				result.error = "Moving entity %d requires a path and start" % definition.entity_index
 				return result
@@ -192,7 +195,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].entity_name in ["ORG_FLY", "ORG_BABY_FROG"] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
@@ -290,17 +293,17 @@ func advance_animations() -> void:
 			entity.animation.advance()
 
 ## Updates one admitted custom neighbor on detached candidate state.
-func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: RunSnapshot = null) -> EntityBackgroundResult:
+func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: RunSnapshot = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
-		var failed := EntityBackgroundResult.new()
+		var failed := EntityCustomResult.new()
 		failed.error = "Unknown background entity"
 		return failed
 	var definition: EntityDefinition = _definitions[slot]
 	var parent_live: bool = false
 	var parent: EntitySnapshot = null
 	var parent_form: FormContactDefinition = null
-	if definition.entity_name == "ORG_BABY_FROG":
+	if definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 		for candidate: EntitySnapshot in _state.entities:
 			if candidate.unique_id == definition.parent_unique_id:
 				parent_live = candidate.live
@@ -309,7 +312,7 @@ func update_background(entity_index: int, environment: EntityEnvironmentState, r
 				if parent_slot < contacts.size():
 					parent_form = contacts[parent_slot]
 				break
-	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form, frog)
+	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form, frog)
 	if result.error.is_empty():
 		_state.entities[slot] = result.entity.copy()
 	return result
@@ -397,21 +400,21 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) 
 	if entity.path != null:
 		entity.matrix12 = EntityTransform.moving(entity.path, definition.flags)
 	entity.destroy_pending = false
-	entity.animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
+	entity.animation = EntityAnimationState.create(definition.action_lengths, definition.behavior.one_shot)
 	entity.live_flags = EntityLiveFlags.ANIMATED | EntityLiveFlags.FLIPBOOK if not definition.action_lengths.is_empty() else 0
 	entity.script_state = EntityScriptState.create(definition.script_definition.root_id) if definition.script_definition != null else null
 	entity.colour_scale = Vector3i.ZERO
 	entity.ambient = Vector3i.ZERO
 	entity.requests.clear()
-	if definition.background_admitted:
-		entity.background = EntityBackgroundState.new()
-		if definition.entity_name == "ORG_FLY":
+	if definition.behavior.has_custom_update():
+		entity.background = EntityCustomState.new()
+		if definition.behavior.kind == EntityBehavior.Kind.BONUS_FLY:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.background.model_hidden = true
-		elif definition.entity_name == "ORG_BABY_FROG":
+		elif definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 			entity.background.timer = 0
 			entity.background.model_hidden = true
-		elif definition.entity_name == "CHECKPOINT":
+		elif definition.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			entity.ambient = Vector3i(160, 160, 160)
 
 func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:

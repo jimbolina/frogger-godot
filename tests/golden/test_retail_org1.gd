@@ -219,7 +219,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		header[index] = header[index].strip_edges()
 	assert_eq(rows.size(), ticks * 6 + 1)
 	assert_eq(digests.size(), ticks + 1)
-	var fly: EntityBackgroundState = run.snapshot().entities.entities[55].background
+	var fly: EntityCustomState = run.snapshot().entities.entities[55].background
 	var lifecycle_rows: Array = []
 	if preset == Org1ExplorationSetup.VISIBILITY_PRESET:
 		lifecycle_rows = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/" + name + "_lifecycle.json"))
@@ -274,7 +274,7 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 			var expected_groups: Array = expected_life.groups
 			assert_eq(actual_life.live_order, PackedInt32Array(expected_order), "live order at %d" % tick)
 			assert_eq(actual_life.selected_groups, PackedInt32Array(expected_groups), "groups at %d" % tick)
-			var baby: EntityBackgroundState = actual_life.entities[53].background
+			var baby: EntityCustomState = actual_life.entities[53].background
 			assert_eq(baby.mode, _number(expected_life.baby_mode))
 			assert_eq(baby.search_count, _number(expected_life.baby_search))
 			assert_eq(baby.parent_entity_index, _number(expected_life.baby_parent))

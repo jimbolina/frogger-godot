@@ -27,7 +27,7 @@ func test_turtle_payload_replaces_script_by_name_and_remains_detached() -> void:
 	payload.encode_s32(12, 30)
 	payload.encode_s32(16, 45)
 	payload.encode_s32(20, 1)
-	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 1, "SUB_TURTLE", payload)
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload)
 	assert_eq(setup.error, "")
 	assert_eq(setup.definition.root_id, 2)
 	assert_eq(setup.definition.payload_registers, PackedInt32Array([30, 45, 1]))
@@ -36,19 +36,19 @@ func test_turtle_payload_replaces_script_by_name_and_remains_detached() -> void:
 	table.scripts[2].commands.clear()
 	payload.encode_s32(20, 0)
 	assert_eq(setup.definition.programs[2].size(), 6)
-	setup = EntityScriptSetup.from_tables(_table(names), names, 1, "SUB_TURTLE", payload)
+	setup = EntityScriptSetup.from_tables(_table(names), names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload)
 	assert_eq(setup.definition.root_id, 1)
 
 func test_unknown_name_and_callback_or_bad_payload_reject() -> void:
 	var names: NameBank = _names()
 	var table: ScriptTable = _table(names)
 	var payload := PackedByteArray()
-	assert_ne(EntityScriptSetup.from_tables(table, names, 1, "SUB_TURTLE", payload).error, "")
+	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")
 	payload.resize(24)
 	payload.encode_s32(20, 2)
-	assert_ne(EntityScriptSetup.from_tables(table, names, 1, "SUB_TURTLE", payload).error, "")
+	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")
 	payload.encode_s32(20, 0)
 	table.scripts[1].commands[0].arguments[1] = 9
-	assert_ne(EntityScriptSetup.from_tables(table, names, 1, "SUB_TURTLE", payload).error, "")
+	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")
 	table.scripts[1].name = "UNKNOWN"
-	assert_ne(EntityScriptSetup.from_tables(table, names, 1, "SUB_TURTLE", payload).error, "")
+	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")

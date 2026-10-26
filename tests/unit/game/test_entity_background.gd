@@ -11,12 +11,13 @@ func _entity(name: String) -> EntityDefinition:
 	var definition := EntityDefinition.new()
 	definition.entity_index = 55
 	definition.entity_name = name
-	definition.background_admitted = true
+	definition.behavior = EntityBehaviorCatalog.resolve(definition.entity_name)
+	definition.behavior.execution = EntityBehavior.Execution.UPDATE
 	return definition
 
 func _snapshot() -> EntitySnapshot:
 	var state := EntitySnapshot.new()
-	state.background = EntityBackgroundState.new()
+	state.background = EntityCustomState.new()
 	state.entity_flags = EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 	state.background.model_hidden = true
 	return state
@@ -27,7 +28,7 @@ func test_fly_wait_appearance_covered_bits_and_source_rng() -> void:
 	var environment: EntityEnvironmentState = _environment()
 	var random: SourceRandom = SourceRandom.create(1)
 	for tick: int in 61:
-		var result: EntityBackgroundResult = EntityBackground.update(definition, state, environment, random, Vector3i.ZERO, false, false)
+		var result: EntityCustomResult = EntityCustomUpdate.update(definition, state, environment, random, Vector3i.ZERO, false, false)
 		assert_eq(result.error, "")
 		if tick < 60:
 			assert_eq(result.environment.covered, 0)
@@ -44,7 +45,7 @@ func test_fly_wait_appearance_covered_bits_and_source_rng() -> void:
 		environment = result.environment
 		random = result.random
 	for tick: int in 121:
-		var result: EntityBackgroundResult = EntityBackground.update(definition, state, environment, random, Vector3i.ZERO, false, false)
+		var result: EntityCustomResult = EntityCustomUpdate.update(definition, state, environment, random, Vector3i.ZERO, false, false)
 		assert_eq(result.error, "")
 		state = result.entity
 		environment = result.environment
@@ -61,20 +62,20 @@ func test_custom_failure_discards_candidate_and_baby_requires_live_parent() -> v
 	var environment: EntityEnvironmentState = _environment()
 	environment.covered = 1
 	var random: SourceRandom = SourceRandom.create(1)
-	var result: EntityBackgroundResult = EntityBackground.update(_entity("ORG_FLY"), state, environment, random, Vector3i.ZERO, false, false)
+	var result: EntityCustomResult = EntityCustomUpdate.update(_entity("ORG_FLY"), state, environment, random, Vector3i.ZERO, false, false)
 	assert_ne(result.error, "")
 	assert_null(result.entity)
 	assert_eq(state.background.timer, 0)
 	assert_eq(environment.covered, 1)
 	assert_eq(random.state, 1)
-	result = EntityBackground.update(_entity("ORG_BABY_FROG"), state, environment, random, Vector3i.ZERO, false, true)
+	result = EntityCustomUpdate.update(_entity("ORG_BABY_FROG"), state, environment, random, Vector3i.ZERO, false, true)
 	assert_eq(result.error, "")
 	assert_eq(result.entity.background.mode, 5)
 	assert_eq(result.entity.background.search_count, 1)
-	var next: EntityBackgroundResult = EntityBackground.update(_entity("ORG_BABY_FROG"), result.entity, environment, random, Vector3i.ZERO, false, true)
+	var next: EntityCustomResult = EntityCustomUpdate.update(_entity("ORG_BABY_FROG"), result.entity, environment, random, Vector3i.ZERO, false, true)
 	assert_eq(next.entity.background.search_count, 1)
-	assert_ne(EntityBackground.update(_entity("ORG_BABY_FROG"), next.entity, environment, random, Vector3i.ZERO, false, false).error, "")
-	assert_ne(EntityBackground.update(_entity("CHECKPOINT"), state, environment, random, Vector3i.ZERO, false, true).error, "")
+	assert_ne(EntityCustomUpdate.update(_entity("ORG_BABY_FROG"), next.entity, environment, random, Vector3i.ZERO, false, false).error, "")
+	assert_ne(EntityCustomUpdate.update(_entity("CHECKPOINT"), state, environment, random, Vector3i.ZERO, false, true).error, "")
 
 func test_dynamic_collection_exclusion_uses_half_open_corridor_and_copies() -> void:
 	var guard := ExplorationGuard.new()

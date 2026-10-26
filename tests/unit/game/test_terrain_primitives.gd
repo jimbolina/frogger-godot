@@ -37,6 +37,7 @@ func _level(indices: PackedInt32Array = PackedInt32Array([2])) -> LevelDefinitio
 	for index: int in indices:
 		var entity := EntityDefinition.new()
 		entity.entity_name = "STATIC"
+		entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 		entity.entity_index = index
 		entity.unique_id = index + 7
 		entity.form_grid_id = 2

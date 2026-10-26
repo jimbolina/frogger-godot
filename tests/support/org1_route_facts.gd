@@ -45,7 +45,7 @@ static func phase(state: RunSnapshot, tick: int, name: String, definition: Entit
 	return result
 
 ## Encodes one ordered visit in the independently specified field order.
-static func entity(visit: EntityUpdateObservation, fly: EntityBackgroundState, tick: int) -> Dictionary:
+static func entity(visit: EntityUpdateObservation, fly: EntityCustomState, tick: int) -> Dictionary:
 	var pose: EntitySnapshot = visit.entity
 	var state: EntityScriptState = pose.script_state
 	var result: Dictionary = {"tick": tick, "index": pose.entity_index,

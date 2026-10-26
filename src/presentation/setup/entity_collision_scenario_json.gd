@@ -88,13 +88,14 @@ static func _entity(value: Variant, errors: PackedStringArray) -> EntityDefiniti
 			errors.append("Entity %s must be a string" % key)
 			return null
 		entity.set(key, row[key])
-	if entity.entity_name == "STATIC":
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
+	if entity.behavior.kind == EntityBehavior.Kind.STATIC:
 		if not _vector(row.get("matrix12"), 12):
 			errors.append("Static entity matrix12 must contain 12 integers")
 			return null
 		var matrix: Array = row.matrix12
 		entity.matrix12 = PackedInt32Array(matrix)
-	elif entity.entity_name == "MOVING":
+	elif entity.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER:
 		if not row.get("path_definition") is Dictionary or not row.get("path_start") is Dictionary:
 			errors.append("Moving entity requires path_definition and path_start")
 			return null

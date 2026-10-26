@@ -3,7 +3,7 @@ extends GutTest
 
 func _pink() -> EntitySnapshot:
 	var entity := EntitySnapshot.new()
-	entity.background = EntityBackgroundState.new()
+	entity.background = EntityCustomState.new()
 	entity.background.mode = 1
 	entity.background.parent_entity_index = 7
 	entity.background.delay = 30
@@ -79,16 +79,17 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 func test_contact_requires_admitted_context_and_preserves_caller_state() -> void:
 	var definition := EntityDefinition.new()
 	definition.entity_name = "ORG_BABY_FROG"
-	definition.background_admitted = true
+	definition.behavior = EntityBehaviorCatalog.resolve(definition.entity_name)
+	definition.behavior.execution = EntityBehavior.Execution.UPDATE
 	var state: EntitySnapshot = _pink()
 	var environment := EntityEnvironmentState.new()
 	for index: int in 5:
 		environment.checkpoint_positions.append(Vector3i.ZERO)
-	var result: EntityBackgroundResult = EntityBackground.update(definition, state, environment, SourceRandom.create(1), Vector3i.ZERO, true, true, _parent(), _form(), _frog())
+	var result: EntityCustomResult = EntityCustomUpdate.update(definition, state, environment, SourceRandom.create(1), Vector3i.ZERO, true, true, _parent(), _form(), _frog())
 	assert_string_contains(result.error, "excluded")
 	assert_null(result.entity)
-	definition.pink_frog_pickup = true
-	result = EntityBackground.update(definition, state, environment, SourceRandom.create(1), Vector3i.ZERO, true, true, _parent(), _form())
+	definition.behavior.execution = EntityBehavior.Execution.CONTACT
+	result = EntityCustomUpdate.update(definition, state, environment, SourceRandom.create(1), Vector3i.ZERO, true, true, _parent(), _form())
 	assert_string_contains(result.error, "carrier")
 	assert_null(result.entity)
 	assert_eq(state.background.mode, 1)

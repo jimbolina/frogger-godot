@@ -179,6 +179,9 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 				or (invoked and TREE_CALLS.has(token.value)):
 			into.append(Violation.new(path, token.line, "tree",
 				"node/tree access %s" % token.value, origin))
+		if layer == "game" and token.value == "entity_name" and _entity_name_dispatch(record.tokens, index):
+			into.append(Violation.new(path, token.line, "behavior",
+				"gameplay must dispatch on resolved behavior kinds, not entity names", origin))
 		if layer == "game" and not member and GAME_ENVIRONMENT.has(token.value):
 			into.append(Violation.new(path, token.line, "environment",
 				"gameplay must receive external data instead of using %s" % token.value, origin))
@@ -201,6 +204,23 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 			if not _base_is_refcounted(path, base.value, base.is_string, records, names, {}):
 				into.append(Violation.new(path, token.line, "base",
 					"inner class must inherit RefCounted through a resolved base", origin))
+
+
+func _entity_name_dispatch(tokens: Array[Token], index: int) -> bool:
+	var line: int = tokens[index].line
+	var first: int = index
+	while first > 0 and tokens[first - 1].line == line:
+		first -= 1
+	var cursor: int = first
+	while cursor < tokens.size() and tokens[cursor].line == line:
+		var token: Token = tokens[cursor]
+		if not token.is_string:
+			if token.value in ["match", "in", "==", "!="]:
+				return true
+			if token.value in ["=", "!"] and cursor + 1 < tokens.size() and tokens[cursor + 1].value == "=":
+				return true
+		cursor += 1
+	return false
 
 
 func _is_refcounted(path: String, records: Dictionary[String, Source],

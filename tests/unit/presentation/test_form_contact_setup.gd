@@ -74,6 +74,7 @@ func _authored(map: MapFile, form_id: int, unique_id: int) -> EntityDefinition:
 	entity.form_id = form_id
 	entity.form_name = "TEST_%d" % form_id
 	entity.entity_name = "MOVING"
+	entity.behavior = EntityBehaviorCatalog.resolve(entity.entity_name)
 	entity.unique_id = unique_id
 	return entity
 
