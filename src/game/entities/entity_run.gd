@@ -24,7 +24,7 @@ func copy() -> EntityRun:
 	return result
 
 ## Builds the next independent tick directly, avoiding a redundant pre-step deep copy.
-func advanced_copy(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> EntityRun:
+func begin_candidate(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> EntityRun:
 	var result := EntityRun.new()
 	result._ready = _ready
 	result._lifecycle = _lifecycle
@@ -37,6 +37,26 @@ func advanced_copy(tick_index: int, attached_entity_index: int = -1, deferred_up
 		result._runners.clear()
 		result._state = null
 	return result
+
+## Adopts a successful private candidate after every aggregate phase has succeeded.
+## The candidate is consumed and must not be used again.
+func commit_candidate(candidate: EntityRun) -> void:
+	assert(candidate != null and candidate != self and candidate.error.is_empty() and candidate._state != null)
+	_definitions = candidate._definitions
+	_scripts = candidate._scripts
+	_runners = candidate._runners
+	_state = candidate._state
+	_lifecycle = candidate._lifecycle
+	_ready = candidate._ready
+	candidate._definitions = []
+	candidate._scripts = []
+	candidate._runners = []
+	candidate._state = null
+	candidate._ready = false
+
+## Updates a private candidate script without exposing its mutable entity state.
+func update_candidate_script(slot: int, context: EntityUpdateContext, random: SourceRandom) -> EntityUpdateResult:
+	return _update_script(slot, context, random, true)
 
 ## Validates and copies source-ordered definitions, then creates tick zero.
 static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecycleDefinition = null) -> EntityRun:

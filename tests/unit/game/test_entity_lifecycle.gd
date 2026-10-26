@@ -247,7 +247,7 @@ func test_immortal_initialization_and_deferred_retirement_order() -> void:
 	assert_eq(run.snapshot().live_order, PackedInt32Array([5, 8]))
 	assert_eq(run.step(0), "")
 	assert_eq(run.apply_visibility(_camera(100000)), "")
-	var candidate: EntityRun = run.advanced_copy(1, -1, true)
+	var candidate: EntityRun = run.begin_candidate(1, -1, true)
 	assert_eq(candidate.error, "")
 	assert_true(candidate.snapshot().entities[0].live)
 	assert_false(candidate.begin_update(0, -1))

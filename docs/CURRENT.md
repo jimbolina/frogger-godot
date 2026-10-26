@@ -20,13 +20,15 @@ corridor. See the [scripted visibility contract](reference/gameplay/entities.md#
 Combined active zones and script-free visibility retain synthetic gameplay and
 the prescribed JUN1 log probe. Ordinary retail terrain still requires zero-zone
 maps. [PORTING](PORTING.md) owns the revised phases: next is P8a, a behaviour
-catalog with typed tick events, then P8b demo playback as the oracle for
+catalog with typed tick events and the remaining DDD refactor before P8b
+demo playback as the oracle for
 completing ORG1 in P8c. The corridor presets retire there. FOR1 remains an
 unverified retail candidate.
 Audio playback, splash/particle effects and
 [animated per-part lighting](reference/rendering/gameplay-projection.md) remain deferred.
 
-Prepared scripts, private transactions, asynchronous playback and rendering
+Explicit entity candidate/commit methods and discovered copy-contract checks
+protect transaction ownership. Prepared scripts, asynchronous playback and rendering
 caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
 Hosted CI awaits a repository host. The licence remains the owner's decision

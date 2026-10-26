@@ -87,7 +87,7 @@ func step() -> String:
 	if next_entities != null:
 		if not next_entities.error.is_empty():
 			return next_entities.error
-		next_entities = next_entities.advanced_copy(tick % 160)
+		next_entities = next_entities.begin_candidate(tick % 160)
 		if not next_entities.error.is_empty():
 			return next_entities.error
 	@warning_ignore("integer_division")

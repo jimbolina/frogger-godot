@@ -275,13 +275,13 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_candidate_random = _random.copy()
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
-	_candidate_entities = _entities.advanced_copy(command.tick_index, _state.current_entity_index, _has_entity_updates) if _entities != null else null
+	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.current_entity_index, _has_entity_updates) if _entities != null else null
 	var next: RunSnapshot = _state.copy(false)
 	if _candidate_entities != null:
 		result.error = _candidate_entities.error
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
-	next.entities = _candidate_entities._state if _candidate_entities != null else null
+	next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
 	var entity_issue: String = _update_entity_scripts(next, result.events)
 	if not entity_issue.is_empty():
 		return _failed_tick(result, entity_issue)
@@ -379,12 +379,12 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			return _failed_tick(result, pose_issue)
 	if _candidate_entities != null:
 		_candidate_entities.advance_animations()
-		next.entities = _candidate_entities._state
+		next.entities = _candidate_entities.snapshot()
 	if _candidate_entities != null and _entity_collision.lifecycle != null:
 		var visibility_error: String = _candidate_entities.apply_visibility(next.camera)
 		if not visibility_error.is_empty():
 			return _failed_tick(result, visibility_error)
-		next.entities = _candidate_entities._state
+		next.entities = _candidate_entities.snapshot()
 	next.rng_state = _candidate_random.state
 	next.rng_draw_count = _candidate_random.draw_count
 	if _exploration_guard != null:
@@ -399,7 +399,9 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_camera = _candidate_camera
 	_random = _candidate_random
 	_animation = _candidate_animation
-	_entities = _candidate_entities
+	if _candidate_entities != null:
+		_entities.commit_candidate(_candidate_entities)
+		_candidate_entities = null
 	if _camera != null:
 		_controller_directions = next.camera.controller_directions.duplicate()
 	result.final_snapshot = next.copy()
@@ -410,7 +412,9 @@ func _update_entity_scripts(state: RunSnapshot, events: Array[String]) -> String
 		return ""
 	for slot: int in _candidate_entities.update_slots():
 		if not _candidate_entities.begin_update(slot, state.current_entity_index):
+			state.entities = _candidate_entities.snapshot()
 			continue
+		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 		var previous_flags: int = state.entities.entities[slot].live_flags
 		var was_alive: bool = state.mode != 2 and not state.flags & 8
 		var issue: String = _visit_entity(slot, previous_flags, state, events)
@@ -420,7 +424,7 @@ func _update_entity_scripts(state: RunSnapshot, events: Array[String]) -> String
 		if killed:
 			events.append("entity:%d:death_pgen" % _entity_collision.entities[slot].entity_index)
 		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.sound_requests, state.entity_environment, killed, _capture_phases)
-		state.entities.entities[slot] = _candidate_entities._state.entities[slot]
+		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 	return ""
 
 func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: Array[String]) -> String:
@@ -434,7 +438,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 		_candidate_random.state = background.random.state
 		_candidate_random.draw_count = background.random.draw_count
 		_candidate_random.consumers.assign(background.random.consumers)
-		state.entities.entities[slot] = _candidate_entities._state.entities[slot]
+		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 		for request: String in background.entity.requests:
 			events.append("entity:%d:%s" % [definition.entity_index, request])
 	if definition.script_definition == null:
@@ -449,7 +453,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	context.has_path = definition.path_definition != null
 	context.no_display = bool(state.entities.entities[slot].entity_flags & EntityDefinition.NO_DISPLAY)
 	context.fade_bounds = PackedInt32Array([_collision_bounds.position.x, _collision_bounds.end.x, _collision_bounds.position.y, _collision_bounds.end.y])
-	var update: EntityUpdateResult = _candidate_entities._update_script(slot, context, _candidate_random, true)
+	var update: EntityUpdateResult = _candidate_entities.update_candidate_script(slot, context, _candidate_random)
 	if not update.error.is_empty():
 		return "Entity %d script: %s" % [definition.entity_index, update.error]
 	if update.random != _candidate_random:
@@ -462,7 +466,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 			state.sound_requests += 1
 	if update.drown:
 		_kill(state, FrogAnimationCatalog.DROWN, false, events)
-	state.entities.entities[slot] = _candidate_entities._state.entities[slot]
+	state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 	return ""
 
 func _copy_grid(source: GridDefinition) -> String:
@@ -1259,7 +1263,7 @@ func _request_animation(animation_id: int, state: RunSnapshot) -> void:
 func _sync_systems(state: RunSnapshot) -> void:
 	if _has_entity_updates:
 		_candidate_entities.set_contact_flags(state.entity_hit_indices, state.entity_carry_indices)
-		state.entities = _candidate_entities._state
+		state.entities = _candidate_entities.snapshot()
 	state.camera = _candidate_camera.snapshot() if _candidate_camera != null else null
 	state.animation = _candidate_animation.state.copy() if _candidate_animation != null else null
 	state.rng_state = _candidate_random.state

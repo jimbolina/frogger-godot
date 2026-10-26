@@ -33,13 +33,13 @@ func _static(index: int) -> EntityDefinition:
 func test_advanced_fork_and_failed_tick_leave_source_and_public_snapshots_detached() -> void:
 	var run: EntityRun = EntityRun.create([_moving(0, _path())])
 	var saved: EntityRunSnapshot = run.snapshot()
-	var fork: EntityRun = run.advanced_copy(0)
+	var fork: EntityRun = run.begin_candidate(0)
 	assert_eq(fork.error, "")
 	assert_eq(fork.snapshot().entities[0].path.position.x, 10)
 	assert_eq(run.snapshot().tick_index, 0)
 	saved.entities[0].matrix12[9] = 999
 	assert_eq(run.snapshot().entities[0].matrix12[9], 0)
-	assert_ne(fork.advanced_copy(99).error, "")
+	assert_ne(fork.begin_candidate(99).error, "")
 	assert_eq(fork.snapshot().tick_index, 1)
 	assert_eq(fork.step(1), "")
 	assert_eq(run.step(0), "")
@@ -165,3 +165,16 @@ func test_failed_step_and_reset_preserve_all_cursors() -> void:
 	assert_eq(run.step(1), "")
 	assert_eq(run.snapshot().entities[0].path.segment_distance, 20)
 	assert_eq(run.snapshot().entities[1].path.segment_distance, 40)
+
+func test_candidate_commit_consumes_candidate_and_detaches_observations() -> void:
+	var run: EntityRun = EntityRun.create([_moving(0, _path())])
+	var candidate: EntityRun = run.begin_candidate(0)
+	var observation: EntityRunSnapshot = candidate.snapshot()
+	run.commit_candidate(candidate)
+	assert_null(candidate.snapshot())
+	assert_ne(candidate.reset(), "")
+	observation.entities[0].matrix12[9] = 999
+	assert_eq(run.snapshot().tick_index, 1)
+	assert_eq(run.snapshot().entities[0].matrix12[9], 10)
+	assert_eq(run.step(1), "")
+	assert_eq(run.snapshot().entities[0].matrix12[9], 20)

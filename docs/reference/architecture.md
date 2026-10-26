@@ -44,9 +44,10 @@ synthetic injection remain supported.
 `TerrainRun` copies setup definitions and owns frog, camera, animation and RNG
 state, plus an optional `EntityRun` supplied through `EntityCollisionDefinition`.
 Each command operates on private candidate copies and commits only on success.
-Entity/path advancement builds its next independent state directly. The frog and
-entity aggregate share that unpublished candidate during the transaction;
-intermediate observations and public results still deep-copy it. Prepared script
+Entity/path advancement builds its next independent state directly. The entity aggregate exposes `begin_candidate`, detached snapshots and ordered
+update methods; the gameplay aggregate never accesses its private state.
+`commit_candidate` consumes the successful candidate only after all phases pass.
+Intermediate observations and public results deep-copy mutable state. Prepared script
 definitions detach caller inputs and validate animation/form/path dependencies
 once, retaining bounded runtime cursor and instruction-budget checks. Standalone
 script calls validate supplied definitions on every call. A dependency mismatch
@@ -233,3 +234,13 @@ dependencies embedded in serialized resources. Identifier shadowing and reflecti
 code require human review; comments and unrelated strings are excluded. Ordinary
 data methods such as `FrogLordConfig.add_child()` are allowed. Keep dependencies
 explicit instead of obscuring them to pass the check. Hosted CI remains deferred.
+
+## Copy ownership
+
+Definitions detach mutable caller inputs at construction. Private definitions
+may be shared read-only between candidate runs; publicly mutable definitions
+and observations retain defensive copies. State and nested containers are
+independently owned. The discovered value-copy contract test populates every
+script field and verifies equality and mutation isolation in both directions;
+new field types require an explicit test sampler. Runtime owners with contextual
+copy semantics retain their component transaction tests.

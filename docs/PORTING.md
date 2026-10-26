@@ -45,7 +45,15 @@ Network play is deferred. Multiplayer levels belong to P15.
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: P8a, P8b, P8c
+## Next: DDD refactor, then P8b and P8c
+
+Complete the DDD refactor before feature expansion: ownership/copy contracts,
+named constants and typed events, behavior resolution, source/application/inspection
+boundaries, composed gameplay state, frog extraction, reusable host and reference
+cleanup. Each part has a separate commit and full verification gate.
+The entity candidate API and discovered value-copy contracts are implemented;
+the remaining parts are pending. P8d moves into this refactor rather than waiting
+for ORG1 completion.
 
 P8a resolves each entity to one behaviour value in setup, from FrogLord names,
 with a documented fallback and diagnostic for unknown names; the game layer
