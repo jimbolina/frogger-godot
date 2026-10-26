@@ -59,14 +59,14 @@ func test_animated_admission_rejects_unproved_roots_actions_and_powerups() -> vo
 	state.animation = FrogAnimationState.new()
 	state.animation.action = 16
 	assert_eq(guard.check_frog(state), "")
-	state.matrix12[0] = 4095
+	state.frog.matrix12[0] = 4095
 	assert_string_contains(guard.check_frog(state), "root")
-	state.matrix12[0] = 4096
+	state.frog.matrix12[0] = 4096
 	state.animation.action = 18
 	assert_string_contains(guard.check_frog(state), "action")
-	state.mode = 2
+	state.frog.mode = 2
 	assert_eq(guard.check_frog(state), "", "Dying skips primitive collision before death animation")
-	state.powerup_flags = 1
+	state.frog.powerup_flags = 1
 	assert_string_contains(guard.check_frog(state), "unpowered")
 	var detached: ExplorationGuard = guard.copy()
 	guard.frog_roots[0][0] = 2

@@ -28,8 +28,8 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	assert_eq(run.error, "")
 	var first: TickResult = _tick(run)
 	assert_eq(first.error, "")
-	assert_eq(first.final_snapshot.entity_hit_indices, PackedInt32Array([4]))
-	assert_eq(first.final_snapshot.sound_requests, 0, "Same-tick hit must not call the script")
+	assert_eq(first.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(first.final_snapshot.requests.sound_requests, 0, "Same-tick hit must not call the script")
 	var before: RunSnapshot = run.snapshot()
 	var command := TickCommand.new()
 	command.tick_index = before.tick_index
@@ -38,7 +38,7 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	assert_null(failed.control_snapshot)
 	assert_eq(TickEvent.trace_lines(failed.events), [])
 	assert_eq(run.snapshot().rng_state, before.rng_state)
-	assert_eq(run.snapshot().sound_requests, before.sound_requests)
+	assert_eq(run.snapshot().requests.sound_requests, before.requests.sound_requests)
 	assert_eq(run.snapshot().entities.entities[0].script_state.timer, 1)
 	assert_eq(run.snapshot().entities.entities[0].animation.cel, 0)
 	assert_eq(run.reset(), "")
@@ -51,7 +51,7 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	var second: TickResult = _tick(run)
 	assert_eq(second.error, "")
 	assert_true(TickEvent.trace_lines(second.events).has("entity:4:sound:19:0:0:0"))
-	assert_eq(second.control_snapshot.sound_requests, 1)
+	assert_eq(second.control_snapshot.requests.sound_requests, 1)
 	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
 	assert_eq(TickEvent.trace_lines(second.control_snapshot.entities.updates[0].entity.requests), ["sound:19:0:0:0"])
 	assert_eq(second.control_snapshot.entities.entities[0].live_flags & 1020, 0)
@@ -111,12 +111,12 @@ func test_diver_callback_death_reaches_same_control_phase() -> void:
 		assert_eq(result.error, "", str(tick))
 		if not result.error.is_empty():
 			return
-		assert_ne(result.final_snapshot.mode, 2)
+		assert_ne(result.final_snapshot.frog.mode, 2)
 	var killed: TickResult = _tick(run)
 	assert_eq(killed.error, "")
-	assert_eq(killed.control_snapshot.mode, 2)
-	assert_eq(killed.control_snapshot.death_equate, FrogAnimationCatalog.DROWN)
-	assert_eq(killed.final_snapshot.entity_carry_indices, PackedInt32Array([4]))
+	assert_eq(killed.control_snapshot.frog.mode, 2)
+	assert_eq(killed.control_snapshot.frog.death_equate, FrogAnimationCatalog.DROWN)
+	assert_eq(killed.final_snapshot.attachment.entity_carry_indices, PackedInt32Array([4]))
 	assert_eq(killed.final_snapshot.entities.entities[0].script_state.colours, Vector3i(0, 64, 255))
 
 func _level(width: int = 2) -> LevelDefinition:
@@ -197,18 +197,18 @@ func test_active_zone_survives_mount_carry_departure_and_reset() -> void:
 	for unused: int in 3:
 		var carried: TickResult = _tick(run)
 		assert_eq(carried.error, "")
-		assert_eq(carried.final_snapshot.current_entity_index, 4)
+		assert_eq(carried.final_snapshot.attachment.current_entity_index, 4)
 		assert_eq(carried.final_snapshot.camera.zone_index, 9)
 	var departed: TickResult = _tick(run, TickCommand.EAST)
 	assert_eq(departed.error, "")
-	assert_eq(departed.move_snapshot.camera_zone_index, 9)
-	assert_eq(departed.collision_snapshot.camera_zone_index, 9)
+	assert_eq(departed.move_snapshot.frog.camera_zone_index, 9)
+	assert_eq(departed.collision_snapshot.frog.camera_zone_index, 9)
 	for unused: int in 5:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
 	assert_eq(run.snapshot().camera.zone_index, 9)
 	assert_eq(run.reset(), "")
-	assert_eq(run.snapshot().camera_zone_index, 9)
+	assert_eq(run.snapshot().frog.camera_zone_index, 9)
 	assert_eq(run.snapshot().camera.zone_index, -1)
 
 func test_active_zone_landing_shake_and_platform_pop_are_atomic() -> void:
@@ -216,13 +216,13 @@ func test_active_zone_landing_shake_and_platform_pop_are_atomic() -> void:
 	_active_zone(level)
 	level.entity_collision.contacts[0].grid_flags[0] = SAFE
 	var run: TerrainRun = TerrainRun.create(level)
-	run._state.old_y = -600
+	run._state.frog.old_y = -600
 	var stunned: TickResult = _tick(run)
 	assert_eq(stunned.error, "")
 	assert_true(TickEvent.trace_lines(stunned.events).has("camera_stun_shake"))
 	assert_eq(stunned.final_snapshot.camera.zone_index, 9)
 	assert_eq(stunned.final_snapshot.camera.shake_timer, 44)
-	assert_eq(stunned.final_snapshot.rng_draw_count, 2)
+	assert_eq(stunned.final_snapshot.diagnostics.rng_draw_count, 2)
 	level.entity_collision.contacts[0].grid_flags[0] = SAFE | SOFT
 	level.entity_collision.contacts[0].grid_flags[1] = 1 | 4096
 	run = TerrainRun.create(level)
@@ -233,7 +233,7 @@ func test_active_zone_landing_shake_and_platform_pop_are_atomic() -> void:
 		assert_eq(_tick(run).error, "")
 	var killed: TickResult = _tick(run)
 	assert_eq(killed.error, "")
-	assert_true(bool(killed.final_snapshot.flags & 8))
+	assert_true(bool(killed.final_snapshot.frog.flags & 8))
 	assert_eq(killed.final_snapshot.camera.mode, GameplayCamera.FIXED)
 	assert_eq(killed.final_snapshot.camera.zone_index, 9)
 
@@ -255,32 +255,32 @@ func test_safe_form_mount_centres_then_carries_without_recontact() -> void:
 	if not first.error.is_empty():
 		return
 	var mounted: RunSnapshot = first.final_snapshot
-	assert_eq(mounted.current_entity_index, 4)
-	assert_true(bool(mounted.flags & ON_ENTITY))
-	assert_eq(mounted.entity_cell, Vector2i.ZERO)
-	assert_eq(mounted.entity_offset_16, Vector3i(-28, 0, 0) * 65536)
-	assert_eq(mounted.mode, 5)
-	assert_eq(mounted.remaining_ticks, 2)
-	assert_eq(mounted.entity_hit_indices, PackedInt32Array([4]))
-	assert_eq(mounted.entity_carry_indices, PackedInt32Array([4]))
+	assert_eq(mounted.attachment.current_entity_index, 4)
+	assert_true(bool(mounted.frog.flags & ON_ENTITY))
+	assert_eq(mounted.attachment.entity_cell, Vector2i.ZERO)
+	assert_eq(mounted.attachment.entity_offset_16, Vector3i(-28, 0, 0) * 65536)
+	assert_eq(mounted.frog.mode, 5)
+	assert_eq(mounted.frog.remaining_ticks, 2)
+	assert_eq(mounted.attachment.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(mounted.attachment.entity_carry_indices, PackedInt32Array([4]))
 	assert_eq(first.entity_contacts.size(), 1)
 	assert_eq(first.entity_contacts[0].status, FormReactionResult.SAFE)
 	var middle: TickResult = _tick(run)
 	assert_eq(middle.error, "")
 	if not middle.error.is_empty():
 		return
-	assert_eq(middle.final_snapshot.entity_offset_16.x, -14 * 65536)
-	assert_eq(middle.final_snapshot.current_entity_index, 4)
-	assert_eq(middle.final_snapshot.entity_hit_indices.size(), 0)
+	assert_eq(middle.final_snapshot.attachment.entity_offset_16.x, -14 * 65536)
+	assert_eq(middle.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(middle.final_snapshot.attachment.entity_hit_indices.size(), 0)
 	var complete: TickResult = _tick(run)
 	assert_eq(complete.error, "")
 	if not complete.error.is_empty():
 		return
-	assert_eq(complete.final_snapshot.mode, 0)
-	assert_eq(complete.final_snapshot.entity_offset_16, Vector3i.ZERO)
-	assert_eq(complete.final_snapshot.world_position, Vector3i(-100, 0, -128))
-	assert_eq(complete.final_snapshot.current_entity_index, 4)
-	assert_eq(complete.final_snapshot.entity_carry_indices, PackedInt32Array([4]))
+	assert_eq(complete.final_snapshot.frog.mode, 0)
+	assert_eq(complete.final_snapshot.attachment.entity_offset_16, Vector3i.ZERO)
+	assert_eq(complete.final_snapshot.frog.world_position, Vector3i(-100, 0, -128))
+	assert_eq(complete.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(complete.final_snapshot.attachment.entity_carry_indices, PackedInt32Array([4]))
 
 func test_attached_hop_keeps_local_target_and_reacts_before_completion() -> void:
 	var run: TerrainRun = TerrainRun.create(_level())
@@ -293,30 +293,30 @@ func test_attached_hop_keeps_local_target_and_reacts_before_completion() -> void
 	assert_eq(started.error, "")
 	if not started.error.is_empty():
 		return
-	assert_eq(started.control_snapshot.mode, 1)
-	assert_eq(started.control_snapshot.current_entity_index, 4)
-	assert_true(bool(started.control_snapshot.flags & FROM_ENTITY))
-	assert_true(bool(started.control_snapshot.flags & TO_ENTITY))
-	assert_false(bool(started.control_snapshot.flags & ON_ENTITY))
-	assert_eq(started.control_snapshot.entity_cell, Vector2i(1, 0))
-	assert_eq(started.control_snapshot.remaining_ticks, 6)
-	assert_eq(started.final_snapshot.remaining_ticks, 5)
+	assert_eq(started.control_snapshot.frog.mode, 1)
+	assert_eq(started.control_snapshot.attachment.current_entity_index, 4)
+	assert_true(bool(started.control_snapshot.frog.flags & FROM_ENTITY))
+	assert_true(bool(started.control_snapshot.frog.flags & TO_ENTITY))
+	assert_false(bool(started.control_snapshot.frog.flags & ON_ENTITY))
+	assert_eq(started.control_snapshot.attachment.entity_cell, Vector2i(1, 0))
+	assert_eq(started.control_snapshot.frog.remaining_ticks, 6)
+	assert_eq(started.final_snapshot.frog.remaining_ticks, 5)
 	for unused: int in 3:
 		assert_eq(_tick(run).error, "")
 	var penultimate: TickResult = _tick(run)
 	assert_eq(penultimate.error, "")
 	if not penultimate.error.is_empty():
 		return
-	assert_eq(penultimate.final_snapshot.remaining_ticks, 1)
-	assert_false(bool(penultimate.final_snapshot.flags & ON_ENTITY))
-	assert_eq(penultimate.final_snapshot.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(penultimate.final_snapshot.frog.remaining_ticks, 1)
+	assert_false(bool(penultimate.final_snapshot.frog.flags & ON_ENTITY))
+	assert_eq(penultimate.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([4]))
 	var completed: TickResult = _tick(run)
 	assert_eq(completed.error, "")
 	if not completed.error.is_empty():
 		return
-	assert_eq(completed.final_snapshot.remaining_ticks, 0)
-	assert_true(bool(completed.final_snapshot.flags & ON_ENTITY))
-	assert_eq(penultimate.final_snapshot.current_entity_index, 4)
+	assert_eq(completed.final_snapshot.frog.remaining_ticks, 0)
+	assert_true(bool(completed.final_snapshot.frog.flags & ON_ENTITY))
+	assert_eq(penultimate.final_snapshot.attachment.current_entity_index, 4)
 
 func test_same_platform_usable_destination_reacts_without_safe_remount() -> void:
 	var level: LevelDefinition = _level()
@@ -337,16 +337,16 @@ func test_same_platform_usable_destination_reacts_without_safe_remount() -> void
 	assert_eq(count_one.error, "")
 	if not count_one.error.is_empty():
 		return
-	assert_eq(count_one.collision_snapshot.remaining_ticks, 1)
+	assert_eq(count_one.collision_snapshot.frog.remaining_ticks, 1)
 	assert_eq(count_one.entity_contacts.size(), 1)
 	assert_eq(count_one.entity_contacts[0].status, FormReactionResult.HIT)
-	assert_eq(count_one.collision_snapshot.entity_hit_indices, PackedInt32Array([4]))
-	assert_eq(count_one.collision_snapshot.current_entity_index, 4)
+	assert_eq(count_one.collision_snapshot.attachment.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(count_one.collision_snapshot.attachment.current_entity_index, 4)
 	assert_false(TickEvent.trace_lines(count_one.events).has("platform_attachment"))
 	var finished: TickResult = _tick(run)
 	assert_eq(finished.error, "")
 	if finished.error.is_empty():
-		assert_true(bool(finished.final_snapshot.flags & ON_ENTITY))
+		assert_true(bool(finished.final_snapshot.frog.flags & ON_ENTITY))
 
 func test_same_platform_pop_destination_kills_on_count_one() -> void:
 	var level: LevelDefinition = _level()
@@ -366,8 +366,8 @@ func test_same_platform_pop_destination_kills_on_count_one() -> void:
 		return
 	assert_eq(count_one.entity_contacts.size(), 1)
 	assert_eq(count_one.entity_contacts[0].status, FormReactionResult.POP)
-	assert_eq(count_one.collision_snapshot.death_entity_index, 4)
-	assert_true(bool(count_one.collision_snapshot.flags & 8))
+	assert_eq(count_one.collision_snapshot.diagnostics.death_entity_index, 4)
+	assert_true(bool(count_one.collision_snapshot.frog.flags & 8))
 	assert_true(TickEvent.trace_lines(count_one.events).has("entity_pop_explosion_request"))
 
 func test_vertical_same_platform_safe_rejection_still_marks_source_special_hit() -> void:
@@ -377,8 +377,8 @@ func test_vertical_same_platform_safe_rejection_still_marks_source_special_hit()
 		return
 	assert_eq(_tick(run).error, "")
 	var state: RunSnapshot = run.snapshot()
-	state.flags = (state.flags & ~ON_ENTITY) | FROM_ENTITY | TO_ENTITY
-	state.remaining_ticks = 1
+	state.frog.flags = (state.frog.flags & ~ON_ENTITY) | FROM_ENTITY | TO_ENTITY
+	state.frog.remaining_ticks = 1
 	state.entities.entities[0].matrix12 = PackedInt32Array([4096, 0, 0, 0, 0, -4096, 0, 4096, 0, -100, 0, -128])
 	var result := TickResult.new()
 	assert_eq(run._contact_entities(state, result), "")
@@ -386,8 +386,8 @@ func test_vertical_same_platform_safe_rejection_still_marks_source_special_hit()
 	assert_eq(result.entity_contacts[0].status, FormReactionResult.NONE)
 	assert_eq(result.entity_contacts[0].reason, "SAFE platform is too vertical")
 	assert_true(result.entity_contacts[0].hit)
-	assert_eq(state.entity_hit_indices, PackedInt32Array([4]))
-	assert_eq(state.current_entity_index, 4)
+	assert_eq(state.attachment.entity_hit_indices, PackedInt32Array([4]))
+	assert_eq(state.attachment.current_entity_index, 4)
 
 func test_directional_input_interrupts_centring_before_countdown() -> void:
 	var run: TerrainRun = TerrainRun.create(_level())
@@ -398,18 +398,18 @@ func test_directional_input_interrupts_centring_before_countdown() -> void:
 	assert_eq(mount.error, "")
 	if not mount.error.is_empty():
 		return
-	assert_eq(mount.final_snapshot.mode, 5)
-	assert_eq(mount.final_snapshot.remaining_ticks, 2)
+	assert_eq(mount.final_snapshot.frog.mode, 5)
+	assert_eq(mount.final_snapshot.frog.remaining_ticks, 2)
 	var hop: TickResult = _tick(run, TickCommand.EAST)
 	assert_eq(hop.error, "")
 	if not hop.error.is_empty():
 		return
-	assert_eq(hop.control_snapshot.mode, 1)
-	assert_eq(hop.control_snapshot.remaining_ticks, 6)
-	assert_eq(hop.control_snapshot.entity_cell, Vector2i(1, 0))
-	assert_true(bool(hop.control_snapshot.flags & FROM_ENTITY))
-	assert_true(bool(hop.control_snapshot.flags & TO_ENTITY))
-	assert_eq(hop.move_snapshot.remaining_ticks, 5)
+	assert_eq(hop.control_snapshot.frog.mode, 1)
+	assert_eq(hop.control_snapshot.frog.remaining_ticks, 6)
+	assert_eq(hop.control_snapshot.attachment.entity_cell, Vector2i(1, 0))
+	assert_true(bool(hop.control_snapshot.frog.flags & FROM_ENTITY))
+	assert_true(bool(hop.control_snapshot.frog.flags & TO_ENTITY))
+	assert_eq(hop.move_snapshot.frog.remaining_ticks, 5)
 
 func test_unusable_form_tile_blocks_hop_without_departure() -> void:
 	var level: LevelDefinition = _level()
@@ -424,13 +424,13 @@ func test_unusable_form_tile_blocks_hop_without_departure() -> void:
 	assert_eq(blocked.error, "")
 	if not blocked.error.is_empty():
 		return
-	assert_eq(blocked.final_snapshot.current_entity_index, 4)
-	assert_eq(blocked.final_snapshot.entity_cell, Vector2i.ZERO)
-	assert_true(bool(blocked.final_snapshot.flags & ON_ENTITY))
-	assert_false(bool(blocked.final_snapshot.flags & FROM_ENTITY))
-	assert_eq(blocked.final_snapshot.mode, 0)
-	assert_eq(blocked.final_snapshot.velocity_16, Vector3i.ZERO)
-	assert_eq(blocked.final_snapshot.last_animation_request, FrogAnimationCatalog.OUCH)
+	assert_eq(blocked.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(blocked.final_snapshot.attachment.entity_cell, Vector2i.ZERO)
+	assert_true(bool(blocked.final_snapshot.frog.flags & ON_ENTITY))
+	assert_false(bool(blocked.final_snapshot.frog.flags & FROM_ENTITY))
+	assert_eq(blocked.final_snapshot.frog.mode, 0)
+	assert_eq(blocked.final_snapshot.frog.velocity_16, Vector3i.ZERO)
+	assert_eq(blocked.final_snapshot.requests.last_animation_request, FrogAnimationCatalog.OUCH)
 
 func test_no_entity_angle_departs_through_world_grid() -> void:
 	var level: LevelDefinition = _level(1)
@@ -445,15 +445,15 @@ func test_no_entity_angle_departs_through_world_grid() -> void:
 	assert_eq(departed.error, "")
 	if not departed.error.is_empty():
 		return
-	assert_eq(departed.control_snapshot.mode, 1)
-	assert_eq(departed.control_snapshot.forbidden_entity_index, 4)
-	assert_false(bool(departed.control_snapshot.flags & TO_ENTITY))
-	assert_true(bool(departed.control_snapshot.flags & 64))
-	assert_eq(departed.control_snapshot.cell, Vector2i(1, 0))
+	assert_eq(departed.control_snapshot.frog.mode, 1)
+	assert_eq(departed.control_snapshot.attachment.forbidden_entity_index, 4)
+	assert_false(bool(departed.control_snapshot.frog.flags & TO_ENTITY))
+	assert_true(bool(departed.control_snapshot.frog.flags & 64))
+	assert_eq(departed.control_snapshot.frog.cell, Vector2i(1, 0))
 	for unused: int in 5:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_false(bool(run.snapshot().flags & ON_ENTITY))
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_false(bool(run.snapshot().frog.flags & ON_ENTITY))
 
 func test_terrain_landing_can_remount_the_departed_platform_same_tick() -> void:
 	var level: LevelDefinition = _level()
@@ -471,10 +471,10 @@ func test_terrain_landing_can_remount_the_departed_platform_same_tick() -> void:
 	assert_eq(landed.error, "")
 	if not landed.error.is_empty():
 		return
-	assert_eq(landed.move_snapshot.current_entity_index, -1)
-	assert_eq(landed.collision_snapshot.current_entity_index, 4)
-	assert_eq(landed.final_snapshot.current_entity_index, 4)
-	assert_eq(landed.final_snapshot.entity_carry_indices, PackedInt32Array([4]))
+	assert_eq(landed.move_snapshot.attachment.current_entity_index, -1)
+	assert_eq(landed.collision_snapshot.attachment.current_entity_index, 4)
+	assert_eq(landed.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(landed.final_snapshot.attachment.entity_carry_indices, PackedInt32Array([4]))
 
 func test_no_centring_x_preserves_local_contact_x() -> void:
 	var level: LevelDefinition = _level()
@@ -487,10 +487,10 @@ func test_no_centring_x_preserves_local_contact_x() -> void:
 	assert_eq(result.error, "")
 	if not result.error.is_empty():
 		return
-	assert_eq(result.final_snapshot.current_entity_index, 4)
-	assert_eq(result.final_snapshot.entity_offset_16.x, -28 * 65536)
-	assert_eq(result.final_snapshot.target_16.x, -28 * 65536)
-	assert_eq(result.final_snapshot.world_position.x, -128)
+	assert_eq(result.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(result.final_snapshot.attachment.entity_offset_16.x, -28 * 65536)
+	assert_eq(result.final_snapshot.frog.target_16.x, -28 * 65536)
+	assert_eq(result.final_snapshot.frog.world_position.x, -128)
 
 func test_no_centring_z_preserves_local_contact_z() -> void:
 	var level: LevelDefinition = _level()
@@ -507,10 +507,10 @@ func test_no_centring_z_preserves_local_contact_z() -> void:
 	assert_eq(result.error, "")
 	if not result.error.is_empty():
 		return
-	assert_eq(result.final_snapshot.current_entity_index, 4)
-	assert_eq(result.final_snapshot.entity_offset_16.z, -28 * 65536)
-	assert_eq(result.final_snapshot.target_16.z, -28 * 65536)
-	assert_eq(result.final_snapshot.world_position.z, -128)
+	assert_eq(result.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(result.final_snapshot.attachment.entity_offset_16.z, -28 * 65536)
+	assert_eq(result.final_snapshot.frog.target_16.z, -28 * 65536)
+	assert_eq(result.final_snapshot.frog.world_position.z, -128)
 
 func test_safe_precedes_pop_and_vertical_rejection_does_not_request_hit() -> void:
 	var level: LevelDefinition = _level()
@@ -523,8 +523,8 @@ func test_safe_precedes_pop_and_vertical_rejection_does_not_request_hit() -> voi
 	assert_eq(safe.error, "")
 	if not safe.error.is_empty():
 		return
-	assert_eq(safe.final_snapshot.current_entity_index, 4)
-	assert_eq(safe.final_snapshot.death_entity_index, -1)
+	assert_eq(safe.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(safe.final_snapshot.diagnostics.death_entity_index, -1)
 	assert_false(TickEvent.trace_lines(safe.events).has("entity_pop_explosion_request"))
 	level = _level()
 	var matrix: PackedInt32Array = level.entity_collision.entities[0].matrix12
@@ -542,9 +542,9 @@ func test_safe_precedes_pop_and_vertical_rejection_does_not_request_hit() -> voi
 	if rejected.error.is_empty():
 		assert_eq(rejected.entity_contacts.size(), 1)
 		assert_eq(rejected.entity_contacts[0].reason, "SAFE platform is too vertical")
-		assert_eq(rejected.final_snapshot.current_entity_index, -1)
-		assert_eq(rejected.final_snapshot.entity_hit_indices.size(), 0)
-		assert_eq(rejected.final_snapshot.entity_carry_indices.size(), 0)
+		assert_eq(rejected.final_snapshot.attachment.current_entity_index, -1)
+		assert_eq(rejected.final_snapshot.attachment.entity_hit_indices.size(), 0)
+		assert_eq(rejected.final_snapshot.attachment.entity_carry_indices.size(), 0)
 
 func test_soft_and_nonsoft_fall_reactions_and_ascending_contact() -> void:
 	for source_old_y: int in [-600, 600]:
@@ -556,17 +556,17 @@ func test_soft_and_nonsoft_fall_reactions_and_ascending_contact() -> void:
 			assert_eq(run.error, "")
 			if not run.error.is_empty():
 				continue
-			run._state.old_y = source_old_y
+			run._state.frog.old_y = source_old_y
 			var contact: TickResult = _tick(run)
 			assert_eq(contact.error, "")
 			if not contact.error.is_empty():
 				continue
-			assert_eq(contact.final_snapshot.current_entity_index, 4)
+			assert_eq(contact.final_snapshot.attachment.current_entity_index, 4)
 			var should_stun: bool = source_old_y == -600 and not soft
 			assert_eq(TickEvent.trace_lines(contact.events).has("stun_sound"), should_stun)
 			assert_eq(TickEvent.trace_lines(contact.events).has("camera_stun_shake"), should_stun)
-			assert_eq(contact.final_snapshot.sound_requests, 1 if should_stun else 0)
-			assert_eq(contact.final_snapshot.rng_draw_count, 2 if should_stun else 0)
+			assert_eq(contact.final_snapshot.requests.sound_requests, 1 if should_stun else 0)
+			assert_eq(contact.final_snapshot.diagnostics.rng_draw_count, 2 if should_stun else 0)
 
 func test_safe_fall_boundaries_retain_source_reaction_thresholds() -> void:
 	for fall_distance: int in [512, 513, 1024, 1025]:
@@ -576,18 +576,18 @@ func test_safe_fall_boundaries_retain_source_reaction_thresholds() -> void:
 		assert_eq(run.error, "")
 		if not run.error.is_empty():
 			continue
-		run._state.old_y = -fall_distance
+		run._state.frog.old_y = -fall_distance
 		var result: TickResult = _tick(run)
 		assert_eq(result.error, "", "fall %d" % fall_distance)
 		if not result.error.is_empty():
 			continue
-		assert_eq(result.collision_snapshot.current_entity_index, 4)
+		assert_eq(result.collision_snapshot.attachment.current_entity_index, 4)
 		assert_eq(TickEvent.trace_lines(result.events).has("pant"), fall_distance == 512)
 		assert_eq(TickEvent.trace_lines(result.events).has("stun_sound"), fall_distance == 513 or fall_distance == 1024)
-		assert_eq(result.collision_snapshot.sound_requests, 1 if fall_distance == 513 or fall_distance == 1024 else 0)
+		assert_eq(result.collision_snapshot.requests.sound_requests, 1 if fall_distance == 513 or fall_distance == 1024 else 0)
 		assert_eq(TickEvent.trace_lines(result.events).has("camera_stun_shake"), fall_distance == 513 or fall_distance == 1024)
-		assert_eq(bool(result.collision_snapshot.flags & 8), fall_distance == 1025)
-		assert_eq(result.collision_snapshot.death_equate, 2 if fall_distance == 1025 else 0)
+		assert_eq(bool(result.collision_snapshot.frog.flags & 8), fall_distance == 1025)
+		assert_eq(result.collision_snapshot.frog.death_equate, 2 if fall_distance == 1025 else 0)
 
 func test_ordered_safe_transfer_and_late_invalid_contact_rollback() -> void:
 	var level: LevelDefinition = _level()
@@ -600,25 +600,25 @@ func test_ordered_safe_transfer_and_late_invalid_contact_rollback() -> void:
 	assert_eq(transferred.error, "")
 	if not transferred.error.is_empty():
 		return
-	assert_eq(transferred.final_snapshot.current_entity_index, 4)
-	assert_eq(transferred.final_snapshot.entity_hit_indices, PackedInt32Array([7, 4]))
-	assert_eq(transferred.final_snapshot.entity_carry_indices, PackedInt32Array([7, 4]))
+	assert_eq(transferred.final_snapshot.attachment.current_entity_index, 4)
+	assert_eq(transferred.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 4]))
+	assert_eq(transferred.final_snapshot.attachment.entity_carry_indices, PackedInt32Array([7, 4]))
 	var transferred_again: TickResult = _tick(run)
 	assert_eq(transferred_again.error, "")
 	if transferred_again.error.is_empty():
-		assert_eq(transferred_again.final_snapshot.current_entity_index, 4)
-		assert_eq(transferred_again.final_snapshot.entity_hit_indices, PackedInt32Array([7, 4]),
+		assert_eq(transferred_again.final_snapshot.attachment.current_entity_index, 4)
+		assert_eq(transferred_again.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 4]),
 			"current entity changes during the ordered scan, while candidates remain fixed")
 	run = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
-	run._state.forbidden_entity_index = 7
+	run._state.attachment.forbidden_entity_index = 7
 	var forbidden: TickResult = _tick(run)
 	assert_eq(forbidden.error, "")
 	if forbidden.error.is_empty():
-		assert_eq(forbidden.final_snapshot.entity_hit_indices, PackedInt32Array([4]))
-		assert_eq(forbidden.final_snapshot.current_entity_index, 4)
+		assert_eq(forbidden.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([4]))
+		assert_eq(forbidden.final_snapshot.attachment.current_entity_index, 4)
 	run = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
@@ -631,8 +631,8 @@ func test_ordered_safe_transfer_and_late_invalid_contact_rollback() -> void:
 	assert_eq(failed.entity_contacts.size(), 0)
 	assert_eq(failed.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before.tick_index)
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_eq(run.snapshot().entity_carry_indices.size(), 0)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.entity_carry_indices.size(), 0)
 	run._entity_collision.contacts[0].dimensions = Vector2i(2, 1)
 	assert_eq(_tick(run).error, "")
 
@@ -657,9 +657,9 @@ func test_source_order_allows_pop_after_safe_mount_in_same_pass() -> void:
 	assert_eq(result.entity_contacts[0].contact.local_position.y, 0)
 	assert_eq(result.entity_contacts[1].contact.local_position.y, -32,
 		"later POP queries the frog after SAFE has lowered it")
-	assert_eq(result.collision_snapshot.current_entity_index, 7)
-	assert_eq(result.collision_snapshot.death_entity_index, 4)
-	assert_eq(result.collision_snapshot.entity_hit_indices, PackedInt32Array([7, 4]))
+	assert_eq(result.collision_snapshot.attachment.current_entity_index, 7)
+	assert_eq(result.collision_snapshot.diagnostics.death_entity_index, 4)
+	assert_eq(result.collision_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 4]))
 
 func test_unsupported_same_platform_destination_rolls_back_whole_hop() -> void:
 	var level: LevelDefinition = _level()
@@ -677,9 +677,9 @@ func test_unsupported_same_platform_destination_rolls_back_whole_hop() -> void:
 	assert_null(failed.final_snapshot)
 	assert_eq(failed.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before.tick_index)
-	assert_eq(run.snapshot().flags, before.flags)
-	assert_eq(run.snapshot().entity_cell, before.entity_cell)
-	assert_eq(run.snapshot().current_entity_index, before.current_entity_index)
+	assert_eq(run.snapshot().frog.flags, before.frog.flags)
+	assert_eq(run.snapshot().attachment.entity_cell, before.attachment.entity_cell)
+	assert_eq(run.snapshot().attachment.current_entity_index, before.attachment.current_entity_index)
 	assert_eq(run.snapshot().camera.mod_matrix12, before.camera.mod_matrix12)
 
 func test_form_wall_n_flag_allows_jump_off_instead_of_blocking() -> void:
@@ -695,10 +695,10 @@ func test_form_wall_n_flag_allows_jump_off_instead_of_blocking() -> void:
 	assert_eq(jumped.error, "")
 	if not jumped.error.is_empty():
 		return
-	assert_eq(jumped.control_snapshot.mode, 1)
-	assert_true(bool(jumped.control_snapshot.flags & FROM_ENTITY))
-	assert_false(bool(jumped.control_snapshot.flags & TO_ENTITY))
-	assert_eq(jumped.control_snapshot.forbidden_entity_index, 4)
+	assert_eq(jumped.control_snapshot.frog.mode, 1)
+	assert_true(bool(jumped.control_snapshot.frog.flags & FROM_ENTITY))
+	assert_false(bool(jumped.control_snapshot.frog.flags & TO_ENTITY))
+	assert_eq(jumped.control_snapshot.attachment.forbidden_entity_index, 4)
 
 func test_quick_auto_and_super_hops_keep_source_requests() -> void:
 	for powers: int in [0, 2, 4]:
@@ -718,11 +718,11 @@ func test_quick_auto_and_super_hops_keep_source_requests() -> void:
 		assert_eq(hop.error, "", "power %d" % powers)
 		if not hop.error.is_empty():
 			continue
-		assert_eq(hop.control_snapshot.remaining_ticks, 3 if powers == 2 else 6)
-		assert_eq(hop.control_snapshot.last_animation_request,
+		assert_eq(hop.control_snapshot.frog.remaining_ticks, 3 if powers == 2 else 6)
+		assert_eq(hop.control_snapshot.requests.last_animation_request,
 			FrogAnimationCatalog.SUPERHOP if powers == 2 else FrogAnimationCatalog.AUTOHOP if powers == 4 else FrogAnimationCatalog.HOP)
-		assert_eq(hop.control_snapshot.score_requests, 0 if powers == 4 else 1)
-		assert_eq(hop.control_snapshot.sound_requests, 1)
+		assert_eq(hop.control_snapshot.requests.score_requests, 0 if powers == 4 else 1)
+		assert_eq(hop.control_snapshot.requests.sound_requests, 1)
 	var super_run: TerrainRun = TerrainRun.create(_level())
 	assert_eq(super_run.error, "")
 	if not super_run.error.is_empty():
@@ -732,11 +732,11 @@ func test_quick_auto_and_super_hops_keep_source_requests() -> void:
 	var super_hop: TickResult = _tick(super_run, TickCommand.SUPER_HOP)
 	assert_eq(super_hop.error, "")
 	if super_hop.error.is_empty():
-		assert_eq(super_hop.control_snapshot.remaining_ticks, 15)
-		assert_true(bool(super_hop.control_snapshot.flags & 32))
-		assert_eq(super_hop.control_snapshot.last_animation_request, FrogAnimationCatalog.SUPERJUMP)
-		assert_eq(super_hop.control_snapshot.score_requests, 1)
-		assert_eq(super_hop.control_snapshot.sound_requests, 1)
+		assert_eq(super_hop.control_snapshot.frog.remaining_ticks, 15)
+		assert_true(bool(super_hop.control_snapshot.frog.flags & 32))
+		assert_eq(super_hop.control_snapshot.requests.last_animation_request, FrogAnimationCatalog.SUPERJUMP)
+		assert_eq(super_hop.control_snapshot.requests.score_requests, 1)
+		assert_eq(super_hop.control_snapshot.requests.sound_requests, 1)
 
 func test_moving_platform_pose_precedes_carry() -> void:
 	var level: LevelDefinition = _level(1)
@@ -763,34 +763,34 @@ func test_moving_platform_pose_precedes_carry() -> void:
 	if not mounted.error.is_empty():
 		return
 	assert_eq(mounted.final_snapshot.entities.entities[0].matrix12[11], -128)
-	assert_eq(mounted.final_snapshot.current_entity_index, 4)
-	var offset_x: int = mounted.final_snapshot.entity_offset_16.x
+	assert_eq(mounted.final_snapshot.attachment.current_entity_index, 4)
+	var offset_x: int = mounted.final_snapshot.attachment.entity_offset_16.x
 	var carried: TickResult = _tick(run)
 	assert_eq(carried.error, "")
 	if not carried.error.is_empty():
 		return
 	assert_eq(carried.final_snapshot.entities.entities[0].matrix12[11], -118)
-	assert_eq(carried.final_snapshot.current_entity_index, 4)
-	assert_gt(carried.final_snapshot.entity_offset_16.x, offset_x)
-	assert_eq(carried.final_snapshot.world_position.z, -118)
+	assert_eq(carried.final_snapshot.attachment.current_entity_index, 4)
+	assert_gt(carried.final_snapshot.attachment.entity_offset_16.x, offset_x)
+	assert_eq(carried.final_snapshot.frog.world_position.z, -118)
 
 func test_carry_narrows_local_words_while_airborne_uses_full_fixed_fraction() -> void:
 	var state := RunSnapshot.new()
 	var pose := EntitySnapshot.new()
-	state.entity_offset_16 = Vector3i(32768 * 65536, 0, 0)
+	state.attachment.entity_offset_16 = Vector3i(32768 * 65536, 0, 0)
 	assert_eq(TerrainPlatform.carry(state, pose).error, "")
-	assert_eq(state.position_16.x, -32768 * 65536)
-	state.entity_offset_16 = Vector3i(-1, 0, 0)
+	assert_eq(state.frog.position_16.x, -32768 * 65536)
+	state.attachment.entity_offset_16 = Vector3i(-1, 0, 0)
 	assert_eq(TerrainPlatform.carry(state, pose).error, "")
-	assert_eq(state.position_16.x, -65536, "signed arithmetic shift before short narrowing")
+	assert_eq(state.frog.position_16.x, -65536, "signed arithmetic shift before short narrowing")
 	pose.matrix12 = PlatformMath.yaw(1024)
-	state.entity_offset_16 = Vector3i(98304, 0, 0)
+	state.attachment.entity_offset_16 = Vector3i(98304, 0, 0)
 	assert_eq(TerrainPlatform.carry(state, pose).error, "")
-	assert_eq(state.position_16.z, -65536, "carry discards the half-unit fraction")
-	state.position_16 = Vector3i.ZERO
-	state.velocity_16 = Vector3i.ZERO
+	assert_eq(state.frog.position_16.z, -65536, "carry discards the half-unit fraction")
+	state.frog.position_16 = Vector3i.ZERO
+	state.frog.velocity_16 = Vector3i.ZERO
 	TerrainPlatform.airborne(state, pose)
-	assert_eq(state.position_16.z, -98304, "airborne rotation retains full 16.16 fraction")
+	assert_eq(state.frog.position_16.z, -98304, "airborne rotation retains full 16.16 fraction")
 
 func test_platform_definitions_and_snapshots_are_detached() -> void:
 	var level: LevelDefinition = _level()
@@ -806,11 +806,11 @@ func test_platform_definitions_and_snapshots_are_detached() -> void:
 		return
 	assert_eq(_tick(run).error, "")
 	var detached: RunSnapshot = run.snapshot()
-	detached.entity_transform12[0] = 0
-	detached.entity_carry_indices.append(99)
+	detached.attachment.entity_transform12[0] = 0
+	detached.attachment.entity_carry_indices.append(99)
 	detached.camera.mod_matrix12[0] = 0
-	assert_eq(run.snapshot().entity_transform12[0], 4096)
-	assert_eq(run.snapshot().entity_carry_indices, PackedInt32Array([4]))
+	assert_eq(run.snapshot().attachment.entity_transform12[0], 4096)
+	assert_eq(run.snapshot().attachment.entity_carry_indices, PackedInt32Array([4]))
 	assert_eq(run.snapshot().camera.mod_matrix12[0], 4096)
 
 func test_failed_reset_preserves_attachment_and_successful_reset_clears_it() -> void:
@@ -825,14 +825,14 @@ func test_failed_reset_preserves_attachment_and_successful_reset_clears_it() -> 
 	assert_false(run.reset(invalid).is_empty())
 	var after: RunSnapshot = run.snapshot()
 	assert_eq(after.tick_index, before.tick_index)
-	assert_eq(after.current_entity_index, 4)
-	assert_eq(after.entity_offset_16, before.entity_offset_16)
-	assert_eq(after.entity_carry_indices, before.entity_carry_indices)
+	assert_eq(after.attachment.current_entity_index, 4)
+	assert_eq(after.attachment.entity_offset_16, before.attachment.entity_offset_16)
+	assert_eq(after.attachment.entity_carry_indices, before.attachment.entity_carry_indices)
 	assert_eq(after.camera.mod_matrix12, before.camera.mod_matrix12)
 	assert_eq(run.reset(), "")
 	assert_eq(run.snapshot().tick_index, 0)
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_eq(run.snapshot().entity_carry_indices.size(), 0)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.entity_carry_indices.size(), 0)
 	assert_eq(run.snapshot().camera.mod_matrix12[0], 4096)
 
 func test_late_animation_failure_rolls_back_mount_and_retry() -> void:
@@ -851,14 +851,14 @@ func test_late_animation_failure_rolls_back_mount_and_retry() -> void:
 	assert_eq(failed.entity_contacts.size(), 0)
 	assert_eq(failed.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before.tick_index)
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_eq(run.snapshot().entity_carry_indices.size(), 0)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.entity_carry_indices.size(), 0)
 	run._animation.error = ""
 	var succeeded: TickResult = _tick(run)
 	assert_eq(succeeded.error, "")
 	if succeeded.error.is_empty():
-		assert_eq(succeeded.final_snapshot.current_entity_index, 4)
-		assert_eq(succeeded.final_snapshot.entity_carry_indices, PackedInt32Array([4]))
+		assert_eq(succeeded.final_snapshot.attachment.current_entity_index, 4)
+		assert_eq(succeeded.final_snapshot.attachment.entity_carry_indices, PackedInt32Array([4]))
 
 func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 	var level: LevelDefinition = _level()
@@ -870,16 +870,16 @@ func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 		return
 	assert_eq(_tick(run).error, "")
 	var before_carry: RunSnapshot = run.snapshot()
-	run._state.remaining_ticks = -1
+	run._state.frog.remaining_ticks = -1
 	var failed_carry: TickResult = _tick(run)
 	assert_string_contains(failed_carry.error, "Camera timers")
 	assert_null(failed_carry.final_snapshot)
 	assert_eq(failed_carry.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before_carry.tick_index)
-	assert_eq(run.snapshot().current_entity_index, 4)
+	assert_eq(run.snapshot().attachment.current_entity_index, 4)
 
-	assert_eq(run.snapshot().entity_offset_16, before_carry.entity_offset_16)
-	run._state.remaining_ticks = before_carry.remaining_ticks
+	assert_eq(run.snapshot().attachment.entity_offset_16, before_carry.attachment.entity_offset_16)
+	run._state.frog.remaining_ticks = before_carry.frog.remaining_ticks
 	assert_eq(_tick(run).error, "")
 	assert_eq(_tick(run).error, "")
 	var before_departure: RunSnapshot = run.snapshot()
@@ -889,8 +889,8 @@ func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 	assert_null(failed_departure.final_snapshot)
 	assert_eq(failed_departure.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, before_departure.tick_index)
-	assert_eq(run.snapshot().current_entity_index, 4)
-	assert_eq(run.snapshot().flags, before_departure.flags)
+	assert_eq(run.snapshot().attachment.current_entity_index, 4)
+	assert_eq(run.snapshot().frog.flags, before_departure.frog.flags)
 	assert_eq(run.snapshot().camera.mod_matrix12, before_departure.camera.mod_matrix12)
 	run._animation.error = ""
 	assert_eq(_tick(run, TickCommand.EAST).error, "")
@@ -907,11 +907,11 @@ func test_late_failures_rollback_carry_departure_and_transfer() -> void:
 	assert_eq(failed_transfer.error, "forced transfer failure")
 	assert_null(failed_transfer.final_snapshot)
 	assert_eq(failed_transfer.entity_contacts.size(), 0)
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_eq(run.snapshot().entity_carry_indices.size(), 0)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.entity_carry_indices.size(), 0)
 	run._animation.error = ""
 	assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, 4)
+	assert_eq(run.snapshot().attachment.current_entity_index, 4)
 
 func _guarded_mover() -> LevelDefinition:
 	var level: LevelDefinition = _level()
@@ -959,7 +959,7 @@ func test_carry_guard_rejects_boundary_and_zone_without_advancing_paths() -> voi
 			assert_null(failed.final_snapshot)
 			assert_true(failed.events.is_empty())
 			assert_true(failed.entity_contacts.is_empty())
-			assert_eq(run.snapshot().current_entity_index, 4)
+			assert_eq(run.snapshot().attachment.current_entity_index, 4)
 
 func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() -> void:
 	var level: LevelDefinition = _level()
@@ -970,7 +970,7 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 	(level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-256, -130, 512, 386)
 	var run: TerrainRun = TerrainRun.create(level)
 	assert_eq(run.error, "")
-	run._state.old_y = -600
+	run._state.frog.old_y = -600
 	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	var failed: TickResult = _tick(run)
 	assert_string_contains(failed.error, "Exploration boundary")
@@ -986,7 +986,7 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 	assert_eq(retry.error, "")
 	if retry.error.is_empty():
 		assert_eq(retry.final_snapshot.tick_index, 1)
-		assert_eq(retry.final_snapshot.current_entity_index, 4)
-		assert_eq(retry.final_snapshot.rng_draw_count, 2)
+		assert_eq(retry.final_snapshot.attachment.current_entity_index, 4)
+		assert_eq(retry.final_snapshot.diagnostics.rng_draw_count, 2)
 		assert_true(TickEvent.trace_lines(retry.events).has("camera_stun_shake"))
 		assert_true(TickEvent.trace_lines(retry.events).has("platform_attachment"))

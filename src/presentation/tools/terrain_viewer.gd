@@ -313,7 +313,7 @@ func draw_state(fraction: float) -> void:
 			else:
 				_map_instance.set_tick(_current.tick_index - 1)
 		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
-		_map_instance.set_cave_frog(_current.world_position)
+		_map_instance.set_cave_frog(_current.frog.world_position)
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
 	if update_entities and _entity_inspection != null and _current.entities != null:
 		var selected_index: int = _selected_contact_index()
@@ -324,7 +324,7 @@ func draw_state(fraction: float) -> void:
 			if reaction.contact != null and scenario.level.entity_collision != null and selected_index >= 0 and reaction.contact.entity_index == scenario.level.entity_collision.entities[selected_index].entity_index:
 				hit_contact = reaction.contact
 				break
-		_entity_inspection.set_contact(_current.world_position, hit_contact)
+		_entity_inspection.set_contact(_current.frog.world_position, hit_contact)
 	if smoothing and _entity_inspection != null and _entity_inspection.visible and _current.entities != null:
 		_entity_inspection.draw_motion(_motion, weight)
 	if _current.entities != null:
@@ -352,9 +352,9 @@ func draw_state(fraction: float) -> void:
 	_overlay_key = overlay_key
 	var camera_facts: String = "none" if _current.camera == null else "%d source %s" % [_current.camera.mode, _current.camera.source_world]
 	var presentation: String = "synthetic marker" if _frog_model == null else "high-detail frog"
-	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.mode, _current.cell, _current.square_index]
-	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.position_16, _current.velocity_16, _current.remaining_ticks, _current.flags, _current.buffered_keys, _current.buffered_input_count]
-	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.destination_cell, _current.square_flags, _current.source_id, camera_facts, _current.death_equate, _current.death_count, str(_current.completed), "; ".join(_outcomes)]
+	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.frog.mode, _current.frog.cell, _current.frog.square_index]
+	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.frog.position_16, _current.frog.velocity_16, _current.frog.remaining_ticks, _current.frog.flags, _current.frog.buffered_keys, _current.frog.buffered_input_count]
+	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.frog.destination_cell, _current.frog.square_flags, _current.diagnostics.source_id, camera_facts, _current.frog.death_equate, _current.frog.death_count, str(_current.completed), "; ".join(_outcomes)]
 	if scenario.options.entity_reactions:
 		if scenario.options.entity_lifecycle and _current.entities != null:
 			var selected: PackedInt32Array = _current.entities.selected_groups
@@ -364,7 +364,7 @@ func draw_state(fraction: float) -> void:
 				subjects.append("#%d support=%s live=%s pending=%s gen=%d" % [subject.entity_index, str(subject.lifecycle_supported), str(subject.live), str(subject.destroy_pending), subject.generation])
 			_label.text += "live %d | groups %d %s | events %s\n%s\n" % [_current.entities.live_order.size(), selected.size(), selected.slice(0, mini(4, selected.size())), TickEvent.trace_lines(_current.entities.lifecycle_events.slice(0, 3)), "; ".join(subjects)]
 		if scenario.options.platforms_enabled:
-			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.current_entity_index, _current.entity_cell, _current.entity_carry_indices]
+			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.attachment.current_entity_index, _current.attachment.entity_cell, _current.attachment.entity_carry_indices]
 		var contact_lines := PackedStringArray()
 		var nearby_count: int = _last_contacts.size()
 		for reaction: FormReactionResult in _last_contacts:
@@ -374,7 +374,7 @@ func draw_state(fraction: float) -> void:
 			if contact.status == EntityPrimitiveQuery.CONTACT:
 				contact_lines.append("cuboid #%d | frog part %d point %d" % [contact.entity_index, contact.frog_part_index, contact.hilite_index])
 		var visible: PackedStringArray = contact_lines.slice(0, 2)
-		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.entity_hit_indices, _current.death_entity_index, nearby_count, "; ".join(visible)]
+		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.attachment.entity_hit_indices, _current.diagnostics.death_entity_index, nearby_count, "; ".join(visible)]
 		if contact_lines.size() > visible.size():
 			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
 		_label.text += "\n"
@@ -383,12 +383,12 @@ func draw_state(fraction: float) -> void:
 		var bounds: Rect2i = (scenario.level.tick_guard as ExplorationGuard).world_bounds
 		var overlay: Dictionary[String, String] = TerrainCaptureStages.overlay(scenario)
 		var title: String = overlay.title
-		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
+		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.frog.cell, _current.attachment.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
 		_label.text += "Visibility lifetime | pink frog pickup and riding\n" if scenario.options.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
 		_label.text += overlay.instructions
 		if overlay.detail == "road":
-			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.death_equate, _current.death_entity_index, _current.entity_hit_indices]
+			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.frog.death_equate, _current.diagnostics.death_entity_index, _current.attachment.entity_hit_indices]
 			for contact: EntityPrimitiveContact in _last_primitive_contacts:
 				if contact.status == EntityPrimitiveQuery.CONTACT:
 					_label.text += "cuboid #%d | frog part %d point %d\n" % [contact.entity_index, contact.frog_part_index, contact.hilite_index]
@@ -657,7 +657,7 @@ func _selected_contact_index() -> int:
 	if scenario == null or scenario.level.entity_collision == null:
 		return -1
 	for slot: int in scenario.level.entity_collision.entities.size():
-		if scenario.level.entity_collision.entities[slot].entity_index == _current.death_entity_index and (_current.entities == null or not _current.entities.lifecycle_enabled or _current.entities.entities[slot].live):
+		if scenario.level.entity_collision.entities[slot].entity_index == _current.diagnostics.death_entity_index and (_current.entities == null or not _current.entities.lifecycle_enabled or _current.entities.entities[slot].live):
 			return slot
 	var nearest: int = -1
 	var nearest_distance: int = 0x7fffffffffffffff
@@ -667,8 +667,8 @@ func _selected_contact_index() -> int:
 		if _current.entities.lifecycle_enabled and not _current.entities.entities[slot].live:
 			continue
 		var matrix: PackedInt32Array = _current.entities.entities[slot].matrix12
-		var dx: int = matrix[9] - _current.world_position.x
-		var dz: int = matrix[11] - _current.world_position.z
+		var dx: int = matrix[9] - _current.frog.world_position.x
+		var dz: int = matrix[11] - _current.frog.world_position.z
 		var distance: int = dx * dx + dz * dz
 		if distance < nearest_distance:
 			nearest = slot
@@ -766,18 +766,18 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				return
 		if scenario.options.platforms_enabled and not folder.is_empty():
 			var platform_stages: Array[String] = TerrainCaptureStages.platform(scenario, _current)
-			if hit_tick < 0 and _current.current_entity_index >= 0:
+			if hit_tick < 0 and _current.attachment.current_entity_index >= 0:
 				hit_tick = _current.tick_index
 				platform_stages.append("platform-attachment")
 			if hit_tick >= 0 and _current.tick_index >= hit_tick + 1:
 				platform_stages.append("platform-camera")
-			if hit_tick >= 0 and _current.current_entity_index >= 0 and _current.mode == 0:
+			if hit_tick >= 0 and _current.attachment.current_entity_index >= 0 and _current.frog.mode == 0:
 				if centred_tick < 0:
 					centred_tick = _current.tick_index
 				platform_stages.append("platform-centred")
 				if _current.tick_index >= centred_tick + 2:
 					platform_stages.append("platform-carry")
-			if hit_tick >= 0 and _current.current_entity_index < 0:
+			if hit_tick >= 0 and _current.attachment.current_entity_index < 0:
 				platform_stages.append("platform-departure")
 			for stage: String in platform_stages:
 				last_error = _save_stage(folder, stage, captured)
@@ -788,7 +788,7 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				get_tree().quit(1)
 				return
 		elif scenario.options.entity_reactions and not folder.is_empty():
-			if hit_tick < 0 and _current.death_entity_index >= 0:
+			if hit_tick < 0 and _current.diagnostics.death_entity_index >= 0:
 				hit_tick = _current.tick_index
 				last_error = _save_stage(folder, "hit", captured)
 			elif hit_tick < 0 and TerrainCaptureStages.before_contact(scenario, _current):

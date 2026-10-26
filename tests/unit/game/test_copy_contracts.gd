@@ -15,7 +15,7 @@ func test_value_copies_include_every_field_and_detach_nested_values() -> void:
 	for entry: Dictionary in ProjectSettings.get_global_class_list():
 		var path: String = entry.path
 		var name: String = entry.class
-		if path.begins_with("res://src/game/"):
+		if path.begins_with("res://src/game/") or name == "ExplorationGuard":
 			_scripts[name] = load(path)
 	var checked: int = 0
 	for name: String in _scripts:

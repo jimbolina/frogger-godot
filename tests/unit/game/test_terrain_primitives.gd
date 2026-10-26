@@ -79,10 +79,10 @@ func test_primitive_hit_precedes_pop_form_and_retains_first_source_winner() -> v
 	assert_eq(result.primitive_contacts[1].entity_index, 2)
 	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.CONTACT)
 	assert_true(result.entity_contacts.is_empty())
-	assert_eq(result.final_snapshot.entity_hit_indices, PackedInt32Array([7, 2]))
-	assert_eq(result.final_snapshot.death_entity_index, 7)
-	assert_eq(result.final_snapshot.death_equate, FrogAnimationCatalog.SQUISHED)
-	assert_eq(result.collision_snapshot.matrix12.slice(3, 6), PackedInt32Array([0, 0, 0]))
+	assert_eq(result.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 2]))
+	assert_eq(result.final_snapshot.diagnostics.death_entity_index, 7)
+	assert_eq(result.final_snapshot.frog.death_equate, FrogAnimationCatalog.SQUISHED)
+	assert_eq(result.collision_snapshot.frog.matrix12.slice(3, 6), PackedInt32Array([0, 0, 0]))
 	assert_eq(TickEvent.trace_lines(result.events).count("entity_squish"), 1)
 	assert_false(TickEvent.trace_lines(result.events).has("entity_pop_explosion_request"))
 
@@ -103,7 +103,7 @@ func test_primitive_miss_and_disabled_shape_fall_back_to_pop_form() -> void:
 			return
 		assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.DISABLED if disabled else EntityPrimitiveQuery.MISS)
 		assert_eq(result.entity_contacts[0].status, FormReactionResult.POP)
-		assert_eq(result.final_snapshot.death_equate, FrogAnimationCatalog.POP)
+		assert_eq(result.final_snapshot.frog.death_equate, FrogAnimationCatalog.POP)
 		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)
 
 func test_primitive_miss_deadly_form_squishes_without_primitive_flatten() -> void:
@@ -117,8 +117,8 @@ func test_primitive_miss_deadly_form_squishes_without_primitive_flatten() -> voi
 	if not result.error.is_empty():
 		return
 	assert_eq(result.entity_contacts[0].status, FormReactionResult.SQUISH)
-	assert_eq(result.final_snapshot.death_equate, FrogAnimationCatalog.SQUISHED)
-	assert_eq(result.collision_snapshot.matrix12[4], 4096)
+	assert_eq(result.final_snapshot.frog.death_equate, FrogAnimationCatalog.SQUISHED)
+	assert_eq(result.collision_snapshot.frog.matrix12[4], 4096)
 
 func test_entity_no_collision_disables_both_contact_paths() -> void:
 	var level: LevelDefinition = _level()
@@ -132,8 +132,8 @@ func test_entity_no_collision_disables_both_contact_paths() -> void:
 		return
 	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.DISABLED)
 	assert_eq(result.entity_contacts[0].contact.status, FormContactResult.DISABLED)
-	assert_eq(result.final_snapshot.death_entity_index, -1)
-	assert_true(result.final_snapshot.entity_hit_indices.is_empty())
+	assert_eq(result.final_snapshot.diagnostics.death_entity_index, -1)
+	assert_true(result.final_snapshot.attachment.entity_hit_indices.is_empty())
 
 func test_late_failure_rolls_back_hits_and_stored_pose_then_retries() -> void:
 	var run: TerrainRun = TerrainRun.create(_level())
@@ -156,7 +156,7 @@ func test_late_failure_rolls_back_hits_and_stored_pose_then_retries() -> void:
 	run._animation.error = ""
 	var succeeded: TickResult = run.step(TickCommand.new())
 	assert_eq(succeeded.error, "")
-	assert_eq(succeeded.final_snapshot.death_entity_index, 2)
+	assert_eq(succeeded.final_snapshot.diagnostics.death_entity_index, 2)
 	assert_eq(succeeded.primitive_contacts.size(), 1)
 
 func test_setup_and_snapshots_detach_primitive_and_cached_probe_facts() -> void:
@@ -167,11 +167,11 @@ func test_setup_and_snapshots_detach_primitive_and_cached_probe_facts() -> void:
 	level.entity_collision.frog_collision.probes[0].vertex.x = 500
 	level.entity_collision.frog_collision.actions[0].frames[0][9] = 500
 	var snapshot: RunSnapshot = run.snapshot()
-	var original_point: Vector3i = snapshot.frog_collision_pose.probes.points[0]
-	snapshot.frog_collision_pose.probes.points[0].x = 999
-	snapshot.frog_collision_pose.action = 999
-	assert_eq(run.snapshot().frog_collision_pose.probes.points[0], original_point)
-	assert_eq(run.snapshot().frog_collision_pose.action, 0)
+	var original_point: Vector3i = snapshot.frog.frog_collision_pose.probes.points[0]
+	snapshot.frog.frog_collision_pose.probes.points[0].x = 999
+	snapshot.frog.frog_collision_pose.action = 999
+	assert_eq(run.snapshot().frog.frog_collision_pose.probes.points[0], original_point)
+	assert_eq(run.snapshot().frog.frog_collision_pose.action, 0)
 	var result: TickResult = run.step(TickCommand.new())
 	assert_eq(result.error, "")
 	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.CONTACT)
@@ -198,4 +198,4 @@ func test_primitive_hit_drives_traffic_splat_on_the_following_update() -> void:
 	assert_eq(second.error, "")
 	assert_eq(TickEvent.trace_lines(second.events).count("entity:2:sound:13:0:0:0"), 1)
 	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
-	assert_true(second.final_snapshot.entity_hit_indices.is_empty())
+	assert_true(second.final_snapshot.attachment.entity_hit_indices.is_empty())

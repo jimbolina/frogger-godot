@@ -55,15 +55,15 @@ func copy() -> ExplorationGuard:
 func check_frog(state: RunSnapshot) -> String:
 	if frog_roots.is_empty():
 		return ""
-	if state.powerup_flags != 0:
+	if state.frog.powerup_flags != 0:
 		return "Animated admission requires an unpowered frog; tick rolled back"
-	if state.mode == FrogMode.DYING or state.flags & FrogFlags.MUST_DIE:
+	if state.frog.mode == FrogMode.DYING or state.frog.flags & FrogFlags.MUST_DIE:
 		return ""
-	if not frog_roots.has(state.matrix12.slice(0, 9)):
+	if not frog_roots.has(state.frog.matrix12.slice(0, 9)):
 		return "Animated admission rejected an unproved frog root; tick rolled back"
 	if state.animation == null or (not frog_actions.has(state.animation.action) and not (state.animation.action == 0 and state.animation.cel == 0)):
 		return "Animated admission rejected an unproved frog action; tick rolled back"
-	return check_world(Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11]))
+	return check_world(Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]))
 
 ## Checks actual source world X/Z using inclusive starts and exclusive ends.
 func check_world(world: Vector3i) -> String:
@@ -123,18 +123,18 @@ func check(phase: Phase, candidate: TickGuardCandidate) -> String:
 	var state: RunSnapshot = candidate.state
 	match phase:
 		Phase.RESET_WORLD:
-			var issue: String = check_world(state.world_position)
-			return issue if not issue.is_empty() else check_cell(state.cell)
+			var issue: String = check_world(state.frog.world_position)
+			return issue if not issue.is_empty() else check_cell(state.frog.cell)
 		Phase.RESET_POSE, Phase.BEFORE_CONTACT:
 			return check_frog(state)
 		Phase.ENTITY_UPDATE:
 			return check_entities(state.entities)
 		Phase.MOVEMENT:
-			var issue: String = check_cell(state.cell)
-			return issue if not issue.is_empty() else check_world(state.world_position)
+			var issue: String = check_cell(state.frog.cell)
+			return issue if not issue.is_empty() else check_world(state.frog.world_position)
 		Phase.CONTACT_WORLD:
-			return check_world(state.world_position)
+			return check_world(state.frog.world_position)
 		Phase.CONTACT_POSE, Phase.FINAL:
-			var issue: String = check_world(state.world_position)
+			var issue: String = check_world(state.frog.world_position)
 			return issue if not issue.is_empty() else check_frog(state)
 	return ""

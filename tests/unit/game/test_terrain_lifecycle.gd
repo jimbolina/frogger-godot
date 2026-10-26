@@ -90,7 +90,7 @@ func test_zone_transition_visibility_failure_rolls_back_every_component_and_retr
 	assert_eq(_tick(run).error, "")
 	assert_eq(_tick(clean).error, "")
 	assert_eq(ZoneLifecycleChecks.canonical(TerrainTrace.facts(run.snapshot(), true)), ZoneLifecycleChecks.canonical(TerrainTrace.facts(clean.snapshot(), true)))
-	assert_eq(run.snapshot().death_entity_index, 9)
+	assert_eq(run.snapshot().diagnostics.death_entity_index, 9)
 	assert_eq(run.snapshot().camera.zone_index, 0)
 
 func test_active_zone_safe_attachment_and_departure_keep_live_generation() -> void:
@@ -101,18 +101,18 @@ func test_active_zone_safe_attachment_and_departure_keep_live_generation() -> vo
 	if not run.error.is_empty():
 		return
 	assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
 	assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(run.snapshot().attachment.current_entity_index, 9)
 	assert_eq(run.snapshot().camera.zone_index, 0)
 	assert_eq(_tick(run, TickCommand.EAST).error, "")
 	for unused: int in 5:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(run.snapshot().attachment.current_entity_index, 9)
 	assert_eq(_tick(run, TickCommand.EAST).error, "")
 	for unused: int in 6:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
 	assert_eq(run.snapshot().entities.entities[0].generation, 1)
 
 func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
@@ -132,10 +132,10 @@ func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
 		if not result.error.is_empty():
 			return
 		var state: RunSnapshot = result.final_snapshot
-		if state.current_entity_index >= 0:
+		if state.attachment.current_entity_index >= 0:
 			attached = true
 			assert_eq(state.camera.zone_index, 0)
-			assert_true(state.entities.live_order.has(state.current_entity_index))
+			assert_true(state.entities.live_order.has(state.attachment.current_entity_index))
 		elif attached:
 			departed = true
 	assert_true(attached)
@@ -156,11 +156,11 @@ func test_tail_creation_defers_pop_until_following_tick() -> void:
 	assert_true(first.final_snapshot.entities.entities[0].live)
 	assert_eq(first.final_snapshot.entities.entities[0].generation, 1)
 	assert_true(first.entity_contacts.is_empty())
-	assert_eq(first.final_snapshot.death_entity_index, -1)
+	assert_eq(first.final_snapshot.diagnostics.death_entity_index, -1)
 	var second: TickResult = _tick(run)
 	assert_eq(second.error, "")
 	if second.error.is_empty():
-		assert_eq(second.final_snapshot.death_entity_index, 9)
+		assert_eq(second.final_snapshot.diagnostics.death_entity_index, 9)
 		assert_true(TickEvent.trace_lines(second.events).has("entity_pop_explosion_request"))
 
 func test_visibility_requires_camera_and_preserves_all_attached_default() -> void:
@@ -171,7 +171,7 @@ func test_visibility_requires_camera_and_preserves_all_attached_default() -> voi
 	var legacy: TerrainRun = TerrainRun.create(level)
 	assert_eq(legacy.error, "")
 	if legacy.error.is_empty():
-		assert_eq(_tick(legacy).final_snapshot.death_entity_index, 9)
+		assert_eq(_tick(legacy).final_snapshot.diagnostics.death_entity_index, 9)
 
 func test_safe_mount_local_hop_and_departure_keep_live_identity() -> void:
 	var run: TerrainRun = TerrainRun.create(_level(3 | 256))
@@ -180,20 +180,20 @@ func test_safe_mount_local_hop_and_departure_keep_live_identity() -> void:
 		return
 	assert_eq(_tick(run).error, "")
 	assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(run.snapshot().attachment.current_entity_index, 9)
 	assert_eq(_tick(run, TickCommand.EAST).error, "")
 	for unused: int in 5:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, 9)
-	assert_eq(run.snapshot().entity_cell, Vector2i(1, 0))
+	assert_eq(run.snapshot().attachment.current_entity_index, 9)
+	assert_eq(run.snapshot().attachment.entity_cell, Vector2i(1, 0))
 	var departure: TickResult = _tick(run, TickCommand.EAST)
 	assert_eq(departure.error, "")
 	if not departure.error.is_empty():
 		return
-	assert_eq(departure.final_snapshot.forbidden_entity_index, 9)
+	assert_eq(departure.final_snapshot.attachment.forbidden_entity_index, 9)
 	for unused: int in 6:
 		assert_eq(_tick(run).error, "")
-	assert_eq(run.snapshot().current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
 
 func test_missing_or_dormant_current_attachment_fails_before_mutation() -> void:
 	for identity: int in [9, 99]:
@@ -201,7 +201,7 @@ func test_missing_or_dormant_current_attachment_fails_before_mutation() -> void:
 		assert_eq(run.error, "")
 		if not run.error.is_empty():
 			return
-		run._state.current_entity_index = identity
+		run._state.attachment.current_entity_index = identity
 		_assert_failed(_tick(run))
 		assert_eq(run.snapshot().tick_index, 0)
 		assert_false(run.snapshot().entities.entities[0].live)
@@ -213,14 +213,14 @@ func test_forbidden_identity_without_current_link_does_not_pin() -> void:
 		return
 	assert_eq(_tick(run).error, "")
 	run._entities._state.entities[0].destroy_pending = true
-	run._state.forbidden_entity_index = 9
-	assert_eq(run.snapshot().current_entity_index, -1)
+	run._state.attachment.forbidden_entity_index = 9
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
 	var next: TickResult = _tick(run)
 	assert_eq(next.error, "")
 	if next.error.is_empty():
 		assert_eq(TickEvent.trace_lines(next.final_snapshot.entities.lifecycle_events), ["destroy:9:1", "create:9:2"])
 		assert_false(next.collision_snapshot.entities.entities[0].live)
-		assert_eq(next.final_snapshot.current_entity_index, -1)
+		assert_eq(next.final_snapshot.attachment.current_entity_index, -1)
 
 func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	var level: LevelDefinition = _level()
@@ -239,12 +239,12 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	assert_string_contains(failed.error, "2500")
 	var after: RunSnapshot = run.snapshot()
 	assert_eq(after.tick_index, before.tick_index)
-	assert_eq(after.death_entity_index, -1)
+	assert_eq(after.diagnostics.death_entity_index, -1)
 	assert_eq(after.camera.source_world, before.camera.source_world)
 	assert_eq(after.camera.mode, before.camera.mode)
 	assert_eq(after.animation.cel, before.animation.cel)
 	assert_eq(after.rng_state, before.rng_state)
-	assert_eq(after.rng_draw_count, before.rng_draw_count)
+	assert_eq(after.diagnostics.rng_draw_count, before.diagnostics.rng_draw_count)
 	assert_eq(after.entities.live_order, before.entities.live_order)
 	assert_eq(after.entities.selected_groups, before.entities.selected_groups)
 	assert_eq(after.entities.entities[0].generation, 1)
@@ -253,7 +253,7 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	var retry: TickResult = _tick(run)
 	assert_eq(retry.error, "")
 	if retry.error.is_empty():
-		assert_eq(retry.final_snapshot.death_entity_index, 9)
+		assert_eq(retry.final_snapshot.diagnostics.death_entity_index, 9)
 		assert_eq(TickEvent.trace_lines(retry.events).count("entity_pop_explosion_request"), 1)
 
 func test_reset_and_detached_nested_lifecycle_snapshots() -> void:
@@ -280,11 +280,11 @@ func test_reset_and_detached_nested_lifecycle_snapshots() -> void:
 	invalid.spawn_cell = Vector2i(99, 99)
 	assert_false(run.reset(invalid).is_empty())
 	assert_eq(run.snapshot().tick_index, before.tick_index)
-	assert_eq(run.snapshot().current_entity_index, 9)
+	assert_eq(run.snapshot().attachment.current_entity_index, 9)
 	assert_eq(run.reset(), "")
 	assert_eq(run.snapshot().tick_index, 0)
-	assert_eq(run.snapshot().current_entity_index, -1)
-	assert_eq(run.snapshot().forbidden_entity_index, -1)
+	assert_eq(run.snapshot().attachment.current_entity_index, -1)
+	assert_eq(run.snapshot().attachment.forbidden_entity_index, -1)
 	assert_false(run.snapshot().entities.entities[0].live)
 	assert_eq(run.snapshot().entities.entities[0].generation, 0)
 	assert_true(run.snapshot().entities.live_order.is_empty())
@@ -320,13 +320,13 @@ func test_visibility_failure_after_stun_random_draws_retries_identically() -> vo
 			_assert_failed(_tick(run, pressed))
 			var after: RunSnapshot = run.snapshot()
 			assert_eq(after.tick_index, before.tick_index)
-			assert_eq(after.position_16, before.position_16)
-			assert_eq(after.mode, before.mode)
+			assert_eq(after.frog.position_16, before.frog.position_16)
+			assert_eq(after.frog.mode, before.frog.mode)
 			assert_eq(after.camera.shake_timer, before.camera.shake_timer)
 			assert_eq(after.camera.source_world, before.camera.source_world)
 			assert_eq(after.animation.cel, before.animation.cel)
 			assert_eq(after.rng_state, before.rng_state)
-			assert_eq(after.rng_draw_count, before.rng_draw_count)
+			assert_eq(after.diagnostics.rng_draw_count, before.diagnostics.rng_draw_count)
 			run._entities._lifecycle.polygon_counts.fill(1)
 		var actual: TickResult = _tick(run, pressed)
 		assert_eq(actual.error, "")
@@ -335,7 +335,7 @@ func test_visibility_failure_after_stun_random_draws_retries_identically() -> vo
 		assert_eq(actual.rng_consumers, expected.rng_consumers)
 		assert_eq(actual.final_snapshot.rng_state, expected.final_snapshot.rng_state)
 		assert_eq(actual.final_snapshot.camera.source_world, expected.final_snapshot.camera.source_world)
-		assert_eq(actual.final_snapshot.position_16, expected.final_snapshot.position_16)
+		assert_eq(actual.final_snapshot.frog.position_16, expected.final_snapshot.frog.position_16)
 		assert_eq(actual.final_snapshot.animation.cel, expected.final_snapshot.animation.cel)
 		assert_eq(TickEvent.trace_lines(actual.final_snapshot.entities.lifecycle_events), TickEvent.trace_lines(expected.final_snapshot.entities.lifecycle_events))
 	assert_true(observed_draws, "The injected late failure must discard real RNG consumption")

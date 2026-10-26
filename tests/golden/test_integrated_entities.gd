@@ -4,19 +4,19 @@ extends GutTest
 func _represented(state: RunSnapshot) -> Array[int]:
 	var camera: GameplayCameraSnapshot = state.camera
 	var animation: FrogAnimationState = state.animation
-	var values: Array[int] = [state.position_16.x, state.position_16.y, state.position_16.z,
-		state.velocity_16.x, state.velocity_16.y, state.velocity_16.z,
-		state.cell.x, state.cell.y, state.remaining_ticks, state.flags, state.mode,
-		state.current_input, state.direction, state.no_input_timer, state.death_count,
+	var values: Array[int] = [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z,
+		state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z,
+		state.frog.cell.x, state.frog.cell.y, state.frog.remaining_ticks, state.frog.flags, state.frog.mode,
+		state.frog.current_input, state.frog.direction, state.frog.no_input_timer, state.frog.death_count,
 		camera.mode, camera.move_timer, camera.twist_counter,
 		camera.tracked_world.x, camera.tracked_world.y, camera.tracked_world.z,
 		camera.source_world.x, camera.source_world.y, camera.source_world.z,
 		camera.controller_directions[0], camera.shake_timer,
 		animation.script_type, animation.script_timer, animation.flags,
-		animation.environment_flags, state.rng_state, state.animation_condition_counter,
+		animation.environment_flags, state.rng_state, state.frog.animation_condition_counter,
 		animation.program_id, animation.word_offset, animation.action, animation.cel,
 		animation.total_cels, animation.update_count,
-		10 if state.game_mode_request < 0 else state.game_mode_request]
+		10 if state.requests.game_mode_request < 0 else state.requests.game_mode_request]
 	for index: int in 2:
 		if index >= state.entities.entities.size():
 			values.append_array([-1, -1, -1, -1, -1, 0])
@@ -73,11 +73,11 @@ func test_integrated_entity_trajectories_match_frozen_c() -> void:
 					for field: int in represented.size():
 						assert_eq(represented[field], expected[field + 3].to_int(),
 							"scenario %d tick %d phase %d field %d" % [scenario_index, tick, phase, field])
-					assert_eq(_joined(EntityContactOrder.indices(scenario.entity_collision, snapshot.entities, snapshot.world_position)), expected[54])
-					assert_eq(_joined(snapshot.entity_hit_indices), expected[55])
-					assert_eq(snapshot.death_entity_index, expected[56].to_int())
+					assert_eq(_joined(EntityContactOrder.indices(scenario.entity_collision, snapshot.entities, snapshot.frog.world_position)), expected[54])
+					assert_eq(_joined(snapshot.attachment.entity_hit_indices), expected[55])
+					assert_eq(snapshot.diagnostics.death_entity_index, expected[56].to_int())
 					assert_eq(cumulative_pops + (1 if popped and phase >= 2 else 0), expected[57].to_int())
-					assert_eq(snapshot.sound_requests, expected[58].to_int())
+					assert_eq(snapshot.requests.sound_requests, expected[58].to_int())
 				row_index += 1
 			if popped:
 				cumulative_pops += 1

@@ -59,12 +59,12 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 			state.direction = 0
 			if state.carried_jump_ticks != 0:
 				state.carried_jump_ticks -= 1
-			if frog.mode == FrogMode.DYING and not state.dead:
+			if frog.frog.mode == FrogMode.DYING and not state.dead:
 				state.dead = true
 				state.model_hidden = true
 				state.mode = Mode.NOTHING
 				entity.requests.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN))
-			if frog.mode == FrogMode.JUMPING and state.carried_jump_ticks == 0:
+			if frog.frog.mode == FrogMode.JUMPING and state.carried_jump_ticks == 0:
 				entity.animation.select(0)
 				state.carried_jump_ticks = 6
 		Mode.NOTHING:
@@ -80,7 +80,7 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 		state.carrier_index = 0
 		state.mode = Mode.ON_FROG
 		entity.animation.select(0)
-	var carrier: PackedInt32Array = frog.matrix12 if state.carrier_index == 0 and frog != null else parent.matrix12
+	var carrier: PackedInt32Array = frog.frog.matrix12 if state.carrier_index == 0 and frog != null else parent.matrix12
 	var has_parent: bool = state.carrier_index == 0 or (state.parent_entity_index >= 0 and parent.live)
 	state.model_hidden = state.dead or not has_parent
 	if has_parent:

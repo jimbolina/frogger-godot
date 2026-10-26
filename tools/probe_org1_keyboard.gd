@@ -50,7 +50,7 @@ func _run() -> void:
 			_failures.append("route tick %d: %s" % [tick, _viewer.last_error])
 			break
 	var bank: RunSnapshot = _viewer.run.snapshot()
-	_check(bank.tick_index == 52 and bank.current_entity_index == -1 and bank.mode == 0 and bank.world_position == Vector3i(128, -256, -128), "keyboard round-trip bank return")
+	_check(bank.tick_index == 52 and bank.attachment.current_entity_index == -1 and bank.frog.mode == 0 and bank.frog.world_position == Vector3i(128, -256, -128), "keyboard round-trip bank return")
 	await _tap(KEY_SPACE)
 	_check(_viewer.playing, "resume dispatch")
 	_viewer._process(1.0 / 30.0)
@@ -77,7 +77,7 @@ func _run() -> void:
 	await _key(KEY_UP, true)
 	await _tap(KEY_PERIOD)
 	await _key(KEY_UP, false)
-	_check(_viewer.last_error.is_empty() and _viewer.run.snapshot().direction == expected_direction, "camera-relative keyboard hop")
+	_check(_viewer.last_error.is_empty() and _viewer.run.snapshot().frog.direction == expected_direction, "camera-relative keyboard hop")
 	await _tap(KEY_R)
 	await _tap(KEY_TAB)
 	await _tap(KEY_R)

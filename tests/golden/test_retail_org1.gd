@@ -54,7 +54,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 		command.held_mask = command.pressed_mask
 		if tick == 445:
 			var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
-			assert_true(run.snapshot().entity_hit_indices.has(53))
+			assert_true(run.snapshot().attachment.entity_hit_indices.has(53))
 			assert_eq(run.snapshot().entities.entities[53].background.carrier_index, -1)
 			run._entities._lifecycle.polygon_counts.fill(2500)
 			var rejected: TickResult = run.step(command)
@@ -243,8 +243,8 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		assert_eq(result.error, "", "tick %d" % tick)
 		if not result.error.is_empty():
 			return
-		reached_river = reached_river or result.final_snapshot.current_entity_index >= 0
-		vehicle_death = vehicle_death or (result.final_snapshot.death_entity_index >= 24 and result.final_snapshot.death_entity_index <= 47)
+		reached_river = reached_river or result.final_snapshot.attachment.current_entity_index >= 0
+		vehicle_death = vehicle_death or (result.final_snapshot.diagnostics.death_entity_index >= 24 and result.final_snapshot.diagnostics.death_entity_index <= 47)
 		var snapshots: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot, result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
 		for index: int in 6:
 			var expected: PackedStringArray = rows[tick * 6 + index + 1]

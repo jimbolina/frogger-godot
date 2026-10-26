@@ -66,29 +66,29 @@ func test_live_pressed_edges_are_derived_at_the_tick_boundary() -> void:
 	_viewer._unhandled_key_input(key)
 	assert_eq(_viewer.step_live().error, "")
 	assert_eq(_viewer.step_live().error, "")
-	assert_eq(_viewer.run.snapshot().buffered_keys, 0, "Held input is not another pressed edge")
+	assert_eq(_viewer.run.snapshot().frog.buffered_keys, 0, "Held input is not another pressed edge")
 	key.physical_keycode = KEY_RIGHT
 	_viewer._unhandled_key_input(key)
 	key.pressed = false
 	_viewer._unhandled_key_input(key)
 	assert_eq(_viewer.step_live().error, "")
-	assert_eq(_viewer.run.snapshot().buffered_keys, 0, "A released transient key is absent at the source sampling boundary")
+	assert_eq(_viewer.run.snapshot().frog.buffered_keys, 0, "A released transient key is absent at the source sampling boundary")
 	key.pressed = true
 	_viewer._unhandled_key_input(key)
 	assert_eq(_viewer.step_live().error, "")
-	assert_eq(_viewer.run.snapshot().buffered_keys, 1)
+	assert_eq(_viewer.run.snapshot().frog.buffered_keys, 1)
 
 func test_direct_map_controls_idle_and_hop_beyond_the_replay_limit() -> void:
 	_viewer.configure_input(PackedStringArray(["--level=ORG1"]))
 	assert_false(_viewer.replay_commands)
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	assert_eq(_viewer.open_scenario(scenario), "")
-	var start: Vector3i = _viewer.run.snapshot().position_16
+	var start: Vector3i = _viewer.run.snapshot().frog.position_16
 	_press(KEY_SPACE)
 	for tick: int in 24:
 		_viewer._process(1.0 / 30.0)
 	assert_eq(_viewer.run.snapshot().tick_index, 24)
-	assert_eq(_viewer.run.snapshot().position_16, start, "No fixture hop leaks into live input")
+	assert_eq(_viewer.run.snapshot().frog.position_16, start, "No fixture hop leaks into live input")
 	assert_true(_viewer.playing)
 	assert_string_contains(_viewer._label.text, "LIVE | running")
 	_press(KEY_UP)
@@ -96,13 +96,13 @@ func test_direct_map_controls_idle_and_hop_beyond_the_replay_limit() -> void:
 	_press(KEY_UP, false)
 	for tick: int in 9:
 		_viewer._process(1.0 / 30.0)
-	assert_ne(_viewer.run.snapshot().position_16, start)
+	assert_ne(_viewer.run.snapshot().frog.position_16, start)
 	_press(KEY_DOWN)
 	_viewer._process(1.0 / 30.0)
 	_press(KEY_DOWN, false)
 	for tick: int in 9:
 		_viewer._process(1.0 / 30.0)
-	assert_eq(_viewer.run.snapshot().position_16, start, "A later live hop still responds")
+	assert_eq(_viewer.run.snapshot().frog.position_16, start, "A later live hop still responds")
 	_press(KEY_R)
 	assert_false(_viewer.replay_commands, "Reset retains live control selection")
 	assert_false(_viewer.playing)
@@ -224,8 +224,8 @@ func test_json_start_completion_roundtrip_uint32_inputs_and_atomic_refusal() -> 
 	assert_eq(_viewer.open_scenario(scenario), "")
 	var result: TickResult = _viewer.step_scenario()
 	assert_eq(result.error, "")
-	assert_eq(result.control_snapshot.start_timer, 37)
-	assert_eq(result.control_snapshot.mode, 3, "Explicit HUD completion selects source WAIT")
+	assert_eq(result.control_snapshot.frog.start_timer, 37)
+	assert_eq(result.control_snapshot.frog.mode, 3, "Explicit HUD completion selects source WAIT")
 	assert_eq(_viewer.run.snapshot().tick_index, 1)
 	var row: Dictionary = JSON.parse_string(_viewer.trace.full_rows[1])
 	var command: Dictionary = row.command
@@ -255,15 +255,15 @@ func test_pause_step_reset_and_optional_smoothing_have_no_native_interpolation()
 	assert_eq(_viewer._frog.position, initial)
 	assert_eq(JSON.stringify(TerrainTrace.facts(_viewer.run.snapshot())), before)
 	assert_eq(_viewer.step_scenario().error, "")
-	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.position_16) + Vector3(0, 0.12, 0))
+	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.frog.position_16) + Vector3(0, 0.12, 0))
 	assert_eq(_viewer._frog.get_global_transform_interpolated().origin, _viewer._frog.global_position)
 	_viewer.playing = true
 	_viewer.smoothing = true
 	assert_eq(_viewer.step_scenario().error, "")
 	_viewer.draw_state(0.5)
-	var midpoint: Vector3 = GameSpace.fixed_position(_viewer._previous.position_16).lerp(GameSpace.fixed_position(_viewer._current.position_16), 0.5) + Vector3(0, 0.12, 0)
+	var midpoint: Vector3 = GameSpace.fixed_position(_viewer._previous.frog.position_16).lerp(GameSpace.fixed_position(_viewer._current.frog.position_16), 0.5) + Vector3(0, 0.12, 0)
 	assert_eq(_viewer._frog.position, midpoint)
-	assert_ne(_viewer._previous.position_16, _viewer._current.position_16)
+	assert_ne(_viewer._previous.frog.position_16, _viewer._current.frog.position_16)
 	assert_eq(_viewer._frog.get_global_transform_interpolated().origin, _viewer._frog.global_position)
 	assert_eq(_viewer.reset_scenario(), "")
 	assert_eq(_viewer._frog.position, initial)
@@ -285,4 +285,4 @@ func test_interactive_smoothing_default_capture_override_and_rejection_reset() -
 	assert_ne(_viewer.step_command(rejected).error, "")
 	assert_false(_viewer.playing)
 	_viewer.draw_state(0.0)
-	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.position_16) + Vector3(0, 0.12, 0))
+	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.frog.position_16) + Vector3(0, 0.12, 0))

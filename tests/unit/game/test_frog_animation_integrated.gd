@@ -43,13 +43,13 @@ func _command(scenario: int, tick: int) -> TickCommand:
 func _fields(state: RunSnapshot) -> Array[int]:
 	var camera: GameplayCameraSnapshot = state.camera
 	var animation: FrogAnimationState = state.animation
-	return [state.position_16.x, state.position_16.y, state.position_16.z, state.velocity_16.x, state.velocity_16.y, state.velocity_16.z,
-		state.cell.x, state.cell.y, state.remaining_ticks, state.flags, state.mode, state.current_input, state.direction,
-		state.no_input_timer, state.death_count, camera.mode, camera.move_timer, camera.twist_counter,
+	return [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z,
+		state.frog.cell.x, state.frog.cell.y, state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.current_input, state.frog.direction,
+		state.frog.no_input_timer, state.frog.death_count, camera.mode, camera.move_timer, camera.twist_counter,
 		camera.tracked_world.x, camera.tracked_world.y, camera.tracked_world.z, camera.source_world.x, camera.source_world.y, camera.source_world.z,
 		camera.controller_directions[0], camera.shake_timer, animation.script_type, animation.script_timer, animation.flags,
-		animation.environment_flags, state.rng_state, state.animation_condition_counter, animation.program_id, animation.word_offset,
-		animation.action, animation.cel, animation.total_cels, animation.update_count, 10 if state.game_mode_request == -1 else state.game_mode_request]
+		animation.environment_flags, state.rng_state, state.frog.animation_condition_counter, animation.program_id, animation.word_offset,
+		animation.action, animation.cel, animation.total_cels, animation.update_count, 10 if state.requests.game_mode_request == -1 else state.requests.game_mode_request]
 
 func test_all_represented_integration_fields_match_frozen_c() -> void:
 	var lines: PackedStringArray = FileAccess.get_file_as_string("res://tests/golden/synthetic/integrated_terrain.csv").strip_edges().split("\n")
@@ -87,7 +87,7 @@ func test_all_represented_integration_fields_match_frozen_c() -> void:
 							draws = 3
 						if tick > 117 or (tick == 117 and phase == 5):
 							draws = 4
-					assert_eq(snapshots[phase].rng_draw_count, draws, "source draw count scenario %d tick %d phase %d" % [scenario, tick, phase])
+					assert_eq(snapshots[phase].diagnostics.rng_draw_count, draws, "source draw count scenario %d tick %d phase %d" % [scenario, tick, phase])
 				row_index += 1
 	assert_eq(row_index, lines.size())
 
@@ -105,6 +105,6 @@ func test_reset_replays_shared_rng_and_detaches_animation_camera() -> void:
 	var last_expected: Array = expected[expected.size() - 1]
 	assert_eq(_fields(run.snapshot()), last_expected)
 	assert_eq(run.reset(), "")
-	assert_eq(run.snapshot().rng_draw_count, 0)
+	assert_eq(run.snapshot().diagnostics.rng_draw_count, 0)
 	for tick: int in 120:
 		assert_eq(_fields(run.step(_command(2, tick)).final_snapshot), expected[tick], "reset tick %d" % tick)

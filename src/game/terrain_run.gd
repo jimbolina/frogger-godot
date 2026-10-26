@@ -148,40 +148,40 @@ func reset(initial: RunStart = null) -> String:
 		return "Terrain run start requires a bounded terrain cell, direction 0..3 and supported fixture powers"
 	var index: int = stack.first_square_index + stack.square_count - 1
 	var state := RunSnapshot.new()
-	state.cell = cell
-	state.direction = direction
-	state.square_index = index
-	state.powerup_flags = powers
+	state.frog.cell = cell
+	state.frog.direction = direction
+	state.frog.square_index = index
+	state.frog.powerup_flags = powers
 	if initial != null:
 		if initial.quick_jump_timer < 0 or initial.quick_jump_timer > 65535 or initial.auto_hop_timer < 0 or initial.auto_hop_timer > 65535 or initial.super_tongue_timer < 0 or initial.super_tongue_timer > 65535:
 			return "Modifier timers must fit source unsigned16 values"
-		state.quick_jump_timer = initial.quick_jump_timer
-		state.auto_hop_timer = initial.auto_hop_timer
-		state.super_tongue_timer = initial.super_tongue_timer
-	state.position_16 = GridQueries.square_centre(_grid, _grid.squares[index]) * 65536
-	state.world_position = Vector3i(state.position_16.x >> 16, state.position_16.y >> 16, state.position_16.z >> 16)
-	state.fixture_lives = initial.lives if initial != null else 3
-	state.old_y = state.position_16.y >> 16
-	state.target_y = state.old_y
-	state.old_position_16 = state.position_16
-	state.matrix12[9] = state.world_position.x
-	state.matrix12[10] = state.world_position.y
-	state.matrix12[11] = state.world_position.z
-	state.matrix12 = TerrainMatrix.update(state.matrix12, state.flags, state.direction, _grid.squares[index])
-	state.initial_cell = cell
-	state.start_mode = initial.start_mode if initial != null else 0
-	if state.start_mode < 0 or state.start_mode > 2:
+		state.frog.quick_jump_timer = initial.quick_jump_timer
+		state.frog.auto_hop_timer = initial.auto_hop_timer
+		state.frog.super_tongue_timer = initial.super_tongue_timer
+	state.frog.position_16 = GridQueries.square_centre(_grid, _grid.squares[index]) * 65536
+	state.frog.world_position = Vector3i(state.frog.position_16.x >> 16, state.frog.position_16.y >> 16, state.frog.position_16.z >> 16)
+	state.frog.lives = initial.lives if initial != null else 3
+	state.frog.old_y = state.frog.position_16.y >> 16
+	state.frog.target_y = state.frog.old_y
+	state.frog.old_position_16 = state.frog.position_16
+	state.frog.matrix12[9] = state.frog.world_position.x
+	state.frog.matrix12[10] = state.frog.world_position.y
+	state.frog.matrix12[11] = state.frog.world_position.z
+	state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, _grid.squares[index])
+	state.frog.initial_cell = cell
+	state.frog.start_mode = initial.start_mode if initial != null else 0
+	if state.frog.start_mode < 0 or state.frog.start_mode > 2:
 		return "Start mode must select component, fast reset or single-start bounce"
-	state.start_target_16 = state.position_16.y
-	if state.start_mode == 2:
-		state.position_16.y -= 6400 << 12
-		state.mode = FrogMode.LEVEL_START_BOUNCE
+	state.frog.start_target_16 = state.frog.position_16.y
+	if state.frog.start_mode == 2:
+		state.frog.position_16.y -= 6400 << 12
+		state.frog.mode = FrogMode.LEVEL_START_BOUNCE
 		_update_world(state)
-		state.old_position_16 = state.position_16
-		state.old_y = state.world_position.y
-		state.target_y = state.old_y
-	elif state.start_mode == 1:
-		state.mode = FrogMode.WAIT_FOR_CAMERA
+		state.frog.old_position_16 = state.frog.position_16
+		state.frog.old_y = state.frog.world_position.y
+		state.frog.target_y = state.frog.old_y
+	elif state.frog.start_mode == 1:
+		state.frog.mode = FrogMode.WAIT_FOR_CAMERA
 	if _tick_guard != null:
 		var guard_error: String = _check_guard(TickGuard.Phase.RESET_WORLD, state)
 		if not guard_error.is_empty():
@@ -192,7 +192,7 @@ func reset(initial: RunStart = null) -> String:
 	var camera: GameplayCamera = null
 	var animation: FrogAnimationController = null
 	if _camera_definition != null:
-		camera = GameplayCamera.create(_camera_definition, state.world_position, initial.camera_startup if initial != null else false)
+		camera = GameplayCamera.create(_camera_definition, state.frog.world_position, initial.camera_startup if initial != null else false)
 		if not camera.error.is_empty():
 			return camera.error
 		state.camera = camera.snapshot()
@@ -205,8 +205,8 @@ func reset(initial: RunStart = null) -> String:
 	if _entity_collision != null and _entity_collision.frog_collision != null:
 		if state.animation == null:
 			return "Entity primitives require authoritative frog animation"
-		state.frog_collision_pose = FrogCollisionPose.new()
-		var pose_issue: String = state.frog_collision_pose.refresh(_entity_collision.frog_collision, state.animation.action, state.animation.cel, state.matrix12)
+		state.frog.frog_collision_pose = FrogCollisionPose.new()
+		var pose_issue: String = state.frog.frog_collision_pose.refresh(_entity_collision.frog_collision, state.animation.action, state.animation.cel, state.frog.matrix12)
 		if not pose_issue.is_empty():
 			return pose_issue
 	if _tick_guard != null:
@@ -214,8 +214,8 @@ func reset(initial: RunStart = null) -> String:
 		if not animated_issue.is_empty():
 			return animated_issue
 	state.rng_state = random.state
-	state.start_timer = initial.start_timer if initial != null else 0
-	if state.start_timer < 0:
+	state.frog.start_timer = initial.start_timer if initial != null else 0
+	if state.frog.start_timer < 0:
 		return "Start timer must be nonnegative"
 	var candidate_entities: EntityRun = _entities.copy() if _entities != null else null
 	if candidate_entities != null:
@@ -237,9 +237,9 @@ func snapshot() -> RunSnapshot:
 	return _state.copy() if _state != null else null
 
 func _update_camera_zone(state: RunSnapshot) -> void:
-	var selected: Vector2i = ZoneQueries.update_camera_match(_camera_zones, state.cell, Vector2i(state.camera_zone_index, state.camera_zone_region_index), state.flags)
-	state.camera_zone_index = selected.x
-	state.camera_zone_region_index = selected.y
+	var selected: Vector2i = ZoneQueries.update_camera_match(_camera_zones, state.frog.cell, Vector2i(state.frog.camera_zone_index, state.frog.camera_zone_region_index), state.frog.flags)
+	state.frog.camera_zone_index = selected.x
+	state.frog.camera_zone_region_index = selected.y
 
 ## Commits one atomic tick. Optional phase capture affects diagnostics only; final state is always detached.
 func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
@@ -261,14 +261,14 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if _camera == null and (command.pressed_mask | command.held_mask) & 96:
 		result.error = "Camera-turn commands require an integrated camera definition"
 		return result
-	if command.start_timer_context < -1 or command.start_timer_context > 2147483647 or (command.start_sequence_complete and _state.mode not in [FrogMode.LEVEL_START_BOUNCE, FrogMode.LEVEL_START_COME_TO_REST]):
+	if command.start_timer_context < -1 or command.start_timer_context > 2147483647 or (command.start_sequence_complete and _state.frog.mode not in [FrogMode.LEVEL_START_BOUNCE, FrogMode.LEVEL_START_COME_TO_REST]):
 		result.error = "Start context requires a nonnegative timer and completion only during single-start callbacks"
 		return result
 	_candidate_camera = _camera.copy() if _camera != null else null
 	_candidate_random = _random.copy()
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
-	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.current_entity_index, _has_entity_updates) if _entities != null else null
+	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.attachment.current_entity_index, _has_entity_updates) if _entities != null else null
 	var next: RunSnapshot = _state.copy(false)
 	if _candidate_entities != null:
 		result.error = _candidate_entities.error
@@ -282,14 +282,14 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		var exclusion_issue: String = _check_guard(TickGuard.Phase.ENTITY_UPDATE, next)
 		if not exclusion_issue.is_empty():
 			return _failed_tick(result, exclusion_issue)
-	next.entity_hit_indices = PackedInt32Array()
-	next.entity_carry_indices = PackedInt32Array()
-	if next.current_entity_index >= 0 and (_platform_pose(next) == null or _platform_definition(next) == null):
+	next.attachment.entity_hit_indices = PackedInt32Array()
+	next.attachment.entity_carry_indices = PackedInt32Array()
+	if next.attachment.current_entity_index >= 0 and (_platform_pose(next) == null or _platform_definition(next) == null):
 		return _failed_tick(result, "Current platform identity or matrix is invalid")
 	if command.start_timer_context >= 0:
-		next.start_timer = command.start_timer_context
+		next.frog.start_timer = command.start_timer_context
 	if command.start_sequence_complete:
-		next.mode = FrogMode.WAIT_FOR_CAMERA
+		next.frog.mode = FrogMode.WAIT_FOR_CAMERA
 	_callback_error = ""
 	var control_error: String = _control(next, command, result.events)
 	if not control_error.is_empty():
@@ -297,12 +297,12 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_sync_systems(next)
 	if capture_phases:
 		result.control_snapshot = next.copy()
-	next.old_position_16 = next.position_16
+	next.frog.old_position_16 = next.frog.position_16
 	_move(next, result.events)
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
-	if next.flags & FrogFlags.ON_ENTITY and next.current_entity_index >= 0:
-		_mark_carry(next, next.current_entity_index)
+	if next.frog.flags & FrogFlags.ON_ENTITY and next.attachment.current_entity_index >= 0:
+		_mark_carry(next, next.attachment.current_entity_index)
 	_update_camera_zone(next)
 	if _tick_guard != null:
 		var guard_error: String = _check_guard(TickGuard.Phase.MOVEMENT, next)
@@ -332,29 +332,29 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		result.collision_snapshot = next.copy()
 	if _candidate_camera != null:
 		var camera_input := GameplayCameraTick.new()
-		camera_input.frog_world = next.world_position
-		camera_input.frog_mode = next.mode
-		camera_input.remaining_ticks = next.remaining_ticks
-		camera_input.old_y = next.old_y
-		camera_input.target_y = next.target_y
-		camera_input.freefall = next.flags & FrogFlags.FREEFALL != 0
-		camera_input.superjump = next.flags & FrogFlags.SUPERJUMP != 0
-		camera_input.start_timer = next.start_timer
-		camera_input.camera_zone = ZoneQueries.definition_for(_camera_zones, next.camera_zone_index)
-		camera_input.on_entity = next.current_entity_index >= 0
+		camera_input.frog_world = next.frog.world_position
+		camera_input.frog_mode = next.frog.mode
+		camera_input.remaining_ticks = next.frog.remaining_ticks
+		camera_input.old_y = next.frog.old_y
+		camera_input.target_y = next.frog.target_y
+		camera_input.freefall = next.frog.flags & FrogFlags.FREEFALL != 0
+		camera_input.superjump = next.frog.flags & FrogFlags.SUPERJUMP != 0
+		camera_input.start_timer = next.frog.start_timer
+		camera_input.camera_zone = ZoneQueries.definition_for(_camera_zones, next.frog.camera_zone_index)
+		camera_input.on_entity = next.attachment.current_entity_index >= 0
 		if camera_input.on_entity:
 			camera_input.entity_matrix12 = _platform_pose(next).matrix12.duplicate()
 		result.error = _candidate_camera.step(camera_input)
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
 		next.camera = _candidate_camera.snapshot()
-		next.entity_angle = (next.entity_angle + next.camera.entity_angle_delta) & 3
+		next.attachment.entity_angle = (next.attachment.entity_angle + next.camera.entity_angle_delta) & 3
 	if capture_phases:
 		result.camera_snapshot = next.copy()
 	if _candidate_animation != null:
-		next.no_input_timer = _candidate_animation.update_scripts(next.no_input_timer)
+		next.frog.no_input_timer = _candidate_animation.update_scripts(next.frog.no_input_timer)
 		_sync_systems(next)
-		next.animation_condition_counter = _candidate_animation.context.if_counter
+		next.frog.animation_condition_counter = _candidate_animation.context.if_counter
 	if capture_phases:
 		result.scripts_snapshot = next.copy()
 	if _candidate_animation != null:
@@ -363,9 +363,9 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			result.error = _candidate_animation.error
 			return _failed_tick(result, result.error)
 		next.animation = _candidate_animation.state.copy()
-		next.animation_condition_counter = _candidate_animation.context.if_counter
-	if next.frog_collision_pose != null:
-		var pose_issue: String = next.frog_collision_pose.refresh(_entity_collision.frog_collision, next.animation.action, next.animation.cel, next.matrix12)
+		next.frog.animation_condition_counter = _candidate_animation.context.if_counter
+	if next.frog.frog_collision_pose != null:
+		var pose_issue: String = next.frog.frog_collision_pose.refresh(_entity_collision.frog_collision, next.animation.action, next.animation.cel, next.frog.matrix12)
 		if not pose_issue.is_empty():
 			return _failed_tick(result, pose_issue)
 	if _candidate_entities != null:
@@ -377,7 +377,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			return _failed_tick(result, visibility_error)
 		next.entities = _candidate_entities.snapshot()
 	next.rng_state = _candidate_random.state
-	next.rng_draw_count = _candidate_random.draw_count
+	next.diagnostics.rng_draw_count = _candidate_random.draw_count
 	if _tick_guard != null:
 		var guard_error: String = _check_guard(TickGuard.Phase.FINAL, next)
 		if not guard_error.is_empty():
@@ -400,27 +400,27 @@ func _update_entity_scripts(state: RunSnapshot, events: Array[TickEvent]) -> Str
 	if _candidate_entities == null or not _has_entity_updates:
 		return ""
 	for slot: int in _candidate_entities.update_slots():
-		if not _candidate_entities.begin_update(slot, state.current_entity_index):
+		if not _candidate_entities.begin_update(slot, state.attachment.current_entity_index):
 			state.entities = _candidate_entities.snapshot()
 			continue
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 		var previous_flags: int = state.entities.entities[slot].live_flags
-		var was_alive: bool = state.mode != FrogMode.DYING and not state.flags & FrogFlags.MUST_DIE
+		var was_alive: bool = state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE
 		var issue: String = _visit_entity(slot, previous_flags, state, events)
 		if not issue.is_empty():
 			return issue
-		var killed: bool = was_alive and bool(state.flags & FrogFlags.MUST_DIE)
+		var killed: bool = was_alive and bool(state.frog.flags & FrogFlags.MUST_DIE)
 		if killed:
 			events.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN).for_entity(_entity_collision.entities[slot].entity_index))
-		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.sound_requests, state.entity_environment, killed, _capture_phases)
+		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.requests.sound_requests, state.entity_environment, killed, _capture_phases)
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 	return ""
 
 func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: Array[TickEvent]) -> String:
 	var definition: EntityDefinition = _entity_collision.entities[slot]
 	if definition.behavior.has_custom_update():
-		var frog_position := Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
-		var background: EntityCustomResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
+		var frog_position := Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
+		var background: EntityCustomResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
 		if not background.error.is_empty():
 			return background.error
 		state.entity_environment = background.environment
@@ -436,7 +436,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	context.entity_index = definition.entity_index
 	context.form_id = definition.form_id
 	context.base_matrix = state.entities.entities[slot].matrix12.duplicate()
-	context.frog_position = Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
+	context.frog_position = Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
 	context.previous_hit = bool(previous_flags & EntityLiveFlags.HIT_FROG_0)
 	context.previous_carry = bool(previous_flags & EntityLiveFlags.CARRIES_FROG_0)
 	context.has_path = definition.path_definition != null
@@ -452,7 +452,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	for request: TickEvent in update.requests:
 		events.append(request.for_entity(definition.entity_index))
 		if request.kind == TickEvent.Kind.SOUND:
-			state.sound_requests += 1
+			state.requests.sound_requests += 1
 	if update.drown:
 		_kill(state, FrogAnimationCatalog.DROWN, false, events)
 	state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
@@ -504,44 +504,44 @@ func _first_direction(mask: int) -> int:
 	return NO_INPUT
 
 func _control(state: RunSnapshot, command: TickCommand, events: Array[TickEvent]) -> String:
-	if state.flags & FrogFlags.MUST_DIE:
-		state.flags &= ~FrogFlags.MUST_DIE
-		if state.mode != FrogMode.JUMPING or not state.flags & FrogFlags.JUMP_TO_LAND:
-			state.remaining_ticks = 0
-		state.mode = FrogMode.DYING
-		state.death_count = 70
+	if state.frog.flags & FrogFlags.MUST_DIE:
+		state.frog.flags &= ~FrogFlags.MUST_DIE
+		if state.frog.mode != FrogMode.JUMPING or not state.frog.flags & FrogFlags.JUMP_TO_LAND:
+			state.frog.remaining_ticks = 0
+		state.frog.mode = FrogMode.DYING
+		state.frog.death_count = 70
 		if _candidate_camera != null:
 			_candidate_camera.request_death()
 		events.append(TickEvent.make(TickEvent.Kind.CAMERA_DEATH))
-	if state.start_timer != 0 or not state.flags & FrogFlags.CONTROL_ACTIVE:
+	if state.frog.start_timer != 0 or not state.frog.flags & FrogFlags.CONTROL_ACTIVE:
 		return ""
-	if state.mode == FrogMode.SLIPPING_LAND_NONGRID:
+	if state.frog.mode == FrogMode.SLIPPING_LAND_NONGRID:
 		var callback: TerrainCallbackResult = TerrainFreeformSlip.control(state, command, _controller_directions, _theme)
 		if callback.forward_steering:
-			if state.square_index < 0:
+			if state.frog.square_index < 0:
 				return "Freeform forward steering requires a current authored square"
-			TerrainFreeformSlip.forward_control(state, _grid.squares[state.square_index])
+			TerrainFreeformSlip.forward_control(state, _grid.squares[state.frog.square_index])
 		_apply_requests(state, callback, events)
 		return _callback_error
-	if state.mode not in [FrogMode.STATIONARY, FrogMode.JUMPING, FrogMode.CENTRING, FrogMode.SLIPPING_LAND_GRID, FrogMode.SIMPLE_SLIPPING_LAND_GRID]:
+	if state.frog.mode not in [FrogMode.STATIONARY, FrogMode.JUMPING, FrogMode.CENTRING, FrogMode.SLIPPING_LAND_GRID, FrogMode.SIMPLE_SLIPPING_LAND_GRID]:
 		return ""
-	if state.mode == FrogMode.JUMPING:
+	if state.frog.mode == FrogMode.JUMPING:
 		var pressed: int = _first_direction(command.pressed_mask)
 		if pressed == NO_INPUT and command.pressed_mask & TickCommand.SUPER_HOP:
 			pressed = 8
-		if pressed != NO_INPUT and state.buffered_keys < 1:
-			state.buffered_keys = 1
-			state.buffered_direction = (pressed - _controller_directions[0]) & 3 if pressed != 8 else 8
+		if pressed != NO_INPUT and state.frog.buffered_keys < 1:
+			state.frog.buffered_keys = 1
+			state.frog.buffered_direction = (pressed - _controller_directions[0]) & 3 if pressed != 8 else 8
 		return ""
 	var input: int = NO_INPUT
-	state.no_input_timer += 1
-	var buffered_mask: int = 16 if state.buffered_direction == 8 else 1 << state.buffered_direction
-	if state.buffered_keys > 0 and command.held_mask & buffered_mask:
-		input = state.buffered_direction
-		state.buffered_input_count += 1
-	elif state.buffered_input_count > 0:
-		state.buffered_input_count -= 1
-	state.buffered_keys = 0
+	state.frog.no_input_timer += 1
+	var buffered_mask: int = 16 if state.frog.buffered_direction == 8 else 1 << state.frog.buffered_direction
+	if state.frog.buffered_keys > 0 and command.held_mask & buffered_mask:
+		input = state.frog.buffered_direction
+		state.frog.buffered_input_count += 1
+	elif state.frog.buffered_input_count > 0:
+		state.frog.buffered_input_count -= 1
+	state.frog.buffered_keys = 0
 	if input == NO_INPUT:
 		input = _first_direction(command.pressed_mask)
 		if input == NO_INPUT and command.pressed_mask & TickCommand.SUPER_HOP:
@@ -551,37 +551,37 @@ func _control(state: RunSnapshot, command: TickCommand, events: Array[TickEvent]
 				input |= 32
 			if command.pressed_mask & TickCommand.CAMERA_ANTICLOCKWISE:
 				input |= 64
-		if state.powerup_flags & PowerupFlags.AUTO_HOP:
+		if state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
 			var held_direction: int = _first_direction(command.held_mask)
 			if held_direction != NO_INPUT:
 				input = held_direction
 		if input & 96 and _candidate_camera.allows_manual_turn():
 			var entity_matrix: PackedInt32Array = PackedInt32Array()
-			if state.current_entity_index >= 0:
+			if state.attachment.current_entity_index >= 0:
 				entity_matrix = _platform_pose(state).matrix12
-			var failure: String = _candidate_camera.request_turn(1 if input & 32 else -1, state.camera_zone_index >= 0, entity_matrix)
+			var failure: String = _candidate_camera.request_turn(1 if input & 32 else -1, state.frog.camera_zone_index >= 0, entity_matrix)
 			if not failure.is_empty():
 				return failure
-			state.mode = FrogMode.WAIT_FOR_CAMERA
+			state.frog.mode = FrogMode.WAIT_FOR_CAMERA
 			events.append(TickEvent.make(TickEvent.Kind.CAMERA_CLOCKWISE) if input & 32 else TickEvent.make(TickEvent.Kind.CAMERA_ANTICLOCKWISE))
 			return ""
 	var is_super: bool = input & 8 != 0
 	if is_super:
-		input = (state.direction - (state.entity_angle if state.flags & FrogFlags.ON_ENTITY else _controller_directions[0])) & 3
+		input = (state.frog.direction - (state.attachment.entity_angle if state.frog.flags & FrogFlags.ON_ENTITY else _controller_directions[0])) & 3
 	if not input & NO_INPUT:
-		state.no_input_timer = 0
+		state.frog.no_input_timer = 0
 		var failure: String = _jump(state, input, events, is_super)
 		if not failure.is_empty():
 			return failure
-	state.current_input = input
+	state.frog.current_input = input
 	return ""
 
 func _jump(state: RunSnapshot, direction: int, events: Array[TickEvent], is_super: bool = false, forced: bool = false, distance: int = 1, duration: int = 0) -> String:
-	if state.flags & FrogFlags.ON_ENTITY:
+	if state.frog.flags & FrogFlags.ON_ENTITY:
 		return _jump_platform(state, direction, events, is_super, distance)
 	direction = _controller_directions[direction]
 	var offsets: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
-	var target_cell: Vector2i = state.cell + offsets[direction] * distance
+	var target_cell: Vector2i = state.frog.cell + offsets[direction] * distance
 	for attempt: int in range(distance):
 		if _grid.stack_at(target_cell) != null:
 			break
@@ -589,25 +589,25 @@ func _jump(state: RunSnapshot, direction: int, events: Array[TickEvent], is_supe
 	var stack: GridStackDefinition = _grid.stack_at(target_cell)
 	var wall: bool = false
 	if stack != null:
-		if direction in [0, 1] and state.square_index >= 0:
-			wall = _grid.squares[state.square_index].flags & (GridSquareFlags.BOUNCE_WALL_N if direction == 0 else GridSquareFlags.BOUNCE_WALL_E) != 0
+		if direction in [0, 1] and state.frog.square_index >= 0:
+			wall = _grid.squares[state.frog.square_index].flags & (GridSquareFlags.BOUNCE_WALL_N if direction == 0 else GridSquareFlags.BOUNCE_WALL_E) != 0
 		elif direction in [2, 3]:
 			for candidate: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
 				wall = wall or _grid.squares[candidate].flags & (GridSquareFlags.BOUNCE_WALL_N if direction == 2 else GridSquareFlags.BOUNCE_WALL_E) != 0
 		if not wall:
 			for candidate: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
-				if _grid.squares[candidate].flags & GridSquareFlags.USABLE and _grid.squares[candidate].flags & GridSquareFlags.CLIFF and state.world_position.y >= -(stack.cliff_height_byte << 6):
+				if _grid.squares[candidate].flags & GridSquareFlags.USABLE and _grid.squares[candidate].flags & GridSquareFlags.CLIFF and state.frog.world_position.y >= -(stack.cliff_height_byte << 6):
 					wall = true
 					break
 	if wall:
-		state.user_target_cell = target_cell
-		state.direction = direction
+		state.frog.user_target_cell = target_cell
+		state.frog.direction = direction
 		_apply_requests(state, TerrainWallBounce.setup(state, _grid), events)
-		state.mode = FrogMode.BOUNCY_COBWEB
+		state.frog.mode = FrogMode.BOUNCY_COBWEB
 		return _callback_error
-	var current_height: int = state.world_position.y
+	var current_height: int = state.frog.world_position.y
 	var allowed_up: int = 448 if is_super else 200
-	if not is_super and state.square_index >= 0 and _grid.squares[state.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT:
+	if not is_super and state.frog.square_index >= 0 and _grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT:
 		allowed_up = 255
 	var index: int = -1
 	var height: int = current_height
@@ -632,209 +632,209 @@ func _jump(state: RunSnapshot, direction: int, events: Array[TickEvent], is_supe
 		if index < 0 or index >= _grid.squares.size():
 			return "Source forced-hop leftover layer pointer lies outside authored global storage"
 	if stack != null and stack.square_count > 0 and index < 0:
-		state.direction = direction
-		state.animation_requests += 1
+		state.frog.direction = direction
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.OUCH, state)
 		events.append(TickEvent.make(TickEvent.Kind.OUCH))
 		return ""
-	var roll_request: bool = state.direction == direction and state.buffered_input_count > 3
+	var roll_request: bool = state.frog.direction == direction and state.frog.buffered_input_count > 3
 	if roll_request:
-		state.buffered_input_count = 0
-	state.direction = direction
-	state.cell = target_cell
-	state.square_index = index
+		state.frog.buffered_input_count = 0
+	state.frog.direction = direction
+	state.frog.cell = target_cell
+	state.frog.square_index = index
 	if smooth:
-		state.flags |= FrogFlags.JUMP_TO_LAND
+		state.frog.flags |= FrogFlags.JUMP_TO_LAND
 	else:
-		state.flags &= ~FrogFlags.JUMP_TO_LAND
+		state.frog.flags &= ~FrogFlags.JUMP_TO_LAND
 	if is_super:
-		state.flags |= FrogFlags.SUPERJUMP
-	state.mode = FrogMode.JUMPING
-	state.remaining_ticks = 15 if is_super else 3 if state.powerup_flags & PowerupFlags.QUICK_JUMP else 6
+		state.frog.flags |= FrogFlags.SUPERJUMP
+	state.frog.mode = FrogMode.JUMPING
+	state.frog.remaining_ticks = 15 if is_super else 3 if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else 6
 	if duration > 0:
-		state.remaining_ticks = duration
-	state.old_y = state.target_y
-	state.target_y = height if smooth else current_height
-	state.target_16 = Vector3i((target_cell.x * 256 + _grid.base.x + 128) * 65536, state.target_16.y, (target_cell.y * 256 + _grid.base.y + 128) * 65536)
-	var delta: Vector3i = state.target_16 - state.position_16
+		state.frog.remaining_ticks = duration
+	state.frog.old_y = state.frog.target_y
+	state.frog.target_y = height if smooth else current_height
+	state.frog.target_16 = Vector3i((target_cell.x * 256 + _grid.base.x + 128) * 65536, state.frog.target_16.y, (target_cell.y * 256 + _grid.base.y + 128) * 65536)
+	var delta: Vector3i = state.frog.target_16 - state.frog.position_16
 	@warning_ignore("integer_division")
-	state.velocity_16.x = delta.x / state.remaining_ticks
+	state.frog.velocity_16.x = delta.x / state.frog.remaining_ticks
 	@warning_ignore("integer_division")
-	state.velocity_16.z = delta.z / state.remaining_ticks
+	state.frog.velocity_16.z = delta.z / state.frog.remaining_ticks
 	@warning_ignore("integer_division")
-	state.velocity_16.y = ((state.target_y - current_height) * 65536) / (state.remaining_ticks + 1) - ((GRAVITY_16 * (state.remaining_ticks + 1)) >> 1)
-	state.animation_requests += 1
-	_request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll_request else FrogAnimationCatalog.HOP, state)
-	state.sound_requests += 1
-	if is_super or state.powerup_flags & PowerupFlags.QUICK_JUMP or not state.powerup_flags & PowerupFlags.AUTO_HOP:
-		state.score_requests += 1
-	events.append(TickEvent.make(TickEvent.Kind.SUPER_HOP) if is_super else TickEvent.make(TickEvent.Kind.QUICK_HOP) if state.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.AUTO_HOP) if state.powerup_flags & PowerupFlags.AUTO_HOP else TickEvent.make(TickEvent.Kind.ROLL) if roll_request else TickEvent.make(TickEvent.Kind.HOP))
+	state.frog.velocity_16.y = ((state.frog.target_y - current_height) * 65536) / (state.frog.remaining_ticks + 1) - ((GRAVITY_16 * (state.frog.remaining_ticks + 1)) >> 1)
+	state.requests.animation_requests += 1
+	_request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll_request else FrogAnimationCatalog.HOP, state)
+	state.requests.sound_requests += 1
+	if is_super or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP or not state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
+		state.requests.score_requests += 1
+	events.append(TickEvent.make(TickEvent.Kind.SUPER_HOP) if is_super else TickEvent.make(TickEvent.Kind.QUICK_HOP) if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.AUTO_HOP) if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else TickEvent.make(TickEvent.Kind.ROLL) if roll_request else TickEvent.make(TickEvent.Kind.HOP))
 	events.append(TickEvent.make(TickEvent.Kind.HOP_SOUND))
-	if is_super or state.powerup_flags & PowerupFlags.QUICK_JUMP or not state.powerup_flags & PowerupFlags.AUTO_HOP:
-		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll_request or state.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
+	if is_super or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP or not state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
+		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll_request or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
 	return ""
 
 func _move(state: RunSnapshot, events: Array[TickEvent]) -> void:
-	if state.current_entity_index >= 0 and state.mode in [FrogMode.STATIONARY, FrogMode.WAIT_FOR_CAMERA, FrogMode.CENTRING] and state.flags & FrogFlags.ON_ENTITY:
-		var was_centring: bool = state.mode == FrogMode.CENTRING
+	if state.attachment.current_entity_index >= 0 and state.frog.mode in [FrogMode.STATIONARY, FrogMode.WAIT_FOR_CAMERA, FrogMode.CENTRING] and state.frog.flags & FrogFlags.ON_ENTITY:
+		var was_centring: bool = state.frog.mode == FrogMode.CENTRING
 		_apply_requests(state, TerrainPlatform.carry(state, _platform_pose(state)), events)
 		_update_world(state)
 		if not was_centring:
-			state.target_y = state.world_position.y
+			state.frog.target_y = state.frog.world_position.y
 		if was_centring:
 			_update_matrix(state)
 			return
-	if state.mode == FrogMode.SLIPPING_LAND_NONGRID:
+	if state.frog.mode == FrogMode.SLIPPING_LAND_NONGRID:
 		_apply_callback(state, TerrainFreeformSlip.move(state, _grid), events)
 		return
-	if state.mode == FrogMode.BOUNCY_COBWEB:
+	if state.frog.mode == FrogMode.BOUNCY_COBWEB:
 		_apply_callback(state, TerrainWallBounce.move(state, _grid), events)
 		return
-	if state.mode in [FrogMode.LEVEL_START_BOUNCE, FrogMode.LEVEL_START_COME_TO_REST]:
+	if state.frog.mode in [FrogMode.LEVEL_START_BOUNCE, FrogMode.LEVEL_START_COME_TO_REST]:
 		_apply_callback(state, TerrainStartup.move(state), events)
 		return
-	if state.mode in [FrogMode.SLIPPING_LAND_GRID, FrogMode.SIMPLE_SLIPPING_LAND_GRID]:
+	if state.frog.mode in [FrogMode.SLIPPING_LAND_GRID, FrogMode.SIMPLE_SLIPPING_LAND_GRID]:
 		_apply_callback(state, TerrainGridSlip.move(state, _grid), events)
 		return
-	if state.mode == FrogMode.BOUNCE:
+	if state.frog.mode == FrogMode.BOUNCE:
 		var callback: TerrainCallbackResult = TerrainGridSlip.move(state, _grid, false)
 		callback.kill_looping_sound = false
 		_apply_callback(state, callback, events)
 		return
-	if state.mode == FrogMode.CLIFF_ROLL:
+	if state.frog.mode == FrogMode.CLIFF_ROLL:
 		_apply_callback(state, TerrainCliffRoll.move(state, _grid), events)
 		return
-	if state.mode == FrogMode.STUNNED:
-		state.remaining_ticks -= 1
-		if state.remaining_ticks == 0:
-			state.mode = FrogMode.STATIONARY
-			state.animation_requests += 1
+	if state.frog.mode == FrogMode.STUNNED:
+		state.frog.remaining_ticks -= 1
+		if state.frog.remaining_ticks == 0:
+			state.frog.mode = FrogMode.STATIONARY
+			state.requests.animation_requests += 1
 			_request_animation(FrogAnimationCatalog.PANT, state)
 			events.append(TickEvent.make(TickEvent.Kind.PANT))
 		_update_matrix(state)
 		return
-	if state.mode == FrogMode.DYING:
-		var continuing_jump: bool = state.remaining_ticks != 0
-		if state.current_entity_index >= 0 and state.flags & FrogFlags.ON_ENTITY:
-			state.position_16 = PlatformMath.world(_platform_pose(state).matrix12, state.entity_offset_16) * 65536
-		state.death_count -= 1
-		if state.death_count == 0:
-			state.flags &= ~FrogFlags.CONTROL_ACTIVE
-			state.game_mode_request = 3
+	if state.frog.mode == FrogMode.DYING:
+		var continuing_jump: bool = state.frog.remaining_ticks != 0
+		if state.attachment.current_entity_index >= 0 and state.frog.flags & FrogFlags.ON_ENTITY:
+			state.frog.position_16 = PlatformMath.world(_platform_pose(state).matrix12, state.attachment.entity_offset_16) * 65536
+		state.frog.death_count -= 1
+		if state.frog.death_count == 0:
+			state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
+			state.requests.game_mode_request = 3
 			state.completed = true
 			events.append(TickEvent.make(TickEvent.Kind.DEATH_COMPLETE))
 			events.append(TickEvent.make(TickEvent.Kind.SINGLE_FROG_DIED_REQUEST))
-		if state.remaining_ticks != 0:
+		if state.frog.remaining_ticks != 0:
 			_move_jumping(state, events, false)
-			state.mode = FrogMode.DYING
+			state.frog.mode = FrogMode.DYING
 		else:
-			state.position_16 += state.velocity_16
+			state.frog.position_16 += state.frog.velocity_16
 			if _map_index == 2:
-				var product: Vector3i = state.velocity_16 * 14
-				state.velocity_16 = Vector3i(product.x >> 4, product.y >> 4, product.z >> 4)
+				var product: Vector3i = state.frog.velocity_16 * 14
+				state.frog.velocity_16 = Vector3i(product.x >> 4, product.y >> 4, product.z >> 4)
 		_update_world(state)
 		if not continuing_jump:
 			_update_matrix(state)
 		return
-	if state.mode == FrogMode.STATIONARY or state.mode == FrogMode.WAIT_FOR_CAMERA:
+	if state.frog.mode == FrogMode.STATIONARY or state.frog.mode == FrogMode.WAIT_FOR_CAMERA:
 		if _candidate_camera == null or _candidate_camera.snapshot().turn_wait_complete():
-			state.mode = FrogMode.STATIONARY
-			state.buffered_keys = 0
+			state.frog.mode = FrogMode.STATIONARY
+			state.frog.buffered_keys = 0
 		_update_matrix(state)
 		return
-	var landing: bool = state.remaining_ticks == 1 and state.flags & FrogFlags.JUMP_TO_LAND != 0
+	var landing: bool = state.frog.remaining_ticks == 1 and state.frog.flags & FrogFlags.JUMP_TO_LAND != 0
 	_move_jumping(state, events)
 	_update_world(state)
 	if not landing:
 		_update_matrix(state)
 
 func _move_jumping(state: RunSnapshot, events: Array[TickEvent], react_on_land: bool = true) -> void:
-	if state.current_entity_index >= 0:
+	if state.attachment.current_entity_index >= 0:
 		_move_platform_jumping(state, events, react_on_land)
 		return
-	state.remaining_ticks -= 1
-	if state.remaining_ticks == 0:
-		if state.flags & FrogFlags.JUMP_TO_LAND:
-			state.position_16.x = state.target_16.x
-			state.position_16.z = state.target_16.z
+	state.frog.remaining_ticks -= 1
+	if state.frog.remaining_ticks == 0:
+		if state.frog.flags & FrogFlags.JUMP_TO_LAND:
+			state.frog.position_16.x = state.frog.target_16.x
+			state.frog.position_16.z = state.frog.target_16.z
 			_land(state, events)
 			_update_world(state)
 			if react_on_land:
 				_update_matrix(state)
 			if react_on_land:
-				_react(state, _grid.squares[state.square_index].flags & 65535, events)
+				_react(state, _grid.squares[state.frog.square_index].flags & 65535, events)
 		else:
-			state.position_16.x = state.target_16.x
-			state.position_16.z = state.target_16.z
-			if state.square_index < 0:
-				var stack: GridStackDefinition = _grid.stack_at(state.cell)
+			state.frog.position_16.x = state.frog.target_16.x
+			state.frog.position_16.z = state.frog.target_16.z
+			if state.frog.square_index < 0:
+				var stack: GridStackDefinition = _grid.stack_at(state.frog.cell)
 				if stack == null:
 					_callback_error = "Source final hop stack lookup lies outside authored storage"
 					return
 				if stack != null:
 					for index: int in range(stack.first_square_index + stack.square_count - 1, stack.first_square_index - 1, -1):
-						if _grid.squares[index].flags & GridSquareFlags.USABLE and GridQueries.square_height(_grid.squares[index]) >= (state.position_16.y >> 16):
-							state.square_index = index
+						if _grid.squares[index].flags & GridSquareFlags.USABLE and GridQueries.square_height(_grid.squares[index]) >= (state.frog.position_16.y >> 16):
+							state.frog.square_index = index
 							break
-			state.flags &= ~(FrogFlags.SUPERJUMP | FrogFlags.JUMP_TO_LAND)
-			state.flags |= FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
-			state.remaining_ticks = 0x7FFFFFF
-			state.velocity_16.x = 0
-			state.velocity_16.z = 0
+			state.frog.flags &= ~(FrogFlags.SUPERJUMP | FrogFlags.JUMP_TO_LAND)
+			state.frog.flags |= FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
+			state.frog.remaining_ticks = 0x7FFFFFF
+			state.frog.velocity_16.x = 0
+			state.frog.velocity_16.z = 0
 	else:
-		state.velocity_16.y += GRAVITY_16
-		if state.flags & (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) == (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) and state.world_position.y - state.old_y >= 0:
-			state.animation_requests += 1
+		state.frog.velocity_16.y += GRAVITY_16
+		if state.frog.flags & (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) == (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) and state.frog.world_position.y - state.frog.old_y >= 0:
+			state.requests.animation_requests += 1
 			_request_animation(FrogAnimationCatalog.FREEFALL if _map_index >= 42 and _map_index <= 47 else FrogAnimationCatalog.FALLING, state)
-			state.flags &= ~FrogFlags.FREEFALL_NO_ANIMATION
+			state.frog.flags &= ~FrogFlags.FREEFALL_NO_ANIMATION
 			events.append(TickEvent.make(TickEvent.Kind.FALLING))
-		state.position_16 += state.velocity_16
+		state.frog.position_16 += state.frog.velocity_16
 
 func _update_world(state: RunSnapshot) -> void:
-	state.world_position = Vector3i(state.position_16.x >> 16, state.position_16.y >> 16, state.position_16.z >> 16)
-	state.cell = GridQueries.world_to_cell(_grid, state.world_position.x, state.world_position.z)
-	state.matrix12[9] = state.world_position.x
-	state.matrix12[10] = state.world_position.y
-	state.matrix12[11] = state.world_position.z
+	state.frog.world_position = Vector3i(state.frog.position_16.x >> 16, state.frog.position_16.y >> 16, state.frog.position_16.z >> 16)
+	state.frog.cell = GridQueries.world_to_cell(_grid, state.frog.world_position.x, state.frog.world_position.z)
+	state.frog.matrix12[9] = state.frog.world_position.x
+	state.frog.matrix12[10] = state.frog.world_position.y
+	state.frog.matrix12[11] = state.frog.world_position.z
 
 func _update_matrix(state: RunSnapshot) -> void:
-	if state.flags & FrogFlags.ON_ENTITY and state.current_entity_index >= 0:
+	if state.frog.flags & FrogFlags.ON_ENTITY and state.attachment.current_entity_index >= 0:
 		TerrainPlatform.update_matrix(state, _platform_pose(state))
 		return
-	if state.current_entity_index >= 0 and state.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_LAND) == FrogFlags.JUMP_FROM_ENTITY:
-		var facing: Vector3i = PlatformMath.apply(_platform_pose(state).matrix12, TerrainPlatform.DIRECTIONS[state.direction])
-		state.matrix12 = TerrainMatrix.update(state.matrix12, state.flags, state.direction, null, facing)
+	if state.attachment.current_entity_index >= 0 and state.frog.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_LAND) == FrogFlags.JUMP_FROM_ENTITY:
+		var facing: Vector3i = PlatformMath.apply(_platform_pose(state).matrix12, TerrainPlatform.DIRECTIONS[state.frog.direction])
+		state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, null, facing)
 		return
-	state.matrix12 = TerrainMatrix.update(state.matrix12, state.flags, state.direction, _grid.squares[state.square_index] if state.square_index >= 0 else null)
+	state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, _grid.squares[state.frog.square_index] if state.frog.square_index >= 0 else null)
 
 func _land(state: RunSnapshot, events: Array[TickEvent]) -> void:
-	var flags: int = _grid.squares[state.square_index].flags
+	var flags: int = _grid.squares[state.frog.square_index].flags
 	if not flags & (GridSquareFlags.DEADLY | GridSquareFlags.WATER | GridSquareFlags.POPDEATH):
-		state.position_16 = GridQueries.square_centre(_grid, _grid.squares[state.square_index]) * 65536
-	state.target_y = state.position_16.y >> 16
-	var distance: int = state.target_y - state.old_y
+		state.frog.position_16 = GridQueries.square_centre(_grid, _grid.squares[state.frog.square_index]) * 65536
+	state.frog.target_y = state.frog.position_16.y >> 16
+	var distance: int = state.frog.target_y - state.frog.old_y
 	_react_fall(state, distance, flags, events)
-	state.current_entity_index = -1
-	state.forbidden_entity_index = -1
-	state.velocity_16 = Vector3i.ZERO
-	state.old_y = state.target_y
-	state.flags &= ~(FrogFlags.ON_ENTITY | FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY | FrogFlags.SUPERJUMP | FrogFlags.JUMP_TO_LAND | FrogFlags.FREEFALL | FrogFlags.FORCEDJUMP | FrogFlags.JUMP_FROM_COLLPRIM | FrogFlags.JUMP_ON_SPOT)
+	state.attachment.current_entity_index = -1
+	state.attachment.forbidden_entity_index = -1
+	state.frog.velocity_16 = Vector3i.ZERO
+	state.frog.old_y = state.frog.target_y
+	state.frog.flags &= ~(FrogFlags.ON_ENTITY | FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY | FrogFlags.SUPERJUMP | FrogFlags.JUMP_TO_LAND | FrogFlags.FREEFALL | FrogFlags.FORCEDJUMP | FrogFlags.JUMP_FROM_COLLPRIM | FrogFlags.JUMP_ON_SPOT)
 	if _entity_collision != null and _entity_collision.platforms_enabled and _candidate_camera != null and _candidate_camera.snapshot().twist_counter == 0:
 		_candidate_camera.align_y()
 	if _entity_collision != null and _entity_collision.platforms_enabled:
-		state.direction = PlatformMath.quadrant(Vector3i(state.matrix12[2], state.matrix12[5], state.matrix12[8]))
+		state.frog.direction = PlatformMath.quadrant(Vector3i(state.frog.matrix12[2], state.frog.matrix12[5], state.frog.matrix12[8]))
 
 func _react_fall(state: RunSnapshot, distance: int, flags: int, events: Array[TickEvent]) -> void:
-	state.mode = FrogMode.STATIONARY
+	state.frog.mode = FrogMode.STATIONARY
 	if flags & GridSquareFlags.SOFT or distance <= 512:
-		state.animation_requests += 1
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.PANT, state)
 		events.append(TickEvent.make(TickEvent.Kind.PANT))
 	elif distance <= 1024:
-		state.mode = FrogMode.STUNNED
-		state.remaining_ticks = 45
-		state.sound_requests += 1
-		state.animation_requests += 1
+		state.frog.mode = FrogMode.STUNNED
+		state.frog.remaining_ticks = 45
+		state.requests.sound_requests += 1
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.CRASH, state)
 		if _candidate_camera != null:
 			_candidate_camera.request_shake(128, 45, 20480, _candidate_random.next_value("camera_stun_shake_x"), _candidate_random.next_value("camera_stun_shake_y"))
@@ -844,13 +844,13 @@ func _react_fall(state: RunSnapshot, distance: int, flags: int, events: Array[Ti
 	else:
 		if flags & GridSquareFlags.DEADLY:
 			if _theme == 3:
-				state.sound_requests += 1
+				state.requests.sound_requests += 1
 			_kill(state, 12 if _theme == 3 else 8, _theme != 3, events)
 		elif flags & GridSquareFlags.POPDEATH:
 			_kill(state, 23, false, events)
 		elif flags & GridSquareFlags.WATER:
 			_kill(state, 8, true, events)
-			state.sound_requests += 1
+			state.requests.sound_requests += 1
 		else:
 			_kill(state, 2, false, events)
 
@@ -861,84 +861,84 @@ func _react(state: RunSnapshot, flags: int, events: Array[TickEvent]) -> void:
 	if not flags & GridSquareFlags.USABLE:
 		return
 	if flags & GridSquareFlags.CLIFF:
-		if state.flags & FrogFlags.CONTROL_ACTIVE:
+		if state.frog.flags & FrogFlags.CONTROL_ACTIVE:
 			_apply_requests(state, TerrainCliffRoll.setup(state, _grid), events)
-			state.mode = FrogMode.CLIFF_ROLL
+			state.frog.mode = FrogMode.CLIFF_ROLL
 		return
 	if flags & GridSquareFlags.SAFE:
 		return
 	if flags & GridSquareFlags.DEADLY:
 		_kill(state, 12 if _theme == 3 else 8, _theme != 3, events)
-		state.sound_requests += 1
+		state.requests.sound_requests += 1
 	elif flags & GridSquareFlags.POPDEATH:
 		_kill(state, 23, false, events)
-		state.sound_requests += 1
+		state.requests.sound_requests += 1
 	elif flags & GridSquareFlags.WATER:
 		_kill(state, 8, true, events)
-		state.sound_requests += 1
+		state.requests.sound_requests += 1
 	elif flags & (GridSquareFlags.SLIPPY | GridSquareFlags.SIMPLE_SLIPPY):
 		var mode: int = FrogMode.SLIPPING_LAND_GRID if flags & GridSquareFlags.SLIPPY else FrogMode.SIMPLE_SLIPPING_LAND_GRID
 		var callback: TerrainCallbackResult = TerrainGridSlip.setup(state, _grid, mode == FrogMode.SIMPLE_SLIPPING_LAND_GRID, _theme)
 		_apply_requests(state, callback, events)
-		state.mode = mode
+		state.frog.mode = mode
 	elif flags & GridSquareFlags.FREEFORM_SLIPPY:
 		_apply_requests(state, TerrainFreeformSlip.setup(state), events)
-		state.mode = FrogMode.SLIPPING_LAND_NONGRID
+		state.frog.mode = FrogMode.SLIPPING_LAND_NONGRID
 	elif flags & GridSquareFlags.BOUNCY:
-		_callback_error = _jump(state, (state.direction - _controller_directions[0]) & 3, events, false, true, 2, 15)
-		state.mode = FrogMode.BOUNCE
+		_callback_error = _jump(state, (state.frog.direction - _controller_directions[0]) & 3, events, false, true, 2, 15)
+		state.frog.mode = FrogMode.BOUNCE
 
 func _kill(state: RunSnapshot, animation: int, down_velocity: bool, events: Array[TickEvent]) -> void:
-	if state.mode == FrogMode.DYING or state.flags & FrogFlags.MUST_DIE:
+	if state.frog.mode == FrogMode.DYING or state.frog.flags & FrogFlags.MUST_DIE:
 		return
-	state.flags &= ~FrogFlags.CONTROL_ACTIVE
-	if state.fixture_lives > 0:
-		state.life_decrement_requested = true
-	if state.fixture_lives <= 1:
-		state.flags &= ~FrogFlags.ACTIVE
-	state.flags |= FrogFlags.MUST_DIE
-	state.animation_requests += 1
+	state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
+	if state.frog.lives > 0:
+		state.requests.life_decrement_requested = true
+	if state.frog.lives <= 1:
+		state.frog.flags &= ~FrogFlags.ACTIVE
+	state.frog.flags |= FrogFlags.MUST_DIE
+	state.requests.animation_requests += 1
 	_request_animation(animation, state)
 	if _candidate_camera != null:
 		_candidate_camera.request_fixed()
-	state.death_equate = animation
+	state.frog.death_equate = animation
 	if down_velocity:
-		state.velocity_16 = Vector3i(0, 65536, 0)
-	elif state.mode != FrogMode.JUMPING or not state.flags & FrogFlags.JUMP_TO_LAND:
-		state.velocity_16 = Vector3i.ZERO
+		state.frog.velocity_16 = Vector3i(0, 65536, 0)
+	elif state.frog.mode != FrogMode.JUMPING or not state.frog.flags & FrogFlags.JUMP_TO_LAND:
+		state.frog.velocity_16 = Vector3i.ZERO
 	if _theme == 10 and animation in [FrogAnimationCatalog.DROWN, FrogAnimationCatalog.FLOP]:
-		state.death_fire_requested = true
-		state.death_scale_colour = Vector3i(24, 0, 0)
-		state.animation_requests += 1
+		state.requests.death_fire_requested = true
+		state.requests.death_scale_colour = Vector3i(24, 0, 0)
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.DROWN, state)
 		events.append(TickEvent.make(TickEvent.Kind.DEATH_FIRE_PARTICLE_REQUEST))
 	events.append(TickEvent.death_animation(animation))
 	events.append(TickEvent.make(TickEvent.Kind.CAMERA_FIXED))
 
 func _collision(state: RunSnapshot, events: Array[TickEvent]) -> bool:
-	if state.mode == FrogMode.WAIT_FOR_CAMERA and (_candidate_camera == null or _candidate_camera.snapshot().twist_counter == 0):
+	if state.frog.mode == FrogMode.WAIT_FOR_CAMERA and (_candidate_camera == null or _candidate_camera.snapshot().twist_counter == 0):
 		return false
-	if state.mode in [FrogMode.DYING, FrogMode.HIT_CHECKPOINT, FrogMode.CHECKPOINT_COLLECTED] or state.flags & FrogFlags.MUST_DIE:
+	if state.frog.mode in [FrogMode.DYING, FrogMode.HIT_CHECKPOINT, FrogMode.CHECKPOINT_COLLECTED] or state.frog.flags & FrogFlags.MUST_DIE:
 		return false
-	var p: Vector3i = state.world_position
+	var p: Vector3i = state.frog.world_position
 	if p.x < _collision_bounds.position.x or p.x > _collision_bounds.end.x or p.z < _collision_bounds.position.y or p.z > _collision_bounds.end.y:
 		_kill(state, 2, false, events)
 		return false
-	if state.flags & FrogFlags.FREEFALL and state.square_index >= 0 and p.y > GridQueries.square_height(_grid.squares[state.square_index]):
+	if state.frog.flags & FrogFlags.FREEFALL and state.frog.square_index >= 0 and p.y > GridQueries.square_height(_grid.squares[state.frog.square_index]):
 		_land(state, events)
 		_update_world(state)
-		_react(state, _grid.squares[state.square_index].flags & 65535, events)
+		_react(state, _grid.squares[state.frog.square_index].flags & 65535, events)
 		return false
 	if p.y > _death_height:
-		state.world_position.y = _death_height
-		state.velocity_16 = Vector3i.ZERO
+		state.frog.world_position.y = _death_height
+		state.frog.velocity_16 = Vector3i.ZERO
 		_kill(state, 8, true, events)
-		state.sound_requests += 1
+		state.requests.sound_requests += 1
 		return false
 	return true
 
 func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
-	if _entity_collision.frog_collision != null and state.flags & FrogFlags.JUMP_FROM_COLLPRIM:
+	if _entity_collision.frog_collision != null and state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM:
 		return "Primitive admission does not support a jump from a collision primitive"
 	if state.entities == null or state.entities.entities.size() != _entity_collision.entities.size():
 		return "Entity collision snapshot does not match validated definitions"
@@ -947,14 +947,14 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		var actual: EntitySnapshot = state.entities.entities[index]
 		if actual == null or actual.entity_index != expected.entity_index or actual.unique_id != expected.unique_id:
 			return "Entity collision snapshot identity does not match validated definitions"
-	var ordered: PackedInt32Array = EntityContactOrder._indices_validated(_entity_collision, state.entities, state.world_position)
-	var forbidden: int = state.forbidden_entity_index
+	var ordered: PackedInt32Array = EntityContactOrder._indices_validated(_entity_collision, state.entities, state.frog.world_position)
+	var forbidden: int = state.attachment.forbidden_entity_index
 	for entity_id: int in ordered:
 		if _tick_guard != null:
 			var guard_error: String = _check_guard(TickGuard.Phase.CONTACT_POSE, state)
 			if not guard_error.is_empty():
 				return guard_error
-		if entity_id == state.current_entity_index or entity_id == forbidden:
+		if entity_id == state.attachment.current_entity_index or entity_id == forbidden:
 			continue
 		var index: int = -1
 		for candidate: int in _entity_collision.entities.size():
@@ -973,16 +973,16 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 			if primitive.status in [EntityPrimitiveQuery.INVALID, EntityPrimitiveQuery.UNSUPPORTED]:
 				return primitive.reason
 			if primitive.status == EntityPrimitiveQuery.CONTACT:
-				if not state.entity_hit_indices.has(pose.entity_index):
-					state.entity_hit_indices.append(pose.entity_index)
-				if state.death_entity_index < 0 and state.mode != FrogMode.DYING and not state.flags & FrogFlags.MUST_DIE:
+				if not state.attachment.entity_hit_indices.has(pose.entity_index):
+					state.attachment.entity_hit_indices.append(pose.entity_index)
+				if state.diagnostics.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
 					_kill(state, FrogAnimationCatalog.SQUISHED, false, result.events)
-					state.death_entity_index = pose.entity_index
+					state.diagnostics.death_entity_index = pose.entity_index
 					result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
 				for component: int in range(3, 6):
-					state.matrix12[component] = 0
+					state.frog.matrix12[component] = 0
 				continue
-		var contact: FormContactResult = FormContactQuery.query(definition, pose, state.world_position)
+		var contact: FormContactResult = FormContactQuery.query(definition, pose, state.frog.world_position)
 		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact, _entity_collision.platforms_enabled)
 		if reaction.status == FormReactionResult.INVALID:
 			return reaction.reason
@@ -990,14 +990,14 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		var issue: String = _apply_form_reaction(state, _entity_collision.contacts[index], state.entities.entities[index], reaction, result)
 		if not issue.is_empty():
 			return issue
-	if state.current_entity_index >= 0 and state.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) == (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) and state.remaining_ticks == 1:
+	if state.attachment.current_entity_index >= 0 and state.frog.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) == (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) and state.frog.remaining_ticks == 1:
 		if _tick_guard != null:
 			var guard_error: String = _check_guard(TickGuard.Phase.CONTACT_WORLD, state)
 			if not guard_error.is_empty():
 				return guard_error
 		var pose: EntitySnapshot = _platform_pose(state)
 		var definition: FormContactDefinition = _platform_definition(state)
-		var delta: Vector3i = state.world_position - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
+		var delta: Vector3i = state.frog.world_position - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
 		delta = Vector3i(PlatformMath.s16(delta.x), PlatformMath.s16(delta.y), PlatformMath.s16(delta.z))
 		var local: Vector3i = PlatformMath.apply(PlatformMath.transpose(pose.matrix12), delta)
 		var cell := Vector2i((local.x - definition.offsets.x) >> 8, (local.z - definition.offsets.y) >> 8)
@@ -1022,8 +1022,8 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		if not issue.is_empty():
 			return issue
 		reaction.hit = true
-		if not state.entity_hit_indices.has(pose.entity_index):
-			state.entity_hit_indices.append(pose.entity_index)
+		if not state.attachment.entity_hit_indices.has(pose.entity_index):
+			state.attachment.entity_hit_indices.append(pose.entity_index)
 	return ""
 
 func _contact_primitive(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot) -> EntityPrimitiveContact:
@@ -1034,17 +1034,17 @@ func _contact_primitive(state: RunSnapshot, definition: FormContactDefinition, p
 		result.status = EntityPrimitiveQuery.DISABLED
 		result.reason = "Entity has no collision-live instance"
 		return result
-	if not PlatformMath.valid(pose.matrix12) or state.frog_collision_pose == null:
+	if not PlatformMath.valid(pose.matrix12) or state.frog.frog_collision_pose == null:
 		result.status = EntityPrimitiveQuery.INVALID
 		result.reason = "Primitive contact requires an entity matrix and stored frog pose"
 		return result
-	var delta := Vector3i(PlatformMath.s16(state.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.world_position.z - pose.matrix12[11]))
+	var delta := Vector3i(PlatformMath.s16(state.frog.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.frog.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.frog.world_position.z - pose.matrix12[11]))
 	var distance: int = PlatformMath.s32(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z)
 	if distance >= definition.radius_squared:
 		result.status = EntityPrimitiveQuery.MISS
 		result.reason = "Outside strict form-book bounding sphere"
 		return result
-	var hit: EntityPrimitiveQuery.Result = EntityPrimitiveQuery.query(definition.primitives, pose.matrix12, state.frog_collision_pose.probes)
+	var hit: EntityPrimitiveQuery.Result = EntityPrimitiveQuery.query(definition.primitives, pose.matrix12, state.frog.frog_collision_pose.probes)
 	result.status = hit.status
 	result.reason = hit.reason
 	result.frog_part_index = hit.part_index
@@ -1061,11 +1061,11 @@ func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition,
 		var issue: String = _mount_platform(state, definition, pose, reaction, result.events)
 		if not issue.is_empty():
 			return issue
-	if reaction.hit and not state.entity_hit_indices.has(pose.entity_index):
-		state.entity_hit_indices.append(pose.entity_index)
-	if reaction.status in [FormReactionResult.POP, FormReactionResult.SQUISH] and state.death_entity_index < 0 and state.mode != FrogMode.DYING and not state.flags & FrogFlags.MUST_DIE:
+	if reaction.hit and not state.attachment.entity_hit_indices.has(pose.entity_index):
+		state.attachment.entity_hit_indices.append(pose.entity_index)
+	if reaction.status in [FormReactionResult.POP, FormReactionResult.SQUISH] and state.diagnostics.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
 		_kill(state, reaction.kill_animation, false, result.events)
-		state.death_entity_index = pose.entity_index
+		state.diagnostics.death_entity_index = pose.entity_index
 		result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_POP_EXPLOSION_REQUEST) if reaction.status == FormReactionResult.POP else TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
 	if _tick_guard != null:
 		return _check_guard(TickGuard.Phase.CONTACT_WORLD, state)
@@ -1088,7 +1088,7 @@ func _failed_tick(result: TickResult, issue: String) -> TickResult:
 func _platform_pose(state: RunSnapshot) -> EntitySnapshot:
 	if state.entities != null:
 		for pose: EntitySnapshot in state.entities.entities:
-			if pose != null and pose.entity_index == state.current_entity_index and PlatformMath.valid(pose.matrix12):
+			if pose != null and pose.entity_index == state.attachment.current_entity_index and PlatformMath.valid(pose.matrix12):
 				if state.entities.lifecycle_enabled and (not pose.live or not pose.lifecycle_supported):
 					return null
 				return pose
@@ -1097,13 +1097,13 @@ func _platform_pose(state: RunSnapshot) -> EntitySnapshot:
 func _platform_definition(state: RunSnapshot) -> FormContactDefinition:
 	if _entity_collision != null:
 		for definition: FormContactDefinition in _entity_collision.contacts:
-			if definition.entity_index == state.current_entity_index:
+			if definition.entity_index == state.attachment.current_entity_index:
 				return definition
 	return null
 
 func _mark_carry(state: RunSnapshot, index: int) -> void:
-	if not state.entity_carry_indices.has(index):
-		state.entity_carry_indices.append(index)
+	if not state.attachment.entity_carry_indices.has(index):
+		state.attachment.entity_carry_indices.append(index)
 
 func _mount_platform(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, events: Array[TickEvent]) -> String:
 	var matrix: PackedInt32Array = pose.matrix12
@@ -1111,11 +1111,11 @@ func _mount_platform(state: RunSnapshot, definition: FormContactDefinition, pose
 		reaction.status = FormReactionResult.NONE
 		reaction.reason = "SAFE platform is too vertical"
 		return ""
-	if state.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) != (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY):
+	if state.frog.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) != (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY):
 		var previous: PackedInt32Array = PackedInt32Array()
-		if state.current_entity_index >= 0:
+		if state.attachment.current_entity_index >= 0:
 			previous = _platform_pose(state).matrix12
-		_react_fall(state, state.world_position.y - state.old_y, reaction.contact.cell_flags, events)
+		_react_fall(state, state.frog.world_position.y - state.frog.old_y, reaction.contact.cell_flags, events)
 		var outcome: TerrainCallbackResult = TerrainPlatform.land(state, definition, reaction.contact, pose, _candidate_camera, previous)
 		_apply_requests(state, outcome, events)
 		if not outcome.error.is_empty():
@@ -1127,10 +1127,10 @@ func _mount_platform(state: RunSnapshot, definition: FormContactDefinition, pose
 	return ""
 
 func _detach_platform(state: RunSnapshot, events: Array[TickEvent]) -> void:
-	if state.current_entity_index < 0:
+	if state.attachment.current_entity_index < 0:
 		return
 	_callback_error = _candidate_camera.transition_attachment(_platform_pose(state).matrix12, PackedInt32Array(), false)
-	state.current_entity_index = -1
+	state.attachment.current_entity_index = -1
 	events.append(TickEvent.make(TickEvent.Kind.PLATFORM_DEPARTURE))
 
 func _jump_platform(state: RunSnapshot, input: int, events: Array[TickEvent], is_super: bool, distance: int) -> String:
@@ -1138,13 +1138,13 @@ func _jump_platform(state: RunSnapshot, input: int, events: Array[TickEvent], is
 	var pose: EntitySnapshot = _platform_pose(state)
 	if definition == null or pose == null:
 		return "Platform departure requires a current definition and pose"
-	var old_direction: int = state.direction
-	var old_y: int = state.target_y
+	var old_direction: int = state.frog.direction
+	var old_y: int = state.frog.target_y
 	var selection: PlatformJumpResult = TerrainPlatform.prepare_jump(state, definition, pose, _grid, _controller_directions, input, is_super, distance)
 	if not selection.error.is_empty():
 		return selection.error
 	if selection.blocked:
-		state.animation_requests += 1
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.OUCH, state)
 		events.append(TickEvent.make(TickEvent.Kind.OUCH))
 		return ""
@@ -1154,134 +1154,134 @@ func _jump_platform(state: RunSnapshot, input: int, events: Array[TickEvent], is
 		_detach_platform(state, events)
 		if not _callback_error.is_empty():
 			return _callback_error
-	state.mode = FrogMode.JUMPING
-	state.remaining_ticks = 15 if is_super else 3 if state.powerup_flags & PowerupFlags.QUICK_JUMP else 6
-	state.old_y = old_y
+	state.frog.mode = FrogMode.JUMPING
+	state.frog.remaining_ticks = 15 if is_super else 3 if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else 6
+	state.frog.old_y = old_y
 	if is_super:
-		state.flags |= FrogFlags.SUPERJUMP
-	var origin: Vector3i = state.entity_offset_16 if state.current_entity_index >= 0 and not state.flags & FrogFlags.JUMP_TO_LAND else state.position_16
-	state.velocity_16.x = PlatformMath.divide(state.target_16.x - origin.x, state.remaining_ticks)
-	state.velocity_16.z = PlatformMath.divide(state.target_16.z - origin.z, state.remaining_ticks)
-	state.velocity_16.y = PlatformMath.divide((state.target_y - state.world_position.y) << 16, state.remaining_ticks + 1) - ((GRAVITY_16 * (state.remaining_ticks + 1)) >> 1)
-	var roll: bool = old_direction == state.direction and state.buffered_input_count > 3 and not is_super and not state.powerup_flags & (PowerupFlags.QUICK_JUMP | PowerupFlags.AUTO_HOP)
+		state.frog.flags |= FrogFlags.SUPERJUMP
+	var origin: Vector3i = state.attachment.entity_offset_16 if state.attachment.current_entity_index >= 0 and not state.frog.flags & FrogFlags.JUMP_TO_LAND else state.frog.position_16
+	state.frog.velocity_16.x = PlatformMath.divide(state.frog.target_16.x - origin.x, state.frog.remaining_ticks)
+	state.frog.velocity_16.z = PlatformMath.divide(state.frog.target_16.z - origin.z, state.frog.remaining_ticks)
+	state.frog.velocity_16.y = PlatformMath.divide((state.frog.target_y - state.frog.world_position.y) << 16, state.frog.remaining_ticks + 1) - ((GRAVITY_16 * (state.frog.remaining_ticks + 1)) >> 1)
+	var roll: bool = old_direction == state.frog.direction and state.frog.buffered_input_count > 3 and not is_super and not state.frog.powerup_flags & (PowerupFlags.QUICK_JUMP | PowerupFlags.AUTO_HOP)
 	if roll:
-		state.buffered_input_count = 0
-	state.animation_requests += 1
-	_request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll else FrogAnimationCatalog.HOP, state)
-	state.sound_requests += 1
-	events.append(TickEvent.make(TickEvent.Kind.SUPER_HOP) if is_super else TickEvent.make(TickEvent.Kind.QUICK_HOP) if state.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.AUTO_HOP) if state.powerup_flags & PowerupFlags.AUTO_HOP else TickEvent.make(TickEvent.Kind.ROLL) if roll else TickEvent.make(TickEvent.Kind.HOP))
+		state.frog.buffered_input_count = 0
+	state.requests.animation_requests += 1
+	_request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll else FrogAnimationCatalog.HOP, state)
+	state.requests.sound_requests += 1
+	events.append(TickEvent.make(TickEvent.Kind.SUPER_HOP) if is_super else TickEvent.make(TickEvent.Kind.QUICK_HOP) if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.AUTO_HOP) if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else TickEvent.make(TickEvent.Kind.ROLL) if roll else TickEvent.make(TickEvent.Kind.HOP))
 	events.append(TickEvent.make(TickEvent.Kind.HOP_SOUND))
-	if is_super or state.powerup_flags & PowerupFlags.QUICK_JUMP or not state.powerup_flags & PowerupFlags.AUTO_HOP:
-		state.score_requests += 1
-		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll or state.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
+	if is_super or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP or not state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
+		state.requests.score_requests += 1
+		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
 	return ""
 
 func _move_platform_jumping(state: RunSnapshot, events: Array[TickEvent], react_on_land: bool) -> void:
 	var pose: EntitySnapshot = _platform_pose(state)
-	state.remaining_ticks -= 1
-	if state.remaining_ticks > 0:
+	state.frog.remaining_ticks -= 1
+	if state.frog.remaining_ticks > 0:
 		_platform_freefall(state, pose, events)
 		return
-	if state.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_ENTITY) == (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_ENTITY):
+	if state.frog.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_ENTITY) == (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_ENTITY):
 		var definition: FormContactDefinition = _platform_definition(state)
-		state.flags = (state.flags & ~TerrainPlatform.LANDED_CLEAR) | FrogFlags.ON_ENTITY
-		state.mode = FrogMode.STATIONARY
-		state.animation_requests += 1
+		state.frog.flags = (state.frog.flags & ~TerrainPlatform.LANDED_CLEAR) | FrogFlags.ON_ENTITY
+		state.frog.mode = FrogMode.STATIONARY
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.PANT, state)
-		state.entity_offset_16 = state.target_16
-		state.entity_transform12 = PlatformMath.project(PlatformMath.multiply(state.matrix12, PlatformMath.transpose(pose.matrix12)))
-		state.position_16 = PlatformMath.world(pose.matrix12, state.entity_offset_16) * 65536
-		state.velocity_16 = Vector3i.ZERO
-		var flags: int = definition.grid_flags[state.entity_cell.y * definition.dimensions.x + state.entity_cell.x]
-		_react_fall(state, state.world_position.y - state.old_y, flags, events)
+		state.attachment.entity_offset_16 = state.frog.target_16
+		state.attachment.entity_transform12 = PlatformMath.project(PlatformMath.multiply(state.frog.matrix12, PlatformMath.transpose(pose.matrix12)))
+		state.frog.position_16 = PlatformMath.world(pose.matrix12, state.attachment.entity_offset_16) * 65536
+		state.frog.velocity_16 = Vector3i.ZERO
+		var flags: int = definition.grid_flags[state.attachment.entity_cell.y * definition.dimensions.x + state.attachment.entity_cell.x]
+		_react_fall(state, state.frog.world_position.y - state.frog.old_y, flags, events)
 		_update_world(state)
 		_update_matrix(state)
 		if react_on_land:
 			_react(state, flags, events)
-		state.old_position_16 = state.position_16
+		state.frog.old_position_16 = state.frog.position_16
 		return
-	if state.flags & FrogFlags.JUMP_TO_LAND:
-		if not state.flags & FrogFlags.JUMP_FROM_ENTITY:
-			state.position_16.x = state.target_16.x
-			state.position_16.z = state.target_16.z
+	if state.frog.flags & FrogFlags.JUMP_TO_LAND:
+		if not state.frog.flags & FrogFlags.JUMP_FROM_ENTITY:
+			state.frog.position_16.x = state.frog.target_16.x
+			state.frog.position_16.z = state.frog.target_16.z
 		_detach_platform(state, events)
 		_land(state, events)
 		_update_world(state)
 		_update_matrix(state)
 		if react_on_land:
-			_react(state, _grid.squares[state.square_index].flags, events)
-		state.old_position_16 = state.position_16
+			_react(state, _grid.squares[state.frog.square_index].flags, events)
+		state.frog.old_position_16 = state.frog.position_16
 		return
 	_platform_freefall(state, pose, events)
 	_detach_platform(state, events)
-	if state.square_index < 0:
-		var stack: GridStackDefinition = _grid.stack_at(state.cell)
+	if state.frog.square_index < 0:
+		var stack: GridStackDefinition = _grid.stack_at(state.frog.cell)
 		if stack == null:
 			_callback_error = "Source platform final-hop stack lookup lies outside authored storage"
 			return
 		for index: int in range(stack.first_square_index + stack.square_count - 1, stack.first_square_index - 1, -1):
-			if _grid.squares[index].flags & GridSquareFlags.USABLE and GridQueries.square_height(_grid.squares[index]) >= state.world_position.y:
-				state.square_index = index
+			if _grid.squares[index].flags & GridSquareFlags.USABLE and GridQueries.square_height(_grid.squares[index]) >= state.frog.world_position.y:
+				state.frog.square_index = index
 				break
-	state.flags = (state.flags & ~TerrainPlatform.LANDED_CLEAR) | FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
-	state.remaining_ticks = 0x7FFFFFF
-	state.velocity_16.x = 0
-	state.velocity_16.z = 0
+	state.frog.flags = (state.frog.flags & ~TerrainPlatform.LANDED_CLEAR) | FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
+	state.frog.remaining_ticks = 0x7FFFFFF
+	state.frog.velocity_16.x = 0
+	state.frog.velocity_16.z = 0
 	_update_world(state)
-	state.old_position_16 = state.position_16
+	state.frog.old_position_16 = state.frog.position_16
 
 func _platform_freefall(state: RunSnapshot, pose: EntitySnapshot, events: Array[TickEvent]) -> void:
-	state.velocity_16.y += GRAVITY_16
-	if state.flags & (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) == (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) and state.world_position.y - state.old_y >= 0:
-		state.animation_requests += 1
+	state.frog.velocity_16.y += GRAVITY_16
+	if state.frog.flags & (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) == (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) and state.frog.world_position.y - state.frog.old_y >= 0:
+		state.requests.animation_requests += 1
 		_request_animation(FrogAnimationCatalog.FREEFALL if _map_index >= 42 and _map_index <= 47 else FrogAnimationCatalog.FALLING, state)
-		state.flags &= ~FrogFlags.FREEFALL_NO_ANIMATION
+		state.frog.flags &= ~FrogFlags.FREEFALL_NO_ANIMATION
 		events.append(TickEvent.make(TickEvent.Kind.FALLING))
-	if not state.flags & FrogFlags.JUMP_TO_LAND:
+	if not state.frog.flags & FrogFlags.JUMP_TO_LAND:
 		TerrainPlatform.airborne(state, pose)
 	else:
-		state.position_16 += state.velocity_16
+		state.frog.position_16 += state.frog.velocity_16
 
 func _request_animation(animation_id: int, state: RunSnapshot) -> void:
-	state.last_animation_request = animation_id
+	state.requests.last_animation_request = animation_id
 	if _candidate_animation != null:
 		_candidate_animation.request(animation_id)
 
 func _sync_systems(state: RunSnapshot) -> void:
 	if _has_entity_updates:
-		_candidate_entities.set_contact_flags(state.entity_hit_indices, state.entity_carry_indices)
+		_candidate_entities.set_contact_flags(state.attachment.entity_hit_indices, state.attachment.entity_carry_indices)
 		state.entities = _candidate_entities.snapshot()
 	state.camera = _candidate_camera.snapshot() if _candidate_camera != null else null
 	state.animation = _candidate_animation.state.copy() if _candidate_animation != null else null
 	state.rng_state = _candidate_random.state
-	state.rng_draw_count = _candidate_random.draw_count
+	state.diagnostics.rng_draw_count = _candidate_random.draw_count
 	_sync_facts(state)
 
 func _sync_facts(state: RunSnapshot) -> void:
-	state.source_id = _source_id
-	state.resource_id = _resource_id
-	state.map_index = _map_index
-	state.destination_cell = GridQueries.world_to_cell(_grid, state.target_16.x >> 16, state.target_16.z >> 16)
-	if _entity_collision != null and _entity_collision.platforms_enabled and (state.flags & FrogFlags.FREEFALL or (state.current_entity_index < 0 and state.mode != FrogMode.JUMPING)):
-		state.destination_cell = state.cell
-	elif state.current_entity_index >= 0 and not state.flags & FrogFlags.JUMP_TO_LAND:
-		var target: Vector3i = PlatformMath.world(_platform_pose(state).matrix12, state.target_16)
-		state.destination_cell = GridQueries.world_to_cell(_grid, target.x, target.z)
-	state.square_flags = 0
-	state.square_source_offset = -1
-	state.polygon_index = -1
-	state.polygon_source_offset = -1
-	if state.square_index >= 0:
-		var square: GridSquareDefinition = _grid.squares[state.square_index]
-		state.square_flags = square.flags
-		state.square_source_offset = square.source_offset
-		state.polygon_index = square.polygon_index
-		state.polygon_source_offset = square.polygon_source_offset
+	state.diagnostics.source_id = _source_id
+	state.diagnostics.resource_id = _resource_id
+	state.diagnostics.map_index = _map_index
+	state.frog.destination_cell = GridQueries.world_to_cell(_grid, state.frog.target_16.x >> 16, state.frog.target_16.z >> 16)
+	if _entity_collision != null and _entity_collision.platforms_enabled and (state.frog.flags & FrogFlags.FREEFALL or (state.attachment.current_entity_index < 0 and state.frog.mode != FrogMode.JUMPING)):
+		state.frog.destination_cell = state.frog.cell
+	elif state.attachment.current_entity_index >= 0 and not state.frog.flags & FrogFlags.JUMP_TO_LAND:
+		var target: Vector3i = PlatformMath.world(_platform_pose(state).matrix12, state.frog.target_16)
+		state.frog.destination_cell = GridQueries.world_to_cell(_grid, target.x, target.z)
+	state.frog.square_flags = 0
+	state.diagnostics.square_source_offset = -1
+	state.diagnostics.polygon_index = -1
+	state.diagnostics.polygon_source_offset = -1
+	if state.frog.square_index >= 0:
+		var square: GridSquareDefinition = _grid.squares[state.frog.square_index]
+		state.frog.square_flags = square.flags
+		state.diagnostics.square_source_offset = square.source_offset
+		state.diagnostics.polygon_index = square.polygon_index
+		state.diagnostics.polygon_source_offset = square.polygon_source_offset
 
 func _apply_requests(state: RunSnapshot, callback: TerrainCallbackResult, events: Array[TickEvent]) -> void:
 	_callback_error = callback.error
 	for animation_id: int in callback.animation_ids:
-		state.animation_requests += 1
+		state.requests.animation_requests += 1
 		_request_animation(animation_id, state)
 	if callback.kill_animation >= 0:
 		_kill(state, callback.kill_animation, false, events)
@@ -1295,7 +1295,7 @@ func _apply_requests(state: RunSnapshot, callback: TerrainCallbackResult, events
 		events.append(TickEvent.make(TickEvent.Kind.SLIDE_PARTICLES_STOP))
 	if callback.setup_mode_request == FrogMode.CLIFF_ROLL:
 		_apply_requests(state, TerrainCliffRoll.setup(state, _grid), events)
-		state.mode = FrogMode.CLIFF_ROLL
+		state.frog.mode = FrogMode.CLIFF_ROLL
 
 func _apply_callback(state: RunSnapshot, callback: TerrainCallbackResult, events: Array[TickEvent]) -> void:
 	_apply_requests(state, callback, events)
@@ -1308,7 +1308,7 @@ func _apply_callback(state: RunSnapshot, callback: TerrainCallbackResult, events
 	if callback.callback_flags & TerrainCallbackResult.REACT_WITH_FLAGS:
 		_react(state, callback.react_flags & 65535, events)
 	if callback.callback_flags & TerrainCallbackResult.UPDATE_OLD_POS:
-		state.old_position_16 = state.position_16
+		state.frog.old_position_16 = state.frog.position_16
 
 func _check_guard(phase: TickGuard.Phase, state: RunSnapshot) -> String:
-	return _tick_guard.check(phase, TickGuardCandidate.from_state(state)) if _tick_guard != null else ""
+	return _tick_guard.check(phase, TickGuardCandidate.from_state(state, phase == TickGuard.Phase.ENTITY_UPDATE)) if _tick_guard != null else ""

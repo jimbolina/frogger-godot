@@ -6,10 +6,10 @@ var state: RunSnapshot = null
 var visibility_enabled: bool = false
 var restricted_contacts: bool = false
 
-## Builds a detached observation of an in-progress state.
-static func from_state(value: RunSnapshot) -> TickGuardCandidate:
+## Copies an in-progress state; entity observations are included only when requested.
+static func from_state(value: RunSnapshot, include_entities: bool = false) -> TickGuardCandidate:
 	var result := TickGuardCandidate.new()
-	result.state = value.copy()
+	result.state = value.copy(include_entities)
 	return result
 
 ## Builds the setup requirements without passing mutable definitions.

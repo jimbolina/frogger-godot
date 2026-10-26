@@ -27,6 +27,17 @@ The [domain glossary](domain.md) gives semantic boundaries. Existing
 [simulation](gameplay/simulation.md), [coordinates](rendering/coordinates.md) and topic references
 remain authoritative for detailed rules.
 
+## Gameplay state
+
+`RunSnapshot` composes `FrogState` (movement, control, timers and collision pose),
+`AttachmentState` (platform-local coordinates and contact identities),
+`TickRequests` (logical requests and counters) and `TickDiagnostics` (provenance
+and observations). Each value has a complete detached copy contract. Systems,
+entity state, the RNG seed and the tick identity remain at the transaction level.
+Lives are a frog state value; applying life-decrement requests remains game-flow work.
+`TerrainTrace` flattens this structure into the existing wire schema, including
+the historical `fixture_lives` key. Runtime consumers use the composed records.
+
 ## Current lifetimes
 
 `GameData` owns its archive, decoded executable tables and caches. Treat shared
@@ -119,7 +130,8 @@ Reset clears current/forbidden links and transient observations. Detached
 platform helpers retain no source objects or live scene references.
 
 `LevelDefinition.tick_guard` is an optional `TickGuard`. Its `check(phase, candidate)`
-receives detached state at each existing validation boundary. `ExplorationGuard`
+receives detached state at each existing validation boundary. Entity snapshots
+are supplied at the entity-update checkpoint; other checkpoints observe frog state. `ExplorationGuard`
 in inspection owns corridor rectangles, zones and animated contact restrictions.
 The run copies the guard and validates setup before accepting any state.
 Spawn/reset must satisfy both guards. During a tick, the zone query uses the
@@ -147,7 +159,7 @@ Definitions, cached samples and primitive diagnostics are deeply copied across
 publication boundaries. Late failure discards them with every other candidate
 field. Rendered and interpolated model transforms never drive collision.
 
-`RunSnapshot.entity_cell` and `entity_offset_16` are platform-local. `target_16`
+`RunSnapshot.attachment.entity_cell` and `entity_offset_16` are platform-local. `target_16`
 is local while attached or jumping within the entity frame, and world-space
 for a terrain target; derived inspection destinations convert it accordingly.
 After departure into freefall, the inactive local target remains a source fact

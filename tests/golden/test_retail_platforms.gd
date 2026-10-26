@@ -110,10 +110,10 @@ func test_jun1_log_setup_and_first_safe_contact_match_independent_facts() -> voi
 	if accepted == null:
 		return
 	var pose: EntitySnapshot = accepted.move_snapshot.entities.entities[slot]
-	var frog: Vector3i = accepted.move_snapshot.world_position
+	var frog: Vector3i = accepted.move_snapshot.frog.world_position
 	var hit: FormContactResult = accepted_contact.contact
 	assert_eq(hit.status, FormContactResult.CONTACT)
-	assert_eq(accepted.collision_snapshot.current_entity_index, entity.entity_index)
+	assert_eq(accepted.collision_snapshot.attachment.current_entity_index, entity.entity_index)
 	var delta: Vector3i = frog - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
 	var observed: Dictionary[String, String] = {
 		"resource_id": str(entity.resource_id), "map": "JUN1.MAP", "map_index": str(map_number),

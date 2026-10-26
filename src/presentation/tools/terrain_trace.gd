@@ -130,11 +130,11 @@ func _save_lines(path: String, lines: PackedStringArray) -> String:
 	return "" if file.get_error() == OK else "Terrain trace write failed: " + path
 
 func _append(scenario: int, command: TickCommand, phase: String, state: RunSnapshot) -> void:
-	var fields: Array = [scenario, command.tick_index, phase, state.position_16.x, state.position_16.y, state.position_16.z,
-		state.velocity_16.x, state.velocity_16.y, state.velocity_16.z, state.cell.x, state.cell.y,
-		state.remaining_ticks, state.flags, state.mode, state.current_input, state.direction,
-		state.animation_requests, state.sound_requests, state.score_requests, state.buffered_keys,
-		state.buffered_input_count, command.pressed_mask, command.held_mask]
+	var fields: Array = [scenario, command.tick_index, phase, state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z,
+		state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.cell.x, state.frog.cell.y,
+		state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.current_input, state.frog.direction,
+		state.requests.animation_requests, state.requests.sound_requests, state.requests.score_requests, state.frog.buffered_keys,
+		state.frog.buffered_input_count, command.pressed_mask, command.held_mask]
 	var strings := PackedStringArray()
 	for value: Variant in fields:
 		strings.append(str(value))
@@ -143,10 +143,16 @@ func _append(scenario: int, command: TickCommand, phase: String, state: RunSnaps
 ## Serializes detached rule records only; this reflection remains outside gameplay.
 static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictionary:
 	var values: Dictionary = {}
+	if record is RunSnapshot:
+		var state: RunSnapshot = record
+		for part: RefCounted in [state.frog, state.attachment, state.requests, state.diagnostics]:
+			values.merge(facts(part, include_lifecycle))
 	for property: Dictionary in record.get_property_list():
 		var usage: int = property.usage
 		if usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			var key: String = property.name
+			if record is RunSnapshot and key in ["frog", "attachment", "requests", "diagnostics"]:
+				continue
 			if record is EntityDefinition and key == "behavior":
 				var entity: EntityDefinition = record
 				values["animation_one_shot"] = entity.behavior.one_shot
@@ -155,7 +161,7 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 				continue
 			if not include_lifecycle and _lifecycle_key(record, key):
 				continue
-			values["admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
+			values["fixture_lives" if record is FrogState and key == "lives" else "admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
 	return values
 
 static func _lifecycle_key(record: RefCounted, key: String) -> bool:

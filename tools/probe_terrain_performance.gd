@@ -135,7 +135,7 @@ func _run() -> void:
 	viewer._close_worker()
 	var final: RunSnapshot = viewer.run.snapshot()
 	var diver: bool = scenario.tick_limit == 1255
-	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.current_entity_index == -1 and final.cell == Vector2i(10, 7) and final.mode != 2)
+	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.frog.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.attachment.current_entity_index == -1 and final.frog.cell == Vector2i(10, 7) and final.frog.mode != 2)
 	var native_size := Vector2i(root.get_visible_rect().size * root.get_stretch_transform().get_scale())
 	var fps: float = frames.size() / seconds
 	var frame_stats: Dictionary = _stats(frames)
@@ -153,7 +153,7 @@ func _run() -> void:
 		"window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y],
 		"render_target_size": [native_size.x, native_size.y],
 		"bars": [(root.size.x - native_size.x) / 2.0, (root.size.y - native_size.y) / 2.0],
-		"final_mode": final.mode, "final_action": final.animation.action,
+		"final_mode": final.frog.mode, "final_action": final.animation.action,
 		"vsync": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
 		"window_mode": root.mode, "screen_refresh_hz": DisplayServer.screen_get_refresh_rate(),
 		"threaded": viewer.threaded_playback,

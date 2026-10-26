@@ -19,13 +19,13 @@ static func platform(scenario: TerrainScenario, state: RunSnapshot) -> Array[Str
 	elif scenario.options.exploration_preset == Org1ExplorationSetup.ROAD_PRESET:
 		if state.tick_index == 1:
 			platform_stages.append("org1-road-start")
-		if state.cell.y >= 2 and state.cell.y <= 6:
+		if state.frog.cell.y >= 2 and state.frog.cell.y <= 6:
 			platform_stages.append("org1-road-traffic")
-		if state.cell.y == 7 and state.mode == 0:
+		if state.frog.cell.y == 7 and state.frog.mode == 0:
 			platform_stages.append("org1-road-bank")
-		if state.current_entity_index >= 0 and state.current_entity_index < 24:
+		if state.attachment.current_entity_index >= 0 and state.attachment.current_entity_index < 24:
 			platform_stages.append("org1-road-river")
-		if state.death_entity_index >= 24 and state.death_entity_index <= 47:
+		if state.diagnostics.death_entity_index >= 24 and state.diagnostics.death_entity_index <= 47:
 			platform_stages.append("org1-road-vehicle-death")
 	elif scenario.level.tick_guard != null:
 		if state.tick_index == 3:

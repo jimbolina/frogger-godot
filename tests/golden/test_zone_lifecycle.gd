@@ -18,8 +18,8 @@ func test_synthetic_zone_lifecycle_matches_frozen_gameplay() -> void:
 		if not result.error.is_empty():
 			return
 		var state: RunSnapshot = result.final_snapshot
-		assert_eq(ZoneLifecycleChecks.compare(rows[tick], state.camera, state.camera_zone_index, state.camera_zone_region_index,
-			state.entity_angle, state.world_position, state.entities), "", "tick %d" % tick)
+		assert_eq(ZoneLifecycleChecks.compare(rows[tick], state.camera, state.frog.camera_zone_index, state.frog.camera_zone_region_index,
+			state.attachment.entity_angle, state.frog.world_position, state.entities), "", "tick %d" % tick)
 		var quick: TickResult = fast.step(scenario.command_at(tick), false)
 		assert_eq(quick.error, "")
 		assert_eq(ZoneLifecycleChecks.canonical(TerrainTrace.facts(quick.final_snapshot, true)), ZoneLifecycleChecks.canonical(TerrainTrace.facts(state, true)))

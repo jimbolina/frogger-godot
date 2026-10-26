@@ -14,10 +14,10 @@ var _local_frog: Transform3D
 
 ## Supplies detached viewer snapshots; only converted values are retained.
 func capture(previous: RunSnapshot, current: RunSnapshot) -> void:
-	_before_frog = GameSpace.transform(previous.matrix12)
-	_before_frog.origin = GameSpace.fixed_position(previous.position_16)
-	_frog = GameSpace.transform(current.matrix12)
-	_frog.origin = GameSpace.fixed_position(current.position_16)
+	_before_frog = GameSpace.transform(previous.frog.matrix12)
+	_before_frog.origin = GameSpace.fixed_position(previous.frog.position_16)
+	_frog = GameSpace.transform(current.frog.matrix12)
+	_frog.origin = GameSpace.fixed_position(current.frog.position_16)
 	_before_camera = GameplayProjection.camera_transform(previous.camera) if previous.camera != null else Transform3D.IDENTITY
 	_camera = GameplayProjection.camera_transform(current.camera) if current.camera != null else _before_camera
 	_before_entities.clear()
@@ -35,10 +35,10 @@ func capture(previous: RunSnapshot, current: RunSnapshot) -> void:
 		var transform_before: Transform3D = GameSpace.transform(before.matrix12) if continuous else transform_now
 		_entities.append(transform_now)
 		_before_entities.append(transform_before)
-		if not continuous and now.entity_index == previous.current_entity_index and now.entity_index == current.current_entity_index:
+		if not continuous and now.entity_index == previous.attachment.current_entity_index and now.entity_index == current.attachment.current_entity_index:
 			_before_frog = _frog
 			_before_camera = _camera
-		if continuous and now.entity_index == previous.current_entity_index and now.entity_index == current.current_entity_index and absf(transform_before.basis.determinant()) > 0.000001 and absf(transform_now.basis.determinant()) > 0.000001:
+		if continuous and now.entity_index == previous.attachment.current_entity_index and now.entity_index == current.attachment.current_entity_index and absf(transform_before.basis.determinant()) > 0.000001 and absf(transform_now.basis.determinant()) > 0.000001:
 			_attached_slot = slot
 			_before_local_frog = transform_before.affine_inverse() * _before_frog
 			_local_frog = transform_now.affine_inverse() * _frog

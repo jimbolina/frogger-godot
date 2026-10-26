@@ -15,7 +15,7 @@ func test_worker_detaches_commands_results_and_rejects_overlapping_submissions()
 		command.tick_index = -1
 		var result: TickResult = worker.finish()
 		assert_eq(JSON.stringify(TerrainTrace.facts(result, true)), JSON.stringify(TerrainTrace.facts(expected, true)))
-		result.final_snapshot.position_16 = Vector3i(999, 999, 999)
+		result.final_snapshot.frog.position_16 = Vector3i(999, 999, 999)
 	assert_true(worker.submit(TickCommand.new()))
 	assert_ne(worker.finish().error, "")
 	assert_null(worker.poll())

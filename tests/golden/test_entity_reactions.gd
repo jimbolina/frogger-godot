@@ -45,7 +45,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		if snapshot == null:
 			continue
 		var observed_hits := PackedStringArray()
-		for entity_index: int in snapshot.entity_hit_indices:
+		for entity_index: int in snapshot.attachment.entity_hit_indices:
 			observed_hits.append(str(entity_index))
 		var supported_hits := PackedStringArray()
 		var expected_indices: PackedStringArray = fields[11].split(",")
@@ -58,22 +58,22 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		if not fields[12].contains("unsupported"):
 			assert_eq(",".join(observed_hits) if not observed_hits.is_empty() else "-", fields[10], name + " frozen C hits")
 		if fields[12] == "unsupported":
-			assert_eq(snapshot.death_entity_index, -1, name + " unsupported killer omitted")
-			assert_eq(snapshot.death_equate, 0, name + " unsupported death omitted")
+			assert_eq(snapshot.diagnostics.death_entity_index, -1, name + " unsupported killer omitted")
+			assert_eq(snapshot.frog.death_equate, 0, name + " unsupported death omitted")
 			assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 0, name + " unsupported effect omitted")
-			assert_eq(snapshot.sound_requests, 0, name + " unsupported sound omitted")
+			assert_eq(snapshot.requests.sound_requests, 0, name + " unsupported sound omitted")
 			continue
-		assert_eq(snapshot.death_entity_index, int(fields[13]), name + " first killer")
-		assert_eq(snapshot.death_equate, int(fields[3]), name + " death animation")
-		assert_eq(snapshot.flags, int(fields[2]), name + " frog flags")
-		assert_eq(snapshot.mode, int(fields[1]), name + " frog mode")
-		assert_eq(snapshot.velocity_16.x, int(fields[4]), name + " vx")
-		assert_eq(snapshot.velocity_16.y, int(fields[5]), name + " vy")
-		assert_eq(snapshot.velocity_16.z, int(fields[6]), name + " vz")
+		assert_eq(snapshot.diagnostics.death_entity_index, int(fields[13]), name + " first killer")
+		assert_eq(snapshot.frog.death_equate, int(fields[3]), name + " death animation")
+		assert_eq(snapshot.frog.flags, int(fields[2]), name + " frog flags")
+		assert_eq(snapshot.frog.mode, int(fields[1]), name + " frog mode")
+		assert_eq(snapshot.frog.velocity_16.x, int(fields[4]), name + " vx")
+		assert_eq(snapshot.frog.velocity_16.y, int(fields[5]), name + " vy")
+		assert_eq(snapshot.frog.velocity_16.z, int(fields[6]), name + " vz")
 		var pop_requests: int = int(fields[8]) if int(fields[3]) == 23 else 0
 		var squish_notifications: int = 1 if int(fields[3]) == 2 and int(fields[13]) >= 0 else 0
 		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), pop_requests, name + " POP request")
 		assert_eq(TickEvent.trace_lines(result.events).count("entity_squish"), squish_notifications, name + " SQUISH notification")
-		assert_eq(snapshot.sound_requests, int(fields[9]), name + " sound request")
+		assert_eq(snapshot.requests.sound_requests, int(fields[9]), name + " sound request")
 		if snapshot.camera != null:
 			assert_eq(snapshot.camera.mode, int(fields[7]), name + " camera mode")

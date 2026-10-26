@@ -99,17 +99,17 @@ func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 		if collision == null:
 			return
 		if tick < 4:
-			assert_eq(collision.death_entity_index, -1, "DES2 earlier tick %d" % tick)
-			assert_false(collision.entity_hit_indices.has(46), "DES2 earlier cactus %d" % tick)
+			assert_eq(collision.diagnostics.death_entity_index, -1, "DES2 earlier tick %d" % tick)
+			assert_false(collision.attachment.entity_hit_indices.has(46), "DES2 earlier cactus %d" % tick)
 			for reaction: FormReactionResult in result.entity_contacts:
 				assert_ne(reaction.status, FormReactionResult.POP, "DES2 earlier lethal contact %d" % tick)
 			continue
-		assert_eq(collision.world_position, Vector3i(-683, -1576, 2176))
-		assert_eq(collision.death_entity_index, 46)
-		assert_eq(collision.death_equate, 23)
-		assert_true(collision.flags & 8 != 0)
-		assert_eq(collision.mode, 1, "POP remains pending until the next move")
-		assert_true(collision.velocity_16 != Vector3i.ZERO, "Airborne jump velocity is preserved")
+		assert_eq(collision.frog.world_position, Vector3i(-683, -1576, 2176))
+		assert_eq(collision.diagnostics.death_entity_index, 46)
+		assert_eq(collision.frog.death_equate, 23)
+		assert_true(collision.frog.flags & 8 != 0)
+		assert_eq(collision.frog.mode, 1, "POP remains pending until the next move")
+		assert_true(collision.frog.velocity_16 != Vector3i.ZERO, "Airborne jump velocity is preserved")
 		var first: FormReactionResult = null
 		for reaction: FormReactionResult in result.entity_contacts:
 			if reaction.contact != null and reaction.contact.entity_index == 46 and reaction.contact.status == FormContactResult.CONTACT:
@@ -124,6 +124,6 @@ func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 	var next: TickResult = run.step(scenario.command_at(5))
 	assert_eq(next.error, "")
 	if next.error.is_empty():
-		assert_eq(next.collision_snapshot.mode, 2)
-		assert_eq(next.collision_snapshot.death_entity_index, 46)
-		assert_eq(next.collision_snapshot.entity_hit_indices.size(), 0)
+		assert_eq(next.collision_snapshot.frog.mode, 2)
+		assert_eq(next.collision_snapshot.diagnostics.death_entity_index, 46)
+		assert_eq(next.collision_snapshot.attachment.entity_hit_indices.size(), 0)

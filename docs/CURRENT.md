@@ -1,7 +1,6 @@
 # Current checkpoint
 
-Terrain movement, collision/deaths, gameplay camera and animation control follow
-the frozen C port at 30 Hz. Retail exploration uses live input. See
+Movement, collision/deaths, camera and animation follow frozen C at 30 Hz. Retail exploration uses live input. See
 [launch and controls](../README.md) and the [domain index](reference/domain.md).
 
 POP, SAFE and SQUISHED interactions advance entity/path, frog, camera,
@@ -26,13 +25,12 @@ unverified retail candidate.
 Audio playback, splash/particle effects and
 [animated per-part lighting](reference/rendering/gameplay-projection.md) remain deferred.
 
-Explicit entity candidate/commit methods and discovered copy-contract checks
-protect transaction ownership. Typed tick events preserve text traces. Setup
+Candidate/commit methods and discovered copy contracts protect transaction
+ownership across composed frog, attachment, request and diagnostic state. Typed tick events preserve text traces. Setup
 resolves entity behaviors once; gameplay uses kinds and named source constants. Inspection owns corridor guards and presets; application owns source adapters.
-Prepared scripts, asynchronous playback and rendering
-caches are implemented. Sustained performance acceptance remains open and must
+Prepared scripts, asynchronous playback and rendering caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
-Hosted CI awaits a repository host. The licence remains the owner's decision
+CI awaits a repository host. The licence remains the owner's decision
 before publication. Never push.
 
 [Mac source setup](../README.md#macos-setup) uses Godot 4.5.1 with isolated

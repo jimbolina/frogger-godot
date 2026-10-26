@@ -63,14 +63,14 @@ func test_active_zone_validation_and_nested_ownership() -> void:
 	assert_eq(run.error, "")
 	zone.bounds[0] = 30
 	zone.camera_offsets[0] = Vector3i.ONE
-	assert_eq(run.snapshot().camera_zone_index, 0)
+	assert_eq(run.snapshot().frog.camera_zone_index, 0)
 	assert_eq(run.step(_command(0)).error, "")
 	assert_eq(run.snapshot().camera.next_source_offset, Vector3i(0, -800, -700))
 	var detached: RunSnapshot = run.snapshot()
 	detached.camera.zone_index = 40
-	detached.camera_zone_region_index = 40
+	detached.frog.camera_zone_region_index = 40
 	assert_eq(run.snapshot().camera.zone_index, 0)
-	assert_eq(run.snapshot().camera_zone_region_index, -1)
+	assert_eq(run.snapshot().frog.camera_zone_region_index, -1)
 	scenario.level.camera_zones.append(zone.copy())
 	assert_string_contains(TerrainRun.create(scenario.level).error, "duplicate")
 	scenario.level.camera_zones.pop_back()
@@ -92,11 +92,11 @@ func test_move_selects_zone_before_camera_and_failed_late_guard_rolls_back() -> 
 	(run._tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
 	var accepted: TickResult = run.step(_command(3))
 	assert_eq(accepted.error, "")
-	assert_eq(accepted.move_snapshot.camera_zone_index, 5)
+	assert_eq(accepted.move_snapshot.frog.camera_zone_index, 5)
 	assert_eq(accepted.move_snapshot.camera.zone_index, -1)
 	assert_eq(accepted.camera_snapshot.camera.zone_index, 5)
 	assert_eq(run.reset(), "")
-	assert_eq(run.snapshot().camera_zone_index, -1)
+	assert_eq(run.snapshot().frog.camera_zone_index, -1)
 	assert_eq(run.snapshot().camera.zone_index, -1)
 
 func test_forced_control_is_ignored_and_semiforced_turn_waits() -> void:
@@ -111,10 +111,10 @@ func test_forced_control_is_ignored_and_semiforced_turn_waits() -> void:
 			assert_eq(run.step(_command(tick)).error, "")
 		var result: TickResult = run.step(_command(30, TickCommand.CAMERA_CLOCKWISE))
 		assert_eq(result.error, "")
-		assert_eq(run.snapshot().mode, 3 if semiforced else 0)
+		assert_eq(run.snapshot().frog.mode, 3 if semiforced else 0)
 		assert_eq(run.snapshot().camera.twist_counter, 2 if semiforced else 0)
 		if not semiforced:
-			assert_eq(run.snapshot().current_input, 128 | 32)
+			assert_eq(run.snapshot().frog.current_input, 128 | 32)
 
 func test_frozen_region_retention_ignores_outer_bounds_until_region_exit() -> void:
 	var zone: ZoneDefinition = _zone(12, PackedInt32Array([1, 1, 1, 1]))

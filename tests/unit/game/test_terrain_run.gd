@@ -22,7 +22,7 @@ func _level(blocked: bool = false) -> LevelDefinition:
 	return level
 
 func _fields(state: RunSnapshot) -> Array[int]:
-	return [state.position_16.x, state.position_16.y, state.position_16.z, state.velocity_16.x, state.velocity_16.y, state.velocity_16.z, state.cell.x, state.cell.y, state.remaining_ticks, state.flags, state.mode, state.current_input, state.direction, state.animation_requests, state.sound_requests, state.score_requests, state.buffered_keys, state.buffered_input_count]
+	return [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.cell.x, state.frog.cell.y, state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.current_input, state.frog.direction, state.requests.animation_requests, state.requests.sound_requests, state.requests.score_requests, state.frog.buffered_keys, state.frog.buffered_input_count]
 
 func _empty_target(level: LevelDefinition) -> void:
 	level.grid.stacks[9].square_count = 0
@@ -64,7 +64,7 @@ func test_tick_validation_snapshot_ownership_and_reset() -> void:
 	var level: LevelDefinition = _level()
 	var run: TerrainRun = TerrainRun.create(level)
 	var snapshot: RunSnapshot = run.snapshot()
-	snapshot.position_16 = Vector3i.ZERO
+	snapshot.frog.position_16 = Vector3i.ZERO
 	level.grid.squares[9].flags = 0
 	var command := TickCommand.new()
 	command.tick_index = 1
@@ -77,17 +77,17 @@ func test_tick_validation_snapshot_ownership_and_reset() -> void:
 	command.pressed_mask = TickCommand.NORTH
 	var result: TickResult = run.step(command)
 	assert_eq(result.error, "")
-	assert_eq(result.move_snapshot.remaining_ticks, 5)
-	result.move_snapshot.position_16 = Vector3i.ZERO
-	assert_eq(run.snapshot().position_16, Vector3i(-8388608, -2621440, -5592406))
+	assert_eq(result.move_snapshot.frog.remaining_ticks, 5)
+	result.move_snapshot.frog.position_16 = Vector3i.ZERO
+	assert_eq(run.snapshot().frog.position_16, Vector3i(-8388608, -2621440, -5592406))
 	var invalid := RunStart.new()
 	invalid.spawn_cell = Vector2i(-2, -2)
 	assert_false(run.reset(invalid).is_empty())
 	assert_eq(run.snapshot().tick_index, 1)
 	assert_eq(run.reset(), "")
 	assert_eq(run.snapshot().tick_index, 0)
-	assert_eq(run.snapshot().animation_requests, 0)
-	assert_eq(run.snapshot().position_16, Vector3i(-8388608, 0, -8388608))
+	assert_eq(run.snapshot().requests.animation_requests, 0)
+	assert_eq(run.snapshot().frog.position_16, Vector3i(-8388608, 0, -8388608))
 	assert_eq(run.step(command).error, "")
 
 func test_unknown_flag_data_is_retained_and_source_ignored() -> void:
@@ -105,9 +105,9 @@ func test_unknown_flag_data_is_retained_and_source_ignored() -> void:
 		result = run.step(command)
 		assert_eq(result.error, "")
 	assert_true(TickEvent.trace_lines(result.events).has("unknown_terrain_flags_ignored"))
-	assert_eq(result.final_snapshot.square_flags, 8195)
-	assert_eq(result.final_snapshot.mode, 0)
-	assert_eq(result.final_snapshot.position_16, Vector3i(-128 * 65536, 0, 128 * 65536))
+	assert_eq(result.final_snapshot.frog.square_flags, 8195)
+	assert_eq(result.final_snapshot.frog.mode, 0)
+	assert_eq(result.final_snapshot.frog.position_16, Vector3i(-128 * 65536, 0, 128 * 65536))
 
 func test_source_shape_ranges_are_validated_before_state() -> void:
 	var level: LevelDefinition = _level()
@@ -144,10 +144,10 @@ func test_source_undefined_final_lookup_rejects_without_partial_tick() -> void:
 	var result: TickResult = run.step(command)
 	assert_string_contains(result.error, "outside authored storage")
 	assert_eq(run.snapshot().tick_index, before.tick_index)
-	assert_eq(run.snapshot().position_16, before.position_16)
-	assert_eq(run.snapshot().matrix12, before.matrix12)
+	assert_eq(run.snapshot().frog.position_16, before.frog.position_16)
+	assert_eq(run.snapshot().frog.matrix12, before.frog.matrix12)
 	assert_eq(run.snapshot().rng_state, before.rng_state)
-	assert_eq(run.snapshot().rng_draw_count, before.rng_draw_count)
+	assert_eq(run.snapshot().diagnostics.rng_draw_count, before.diagnostics.rng_draw_count)
 
 func test_start_context_completion_and_scalar_identity_ownership() -> void:
 	var level: LevelDefinition = _level()
@@ -162,26 +162,26 @@ func test_start_context_completion_and_scalar_identity_ownership() -> void:
 	level.source_id = "mutated"
 	level.grid.squares[5].source_offset = 999
 	var state: RunSnapshot = run.snapshot()
-	assert_eq(state.source_id, "synthetic-source")
-	assert_eq(state.resource_id, 42)
-	assert_eq(state.square_source_offset, 123)
-	assert_eq(state.polygon_index, 8)
-	assert_eq(state.polygon_source_offset, 456)
-	assert_eq(state.initial_cell, Vector2i(1, 1))
-	assert_eq(state.mode, 265)
+	assert_eq(state.diagnostics.source_id, "synthetic-source")
+	assert_eq(state.diagnostics.resource_id, 42)
+	assert_eq(state.diagnostics.square_source_offset, 123)
+	assert_eq(state.diagnostics.polygon_index, 8)
+	assert_eq(state.diagnostics.polygon_source_offset, 456)
+	assert_eq(state.frog.initial_cell, Vector2i(1, 1))
+	assert_eq(state.frog.mode, 265)
 	var command := TickCommand.new()
 	command.pressed_mask = TickCommand.NORTH
 	var result: TickResult = run.step(command)
 	assert_eq(result.error, "")
-	assert_eq(result.control_snapshot.mode, 265, "Bounce has no input controller")
-	assert_eq(result.control_snapshot.sound_requests, 0)
+	assert_eq(result.control_snapshot.frog.mode, 265, "Bounce has no input controller")
+	assert_eq(result.control_snapshot.requests.sound_requests, 0)
 	command.tick_index = 1
 	command.start_sequence_complete = true
 	command.start_timer_context = 5
 	result = run.step(command)
 	assert_eq(result.error, "")
-	assert_eq(result.control_snapshot.mode, 3, "Explicit HUD completion enters source camera wait")
-	assert_eq(result.final_snapshot.start_timer, 5, "Run does not invent global countdown")
+	assert_eq(result.control_snapshot.frog.mode, 3, "Explicit HUD completion enters source camera wait")
+	assert_eq(result.final_snapshot.frog.start_timer, 5, "Run does not invent global countdown")
 	command.tick_index = 2
 	assert_false(run.step(command).error.is_empty())
 	assert_eq(run.snapshot().tick_index, 2)
@@ -189,8 +189,8 @@ func test_start_context_completion_and_scalar_identity_ownership() -> void:
 	command.start_timer_context = -1
 	result = run.step(command)
 	assert_eq(result.error, "")
-	assert_eq(result.final_snapshot.start_timer, 5)
-	assert_eq(result.final_snapshot.sound_requests, 0)
+	assert_eq(result.final_snapshot.frog.start_timer, 5)
+	assert_eq(result.final_snapshot.requests.sound_requests, 0)
 	assert_eq(run.reset(), "")
 	command.tick_index = 0
 	command.start_sequence_complete = true
@@ -272,9 +272,9 @@ func test_collision_landing_deferred_death_and_completion_corpus() -> void:
 					state = result.collision_snapshot
 				var values: Array[int] = _fields(state)
 				values.resize(16)
-				var requested_lives: int = state.fixture_lives - (1 if state.life_decrement_requested else 0)
-				var requested_game_mode: int = state.game_mode_request if state.game_mode_request >= 0 else 10
-				values.append_array([state.old_y, state.target_y, requested_lives, state.death_count, state.death_equate, state.world_position.y, requested_game_mode])
+				var requested_lives: int = state.frog.lives - (1 if state.requests.life_decrement_requested else 0)
+				var requested_game_mode: int = state.requests.game_mode_request if state.requests.game_mode_request >= 0 else 10
+				values.append_array([state.frog.old_y, state.frog.target_y, requested_lives, state.frog.death_count, state.frog.death_equate, state.frog.world_position.y, requested_game_mode])
 				for i: int in values.size():
 					assert_eq(values[i], expected[i + 3].to_int(), "Collision scenario %d tick %d %s field %d" % [scenario, tick, phase, i])
 				row += 1

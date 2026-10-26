@@ -174,8 +174,8 @@ func test_integrated_visibility_transitions_follow_independent_oracle() -> void:
 			return
 		var fields: PackedStringArray = rows[tick + 1].split("\t")
 		var state: RunSnapshot = result.final_snapshot
-		assert_eq(state.world_position.x, fields[1].to_int(), "tick %d frog x" % tick)
-		assert_eq(state.world_position.y, fields[2].to_int(), "tick %d frog y" % tick)
+		assert_eq(state.frog.world_position.x, fields[1].to_int(), "tick %d frog x" % tick)
+		assert_eq(state.frog.world_position.y, fields[2].to_int(), "tick %d frog y" % tick)
 		assert_eq(state.camera.source_world.x, fields[3].to_int(), "tick %d camera x" % tick)
 		assert_eq(state.camera.source_world.y, fields[4].to_int(), "tick %d camera y" % tick)
 		assert_eq(state.camera.source_world.z, fields[5].to_int(), "tick %d camera z" % tick)

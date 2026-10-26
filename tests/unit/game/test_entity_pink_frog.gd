@@ -24,9 +24,9 @@ func _form() -> FormContactDefinition:
 
 func _frog() -> RunSnapshot:
 	var frog := RunSnapshot.new()
-	frog.matrix12[9] = 100
-	frog.matrix12[10] = -256
-	frog.matrix12[11] = 128
+	frog.frog.matrix12[9] = 100
+	frog.frog.matrix12[10] = -256
+	frog.frog.matrix12[11] = 128
 	return frog
 
 func test_pickup_consumes_prior_hit_and_keeps_carrier_after_parent_loss() -> void:
@@ -56,9 +56,9 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	var parent: EntitySnapshot = _parent()
 	var frog: RunSnapshot = _frog()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog, true), "")
-	frog.matrix12 = PlatformMath.yaw(1024)
-	frog.matrix12[9] = 100
-	frog.mode = 1
+	frog.frog.matrix12 = PlatformMath.yaw(1024)
+	frog.frog.matrix12[9] = 100
+	frog.frog.mode = 1
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_eq(entity.matrix12.slice(9), PackedInt32Array([80, -20, 0]))
 	assert_eq(entity.background.carried_jump_ticks, 6)
@@ -66,7 +66,7 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_eq(entity.background.carried_jump_ticks, 5)
 	assert_eq(entity.animation.cel, 0)
-	frog.mode = 2
+	frog.frog.mode = 2
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_true(entity.background.dead)
 	assert_true(entity.background.model_hidden)

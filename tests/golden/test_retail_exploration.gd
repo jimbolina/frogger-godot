@@ -25,24 +25,24 @@ func _fields(state: RunSnapshot) -> Dictionary[String, String]:
 	if pose == null or pose.path == null:
 		return {}
 	var hits := PackedStringArray()
-	for index: int in state.entity_hit_indices:
+	for index: int in state.attachment.entity_hit_indices:
 		hits.append(str(index))
 	var camera_directions: PackedInt32Array = state.camera.controller_directions
 	return {
-		"x16": str(state.position_16.x), "y16": str(state.position_16.y), "z16": str(state.position_16.z),
-		"vx16": str(state.velocity_16.x), "vy16": str(state.velocity_16.y), "vz16": str(state.velocity_16.z),
-		"grid_x": str(state.cell.x), "grid_z": str(state.cell.y), "flags": str(state.flags),
-		"mode": str(state.mode), "attached": str(state.current_entity_index),
-		"count": str(state.remaining_ticks), "direction": str(state.direction),
-		"input": str(state.current_input), "entity_x": str(pose.matrix12[9]),
+		"x16": str(state.frog.position_16.x), "y16": str(state.frog.position_16.y), "z16": str(state.frog.position_16.z),
+		"vx16": str(state.frog.velocity_16.x), "vy16": str(state.frog.velocity_16.y), "vz16": str(state.frog.velocity_16.z),
+		"grid_x": str(state.frog.cell.x), "grid_z": str(state.frog.cell.y), "flags": str(state.frog.flags),
+		"mode": str(state.frog.mode), "attached": str(state.attachment.current_entity_index),
+		"count": str(state.frog.remaining_ticks), "direction": str(state.frog.direction),
+		"input": str(state.frog.current_input), "entity_x": str(pose.matrix12[9]),
 		"entity_y": str(pose.matrix12[10]), "entity_z": str(pose.matrix12[11]),
 		"segment": str(pose.path.segment_index), "distance": str(pose.path.segment_distance),
 		"camera_x": str(state.camera.tracked_world.x), "camera_y": str(state.camera.tracked_world.y),
 		"camera_z": str(state.camera.tracked_world.z),
 		"controller_n": str(camera_directions[0]), "controller_e": str(camera_directions[1]),
 		"controller_s": str(camera_directions[2]), "controller_w": str(camera_directions[3]),
-		"old_y": str(state.old_y), "entity_cell_x": str(state.entity_cell.x),
-		"entity_cell_z": str(state.entity_cell.y), "forbidden": str(state.forbidden_entity_index),
+		"old_y": str(state.frog.old_y), "entity_cell_x": str(state.attachment.entity_cell.x),
+		"entity_cell_z": str(state.attachment.entity_cell.y), "forbidden": str(state.attachment.forbidden_entity_index),
 		"hit_indices": ";".join(hits) if not hits.is_empty() else "-",
 	}
 
