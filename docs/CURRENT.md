@@ -28,7 +28,7 @@ Audio playback, splash/particle effects and
 Candidate/commit methods and discovered copy contracts protect transaction
 ownership across composed state. GameplayRun coordinates Frog and contact components. Typed tick events preserve text traces. Setup
 resolves entity behaviors once; gameplay uses kinds and named source constants. Inspection owns corridor guards and presets; application owns source adapters.
-Prepared scripts, asynchronous playback and rendering caches are implemented. Sustained performance acceptance remains open and must
+GameplayHost owns pacing and asynchronous playback; map inspection remains seekable. Performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
 CI awaits a repository host. The licence remains the owner's decision
 before publication. Never push.

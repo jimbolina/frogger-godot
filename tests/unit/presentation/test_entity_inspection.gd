@@ -67,7 +67,7 @@ func test_replacement_releases_run_definitions_and_markers() -> void:
 	assert_null(released)
 	assert_null(_viewer.entity_snapshot())
 	assert_null(_viewer._entity_inspection)
-	assert_eq(_viewer._entity_definitions.size(), 0)
+	assert_eq(_viewer._entity_session.definitions.size(), 0)
 	assert_false(_viewer._entity_visible)
 	assert_eq(_viewer._form_contacts.size(), 0)
 	assert_eq(_viewer._world.get_child_count(), 3)

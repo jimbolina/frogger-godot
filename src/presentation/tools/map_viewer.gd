@@ -49,9 +49,9 @@ var _projection_distance: int = 256
 var _projection_scale: int = 1
 var _vertical_ratio: float = 1.0
 var _custom_camera: bool = false
+var _path_session: PathInspectionSession = PathInspectionSession.new()
+var _entity_session: EntityInspectionSession = EntityInspectionSession.new()
 var _path_setup: PathSetup
-var _path_runner: PathRunner
-var _path_start: PathStart
 var _path_inspection: PathInspection
 var _path_selected: int = -1
 var _path_visible: bool = false
@@ -65,8 +65,6 @@ var _path_mode: OptionButton
 var _path_toggle: CheckButton
 var _path_readout: Label
 var _entity_setup: EntitySetup
-var _entity_definitions: Array[EntityDefinition] = []
-var _entity_run: EntityRun
 var _entity_inspection: EntityInspection
 var _entity_visible: bool = false
 var _entity_selected: int = -1
@@ -560,12 +558,10 @@ func configure_path(index: int, start: PathStart = null) -> bool:
 	if definition == null:
 		return false
 	var requested: PathStart = start.copy() if start != null else PathStart.new()
-	var runner: PathRunner = PathRunner.create(definition, requested)
-	if not runner.error.is_empty():
+	var issue: String = _path_session.configure(definition, requested)
+	if not issue.is_empty():
 		return false
 	_path_selected = index
-	_path_start = requested
-	_path_runner = runner
 	if _path_inspection != null:
 		_path_inspection.configure(definition)
 		_update_path_visibility()
@@ -589,7 +585,7 @@ func configure_path(index: int, start: PathStart = null) -> bool:
 
 ## Returns a detached observation of the selected path at the current tick.
 func path_snapshot() -> PathSnapshot:
-	return _path_runner.snapshot() if _path_runner != null else null
+	return _path_session.snapshot()
 
 ## Controls the optional path overlay without changing simulation state.
 func set_path_visibility(value: bool) -> void:
@@ -602,15 +598,10 @@ func _update_path_visibility() -> void:
 		_path_inspection.visible = _path_visible and camera_preset != "map-slice"
 
 func _replay_path(target_tick: int) -> void:
-	if _path_runner == null or _path_start == null:
+	if _path_session.runner == null or _path_session.start == null:
 		_update_path_readout()
 		return
-	var problem: String = _path_runner.reset(_path_start)
-	if problem.is_empty():
-		for index: int in target_tick:
-			problem = _path_runner.step(index)
-			if not problem.is_empty():
-				break
+	var problem: String = _path_session.seek(target_tick)
 	if not problem.is_empty():
 		set_playing(false)
 		var committed: PathSnapshot = path_snapshot()
@@ -625,9 +616,9 @@ func _replay_path(target_tick: int) -> void:
 	_update_path_readout()
 
 func _step_path(previous_tick: int) -> void:
-	if _path_runner == null:
+	if _path_session.runner == null:
 		return
-	var problem: String = _path_runner.step(previous_tick)
+	var problem: String = _path_session.step(previous_tick)
 	if not problem.is_empty():
 		set_playing(false)
 		var committed: PathSnapshot = path_snapshot()
@@ -680,8 +671,7 @@ func _on_path_controls_changed(_value: bool) -> void:
 
 func _release_path(detach: bool = true) -> void:
 	_path_setup = null
-	_path_runner = null
-	_path_start = null
+	_path_session.clear()
 	_path_selected = -1
 	_path_visible = false
 	if _path_toggle != null:
@@ -757,14 +747,10 @@ func _setup_entities() -> void:
 ## Injects detached synthetic definitions without replacing map or path controls.
 func set_entity_definitions(definitions: Array[EntityDefinition]) -> String:
 	_release_entities()
-	var copies: Array[EntityDefinition] = []
-	for definition: EntityDefinition in definitions:
-		copies.append(definition.copy() if definition != null else null)
-	var candidate: EntityRun = EntityRun.create(copies)
-	if not candidate.error.is_empty():
-		return candidate.error
-	_entity_definitions = copies
-	_entity_run = candidate
+	var issue: String = _entity_session.configure(definitions)
+	if not issue.is_empty():
+		return issue
+	var copies: Array[EntityDefinition] = _entity_session.definitions
 	_entity_inspection = EntityInspection.new()
 	_world.add_child(_entity_inspection)
 	_entity_inspection.configure(copies)
@@ -783,10 +769,10 @@ func set_entity_definitions(definitions: Array[EntityDefinition]) -> String:
 
 ## Attaches detached FORM facts to the existing entity slots and starts the probe.
 func set_form_contacts(definitions: Array[FormContactDefinition], probe: Vector3i = Vector3i.ZERO, place_first: bool = true) -> String:
-	if _entity_run == null:
+	if _entity_session.run == null:
 		return "Entity run is not attached"
 	var aligned: Array[FormContactDefinition] = []
-	for entity: EntityDefinition in _entity_definitions:
+	for entity: EntityDefinition in _entity_session.definitions:
 		var found: FormContactDefinition = null
 		for candidate: FormContactDefinition in definitions:
 			if candidate != null and candidate.entity_index == entity.entity_index:
@@ -819,8 +805,8 @@ func selected_form_contact() -> FormContactResult:
 	return FormContactQuery.query(_form_contacts[slot], snapshot.entities[slot], _form_probe_world)
 
 func _selected_entity_slot() -> int:
-	for index: int in _entity_definitions.size():
-		if _entity_definitions[index].entity_index == _entity_selected:
+	for index: int in _entity_session.definitions.size():
+		if _entity_session.definitions[index].entity_index == _entity_selected:
 			return index
 	return -1
 
@@ -868,7 +854,7 @@ func _entity_diagnostic_text() -> PackedStringArray:
 
 ## Returns a detached observation of every attached entity at the shared tick.
 func entity_snapshot() -> EntityRunSnapshot:
-	return _entity_run.snapshot() if _entity_run != null else null
+	return _entity_session.snapshot()
 
 ## Controls marker visibility without changing entity state.
 func set_entity_visibility(value: bool) -> void:
@@ -881,15 +867,10 @@ func _update_entity_visibility() -> void:
 		_entity_inspection.visible = _entity_visible and camera_preset != "map-slice"
 
 func _replay_entities(target_tick: int) -> void:
-	if _entity_run == null:
+	if _entity_session.run == null:
 		_update_entity_readout()
 		return
-	var issue: String = _entity_run.reset()
-	if issue.is_empty():
-		for index: int in target_tick:
-			issue = _entity_run.step(index)
-			if not issue.is_empty():
-				break
+	var issue: String = _entity_session.seek(target_tick)
 	if not issue.is_empty():
 		_entity_failure(issue)
 	if _entity_inspection != null:
@@ -897,9 +878,9 @@ func _replay_entities(target_tick: int) -> void:
 	_update_form_contact()
 
 func _step_entities(previous_tick: int) -> void:
-	if _entity_run == null:
+	if _entity_session.run == null:
 		return
-	var issue: String = _entity_run.step(previous_tick)
+	var issue: String = _entity_session.step(previous_tick)
 	if not issue.is_empty():
 		_entity_failure(issue)
 	if _entity_inspection != null:
@@ -926,8 +907,8 @@ func _update_entity_readout() -> void:
 		if _entity_contact_readout != null:
 			_entity_contact_readout.text = "FORM point contact · no reaction\nNo contact probe attached"
 		return
-	for index: int in _entity_definitions.size():
-		var definition: EntityDefinition = _entity_definitions[index]
+	for index: int in _entity_session.definitions.size():
+		var definition: EntityDefinition = _entity_session.definitions[index]
 		if definition.entity_index != _entity_selected:
 			continue
 		var entity: EntitySnapshot = snapshot.entities[index]
@@ -972,8 +953,7 @@ func _on_entity_selected(item: int) -> void:
 
 func _release_entities(detach: bool = true) -> void:
 	_entity_setup = null
-	_entity_run = null
-	_entity_definitions.clear()
+	_entity_session.clear()
 	_form_contacts.clear()
 	_form_probe_world = Vector3i.ZERO
 	_sync_form_probe_spins()
@@ -1201,7 +1181,7 @@ func _run_entity_scenario() -> void:
 		if not load_level_by_code(level_code):
 			_fail_path_run(_status.text)
 			return
-		if _entity_run == null or _entity_setup == null:
+		if _entity_session.run == null or _entity_setup == null:
 			_fail_path_run("Entity setup did not attach the selected map")
 			return
 	else:
@@ -1336,65 +1316,29 @@ func _show_probe(name: String) -> void:
 	_update_probe_projection()
 
 func _capture(folder: String) -> void:
-	set_playing(false)
-	var capture_error: String = ViewerCapture.prepare_folder(folder)
-	if not capture_error.is_empty():
-		push_error(capture_error)
-		get_tree().quit(1)
-		return
-	for _frame: int in 2:
-		await get_tree().process_frame
-		await RenderingServer.frame_post_draw
-	var benchmark_fps: float = 0.0
-	var benchmark_frames: int = 0
-	var benchmark_seconds: float = 0.0
-	var benchmark_final_tick: int = tick
-	var original_tick: int = tick
-	var allocations_before: Dictionary = _allocation_snapshot()
-	var allocations_after: Dictionary = allocations_before.duplicate(true)
-	if ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--benchmark"):
-		set_playing(true)
-		var started: int = Time.get_ticks_usec()
-		while benchmark_frames < 120 or Time.get_ticks_usec() - started < 2000000:
-			await get_tree().process_frame
-			await RenderingServer.frame_post_draw
-			benchmark_frames += 1
-		benchmark_seconds = float(Time.get_ticks_usec() - started) / 1000000.0
-		benchmark_fps = float(benchmark_frames) / maxf(0.000001, benchmark_seconds)
-		benchmark_final_tick = tick
-		set_playing(false)
-		allocations_after = _allocation_snapshot()
-		seek_tick(original_tick)
-		for _frame: int in 2:
-			await get_tree().process_frame
-			await RenderingServer.frame_post_draw
+	await MapCaptureSession.capture(self, folder)
+
+## Returns the current rendered map image after the caller awaits frame completion.
+func capture_image() -> Image:
+	return _viewport.get_texture().get_image()
+
+## Names a capture from the selected rendering inputs.
+func capture_basename() -> String:
 	var code: String = FroggerIds.LEVEL_CODES[scene_data.level].to_lower()
-	var basename: String = "map_%s_%s_%s_tick%d_%s" % [code, "low" if scene_data.low_poly else "high", camera_preset, tick, "linear" if linear_filter else "nearest"]
-	capture_error = ViewerCapture.save_image(_viewport.get_texture().get_image(), folder.path_join(basename + ".png"))
-	if not capture_error.is_empty():
-		push_error(capture_error)
-		get_tree().quit(1)
-		return
-	var rendered: Dictionary[String, int] = _render_counts()
+	return "map_%s_%s_%s_tick%d_%s" % [code, "low" if scene_data.low_poly else "high", camera_preset, tick, "linear" if linear_filter else "nearest"]
+
+## Supplies rendering facts to the external capture workflow.
+func capture_metadata(benchmark: Dictionary, allocations_before: Dictionary, allocations_after: Dictionary) -> Dictionary:
+	var code: String = FroggerIds.LEVEL_CODES[scene_data.level].to_lower()
+	var rendered: Dictionary[String, int] = capture_render_counts()
 	var resource: int = data.map_book_entry(scene_data.level).map_id(scene_data.low_poly)
 	var machine: Dictionary = {"processor_name": OS.get_processor_name(), "processor_count": OS.get_processor_count(), "os": OS.get_name(), "os_version": OS.get_version(), "renderer_device": RenderingServer.get_video_adapter_name()}
 	if OS.has_method("get_memory_info"):
 		var memory_info: Dictionary = OS.call("get_memory_info")
 		machine["memory_info"] = memory_info
-	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "benchmark_fps": benchmark_fps, "benchmark_frame_count": benchmark_frames, "benchmark_elapsed_seconds": benchmark_seconds, "benchmark_initial_tick": original_tick, "benchmark_final_tick": benchmark_final_tick, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "standalone_index_checked": data.standalone_index_checked, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
-	var file: FileAccess = FileAccess.open(folder.path_join(basename + ".json"), FileAccess.WRITE)
-	if file != null:
-		file.store_string(JSON.stringify(metadata, "\t") + "\n")
-		file.flush()
-		if file.get_error() != OK:
-			capture_error = "Cannot write capture metadata '%s': %s" % [folder.path_join(basename + ".json"), error_string(file.get_error())]
-		file.close()
-	else:
-		capture_error = "Cannot create capture metadata '%s': %s. Check write permissions." % [folder.path_join(basename + ".json"), error_string(FileAccess.get_open_error())]
-	if not capture_error.is_empty():
-		push_error(capture_error)
-	print("map capture %s: %s" % [folder.path_join(basename + ".png"), "OK" if capture_error.is_empty() else capture_error])
-	get_tree().quit(0 if capture_error.is_empty() else 1)
+	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "standalone_index_checked": data.standalone_index_checked, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
+	metadata.merge(benchmark)
+	return metadata
 
 ## Capture outputs must use an absolute folder outside the source checkout.
 static func _external_capture_folder(folder: String) -> bool:
@@ -1404,7 +1348,8 @@ static func _arg(prefix: String) -> String:
 	return ViewerArguments.value(OS.get_cmdline_user_args(), prefix)
 
 
-func _render_counts() -> Dictionary[String, int]:
+## Counts the current visible rendering resources.
+func capture_render_counts() -> Dictionary[String, int]:
 	var totals: Dictionary[String, int] = {"triangles": 0, "groups": 0, "surfaces": 0}
 	var meshes: Array[ArrayMesh] = []
 	for index: int in map_instance.visible_group_indices():
@@ -1569,7 +1514,8 @@ static func _has_arg(prefix: String) -> bool:
 	return ViewerArguments.has_prefix(OS.get_cmdline_user_args(), prefix)
 
 
-func _allocation_snapshot() -> Dictionary:
+## Returns resource identities for capture allocation comparisons.
+func capture_allocations() -> Dictionary:
 	var meshes := PackedInt64Array()
 	for mesh: ArrayMesh in current_mesh.groups:
 		meshes.append(mesh.get_instance_id() if mesh != null else 0)

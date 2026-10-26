@@ -21,9 +21,7 @@ var data: GameData
 var frog_assets: TerrainFrogAssets
 var _owns_data: bool = false
 var _frog_model: AnimatedModelInstance
-var _elapsed: float = 0.0
 var _held: int = 0
-var _sampled_held: int = 0
 var _previous: GameplayState
 var _current: GameplayState
 var _ground: Node3D
@@ -44,12 +42,10 @@ var _last_primitive_contacts: Array[EntityPrimitiveContact] = []
 var _entity_pose_tick: int = -1
 var _entity_lighting: MapLighting = null
 var _full_trace_destination: String = ""
+var _host: GameplayHost = GameplayHost.new()
 var _host_step: bool = false
 var _overlay_key: Array = []
 var threaded_playback: bool = false
-var _worker: TerrainTickWorker
-var _pending_command: TickCommand
-var _render_elapsed: float = 0.0
 var last_tick_usec: int = 0
 var _motion := TerrainMotion.new()
 
@@ -174,6 +170,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 	scenario = selected
 	_close_worker()
 	run = replacement
+	_host.open(run)
 	trace = TerrainTrace.new()
 	trace.configure(selected)
 	if not _full_trace_destination.is_empty():
@@ -181,11 +178,11 @@ func open_scenario(selected: TerrainScenario) -> String:
 		if not last_error.is_empty():
 			return last_error
 	playing = false
-	_elapsed = 0.0
-	_render_elapsed = 0.0
+	_host.elapsed = 0.0
+	_host.render_elapsed = 0.0
 	_overlay_key.clear()
 	_held = 0
-	_sampled_held = 0
+	_host.sampled_held = 0
 	_current = run.snapshot()
 	_previous = _current
 	_motion.capture(_current, _current)
@@ -208,9 +205,8 @@ func step_command(command: TickCommand, capture_phases: bool = true) -> TickResu
 		var rejected := TickResult.new()
 		rejected.error = "Open a terrain scenario before stepping"
 		return rejected
-	var started: int = Time.get_ticks_usec()
-	var result: TickResult = run.step(command, capture_phases or record_trace)
-	last_tick_usec = Time.get_ticks_usec() - started
+	var result: TickResult = _host.step(command, capture_phases or record_trace)
+	last_tick_usec = _host.last_tick_usec
 	_accept_result(command, result)
 	return result
 
@@ -240,9 +236,9 @@ func _accept_result(command: TickCommand, result: TickResult) -> void:
 	if not playing:
 		reset_interpolation()
 	_motion.capture(_previous, _current)
-	_render_elapsed = 0.0
+	_host.render_elapsed = 0.0
 	if not _host_step:
-		_elapsed = 0.0
+		_host.elapsed = 0.0
 		draw_state(1.0)
 
 ## Replays the authored command at the run's next tick, without polling input.
@@ -256,12 +252,7 @@ func step_live() -> TickResult:
 	return step_command(_live_command(), record_trace)
 
 func _live_command() -> TickCommand:
-	var command := TickCommand.new()
-	command.tick_index = _current.tick_index
-	command.pressed_mask = _held & ~_sampled_held
-	command.held_mask = _held
-	_sampled_held = _held
-	return command
+	return _host.sample(_current.tick_index, _held)
 
 ## Clears scenario state, pending input and presentation clocks without reusing mutable snapshots.
 func reset_scenario() -> String:
@@ -273,7 +264,7 @@ func reset_interpolation() -> void:
 		return
 	_previous = _current
 	_motion.capture(_current, _current)
-	_render_elapsed = 0.0
+	_host.render_elapsed = 0.0
 	if _frog_model != null:
 		_frog_model.smoothing_enabled = smoothing
 		_frog_model.apply_exact()
@@ -403,58 +394,44 @@ func draw_state(fraction: float) -> void:
 func _process(delta: float) -> void:
 	if run == null or _current == null:
 		return
-	_render_elapsed += delta
-	if _worker != null and _worker.pending:
-		var completed: TickResult = _worker.poll()
-		if completed != null:
-			last_tick_usec = _worker.last_tick_usec
-			_host_step = true
-			_accept_result(_pending_command, completed)
-			_host_step = false
-	var period: float = 1.0 / GameplayRun.TICKS_PER_SECOND
-	if playing:
-		_elapsed += delta
-		if _elapsed >= period and (_worker == null or not _worker.pending):
-			var remainder: float = 0.0 if _elapsed > period * 2.0 else _elapsed - period
-			_host_step = true
-			if replay_commands and _current.tick_index >= scenario.tick_limit:
+	_host.begin_frame(delta)
+	var completed: TickResult = _host.poll()
+	if completed != null:
+		last_tick_usec = _host.last_tick_usec
+		_host_step = true
+		_accept_result(_host.pending_command, completed)
+		_host_step = false
+	if _host.advance(delta, playing):
+		_host.consume_period()
+		_host_step = true
+		if replay_commands and _current.tick_index >= scenario.tick_limit:
+			playing = false
+			reset_interpolation()
+		elif threaded_playback and not record_trace:
+			var command: TickCommand = scenario.command_at(_current.tick_index) if replay_commands else _live_command()
+			if not _host.submit(command):
+				last_error = _host.error
 				playing = false
-				reset_interpolation()
-			elif threaded_playback and not record_trace:
-				_pending_command = scenario.command_at(_current.tick_index) if replay_commands else _live_command()
-				if _worker == null:
-					_worker = TerrainTickWorker.new()
-					var issue: Error = _worker.start(run)
-					if issue != OK:
-						last_error = "Cannot start terrain tick worker: %s" % error_string(issue)
-						_worker = null
-						playing = false
-				if _worker != null and not _worker.submit(_pending_command):
-					last_error = "Terrain tick worker already has a command"
-					playing = false
-			elif replay_commands:
-				step_scenario()
-			else:
-				step_live()
-			_host_step = false
-			_elapsed = remainder
-	var fraction: float = (_render_elapsed if threaded_playback and not record_trace else _elapsed) / period
+		elif replay_commands:
+			step_scenario()
+		else:
+			step_live()
+		_host_step = false
+	var fraction: float = (_host.render_elapsed if threaded_playback and not record_trace else _host.elapsed) / GameplayHost.PERIOD
 	draw_state(fraction if playing else 1.0)
 
 func _finish_pending() -> void:
-	if _worker == null or not _worker.pending:
+	if not _host.pending():
 		return
-	var result: TickResult = _worker.finish()
-	last_tick_usec = _worker.last_tick_usec
+	var result: TickResult = _host.finish()
+	last_tick_usec = _host.last_tick_usec
 	var was_host: bool = _host_step
 	_host_step = true
-	_accept_result(_pending_command, result)
+	_accept_result(_host.pending_command, result)
 	_host_step = was_host
 
 func _close_worker() -> void:
-	if _worker != null:
-		_worker.close()
-		_worker = null
+	_host.close()
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
@@ -482,7 +459,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_finish_pending()
 			playing = not playing and not _current.completed
 			reset_interpolation()
-			_elapsed = 0.0
+			_host.elapsed = 0.0
 		KEY_PERIOD:
 			_finish_pending()
 			playing = false
@@ -495,7 +472,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_TAB:
 			_finish_pending()
 			replay_commands = not replay_commands
-			_sampled_held = 0
+			_host.sampled_held = 0
 			_held = 0
 		KEY_ESCAPE: get_tree().change_scene_to_file("res://scenes/boot.tscn")
 	draw_state(1.0)

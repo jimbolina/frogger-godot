@@ -27,6 +27,18 @@ The [domain glossary](domain.md) gives semantic boundaries. Existing
 [simulation](gameplay/simulation.md), [coordinates](rendering/coordinates.md) and topic references
 remain authoritative for detailed rules.
 
+## Presentation hosts
+
+`GameplayHost` owns the gameplay period accumulator, source-style held/pressed
+sampling and one outstanding worker command. It returns completed results to
+the viewer, which owns drawing, overlays and trace capture. Long host stalls
+retain at most one fractional period. Pause, reset and explicit stepping join
+pending work before changing the run.
+`PathInspectionSession` and `EntityInspectionSession` own independently seekable
+map timelines. The map viewer retains its separate catch-up clock and backward
+seek behavior. `MapCaptureSession` owns external image/metadata capture and
+benchmark scheduling; it consumes rendering facts supplied by the viewer.
+
 ## Tick coordination
 
 `GameplayRun` is the transaction coordinator. It prepares independent system

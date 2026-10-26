@@ -60,7 +60,7 @@ func _run() -> void:
 	_check(_viewer.run.snapshot().tick_index == 53, "paused clock remains fixed")
 	await _tap(KEY_R)
 	_check(JSON.stringify(TerrainTrace.facts(_viewer.run.snapshot(), true)) == initial, "complete reset")
-	_check(_viewer._held == 0 and _viewer._sampled_held == 0 and not _viewer.replay_commands, "reset clears buffers and retains live mode")
+	_check(_viewer._held == 0 and _viewer._host.sampled_held == 0 and not _viewer.replay_commands, "reset clears buffers and retains live mode")
 	await _key(KEY_DOWN, true)
 	await _tap(KEY_PERIOD)
 	_check(_viewer.last_error.contains("boundary") and not _viewer.playing, "boundary rejection pauses")

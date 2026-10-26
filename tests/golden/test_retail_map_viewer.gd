@@ -50,8 +50,8 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 					previous_path = weakref(_viewer._path_inspection)
 				if _viewer._entity_inspection != null:
 					previous_entity = weakref(_viewer._entity_inspection)
-				if _viewer._entity_run != null:
-					previous_entity_run = weakref(_viewer._entity_run)
+				if _viewer._entity_session.run != null:
+					previous_entity_run = weakref(_viewer._entity_session.run)
 			assert_true(_viewer.load_level_by_code(FroggerIds.LEVEL_CODES[level], low_poly))
 			await get_tree().process_frame
 			await get_tree().process_frame

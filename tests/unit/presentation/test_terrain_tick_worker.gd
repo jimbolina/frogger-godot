@@ -31,7 +31,7 @@ func test_viewer_drains_before_step_and_reset_and_drawing_never_submits() -> voi
 	assert_eq(viewer.open_scenario(TerrainScenario.builtin("normal")), "")
 	viewer.playing = true
 	viewer._process(1.0 / 30.0)
-	assert_true(viewer._worker.pending)
+	assert_true(viewer._host.worker.pending)
 	viewer._finish_pending()
 	assert_eq(viewer._current.tick_index, 1)
 	for fraction: float in [0.0, 0.25, 0.5, 1.0]:
@@ -41,5 +41,5 @@ func test_viewer_drains_before_step_and_reset_and_drawing_never_submits() -> voi
 	assert_eq(viewer._current.tick_index, 2)
 	viewer._process(1.0 / 30.0)
 	assert_eq(viewer.reset_scenario(), "")
-	assert_null(viewer._worker)
+	assert_null(viewer._host.worker)
 	assert_eq(viewer._current.tick_index, 0)
