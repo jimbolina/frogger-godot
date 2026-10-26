@@ -3,6 +3,8 @@ extends RefCounted
 ## Ordered control/movement observations, or an error without partial advancement.
 
 var error: String = ""
+## Raw byte consumed at stationary control; -1 means no demo input was read.
+var consumed_demo_byte: int = -1
 var tick_index: int = -1
 var control_snapshot: GameplayState = null
 var move_snapshot: GameplayState = null

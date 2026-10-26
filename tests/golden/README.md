@@ -25,6 +25,7 @@ commands run from the repository root; generated facts live in
 |---|---|
 | MWI, MWD, WAD, PowerPacker | [Archives](specs/archives.md) |
 | Executable tables | [Executable tables](specs/executable-tables.md) |
+| Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |

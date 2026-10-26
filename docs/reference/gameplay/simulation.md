@@ -10,7 +10,7 @@ implemented. See [paths](paths.md) and [entities](entities.md).
 - The model viewer uses that existing 30 Hz clock. Its optional smoothing changes only presentation and defaults off; textures and animation state stay tick-driven.
 - Entities update in the original list order, because random-number use depends on it.
 - These keep integer behaviour: the random number generator, script timers and counters, path distance stepping, grid coordinates and form heights, the game timer, score, entity delay counters, and radius-squared collision tests.
-- Frog hops last a whole number of ticks and snap to the grid on landing, so recorded demos replay approximately. Demo checks compare completion and end state, not the path.
+- Frog hops last a whole number of ticks and snap to the grid on landing, so recorded demos replay approximately. Demo acceptance compares completion and end state; route and input differences are reported as diagnostics.
 - Camera control uses the source's discrete integer state. Floats remain available for particles, animation blending and render interpolation; numeric conversion bounds require independent evidence.
 
 The C source defines 30 logic calls per second and creates a 33 ms timer;
@@ -57,3 +57,32 @@ are external text projections and preserve the existing golden spellings.
 name the source integer values. Movement callback flags belong to
 `TerrainCallbackResult`. Their names do not alter serialized numeric values
 or extend supported gameplay.
+
+## Recorded demo control
+
+`DemoSetup` resolves the enabled executable demo row and chosen detail through
+`GameData`, then supplies the recorded starting cell and `FAST_RESET` start with the source 30-tick
+fast-start timer. The session supplies its countdown only after accepted ticks.
+Normal map, zone, entity and corridor validation still applies. Demo setup does
+not establish whole-map gameplay support.
+
+`TickCommand.recorded_input_byte` carries the raw byte separately from live
+masks (`-1` means absent). Mixing live masks and recorded input is rejected.
+The stationary C override boundary consumes the byte after input selection and
+before camera, tongue and jump handling; jumping and camera waits do not consume
+or buffer demo input. Raw camera bits are `0x40` clockwise and `0x20`
+anticlockwise, while existing live logical masks retain their public values.
+Camera handling precedes tongue and super-hop. Unsupported tongue and unsafe
+reserved directional actions fail atomically. The recorded byte is preserved
+in `TickResult.consumed_demo_byte`, or `-1` when the tick reads no input.
+
+`DemoPlaybackSession` owns detached bytes, elapsed successful logic ticks and
+consumed-input count. It offers one command at a time and accepts its matching
+committed result; a failed tick advances neither counter and marks playback
+incomplete with its diagnostic. An exhausted stream may continue non-consuming
+ticks through `recorded_input_exhausted`; the next read fails safely. Reset the
+session only after resetting the run succeeds. Worker consumers accept a result
+only once after host handoff. Pause offers no commands and advances no counters.
+Duration completion means the authored tick count elapsed, not that missing
+level flow or reference agreement has been established. Reference global driver
+call numbers are separate from local logic tick numbers.

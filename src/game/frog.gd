@@ -17,6 +17,7 @@ var source_id: String = ""
 var resource_id: int = -1
 var tick_guard: TickGuard = null
 var callback_error: String = ""
+var consumed_demo_byte: int = -1
 var camera: GameplayCamera = null
 var random: SourceRandom = null
 var animation_system: FrogAnimationController = null
@@ -28,6 +29,7 @@ func begin_tick(next_camera: GameplayCamera, next_random: SourceRandom, next_ani
 	animation_system = next_animation
 	controller_directions = directions
 	callback_error = ""
+	consumed_demo_byte = -1
 
 ## Validates an isolated observation at a contact boundary.
 func check_guard(phase: TickGuard.Phase, state: GameplayState) -> String:
@@ -65,6 +67,8 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 	if state.frog.mode not in [FrogMode.STATIONARY, FrogMode.JUMPING, FrogMode.CENTRING, FrogMode.SLIPPING_LAND_GRID, FrogMode.SIMPLE_SLIPPING_LAND_GRID]:
 		return ""
 	if state.frog.mode == FrogMode.JUMPING:
+		if command.recorded_input_byte >= 0 or command.recorded_input_exhausted:
+			return ""
 		var pressed: int = first_direction(command.pressed_mask)
 		if pressed == NO_INPUT and command.pressed_mask & TickCommand.SUPER_HOP:
 			pressed = 8
@@ -75,7 +79,7 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 	var input: int = NO_INPUT
 	state.frog.no_input_timer += 1
 	var buffered_mask: int = 16 if state.frog.buffered_direction == 8 else 1 << state.frog.buffered_direction
-	if state.frog.buffered_keys > 0 and command.held_mask & buffered_mask:
+	if command.recorded_input_byte < 0 and not command.recorded_input_exhausted and state.frog.buffered_keys > 0 and command.held_mask & buffered_mask:
 		input = state.frog.buffered_direction
 		state.frog.buffered_input_count += 1
 	elif state.frog.buffered_input_count > 0:
@@ -94,16 +98,29 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 			var held_direction: int = first_direction(command.held_mask)
 			if held_direction != NO_INPUT:
 				input = held_direction
+		if command.recorded_input_byte >= 0 or command.recorded_input_exhausted:
+			if command.recorded_input_exhausted:
+				return "Demo input buffer exhausted before duration elapsed"
+			input = command.recorded_input_byte
+			consumed_demo_byte = input
+		if input & 96 and camera == null:
+			return "Demo camera action requires an integrated camera definition"
 		if input & 96 and camera.allows_manual_turn():
 			var entity_matrix: PackedInt32Array = PackedInt32Array()
 			if state.attachment.current_entity_index >= 0:
 				entity_matrix = contacts.platform_pose(self, state).matrix12
-			var failure: String = camera.request_turn(1 if input & 32 else -1, state.frog.camera_zone_index >= 0, entity_matrix)
+			var clockwise_bit: int = 64 if command.recorded_input_byte >= 0 else 32
+			var clockwise: bool = bool(input & clockwise_bit)
+			var failure: String = camera.request_turn(1 if clockwise else -1, state.frog.camera_zone_index >= 0, entity_matrix)
 			if not failure.is_empty():
 				return failure
 			state.frog.mode = FrogMode.WAIT_FOR_CAMERA
-			events.append(TickEvent.make(TickEvent.Kind.CAMERA_CLOCKWISE) if input & 32 else TickEvent.make(TickEvent.Kind.CAMERA_ANTICLOCKWISE))
+			events.append(TickEvent.make(TickEvent.Kind.CAMERA_CLOCKWISE) if clockwise else TickEvent.make(TickEvent.Kind.CAMERA_ANTICLOCKWISE))
 			return ""
+	if command.recorded_input_byte >= 0 and input & 16:
+		return "Demo tongue action is unsupported"
+	if command.recorded_input_byte >= 0 and not input & (NO_INPUT | 8) and input > 3:
+		return "Demo directional action contains unsupported reserved bits"
 	var is_super: bool = input & 8 != 0
 	if is_super:
 		input = (state.frog.direction - (state.attachment.entity_angle if state.frog.flags & FrogFlags.ON_ENTITY else controller_directions[0])) & 3

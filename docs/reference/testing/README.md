@@ -90,6 +90,62 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   The older general-pose diagnostic remains blocked; the narrower route has
   its own complete proof and pinned inputs.
 
+## Demo playback and comparison
+
+`tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
+from the supplied executable and archive, then drives recorded commands through
+`GameplayHost`. It applies the existing ORG1 visibility admission before the
+recorded starting cell and FAST_RESET initialization. Other retail levels with
+entities or zones report the missing admission. No corridor restriction is removed.
+
+```text
+python tools/run_demo.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+python tools/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24
+python tools/verify_demo_schedules.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+python -m unittest discover -s tools -p test_demo_trace.py
+```
+
+The launcher uses an isolated project/profile, explicit logs, hidden awaited
+processes on Windows and `--disable-crash-handler`; import, strict compilation
+and architecture checks precede playback. Exit 0 means the demo duration elapsed,
+3 means an explicitly incomplete run and 1 means launcher/verification failure.
+A tick limit, unsupported action, death/reset/checkpoint flow or failed admission
+cannot become a complete result. Duration completion alone establishes no retail
+gameplay or reference match. Playback provenance records that distinction.
+
+`frog.csv` uses `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`.
+Its companion `frog.csv.entities.csv` uses
+`call,map,index,unique_id,form_book_id,entity_type,x,y,z`, with original form/type
+identities and live-list walk order. Local calls start at zero and count committed
+logic ticks; `input=-1` means no byte was consumed. Positions use integer matrix
+translations. Existing terrain trace formats are unchanged.
+
+The comparator validates LF-terminated integer CSVs, ordered calls and per-call
+identities. `--segment <index>` selects a contiguous reference visit to the map;
+the candidate must contain one visit. It checks declared duration, committed row
+count and consumed-input count before accepting completion and matching terminal
+frog state. Route cells and consumed-input differences are diagnostic, with no
+invented distance tolerance. Reference hook calls may include multiple logic
+ticks after level transitions, so their global counters are not aligned to local
+ticks. An identically truncated run is not a passing schedule check: zero-tick
+runs are rejected, and complete status must match its declared duration.
+
+The schedule verifier compares both CSVs and playback provenance byte for byte
+across headless and rendered 30/60/144 Hz and irregular frames. To exercise a
+complete synthetic run independently of current retail admission, supply paired
+`--scenario-file <terrain-json>` and `--demo-file <synthetic-demo>` instead of
+`--data-dir`. The JSON uses the existing terrain fixture schema; the binary demo
+is three little-endian signed integers (duration, start X, start Z), then action
+bytes. These supplied fixtures are inputs, never expected-data goldens. Rendered
+runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect it.
+
+Use the unchanged frozen export described in `../froggy/engine/docs/REFERENCE.md`:
+`python engine/tools/reference_export.py traces --out <external-folder>` from
+that repository. Never rebuild or modify it. The available driver in this macOS
+environment is a Windows PE executable and no Wine runtime is available, so
+native reference validation remains blocked. Supply externally exported attract
+CSVs to the comparator; no local run claims reference validation.
+
 ## Focused iteration and guardrails
 
 Append `-gselect=test_model_viewer` to either wrapper to select one script.

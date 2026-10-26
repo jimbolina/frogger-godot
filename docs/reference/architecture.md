@@ -83,6 +83,11 @@ synthetic injection remain supported.
 `GameplayRun` copies setup definitions and owns frog, camera, animation and RNG
 state, plus an optional `EntityRun` supplied through `EntityCollisionDefinition`.
 Each command operates on private candidate copies and commits only on success.
+Recorded demo commands follow the same transaction: only a committed result
+reports consumed input. `DemoPlaybackSession` owns duration/cursor state and
+accepts that result after synchronous or worker completion. `DemoSetup` resolves
+source resources and initial state without relaxing inspection admission. See
+[recorded control](gameplay/simulation.md#recorded-demo-control).
 Entity/path advancement builds its next independent state directly. The entity aggregate exposes `begin_candidate`, detached snapshots and ordered
 update methods; the gameplay aggregate never accesses its private state.
 `commit_candidate` consumes the successful candidate only after all phases pass.

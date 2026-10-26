@@ -50,6 +50,22 @@ Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
 selected map. The [inspection contract](docs/reference/testing/terrain-inspection.md)
 defines scenario fields and omitted level systems.
 
+Recorded demo inspection uses the player's high-detail demo table and archive:
+
+```text
+python tools/run_demo.py --godot <executable> --data-dir <game-folder> --level ORG1 --output-directory <external-folder>
+```
+
+Add `--viewer` for rendered playback and a capture, `--render-rate
+30|60|144|irregular` for a frame schedule, or `--tick-limit <ticks>` for a bounded
+run. The default level is ORG1. Evidence includes reference-layout frog and
+live-entity CSVs plus `playback.json` with the initialization, consumed inputs,
+committed ticks and termination reason. Exit 3 means incomplete playback;
+missing resources, unsupported actions and existing admission limits remain
+visible. Full retail level playback is unfinished. See the
+[demo verification commands](docs/reference/testing/README.md#demo-playback-and-comparison)
+for reference comparisons and schedule checks.
+
 For the bounded entity demonstration, run `python tools/run_terrain.py --godot
 <executable> --data-dir <game-folder> --level DES2 --entity-reactions pop
 --viewer --output-directory <external-folder>`. This starts at an explicit safe

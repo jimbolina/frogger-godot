@@ -196,6 +196,15 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if command.tick_index != _state.tick_index:
 		result.error = "Tick index must equal next tick %d" % _state.tick_index
 		return result
+	if command.recorded_input_exhausted and command.recorded_input_byte >= 0:
+		result.error = "Recorded demo input cannot contain a byte and mark exhaustion"
+		return result
+	if command.recorded_input_byte < -1 or command.recorded_input_byte > 255:
+		result.error = "Recorded demo input must be an unsigned byte or -1"
+		return result
+	if (command.recorded_input_byte >= 0 or command.recorded_input_exhausted) and (command.pressed_mask != 0 or command.held_mask != 0):
+		result.error = "Recorded demo input cannot be mixed with live controller masks"
+		return result
 	if command.pressed_mask < 0 or command.held_mask < 0 or (command.pressed_mask | command.held_mask) & ~127:
 		result.error = "Terrain commands support directional, super-hop and camera-turn masks"
 		return result
@@ -335,6 +344,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		_candidate_entities = null
 	if _camera != null:
 		_frog.controller_directions = next.camera.controller_directions.duplicate()
+	result.consumed_demo_byte = _frog.consumed_demo_byte
 	result.final_snapshot = next.copy()
 	return result
 
@@ -441,6 +451,7 @@ func _copy_grid(source: GridDefinition) -> String:
 
 func _failed_tick(result: TickResult, issue: String) -> TickResult:
 	result.error = issue
+	result.consumed_demo_byte = -1
 	result.control_snapshot = null
 	result.move_snapshot = null
 	result.collision_snapshot = null

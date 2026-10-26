@@ -17,11 +17,15 @@ Typed events retain the existing trace format. Candidate APIs and discovered
 copy contracts protect transaction ownership. GameplayHost owns pacing and worker
 handoff; map inspection retains its independent seek clock and capture workflow.
 
-[PORTING](PORTING.md) owns the remaining work. Next is P8b demo playback, then
-complete ORG1 in P8c. Bounded JUN1/ORG1 presets remain inspection scaffolding until
-that replacement is ready. Ordinary retail terrain still requires zero-zone maps;
-combined zones/visibility retain synthetic gameplay and the prescribed JUN1 probe.
-FOR1 remains an unverified retail candidate.
+[PORTING](PORTING.md) owns remaining work. P8b provides player-data demo
+resolution, raw-action control, atomic duration/input counters and isolated
+reference-layout traces with comparison reporting. Duration completion does
+not establish complete gameplay. Native reference validation remains pending;
+unsupported actions, whole-map zones and corridor admission report incomplete
+playback. Next is complete ORG1 in P8c. Bounded JUN1/ORG1 presets remain
+inspection scaffolding. Ordinary retail terrain still requires zero-zone maps;
+combined zones/visibility retain synthetic gameplay and the prescribed JUN1
+probe. FOR1 remains an unverified retail candidate.
 
 Audio playback, splash/particle effects and [animated per-part lighting](reference/rendering/gameplay-projection.md)
 remain deferred. Performance acceptance requires an idle-system measurement.

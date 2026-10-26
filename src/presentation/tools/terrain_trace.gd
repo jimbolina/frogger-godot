@@ -151,6 +151,8 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 		var usage: int = property.usage
 		if usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			var key: String = property.name
+			if record is TickCommand and key in ["recorded_input_byte", "recorded_input_exhausted"]:
+				continue
 			if record is GameplayState and key in ["frog", "attachment", "requests", "diagnostics"]:
 				continue
 			if record is EntityDefinition and key == "behavior":
