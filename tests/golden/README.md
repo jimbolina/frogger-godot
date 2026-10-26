@@ -4,6 +4,10 @@ These are text facts only: names, sizes, flags, counts, IDs and digests.
 Never commit retail bytes or excerpts. Tests load the owner's retail files
 through `FROGGER_DATA_DIR` and compare decoded values with these facts.
 
+`synthetic/.gdignore` keeps raw fixtures out of Godot's asset importer. Tests
+read them with `FileAccess`; CSV columns are not translation locales. Importing
+these tables as translations can crash Godot 4.5.1's threaded Mac importer.
+
 Generators in `tools/` independently implement FrogLord's formats and the
 C reference's playback calculations in Python. They share no GDScript
 implementation. Never regenerate expected results from Godot output.

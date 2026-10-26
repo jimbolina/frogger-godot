@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import sys
 import uuid
+
+from godot_project import isolated_project
 from godot_profile import ProfileCapture
 
 
@@ -58,6 +60,7 @@ def main():
     evidence = output / ('performance-' + uuid.uuid4().hex)
     (evidence / 'profile').mkdir(parents=True)
     (evidence / 'temp').mkdir()
+    project = isolated_project(repo, evidence / 'profile')
     env = os.environ.copy()
     env.update(APPDATA=str(evidence / 'profile'), XDG_DATA_HOME=str(evidence / 'profile'),
                TEMP=str(evidence / 'temp'), TMP=str(evidence / 'temp'))
@@ -70,7 +73,7 @@ def main():
 
     def stage(name, arguments, headless=False):
         log = evidence / (name + '.log')
-        command = [args.godot, '--disable-crash-handler', '--path', str(repo), '--log-file', str(log)]
+        command = [args.godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log)]
         if headless:
             command.append('--headless')
         capture = ProfileCapture(evidence / (name + '-profile.json'), args.profile_kind) if args.profile and not headless else None

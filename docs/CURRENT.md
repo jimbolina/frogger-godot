@@ -30,3 +30,6 @@ caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
 Hosted CI awaits a repository host. The licence remains the owner's decision
 before publication. Never push.
+
+[Mac source setup](../README.md#macos-setup) uses Godot 4.5.1 with isolated
+automated profiles. Packaged exports and native C-reference builders remain open.

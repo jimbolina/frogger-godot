@@ -6,6 +6,8 @@ import subprocess
 import sys
 import uuid
 
+from godot_project import isolated_project
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -41,6 +43,7 @@ def main():
     temporary = evidence / 'temp'
     profile.mkdir(parents=True)
     temporary.mkdir()
+    project = isolated_project(repo, profile)
     env = os.environ.copy()
     env.update(APPDATA=str(profile), XDG_DATA_HOME=str(profile), TEMP=str(temporary), TMP=str(temporary))
     startup = None
@@ -52,7 +55,7 @@ def main():
 
     def stage(name, arguments, headless=True):
         log = evidence / (name + '.log')
-        command = [args.godot, '--disable-crash-handler', '--path', str(repo), '--log-file', str(log)]
+        command = [args.godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log)]
         if headless:
             command.append('--headless')
         command += arguments

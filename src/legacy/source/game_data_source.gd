@@ -123,15 +123,16 @@ func describe() -> String:
 
 
 ## Finds [param file_name] in [param dir] ignoring letter case (a Windows
-## install copied to Linux may have any case). Returns the full path or "".
+## install copied to another desktop may have any case). Returns the full path
+## with its on-disk spelling, preferring an exact match, or "".
 static func find_file_ignoring_case(dir: String, file_name: String) -> String:
 	if dir.is_empty() or not DirAccess.dir_exists_absolute(dir):
 		return ""
-	var exact: String = dir.path_join(file_name)
-	if FileAccess.file_exists(exact):
-		return exact
+	var files: PackedStringArray = DirAccess.get_files_at(dir)
+	if files.has(file_name):
+		return dir.path_join(file_name)
 	var wanted: String = file_name.to_lower()
-	for candidate: String in DirAccess.get_files_at(dir):
+	for candidate: String in files:
 		if candidate.to_lower() == wanted:
 			return dir.path_join(candidate)
 	return ""

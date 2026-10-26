@@ -74,6 +74,8 @@ func test_file_names_match_regardless_of_case() -> void:
 	var found: GameDataLocator.Located = _locator.locate(dir)
 	assert_true(found.is_ok(), found.error)
 	assert_eq(found.version.internal_name, "pc-retail-v1.0")
+	assert_eq(found.source.get_exe_path(), dir.path_join("modded_frogger.exe"))
+	assert_eq(found.source.get_mwd_path(), dir.path_join("MODDED_FROGPSX.mwd"))
 
 
 func test_saved_setting_is_used_last() -> void:

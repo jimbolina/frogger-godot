@@ -25,7 +25,7 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P14 | FrogLord round trip and reload on change | M | An edited map, script, remap and demo all load | |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending | M | | |
-| P17 | Export for Windows, Linux and macOS | S | A run on a clean machine | |
+| P17 | Export for Windows, Linux and macOS | S | A run on a clean machine | Mac source setup and isolated verification available; packaged exports pending |
 
 Network play is deferred.
 

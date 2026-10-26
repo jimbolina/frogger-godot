@@ -150,6 +150,43 @@ Add `--entity-lifecycle visibility` to the JUN1 camera command to show its
 eleven audited logs appearing, retiring and returning as the zone camera changes.
 Other entities are omitted and the probe does not execute frog contact.
 
+## macOS setup
+
+Install the standard **Godot 4.5.1 macOS Universal** build from the
+[official archive](https://godotengine.org/download/archive/4.5.1-stable/)
+as `/Applications/Godot.app`. It runs natively on Apple Silicon and Intel.
+The project uses GDScript; .NET, Java, a C compiler and export templates are
+not required to run it or its Godot tests. GUT is already included.
+Python 3 is needed for the Mac test runner and inspection launchers.
+
+Double-click `tools/launch_macos.command` in Finder to open the project in the editor.
+Let the initial import finish, then press F5 (Fn-F5 when the keyboard uses media
+keys) to run the start screen.
+It uses `FROGGER_DATA_DIR` when set, otherwise the existing retail folder at
+`../froggy/resources/pc-version/extracted/FROGGER` when present.
+The same launcher works from Terminal. After the initial editor import,
+launch guarded exploration directly with:
+
+```sh
+tools/launch_macos.command res://scenes/tools/terrain_viewer.tscn -- --level=ORG1 --exploration=org1-road-river
+```
+
+For other commands in this README, use the executable inside the app:
+
+```sh
+export GODOT=/Applications/Godot.app/Contents/MacOS/Godot
+export FROGGER_DATA_DIR="$(cd ../froggy/resources/pc-version/extracted/FROGGER && pwd)"
+"$GODOT" --path .
+bash tools/run_tests.sh
+env -u FROGGER_DATA_DIR bash tools/run_tests.sh
+```
+
+The last command expects exit 3 for the approved retail-only skips. See the
+[testing guide](docs/reference/testing/README.md) for isolated Mac profiles.
+Use `python3` for Python commands on macOS. The frozen sibling C engine's
+Windows binaries and PowerShell oracle builders are separate reference tooling;
+they are not part of this Mac runtime setup. Packaged exports remain future work.
+
 ## No game data is included
 
 This repository contains **no part of the original game**: no executable, no

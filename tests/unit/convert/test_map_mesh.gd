@@ -2,6 +2,25 @@ extends GutTest
 ## Synthetic map group geometry, materials and independent instance playback.
 
 
+func test_reference_projection_updates_camera_on_ordinary_surfaces() -> void:
+	var instance: MapMesh.Instance = MapMeshBuilder.new().build(_scene()).create_instance()
+	var node: MeshInstance3D = instance.get_child(0)
+	instance.set_reference_projection(true)
+	instance.set_camera_position(Vector3i(157, -10301, -10128))
+	var material: ShaderMaterial = node.get_surface_override_material(0)
+	var camera: Vector3 = material.get_shader_parameter("camera_game")
+	assert_eq(camera, Vector3(157, -10301, -10128))
+	instance.set_reference_projection(false)
+	instance.set_camera_position(Vector3i(20, 30, 40))
+	instance.set_reference_projection(true)
+	camera = material.get_shader_parameter("camera_game")
+	assert_eq(camera, Vector3(20, 30, 40))
+	instance.set_camera_position(Vector3i(50, 60, 70))
+	camera = material.get_shader_parameter("camera_game")
+	assert_eq(camera, Vector3(50, 60, 70))
+	instance.free()
+
+
 func test_material_settings_invalidate_inactive_animation_frames() -> void:
 	var scene: MapSceneData = _scene()
 	scene.map.polygons[0].flags = 2

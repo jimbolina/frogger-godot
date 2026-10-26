@@ -152,6 +152,7 @@ class Instance extends Node3D:
 	## Exact frozen map-slice integer projection; custom cameras keep this off.
 	func set_reference_projection(value: bool) -> void:
 		reference_projection = value
+		_camera_materials.clear()
 		_configured.clear()
 		_update_materials()
 
@@ -224,7 +225,7 @@ class Instance extends Node3D:
 					material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
 					material.set_shader_parameter("environment_uv", spec.environment)
 					material.set_shader_parameter("camera_game", _camera_presentation)
-					if spec.environment:
+					if spec.environment or reference_projection:
 						_camera_materials[material] = true
 					material.set_shader_parameter("projection_scale", projection_scale)
 					material.set_shader_parameter("reference_projection", reference_projection)

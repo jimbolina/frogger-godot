@@ -25,6 +25,19 @@ Exit codes: 0 = all passed; 1 = test, compile, architecture or result failure;
 Retail mode must have none. A supplied but invalid `FROGGER_DATA_DIR` fails;
 unset the variable explicitly for asset-free mode.
 
+On macOS, the Bash wrapper also finds `/Applications/Godot.app/Contents/MacOS/Godot`
+when `godot` is not on PATH. Python 3 is required (`PYTHON` can select its executable).
+The Bash wrapper and Python inspection launchers use `tools/godot_project.py`:
+each run gets an external project file and import cache, with links to the current
+checkout's sources. A generated override selects a unique user-data directory in
+`~/Library/Application Support/Frogger Automation/`; `profile/user-data-path.txt`
+(or `data/user-data-path.txt` for Bash tests) records the location.
+macOS Godot ignores `APPDATA` and `XDG_DATA_HOME`, so these variables alone do
+not isolate `user://`. The user's home and interactive Frogger settings stay
+unchanged. A checkout-local `override.cfg` must be removed before isolated runs.
+Retained run folders and their matching user-data directories may be deleted
+after diagnosis. Sandbox environments must allow the unique Library directory.
+
 ## Feature checks
 
 - [Terrain inspection](terrain-inspection.md): scenarios, headless/rendered traces
@@ -122,9 +135,10 @@ adapters that call unchanged frozen reference objects and emit text facts;
 they are not loaded by the game. Their builders need a developer compiler,
 but normal runtime use and the Godot test suites do not build or load them.
 
-- Godot 4.5.1 Compatibility: `C:\Users\janit\Desktop\Godot.exe`.
-  Its windowed executable does not reliably print to a console; use log files.
-- Python: `C:\Python313\python.exe`; MSYS2 tools are also available.
+- Godot 4.5.1 Compatibility; see [Mac setup](../../../README.md#macos-setup).
+  Windows windowed builds do not reliably print to a console; use log files.
+- Python 3 for inspection launchers and independent generators. Use `python3`
+  on macOS; Homebrew Python can be selected by its absolute path when needed.
 - GUT 9.5.0 is vendored in `addons/gut/`.
 - Visually inspect visual changes. Store screenshots outside the repository.
   Hash agreement establishes decoding, not appearance.

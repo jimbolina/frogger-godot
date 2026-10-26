@@ -151,6 +151,10 @@ also happens before rasterization; MAX_OT/environment polygons bypass it.
 GPU projection is confined to the reference preset, with per-polygon depth
 attributes so animation never rebuilds static geometry. Explicit custom
 poses and the normal inspection camera use Godot projection.
+Every material using reference projection receives camera translation updates,
+including ordinary surfaces without environment UVs. Changing projection mode
+rebuilds that material selection; otherwise a cached zero camera can project
+the map against the near-depth clamp instead of the reference viewpoint.
 
 Use `mr_stub/src/drivers/map_slice/mr_map_slice_main.c`, `API.SRC/MR_VIEW.C`,
 `CAMERA.C`, `MAPVIEW.C`, `gamesys.C` and GPU rasterizer for behavior. The driver

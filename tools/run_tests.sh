@@ -2,6 +2,9 @@
 set -u
 cd "$(dirname "$0")/.." || exit 2
 GODOT="${GODOT:-godot}"
+if [ "$GODOT" = godot ] && ! command -v "$GODOT" >/dev/null 2>&1 && [ -x /Applications/Godot.app/Contents/MacOS/Godot ]; then
+    GODOT=/Applications/Godot.app/Contents/MacOS/Godot
+fi
 if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
     echo "run_tests: Godot not found; set GODOT=/path/to/godot" >&2
     exit 2
@@ -15,7 +18,11 @@ export XDG_CONFIG_HOME="$run_directory/config"
 export TMPDIR="$run_directory/temp"
 export TEMP="$run_directory/temp"
 export TMP="$run_directory/temp"
+project_directory="$PWD"
 case "$(uname -s)" in
+    Darwin)
+        project_directory="$("${PYTHON:-python3}" tools/godot_project.py "$PWD" "$run_directory/data")" || exit 2
+        ;;
     MINGW*|MSYS*|CYGWIN*)
         if command -v cygpath >/dev/null 2>&1; then
             export APPDATA="$(cygpath -w "$APPDATA")"
@@ -30,7 +37,7 @@ script_errors='SCRIPT ERROR|Parse Error|Failed to load script|Failed loading res
 run_stage() {
     local stage="$1"
     shift
-    "$GODOT" --headless --disable-crash-handler --path . --log-file "$run_directory/$stage.log" "$@" >"$run_directory/$stage.console.log" 2>&1
+    "$GODOT" --headless --disable-crash-handler --path "$project_directory" --log-file "$run_directory/$stage.log" "$@" >"$run_directory/$stage.console.log" 2>&1
 }
 
 run_stage import --import
