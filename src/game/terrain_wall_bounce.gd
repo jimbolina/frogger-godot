@@ -18,7 +18,7 @@ static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRe
 
 static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
-	result.callback_flags = 8
+	result.callback_flags = TerrainCallbackResult.UPDATE_MATRIX
 	if state.remaining_ticks == 0:
 		return result
 	state.remaining_ticks -= 1
@@ -26,7 +26,7 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 		state.position_16.x = state.target_16.x
 		state.position_16.z = state.target_16.z
 		result.land_requested = true
-		result.callback_flags |= 7
+		result.callback_flags |= (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_OLD_POS | TerrainCallbackResult.REACT_WITH_FLAGS)
 		result.react_flags = grid.squares[state.square_index].flags
 		return result
 	if state.remaining_ticks == 3:
@@ -34,5 +34,5 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 		state.velocity_16.z = -state.velocity_16.z
 	state.velocity_16.y += 0x100000
 	state.position_16 += state.velocity_16
-	result.callback_flags |= 1
+	result.callback_flags |= TerrainCallbackResult.UPDATE_POS
 	return result

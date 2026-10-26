@@ -60,7 +60,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		if fields[12] == "unsupported":
 			assert_eq(snapshot.death_entity_index, -1, name + " unsupported killer omitted")
 			assert_eq(snapshot.death_equate, 0, name + " unsupported death omitted")
-			assert_eq(result.events.count("entity_pop_explosion_request"), 0, name + " unsupported effect omitted")
+			assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 0, name + " unsupported effect omitted")
 			assert_eq(snapshot.sound_requests, 0, name + " unsupported sound omitted")
 			continue
 		assert_eq(snapshot.death_entity_index, int(fields[13]), name + " first killer")
@@ -72,8 +72,8 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		assert_eq(snapshot.velocity_16.z, int(fields[6]), name + " vz")
 		var pop_requests: int = int(fields[8]) if int(fields[3]) == 23 else 0
 		var squish_notifications: int = 1 if int(fields[3]) == 2 and int(fields[13]) >= 0 else 0
-		assert_eq(result.events.count("entity_pop_explosion_request"), pop_requests, name + " POP request")
-		assert_eq(result.events.count("entity_squish"), squish_notifications, name + " SQUISH notification")
+		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), pop_requests, name + " POP request")
+		assert_eq(TickEvent.trace_lines(result.events).count("entity_squish"), squish_notifications, name + " SQUISH notification")
 		assert_eq(snapshot.sound_requests, int(fields[9]), name + " sound request")
 		if snapshot.camera != null:
 			assert_eq(snapshot.camera.mode, int(fields[7]), name + " camera mode")

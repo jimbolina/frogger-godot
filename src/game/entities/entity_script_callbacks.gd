@@ -12,12 +12,12 @@ static func apply(definition: EntityScriptDefinition, context: EntityUpdateConte
 			continue
 		match definition.callbacks[slot[0]]:
 			"SCRIPT_CB_FROG_TRAFFIC_SPLAT":
-				result.requests.append("sound:13:0:0:0")
+				result.requests.append(TickEvent.sound(13))
 			"SCRIPT_CB_LOG_SPLASH":
-				result.requests.append("sound:19:0:0:0")
+				result.requests.append(TickEvent.sound(19))
 			"SCRIPT_CB_HIT_TURTLE":
-				result.requests.append("sound:14:0:0:0")
-				result.requests.append("sound:15:0:0:0")
+				result.requests.append(TickEvent.sound(14))
+				result.requests.append(TickEvent.sound(15))
 			"SCRIPT_CB_DIVE_COLOUR_CHANGE":
 				if context.no_display:
 					continue

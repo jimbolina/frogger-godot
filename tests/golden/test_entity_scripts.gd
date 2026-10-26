@@ -46,7 +46,7 @@ func test_complete_script_updates_match_independent_frozen_c_facts() -> void:
 			animation = result.animation
 			rng = result.random
 			animation.advance()
-			var fields: Dictionary = {"case": fixture.name, "tick": tick, "program": state.program_id, "cursor": state.cursor, "loop_start": state.loop_start, "loop_end": state.loop_end, "timer": state.timer, "deviation": state.deviation, "delta": state.delta, "destination": state.destination, "remaining": state.remaining, "action": animation.action, "cel": animation.cel, "rng": rng.state, "red": state.colours.x, "green": state.colours.y, "blue": state.colours.z, "ambient_red": state.ambient.x, "ambient_green": state.ambient.y, "ambient_blue": state.ambient.z, "no_fade": int(state.no_screen_fade), "drown": int(result.drown), "requests": ";".join(result.requests) if not result.requests.is_empty() else "-"}
+			var fields: Dictionary = {"case": fixture.name, "tick": tick, "program": state.program_id, "cursor": state.cursor, "loop_start": state.loop_start, "loop_end": state.loop_end, "timer": state.timer, "deviation": state.deviation, "delta": state.delta, "destination": state.destination, "remaining": state.remaining, "action": animation.action, "cel": animation.cel, "rng": rng.state, "red": state.colours.x, "green": state.colours.y, "blue": state.colours.z, "ambient_red": state.ambient.x, "ambient_green": state.ambient.y, "ambient_blue": state.ambient.z, "no_fade": int(state.no_screen_fade), "drown": int(result.drown), "requests": ";".join(TickEvent.trace_lines(result.requests)) if not result.requests.is_empty() else "-"}
 			for slot: int in 2:
 				var values := PackedStringArray()
 				for value: int in state.callbacks[slot]:

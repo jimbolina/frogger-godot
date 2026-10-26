@@ -40,6 +40,20 @@ the host does not consume or arbitrate them.
 
 `src/game/` owns detached terrain, path and bounded entity definitions/state,
 grid and FORM queries, movement/reactions, gameplay camera, animation control
-and source RNG. Entity scripts remain unimplemented. `src/mod/` remains future work
+and source RNG. Supported entity scripts run in the same transaction. `src/mod/` remains future work
 for watching files and reporting unmapped behavior. See the
 [README layout](../../../README.md#layout) and [path contract](paths.md).
+
+## Tick notifications and named source values
+
+`TickEvent` carries a kind and typed parameters for sound, moving sound, sprite,
+entity generation and death-animation notifications. Entity requests and
+lifecycle notifications use the same value type. Candidate outboxes preserve
+source order and are discarded on failure; copied observations detach events.
+Consumers inspect kinds and parameters. `to_trace_line()` and `trace_lines()`
+are external text projections and preserve the existing golden spellings.
+
+`FrogMode`, `FrogFlags`, `GridSquareFlags`, `EntityLiveFlags` and `PowerupFlags`
+name the source integer values. Movement callback flags belong to
+`TerrainCallbackResult`. Their names do not alter serialized numeric values
+or extend supported gameplay.

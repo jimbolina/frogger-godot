@@ -21,16 +21,16 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 					state.delay = 30
 					state.velocity_16 = Vector3i.ZERO
 					state.offset_16 = Vector3i((form.offsets.x + 128) << 16, (form.height - 30) << 16, (form.offsets.y + 128) << 16)
-					state.mode = 1
+					state.mode = FrogMode.JUMPING
 					entity.animation.select(1)
 				else:
-					state.mode = 5
+					state.mode = FrogMode.CENTRING
 		5:
 			if not parent.live:
-				state.mode = 0
+				state.mode = FrogMode.STATIONARY
 		1:
 			if not parent.live:
-				state.mode = 0
+				state.mode = FrogMode.STATIONARY
 				state.parent_entity_index = -1
 				state.delay = 0
 				state.search_count = 0
@@ -46,7 +46,7 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 			if state.count == 0:
 				state.offset_16 = Vector3i(state.target.x << 16, state.target.y << 16, state.target.z << 16)
 				state.velocity_16 = Vector3i.ZERO
-				state.mode = 1
+				state.mode = FrogMode.JUMPING
 				state.delay = 30
 				entity.animation.select(1)
 			else:
@@ -57,12 +57,12 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 			state.direction = 0
 			if state.carried_jump_ticks != 0:
 				state.carried_jump_ticks -= 1
-			if frog.mode == 2 and not state.dead:
+			if frog.mode == FrogMode.DYING and not state.dead:
 				state.dead = true
 				state.model_hidden = true
-				state.mode = 4
-				entity.requests.append("death_pgen")
-			if frog.mode == 1 and state.carried_jump_ticks == 0:
+				state.mode = FrogMode.HIT_CHECKPOINT
+				entity.requests.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN))
+			if frog.mode == FrogMode.JUMPING and state.carried_jump_ticks == 0:
 				entity.animation.select(0)
 				state.carried_jump_ticks = 6
 		4:
@@ -70,13 +70,13 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 			return ""
 		_:
 			return "Unsupported pink frog mode"
-	if hit and state.mode != 3:
+	if hit and state.mode != FrogMode.WAIT_FOR_CAMERA:
 		if frog == null:
 			return "Pink frog pickup requires its single-player carrier"
 		state.offset_16 = Vector3i(0, -(20 << 16), -(20 << 16))
 		state.parent_entity_index = -1
 		state.carrier_index = 0
-		state.mode = 3
+		state.mode = FrogMode.WAIT_FOR_CAMERA
 		entity.animation.select(0)
 	var carrier: PackedInt32Array = frog.matrix12 if state.carrier_index == 0 and frog != null else parent.matrix12
 	var has_parent: bool = state.carrier_index == 0 or (state.parent_entity_index >= 0 and parent.live)
@@ -106,9 +106,9 @@ static func _hop(entity: EntitySnapshot, form: FormContactDefinition) -> String:
 	state.target = Vector3i(destination.x * 256 + form.offsets.x + 128, form.height - 30, destination.y * 256 + form.offsets.y + 128)
 	state.count = 6
 	state.velocity_16 = Vector3i(PlatformMath.divide((state.target.x << 16) - state.offset_16.x, 6), -((0x100000 * 7) >> 1), PlatformMath.divide((state.target.z << 16) - state.offset_16.z, 6))
-	state.mode = 2
+	state.mode = FrogMode.DYING
 	entity.animation.select(0)
 	if state.moving_sound.is_empty():
 		state.moving_sound = PackedInt32Array([27, 768, 1536])
-		entity.requests.append("moving:27:768:1536")
+		entity.requests.append(TickEvent.moving_sound(27, 768, 1536))
 	return ""

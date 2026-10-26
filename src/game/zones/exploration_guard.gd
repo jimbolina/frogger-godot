@@ -57,7 +57,7 @@ func check_frog(state: RunSnapshot) -> String:
 		return ""
 	if state.powerup_flags != 0:
 		return "Animated admission requires an unpowered frog; tick rolled back"
-	if state.mode == 2 or state.flags & 8:
+	if state.mode == FrogMode.DYING or state.flags & FrogFlags.MUST_DIE:
 		return ""
 	if not frog_roots.has(state.matrix12.slice(0, 9)):
 		return "Animated admission rejected an unproved frog root; tick rolled back"

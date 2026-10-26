@@ -4,15 +4,15 @@ extends RefCounted
 
 static func move(state: RunSnapshot) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
-	result.callback_flags = 9
-	if state.mode == 265:
+	result.callback_flags = (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_MATRIX)
+	if state.mode == FrogMode.LEVEL_START_BOUNCE:
 		if state.start_target_16 < (state.world_position.y << 16):
 			@warning_ignore("integer_division")
 			state.velocity_16.y = -(2 * state.velocity_16.y) / 3
-			state.flags |= 32768
+			state.flags |= FrogFlags.JUST_BOUNCED
 			if state.velocity_16.y > -(16 << 16):
 				state.velocity_16 = Vector3i.ZERO
-				state.mode = 266
+				state.mode = FrogMode.LEVEL_START_COME_TO_REST
 				return result
 	else:
 		if state.start_target_16 <= (state.world_position.y << 16):

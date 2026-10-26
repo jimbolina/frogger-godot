@@ -219,7 +219,7 @@ func _accept_result(command: TickCommand, result: TickResult) -> void:
 	if last_error.is_empty():
 		_previous = _current
 		_current = result.final_snapshot if _host_step else run.snapshot()
-		_outcomes = PackedStringArray(result.events)
+		_outcomes = PackedStringArray(TickEvent.trace_lines(result.events))
 		_last_contacts.clear()
 		for contact: FormReactionResult in result.entity_contacts:
 			_last_contacts.append(contact.copy())
@@ -362,7 +362,7 @@ func draw_state(fraction: float) -> void:
 			for slot: int in mini(3, _current.entities.entities.size()):
 				var subject: EntitySnapshot = _current.entities.entities[slot]
 				subjects.append("#%d support=%s live=%s pending=%s gen=%d" % [subject.entity_index, str(subject.lifecycle_supported), str(subject.live), str(subject.destroy_pending), subject.generation])
-			_label.text += "live %d | groups %d %s | events %s\n%s\n" % [_current.entities.live_order.size(), selected.size(), selected.slice(0, mini(4, selected.size())), _current.entities.lifecycle_events.slice(0, 3), "; ".join(subjects)]
+			_label.text += "live %d | groups %d %s | events %s\n%s\n" % [_current.entities.live_order.size(), selected.size(), selected.slice(0, mini(4, selected.size())), TickEvent.trace_lines(_current.entities.lifecycle_events.slice(0, 3)), "; ".join(subjects)]
 		if scenario.platforms_enabled:
 			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.current_entity_index, _current.entity_cell, _current.entity_carry_indices]
 		var contact_lines := PackedStringArray()
@@ -743,15 +743,14 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				return
 		if scenario.entity_lifecycle and not folder.is_empty() and _current.entities != null:
 			var lifecycle_stages: Array[String] = []
-			for event: String in _current.entities.lifecycle_events:
-				if event.begins_with("create:"):
-					var fields: PackedStringArray = event.split(":")
-					lifecycle_stages.append("lifecycle-create" if fields.size() < 3 or fields[2].to_int() <= 1 else "lifecycle-recreate")
+			for event: TickEvent in _current.entities.lifecycle_events:
+				if event.kind == TickEvent.Kind.CREATE:
+					lifecycle_stages.append("lifecycle-create" if event.generation <= 1 else "lifecycle-recreate")
 					if had_global_absence:
 						lifecycle_stages.append("lifecycle-return")
 						had_global_absence = false
 					had_lifecycle_creation = true
-				elif event.begins_with("destroy:"):
+				elif event.kind == TickEvent.Kind.DESTROY:
 					lifecycle_stages.append("lifecycle-destroy")
 			for entity: EntitySnapshot in _current.entities.entities:
 				if entity.destroy_pending:

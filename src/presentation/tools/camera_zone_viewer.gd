@@ -128,7 +128,7 @@ func _present() -> void:
 		var state: EntityRunSnapshot = inspection.entities.snapshot()
 		_entities.present(state, GameplayProjection.clip_scale(size), inspection.tick < _last_tick or (_last_tick <= 160 and inspection.tick == 161))
 		_entity_markers.set_snapshot(state)
-		_label.text += "\nLog-only visibility probe: %d/11 live; %d groups\n%s\nOther authored entities omitted; no frog contact" % [state.live_order.size(), state.selected_groups.size(), ", ".join(state.lifecycle_events)]
+		_label.text += "\nLog-only visibility probe: %d/11 live; %d groups\n%s\nOther authored entities omitted; no frog contact" % [state.live_order.size(), state.selected_groups.size(), ", ".join(TickEvent.trace_lines(state.lifecycle_events))]
 	_last_tick = inspection.tick
 
 func _capture(arguments: PackedStringArray) -> void:

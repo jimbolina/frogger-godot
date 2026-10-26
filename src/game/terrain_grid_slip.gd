@@ -17,7 +17,7 @@ static func setup(state: RunSnapshot, grid: GridDefinition, simple: bool, theme:
 		if sensed_stack != null:
 			for index: int in range(sensed_stack.first_square_index, sensed_stack.first_square_index + sensed_stack.square_count):
 				var square: GridSquareDefinition = grid.squares[index]
-				if (square.flags & 1) != 0 and absi(state.world_position.y - GridQueries.square_height(square)) <= 448:
+				if (square.flags & GridSquareFlags.USABLE) != 0 and absi(state.world_position.y - GridQueries.square_height(square)) <= 448:
 					state.cell = sensed
 					state.square_index = index
 					break
@@ -40,9 +40,9 @@ static func setup(state: RunSnapshot, grid: GridDefinition, simple: bool, theme:
 	for index: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
 		var square: GridSquareDefinition = grid.squares[index]
 		var height: int = GridQueries.square_height(square)
-		if (square.flags & 1) == 0 or state.world_position.y - height > (448 if simple else 496) or height - state.world_position.y > 256:
+		if (square.flags & GridSquareFlags.USABLE) == 0 or state.world_position.y - height > (448 if simple else 496) or height - state.world_position.y > 256:
 			continue
-		state.flags &= ~66
+		state.flags &= ~(FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_TO_LAND)
 		state.cell = destination
 		state.square_index = index
 		state.target_16 = Vector3i((destination.x << 8) + grid.base.x + 128, height, (destination.y << 8) + grid.base.y + 128) * 65536
@@ -53,10 +53,10 @@ static func setup(state: RunSnapshot, grid: GridDefinition, simple: bool, theme:
 		result.create_slide_particles = not simple
 		return result
 	if not simple:
-		state.flags &= ~82422
+		state.flags &= ~FrogFlags.LANDED_ON_LAND_CLEAR_MASK
 		state.velocity_16 = Vector3i.ZERO
 	state.remaining_ticks = 0
-	state.mode = 0
+	state.mode = FrogMode.STATIONARY
 	state.target_16 = Vector3i(state.position_16.x >> 16, state.position_16.y >> 16, state.position_16.z >> 16) * 65536
 	return result
 
@@ -67,15 +67,15 @@ static func move(state: RunSnapshot, grid: GridDefinition, align: bool = true) -
 		state.position_16 = state.target_16
 		state.target_y = state.position_16.y >> 16
 		state.old_y = state.target_y
-		state.mode = 0
+		state.mode = FrogMode.STATIONARY
 		result.kill_looping_sound = true
 		result.animation_ids.append(14)
 		result.react_flags = grid.squares[state.square_index].flags
-		result.callback_flags = 7
+		result.callback_flags = (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_OLD_POS | TerrainCallbackResult.REACT_WITH_FLAGS)
 	else:
 		state.position_16 += state.velocity_16
 		state.remaining_ticks -= 1
-		result.callback_flags = 1
+		result.callback_flags = TerrainCallbackResult.UPDATE_POS
 	if align:
 		state.matrix12 = TerrainMatrix.update(state.matrix12, 0, state.direction, grid.squares[state.square_index])
 	return result

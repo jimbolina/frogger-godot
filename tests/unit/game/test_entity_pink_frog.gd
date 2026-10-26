@@ -71,7 +71,7 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	assert_true(entity.background.dead)
 	assert_true(entity.background.model_hidden)
 	assert_eq(entity.background.mode, 4)
-	assert_eq(entity.requests, ["death_pgen"])
+	assert_eq(TickEvent.trace_lines(entity.requests), ["death_pgen"])
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_true(entity.requests.is_empty())
 	assert_true(entity.background.model_hidden)

@@ -143,7 +143,7 @@ func test_pop_continues_scanning_and_resets_transient_hits() -> void:
 	assert_eq(result.final_snapshot.death_equate, 23)
 	assert_eq(result.final_snapshot.velocity_16, Vector3i.ZERO)
 	assert_true(result.final_snapshot.life_decrement_requested)
-	assert_eq(result.events.count("entity_pop_explosion_request"), 1)
+	assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)
 	assert_eq(result.final_snapshot.entities.tick_index, result.final_snapshot.tick_index)
 	var detached: RunSnapshot = run.snapshot()
 	detached.entities.entities[0].matrix12[9] = 123
@@ -155,7 +155,7 @@ func test_pop_continues_scanning_and_resets_transient_hits() -> void:
 	assert_eq(result.error, "")
 	assert_eq(result.final_snapshot.entity_hit_indices.size(), 0)
 	assert_eq(result.final_snapshot.death_count, 69)
-	assert_eq(result.events.count("entity_pop_explosion_request"), 0)
+	assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 0)
 	assert_eq(result.final_snapshot.death_entity_index, 7)
 
 func test_moving_post_step_pose_and_late_failure_retry() -> void:
@@ -374,7 +374,7 @@ func test_pop_requests_death_even_when_animation_is_locked() -> void:
 	assert_eq(result.final_snapshot.last_animation_request, 23)
 	assert_eq(result.final_snapshot.animation_requests, 1)
 	assert_eq(result.final_snapshot.animation.script_type, FrogAnimationCatalog.PANT)
-	assert_true(result.events.has("entity_pop_explosion_request"))
+	assert_true(TickEvent.trace_lines(result.events).has("entity_pop_explosion_request"))
 
 func test_pop_life_request_and_active_flag_boundaries() -> void:
 	for lives: int in [0, 1, 2]:
@@ -390,4 +390,4 @@ func test_pop_life_request_and_active_flag_boundaries() -> void:
 		assert_eq(result.final_snapshot.fixture_lives, lives)
 		assert_eq(result.final_snapshot.life_decrement_requested, lives > 0)
 		assert_eq(bool(result.final_snapshot.flags & 1), lives > 1)
-		assert_eq(result.events.count("entity_pop_explosion_request"), 1)
+		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)

@@ -13,17 +13,17 @@ static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRe
 static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	if state.square_index < 0:
-		state.mode = 1
+		state.mode = FrogMode.JUMPING
 		state.remaining_ticks = 65535
 		state.velocity_16 = Vector3i.ZERO
-		state.flags = (state.flags & ~82422) | 128
+		state.flags = (state.flags & ~FrogFlags.LANDED_ON_LAND_CLEAR_MASK) | FrogFlags.FREEFALL
 		result.animation_ids.assign([11, 6])
 		return result
 	if state.remaining_ticks == 0:
 		state.position_16 = state.target_16
 		state.target_y = state.position_16.y >> 16
 		state.old_y = state.target_y
-		if not grid.squares[state.square_index].flags & 2048:
+		if not grid.squares[state.square_index].flags & GridSquareFlags.CLIFF:
 			result.kill_animation = 2
 			return result
 		var delta: Vector2i = _downhill(state, grid.squares[state.square_index])
@@ -40,7 +40,7 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 		return result
 	state.world_position.y = info.height - 30
 	state.matrix12[10] = state.world_position.y
-	result.callback_flags = 1
+	result.callback_flags = TerrainCallbackResult.UPDATE_POS
 	return result
 
 static func _downhill(state: RunSnapshot, square: GridSquareDefinition) -> Vector2i:
@@ -73,26 +73,26 @@ static func _destination(state: RunSnapshot, grid: GridDefinition, delta: Vector
 		return result
 	for index: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
 		var square: GridSquareDefinition = grid.squares[index]
-		if not square.flags & 1:
+		if not square.flags & GridSquareFlags.USABLE:
 			if not initial:
 				result.error = "Source cliff continuation stalls on an unusable authored layer"
 				return result
 			continue
-		if initial and square.flags == 1:
+		if initial and square.flags == GridSquareFlags.USABLE:
 			state.square_index = -1
 			return result
 		var height: int = GridQueries.square_height(square)
 		if state.world_position.y >= height:
 			continue
-		state.flags &= ~66
+		state.flags &= ~(FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_TO_LAND)
 		state.cell = destination
 		state.square_index = index
 		state.target_16 = Vector3i((destination.x << 8) + grid.base.x + 128, height, (destination.y << 8) + grid.base.y + 128) * 65536
 		state.remaining_ticks = 20
 		state.velocity_16 = TerrainGridSlip._divide_delta(state.target_16, state.position_16, 20)
 		if initial:
-			state.mode = 269
-			state.flags &= ~8
+			state.mode = FrogMode.CLIFF_ROLL
+			state.flags &= ~FrogFlags.MUST_DIE
 			result.animation_ids.append(34)
 		return result
 	result.kill_animation = 2

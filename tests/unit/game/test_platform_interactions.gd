@@ -36,7 +36,7 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	var failed: TickResult = run.step(command, false)
 	assert_string_contains(failed.error, "boundary")
 	assert_null(failed.control_snapshot)
-	assert_eq(failed.events, [])
+	assert_eq(TickEvent.trace_lines(failed.events), [])
 	assert_eq(run.snapshot().rng_state, before.rng_state)
 	assert_eq(run.snapshot().sound_requests, before.sound_requests)
 	assert_eq(run.snapshot().entities.entities[0].script_state.timer, 1)
@@ -50,10 +50,10 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	assert_eq(_tick(run).error, "")
 	var second: TickResult = _tick(run)
 	assert_eq(second.error, "")
-	assert_true(second.events.has("entity:4:sound:19:0:0:0"))
+	assert_true(TickEvent.trace_lines(second.events).has("entity:4:sound:19:0:0:0"))
 	assert_eq(second.control_snapshot.sound_requests, 1)
 	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
-	assert_eq(second.control_snapshot.entities.updates[0].entity.requests, ["sound:19:0:0:0"])
+	assert_eq(TickEvent.trace_lines(second.control_snapshot.entities.updates[0].entity.requests), ["sound:19:0:0:0"])
 	assert_eq(second.control_snapshot.entities.entities[0].live_flags & 1020, 0)
 	assert_eq(second.final_snapshot.entities.entities[0].animation.cel, 1)
 
@@ -217,7 +217,7 @@ func test_active_zone_landing_shake_and_platform_pop_are_atomic() -> void:
 	run._state.old_y = -600
 	var stunned: TickResult = _tick(run)
 	assert_eq(stunned.error, "")
-	assert_true(stunned.events.has("camera_stun_shake"))
+	assert_true(TickEvent.trace_lines(stunned.events).has("camera_stun_shake"))
 	assert_eq(stunned.final_snapshot.camera.zone_index, 9)
 	assert_eq(stunned.final_snapshot.camera.shake_timer, 44)
 	assert_eq(stunned.final_snapshot.rng_draw_count, 2)
@@ -340,7 +340,7 @@ func test_same_platform_usable_destination_reacts_without_safe_remount() -> void
 	assert_eq(count_one.entity_contacts[0].status, FormReactionResult.HIT)
 	assert_eq(count_one.collision_snapshot.entity_hit_indices, PackedInt32Array([4]))
 	assert_eq(count_one.collision_snapshot.current_entity_index, 4)
-	assert_false(count_one.events.has("platform_attachment"))
+	assert_false(TickEvent.trace_lines(count_one.events).has("platform_attachment"))
 	var finished: TickResult = _tick(run)
 	assert_eq(finished.error, "")
 	if finished.error.is_empty():
@@ -366,7 +366,7 @@ func test_same_platform_pop_destination_kills_on_count_one() -> void:
 	assert_eq(count_one.entity_contacts[0].status, FormReactionResult.POP)
 	assert_eq(count_one.collision_snapshot.death_entity_index, 4)
 	assert_true(bool(count_one.collision_snapshot.flags & 8))
-	assert_true(count_one.events.has("entity_pop_explosion_request"))
+	assert_true(TickEvent.trace_lines(count_one.events).has("entity_pop_explosion_request"))
 
 func test_vertical_same_platform_safe_rejection_still_marks_source_special_hit() -> void:
 	var run: TerrainRun = TerrainRun.create(_level())
@@ -523,7 +523,7 @@ func test_safe_precedes_pop_and_vertical_rejection_does_not_request_hit() -> voi
 		return
 	assert_eq(safe.final_snapshot.current_entity_index, 4)
 	assert_eq(safe.final_snapshot.death_entity_index, -1)
-	assert_false(safe.events.has("entity_pop_explosion_request"))
+	assert_false(TickEvent.trace_lines(safe.events).has("entity_pop_explosion_request"))
 	level = _level()
 	var matrix: PackedInt32Array = level.entity_collision.entities[0].matrix12
 	matrix[0] = 0
@@ -561,8 +561,8 @@ func test_soft_and_nonsoft_fall_reactions_and_ascending_contact() -> void:
 				continue
 			assert_eq(contact.final_snapshot.current_entity_index, 4)
 			var should_stun: bool = source_old_y == -600 and not soft
-			assert_eq(contact.events.has("stun_sound"), should_stun)
-			assert_eq(contact.events.has("camera_stun_shake"), should_stun)
+			assert_eq(TickEvent.trace_lines(contact.events).has("stun_sound"), should_stun)
+			assert_eq(TickEvent.trace_lines(contact.events).has("camera_stun_shake"), should_stun)
 			assert_eq(contact.final_snapshot.sound_requests, 1 if should_stun else 0)
 			assert_eq(contact.final_snapshot.rng_draw_count, 2 if should_stun else 0)
 
@@ -580,10 +580,10 @@ func test_safe_fall_boundaries_retain_source_reaction_thresholds() -> void:
 		if not result.error.is_empty():
 			continue
 		assert_eq(result.collision_snapshot.current_entity_index, 4)
-		assert_eq(result.events.has("pant"), fall_distance == 512)
-		assert_eq(result.events.has("stun_sound"), fall_distance == 513 or fall_distance == 1024)
+		assert_eq(TickEvent.trace_lines(result.events).has("pant"), fall_distance == 512)
+		assert_eq(TickEvent.trace_lines(result.events).has("stun_sound"), fall_distance == 513 or fall_distance == 1024)
 		assert_eq(result.collision_snapshot.sound_requests, 1 if fall_distance == 513 or fall_distance == 1024 else 0)
-		assert_eq(result.events.has("camera_stun_shake"), fall_distance == 513 or fall_distance == 1024)
+		assert_eq(TickEvent.trace_lines(result.events).has("camera_stun_shake"), fall_distance == 513 or fall_distance == 1024)
 		assert_eq(bool(result.collision_snapshot.flags & 8), fall_distance == 1025)
 		assert_eq(result.collision_snapshot.death_equate, 2 if fall_distance == 1025 else 0)
 
@@ -984,5 +984,5 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 		assert_eq(retry.final_snapshot.tick_index, 1)
 		assert_eq(retry.final_snapshot.current_entity_index, 4)
 		assert_eq(retry.final_snapshot.rng_draw_count, 2)
-		assert_true(retry.events.has("camera_stun_shake"))
-		assert_true(retry.events.has("platform_attachment"))
+		assert_true(TickEvent.trace_lines(retry.events).has("camera_stun_shake"))
+		assert_true(TickEvent.trace_lines(retry.events).has("platform_attachment"))

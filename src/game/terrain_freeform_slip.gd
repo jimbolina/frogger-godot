@@ -49,7 +49,7 @@ static func forward_control(state: RunSnapshot, square: GridSquareDefinition) ->
 
 static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
-	result.callback_flags = 3
+	result.callback_flags = (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_OLD_POS)
 	if grid.stack_at(state.cell) == null:
 		result.kill_animation = 2
 		return result
@@ -59,11 +59,11 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 		result.error = "Freeform cached translation lies outside authored storage"
 		return result
 	if stack.square_count == 0:
-		if not state.flags & 128:
-			state.flags |= 128 | 8192
+		if not state.flags & FrogFlags.FREEFALL:
+			state.flags |= FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
 			state.remaining_ticks = 0x7FFFFFF
 			state.square_index = -1
-		state.mode = 1
+		state.mode = FrogMode.JUMPING
 		result.kill_slide_particles = true
 		return result
 	var info: GridSurfaceInfo = GridQueries.info_at(grid, state.world_position.x, state.world_position.z)
@@ -75,7 +75,7 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 	var direction: int = (1 if state.velocity_16.x > 0 else 3) if absi(state.velocity_16.x) > absi(state.velocity_16.z) else (0 if state.velocity_16.z > 0 else 2)
 	if direction != state.direction:
 		state.direction = direction
-		result.callback_flags |= 8
+		result.callback_flags |= TerrainCallbackResult.UPDATE_MATRIX
 	state.position_16 += state.velocity_16
 	var floor_16: int = Vector3i(0, info.height << 16, 0).y
 	if state.position_16.y > floor_16:
@@ -83,40 +83,40 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 		state.velocity_16.y = 0
 	for index: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
 		var square: GridSquareDefinition = grid.squares[index]
-		if not square.flags & 1:
+		if not square.flags & GridSquareFlags.USABLE:
 			continue
 		var height: int = GridQueries.square_height(square)
 		var difference: int = state.world_position.y - height
-		if (square.flags & 4096 and absi(difference) < 196) or (square.flags & 4 and ((square.flags & 128 and difference > 196) or (not square.flags & 128 and absi(difference) < 128))):
+		if (square.flags & GridSquareFlags.POPDEATH and absi(difference) < 196) or (square.flags & GridSquareFlags.DEADLY and ((square.flags & GridSquareFlags.FREEFORM_SLIPPY and difference > 196) or (not square.flags & GridSquareFlags.FREEFORM_SLIPPY and absi(difference) < 128))):
 			state.position_16 = state.old_position_16
 			result.kill_animation = 2
 			return result
-		if square.flags & 2048:
+		if square.flags & GridSquareFlags.CLIFF:
 			result.kill_slide_particles = true
-			result.setup_mode_request = 269
+			result.setup_mode_request = FrogMode.CLIFF_ROLL
 			return result
 		if difference < 512:
 			state.world_position.y = height
 			state.matrix12[10] = height
 			state.square_index = index
 			state.cell = cell
-			if not square.flags & 128:
+			if not square.flags & GridSquareFlags.FREEFORM_SLIPPY:
 				state.target_y = state.position_16.y >> 16
 				state.old_y = state.target_y
 				state.shadow_hidden = false
-				state.mode = 0
+				state.mode = FrogMode.STATIONARY
 				result.kill_slide_particles = true
 			return result
-		if square.flags & 128:
+		if square.flags & GridSquareFlags.FREEFORM_SLIPPY:
 			result.kill_animation = 2
 			return result
 	state.target_y = state.position_16.y >> 16
 	state.old_y = state.target_y
-	if not state.flags & 128:
-		state.flags |= 128 | 8192
+	if not state.flags & FrogFlags.FREEFALL:
+		state.flags |= FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
 		state.remaining_ticks = 0x7FFFFFF
 	result.kill_slide_particles = true
-	state.mode = 1
+	state.mode = FrogMode.JUMPING
 	return result
 
 static func _apply(matrix: PackedInt32Array, vector: Vector3i) -> Vector3i:

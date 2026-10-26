@@ -11,7 +11,7 @@ var camera_snapshot: RunSnapshot = null
 var scripts_snapshot: RunSnapshot = null
 var final_snapshot: RunSnapshot = null
 ## Ordered request names emitted during this tick for presentation consumers.
-var events: Array[String] = []
+var events: Array[TickEvent] = []
 var rng_consumers: Array[String] = []
 var entity_contacts: Array[FormReactionResult] = []
 var primitive_contacts: Array[EntityPrimitiveContact] = []

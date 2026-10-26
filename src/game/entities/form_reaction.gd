@@ -29,19 +29,19 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		result.reason = definition.reaction_unsupported_reason
 		return result
 	var flags: int = contact.cell_flags
-	if (flags & 1) == 0:
+	if (flags & GridSquareFlags.USABLE) == 0:
 		return result
-	if flags & 64:
+	if flags & GridSquareFlags.CHECKPOINT:
 		result.status = FormReactionResult.UNSUPPORTED
 		result.reason = "FORM checkpoint reaction is unsupported"
-	elif flags & 2:
+	elif flags & GridSquareFlags.SAFE:
 		result.status = FormReactionResult.SAFE if platforms_enabled else FormReactionResult.UNSUPPORTED
 		result.reason = "" if platforms_enabled else "FORM safe attachment is unsupported"
-	elif flags & 4096:
+	elif flags & GridSquareFlags.POPDEATH:
 		result.status = FormReactionResult.POP
 		result.kill_animation = 23
 		result.hit = true
-	elif flags & 4:
+	elif flags & GridSquareFlags.DEADLY:
 		if definition.death_type == 0:
 			result.status = FormReactionResult.SQUISH
 			result.kill_animation = FrogAnimationCatalog.SQUISHED
@@ -53,10 +53,10 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		else:
 			result.status = FormReactionResult.UNSUPPORTED
 			result.reason = "FORM death type %d is unsupported" % definition.death_type
-	elif flags & 16:
+	elif flags & GridSquareFlags.SLIPPY:
 		result.status = FormReactionResult.HIT
 		result.hit = true
-	elif flags & 32:
+	elif flags & GridSquareFlags.BOUNCY:
 		result.status = FormReactionResult.UNSUPPORTED
 		result.reason = "FORM bounce reaction is unsupported"
 	else:

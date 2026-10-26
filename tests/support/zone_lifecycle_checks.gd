@@ -14,7 +14,7 @@ static func compare(raw_expected: Variant, camera: GameplayCameraSnapshot, zone:
 		if canonical(actual[key]) != canonical(expected.camera[key]):
 			return "camera.%s: %s != %s" % [key, actual[key], expected.camera[key]]
 	for pair: Array in [[Array(entities.selected_groups), expected.selected_groups], [Array(entities.live_order), expected.live_order],
-		[entities.lifecycle_events, expected.events], [[world.x, world.y, world.z], expected.world]]:
+		[TickEvent.trace_lines(entities.lifecycle_events), expected.events], [[world.x, world.y, world.z], expected.world]]:
 		if canonical(pair[0]) != canonical(pair[1]):
 			return "Combined observation differs: %s != %s" % pair
 	if entities.entities.size() != expected_entities.size():

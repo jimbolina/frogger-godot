@@ -108,12 +108,12 @@ static func _execute(definition: EntityScriptDefinition, context: EntityUpdateCo
 			37:
 				if state.moving_sound.is_empty() and context.sound_allocation_enabled:
 					state.moving_sound = PackedInt32Array([a[0], _value(state, a[1], a[2]), _value(state, a[1], a[3])])
-					result.requests.append("moving:%d:%d:%d" % [state.moving_sound[0], state.moving_sound[1], state.moving_sound[2]])
+					result.requests.append(TickEvent.moving_sound(state.moving_sound[0], state.moving_sound[1], state.moving_sound[2]))
 			36:
 				_distance_sound(state, a, context, result)
 			44:
 				for splash: int in context.form_id - 18:
-					result.requests.append("sprite:0:-64:%d:1:-16" % (-(context.form_id - 19) * 128 + splash * 256))
+					result.requests.append(TickEvent.sprite(Vector3i(0, -64, -(context.form_id - 19) * 128 + splash * 256), Vector2i(1, -16)))
 		state.cursor = following
 		if yielded:
 			return ""
@@ -156,7 +156,7 @@ static func _distance_sound(state: EntityScriptState, args: PackedInt32Array, co
 	var distance: int = _isqrt(_isqrt(squared))
 	var threshold: int = _value(state, args[0], args[1])
 	if (args[0] == 1 and threshold < distance) or (args[0] == 0 and threshold > distance):
-		result.requests.append("sound:%d:0:0:0" % _short(_value(state, args[0], args[2])))
+		result.requests.append(TickEvent.sound(_short(_value(state, args[0], args[2]))))
 
 static func _isqrt(value: int) -> int:
 	var root: int = int(sqrt(float(value)))

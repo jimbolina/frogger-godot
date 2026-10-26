@@ -82,8 +82,8 @@ func test_primitive_hit_precedes_pop_form_and_retains_first_source_winner() -> v
 	assert_eq(result.final_snapshot.death_entity_index, 7)
 	assert_eq(result.final_snapshot.death_equate, FrogAnimationCatalog.SQUISHED)
 	assert_eq(result.collision_snapshot.matrix12.slice(3, 6), PackedInt32Array([0, 0, 0]))
-	assert_eq(result.events.count("entity_squish"), 1)
-	assert_false(result.events.has("entity_pop_explosion_request"))
+	assert_eq(TickEvent.trace_lines(result.events).count("entity_squish"), 1)
+	assert_false(TickEvent.trace_lines(result.events).has("entity_pop_explosion_request"))
 
 func test_primitive_miss_and_disabled_shape_fall_back_to_pop_form() -> void:
 	for disabled: bool in [false, true]:
@@ -103,7 +103,7 @@ func test_primitive_miss_and_disabled_shape_fall_back_to_pop_form() -> void:
 		assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.DISABLED if disabled else EntityPrimitiveQuery.MISS)
 		assert_eq(result.entity_contacts[0].status, FormReactionResult.POP)
 		assert_eq(result.final_snapshot.death_equate, FrogAnimationCatalog.POP)
-		assert_eq(result.events.count("entity_pop_explosion_request"), 1)
+		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)
 
 func test_primitive_miss_deadly_form_squishes_without_primitive_flatten() -> void:
 	var level: LevelDefinition = _level()
@@ -190,11 +190,11 @@ func test_primitive_hit_drives_traffic_splat_on_the_following_update() -> void:
 		return
 	var first: TickResult = run.step(TickCommand.new())
 	assert_eq(first.error, "")
-	assert_false(first.events.has("entity:2:sound:13:0:0:0"))
+	assert_false(TickEvent.trace_lines(first.events).has("entity:2:sound:13:0:0:0"))
 	var command := TickCommand.new()
 	command.tick_index = 1
 	var second: TickResult = run.step(command)
 	assert_eq(second.error, "")
-	assert_eq(second.events.count("entity:2:sound:13:0:0:0"), 1)
+	assert_eq(TickEvent.trace_lines(second.events).count("entity:2:sound:13:0:0:0"), 1)
 	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
 	assert_true(second.final_snapshot.entity_hit_indices.is_empty())

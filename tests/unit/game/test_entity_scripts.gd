@@ -69,17 +69,17 @@ func test_stop_timer_wrap_previous_hits_and_repeated_once() -> void:
 	original.timer = 65534
 	var first: EntityUpdateResult = _update(definition, original)
 	assert_eq(first.error, "")
-	assert_eq(first.requests, [])
+	assert_eq(TickEvent.trace_lines(first.requests), [])
 	assert_eq(first.script_state.timer, 65535)
 	assert_eq(original.timer, 65534)
 	var context: EntityUpdateContext = _context()
 	context.previous_hit = true
 	var second: EntityUpdateResult = _update(definition, first.script_state, context)
 	assert_eq(second.script_state.timer, 0)
-	assert_eq(second.requests, ["sound:19:0:0:0"])
+	assert_eq(TickEvent.trace_lines(second.requests), ["sound:19:0:0:0"])
 	assert_eq(second.script_state.callbacks[0][3], 2)
 	var third: EntityUpdateResult = _update(definition, second.script_state, context)
-	assert_eq(third.requests, second.requests)
+	assert_eq(TickEvent.trace_lines(third.requests), TickEvent.trace_lines(second.requests))
 	assert_eq(third.script_state.cursor, first.script_state.cursor)
 
 func test_callbacks_use_slot_order_and_called_source_enum() -> void:
@@ -87,10 +87,10 @@ func test_callbacks_use_slot_order_and_called_source_enum() -> void:
 	var context: EntityUpdateContext = _context()
 	context.previous_hit = true
 	var result: EntityUpdateResult = _update(definition, EntityScriptState.create(1), context)
-	assert_eq(result.requests, ["sound:14:0:0:0", "sound:15:0:0:0", "sound:19:0:0:0"])
+	assert_eq(TickEvent.trace_lines(result.requests), ["sound:14:0:0:0", "sound:15:0:0:0", "sound:19:0:0:0"])
 	result.script_state.callbacks[0][3] = 3
 	var next: EntityUpdateResult = _update(definition, result.script_state, context)
-	assert_eq(next.requests, ["sound:19:0:0:0"])
+	assert_eq(TickEvent.trace_lines(next.requests), ["sound:19:0:0:0"])
 
 func test_loop_yield_and_action_restart() -> void:
 	var definition: EntityScriptDefinition = _definition([11, 3, 1, 7, 0, 0, 12, 5])
@@ -134,7 +134,7 @@ func test_source_widths_and_logical_sound_owner() -> void:
 	assert_eq(result.error, "")
 	assert_eq(result.script_state.timer, 0)
 	assert_eq(result.script_state.deviation, -1)
-	assert_eq(result.requests, ["moving:11:512:1024", "sprite:0:-64:-256:1:-16", "sprite:0:-64:0:1:-16", "sprite:0:-64:256:1:-16"])
+	assert_eq(TickEvent.trace_lines(result.requests), ["moving:11:512:1024", "sprite:0:-64:-256:1:-16", "sprite:0:-64:0:1:-16", "sprite:0:-64:256:1:-16"])
 	var next: EntityUpdateResult = _update(definition, result.script_state)
 	assert_eq(next.requests.size(), 3)
 	result.script_state.moving_sound.clear()
@@ -161,7 +161,7 @@ func test_random_branch_preserves_root_and_transactional_failure() -> void:
 	assert_string_contains(result.error, "Non-yielding")
 	assert_null(result.script_state)
 	assert_null(result.random)
-	assert_eq(result.requests, [])
+	assert_eq(TickEvent.trace_lines(result.requests), [])
 	assert_eq(rng.state, 1)
 
 func test_unsupported_instructions_names_operands_and_malformed_loops() -> void:

@@ -1,0 +1,27 @@
+class_name FrogFlags
+extends RefCounted
+## Named source bit values; numeric trace representations remain unchanged.
+
+const ACTIVE: int = (1 << 0)
+const JUMP_TO_ENTITY: int = (1 << 1)
+const ON_ENTITY: int = (1 << 2)
+const MUST_DIE: int = (1 << 3)
+const JUMP_FROM_ENTITY: int = (1 << 4)
+const SUPERJUMP: int = (1 << 5)
+const JUMP_TO_LAND: int = (1 << 6)
+const FREEFALL: int = (1 << 7)
+const FORCEDJUMP: int = (1 << 8)
+const SCALING_UP: int = (1 << 9)
+const SCALING_DOWN: int = (1 << 10)
+const CONTROL_ACTIVE: int = (1 << 11)
+const IS_NETWORK: int = (1 << 12)
+const FREEFALL_NO_ANIMATION: int = (1 << 13)
+const JUMP_ON_SPOT: int = (1 << 14)
+const JUST_BOUNCED: int = (1 << 15)
+const JUMP_FROM_COLLPRIM: int = (1 << 16)
+const ENTER_SCORE: int = (1 << 17)
+const ENTER_ARCADE_TIME: int = (1 << 18)
+const ENTER_RACE_SCORE: int = (1 << 19)
+const DO_NOT_UPDATE_CAMERA_ZONES: int = (1 << 20)
+const LANDED_ON_LAND_CLEAR_MASK: int = (ON_ENTITY | JUMP_TO_ENTITY | JUMP_FROM_ENTITY | SUPERJUMP | JUMP_TO_LAND | FREEFALL | FORCEDJUMP | JUMP_FROM_COLLPRIM | JUMP_ON_SPOT)
+const LANDED_ON_ENTITY_CLEAR_MASK: int = (JUMP_TO_ENTITY | JUMP_FROM_ENTITY | SUPERJUMP | JUMP_TO_LAND | FREEFALL | FORCEDJUMP | JUMP_FROM_COLLPRIM | JUMP_ON_SPOT)

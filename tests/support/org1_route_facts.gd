@@ -56,7 +56,7 @@ static func entity(visit: EntityUpdateObservation, fly: EntityBackgroundState, t
 		"destination": state.destination if state != null else 0, "remaining": state.remaining if state != null else 0,
 		"action": pose.animation.action, "cel": pose.animation.cel, "rng": visit.rng_state,
 		"sounds": visit.sound_requests, "moving_sound": int(state != null and not state.moving_sound.is_empty()),
-		"requests": ";".join(pose.requests) if not pose.requests.is_empty() else "-",
+		"requests": ";".join(TickEvent.trace_lines(pose.requests)) if not pose.requests.is_empty() else "-",
 		"red": pose.colour_scale.x, "green": pose.colour_scale.y, "blue": pose.colour_scale.z,
 		"ambient_red": pose.ambient.x, "ambient_green": pose.ambient.y, "ambient_blue": pose.ambient.z,
 		"previous_flags": visit.previous_flags, "live_flags": pose.live_flags,

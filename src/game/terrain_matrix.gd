@@ -5,7 +5,7 @@ extends RefCounted
 ## Updates rotation while retaining cached translation; freefall preserves rotation.
 static func update(previous: PackedInt32Array, flags: int, direction: int, square: GridSquareDefinition, facing_override: Vector3i = Vector3i.ZERO) -> PackedInt32Array:
 	var result: PackedInt32Array = previous.duplicate()
-	if (flags & 128) != 0:
+	if (flags & FrogFlags.FREEFALL) != 0:
 		return result
 	var normal: Vector3i
 	if square == null:

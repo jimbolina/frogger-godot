@@ -1,0 +1,25 @@
+class_name GridSquareFlags
+extends RefCounted
+## Named source bit values; numeric trace representations remain unchanged.
+
+const USABLE: int = (1 << 0)
+const SAFE: int = (1 << 1)
+const DEADLY: int = (1 << 2)
+const WATER: int = (1 << 3)
+const SLIPPY: int = (1 << 4)
+const BOUNCY: int = (1 << 5)
+const CHECKPOINT: int = (1 << 6)
+const FREEFORM_SLIPPY: int = (1 << 7)
+const SOFT: int = (1 << 8)
+const EXTEND_HOP_HEIGHT: int = (1 << 9)
+const SIMPLE_SLIPPY: int = (1 << 10)
+const CLIFF: int = (1 << 11)
+const POPDEATH: int = (1 << 12)
+const SAFE_MASK: int = (SAFE | SLIPPY | SIMPLE_SLIPPY | BOUNCY)
+const BOUNCE_WALL_N: int = (1 << 14)
+const BOUNCE_WALL_E: int = (1 << 15)
+const ENTITY_N: int = (1 << 16)
+const ENTITY_E: int = (1 << 17)
+const ENTITY_S: int = (1 << 18)
+const ENTITY_W: int = (1 << 19)
+const DONT_CENTRE_WHEN_LANDED_MASK: int = (WATER | DEADLY | POPDEATH)

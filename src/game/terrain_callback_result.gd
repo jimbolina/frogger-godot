@@ -2,6 +2,11 @@ class_name TerrainCallbackResult
 extends RefCounted
 ## Explicit source callback outputs; TerrainRun applies requests in source order.
 
+const UPDATE_POS: int = 1
+const UPDATE_OLD_POS: int = 2
+const REACT_WITH_FLAGS: int = 4
+const UPDATE_MATRIX: int = 8
+
 var error: String = ""
 var callback_flags: int = 0
 var react_flags: int = 0

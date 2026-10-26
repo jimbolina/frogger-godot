@@ -108,7 +108,7 @@ func test_platform_phase_trajectories_match_frozen_c() -> void:
 			assert_eq(result.error, "", "scenario %d tick %d" % [scenario_index, tick])
 			if not result.error.is_empty():
 				return
-			var popped: bool = result.events.has("entity_pop_explosion_request")
+			var popped: bool = TickEvent.trace_lines(result.events).has("entity_pop_explosion_request")
 			var stages: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot,
 				result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
 			for phase: int in 6:

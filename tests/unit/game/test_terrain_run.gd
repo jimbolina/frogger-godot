@@ -104,7 +104,7 @@ func test_unknown_flag_data_is_retained_and_source_ignored() -> void:
 		command.pressed_mask = 0
 		result = run.step(command)
 		assert_eq(result.error, "")
-	assert_true(result.events.has("unknown_terrain_flags_ignored"))
+	assert_true(TickEvent.trace_lines(result.events).has("unknown_terrain_flags_ignored"))
 	assert_eq(result.final_snapshot.square_flags, 8195)
 	assert_eq(result.final_snapshot.mode, 0)
 	assert_eq(result.final_snapshot.position_16, Vector3i(-128 * 65536, 0, 128 * 65536))

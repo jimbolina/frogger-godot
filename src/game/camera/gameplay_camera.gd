@@ -200,7 +200,7 @@ func _follow(input: GameplayCameraTick) -> void:
 		_sweep_offsets(_state.move_timer)
 		_state.move_timer -= 1
 	var desired_y: int = input.frog_world.y
-	if not input.freefall and input.frog_mode == 1:
+	if not input.freefall and input.frog_mode == FrogMode.JUMPING:
 		var duration: int = 15 if input.superjump else 6
 		desired_y = input.old_y + _divide((duration - input.remaining_ticks) * (input.target_y - input.old_y), duration)
 	desired_y = mini(desired_y, 0)

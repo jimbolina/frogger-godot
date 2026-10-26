@@ -160,7 +160,7 @@ func test_tail_creation_defers_pop_until_following_tick() -> void:
 	assert_eq(second.error, "")
 	if second.error.is_empty():
 		assert_eq(second.final_snapshot.death_entity_index, 9)
-		assert_true(second.events.has("entity_pop_explosion_request"))
+		assert_true(TickEvent.trace_lines(second.events).has("entity_pop_explosion_request"))
 
 func test_visibility_requires_camera_and_preserves_all_attached_default() -> void:
 	var level: LevelDefinition = _level()
@@ -217,7 +217,7 @@ func test_forbidden_identity_without_current_link_does_not_pin() -> void:
 	var next: TickResult = _tick(run)
 	assert_eq(next.error, "")
 	if next.error.is_empty():
-		assert_eq(next.final_snapshot.entities.lifecycle_events, ["destroy:9:1", "create:9:2"])
+		assert_eq(TickEvent.trace_lines(next.final_snapshot.entities.lifecycle_events), ["destroy:9:1", "create:9:2"])
 		assert_false(next.collision_snapshot.entities.entities[0].live)
 		assert_eq(next.final_snapshot.current_entity_index, -1)
 
@@ -253,7 +253,7 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	assert_eq(retry.error, "")
 	if retry.error.is_empty():
 		assert_eq(retry.final_snapshot.death_entity_index, 9)
-		assert_eq(retry.events.count("entity_pop_explosion_request"), 1)
+		assert_eq(TickEvent.trace_lines(retry.events).count("entity_pop_explosion_request"), 1)
 
 func test_reset_and_detached_nested_lifecycle_snapshots() -> void:
 	var level: LevelDefinition = _level(3 | 256)
@@ -269,7 +269,7 @@ func test_reset_and_detached_nested_lifecycle_snapshots() -> void:
 	detached.entities.entities[0].generation = 100
 	detached.entities.live_order.clear()
 	detached.entities.selected_groups.clear()
-	detached.entities.lifecycle_events.append("fake")
+	detached.entities.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, 999, 1))
 	level.entity_collision.lifecycle.polygon_counts.fill(2500)
 	assert_true(run.snapshot().entities.entities[0].live)
 	assert_eq(run.snapshot().entities.entities[0].generation, 1)
@@ -336,5 +336,5 @@ func test_visibility_failure_after_stun_random_draws_retries_identically() -> vo
 		assert_eq(actual.final_snapshot.camera.source_world, expected.final_snapshot.camera.source_world)
 		assert_eq(actual.final_snapshot.position_16, expected.final_snapshot.position_16)
 		assert_eq(actual.final_snapshot.animation.cel, expected.final_snapshot.animation.cel)
-		assert_eq(actual.final_snapshot.entities.lifecycle_events, expected.final_snapshot.entities.lifecycle_events)
+		assert_eq(TickEvent.trace_lines(actual.final_snapshot.entities.lifecycle_events), TickEvent.trace_lines(expected.final_snapshot.entities.lifecycle_events))
 	assert_true(observed_draws, "The injected late failure must discard real RNG consumption")

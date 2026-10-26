@@ -62,7 +62,7 @@ func test_grid_and_simple_source_callbacks() -> void:
 		assert_eq(run.error, "")
 		var state: RunSnapshot = run.snapshot()
 		state.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._react(state, level.grid.squares[5].flags, events)
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(15):
@@ -89,7 +89,7 @@ func test_bounce_and_cliff_source_callbacks() -> void:
 		assert_eq(run.error, "")
 		var state: RunSnapshot = run.snapshot()
 		state.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._react(state, level.grid.squares[5].flags, events)
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(24):
@@ -124,7 +124,7 @@ func test_freeform_source_callbacks() -> void:
 			state.cell = Vector2i(1, 1)
 			state.square_index = 5
 		state.old_position_16.z -= 8 << 16
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._apply_requests(state, TerrainFreeformSlip.setup(state), events)
 		state.mode = 262
 		_assert_facts(file, scenario, -1, state)
@@ -151,7 +151,7 @@ func test_wall_rebound_source_callbacks() -> void:
 			level.grid.squares[9].flags = 2049
 		var run: TerrainRun = TerrainRun.create(level)
 		var state: RunSnapshot = run.snapshot()
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		assert_eq(run._jump(state, 0 if scenario == 4 else scenario, events), "")
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(8):
@@ -166,7 +166,7 @@ func test_single_start_source_callbacks() -> void:
 	initial.start_mode = 2
 	var run: TerrainRun = TerrainRun.create(_level(), initial)
 	var state: RunSnapshot = run.snapshot()
-	var events: Array[String] = []
+	var events: Array[TickEvent] = []
 	_assert_facts(file, 0, -1, state)
 	for tick: int in range(80):
 		state.old_position_16 = state.position_16
@@ -198,7 +198,7 @@ func test_freeform_held_steering_source_control_and_move() -> void:
 		var run: TerrainRun = TerrainRun.create(level)
 		var state: RunSnapshot = run.snapshot()
 		state.old_position_16.z -= 8 << 16
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._react(state, 129, events)
 		_assert_facts(file, scenario, -1, state)
 		var command := TickCommand.new()
@@ -219,7 +219,7 @@ func test_combined_flag_source_precedence() -> void:
 		level.grid.squares[5].flags = authored[scenario]
 		var run: TerrainRun = TerrainRun.create(level)
 		var state: RunSnapshot = run.snapshot()
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._react(state, authored[scenario], events)
 		_assert_facts(file, scenario, -1, state)
 
@@ -232,7 +232,7 @@ func test_outward_bounds_adjustment_safe_source_prefix() -> void:
 		level.spawn_cell = cells[scenario]
 		var run: TerrainRun = TerrainRun.create(level)
 		var state: RunSnapshot = run.snapshot()
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		assert_eq(run._jump(state, scenario, events), "")
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(5):
@@ -269,7 +269,7 @@ func test_grid_slope_threshold_source_setup() -> void:
 		state.position_16.y = 0
 		state.world_position.y = 0
 		state.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		run._react(state, 17, events)
 		_assert_facts(file, scenario, -1, state)
 
@@ -296,7 +296,7 @@ func test_odd_dimensions_source_hop() -> void:
 	var run: TerrainRun = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	var state: RunSnapshot = run.snapshot()
-	var events: Array[String] = []
+	var events: Array[TickEvent] = []
 	assert_eq(run._jump(state, 0, events), "")
 	_assert_facts(file, 0, -1, state)
 	for tick: int in range(8):
@@ -314,7 +314,7 @@ func test_source_map_freefall_dying_and_volcano_death_branches() -> void:
 		level.theme = 10 if scenario >= 8 and scenario < 10 else 8
 		var run: TerrainRun = TerrainRun.create(level)
 		var state: RunSnapshot = run.snapshot()
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		if scenario < 4:
 			state.mode = 1
 			state.flags |= 128 | 8192
@@ -377,7 +377,7 @@ func test_source_hop_signed32_delta_and_forced_search_pointer_prefix() -> void:
 		var run: TerrainRun = TerrainRun.create(level)
 		assert_eq(run.error, "")
 		var state: RunSnapshot = run.snapshot()
-		var events: Array[String] = []
+		var events: Array[TickEvent] = []
 		if scenario == 3:
 			state.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, -32768, -128])
 			state.position_16.y = -32768 * 65536
@@ -413,7 +413,7 @@ func test_source_forced_search_outside_global_storage_is_diagnosed() -> void:
 	_height(level.grid.squares[0], PackedInt32Array([-32768, -32768, -32768, -32768]))
 	var run: TerrainRun = TerrainRun.create(level)
 	var state: RunSnapshot = run.snapshot()
-	var events: Array[String] = []
+	var events: Array[TickEvent] = []
 	assert_string_contains(run._jump(state, 2, events, false, true, 2, 15), "outside authored global storage")
 	assert_eq(state.position_16, run.snapshot().position_16)
 	assert_eq(state.square_index, 8)

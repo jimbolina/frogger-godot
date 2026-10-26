@@ -28,7 +28,8 @@ Audio playback, splash/particle effects and
 [animated per-part lighting](reference/rendering/gameplay-projection.md) remain deferred.
 
 Explicit entity candidate/commit methods and discovered copy-contract checks
-protect transaction ownership. Prepared scripts, asynchronous playback and rendering
+protect transaction ownership. Tick events now carry typed parameters with
+unchanged text traces; source modes and flag catalogs replace gameplay literals. Prepared scripts, asynchronous playback and rendering
 caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
 Hosted CI awaits a repository host. The licence remains the owner's decision

@@ -72,7 +72,7 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 				"pressed": command.pressed_mask, "held": command.held_mask,
 				"command": facts(command),
 				"state": facts(snapshot, _entity_lifecycle or _scripted_exploration),
-				"outcomes": Array(result.events) if phase == "final" else [],
+				"outcomes": Array(TickEvent.trace_lines(result.events)) if phase == "final" else [],
 				"rng_consumers": Array(result.rng_consumers) if phase == "final" else [], "error": result.error}
 			if _entity_reactions:
 				record["entity_contacts"] = _value(result.entity_contacts) if phase == "final" else []
@@ -162,6 +162,9 @@ static func _lifecycle_key(record: RefCounted, key: String) -> bool:
 	return false
 
 static func _value(value: Variant, include_lifecycle: bool = false) -> Variant:
+	if value is TickEvent:
+		var event: TickEvent = value
+		return event.to_trace_line()
 	if value is Dictionary:
 		var source: Dictionary = value
 		var result: Dictionary = {}

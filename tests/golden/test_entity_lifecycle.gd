@@ -116,7 +116,7 @@ func test_frozen_selector_and_component_lifecycle() -> void:
 		var state: EntityRunSnapshot = run.snapshot()
 		assert_eq(_joined(state.selected_groups), fields[3] if tick > 0 else "-", "tick %d selected" % tick)
 		assert_eq(_joined(state.live_order), fields[11], "tick %d live order" % tick)
-		assert_eq(_events(state.lifecycle_events), fields[12], "tick %d events" % tick)
+		assert_eq(_events(TickEvent.trace_lines(state.lifecycle_events)), fields[12], "tick %d events" % tick)
 		for slot: int in state.entities.size():
 			var entity: EntitySnapshot = state.entities[slot]
 			var offset: int = 5 if entity.entity_index == 2 else 8
@@ -181,7 +181,7 @@ func test_integrated_visibility_transitions_follow_independent_oracle() -> void:
 		var entities: EntityRunSnapshot = state.entities
 		assert_eq(_joined(entities.selected_groups), fields[6], "tick %d selected" % tick)
 		assert_eq(_joined(entities.live_order), fields[14], "tick %d live order" % tick)
-		assert_eq(_events(entities.lifecycle_events), fields[15], "tick %d events" % tick)
+		assert_eq(_events(TickEvent.trace_lines(entities.lifecycle_events)), fields[15], "tick %d events" % tick)
 		for entity: EntitySnapshot in entities.entities:
 			var offset: int = 8 if entity.entity_index == 2 else 11
 			assert_eq(int(entity.live), fields[offset].to_int(), "tick %d live %d" % [tick, entity.entity_index])

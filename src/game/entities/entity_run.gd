@@ -246,12 +246,12 @@ func _update_script(slot: int, context: EntityUpdateContext, random: SourceRando
 		entity.script_state = result.script_state if owned else result.script_state.copy()
 		entity.animation = result.animation if owned else result.animation.copy()
 		entity.matrix12 = result.matrix12.duplicate()
-		entity.requests.assign(result.requests)
+		entity.requests = TickEvent.copy_all(result.requests)
 		entity.colour_scale = result.script_state.colours
 		entity.ambient = result.script_state.ambient
-		entity.live_flags = (entity.live_flags & ~65536) | (65536 if result.script_state.no_screen_fade else 0)
+		entity.live_flags = (entity.live_flags & ~EntityLiveFlags.NO_SCREEN_FADE) | (65536 if result.script_state.no_screen_fade else 0)
 		if result.drown:
-			entity.live_flags &= ~4
+			entity.live_flags &= ~EntityLiveFlags.CARRIES_FROG_0
 	return result
 
 ## Copies one current authored slot without cloning the aggregate.
@@ -261,7 +261,7 @@ func entity_snapshot(slot: int) -> EntitySnapshot:
 ## Captures an ordered update, then applies UpdateLiveEntities' transient clear.
 func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds: int, environment: EntityEnvironmentState, death_requested: bool, capture_observation: bool = true) -> void:
 	if death_requested:
-		_state.entities[slot].requests.append("death_pgen")
+		_state.entities[slot].requests.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN))
 	if capture_observation:
 		var observation := EntityUpdateObservation.new()
 		observation.entity = _state.entities[slot].copy()
@@ -270,18 +270,18 @@ func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds:
 		observation.sound_requests = sounds
 		observation.environment = environment.copy() if environment != null else null
 		_state.updates.append(observation)
-	_state.entities[slot].live_flags &= ~25596
+	_state.entities[slot].live_flags &= ~EntityLiveFlags.CLEAR_MASK
 	if _lifecycle != null:
 		_state.entities[slot].destroy_pending = not _definitions[slot].is_immortal()
 
 ## Publishes this tick's frog contact flags for the following entity update.
 func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array) -> void:
 	for entity: EntitySnapshot in _state.entities:
-		entity.live_flags &= ~1020
+		entity.live_flags &= ~(EntityLiveFlags.CARRIES_FROG_0 | EntityLiveFlags.CARRIES_FROG_1 | EntityLiveFlags.CARRIES_FROG_2 | EntityLiveFlags.CARRIES_FROG_3 | EntityLiveFlags.HIT_FROG_0 | EntityLiveFlags.HIT_FROG_1 | EntityLiveFlags.HIT_FROG_2 | EntityLiveFlags.HIT_FROG_3)
 		if hits.has(entity.entity_index):
-			entity.live_flags |= 64
+			entity.live_flags |= EntityLiveFlags.HIT_FROG_0
 		if carries.has(entity.entity_index):
-			entity.live_flags |= 4
+			entity.live_flags |= EntityLiveFlags.CARRIES_FROG_0
 
 ## Advances authoritative entity clocks once at the aggregate pose phase.
 func advance_animations() -> void:
@@ -344,12 +344,12 @@ func apply_visibility(camera: GameplayCameraSnapshot) -> String:
 					continue
 				if entity.live:
 					entity.destroy_pending = false
-					entity.live_flags &= ~1
+					entity.live_flags &= ~EntityLiveFlags.DESTROY
 				else:
 					_initialize_instance(entity, definition)
 					entity.generation += 1
 					next_state.live_order.insert(0, entity.entity_index)
-					next_state.lifecycle_events.append("create:%d:%d" % [entity.entity_index, entity.generation])
+					next_state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
 	_state = next_state
 	return ""
 
@@ -398,7 +398,7 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) 
 		entity.matrix12 = EntityTransform.moving(entity.path, definition.flags)
 	entity.destroy_pending = false
 	entity.animation = EntityAnimationState.create(definition.action_lengths, definition.animation_one_shot)
-	entity.live_flags = 4098 if not definition.action_lengths.is_empty() else 0
+	entity.live_flags = EntityLiveFlags.ANIMATED | EntityLiveFlags.FLIPBOOK if not definition.action_lengths.is_empty() else 0
 	entity.script_state = EntityScriptState.create(definition.script_definition.root_id) if definition.script_definition != null else null
 	entity.colour_scale = Vector3i.ZERO
 	entity.ambient = Vector3i.ZERO
@@ -424,7 +424,7 @@ func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
 	entity.requests.clear()
 	entity.colour_scale = Vector3i.ZERO
 	entity.ambient = Vector3i.ZERO
-	state.lifecycle_events.append("destroy:%d:%d" % [entity.entity_index, entity.generation])
+	state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.DESTROY, entity.entity_index, entity.generation))
 
 ## Returns detached slots in actual live-list order, or the original all-attached order.
 func update_slots() -> PackedInt32Array:
@@ -446,7 +446,7 @@ func begin_update(slot: int, attached: int) -> bool:
 		_retire_instance(_state, entity)
 		_state.live_order.remove_at(_state.live_order.find(entity.entity_index))
 		return false
-	entity.live_flags = (entity.live_flags & ~1) | int(entity.destroy_pending)
+	entity.live_flags = (entity.live_flags & ~EntityLiveFlags.DESTROY) | int(entity.destroy_pending)
 	if entity.path != null:
 		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[slot].flags)
 	return true
