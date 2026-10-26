@@ -3,7 +3,7 @@
 `TerrainScenario` resolves setup outside the rules. Built-ins are authored
 synthetic inputs, not expected outputs. A JSON file may replace `grid`, `level`
 and `start`, and supply explicit tick commands. `TerrainScenarioJson` rejects
-malformed scalar/vector records; `TerrainRun.create` checks detached rule
+malformed scalar/vector records; `GameplayRun.create` checks detached rule
 definitions. Commands contain logical pressed and held masks, never host keys. Optional
 `start_timer_context` and `start_sequence_complete` carry explicit external
 startup milestones. Detached command copies preserve every typed field. Seeds
@@ -92,7 +92,7 @@ tracing remains deliberately more expensive than ordinary LIVE/REPLAY.
 ## POP entity inspection
 
 `--entity-reactions=pop` attaches copied STATIC/MOVING definitions and FORM
-reaction facts to the same `TerrainRun`. Entity paths, frog, camera and animation
+reaction facts to the same `GameplayRun`. Entity paths, frog, camera and animation
 advance through one commit; the viewer consumes its snapshots. Cactus models,
 FORM outlines, contacted cells, authored indices and death requests make the
 reaction visible. Particle effects are requested, not rendered. Support and

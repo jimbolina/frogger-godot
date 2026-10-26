@@ -5,7 +5,7 @@ extends RefCounted
 enum Mode { SEARCHING, ON_ENTITY, JUMPING, ON_FROG, NOTHING, WAIT_TO_SEARCH_AGAIN }
 
 ## Advances one privately owned baby against the parent's pose at this live-list visit.
-static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: RunSnapshot = null, hit: bool = false) -> String:
+static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: GameplayState = null, hit: bool = false) -> String:
 	var state: EntityCustomState = entity.background
 	if parent == null or form == null or form.dimensions.x <= 0 or form.dimensions.y <= 0:
 		return "Baby requires a resolved authored parent and FORM"
@@ -116,7 +116,7 @@ static func _hop(entity: EntitySnapshot, form: FormContactDefinition) -> String:
 	return ""
 
 ## Advances the supported baby-frog update with optional parent and contact state.
-static func update_custom(definition: EntityDefinition, entity: EntitySnapshot, parent_live: bool, parent: EntitySnapshot, parent_form: FormContactDefinition, frog: RunSnapshot, hit: bool) -> String:
+static func update_custom(definition: EntityDefinition, entity: EntitySnapshot, parent_live: bool, parent: EntitySnapshot, parent_form: FormContactDefinition, frog: GameplayState, hit: bool) -> String:
 	if parent != null:
 		var issue: String = EntityBaby.update(entity, parent, parent_form, frog if (definition.behavior.execution == EntityBehavior.Execution.CONTACT) else null, hit)
 		if not issue.is_empty():

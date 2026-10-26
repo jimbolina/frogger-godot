@@ -27,9 +27,21 @@ The [domain glossary](domain.md) gives semantic boundaries. Existing
 [simulation](gameplay/simulation.md), [coordinates](rendering/coordinates.md) and topic references
 remain authoritative for detailed rules.
 
+## Tick coordination
+
+`GameplayRun` is the transaction coordinator. It prepares independent system
+candidates, sequences entity updates, frog control/movement, contacts, camera,
+animation and visibility, checks optional guards, and commits only on success.
+`Frog` owns reset preparation, input, jumps, movement, terrain reactions and death.
+`FrogContacts` owns ordered FORM/primitive scans and platform mount, carry,
+departure and landing. Contact methods receive the frog component explicitly;
+they do not retain a back-reference or another mutable owner.
+The first lethal contact identity belongs to attachment state because later
+contact arbitration reads it. Diagnostics contain provenance and observations.
+
 ## Gameplay state
 
-`RunSnapshot` composes `FrogState` (movement, control, timers and collision pose),
+`GameplayState` composes `FrogState` (movement, control, timers and collision pose),
 `AttachmentState` (platform-local coordinates and contact identities),
 `TickRequests` (logical requests and counters) and `TickDiagnostics` (provenance
 and observations). Each value has a complete detached copy contract. Systems,
@@ -56,7 +68,7 @@ model definitions. Source replacement clears selections, caches and drawing
 references before another source is shown. Standalone viewer entry points and
 synthetic injection remain supported.
 
-`TerrainRun` copies setup definitions and owns frog, camera, animation and RNG
+`GameplayRun` copies setup definitions and owns frog, camera, animation and RNG
 state, plus an optional `EntityRun` supplied through `EntityCollisionDefinition`.
 Each command operates on private candidate copies and commits only on success.
 Entity/path advancement builds its next independent state directly. The entity aggregate exposes `begin_candidate`, detached snapshots and ordered
@@ -93,7 +105,7 @@ collision and before camera/animation. A terrain collision early return suppress
 the entity phase too. Only the final aggregate commit publishes matching frog and
 entity ticks, per-tick hits and requests. Failed reset or tick preserves every
 owned component and returns no partial phase snapshots or outcomes.
-`TerrainRun.step` captures diagnostic phases by default. Interactive playback
+`GameplayRun.step` captures diagnostic phases by default. Interactive playback
 disables that capture: it still commits the same detached final state, contacts,
 requests and RNG, but omits intermediate snapshots and ordered entity-update
 observations. Trace recording always enables them. Retail tests compare both
@@ -115,7 +127,7 @@ Active zones can participate in this transaction: visibility consumes the
 updated candidate camera, and a late rejection restores the prior zone and
 camera along with the entity state. Prescribed retail camera probes use the
 same detached camera/entity components with private candidates; they do not
-add teleport commands or bypass gameplay admission in `TerrainRun`.
+add teleport commands or bypass gameplay admission in `GameplayRun`.
 
 Opt-in platform execution requires an integrated camera. The order is paths,
 source-ordered entity transforms and admitted custom/script updates, frog
@@ -153,13 +165,13 @@ The viewer pauses on rejection. R reconstructs the whole inspection, including
 input buffers and presentation clocks, while retaining the selected input mode.
 
 The ORG1 road preset additionally owns detached frog collision definitions and
-`FrogCollisionPose` in `RunSnapshot`. Previous stored probes are read during
+`FrogCollisionPose` in `GameplayState`. Previous stored probes are read during
 collision; action/actual-cel changes refresh them at the final pose phase.
 Definitions, cached samples and primitive diagnostics are deeply copied across
 publication boundaries. Late failure discards them with every other candidate
 field. Rendered and interpolated model transforms never drive collision.
 
-`RunSnapshot.attachment.entity_cell` and `entity_offset_16` are platform-local. `target_16`
+`GameplayState.attachment.entity_cell` and `entity_offset_16` are platform-local. `target_16`
 is local while attached or jumping within the entity frame, and world-space
 for a terrain target; derived inspection destinations convert it accordingly.
 After departure into freefall, the inactive local target remains a source fact
@@ -183,7 +195,7 @@ path. `EntitySetup` resolves supported STATIC/MOVING records into detached
 definitions and source-located diagnostics. `EntityRun` owns copies and a path
 cursor for each moving entity, with aggregate commit on success and detached
 snapshots. Standalone all-attached transform inspection remains available;
-integrated `TerrainRun` owns its own independent mutable state. Transaction
+integrated `GameplayRun` owns its own independent mutable state. Transaction
 copies of `PathRunner` and `EntityRun` share their private, validated definitions
 read-only; creation still detaches all caller-owned inputs, and cursors, scripts,
 animation, requests and lifecycle state remain independently mutable.
@@ -207,7 +219,7 @@ ownership in `EntityRun`. Each `EntityScriptRunner` update returns detached
 script/animation state, RNG, ordered requests and a frog effect; failures
 discard all candidate outputs. `EntityScriptSetup` supplies decoded named
 programs and callbacks, including turtle creation's script replacement.
-`TerrainRun` owns frog reactions, shared checkpoint covered bits and commit.
+`GameplayRun` owns frog reactions, shared checkpoint covered bits and commit.
 Admitted pink frog updates receive the candidate frog pose/mode and previous HIT;
 their owned carrier/timer/death state commits with the same aggregate. Presentation
 consumes the resulting pose and hides the dead frog without deciding pickup.

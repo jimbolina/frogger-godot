@@ -5,19 +5,19 @@ func test_synthetic_zone_lifecycle_matches_frozen_gameplay() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_zones.json")
 	assert_eq(scenario.error, "")
 	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
 	var golden: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/zone_lifecycle.json"))
 	var rows: Array = golden.cases[0].expected
-	var fast: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var fast: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	for tick: int in rows.size():
 		var result: TickResult = run.step(scenario.command_at(tick))
 		assert_eq(result.error, "", "tick %d" % tick)
 		if not result.error.is_empty():
 			return
-		var state: RunSnapshot = result.final_snapshot
+		var state: GameplayState = result.final_snapshot
 		assert_eq(ZoneLifecycleChecks.compare(rows[tick], state.camera, state.frog.camera_zone_index, state.frog.camera_zone_region_index,
 			state.attachment.entity_angle, state.frog.world_position, state.entities), "", "tick %d" % tick)
 		var quick: TickResult = fast.step(scenario.command_at(tick), false)

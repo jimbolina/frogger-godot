@@ -44,7 +44,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 		return
 	assert_true((scenario.level.tick_guard as ExplorationGuard).collectable_indices.is_empty())
 	assert_true((scenario.level.tick_guard as ExplorationGuard).scripted_visibility_admitted)
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	for tick: int in 446:
@@ -74,7 +74,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 func test_visibility_attached_diver_matches_source() -> void:
 	_route("org1_visibility_diver", 203, {170: 1}, Org1ExplorationSetup.VISIBILITY_PRESET)
 	var scenario: TerrainScenario = _scenario(Org1ExplorationSetup.VISIBILITY_PRESET)
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -135,7 +135,7 @@ func test_road_admission_and_rejected_tick_are_atomic() -> void:
 			assert_false(contact.has_form_data)
 			traffic_count += 1
 	assert_eq(traffic_count, 24)
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -174,7 +174,7 @@ func test_admission_dependencies_and_complete_reset() -> void:
 	var rejected: TerrainScenario = _scenario()
 	form.radius_squared = old_radius
 	assert_string_contains(rejected.error, "proof inputs changed")
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	var command := TickCommand.new()
@@ -190,21 +190,21 @@ func test_admission_dependencies_and_complete_reset() -> void:
 	assert_eq(run.reset(scenario.initial), "")
 	assert_true(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)) == initial, "Every reset field matches the selected inspection start")
 	scenario.initial.powerup_flags = 1
-	assert_string_contains(TerrainRun.create(scenario.level, scenario.initial).error, "unpowered")
+	assert_string_contains(GameplayRun.create(scenario.level, scenario.initial).error, "unpowered")
 	scenario.initial.powerup_flags = 0
 	scenario.level.tick_guard = null
-	assert_string_contains(TerrainRun.create(scenario.level, scenario.initial).error, "admission")
+	assert_string_contains(GameplayRun.create(scenario.level, scenario.initial).error, "admission")
 
 func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org1ExplorationSetup.PRESET) -> void:
 	var scenario: TerrainScenario = _scenario(preset)
 	assert_eq(scenario.error, "")
 	if not scenario.error.is_empty():
 		return
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
-	var live: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var live: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	var worker := TerrainTickWorker.new()
 	_workers.append(worker)
 	assert_eq(worker.start(live), OK)
@@ -244,8 +244,8 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 		if not result.error.is_empty():
 			return
 		reached_river = reached_river or result.final_snapshot.attachment.current_entity_index >= 0
-		vehicle_death = vehicle_death or (result.final_snapshot.diagnostics.death_entity_index >= 24 and result.final_snapshot.diagnostics.death_entity_index <= 47)
-		var snapshots: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot, result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
+		vehicle_death = vehicle_death or (result.final_snapshot.attachment.death_entity_index >= 24 and result.final_snapshot.attachment.death_entity_index <= 47)
+		var snapshots: Array[GameplayState] = [result.control_snapshot, result.move_snapshot, result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
 		for index: int in 6:
 			var expected: PackedStringArray = rows[tick * 6 + index + 1]
 			for column: int in expected.size():

@@ -15,13 +15,13 @@ func _zone(cell: Vector2i) -> ZoneDefinition:
 	zone.bounds = PackedInt32Array([cell.x, cell.y, cell.x, cell.y])
 	return zone
 
-func _state(run: TerrainRun) -> String:
+func _state(run: GameplayRun) -> String:
 	return JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 
 func test_zone_query_uses_moved_cell_instead_of_control_destination() -> void:
 	var scenario: TerrainScenario = _scenario()
 	(scenario.level.tick_guard as ExplorationGuard).zones.append(_zone(Vector2i(1, 2)))
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	for tick: int in 3:
 		assert_eq(run.step(scenario.command_at(tick)).error, "", "Destination alone must not trigger a zone")
@@ -40,7 +40,7 @@ func test_zone_query_uses_moved_cell_instead_of_control_destination() -> void:
 func test_world_boundary_rejects_actual_movement_and_copies_caller_definition() -> void:
 	var scenario: TerrainScenario = _scenario()
 	(scenario.level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 512)
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	(scenario.level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
 	for tick: int in 3:
@@ -54,7 +54,7 @@ func test_world_boundary_rejects_actual_movement_and_copies_caller_definition() 
 func test_spawn_and_failed_reset_check_both_guards_without_publishing_state() -> void:
 	var scenario: TerrainScenario = _scenario()
 	(scenario.level.tick_guard as ExplorationGuard).zones.append(_zone(Vector2i(2, 1)))
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	assert_eq(run.step(scenario.command_at(0)).error, "")
 	var before: String = _state(run)
@@ -63,14 +63,14 @@ func test_spawn_and_failed_reset_check_both_guards_without_publishing_state() ->
 	assert_string_contains(run.reset(start), "active camera zone")
 	assert_eq(_state(run), before)
 	scenario.level.spawn_cell = Vector2i(2, 1)
-	assert_string_contains(TerrainRun.create(scenario.level).error, "active camera zone")
+	assert_string_contains(GameplayRun.create(scenario.level).error, "active camera zone")
 	(scenario.level.tick_guard as ExplorationGuard).zones.clear()
 	(scenario.level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 512, 1024)
-	assert_string_contains(TerrainRun.create(scenario.level).error, "Exploration boundary")
+	assert_string_contains(GameplayRun.create(scenario.level).error, "Exploration boundary")
 
 func test_null_guard_preserves_existing_movement() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	for tick: int in 6:
 		assert_eq(run.step(scenario.command_at(tick)).error, "")
 	assert_eq(run.snapshot().frog.cell, Vector2i(1, 2))
@@ -95,10 +95,10 @@ func test_generic_guard_receives_detached_composed_state_at_each_boundary() -> v
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	var original := MutatingGuard.new()
 	scenario.level.tick_guard = original
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	assert_eq(run.step(scenario.command_at(0)).error, "")
-	var state: RunSnapshot = run.snapshot()
+	var state: GameplayState = run.snapshot()
 	assert_ne(state.frog.position_16, Vector3i(99, 99, 99))
 	assert_eq(state.attachment.current_entity_index, -1)
 	assert_ne(state.requests.sound_requests, 999)

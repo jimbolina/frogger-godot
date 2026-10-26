@@ -22,8 +22,8 @@ func _form() -> FormContactDefinition:
 	form.grid_flags = PackedInt32Array([3, 3])
 	return form
 
-func _frog() -> RunSnapshot:
-	var frog := RunSnapshot.new()
+func _frog() -> GameplayState:
+	var frog := GameplayState.new()
 	frog.frog.matrix12[9] = 100
 	frog.frog.matrix12[10] = -256
 	frog.frog.matrix12[11] = 128
@@ -32,7 +32,7 @@ func _frog() -> RunSnapshot:
 func test_pickup_consumes_prior_hit_and_keeps_carrier_after_parent_loss() -> void:
 	var entity: EntitySnapshot = _pink()
 	var parent: EntitySnapshot = _parent()
-	var frog: RunSnapshot = _frog()
+	var frog: GameplayState = _frog()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog), "")
 	assert_eq(entity.background.carrier_index, -1)
 	parent.live = false
@@ -54,7 +54,7 @@ func test_pickup_consumes_prior_hit_and_keeps_carrier_after_parent_loss() -> voi
 func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	var entity: EntitySnapshot = _pink()
 	var parent: EntitySnapshot = _parent()
-	var frog: RunSnapshot = _frog()
+	var frog: GameplayState = _frog()
 	assert_eq(EntityBaby.update(entity, parent, _form(), frog, true), "")
 	frog.frog.matrix12 = PlatformMath.yaw(1024)
 	frog.frog.matrix12[9] = 100

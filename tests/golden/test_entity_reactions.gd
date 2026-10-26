@@ -24,7 +24,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		if not scenario.error.is_empty():
 			continue
 		assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "", name)
-		var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+		var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 		assert_eq(run.error, "", name)
 		if not run.error.is_empty():
 			continue
@@ -40,7 +40,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 				observed_statuses.append(reaction.status)
 		assert_eq(",".join(observed_contacts) if not observed_contacts.is_empty() else "-", fields[11], name + " contacts")
 		assert_eq(",".join(observed_statuses) if not observed_statuses.is_empty() else "-", fields[12], name + " statuses")
-		var snapshot: RunSnapshot = result.collision_snapshot
+		var snapshot: GameplayState = result.collision_snapshot
 		assert_not_null(snapshot, name)
 		if snapshot == null:
 			continue
@@ -58,12 +58,12 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		if not fields[12].contains("unsupported"):
 			assert_eq(",".join(observed_hits) if not observed_hits.is_empty() else "-", fields[10], name + " frozen C hits")
 		if fields[12] == "unsupported":
-			assert_eq(snapshot.diagnostics.death_entity_index, -1, name + " unsupported killer omitted")
+			assert_eq(snapshot.attachment.death_entity_index, -1, name + " unsupported killer omitted")
 			assert_eq(snapshot.frog.death_equate, 0, name + " unsupported death omitted")
 			assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 0, name + " unsupported effect omitted")
 			assert_eq(snapshot.requests.sound_requests, 0, name + " unsupported sound omitted")
 			continue
-		assert_eq(snapshot.diagnostics.death_entity_index, int(fields[13]), name + " first killer")
+		assert_eq(snapshot.attachment.death_entity_index, int(fields[13]), name + " first killer")
 		assert_eq(snapshot.frog.death_equate, int(fields[3]), name + " death animation")
 		assert_eq(snapshot.frog.flags, int(fields[2]), name + " frog flags")
 		assert_eq(snapshot.frog.mode, int(fields[1]), name + " frog mode")

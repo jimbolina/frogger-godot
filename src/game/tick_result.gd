@@ -4,12 +4,12 @@ extends RefCounted
 
 var error: String = ""
 var tick_index: int = -1
-var control_snapshot: RunSnapshot = null
-var move_snapshot: RunSnapshot = null
-var collision_snapshot: RunSnapshot = null
-var camera_snapshot: RunSnapshot = null
-var scripts_snapshot: RunSnapshot = null
-var final_snapshot: RunSnapshot = null
+var control_snapshot: GameplayState = null
+var move_snapshot: GameplayState = null
+var collision_snapshot: GameplayState = null
+var camera_snapshot: GameplayState = null
+var scripts_snapshot: GameplayState = null
+var final_snapshot: GameplayState = null
 ## Ordered request names emitted during this tick for presentation consumers.
 var events: Array[TickEvent] = []
 var rng_consumers: Array[String] = []

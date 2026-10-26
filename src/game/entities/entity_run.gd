@@ -293,7 +293,7 @@ func advance_animations() -> void:
 			entity.animation.advance()
 
 ## Updates one admitted custom neighbor on detached candidate state.
-func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: RunSnapshot = null) -> EntityCustomResult:
+func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
 		var failed := EntityCustomResult.new()

@@ -66,7 +66,7 @@ func _level(indices: PackedInt32Array = PackedInt32Array([2])) -> LevelDefinitio
 	return level
 
 func test_primitive_hit_precedes_pop_form_and_retains_first_source_winner() -> void:
-	var run: TerrainRun = TerrainRun.create(_level(PackedInt32Array([2, 7])))
+	var run: GameplayRun = GameplayRun.create(_level(PackedInt32Array([2, 7])))
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -80,7 +80,7 @@ func test_primitive_hit_precedes_pop_form_and_retains_first_source_winner() -> v
 	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.CONTACT)
 	assert_true(result.entity_contacts.is_empty())
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 2]))
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, 7)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, 7)
 	assert_eq(result.final_snapshot.frog.death_equate, FrogAnimationCatalog.SQUISHED)
 	assert_eq(result.collision_snapshot.frog.matrix12.slice(3, 6), PackedInt32Array([0, 0, 0]))
 	assert_eq(TickEvent.trace_lines(result.events).count("entity_squish"), 1)
@@ -93,7 +93,7 @@ func test_primitive_miss_and_disabled_shape_fall_back_to_pop_form() -> void:
 			level.entity_collision.contacts[0].primitives[0].flags |= 256
 		else:
 			level.entity_collision.contacts[0].primitives[0].offset.x = 100
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
 		if not run.error.is_empty():
 			return
@@ -110,7 +110,7 @@ func test_primitive_miss_deadly_form_squishes_without_primitive_flatten() -> voi
 	var level: LevelDefinition = _level()
 	level.entity_collision.contacts[0].primitives[0].offset.x = 100
 	level.entity_collision.contacts[0].grid_flags[0] = 5
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var result: TickResult = run.step(TickCommand.new())
 	assert_eq(result.error, "")
@@ -124,7 +124,7 @@ func test_entity_no_collision_disables_both_contact_paths() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision.entities[0].flags = EntityDefinition.NO_COLLISION
 	level.entity_collision.contacts[0].entity_flags = EntityDefinition.NO_COLLISION
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var result: TickResult = run.step(TickCommand.new())
 	assert_eq(result.error, "")
@@ -132,11 +132,11 @@ func test_entity_no_collision_disables_both_contact_paths() -> void:
 		return
 	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.DISABLED)
 	assert_eq(result.entity_contacts[0].contact.status, FormContactResult.DISABLED)
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, -1)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, -1)
 	assert_true(result.final_snapshot.attachment.entity_hit_indices.is_empty())
 
 func test_late_failure_rolls_back_hits_and_stored_pose_then_retries() -> void:
-	var run: TerrainRun = TerrainRun.create(_level())
+	var run: GameplayRun = GameplayRun.create(_level())
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	run._animation.error = "forced primitive late failure"
@@ -156,17 +156,17 @@ func test_late_failure_rolls_back_hits_and_stored_pose_then_retries() -> void:
 	run._animation.error = ""
 	var succeeded: TickResult = run.step(TickCommand.new())
 	assert_eq(succeeded.error, "")
-	assert_eq(succeeded.final_snapshot.diagnostics.death_entity_index, 2)
+	assert_eq(succeeded.final_snapshot.attachment.death_entity_index, 2)
 	assert_eq(succeeded.primitive_contacts.size(), 1)
 
 func test_setup_and_snapshots_detach_primitive_and_cached_probe_facts() -> void:
 	var level: LevelDefinition = _level()
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	level.entity_collision.contacts[0].primitives[0].offset.x = 500
 	level.entity_collision.frog_collision.probes[0].vertex.x = 500
 	level.entity_collision.frog_collision.actions[0].frames[0][9] = 500
-	var snapshot: RunSnapshot = run.snapshot()
+	var snapshot: GameplayState = run.snapshot()
 	var original_point: Vector3i = snapshot.frog.frog_collision_pose.probes.points[0]
 	snapshot.frog.frog_collision_pose.probes.points[0].x = 999
 	snapshot.frog.frog_collision_pose.action = 999
@@ -185,7 +185,7 @@ func test_primitive_hit_drives_traffic_splat_on_the_following_update() -> void:
 	script.callbacks[0] = "SCRIPT_CB_FROG_TRAFFIC_SPLAT"
 	level.entity_collision.entities[0].script_definition = script
 	level.entity_collision.entities[0].action_lengths = PackedInt32Array([1])
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return

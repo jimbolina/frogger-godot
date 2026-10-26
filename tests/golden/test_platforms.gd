@@ -12,7 +12,7 @@ func _joined(indices: PackedInt32Array) -> String:
 		parts.append(str(index))
 	return ";".join(parts)
 
-func _fields(state: RunSnapshot, pgen_requests: int) -> Dictionary:
+func _fields(state: GameplayState, pgen_requests: int) -> Dictionary:
 	var entity: EntitySnapshot = state.entities.entities[0]
 	var fields: Dictionary = {
 		"x16": state.frog.position_16.x,
@@ -98,7 +98,7 @@ func test_platform_phase_trajectories_match_frozen_c() -> void:
 		if not scenario.error.is_empty():
 			continue
 		scenario.level.entity_collision = scenario.entity_collision.copy()
-		var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+		var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 		assert_eq(run.error, "")
 		if not run.error.is_empty():
 			continue
@@ -109,7 +109,7 @@ func test_platform_phase_trajectories_match_frozen_c() -> void:
 			if not result.error.is_empty():
 				return
 			var popped: bool = TickEvent.trace_lines(result.events).has("entity_pop_explosion_request")
-			var stages: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot,
+			var stages: Array[GameplayState] = [result.control_snapshot, result.move_snapshot,
 				result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
 			for phase: int in 6:
 				assert_true(row_index < lines.size(), "Trace is shorter than fixture")
@@ -120,7 +120,7 @@ func test_platform_phase_trajectories_match_frozen_c() -> void:
 				assert_eq(int(expected[0]), scenario_index)
 				assert_eq(int(expected[1]), tick)
 				assert_eq(expected[2], phase_names[phase])
-				var snapshot: RunSnapshot = stages[phase]
+				var snapshot: GameplayState = stages[phase]
 				var fields: Dictionary = _fields(snapshot, cumulative_pops + (1 if popped and phase >= 2 else 0))
 				for column: int in range(3, header.size()):
 					var name: String = header[column]

@@ -44,7 +44,7 @@ func _level(flags: int = 4097) -> LevelDefinition:
 	level.entity_collision.lifecycle = lifetime
 	return level
 
-func _tick(run: TerrainRun, pressed: int = 0) -> TickResult:
+func _tick(run: GameplayRun, pressed: int = 0) -> TickResult:
 	var command := TickCommand.new()
 	command.tick_index = run.snapshot().tick_index
 	command.pressed_mask = pressed
@@ -73,8 +73,8 @@ func _active_zone() -> ZoneDefinition:
 func test_zone_transition_visibility_failure_rolls_back_every_component_and_retries() -> void:
 	var level: LevelDefinition = _level()
 	level.camera_zones.append(_active_zone())
-	var run: TerrainRun = TerrainRun.create(level)
-	var clean: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
+	var clean: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -90,13 +90,13 @@ func test_zone_transition_visibility_failure_rolls_back_every_component_and_retr
 	assert_eq(_tick(run).error, "")
 	assert_eq(_tick(clean).error, "")
 	assert_eq(ZoneLifecycleChecks.canonical(TerrainTrace.facts(run.snapshot(), true)), ZoneLifecycleChecks.canonical(TerrainTrace.facts(clean.snapshot(), true)))
-	assert_eq(run.snapshot().diagnostics.death_entity_index, 9)
+	assert_eq(run.snapshot().attachment.death_entity_index, 9)
 	assert_eq(run.snapshot().camera.zone_index, 0)
 
 func test_active_zone_safe_attachment_and_departure_keep_live_generation() -> void:
 	var level: LevelDefinition = _level(3 | 256)
 	level.camera_zones.append(_active_zone())
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -120,7 +120,7 @@ func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
 	assert_eq(scenario.error, "")
 	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
 	scenario.level.camera_zones.append(_active_zone())
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -131,7 +131,7 @@ func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
 		assert_eq(result.error, "")
 		if not result.error.is_empty():
 			return
-		var state: RunSnapshot = result.final_snapshot
+		var state: GameplayState = result.final_snapshot
 		if state.attachment.current_entity_index >= 0:
 			attached = true
 			assert_eq(state.camera.zone_index, 0)
@@ -142,7 +142,7 @@ func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
 	assert_true(departed)
 
 func test_tail_creation_defers_pop_until_following_tick() -> void:
-	var run: TerrainRun = TerrainRun.create(_level())
+	var run: GameplayRun = GameplayRun.create(_level())
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -156,25 +156,25 @@ func test_tail_creation_defers_pop_until_following_tick() -> void:
 	assert_true(first.final_snapshot.entities.entities[0].live)
 	assert_eq(first.final_snapshot.entities.entities[0].generation, 1)
 	assert_true(first.entity_contacts.is_empty())
-	assert_eq(first.final_snapshot.diagnostics.death_entity_index, -1)
+	assert_eq(first.final_snapshot.attachment.death_entity_index, -1)
 	var second: TickResult = _tick(run)
 	assert_eq(second.error, "")
 	if second.error.is_empty():
-		assert_eq(second.final_snapshot.diagnostics.death_entity_index, 9)
+		assert_eq(second.final_snapshot.attachment.death_entity_index, 9)
 		assert_true(TickEvent.trace_lines(second.events).has("entity_pop_explosion_request"))
 
 func test_visibility_requires_camera_and_preserves_all_attached_default() -> void:
 	var level: LevelDefinition = _level()
 	level.camera = null
-	assert_string_contains(TerrainRun.create(level).error, "camera")
+	assert_string_contains(GameplayRun.create(level).error, "camera")
 	level.entity_collision.lifecycle = null
-	var legacy: TerrainRun = TerrainRun.create(level)
+	var legacy: GameplayRun = GameplayRun.create(level)
 	assert_eq(legacy.error, "")
 	if legacy.error.is_empty():
-		assert_eq(_tick(legacy).final_snapshot.diagnostics.death_entity_index, 9)
+		assert_eq(_tick(legacy).final_snapshot.attachment.death_entity_index, 9)
 
 func test_safe_mount_local_hop_and_departure_keep_live_identity() -> void:
-	var run: TerrainRun = TerrainRun.create(_level(3 | 256))
+	var run: GameplayRun = GameplayRun.create(_level(3 | 256))
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -197,7 +197,7 @@ func test_safe_mount_local_hop_and_departure_keep_live_identity() -> void:
 
 func test_missing_or_dormant_current_attachment_fails_before_mutation() -> void:
 	for identity: int in [9, 99]:
-		var run: TerrainRun = TerrainRun.create(_level(3 | 256))
+		var run: GameplayRun = GameplayRun.create(_level(3 | 256))
 		assert_eq(run.error, "")
 		if not run.error.is_empty():
 			return
@@ -207,7 +207,7 @@ func test_missing_or_dormant_current_attachment_fails_before_mutation() -> void:
 		assert_false(run.snapshot().entities.entities[0].live)
 
 func test_forbidden_identity_without_current_link_does_not_pin() -> void:
-	var run: TerrainRun = TerrainRun.create(_level(3 | 256))
+	var run: GameplayRun = GameplayRun.create(_level(3 | 256))
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -227,19 +227,19 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	level.frog_action_lengths.clear()
 	for unused: int in FrogAnimationCatalog.ACTION_NAMES.size():
 		level.frog_action_lengths.append(3)
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
 	assert_eq(_tick(run).error, "")
-	var before: RunSnapshot = run.snapshot()
+	var before: GameplayState = run.snapshot()
 	run._entities._lifecycle.polygon_counts.fill(2500)
 	var failed: TickResult = _tick(run)
 	_assert_failed(failed)
 	assert_string_contains(failed.error, "2500")
-	var after: RunSnapshot = run.snapshot()
+	var after: GameplayState = run.snapshot()
 	assert_eq(after.tick_index, before.tick_index)
-	assert_eq(after.diagnostics.death_entity_index, -1)
+	assert_eq(after.attachment.death_entity_index, -1)
 	assert_eq(after.camera.source_world, before.camera.source_world)
 	assert_eq(after.camera.mode, before.camera.mode)
 	assert_eq(after.animation.cel, before.animation.cel)
@@ -253,19 +253,19 @@ func test_late_budget_failure_rolls_back_pop_camera_rng_and_retries() -> void:
 	var retry: TickResult = _tick(run)
 	assert_eq(retry.error, "")
 	if retry.error.is_empty():
-		assert_eq(retry.final_snapshot.diagnostics.death_entity_index, 9)
+		assert_eq(retry.final_snapshot.attachment.death_entity_index, 9)
 		assert_eq(TickEvent.trace_lines(retry.events).count("entity_pop_explosion_request"), 1)
 
 func test_reset_and_detached_nested_lifecycle_snapshots() -> void:
 	var level: LevelDefinition = _level(3 | 256)
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
 	assert_eq(_tick(run).error, "")
 	assert_eq(_tick(run).error, "")
-	var before: RunSnapshot = run.snapshot()
-	var detached: RunSnapshot = before.copy()
+	var before: GameplayState = run.snapshot()
+	var detached: GameplayState = before.copy()
 	detached.entities.entities[0].live = false
 	detached.entities.entities[0].generation = 100
 	detached.entities.live_order.clear()
@@ -300,8 +300,8 @@ func test_visibility_failure_after_stun_random_draws_retries_identically() -> vo
 	level.theme = 4
 	for index: int in level.grid.squares[9].vertices.size():
 		level.grid.squares[9].vertices[index].y = 513
-	var reference: TerrainRun = TerrainRun.create(level)
-	var run: TerrainRun = TerrainRun.create(level)
+	var reference: GameplayRun = GameplayRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(reference.error, "")
 	assert_eq(run.error, "")
 	if not run.error.is_empty() or not reference.error.is_empty():
@@ -315,10 +315,10 @@ func test_visibility_failure_after_stun_random_draws_retries_identically() -> vo
 			return
 		if not expected.rng_consumers.is_empty():
 			observed_draws = true
-			var before: RunSnapshot = run.snapshot()
+			var before: GameplayState = run.snapshot()
 			run._entities._lifecycle.polygon_counts.fill(2500)
 			_assert_failed(_tick(run, pressed))
-			var after: RunSnapshot = run.snapshot()
+			var after: GameplayState = run.snapshot()
 			assert_eq(after.tick_index, before.tick_index)
 			assert_eq(after.frog.position_16, before.frog.position_16)
 			assert_eq(after.frog.mode, before.frog.mode)

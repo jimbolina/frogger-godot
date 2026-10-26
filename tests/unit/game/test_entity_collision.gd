@@ -137,19 +137,19 @@ func test_group_order_negative_division_clamping_and_flags() -> void:
 func test_pop_continues_scanning_and_resets_transient_hits() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision = _collision([_static(2, -128, -128), _static(7, -128, -128)])
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var command := TickCommand.new()
 	var result: TickResult = run.step(command)
 	assert_eq(result.error, "")
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([7, 2]))
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, 7)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, 7)
 	assert_eq(result.final_snapshot.frog.death_equate, 23)
 	assert_eq(result.final_snapshot.frog.velocity_16, Vector3i.ZERO)
 	assert_true(result.final_snapshot.requests.life_decrement_requested)
 	assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)
 	assert_eq(result.final_snapshot.entities.tick_index, result.final_snapshot.tick_index)
-	var detached: RunSnapshot = run.snapshot()
+	var detached: GameplayState = run.snapshot()
 	detached.entities.entities[0].matrix12[9] = 123
 	detached.attachment.entity_hit_indices.append(99)
 	assert_eq(run.snapshot().entities.entities[0].matrix12[9], -128)
@@ -160,7 +160,7 @@ func test_pop_continues_scanning_and_resets_transient_hits() -> void:
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices.size(), 0)
 	assert_eq(result.final_snapshot.frog.death_count, 69)
 	assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 0)
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, 7)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, 7)
 
 func test_moving_post_step_pose_and_late_failure_retry() -> void:
 	var path := PathDefinition.new()
@@ -185,7 +185,7 @@ func test_moving_post_step_pose_and_late_failure_retry() -> void:
 	for _index: int in FrogAnimationCatalog.ACTION_NAMES.size():
 		lengths.append(1)
 	level.frog_action_lengths = lengths
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	assert_eq(run.snapshot().entities.entities[0].matrix12[9], -138)
 	run._animation.error = "forced late failure"
@@ -206,19 +206,19 @@ func test_moving_post_step_pose_and_late_failure_retry() -> void:
 	var succeeded: TickResult = run.step(command)
 	assert_eq(succeeded.error, "")
 	assert_eq(succeeded.final_snapshot.entities.entities[0].matrix12[9], -128)
-	assert_eq(succeeded.final_snapshot.diagnostics.death_entity_index, 4)
+	assert_eq(succeeded.final_snapshot.attachment.death_entity_index, 4)
 	assert_eq(succeeded.entity_contacts.size(), 1)
 
 func test_terrain_early_exit_prevents_entity_contact() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision = _collision([_static(3, -128, -128)])
 	level.collision_bounds = Rect2i(0, 0, 100, 100)
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var result: TickResult = run.step(TickCommand.new())
 	assert_eq(result.error, "")
 	assert_eq(result.entity_contacts.size(), 0)
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, -1)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, -1)
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices.size(), 0)
 	assert_eq(result.final_snapshot.frog.death_equate, 2)
 
@@ -226,7 +226,7 @@ func test_late_camera_rejection_rolls_back_pop_and_entity_motion() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision = _collision([_static(3, -128, -128)])
 	level.camera = GameplayCameraDefinition.new()
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	run._state.frog.remaining_ticks = -1
 	var failed: TickResult = run.step(TickCommand.new())
@@ -239,11 +239,11 @@ func test_late_camera_rejection_rolls_back_pop_and_entity_motion() -> void:
 	assert_eq(failed.entity_contacts.size(), 0)
 	assert_eq(failed.events.size(), 0)
 	assert_eq(run.snapshot().tick_index, 0)
-	assert_eq(run.snapshot().diagnostics.death_entity_index, -1)
+	assert_eq(run.snapshot().attachment.death_entity_index, -1)
 	run._state.frog.remaining_ticks = 0
 	var succeeded: TickResult = run.step(TickCommand.new())
 	assert_eq(succeeded.error, "")
-	assert_eq(succeeded.final_snapshot.diagnostics.death_entity_index, 3)
+	assert_eq(succeeded.final_snapshot.attachment.death_entity_index, 3)
 
 func test_source_collision_early_returns_and_wait_twist() -> void:
 	for case_name: String in ["freefall", "deathheight", "pending", "wait", "twist"]:
@@ -253,7 +253,7 @@ func test_source_collision_early_returns_and_wait_twist() -> void:
 			level.theme_death_height = -1
 		if case_name in ["wait", "twist"]:
 			level.camera = GameplayCameraDefinition.new()
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
 		if case_name == "freefall":
 			run._state.frog.flags |= 128
@@ -276,7 +276,7 @@ func test_source_collision_early_returns_and_wait_twist() -> void:
 func test_disabled_contact_and_invalid_contact_rollback() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision = _collision([_static(3, -128, -128, EntityDefinition.NO_COLLISION)])
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var result: TickResult = run.step(TickCommand.new())
 	assert_eq(result.error, "")
@@ -284,9 +284,9 @@ func test_disabled_contact_and_invalid_contact_rollback() -> void:
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices.size(), 0)
 	level = _level()
 	level.entity_collision = _collision([_static(3, -128, -128)])
-	run = TerrainRun.create(level)
+	run = GameplayRun.create(level)
 	run._entity_collision.contacts[0].dimensions = Vector2i.ZERO
-	var before: RunSnapshot = run.snapshot()
+	var before: GameplayState = run.snapshot()
 	result = run.step(TickCommand.new())
 	assert_string_contains(result.error, "dimensions")
 	assert_null(result.control_snapshot)
@@ -303,17 +303,17 @@ func test_reset_preserves_aggregate_then_death_completes() -> void:
 	var level: LevelDefinition = _level()
 	level.entity_collision = _collision([_static(3, -128, -128)])
 	level.camera = GameplayCameraDefinition.new()
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	assert_eq(run.step(TickCommand.new()).error, "")
-	var before: RunSnapshot = run.snapshot()
+	var before: GameplayState = run.snapshot()
 	var invalid := RunStart.new()
 	invalid.spawn_cell = Vector2i(99, 99)
 	assert_false(run.reset(invalid).is_empty())
-	var after: RunSnapshot = run.snapshot()
+	var after: GameplayState = run.snapshot()
 	assert_eq(after.tick_index, before.tick_index)
 	assert_eq(after.entities.tick_index, before.entities.tick_index)
-	assert_eq(after.diagnostics.death_entity_index, before.diagnostics.death_entity_index)
+	assert_eq(after.attachment.death_entity_index, before.attachment.death_entity_index)
 	assert_eq(after.rng_state, before.rng_state)
 	assert_eq(after.camera.mode, before.camera.mode)
 	assert_eq(after.camera.source_world, before.camera.source_world)
@@ -326,7 +326,7 @@ func test_reset_preserves_aggregate_then_death_completes() -> void:
 		assert_eq(result.final_snapshot.entities.tick_index, result.final_snapshot.tick_index)
 	assert_eq(run.snapshot().frog.death_count, 0)
 	assert_true(run.snapshot().completed)
-	assert_eq(run.snapshot().diagnostics.death_entity_index, 3)
+	assert_eq(run.snapshot().attachment.death_entity_index, 3)
 	var beyond := TickCommand.new()
 	beyond.tick_index = 71
 	assert_string_contains(run.step(beyond).error, "completed")
@@ -353,7 +353,7 @@ func test_moving_path_enters_scanned_group_before_contact() -> void:
 	level.entity_collision.group_size = Vector2i(64, 64)
 	level.entity_collision.contacts[0].entity_flags = mover.flags
 	level.entity_collision.contacts[0].radius_squared = 25
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	assert_eq(run.snapshot().entities.entities[0].matrix12[9], -193)
 	assert_eq(EntityContactOrder.indices(level.entity_collision, run.snapshot().entities, Vector3i(-128, 0, -128)).size(), 0)
@@ -361,7 +361,7 @@ func test_moving_path_enters_scanned_group_before_contact() -> void:
 	assert_eq(result.error, "")
 	assert_eq(result.final_snapshot.entities.entities[0].matrix12[9], -128)
 	assert_eq(result.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([6]))
-	assert_eq(result.final_snapshot.diagnostics.death_entity_index, 6)
+	assert_eq(result.final_snapshot.attachment.death_entity_index, 6)
 
 func test_pop_requests_death_even_when_animation_is_locked() -> void:
 	var level: LevelDefinition = _level()
@@ -370,7 +370,7 @@ func test_pop_requests_death_even_when_animation_is_locked() -> void:
 	for _index: int in FrogAnimationCatalog.ACTION_NAMES.size():
 		lengths.append(3)
 	level.frog_action_lengths = lengths
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	run._animation.state.flags |= 32
 	run._state.animation = run._animation.state.copy()
@@ -388,7 +388,7 @@ func test_pop_life_request_and_active_flag_boundaries() -> void:
 		level.entity_collision = _collision([_static(3, -128, -128)])
 		var start := RunStart.new()
 		start.lives = lives
-		var run: TerrainRun = TerrainRun.create(level, start)
+		var run: GameplayRun = GameplayRun.create(level, start)
 		assert_eq(run.error, "")
 		var result: TickResult = run.step(TickCommand.new())
 		assert_eq(result.error, "", "lives %d" % lives)

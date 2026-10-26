@@ -3,8 +3,8 @@ extends GutTest
 
 func test_worker_detaches_commands_results_and_rejects_overlapping_submissions() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("buffer")
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
-	var direct: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
+	var direct: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	var worker := TerrainTickWorker.new()
 	assert_eq(worker.start(run), OK)
 	for tick: int in scenario.tick_limit:

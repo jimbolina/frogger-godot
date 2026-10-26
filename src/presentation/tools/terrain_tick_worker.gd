@@ -3,7 +3,7 @@ extends RefCounted
 ## Runs one exclusively owned terrain transaction at a time, without touching scene objects.
 ## The host schedules input and drains or closes the worker before replacing its run.
 
-var _run: TerrainRun
+var _run: GameplayRun
 var _thread := Thread.new()
 var _wake := Semaphore.new()
 var _done := Semaphore.new()
@@ -15,7 +15,7 @@ var pending: bool = false
 var last_tick_usec: int = 0
 
 ## Starts an idle worker; the caller must stop accessing the run until close.
-func start(run: TerrainRun) -> Error:
+func start(run: GameplayRun) -> Error:
 	_run = run
 	return _thread.start(_work)
 

@@ -106,7 +106,7 @@ an integrated camera. Definitions include all eight signed16 offset vectors,
 flags and direction. Bounds-only exploration guards remain a separate facility;
 existing guarded routes retain their admission restrictions.
 
-`RunSnapshot.camera_zone_index` and `camera_zone_region_index` retain the frog's
+`GameplayState.camera_zone_index` and `camera_zone_region_index` retain the frog's
 selection. Zone -1 means absent; region -1 with a present zone means its outer
 rectangle. `FROG.C/UpdateFrogCameraZone` first retains the current signed region,
 then searches that same zone, then searches all zones in authored order. Thus

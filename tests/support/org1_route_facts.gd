@@ -3,7 +3,7 @@ extends RefCounted
 ## Observation transport only; expected facts come from independent Python/frozen C.
 
 ## Selects represented source phase fields without deriving expected behavior.
-static func phase(state: RunSnapshot, tick: int, name: String, definition: EntityCollisionDefinition, contacts: Array[EntityPrimitiveContact] = []) -> Dictionary:
+static func phase(state: GameplayState, tick: int, name: String, definition: EntityCollisionDefinition, contacts: Array[EntityPrimitiveContact] = []) -> Dictionary:
 	var camera: GameplayCameraSnapshot = state.camera
 	var diver: EntitySnapshot = state.entities.entities[0]
 	var result: Dictionary = {"tick": tick, "phase": name,
@@ -11,7 +11,7 @@ static func phase(state: RunSnapshot, tick: int, name: String, definition: Entit
 		"vx16": state.frog.velocity_16.x, "vy16": state.frog.velocity_16.y, "vz16": state.frog.velocity_16.z,
 		"flags": state.frog.flags, "mode": state.frog.mode, "attached": state.attachment.current_entity_index,
 		"death_equate": state.frog.death_equate, "lives": state.frog.lives - int(state.requests.life_decrement_requested),
-		"first_killer": state.diagnostics.death_entity_index,
+		"first_killer": state.attachment.death_entity_index,
 		"count": state.frog.remaining_ticks, "old_y": state.frog.old_y, "direction": state.frog.direction,
 		"action": state.animation.action, "cel": state.animation.cel, "rng": state.rng_state,
 		"sounds": state.requests.sound_requests, "diver_y": diver.script_state.deviation if diver.script_state != null else 0,

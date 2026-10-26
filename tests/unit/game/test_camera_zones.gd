@@ -32,7 +32,7 @@ func test_text_only_retail_camera_corpus() -> void:
 func test_failure_after_camera_discards_zone_timers_and_animation_rng() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	scenario.level.camera_zones.append(_zone())
-	var run: TerrainRun = TerrainRun.create(scenario.level)
+	var run: GameplayRun = GameplayRun.create(scenario.level)
 	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	var late := LateGuard.new()
 	run._tick_guard = late
@@ -57,22 +57,22 @@ func test_active_zone_validation_and_nested_ownership() -> void:
 	assert_false(omissions.has("zones"))
 	assert_true(metadata.has("camera_zones"))
 	scenario.level.camera = null
-	assert_string_contains(TerrainRun.create(scenario.level).error, "integrated camera")
+	assert_string_contains(GameplayRun.create(scenario.level).error, "integrated camera")
 	scenario.level.camera = GameplayCameraDefinition.new()
-	var run: TerrainRun = TerrainRun.create(scenario.level)
+	var run: GameplayRun = GameplayRun.create(scenario.level)
 	assert_eq(run.error, "")
 	zone.bounds[0] = 30
 	zone.camera_offsets[0] = Vector3i.ONE
 	assert_eq(run.snapshot().frog.camera_zone_index, 0)
 	assert_eq(run.step(_command(0)).error, "")
 	assert_eq(run.snapshot().camera.next_source_offset, Vector3i(0, -800, -700))
-	var detached: RunSnapshot = run.snapshot()
+	var detached: GameplayState = run.snapshot()
 	detached.camera.zone_index = 40
 	detached.frog.camera_zone_region_index = 40
 	assert_eq(run.snapshot().camera.zone_index, 0)
 	assert_eq(run.snapshot().frog.camera_zone_region_index, -1)
 	scenario.level.camera_zones.append(zone.copy())
-	assert_string_contains(TerrainRun.create(scenario.level).error, "duplicate")
+	assert_string_contains(GameplayRun.create(scenario.level).error, "duplicate")
 	scenario.level.camera_zones.pop_back()
 
 func test_move_selects_zone_before_camera_and_failed_late_guard_rolls_back() -> void:
@@ -80,7 +80,7 @@ func test_move_selects_zone_before_camera_and_failed_late_guard_rolls_back() -> 
 	scenario.level.camera_zones.append(_zone(5, PackedInt32Array([1, 2, 1, 2])))
 	scenario.level.tick_guard = ExplorationGuard.new()
 	(scenario.level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
-	var run: TerrainRun = TerrainRun.create(scenario.level)
+	var run: GameplayRun = GameplayRun.create(scenario.level)
 	assert_eq(run.error, "")
 	for tick: int in 3:
 		assert_eq(run.step(_command(tick, TickCommand.NORTH if tick == 0 else 0)).error, "")
@@ -106,7 +106,7 @@ func test_forced_control_is_ignored_and_semiforced_turn_waits() -> void:
 		zone.camera_direction = 0
 		zone.camera_flags = 4 if semiforced else 0
 		scenario.level.camera_zones.append(zone)
-		var run: TerrainRun = TerrainRun.create(scenario.level)
+		var run: GameplayRun = GameplayRun.create(scenario.level)
 		for tick: int in 30:
 			assert_eq(run.step(_command(tick)).error, "")
 		var result: TickResult = run.step(_command(30, TickCommand.CAMERA_CLOCKWISE))

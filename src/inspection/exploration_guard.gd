@@ -52,7 +52,7 @@ func copy() -> ExplorationGuard:
 	return result
 
 ## Rejects an unproved animated collision point before any neighbor scan.
-func check_frog(state: RunSnapshot) -> String:
+func check_frog(state: GameplayState) -> String:
 	if frog_roots.is_empty():
 		return ""
 	if state.frog.powerup_flags != 0:
@@ -120,7 +120,7 @@ func check(phase: Phase, candidate: TickGuardCandidate) -> String:
 		if candidate.restricted_contacts and frog_roots.is_empty():
 			return "Contact exclusion requires animated inspection admission"
 		return ""
-	var state: RunSnapshot = candidate.state
+	var state: GameplayState = candidate.state
 	match phase:
 		Phase.RESET_WORLD:
 			var issue: String = check_world(state.frog.world_position)

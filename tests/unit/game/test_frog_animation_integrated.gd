@@ -40,7 +40,7 @@ func _command(scenario: int, tick: int) -> TickCommand:
 		command.held_mask = TickCommand.NORTH if tick >= 1 and tick <= 12 else command.pressed_mask
 	return command
 
-func _fields(state: RunSnapshot) -> Array[int]:
+func _fields(state: GameplayState) -> Array[int]:
 	var camera: GameplayCameraSnapshot = state.camera
 	var animation: FrogAnimationState = state.animation
 	return [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z,
@@ -56,7 +56,7 @@ func test_all_represented_integration_fields_match_frozen_c() -> void:
 	assert_eq(lines.size(), 1465)
 	var row_index: int = 1
 	for scenario: int in 4:
-		var run: TerrainRun = TerrainRun.create(_level(scenario))
+		var run: GameplayRun = GameplayRun.create(_level(scenario))
 		assert_eq(run.error, "")
 		var ticks: int = 24 if scenario < 2 else 120 if scenario == 2 else 76
 		for tick: int in ticks:
@@ -70,7 +70,7 @@ func test_all_represented_integration_fields_match_frozen_c() -> void:
 			elif scenario == 2 and (tick == 87 or tick == 117):
 				expected_consumers.append("animation_idle")
 			assert_eq(result.rng_consumers, expected_consumers, "source consumer order scenario %d tick %d" % [scenario, tick])
-			var snapshots: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot, result.collision_snapshot, result.camera_snapshot, null, result.final_snapshot]
+			var snapshots: Array[GameplayState] = [result.control_snapshot, result.move_snapshot, result.collision_snapshot, result.camera_snapshot, null, result.final_snapshot]
 			for phase: int in 6:
 				var expected: PackedStringArray = lines[row_index].strip_edges().split(",")
 				assert_eq(expected[0].to_int(), scenario)
@@ -92,13 +92,13 @@ func test_all_represented_integration_fields_match_frozen_c() -> void:
 	assert_eq(row_index, lines.size())
 
 func test_reset_replays_shared_rng_and_detaches_animation_camera() -> void:
-	var run: TerrainRun = TerrainRun.create(_level(2))
+	var run: GameplayRun = GameplayRun.create(_level(2))
 	var expected: Array[Array] = []
 	for tick: int in 120:
 		var result: TickResult = run.step(_command(2, tick))
 		assert_eq(result.error, "")
 		expected.append(_fields(result.final_snapshot))
-	var borrowed: RunSnapshot = run.snapshot()
+	var borrowed: GameplayState = run.snapshot()
 	borrowed.animation.action = -1
 	borrowed.camera.controller_directions[0] = 3
 	borrowed.rng_state = 0

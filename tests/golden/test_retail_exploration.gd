@@ -14,7 +14,7 @@ func after_all() -> void:
 	if _data != null:
 		_data.close()
 
-func _fields(state: RunSnapshot) -> Dictionary[String, String]:
+func _fields(state: GameplayState) -> Dictionary[String, String]:
 	if state.entities == null:
 		return {}
 	var pose: EntitySnapshot = null
@@ -61,7 +61,7 @@ func test_guarded_jun1_bank_log_bank_phases_match_frozen_c() -> void:
 	assert_eq(scenario.attach_data(_data, "JUN1"), "")
 	if scenario.level == null:
 		return
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -82,7 +82,7 @@ func test_guarded_jun1_bank_log_bank_phases_match_frozen_c() -> void:
 		assert_eq(result.error, "", "JUN1 command %d" % tick)
 		if not result.error.is_empty():
 			return
-		var stages: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot,
+		var stages: Array[GameplayState] = [result.control_snapshot, result.move_snapshot,
 			result.collision_snapshot, result.camera_snapshot, result.scripts_snapshot, result.final_snapshot]
 		for phase: int in 6:
 			var expected: PackedStringArray = lines[row_index].trim_suffix("\r").split("\t")

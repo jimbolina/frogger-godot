@@ -37,7 +37,7 @@ fresh map load and reset. This component uses the reset-style tick-0 pose.
 
 The snapshots are source ordered and deeply detached, including matrix arrays
 and nested path cursors. Failed reset or step leaves the full aggregate state
-intact. Standalone transform inspection remains available. `TerrainRun` can also
+intact. Standalone transform inspection remains available. `GameplayRun` can also
 own an entity run for the bounded reaction sequence below. The frozen live-entity
 traversal depends on visibility and creation lifecycle, which this all-attached
 default does not reproduce.
@@ -54,7 +54,7 @@ custom/immortal behaviors. Selective checkpoint/death resets remain deferred. Ex
 collision-callback exclusions still govern collision; bonus callbacks remain
 unexecuted diagnostics.
 
-`TerrainRun` advances persistent paths, culls/updates live entities, runs frog
+`GameplayRun` advances persistent paths, culls/updates live entities, runs frog
 and camera/animation phases, then selects and expands visible groups before
 the aggregate commit (`gamesys.C:1322–1350`). Reset has no mortal live
 instances and does not prewarm visibility; admitted immortals are constructed
@@ -213,7 +213,7 @@ change or volcano-fire override. Animation request locks still apply. Explosion
 and game-flow outcomes are requests, not effect rendering, lives progression
 or full-engine effect RNG simulation.
 
-`TerrainRun` advances private entity path/transform candidates before frog
+`GameplayRun` advances private entity path/transform candidates before frog
 control, movement and collision. Frozen collision early returns also suppress
 entity queries: excluded frog modes, pending death, camera wait without twist,
 fade death, freefall landing even on safe terrain, and theme-height death.

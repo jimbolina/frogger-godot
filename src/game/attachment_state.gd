@@ -3,6 +3,7 @@ extends RefCounted
 ## Platform-local attachment and per-tick contact identities.
 
 var entity_hit_indices: PackedInt32Array = PackedInt32Array()
+var death_entity_index: int = -1
 var current_entity_index: int = -1
 var forbidden_entity_index: int = -1
 var entity_cell: Vector2i = Vector2i.ZERO
@@ -22,4 +23,5 @@ func copy() -> AttachmentState:
 	result.entity_angle = entity_angle
 	result.entity_transform12 = entity_transform12.duplicate()
 	result.entity_carry_indices = entity_carry_indices.duplicate()
+	result.death_entity_index = death_entity_index
 	return result

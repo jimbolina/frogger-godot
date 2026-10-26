@@ -3,7 +3,7 @@ extends RefCounted
 ## Inspection-specific capture milestones, separate from the reusable viewer.
 
 ## Returns route milestones at the observed state.
-static func platform(scenario: TerrainScenario, state: RunSnapshot) -> Array[String]:
+static func platform(scenario: TerrainScenario, state: GameplayState) -> Array[String]:
 	var platform_stages: Array[String] = []
 	if scenario.options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 		var stages: Dictionary[int, String] = {4: "org1-turtle-out", 19: "org1-log", 40: "org1-turtle-return", 52: "org1-bank-return", 60: "org1-diving", 90: "org1-rising", 1234: "org1-diver-attachment", 1255: "org1-diver-drowning"}
@@ -25,7 +25,7 @@ static func platform(scenario: TerrainScenario, state: RunSnapshot) -> Array[Str
 			platform_stages.append("org1-road-bank")
 		if state.attachment.current_entity_index >= 0 and state.attachment.current_entity_index < 24:
 			platform_stages.append("org1-road-river")
-		if state.diagnostics.death_entity_index >= 24 and state.diagnostics.death_entity_index <= 47:
+		if state.attachment.death_entity_index >= 24 and state.attachment.death_entity_index <= 47:
 			platform_stages.append("org1-road-vehicle-death")
 	elif scenario.level.tick_guard != null:
 		if state.tick_index == 3:
@@ -39,7 +39,7 @@ static func platform(scenario: TerrainScenario, state: RunSnapshot) -> Array[Str
 	return platform_stages
 
 ## Selects the authored pre-contact frame where a preset requires one.
-static func before_contact(scenario: TerrainScenario, state: RunSnapshot) -> bool:
+static func before_contact(scenario: TerrainScenario, state: GameplayState) -> bool:
 	return scenario.level_code.to_upper() != "DES2" or state.tick_index == 4
 
 ## Whether entity lighting is part of the selected inspection contract.

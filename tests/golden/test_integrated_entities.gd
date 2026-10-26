@@ -1,7 +1,7 @@
 extends GutTest
 ## Independent Python and unchanged frozen C constrain integrated POP trajectories.
 
-func _represented(state: RunSnapshot) -> Array[int]:
+func _represented(state: GameplayState) -> Array[int]:
 	var camera: GameplayCameraSnapshot = state.camera
 	var animation: FrogAnimationState = state.animation
 	var values: Array[int] = [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z,
@@ -51,7 +51,7 @@ func test_integrated_entity_trajectories_match_frozen_c() -> void:
 		var scenario: TerrainScenario = TerrainScenario.from_object(case_data)
 		assert_eq(scenario.error, "")
 		scenario.level.entity_collision = scenario.entity_collision.copy()
-		var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+		var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 		assert_eq(run.error, "")
 		var cumulative_pops: int = 0
 		for tick: int in 71:
@@ -60,7 +60,7 @@ func test_integrated_entity_trajectories_match_frozen_c() -> void:
 			if not result.error.is_empty():
 				return
 			var popped: bool = TickEvent.trace_lines(result.events).has("entity_pop_explosion_request")
-			var stages: Array[RunSnapshot] = [result.control_snapshot, result.move_snapshot,
+			var stages: Array[GameplayState] = [result.control_snapshot, result.move_snapshot,
 				result.collision_snapshot, result.camera_snapshot, null, result.final_snapshot]
 			for phase: int in 6:
 				var expected: PackedStringArray = lines[row_index].strip_edges().split("\t")
@@ -68,14 +68,14 @@ func test_integrated_entity_trajectories_match_frozen_c() -> void:
 				assert_eq(expected[0].to_int(), scenario_index)
 				assert_eq(expected[1].to_int(), tick)
 				if phase != 4:
-					var snapshot: RunSnapshot = stages[phase]
+					var snapshot: GameplayState = stages[phase]
 					var represented: Array[int] = _represented(snapshot)
 					for field: int in represented.size():
 						assert_eq(represented[field], expected[field + 3].to_int(),
 							"scenario %d tick %d phase %d field %d" % [scenario_index, tick, phase, field])
 					assert_eq(_joined(EntityContactOrder.indices(scenario.entity_collision, snapshot.entities, snapshot.frog.world_position)), expected[54])
 					assert_eq(_joined(snapshot.attachment.entity_hit_indices), expected[55])
-					assert_eq(snapshot.diagnostics.death_entity_index, expected[56].to_int())
+					assert_eq(snapshot.attachment.death_entity_index, expected[56].to_int())
 					assert_eq(cumulative_pops + (1 if popped and phase >= 2 else 0), expected[57].to_int())
 					assert_eq(snapshot.requests.sound_requests, expected[58].to_int())
 				row_index += 1

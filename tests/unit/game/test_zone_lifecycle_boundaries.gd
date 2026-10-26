@@ -17,7 +17,7 @@ func test_zone_json_validation_detaches_and_preserves_absent_defaults() -> void:
 		malformed[key] = 0.5
 		assert_false(TerrainScenarioJson.apply(scenario, {"level": {"camera_zones": [malformed]}}).is_empty(), key)
 	scenario.level.camera = null
-	assert_string_contains(TerrainRun.create(scenario.level).error, "integrated camera")
+	assert_string_contains(GameplayRun.create(scenario.level).error, "integrated camera")
 
 func test_probe_failure_at_sequence_reset_publishes_nothing_and_retries() -> void:
 	var golden: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/zone_lifecycle.json"))

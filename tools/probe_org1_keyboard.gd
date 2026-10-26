@@ -49,7 +49,7 @@ func _run() -> void:
 		if not _viewer.last_error.is_empty():
 			_failures.append("route tick %d: %s" % [tick, _viewer.last_error])
 			break
-	var bank: RunSnapshot = _viewer.run.snapshot()
+	var bank: GameplayState = _viewer.run.snapshot()
 	_check(bank.tick_index == 52 and bank.attachment.current_entity_index == -1 and bank.frog.mode == 0 and bank.frog.world_position == Vector3i(128, -256, -128), "keyboard round-trip bank return")
 	await _tap(KEY_SPACE)
 	_check(_viewer.playing, "resume dispatch")

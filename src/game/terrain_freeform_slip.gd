@@ -2,7 +2,7 @@ class_name TerrainFreeformSlip
 extends RefCounted
 ## Frozen non-grid terrain slipping. Tongue/entity interaction is P8/P10.
 
-static func setup(state: RunSnapshot) -> TerrainCallbackResult:
+static func setup(state: GameplayState) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	state.frog.velocity_16 = state.frog.position_16 - state.frog.old_position_16
 	state.frog.velocity_16.y = 0
@@ -11,7 +11,7 @@ static func setup(state: RunSnapshot) -> TerrainCallbackResult:
 	return result
 
 ## Held steering uses the previous matrix and previous virtual animation action.
-static func control(state: RunSnapshot, command: TickCommand, directions: PackedInt32Array, theme: int) -> TerrainCallbackResult:
+static func control(state: GameplayState, command: TickCommand, directions: PackedInt32Array, theme: int) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var key: int = 128
 	for direction: int in range(4):
@@ -37,7 +37,7 @@ static func control(state: RunSnapshot, command: TickCommand, directions: Packed
 		state.frog.velocity_16.z = _brake(state.frog.velocity_16.z, speed.z)
 	return result
 
-static func forward_control(state: RunSnapshot, square: GridSquareDefinition) -> void:
+static func forward_control(state: GameplayState, square: GridSquareDefinition) -> void:
 	var speed: Vector3i = _apply(state.frog.matrix12, Vector3i(0, 0, 10))
 	var normal: Vector3i = GridQueries.average_normal(square)
 	if (speed.x > 0 and normal.x < 0) or (speed.x < 0 and normal.x > 0):
@@ -47,7 +47,7 @@ static func forward_control(state: RunSnapshot, square: GridSquareDefinition) ->
 	state.frog.velocity_16.x += speed.x << 14
 	state.frog.velocity_16.z += speed.z << 14
 
-static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
+static func move(state: GameplayState, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	result.callback_flags = (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_OLD_POS)
 	if grid.stack_at(state.frog.cell) == null:

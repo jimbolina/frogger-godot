@@ -26,7 +26,7 @@ func _run() -> void:
 			data.close()
 			_fail(setup_error)
 			return
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	if data != null:
 		data.close()
 	if not run.error.is_empty():

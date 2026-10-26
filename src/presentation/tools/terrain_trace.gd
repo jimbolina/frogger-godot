@@ -66,7 +66,7 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 	if _guarded_exploration:
 		phases.insert(4, "scripts")
 	for phase: String in phases:
-		var snapshot: RunSnapshot = result.get(phase + "_snapshot")
+		var snapshot: GameplayState = result.get(phase + "_snapshot")
 		if snapshot != null:
 			var record: Dictionary = {"tick": command.tick_index, "phase": phase,
 				"pressed": command.pressed_mask, "held": command.held_mask,
@@ -129,7 +129,7 @@ func _save_lines(path: String, lines: PackedStringArray) -> String:
 	file.store_string("\n".join(lines) + "\n")
 	return "" if file.get_error() == OK else "Terrain trace write failed: " + path
 
-func _append(scenario: int, command: TickCommand, phase: String, state: RunSnapshot) -> void:
+func _append(scenario: int, command: TickCommand, phase: String, state: GameplayState) -> void:
 	var fields: Array = [scenario, command.tick_index, phase, state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z,
 		state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.cell.x, state.frog.cell.y,
 		state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.current_input, state.frog.direction,
@@ -143,15 +143,15 @@ func _append(scenario: int, command: TickCommand, phase: String, state: RunSnaps
 ## Serializes detached rule records only; this reflection remains outside gameplay.
 static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictionary:
 	var values: Dictionary = {}
-	if record is RunSnapshot:
-		var state: RunSnapshot = record
+	if record is GameplayState:
+		var state: GameplayState = record
 		for part: RefCounted in [state.frog, state.attachment, state.requests, state.diagnostics]:
 			values.merge(facts(part, include_lifecycle))
 	for property: Dictionary in record.get_property_list():
 		var usage: int = property.usage
 		if usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			var key: String = property.name
-			if record is RunSnapshot and key in ["frog", "attachment", "requests", "diagnostics"]:
+			if record is GameplayState and key in ["frog", "attachment", "requests", "diagnostics"]:
 				continue
 			if record is EntityDefinition and key == "behavior":
 				var entity: EntityDefinition = record

@@ -1,6 +1,6 @@
 # Current checkpoint
 
-Movement, collision/deaths, camera and animation follow frozen C at 30 Hz. Retail exploration uses live input. See
+Movement, collision/deaths, camera and animation follow frozen C at 30 Hz. Exploration uses live input. See
 [launch and controls](../README.md) and the [domain index](reference/domain.md).
 
 POP, SAFE and SQUISHED interactions advance entity/path, frog, camera,
@@ -26,7 +26,7 @@ Audio playback, splash/particle effects and
 [animated per-part lighting](reference/rendering/gameplay-projection.md) remain deferred.
 
 Candidate/commit methods and discovered copy contracts protect transaction
-ownership across composed frog, attachment, request and diagnostic state. Typed tick events preserve text traces. Setup
+ownership across composed state. GameplayRun coordinates Frog and contact components. Typed tick events preserve text traces. Setup
 resolves entity behaviors once; gameplay uses kinds and named source constants. Inspection owns corridor guards and presets; application owns source adapters.
 Prepared scripts, asynchronous playback and rendering caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.

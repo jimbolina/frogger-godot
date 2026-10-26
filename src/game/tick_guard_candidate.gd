@@ -2,12 +2,12 @@ class_name TickGuardCandidate
 extends RefCounted
 ## Detached state and setup requirements supplied to an optional guard.
 
-var state: RunSnapshot = null
+var state: GameplayState = null
 var visibility_enabled: bool = false
 var restricted_contacts: bool = false
 
 ## Copies an in-progress state; entity observations are included only when requested.
-static func from_state(value: RunSnapshot, include_entities: bool = false) -> TickGuardCandidate:
+static func from_state(value: GameplayState, include_entities: bool = false) -> TickGuardCandidate:
 	var result := TickGuardCandidate.new()
 	result.state = value.copy(include_entities)
 	return result

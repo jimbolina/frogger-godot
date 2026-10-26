@@ -1,8 +1,8 @@
 extends GutTest
 ## Presentation samples retain exact endpoints and a shared platform/camera timeline.
 
-func _sample() -> RunSnapshot:
-	var result := RunSnapshot.new()
+func _sample() -> GameplayState:
+	var result := GameplayState.new()
 	result.entities = EntityRunSnapshot.new()
 	var entity := EntitySnapshot.new()
 	entity.entity_index = 7
@@ -11,8 +11,8 @@ func _sample() -> RunSnapshot:
 	return result
 
 func test_endpoints_camera_turn_and_caller_mutation_are_independent() -> void:
-	var before: RunSnapshot = _sample()
-	var current: RunSnapshot = before.copy()
+	var before: GameplayState = _sample()
+	var current: GameplayState = before.copy()
 	current.frog.position_16 = Vector3i(512, -256, 0) * 65536
 	current.frog.matrix12 = PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 512, -256, 0])
 	current.camera.source_world = Vector3i(512, -256, 0)
@@ -33,10 +33,10 @@ func test_endpoints_camera_turn_and_caller_mutation_are_independent() -> void:
 	assert_eq(motion.frog(1.0), retained)
 
 func test_rotating_platform_carries_rider_in_its_interpolated_frame() -> void:
-	var before: RunSnapshot = _sample()
+	var before: GameplayState = _sample()
 	before.attachment.current_entity_index = 7
 	before.frog.position_16 = Vector3i(256, 0, 0) * 65536
-	var current: RunSnapshot = before.copy()
+	var current: GameplayState = before.copy()
 	current.entities.entities[0].matrix12 = PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 512, 0, 0])
 	current.frog.position_16 = Vector3i(512, 0, -256) * 65536
 	current.frog.matrix12 = current.entities.entities[0].matrix12.duplicate()
@@ -50,9 +50,9 @@ func test_rotating_platform_carries_rider_in_its_interpolated_frame() -> void:
 	assert_eq(motion.frog(0.5).origin, Vector3(1.5, 0, 0.5), "transfers retain continuous world motion")
 
 func test_recreated_or_disappearing_entities_collapse_and_reset_discards_history() -> void:
-	var before: RunSnapshot = _sample()
+	var before: GameplayState = _sample()
 	before.attachment.current_entity_index = 7
-	var current: RunSnapshot = before.copy()
+	var current: GameplayState = before.copy()
 	current.frog.position_16 = Vector3i(512, 0, 0) * 65536
 	current.camera.source_world = Vector3i(512, 0, 0)
 	current.entities.entities[0].matrix12[9] = 512
@@ -84,10 +84,10 @@ func test_degenerate_basis_stays_finite_and_keeps_exact_endpoints() -> void:
 	assert_eq(TerrainMotion.blend(before, current, 0.5).basis.y, Vector3(0, 0.5, 0))
 
 func test_pink_frog_pickup_collapses_previous_parent_history() -> void:
-	var before: RunSnapshot = _sample()
+	var before: GameplayState = _sample()
 	before.entities.entities[0].background = EntityCustomState.new()
 	before.entities.entities[0].background.parent_entity_index = 15
-	var current: RunSnapshot = before.copy()
+	var current: GameplayState = before.copy()
 	current.entities.entities[0].background.carrier_index = 0
 	current.entities.entities[0].background.parent_entity_index = -1
 	current.entities.entities[0].matrix12[9] = 256
@@ -100,8 +100,8 @@ func test_inspector_axes_match_exact_pose_and_preserve_committed_contact_probe()
 	add_child_autofree(inspection)
 	inspection.configure([EntityDefinition.new()])
 	inspection.configure_contacts([])
-	var before: RunSnapshot = _sample()
-	var current: RunSnapshot = before.copy()
+	var before: GameplayState = _sample()
+	var current: GameplayState = before.copy()
 	current.entities.entities[0].matrix12 = PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 512, 0, 0])
 	inspection.set_snapshot(current.entities)
 	inspection.set_contact(Vector3i(1, 2, 3), null)

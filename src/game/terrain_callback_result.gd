@@ -1,6 +1,6 @@
 class_name TerrainCallbackResult
 extends RefCounted
-## Explicit source callback outputs; TerrainRun applies requests in source order.
+## Explicit source callback outputs; GameplayRun applies requests in source order.
 
 const UPDATE_POS: int = 1
 const UPDATE_OLD_POS: int = 2

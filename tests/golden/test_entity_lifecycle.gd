@@ -161,7 +161,7 @@ func test_integrated_visibility_transitions_follow_independent_oracle() -> void:
 	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=platforms", "--entity-lifecycle=visibility"])), "")
 	if not scenario.error.is_empty():
 		return
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -173,7 +173,7 @@ func test_integrated_visibility_transitions_follow_independent_oracle() -> void:
 		if not result.error.is_empty():
 			return
 		var fields: PackedStringArray = rows[tick + 1].split("\t")
-		var state: RunSnapshot = result.final_snapshot
+		var state: GameplayState = result.final_snapshot
 		assert_eq(state.frog.world_position.x, fields[1].to_int(), "tick %d frog x" % tick)
 		assert_eq(state.frog.world_position.y, fields[2].to_int(), "tick %d frog y" % tick)
 		assert_eq(state.camera.source_world.x, fields[3].to_int(), "tick %d camera x" % tick)

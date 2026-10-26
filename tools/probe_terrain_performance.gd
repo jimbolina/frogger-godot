@@ -133,7 +133,7 @@ func _run() -> void:
 		EngineDebugger.send_message("terrain:measurement_end", [Engine.get_process_frames()])
 	viewer.playing = false
 	viewer._close_worker()
-	var final: RunSnapshot = viewer.run.snapshot()
+	var final: GameplayState = viewer.run.snapshot()
 	var diver: bool = scenario.tick_limit == 1255
 	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.frog.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.attachment.current_entity_index == -1 and final.frog.cell == Vector2i(10, 7) and final.frog.mode != 2)
 	var native_size := Vector2i(root.get_visible_rect().size * root.get_stretch_transform().get_scale())

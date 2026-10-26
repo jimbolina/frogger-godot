@@ -6,7 +6,7 @@ const SPEEDS: Array[int] = [1, 1, 2, 2, 3, 3, 4, 4, 5]
 const DELTAS: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
 
 ## Selects the authored destination and linear velocity without advancing a tick.
-static func setup(state: RunSnapshot, grid: GridDefinition, simple: bool, theme: int) -> TerrainCallbackResult:
+static func setup(state: GameplayState, grid: GridDefinition, simple: bool, theme: int) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var delta: Vector2i = DELTAS[state.frog.direction]
 	var count: int = 10
@@ -61,7 +61,7 @@ static func setup(state: RunSnapshot, grid: GridDefinition, simple: bool, theme:
 	return result
 
 ## Slides once; source tests count before decrement, so snapping occurs next call.
-static func move(state: RunSnapshot, grid: GridDefinition, align: bool = true) -> TerrainCallbackResult:
+static func move(state: GameplayState, grid: GridDefinition, align: bool = true) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	if state.frog.remaining_ticks == 0:
 		state.frog.position_16 = state.frog.target_16

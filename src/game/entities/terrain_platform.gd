@@ -6,7 +6,7 @@ const LANDED_CLEAR: int = 2 | 16 | 32 | 64 | 128 | 256 | 65536 | 16384
 const DIRECTIONS: Array[Vector3i] = [Vector3i(0, 0, 4096), Vector3i(4096, 0, 0), Vector3i(0, 0, -4096), Vector3i(-4096, 0, 0)]
 
 ## Completes SAFE alignment after the coordinator has applied the fall reaction.
-static func land(state: RunSnapshot, definition: FormContactDefinition, contact: FormContactResult, pose: EntitySnapshot, camera: GameplayCamera, previous: PackedInt32Array) -> TerrainCallbackResult:
+static func land(state: GameplayState, definition: FormContactDefinition, contact: FormContactResult, pose: EntitySnapshot, camera: GameplayCamera, previous: PackedInt32Array) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var matrix: PackedInt32Array = pose.matrix12
 	var inverse: PackedInt32Array = PlatformMath.transpose(matrix)
@@ -55,7 +55,7 @@ static func land(state: RunSnapshot, definition: FormContactDefinition, contact:
 	return result
 
 ## Carries or centres using advanced entity position, including source coordinate narrowing.
-static func carry(state: RunSnapshot, pose: EntitySnapshot) -> TerrainCallbackResult:
+static func carry(state: GameplayState, pose: EntitySnapshot) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	if state.frog.mode == FrogMode.CENTRING:
 		state.frog.remaining_ticks -= 1
@@ -70,11 +70,11 @@ static func carry(state: RunSnapshot, pose: EntitySnapshot) -> TerrainCallbackRe
 	return result
 
 ## Applies the source attached matrix branch without changing cached translation.
-static func update_matrix(state: RunSnapshot, pose: EntitySnapshot) -> void:
+static func update_matrix(state: GameplayState, pose: EntitySnapshot) -> void:
 	_replace_rotation(state, PlatformMath.multiply(pose.matrix12, state.attachment.entity_transform12))
 
 ## Advances local airborne XZ with the frozen wide-accumulator matrix operation.
-static func airborne(state: RunSnapshot, pose: EntitySnapshot) -> void:
+static func airborne(state: GameplayState, pose: EntitySnapshot) -> void:
 	state.attachment.entity_offset_16.x += state.frog.velocity_16.x
 	state.attachment.entity_offset_16.z += state.frog.velocity_16.z
 	var transformed: Vector3i = PlatformMath.apply_fixed(pose.matrix12, state.attachment.entity_offset_16)
@@ -83,7 +83,7 @@ static func airborne(state: RunSnapshot, pose: EntitySnapshot) -> void:
 	state.frog.position_16.y += state.frog.velocity_16.y
 
 ## Selects local or terrain targets; the coordinator applies ordered hop requests.
-static func prepare_jump(state: RunSnapshot, definition: FormContactDefinition, pose: EntitySnapshot, grid: GridDefinition, directions: PackedInt32Array, input: int, is_super: bool, distance: int) -> PlatformJumpResult:
+static func prepare_jump(state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, grid: GridDefinition, directions: PackedInt32Array, input: int, is_super: bool, distance: int) -> PlatformJumpResult:
 	var result := PlatformJumpResult.new()
 	var original: Vector2i = state.attachment.entity_cell
 	var world_direction: int = directions[input]
@@ -160,13 +160,13 @@ static func _supported_destination(flags: int, death_type: int) -> bool:
 		return death_type == 5
 	return not flags & (GridSquareFlags.SLIPPY | GridSquareFlags.BOUNCY | GridSquareFlags.FREEFORM_SLIPPY | GridSquareFlags.SIMPLE_SLIPPY)
 
-static func _block(state: RunSnapshot, original: Vector2i, result: PlatformJumpResult) -> void:
+static func _block(state: GameplayState, original: Vector2i, result: PlatformJumpResult) -> void:
 	state.attachment.entity_cell = original
 	state.frog.velocity_16 = Vector3i.ZERO
 	state.frog.flags = (state.frog.flags & ~FrogFlags.JUMP_FROM_ENTITY) | FrogFlags.ON_ENTITY
 	state.attachment.entity_transform12 = PlatformMath.yaw(state.frog.direction << 10)
 	result.blocked = true
 
-static func _replace_rotation(state: RunSnapshot, rotation: PackedInt32Array) -> void:
+static func _replace_rotation(state: GameplayState, rotation: PackedInt32Array) -> void:
 	for index: int in 9:
 		state.frog.matrix12[index] = rotation[index]

@@ -2,7 +2,7 @@ class_name TerrainCliffRoll
 extends RefCounted
 ## Frozen cliff setup/movement, including its distinct FROG_FALL transition.
 
-static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
+static func setup(state: GameplayState, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var delta: Vector2i = _downhill(state, grid.squares[state.frog.square_index])
 	if delta == Vector2i.ZERO:
@@ -10,7 +10,7 @@ static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRe
 		return result
 	return _destination(state, grid, delta, true)
 
-static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
+static func move(state: GameplayState, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	if state.frog.square_index < 0:
 		state.frog.mode = FrogMode.JUMPING
@@ -43,7 +43,7 @@ static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRes
 	result.callback_flags = TerrainCallbackResult.UPDATE_POS
 	return result
 
-static func _downhill(state: RunSnapshot, square: GridSquareDefinition) -> Vector2i:
+static func _downhill(state: GameplayState, square: GridSquareDefinition) -> Vector2i:
 	var normal: Vector3i = GridQueries.average_normal(square)
 	if absi(normal.x) > absi(normal.z):
 		if normal.x > 256:
@@ -61,7 +61,7 @@ static func _downhill(state: RunSnapshot, square: GridSquareDefinition) -> Vecto
 			return Vector2i(0, -1)
 	return Vector2i.ZERO
 
-static func _destination(state: RunSnapshot, grid: GridDefinition, delta: Vector2i, initial: bool) -> TerrainCallbackResult:
+static func _destination(state: GameplayState, grid: GridDefinition, delta: Vector2i, initial: bool) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var destination: Vector2i = state.frog.cell + delta
 	var stack: GridStackDefinition = grid.stack_at(destination)

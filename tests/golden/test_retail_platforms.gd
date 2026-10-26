@@ -82,7 +82,7 @@ func test_jun1_log_setup_and_first_safe_contact_match_independent_facts() -> voi
 	if stack == null or stack.square_count == 0:
 		return
 	var spawn_square: GridSquareDefinition = grid_setup.definition.squares[stack.first_square_index + stack.square_count - 1]
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return

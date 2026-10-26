@@ -53,8 +53,8 @@ boundaries, composed gameplay state, frog extraction, reusable host and referenc
 cleanup. Each part has a separate commit and full verification gate.
 The entity candidate API, discovered value-copy contracts, named source
 constants, typed tick events and behavior resolution are implemented; the
-source/application/inspection boundaries are separated. Composed state is implemented; frog/aggregate and host
-extraction remain pending. P8d moves into this refactor rather than waiting
+source/application/inspection boundaries are separated. Composed state, Frog/contact components and the GameplayRun/GameplayState
+renames are implemented; host extraction and reference cleanup remain pending. P8d moves into this refactor rather than waiting
 for ORG1 completion.
 
 P8a resolves each entity to one behaviour value in setup, from FrogLord names,

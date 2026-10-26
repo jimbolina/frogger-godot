@@ -21,7 +21,7 @@ func _level(blocked: bool = false) -> LevelDefinition:
 		level.grid.squares.append(square)
 	return level
 
-func _fields(state: RunSnapshot) -> Array[int]:
+func _fields(state: GameplayState) -> Array[int]:
 	return [state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.cell.x, state.frog.cell.y, state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.current_input, state.frog.direction, state.requests.animation_requests, state.requests.sound_requests, state.requests.score_requests, state.frog.buffered_keys, state.frog.buffered_input_count]
 
 func _empty_target(level: LevelDefinition) -> void:
@@ -35,7 +35,7 @@ func test_control_and_move_match_independent_corpus() -> void:
 	assert_eq(lines.size(), 97)
 	var row: int = 1
 	for scenario: int in 3:
-		var run: TerrainRun = TerrainRun.create(_level(scenario == 1))
+		var run: GameplayRun = GameplayRun.create(_level(scenario == 1))
 		assert_eq(run.error, "")
 		for tick: int in 16:
 			var command := TickCommand.new()
@@ -52,7 +52,7 @@ func test_control_and_move_match_independent_corpus() -> void:
 				assert_eq(expected[0].to_int(), scenario)
 				assert_eq(expected[1].to_int(), tick)
 				assert_eq(expected[2], phase)
-				var state: RunSnapshot = result.control_snapshot if phase == "control" else result.move_snapshot
+				var state: GameplayState = result.control_snapshot if phase == "control" else result.move_snapshot
 				var values: Array[int] = _fields(state)
 				for i: int in values.size():
 					assert_eq(values[i], expected[i + 3].to_int(), "scenario %d tick %d %s field %d" % [scenario, tick, phase, i])
@@ -62,8 +62,8 @@ func test_control_and_move_match_independent_corpus() -> void:
 
 func test_tick_validation_snapshot_ownership_and_reset() -> void:
 	var level: LevelDefinition = _level()
-	var run: TerrainRun = TerrainRun.create(level)
-	var snapshot: RunSnapshot = run.snapshot()
+	var run: GameplayRun = GameplayRun.create(level)
+	var snapshot: GameplayState = run.snapshot()
 	snapshot.frog.position_16 = Vector3i.ZERO
 	level.grid.squares[9].flags = 0
 	var command := TickCommand.new()
@@ -93,7 +93,7 @@ func test_tick_validation_snapshot_ownership_and_reset() -> void:
 func test_unknown_flag_data_is_retained_and_source_ignored() -> void:
 	var level: LevelDefinition = _level()
 	level.grid.squares[9].flags = 8195
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	var command := TickCommand.new()
 	command.pressed_mask = TickCommand.NORTH
@@ -112,34 +112,34 @@ func test_unknown_flag_data_is_retained_and_source_ignored() -> void:
 func test_source_shape_ranges_are_validated_before_state() -> void:
 	var level: LevelDefinition = _level()
 	level.grid.stacks[6].first_square_index = 5
-	assert_string_contains(TerrainRun.create(level).error, "layer ranges")
+	assert_string_contains(GameplayRun.create(level).error, "layer ranges")
 	level = _level()
 	level.grid.stacks[0].cliff_height_byte = 256
-	assert_string_contains(TerrainRun.create(level).error, "layer ranges")
+	assert_string_contains(GameplayRun.create(level).error, "layer ranges")
 	level = _level()
 	level.grid.squares[0].flags = -1
-	assert_string_contains(TerrainRun.create(level).error, "unsigned32")
+	assert_string_contains(GameplayRun.create(level).error, "unsigned32")
 	level = _level()
 	level.collision_bounds = Rect2i(-32768, -32768, 65536, 65536)
-	assert_string_contains(TerrainRun.create(level).error, "signed16")
+	assert_string_contains(GameplayRun.create(level).error, "signed16")
 	level = _level()
 	level.theme_death_height = 2147483648
-	assert_string_contains(TerrainRun.create(level).error, "signed32")
+	assert_string_contains(GameplayRun.create(level).error, "signed32")
 	var initial := RunStart.new()
 	initial.quick_jump_timer = 65536
-	assert_string_contains(TerrainRun.create(_level(), initial).error, "unsigned16")
+	assert_string_contains(GameplayRun.create(_level(), initial).error, "unsigned16")
 
 func test_source_undefined_final_lookup_rejects_without_partial_tick() -> void:
 	var level: LevelDefinition = _level()
 	level.spawn_cell = Vector2i(1, 3)
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	var command := TickCommand.new()
 	command.pressed_mask = TickCommand.NORTH
 	for tick: int in range(5):
 		command.tick_index = tick
 		assert_eq(run.step(command).error, "")
 		command.pressed_mask = 0
-	var before: RunSnapshot = run.snapshot()
+	var before: GameplayState = run.snapshot()
 	command.tick_index = 5
 	var result: TickResult = run.step(command)
 	assert_string_contains(result.error, "outside authored storage")
@@ -158,10 +158,10 @@ func test_start_context_completion_and_scalar_identity_ownership() -> void:
 	level.grid.squares[5].polygon_source_offset = 456
 	var initial := RunStart.new()
 	initial.start_mode = 2
-	var run: TerrainRun = TerrainRun.create(level, initial)
+	var run: GameplayRun = GameplayRun.create(level, initial)
 	level.source_id = "mutated"
 	level.grid.squares[5].source_offset = 999
-	var state: RunSnapshot = run.snapshot()
+	var state: GameplayState = run.snapshot()
 	assert_eq(state.diagnostics.source_id, "synthetic-source")
 	assert_eq(state.diagnostics.resource_id, 42)
 	assert_eq(state.diagnostics.square_source_offset, 123)
@@ -211,7 +211,7 @@ func test_d1_height_power_and_freefall_corpus() -> void:
 		initial.powerup_flags = 2 if scenario == 1 else 4 if scenario == 2 else 0
 		initial.quick_jump_timer = 65535
 		initial.auto_hop_timer = 65535
-		var run: TerrainRun = TerrainRun.create(level, initial)
+		var run: GameplayRun = GameplayRun.create(level, initial)
 		assert_eq(run.error, "")
 		for tick: int in 20:
 			var command := TickCommand.new()
@@ -225,7 +225,7 @@ func test_d1_height_power_and_freefall_corpus() -> void:
 				assert_eq(expected[0].to_int(), scenario)
 				assert_eq(expected[1].to_int(), tick)
 				assert_eq(expected[2], phase)
-				var state: RunSnapshot = result.control_snapshot if phase == "control" else result.move_snapshot
+				var state: GameplayState = result.control_snapshot if phase == "control" else result.move_snapshot
 				var values: Array[int] = _fields(state)
 				for i: int in values.size():
 					assert_eq(values[i], expected[i + 3].to_int(), "D1 scenario %d tick %d %s field %d" % [scenario, tick, phase, i])
@@ -249,7 +249,7 @@ func test_collision_landing_deferred_death_and_completion_corpus() -> void:
 		if scenario == 10:
 			_empty_target(level)
 			level.theme_death_height = 100
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
 		for tick: int in 90:
 			var command := TickCommand.new()
@@ -263,7 +263,7 @@ func test_collision_landing_deferred_death_and_completion_corpus() -> void:
 				assert_eq(expected[0].to_int(), scenario)
 				assert_eq(expected[1].to_int(), tick)
 				assert_eq(expected[2], phase)
-				var state: RunSnapshot
+				var state: GameplayState
 				if phase == "control":
 					state = result.control_snapshot
 				elif phase == "move":

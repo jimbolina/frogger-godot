@@ -4,7 +4,7 @@ extends Node3D
 
 var auto_open: bool = true
 var scenario: TerrainScenario
-var run: TerrainRun
+var run: GameplayRun
 var playing: bool = false
 var smoothing: bool = false:
 	set(value):
@@ -24,8 +24,8 @@ var _frog_model: AnimatedModelInstance
 var _elapsed: float = 0.0
 var _held: int = 0
 var _sampled_held: int = 0
-var _previous: RunSnapshot
-var _current: RunSnapshot
+var _previous: GameplayState
+var _current: GameplayState
 var _ground: Node3D
 var _frog: MeshInstance3D
 var _camera: Camera3D
@@ -166,7 +166,7 @@ func open_scenario(selected: TerrainScenario) -> String:
 		last_error = "Missing scenario" if selected == null else selected.error
 		playing = false
 		return last_error
-	var replacement: TerrainRun = TerrainRun.create(selected.level, selected.initial)
+	var replacement: GameplayRun = GameplayRun.create(selected.level, selected.initial)
 	last_error = replacement.error
 	if not last_error.is_empty():
 		playing = false
@@ -374,7 +374,7 @@ func draw_state(fraction: float) -> void:
 			if contact.status == EntityPrimitiveQuery.CONTACT:
 				contact_lines.append("cuboid #%d | frog part %d point %d" % [contact.entity_index, contact.frog_part_index, contact.hilite_index])
 		var visible: PackedStringArray = contact_lines.slice(0, 2)
-		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.attachment.entity_hit_indices, _current.diagnostics.death_entity_index, nearby_count, "; ".join(visible)]
+		_label.text += "entity hits %s | death entity %d | nearby %d\ncontacts %s" % [_current.attachment.entity_hit_indices, _current.attachment.death_entity_index, nearby_count, "; ".join(visible)]
 		if contact_lines.size() > visible.size():
 			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
 		_label.text += "\n"
@@ -388,7 +388,7 @@ func draw_state(fraction: float) -> void:
 		_label.text += "Visibility lifetime | pink frog pickup and riding\n" if scenario.options.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
 		_label.text += overlay.instructions
 		if overlay.detail == "road":
-			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.frog.death_equate, _current.diagnostics.death_entity_index, _current.attachment.entity_hit_indices]
+			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.frog.death_equate, _current.attachment.death_entity_index, _current.attachment.entity_hit_indices]
 			for contact: EntityPrimitiveContact in _last_primitive_contacts:
 				if contact.status == EntityPrimitiveQuery.CONTACT:
 					_label.text += "cuboid #%d | frog part %d point %d\n" % [contact.entity_index, contact.frog_part_index, contact.hilite_index]
@@ -411,7 +411,7 @@ func _process(delta: float) -> void:
 			_host_step = true
 			_accept_result(_pending_command, completed)
 			_host_step = false
-	var period: float = 1.0 / TerrainRun.TICKS_PER_SECOND
+	var period: float = 1.0 / GameplayRun.TICKS_PER_SECOND
 	if playing:
 		_elapsed += delta
 		if _elapsed >= period and (_worker == null or not _worker.pending):
@@ -657,7 +657,7 @@ func _selected_contact_index() -> int:
 	if scenario == null or scenario.level.entity_collision == null:
 		return -1
 	for slot: int in scenario.level.entity_collision.entities.size():
-		if scenario.level.entity_collision.entities[slot].entity_index == _current.diagnostics.death_entity_index and (_current.entities == null or not _current.entities.lifecycle_enabled or _current.entities.entities[slot].live):
+		if scenario.level.entity_collision.entities[slot].entity_index == _current.attachment.death_entity_index and (_current.entities == null or not _current.entities.lifecycle_enabled or _current.entities.entities[slot].live):
 			return slot
 	var nearest: int = -1
 	var nearest_distance: int = 0x7fffffffffffffff
@@ -788,7 +788,7 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				get_tree().quit(1)
 				return
 		elif scenario.options.entity_reactions and not folder.is_empty():
-			if hit_tick < 0 and _current.diagnostics.death_entity_index >= 0:
+			if hit_tick < 0 and _current.attachment.death_entity_index >= 0:
 				hit_tick = _current.tick_index
 				last_error = _save_stage(folder, "hit", captured)
 			elif hit_tick < 0 and TerrainCaptureStages.before_contact(scenario, _current):

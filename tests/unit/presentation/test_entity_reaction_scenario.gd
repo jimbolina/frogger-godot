@@ -246,7 +246,7 @@ func test_lifecycle_model_allocation_resets_animation_on_new_generation() -> voi
 	viewer.auto_open = false
 	add_child_autofree(viewer)
 	viewer.set_process(false)
-	var state := RunSnapshot.new()
+	var state := GameplayState.new()
 	state.entities = EntityRunSnapshot.new()
 	state.entities.lifecycle_enabled = true
 	var subject := EntitySnapshot.new()

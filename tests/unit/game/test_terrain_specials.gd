@@ -31,13 +31,13 @@ func _empty(level: LevelDefinition, index: int) -> void:
 	for after: int in range(index + 1, 16):
 		level.grid.stacks[after].first_square_index -= 1
 
-func _facts(state: RunSnapshot) -> PackedInt64Array:
+func _facts(state: GameplayState) -> PackedInt64Array:
 	var facts: PackedInt64Array = PackedInt64Array([state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.cell.x, state.frog.cell.y, state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.frog.direction, state.frog.square_index, state.frog.target_16.x >> 16, state.frog.target_16.y >> 16, state.frog.target_16.z >> 16, state.requests.animation_requests, state.requests.sound_requests, state.requests.score_requests])
 	for value: int in state.frog.matrix12:
 		facts.append(value)
 	return facts
 
-func _assert_facts(file: FileAccess, scenario: int, tick: int, state: RunSnapshot) -> void:
+func _assert_facts(file: FileAccess, scenario: int, tick: int, state: GameplayState) -> void:
 	var row: PackedStringArray = file.get_csv_line()
 	assert_eq(int(row[0]), scenario)
 	assert_eq(int(row[1]), tick)
@@ -58,17 +58,17 @@ func test_grid_and_simple_source_callbacks() -> void:
 			level.grid.squares[9].flags = 0
 		if kind == 3:
 			_height(level.grid.squares[9], PackedInt32Array([-449, -449, -449, -449]))
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
-		var state: RunSnapshot = run.snapshot()
+		var state: GameplayState = run.snapshot()
 		state.frog.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
 		var events: Array[TickEvent] = []
-		run._react(state, level.grid.squares[5].flags, events)
+		run._frog.react(state, level.grid.squares[5].flags, events)
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(15):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
-			assert_eq(run._callback_error, "")
+			run._frog.move(state, events)
+			assert_eq(run._frog.callback_error, "")
 			_assert_facts(file, scenario, tick, state)
 
 func test_bounce_and_cliff_source_callbacks() -> void:
@@ -85,17 +85,17 @@ func test_bounce_and_cliff_source_callbacks() -> void:
 			_empty(level, 9)
 		if scenario == 4:
 			level.grid.squares[9].flags = 1
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
-		var state: RunSnapshot = run.snapshot()
+		var state: GameplayState = run.snapshot()
 		state.frog.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
 		var events: Array[TickEvent] = []
-		run._react(state, level.grid.squares[5].flags, events)
+		run._frog.react(state, level.grid.squares[5].flags, events)
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(24):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
-			assert_eq(run._callback_error, "")
+			run._frog.move(state, events)
+			assert_eq(run._frog.callback_error, "")
 			_assert_facts(file, scenario, tick, state)
 
 func test_freeform_source_callbacks() -> void:
@@ -113,9 +113,9 @@ func test_freeform_source_callbacks() -> void:
 			level.spawn_cell = Vector2i(2, 1)
 		if scenario == 4:
 			level.grid.squares[5].flags = 4097
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
-		var state: RunSnapshot = run.snapshot()
+		var state: GameplayState = run.snapshot()
 		state.frog.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
 		if scenario == 3:
 			state.frog.position_16 = Vector3i(-128 * 65536, 0, -128 * 65536)
@@ -125,13 +125,13 @@ func test_freeform_source_callbacks() -> void:
 			state.frog.square_index = 5
 		state.frog.old_position_16.z -= 8 << 16
 		var events: Array[TickEvent] = []
-		run._apply_requests(state, TerrainFreeformSlip.setup(state), events)
+		run._frog.apply_requests(state, TerrainFreeformSlip.setup(state), events)
 		state.frog.mode = 262
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(8):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
-			assert_eq(run._callback_error, "")
+			run._frog.move(state, events)
+			assert_eq(run._frog.callback_error, "")
 			_assert_facts(file, scenario, tick, state)
 
 func test_wall_rebound_source_callbacks() -> void:
@@ -149,14 +149,14 @@ func test_wall_rebound_source_callbacks() -> void:
 			level.grid.squares[4].flags |= 32768
 		if scenario == 4:
 			level.grid.squares[9].flags = 2049
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		var events: Array[TickEvent] = []
-		assert_eq(run._jump(state, 0 if scenario == 4 else scenario, events), "")
+		assert_eq(run._frog.jump(state, 0 if scenario == 4 else scenario, events), "")
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(8):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
+			run._frog.move(state, events)
 			_assert_facts(file, scenario, tick, state)
 
 func test_single_start_source_callbacks() -> void:
@@ -164,20 +164,20 @@ func test_single_start_source_callbacks() -> void:
 	file.get_csv_line()
 	var initial := RunStart.new()
 	initial.start_mode = 2
-	var run: TerrainRun = TerrainRun.create(_level(), initial)
-	var state: RunSnapshot = run.snapshot()
+	var run: GameplayRun = GameplayRun.create(_level(), initial)
+	var state: GameplayState = run.snapshot()
 	var events: Array[TickEvent] = []
 	_assert_facts(file, 0, -1, state)
 	for tick: int in range(80):
 		state.frog.old_position_16 = state.frog.position_16
-		run._move(state, events)
+		run._frog.move(state, events)
 		_assert_facts(file, 0, tick, state)
 
 func test_modifier_source_expiry() -> void:
 	var file: FileAccess = FileAccess.open("res://tests/golden/synthetic/terrain_modifiers.csv", FileAccess.READ)
 	file.get_csv_line()
 	for scenario: int in range(4):
-		var state := RunSnapshot.new()
+		var state := GameplayState.new()
 		state.frog.powerup_flags = 7
 		state.frog.auto_hop_timer = scenario
 		state.frog.super_tongue_timer = scenario + 1
@@ -195,19 +195,19 @@ func test_freeform_held_steering_source_control_and_move() -> void:
 	for scenario: int in range(4):
 		var level: LevelDefinition = _level()
 		level.grid.squares[5].flags = 129
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		state.frog.old_position_16.z -= 8 << 16
 		var events: Array[TickEvent] = []
-		run._react(state, 129, events)
+		run._frog.react(state, 129, events)
 		_assert_facts(file, scenario, -1, state)
 		var command := TickCommand.new()
 		command.held_mask = 1 << scenario
 		for tick: int in range(8):
-			assert_eq(run._control(state, command, events), "")
+			assert_eq(run._frog.control(state, command, events), "")
 			_assert_facts(file, scenario, tick * 2, state)
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
+			run._frog.move(state, events)
 			_assert_facts(file, scenario, tick * 2 + 1, state)
 
 func test_combined_flag_source_precedence() -> void:
@@ -217,10 +217,10 @@ func test_combined_flag_source_precedence() -> void:
 	for scenario: int in range(10):
 		var level: LevelDefinition = _level()
 		level.grid.squares[5].flags = authored[scenario]
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		var events: Array[TickEvent] = []
-		run._react(state, authored[scenario], events)
+		run._frog.react(state, authored[scenario], events)
 		_assert_facts(file, scenario, -1, state)
 
 func test_outward_bounds_adjustment_safe_source_prefix() -> void:
@@ -230,17 +230,17 @@ func test_outward_bounds_adjustment_safe_source_prefix() -> void:
 	for scenario: int in range(4):
 		var level: LevelDefinition = _level()
 		level.spawn_cell = cells[scenario]
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		var events: Array[TickEvent] = []
-		assert_eq(run._jump(state, scenario, events), "")
+		assert_eq(run._frog.jump(state, scenario, events), "")
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(5):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
+			run._frog.move(state, events)
 			_assert_facts(file, scenario, tick, state)
-		run._move(state, events)
-		assert_string_contains(run._callback_error, "outside authored storage")
+		run._frog.move(state, events)
+		assert_string_contains(run._frog.callback_error, "outside authored storage")
 
 func test_random_diagnostics_copy_and_tick_boundary() -> void:
 	var random: SourceRandom = SourceRandom.create(1)
@@ -264,13 +264,13 @@ func test_grid_slope_threshold_source_setup() -> void:
 		var level: LevelDefinition = _level()
 		level.grid.squares[5].flags = 17
 		_height(level.grid.squares[5], PackedInt32Array([rise[scenario], rise[scenario], 0, 0]))
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		state.frog.position_16.y = 0
 		state.frog.world_position.y = 0
 		state.frog.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, 0, -128])
 		var events: Array[TickEvent] = []
-		run._react(state, 17, events)
+		run._frog.react(state, 17, events)
 		_assert_facts(file, scenario, -1, state)
 
 func test_odd_dimensions_source_hop() -> void:
@@ -293,15 +293,15 @@ func test_odd_dimensions_source_hop() -> void:
 		square.flags = 3
 		square.vertices = [Vector3i(x, 0, z + 256), Vector3i(x + 256, 0, z + 256), Vector3i(x, 0, z), Vector3i(x + 256, 0, z)]
 		level.grid.squares.append(square)
-	var run: TerrainRun = TerrainRun.create(level)
+	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
-	var state: RunSnapshot = run.snapshot()
+	var state: GameplayState = run.snapshot()
 	var events: Array[TickEvent] = []
-	assert_eq(run._jump(state, 0, events), "")
+	assert_eq(run._frog.jump(state, 0, events), "")
 	_assert_facts(file, 0, -1, state)
 	for tick: int in range(8):
 		state.frog.old_position_16 = state.frog.position_16
-		run._move(state, events)
+		run._frog.move(state, events)
 		_assert_facts(file, 0, tick, state)
 
 func test_source_map_freefall_dying_and_volcano_death_branches() -> void:
@@ -312,8 +312,8 @@ func test_source_map_freefall_dying_and_volcano_death_branches() -> void:
 		var level: LevelDefinition = _level()
 		level.map_index = maps[scenario] if scenario < 6 else 48
 		level.theme = 10 if scenario >= 8 and scenario < 10 else 8
-		var run: TerrainRun = TerrainRun.create(level)
-		var state: RunSnapshot = run.snapshot()
+		var run: GameplayRun = GameplayRun.create(level)
+		var state: GameplayState = run.snapshot()
 		var events: Array[TickEvent] = []
 		if scenario < 4:
 			state.frog.mode = 1
@@ -326,18 +326,18 @@ func test_source_map_freefall_dying_and_volcano_death_branches() -> void:
 			state.frog.death_equate = 2
 			state.frog.velocity_16 = Vector3i(131073, -65537, 400000001)
 		elif scenario < 10:
-			run._kill(state, 8 if scenario % 2 == 0 else 12, false, events)
+			run._frog.kill(state, 8 if scenario % 2 == 0 else 12, false, events)
 		else:
 			state.frog.mode = 3
-			run._collision_bounds.position.x = -127
-			run._candidate_camera = GameplayCamera.create(GameplayCameraDefinition.new(), state.frog.world_position)
-			run._candidate_camera._state.twist_counter = scenario - 10
+			run._frog.collision_bounds.position.x = -127
+			run._frog.camera = GameplayCamera.create(GameplayCameraDefinition.new(), state.frog.world_position)
+			run._frog.camera._state.twist_counter = scenario - 10
 		for tick: int in range(3):
 			if scenario < 6:
 				state.frog.old_position_16 = state.frog.position_16
-				run._move(state, events)
+				run._frog.move(state, events)
 			if scenario >= 10:
-				run._collision(state, events)
+				run._frog.collide(state, events)
 			var row: PackedStringArray = file.get_csv_line()
 			var actual: PackedInt64Array = PackedInt64Array([scenario, tick, state.frog.position_16.x, state.frog.position_16.y, state.frog.position_16.z, state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z, state.frog.remaining_ticks, state.frog.flags, state.frog.mode, state.requests.animation_requests, state.requests.last_animation_request, state.frog.death_equate, state.frog.death_count])
 			for index: int in range(actual.size()):
@@ -374,9 +374,9 @@ func test_source_hop_signed32_delta_and_forced_search_pointer_prefix() -> void:
 			level.grid.squares[5].flags = 129
 		if scenario == 1:
 			_height(level.grid.squares[13], PackedInt32Array([-32768, -32768, -32768, -32768]))
-		var run: TerrainRun = TerrainRun.create(level)
+		var run: GameplayRun = GameplayRun.create(level)
 		assert_eq(run.error, "")
-		var state: RunSnapshot = run.snapshot()
+		var state: GameplayState = run.snapshot()
 		var events: Array[TickEvent] = []
 		if scenario == 3:
 			state.frog.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -128, -32768, -128])
@@ -386,7 +386,7 @@ func test_source_hop_signed32_delta_and_forced_search_pointer_prefix() -> void:
 			state.frog.old_y = -32768
 			state.frog.target_y = -32768
 			state.frog.old_position_16 = state.frog.position_16 - Vector3i(0, 0, 8 * 65536)
-			run._apply_requests(state, TerrainFreeformSlip.setup(state), events)
+			run._frog.apply_requests(state, TerrainFreeformSlip.setup(state), events)
 			state.frog.mode = 262
 		elif scenario == 2:
 			state.frog.position_16.y = -32768 * 65536
@@ -395,15 +395,15 @@ func test_source_hop_signed32_delta_and_forced_search_pointer_prefix() -> void:
 			state.frog.old_y = -32768
 			state.frog.target_y = -32768
 			state.frog.user_target_cell = Vector2i(1, 2)
-			run._apply_requests(state, TerrainWallBounce.setup(state, level.grid), events)
+			run._frog.apply_requests(state, TerrainWallBounce.setup(state, level.grid), events)
 			state.frog.mode = 261
 		else:
-			assert_eq(run._jump(state, 0, events, false, scenario == 1, 2 if scenario == 1 else 1, 15 if scenario == 1 else 0), "")
+			assert_eq(run._frog.jump(state, 0, events, false, scenario == 1, 2 if scenario == 1 else 1, 15 if scenario == 1 else 0), "")
 		_assert_facts(file, scenario, -1, state)
 		for tick: int in range(5):
 			state.frog.old_position_16 = state.frog.position_16
-			run._move(state, events)
-			assert_eq(run._callback_error, "")
+			run._frog.move(state, events)
+			assert_eq(run._frog.callback_error, "")
 			_assert_facts(file, scenario, tick, state)
 
 func test_source_forced_search_outside_global_storage_is_diagnosed() -> void:
@@ -411,9 +411,9 @@ func test_source_forced_search_outside_global_storage_is_diagnosed() -> void:
 	level.spawn_cell = Vector2i(0, 2)
 	_height(level.grid.squares[8], PackedInt32Array([32767, 32767, 32767, 32767]))
 	_height(level.grid.squares[0], PackedInt32Array([-32768, -32768, -32768, -32768]))
-	var run: TerrainRun = TerrainRun.create(level)
-	var state: RunSnapshot = run.snapshot()
+	var run: GameplayRun = GameplayRun.create(level)
+	var state: GameplayState = run.snapshot()
 	var events: Array[TickEvent] = []
-	assert_string_contains(run._jump(state, 2, events, false, true, 2, 15), "outside authored global storage")
+	assert_string_contains(run._frog.jump(state, 2, events, false, true, 2, 15), "outside authored global storage")
 	assert_eq(state.frog.position_16, run.snapshot().frog.position_16)
 	assert_eq(state.frog.square_index, 8)

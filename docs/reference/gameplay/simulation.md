@@ -1,6 +1,6 @@
 # Simulation contracts
 
-`TerrainRun` implements one ordered frog tick and optional atomic entity
+`GameplayRun` implements one ordered frog tick and optional atomic entity
 advancement/reaction. `PathRunner` implements one detached PATH cursor update;
 moving entities own independent cursors. Full level simulation is not
 implemented. See [paths](paths.md) and [entities](entities.md).

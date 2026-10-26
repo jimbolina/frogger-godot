@@ -55,7 +55,7 @@ func test_animated_admission_rejects_unproved_roots_actions_and_powerups() -> vo
 	guard.world_bounds = Rect2i(-512, -128, 1024, 608)
 	guard.frog_roots.append(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096]))
 	guard.frog_actions = PackedInt32Array([16])
-	var state := RunSnapshot.new()
+	var state := GameplayState.new()
 	state.animation = FrogAnimationState.new()
 	state.animation.action = 16
 	assert_eq(guard.check_frog(state), "")

@@ -85,7 +85,7 @@ func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 	assert_eq(scenario.attach_data(_data, "DES2"), "")
 	assert_eq(scenario.initial.spawn_cell, Vector2i(17, 30))
 	assert_eq(scenario.initial.spawn_direction, 1)
-	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
 		return
@@ -94,18 +94,18 @@ func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 		assert_eq(result.error, "", "DES2 tick %d" % tick)
 		if not result.error.is_empty():
 			return
-		var collision: RunSnapshot = result.collision_snapshot
+		var collision: GameplayState = result.collision_snapshot
 		assert_not_null(collision)
 		if collision == null:
 			return
 		if tick < 4:
-			assert_eq(collision.diagnostics.death_entity_index, -1, "DES2 earlier tick %d" % tick)
+			assert_eq(collision.attachment.death_entity_index, -1, "DES2 earlier tick %d" % tick)
 			assert_false(collision.attachment.entity_hit_indices.has(46), "DES2 earlier cactus %d" % tick)
 			for reaction: FormReactionResult in result.entity_contacts:
 				assert_ne(reaction.status, FormReactionResult.POP, "DES2 earlier lethal contact %d" % tick)
 			continue
 		assert_eq(collision.frog.world_position, Vector3i(-683, -1576, 2176))
-		assert_eq(collision.diagnostics.death_entity_index, 46)
+		assert_eq(collision.attachment.death_entity_index, 46)
 		assert_eq(collision.frog.death_equate, 23)
 		assert_true(collision.frog.flags & 8 != 0)
 		assert_eq(collision.frog.mode, 1, "POP remains pending until the next move")
@@ -125,5 +125,5 @@ func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 	assert_eq(next.error, "")
 	if next.error.is_empty():
 		assert_eq(next.collision_snapshot.frog.mode, 2)
-		assert_eq(next.collision_snapshot.diagnostics.death_entity_index, 46)
+		assert_eq(next.collision_snapshot.attachment.death_entity_index, 46)
 		assert_eq(next.collision_snapshot.attachment.entity_hit_indices.size(), 0)

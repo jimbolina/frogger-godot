@@ -2,7 +2,7 @@ class_name TerrainStartup
 extends RefCounted
 ## Exact single-start bounce/rest callbacks; HUD completion is supplied explicitly.
 
-static func move(state: RunSnapshot) -> TerrainCallbackResult:
+static func move(state: GameplayState) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	result.callback_flags = (TerrainCallbackResult.UPDATE_POS | TerrainCallbackResult.UPDATE_MATRIX)
 	if state.frog.mode == FrogMode.LEVEL_START_BOUNCE:

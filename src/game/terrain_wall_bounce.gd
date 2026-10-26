@@ -2,7 +2,7 @@ class_name TerrainWallBounce
 extends RefCounted
 ## Source terrain-reachable BOUNCY_COBWEB rebound callback.
 
-static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
+static func setup(state: GameplayState, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	var destination: Vector3i = Vector3i((state.frog.user_target_cell.x << 8) + grid.base.x + 128, 0, (state.frog.user_target_cell.y << 8) + grid.base.y + 128) * 65536
 	state.frog.target_16.x = ((state.frog.cell.x << 8) + grid.base.x + 128) * 65536
@@ -16,7 +16,7 @@ static func setup(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackRe
 	result.animation_ids.append(16)
 	return result
 
-static func move(state: RunSnapshot, grid: GridDefinition) -> TerrainCallbackResult:
+static func move(state: GameplayState, grid: GridDefinition) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()
 	result.callback_flags = TerrainCallbackResult.UPDATE_MATRIX
 	if state.frog.remaining_ticks == 0:

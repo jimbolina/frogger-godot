@@ -1,4 +1,4 @@
-class_name RunSnapshot
+class_name GameplayState
 extends RefCounted
 ## Detached gameplay state composed from independently owned values.
 
@@ -15,8 +15,8 @@ var animation: FrogAnimationState = null
 var rng_state: int = 1
 
 ## Copies the complete candidate; entity state may be replaced by its own aggregate.
-func copy(include_entities: bool = true) -> RunSnapshot:
-	var result := RunSnapshot.new()
+func copy(include_entities: bool = true) -> GameplayState:
+	var result := GameplayState.new()
 	result.frog = frog.copy()
 	result.attachment = attachment.copy()
 	result.requests = requests.copy()

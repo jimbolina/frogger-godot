@@ -13,7 +13,7 @@ var _before_local_frog: Transform3D
 var _local_frog: Transform3D
 
 ## Supplies detached viewer snapshots; only converted values are retained.
-func capture(previous: RunSnapshot, current: RunSnapshot) -> void:
+func capture(previous: GameplayState, current: GameplayState) -> void:
 	_before_frog = GameSpace.transform(previous.frog.matrix12)
 	_before_frog.origin = GameSpace.fixed_position(previous.frog.position_16)
 	_frog = GameSpace.transform(current.frog.matrix12)
