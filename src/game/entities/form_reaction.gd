@@ -42,17 +42,9 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		result.kill_animation = 23
 		result.hit = true
 	elif flags & GridSquareFlags.DEADLY:
-		if definition.death_type == 0:
-			result.status = FormReactionResult.SQUISH
-			result.kill_animation = FrogAnimationCatalog.SQUISHED
-			result.hit = true
-		elif definition.death_type == 5:
-			result.status = FormReactionResult.POP
-			result.kill_animation = 23
-			result.hit = true
-		else:
-			result.status = FormReactionResult.UNSUPPORTED
-			result.reason = "FORM death type %d is unsupported" % definition.death_type
+		var lethal: FormReactionResult = deadly(definition.death_type)
+		lethal.contact = result.contact
+		return lethal
 	elif flags & GridSquareFlags.SLIPPY:
 		result.status = FormReactionResult.HIT
 		result.hit = true
@@ -62,4 +54,30 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 	else:
 		result.status = FormReactionResult.HIT
 		result.hit = true
+	return result
+
+## Resolves the frozen FORM death switch, including DIE_ON_BACK's default squish.
+static func deadly(death_type: int) -> FormReactionResult:
+	var result := FormReactionResult.new()
+	result.hit = true
+	result.status = FormReactionResult.DEATH
+	match death_type:
+		2:
+			result.kill_animation = FrogAnimationCatalog.DROWN
+			result.down_velocity = true
+		3:
+			result.kill_animation = FrogAnimationCatalog.BITTEN
+		4:
+			result.kill_animation = FrogAnimationCatalog.FLOP
+			result.hide_shadow = true
+		5:
+			result.kill_animation = FrogAnimationCatalog.POP
+			result.status = FormReactionResult.POP
+		6:
+			result.kill_animation = FrogAnimationCatalog.CRASH
+		7:
+			result.kill_animation = FrogAnimationCatalog.MOWN
+		_:
+			result.kill_animation = FrogAnimationCatalog.SQUISHED
+			result.status = FormReactionResult.SQUISH
 	return result

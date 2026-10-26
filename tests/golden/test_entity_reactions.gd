@@ -77,3 +77,39 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		assert_eq(snapshot.requests.sound_requests, int(fields[9]), name + " sound request")
 		if snapshot.camera != null:
 			assert_eq(snapshot.camera.mode, int(fields[7]), name + " camera mode")
+
+func test_all_form_deaths_match_independent_source_policy() -> void:
+	var cases: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_deaths.json"))
+	for fixture: Dictionary in cases:
+		var death_type: int = fixture.death_type
+		var frog := Frog.new()
+		frog.map_index = fixture.map_index
+		var state := GameplayState.new()
+		state.frog.lives = 3
+		state.frog.velocity_16 = Vector3i(11, -22, 33)
+		if fixture.jumping_to_land:
+			state.frog.mode = FrogMode.JUMPING
+			state.frog.flags |= FrogFlags.JUMP_TO_LAND
+		var definition := FormContactDefinition.new()
+		definition.death_type = death_type
+		var contact := FormContactResult.new()
+		contact.status = FormContactResult.CONTACT
+		contact.cell_flags = GridSquareFlags.USABLE | GridSquareFlags.DEADLY
+		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact)
+		assert_ne(reaction.status, FormReactionResult.UNSUPPORTED)
+		var pose := EntitySnapshot.new()
+		pose.entity_index = 7
+		var result := TickResult.new()
+		var primitive: bool = fixture.primitive
+		assert_eq(FrogContacts.new().apply_form_reaction(frog, state, definition, pose, reaction, result, primitive), "")
+		var expected_animation: int = fixture.animation
+		var expected_shadow: bool = fixture.shadow_hidden
+		var expected_velocity: Array = fixture.velocity
+		assert_eq(state.frog.death_equate, expected_animation)
+		assert_eq(state.frog.shadow_hidden, expected_shadow)
+		assert_eq(PackedInt32Array([state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z]), PackedInt32Array(expected_velocity))
+		assert_true(state.requests.life_decrement_requested)
+		assert_eq(state.attachment.death_entity_index, 7)
+		var event_count: int = result.events.size()
+		assert_eq(FrogContacts.new().apply_form_reaction(frog, state, definition, pose, reaction, result, primitive), "")
+		assert_eq(result.events.size(), event_count, "Repeated lethal contact emits no second death")

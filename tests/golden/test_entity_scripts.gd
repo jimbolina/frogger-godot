@@ -68,3 +68,45 @@ func test_complete_script_updates_match_independent_frozen_c_facts() -> void:
 func _integers(value: Variant) -> PackedInt32Array:
 	var values: Array = value
 	return PackedInt32Array(values)
+
+func test_control_flow_matches_independent_source_model() -> void:
+	var fixtures: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/script_control.json"))
+	for fixture: Dictionary in fixtures:
+		var definition := EntityScriptDefinition.new()
+		definition.root_id = 1
+		for key: String in fixture.programs:
+			definition.programs[int(key)] = _integers(fixture.programs[key])
+			definition.names[int(key)] = "SCRIPT_TURTLE"
+		definition.callbacks = {1: "SCRIPT_CB_LOG_SPLASH"}
+		definition.payload_registers = _integers(fixture.get("registers", []))
+		definition.payload_offset = 12 if not definition.payload_registers.is_empty() else 0
+		for prepared_mode: bool in [false, true]:
+			var state: EntityScriptState = EntityScriptState.create(1)
+			var animation: EntityAnimationState = EntityAnimationState.create(PackedInt32Array([3, 4]))
+			var random: SourceRandom = SourceRandom.create(1)
+			var prepared: PreparedEntityScript = PreparedEntityScript.create(definition, animation.lengths, 21, true)
+			assert_eq(prepared.error, "", str(fixture.name))
+			var inputs: Array = fixture.inputs
+			for tick: int in inputs.size():
+				var input: Dictionary = fixture.inputs[tick]
+				var context := EntityUpdateContext.new()
+				context.has_path = true
+				context.form_id = 21
+				context.previous_hit = input.get("hit", false)
+				context.previous_carry = input.get("carry", false)
+				var path_flags: float = input.get("path_flags", 0)
+				context.path_flags = int(path_flags)
+				context.sound_allocation_enabled = input.get("allocation", true)
+				var result: EntityUpdateResult = EntityScriptRunner.update_prepared(prepared, state, animation, context, random) if prepared_mode else EntityScriptRunner.update(definition, state, animation, context, random)
+				assert_eq(result.error, "", "%s tick %d" % [fixture.name, tick])
+				if not result.error.is_empty():
+					return
+				state = result.script_state
+				animation = result.animation
+				random = result.random
+				animation.advance()
+				var returning: Array = []
+				if state.return_program >= 0:
+					returning = [state.return_program, state.return_cursor, state.return_loop_start, state.return_loop_end]
+				var actual: Dictionary = {"active": state.active, "program": state.program_id, "cursor": state.cursor, "loop_start": state.loop_start, "loop_end": state.loop_end, "timer": state.timer, "deviation": state.deviation, "delta": state.delta, "destination": state.destination, "remaining": state.remaining, "action": animation.action, "cel": animation.cel, "rng": random.state, "return_frame": returning, "path_active_request": result.path_active_request, "requests": Array(TickEvent.trace_lines(result.requests))}
+				assert_eq(JSON.stringify(JSON.parse_string(JSON.stringify(actual))), JSON.stringify(fixture.expected[tick]), "%s tick %d prepared=%s" % [fixture.name, tick, prepared_mode])

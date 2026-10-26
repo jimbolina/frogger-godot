@@ -424,8 +424,35 @@ def retail(args):
     print(f'DES2 cactus setup: {len(rows)} source ordered instances, grid {grid_dimensions} at size {grid_size}, groups {group_base}/{group_dimensions}/{group_size}')
 
 
+def death_policy(verify):
+    """Independent COLLIDE.C FORM/primitive switch and FrogKill velocity facts."""
+    rows = []
+    for death_type in range(8):
+        animation = {2: 8, 3: 10, 4: 12, 5: 23, 6: 26, 7: 33}.get(death_type, 2)
+        for primitive in (False, True):
+            for map_index in (2, 24):
+                for jumping_to_land in (False, True):
+                    velocity = [11, -22, 33] if jumping_to_land else [0, 0, 0]
+                    if death_type == 2:
+                        velocity = [0, 65536, 0]
+                    if death_type == 4 and not primitive and map_index == 2:
+                        velocity = [11, -22, 33]
+                    rows.append(dict(death_type=death_type, primitive=primitive, map_index=map_index,
+                                     jumping_to_land=jumping_to_land, animation=animation,
+                                     shadow_hidden=death_type == 4, velocity=velocity))
+    target = Path(__file__).resolve().parent.parent / 'tests/golden/synthetic/entity_deaths.json'
+    text = json.dumps(rows, indent=2) + '\n'
+    if verify:
+        if target.read_text(encoding='utf-8') != text:
+            raise ValueError('Independent entity death policy facts differ')
+    else:
+        target.write_text(text, encoding='utf-8')
+    print('Entity death policy facts verified against independent Python source model.')
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--death-policy', action='store_true')
     parser.add_argument('--oracle')
     parser.add_argument('--data-dir')
     parser.add_argument('--version', default='pc-retail-v3.0e')
@@ -434,9 +461,12 @@ if __name__ == '__main__':
     parser.add_argument('--fixture', default='tests/golden/fixtures/entity_reactions.json')
     parser.add_argument('--verify', action='store_true')
     args = parser.parse_args()
-    if not args.oracle and not args.data_dir:
-        parser.error('Specify --oracle, --data-dir or both')
+    if not args.oracle and not args.data_dir and not args.death_policy:
+        parser.error('Specify --oracle, --data-dir or --death-policy')
     if args.oracle:
         generate(args)
     if args.data_dir:
         retail(args)
+
+    if args.death_policy:
+        death_policy(args.verify)

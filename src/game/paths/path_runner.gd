@@ -100,6 +100,10 @@ func advanced_copy(tick_index: int) -> PathRunner:
 		result._state = null
 	return result
 
+## Changes only the active bit after a script visit; the current sample is retained.
+func set_active(active: bool) -> void:
+	_state.flags = (_state.flags | PathStart.ACTIVE) if active else (_state.flags & ~PathStart.ACTIVE)
+
 ## Returns a detached snapshot of the current runner state.
 func snapshot() -> PathSnapshot:
 	return _state.copy() if _state != null else null

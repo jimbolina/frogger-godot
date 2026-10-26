@@ -195,9 +195,11 @@ Authored indices, not unique IDs or compacted array offsets, identify outcomes.
 
 `ReactFrogWithForm` requires `USABLE` and selects CHECKPOINT, SAFE, POPDEATH,
 DEADLY, SLIPPY, then BOUNCY in that order. The default mode implements POPDEATH and
-DEADLY with form-book death type POP or SQUISHED. Higher-priority unsupported branches never
-fall through to POP. Other deaths, checkpoint and bounce reactions are diagnosed
-and omitted; SAFE requires the platform capability below. Unusable squares do
+DEADLY with all eight form-book death values. DIE_ON_BACK and unknown values
+use the source default SQUISHED animation. DROWN supplies downward velocity;
+FLOP hides the shadow and preserves velocity for FORM contacts in CAV3.
+Higher-priority unsupported branches never fall through to a death reaction.
+Checkpoint and bounce reactions remain diagnosed and omitted; SAFE requires the platform capability below. Unusable squares do
 nothing; supported usable no-op
 squares still set the per-tick hit observation. Scanning continues after a
 death request, so later supported usable contacts also record hits. The first
@@ -340,7 +342,7 @@ reads the previous stored pose; refresh happens after final animation stepping
 the selected start; it does not claim uninitialized full-engine startup parity.
 
 The first accepted primitive marks HIT, skips that entity's FORM and requests
-SQUISHED. Source scanning continues, retaining the first killer. Arcade squish
+the form-book death policy. Source scanning continues, retaining the first killer. Arcade squish
 zeros the root matrix's Y row, including on a later hit in the same scan.
 The next entity update observes HIT and requests the named traffic splat sound.
 FORM fallback SQUISHED does not apply primitive-only flattening. All hits,
@@ -384,8 +386,8 @@ the matrix. Neither callback numbers nor executable addresses dispatch code.
 
 `EntityScriptDefinition` validates instruction widths, operand modes, register
 indices, action indices, callback names, branch targets and balanced single
-loops. Supported programs include turtle/log behavior, five traffic program/SFX pairs
-and two noise programs. Unsupported instructions and malformed
+loops. Supported programs include turtle/log behavior, five traffic program/SFX pairs,
+two noise programs and the original-theme snake/crocodile scripts. Unsupported instructions and malformed
 or non-yielding programs fail explicitly. Definitions retain no source data.
 
 `SCRIPT_IF RANDOM` consumes shared RNG before branching. NEW_SCRIPT retains
@@ -394,6 +396,25 @@ ENDLOOP yields, while the vendored reconstruction returns CONTINUE; gameplay
 follows the frozen C behavior. STOP retains callbacks and unsigned16 timer
 increments. ONCE does not invent a called-bit write. Script callback names and
 per-build FORM callback addresses remain separate namespaces.
+
+Control flow also supports animation/path-end waits, direct/random sounds,
+timer loop exits, path pause/resume, END and conditional NEW_SCRIPT/GOSUB/return.
+END applies that tick's deviation, callbacks and timer before returning to the
+single saved GOSUB frame or becoming inactive; inactive scripts do not advance.
+Nested GOSUB overwrites the one source return slot. RESTART still uses the
+original root. NO_CONDITION is a no-op for branches; ALWAYS branches. Path-end
+waits use bounce/repeat flags, excluding one-shot hit flags. Pause affects the
+next path update and is committed with the entity candidate. STOP_DEVIATE
+retains offsets/deltas; CLEAR_DEVIATE clears them. Suppressed random sounds
+consume no RNG; sound IDs and divisors narrow to signed16.
+
+`RETURN_GOSUB_IF RANDOM` remains rejected: frozen C reads `script[3]` despite
+this instruction having one declared operand. No adjacent-word read is invented.
+Its END_OF_PATH condition falls through in C, unlike SCRIPT_IF. Rotation-based
+conditions currently observe the initial zero counts because rotation commands
+remain unsupported. The new control-flow and death-policy facts are independent
+Python implementations of frozen C; they have not been run through a native C
+component adapter. Existing Python/C corpora remain unchanged.
 
 `EntityRun` owns `EntityScriptState` and `EntityAnimationState`, including
 cursors, six registers, callback slots, signed16 deviations, unsigned16 timer,

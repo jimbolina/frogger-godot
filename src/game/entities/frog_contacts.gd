@@ -2,6 +2,8 @@ class_name FrogContacts
 extends RefCounted
 ## Ordered entity contacts and platform attachment transitions for one frog.
 
+const CAVES3_MAP_INDEX: int = 2
+
 ## Scans source-ordered contacts and applies supported reactions.
 func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> String:
 	if frog.entity_collision.frog_collision != null and state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM:
@@ -39,14 +41,13 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 			if primitive.status in [EntityPrimitiveQuery.INVALID, EntityPrimitiveQuery.UNSUPPORTED]:
 				return primitive.reason
 			if primitive.status == EntityPrimitiveQuery.CONTACT:
-				if not state.attachment.entity_hit_indices.has(pose.entity_index):
-					state.attachment.entity_hit_indices.append(pose.entity_index)
-				if state.attachment.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
-					frog.kill(state, FrogAnimationCatalog.SQUISHED, false, result.events)
-					state.attachment.death_entity_index = pose.entity_index
-					result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
-				for component: int in range(3, 6):
-					state.frog.matrix12[component] = 0
+				var reaction: FormReactionResult = FormReaction.deadly(definition.death_type)
+				var issue: String = apply_form_reaction(frog, state, definition, pose, reaction, result, true)
+				if not issue.is_empty():
+					return issue
+				if reaction.status == FormReactionResult.SQUISH:
+					for component: int in range(3, 6):
+						state.frog.matrix12[component] = 0
 				continue
 		var contact: FormContactResult = FormContactQuery.query(definition, pose, state.frog.world_position)
 		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact, frog.entity_collision.platforms_enabled)
@@ -126,17 +127,25 @@ func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContac
 
 
 ## Applies a FORM death or attachment reaction.
-func apply_form_reaction(frog: Frog, state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, result: TickResult) -> String:
+func apply_form_reaction(frog: Frog, state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, result: TickResult, primitive: bool = false) -> String:
 	if reaction.status == FormReactionResult.SAFE:
 		var issue: String = mount_platform(frog, state, definition, pose, reaction, result.events)
 		if not issue.is_empty():
 			return issue
 	if reaction.hit and not state.attachment.entity_hit_indices.has(pose.entity_index):
 		state.attachment.entity_hit_indices.append(pose.entity_index)
-	if reaction.status in [FormReactionResult.POP, FormReactionResult.SQUISH] and state.attachment.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
-		frog.kill(state, reaction.kill_animation, false, result.events)
+	if reaction.kill_animation >= 0 and state.attachment.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
+		var velocity: Vector3i = state.frog.velocity_16
+		frog.kill(state, reaction.kill_animation, reaction.down_velocity, result.events)
+		if reaction.hide_shadow and not primitive and frog.map_index == CAVES3_MAP_INDEX:
+			state.frog.velocity_16 = velocity
 		state.attachment.death_entity_index = pose.entity_index
-		result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_POP_EXPLOSION_REQUEST) if reaction.status == FormReactionResult.POP else TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
+		if reaction.status == FormReactionResult.POP and not primitive:
+			result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_POP_EXPLOSION_REQUEST))
+		elif reaction.status == FormReactionResult.SQUISH:
+			result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
+	if reaction.hide_shadow:
+		state.frog.shadow_hidden = true
 	if frog.tick_guard != null:
 		return frog.check_guard(TickGuard.Phase.CONTACT_WORLD, state)
 	return ""

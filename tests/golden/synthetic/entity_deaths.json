@@ -1,0 +1,834 @@
+[
+  {
+    "death_type": 0,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 0,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 1,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 2,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 2,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 8,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      65536,
+      0
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 3,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 10,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 4,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 12,
+    "shadow_hidden": true,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 5,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 23,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 6,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 26,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": false,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": false,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": false,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": true,
+    "map_index": 2,
+    "jumping_to_land": true,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": false,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "death_type": 7,
+    "primitive": true,
+    "map_index": 24,
+    "jumping_to_land": true,
+    "animation": 33,
+    "shadow_hidden": false,
+    "velocity": [
+      11,
+      -22,
+      33
+    ]
+  }
+]

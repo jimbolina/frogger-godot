@@ -6,6 +6,7 @@ const NONE: String = "none"
 const HIT: String = "hit"
 const POP: String = "pop"
 const SQUISH: String = "squish"
+const DEATH: String = "death"
 const SAFE: String = "safe"
 const UNSUPPORTED: String = "unsupported"
 const INVALID: String = "invalid"
@@ -14,6 +15,8 @@ var contact: FormContactResult = null
 var status: String = NONE
 var reason: String = ""
 var hit: bool = false
+var down_velocity: bool = false
+var hide_shadow: bool = false
 var kill_animation: int = -1
 
 ## Returns an independently mutable reaction and contact.
@@ -23,5 +26,7 @@ func copy() -> FormReactionResult:
 	result.status = status
 	result.reason = reason
 	result.hit = hit
+	result.down_velocity = down_velocity
+	result.hide_shadow = hide_shadow
 	result.kill_animation = kill_animation
 	return result

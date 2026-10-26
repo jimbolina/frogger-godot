@@ -32,6 +32,8 @@ static func _update_validated(definition: EntityScriptDefinition, state: EntityS
 	result.animation = animation if owned else animation.copy()
 	result.random = random if owned else random.copy()
 	result.matrix12 = context.base_matrix.duplicate()
+	if not result.script_state.active:
+		return result
 	result.error = _execute(definition, context, result, prepared)
 	if not result.error.is_empty():
 		var failed := EntityUpdateResult.new()
@@ -41,6 +43,16 @@ static func _update_validated(definition: EntityScriptDefinition, state: EntityS
 	result.matrix12[10] = _signed32(result.matrix12[10] + result.script_state.deviation)
 	EntityScriptCallbacks.apply(definition, context, result)
 	result.script_state.timer = (result.script_state.timer + 1) & 65535
+	if result.script_ended:
+		var next: EntityScriptState = result.script_state
+		if next.return_program >= 0:
+			next.program_id = next.return_program
+			next.cursor = next.return_cursor
+			next.loop_start = next.return_loop_start
+			next.loop_end = next.return_loop_end
+			next.return_program = -1
+		else:
+			next.active = false
 	return result
 
 static func _execute(definition: EntityScriptDefinition, context: EntityUpdateContext, result: EntityUpdateResult, prepared: PreparedEntityScript = null) -> String:
@@ -56,6 +68,47 @@ static func _execute(definition: EntityScriptDefinition, context: EntityUpdateCo
 		var a: PackedInt32Array = words.slice(state.cursor + 1, following)
 		var yielded: bool = false
 		match opcode:
+			1:
+				if result.animation.action < 0 or result.animation.action >= result.animation.lengths.size():
+					return "Invalid action while waiting for animation"
+				if result.animation.cel < result.animation.lengths[result.animation.action] - 1:
+					following = state.cursor
+					yielded = true
+			2:
+				if not _path_ended(context):
+					following = state.cursor
+					yielded = true
+			4:
+				if context.sound_allocation_enabled:
+					result.requests.append(TickEvent.sound(_short(a[0])))
+			6:
+				following = state.cursor
+				yielded = true
+				result.script_ended = true
+			10:
+				if context.sound_allocation_enabled and result.random.next_value("entity:%d:script" % context.entity_index) % absi(_short(a[1])) == 1:
+					result.requests.append(TickEvent.sound(_short(a[0])))
+			14:
+				if state.loop_start < 0 or state.loop_end < 0:
+					return "Timer break without active loop"
+				if state.timer >= _value(state, a[0], a[1]):
+					following = state.loop_end
+					state.loop_start = -1
+					state.loop_end = -1
+			15, 16:
+				result.path_active_request = 1 if opcode == 16 else 0
+			20:
+				if a[0] != 8 and _condition(a[0], 0, context, result):
+					following = state.cursor
+					yielded = true
+					result.script_ended = true
+			30:
+				state.remaining = 0
+			32:
+				state.remaining = 0
+				state.deviation = 0
+				state.delta = 0
+				state.destination = 0
 			31:
 				for register: int in definition.payload_registers.size():
 					state.registers[register] = definition.payload_registers[register]
@@ -100,7 +153,12 @@ static func _execute(definition: EntityScriptDefinition, context: EntityUpdateCo
 					following = state.cursor
 					yielded = true
 			13:
-				if result.random.next_value("entity:%d:script" % context.entity_index) % a[3] == 1:
+				if _condition(a[1], a[3], context, result):
+					if a[0] == 1:
+						state.return_program = state.program_id
+						state.return_cursor = following
+						state.return_loop_start = state.loop_start
+						state.return_loop_end = state.loop_end
 					state.program_id = a[2]
 					following = 0
 					state.loop_start = -1
@@ -173,3 +231,28 @@ static func _short(value: int) -> int:
 static func _signed32(value: int) -> int:
 	var low: int = value & 0xffffffff
 	return low - 0x100000000 if low >= 0x80000000 else low
+
+static func _path_ended(context: EntityUpdateContext) -> bool:
+	return bool(context.path_flags & (PathStart.JUST_BOUNCED_START | PathStart.JUST_BOUNCED_END | PathStart.JUST_REPEATED_START | PathStart.JUST_REPEATED_END))
+
+static func _condition(condition: int, operand: int, context: EntityUpdateContext, result: EntityUpdateResult) -> bool:
+	match condition:
+		0:
+			return context.previous_hit
+		1:
+			return not context.previous_hit
+		2:
+			return result.script_state.remaining == 0
+		3:
+			return true
+		4:
+			return context.previous_carry
+		5:
+			return not context.previous_carry
+		6:
+			return result.random.next_value("entity:%d:script" % context.entity_index) % operand == 1
+		8:
+			return _path_ended(context)
+		9:
+			return true
+	return false

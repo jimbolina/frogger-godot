@@ -397,3 +397,43 @@ func test_pop_life_request_and_active_flag_boundaries() -> void:
 		assert_eq(result.final_snapshot.requests.life_decrement_requested, lives > 0)
 		assert_eq(bool(result.final_snapshot.frog.flags & 1), lives > 1)
 		assert_eq(TickEvent.trace_lines(result.events).count("entity_pop_explosion_request"), 1)
+
+func test_all_form_deaths_commit_and_rollback_with_animation() -> void:
+	for death_type: int in 8:
+		var level: LevelDefinition = _level()
+		level.entity_collision = _collision([_static(2, -128, -128)])
+		level.entity_collision.contacts[0].grid_flags = PackedInt32Array([GridSquareFlags.USABLE | GridSquareFlags.DEADLY])
+		level.entity_collision.contacts[0].death_type = death_type
+		for _index: int in FrogAnimationCatalog.ACTION_NAMES.size():
+			level.frog_action_lengths.append(3)
+		var run: GameplayRun = GameplayRun.create(level)
+		assert_eq(run.error, "")
+		run._animation.error = "forced death rollback"
+		var failed: TickResult = run.step(TickCommand.new())
+		assert_eq(failed.error, "forced death rollback")
+		assert_null(failed.final_snapshot)
+		assert_eq(failed.events.size(), 0)
+		assert_eq(run.snapshot().tick_index, 0)
+		assert_false(run.snapshot().frog.shadow_hidden)
+		assert_false(run.snapshot().requests.life_decrement_requested)
+		run._animation.error = ""
+		var result: TickResult = run.step(TickCommand.new())
+		assert_eq(result.error, "")
+		assert_eq(result.final_snapshot.attachment.death_entity_index, 2)
+		assert_true(result.final_snapshot.requests.life_decrement_requested)
+		assert_eq(result.final_snapshot.frog.shadow_hidden, death_type == 4)
+
+func test_later_flop_contact_hides_shadow_without_replacing_first_death() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision = _collision([_static(2, -128, -128), _static(7, -128, -128)])
+	for contact: FormContactDefinition in level.entity_collision.contacts:
+		contact.grid_flags = PackedInt32Array([GridSquareFlags.USABLE | GridSquareFlags.DEADLY])
+	level.entity_collision.contacts[0].death_type = 4
+	level.entity_collision.contacts[1].death_type = 0
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	var result: TickResult = run.step(TickCommand.new())
+	assert_eq(result.error, "")
+	assert_eq(result.final_snapshot.attachment.death_entity_index, 7)
+	assert_eq(result.final_snapshot.frog.death_equate, FrogAnimationCatalog.SQUISHED)
+	assert_true(result.final_snapshot.frog.shadow_hidden)

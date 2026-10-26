@@ -1,0 +1,3558 @@
+[
+  {
+    "name": "animation_end",
+    "programs": {
+      "1": [
+        3,
+        1,
+        1,
+        4,
+        65549,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 3,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 3,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 1,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "loop_break",
+    "programs": {
+      "1": [
+        11,
+        14,
+        0,
+        3,
+        4,
+        14,
+        12,
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 7,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 7,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 7,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 9,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 9,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 9,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "register_break",
+    "programs": {
+      "1": [
+        31,
+        12,
+        3,
+        11,
+        14,
+        1,
+        0,
+        12,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "registers": [
+      2,
+      4,
+      0
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": 4,
+        "loop_end": 8,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": 4,
+        "loop_end": 8,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 8,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 8,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 8,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 8,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "end_callback_once_more",
+    "programs": {
+      "1": [
+        34,
+        0,
+        1,
+        7,
+        1,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:19:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "gosub_restore",
+    "programs": {
+      "1": [
+        11,
+        13,
+        1,
+        9,
+        2,
+        0,
+        4,
+        14,
+        12,
+        6
+      ],
+      "2": [
+        4,
+        13,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 9,
+        "timer": 6,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "gosub_conditional_return",
+    "programs": {
+      "1": [
+        13,
+        1,
+        9,
+        2,
+        0,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        11,
+        20,
+        4,
+        4,
+        15,
+        12,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {
+        "carry": true
+      },
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 2,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 6,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [
+          1,
+          5,
+          -1,
+          -1
+        ],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 2,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 6,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [
+          1,
+          5,
+          -1,
+          -1
+        ],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "nested_single_return_slot",
+    "programs": {
+      "1": [
+        13,
+        1,
+        9,
+        2,
+        0,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        13,
+        1,
+        9,
+        3,
+        0,
+        4,
+        15,
+        6
+      ],
+      "3": [
+        4,
+        16,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 2,
+        "cursor": 5,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:16:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "stop_deviation",
+    "programs": {
+      "1": [
+        8,
+        0,
+        1,
+        128,
+        2048,
+        -1,
+        0,
+        0,
+        2,
+        30,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 8,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": -1,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": -1,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "clear_deviation",
+    "programs": {
+      "1": [
+        8,
+        0,
+        1,
+        128,
+        2048,
+        -1,
+        0,
+        0,
+        2,
+        32,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 8,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": -1,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 16,
+        "delta": 2048,
+        "destination": 128,
+        "remaining": -1,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 10,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "random_sound",
+    "programs": {
+      "1": [
+        11,
+        10,
+        65549,
+        65539,
+        12,
+        5
+      ]
+    },
+    "inputs": [
+      {
+        "allocation": false
+      },
+      {},
+      {},
+      {},
+      {
+        "allocation": false
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1103527590,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 2524885223,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 662824084,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 662824084,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 6,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 3295386429,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 7,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 4182499122,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 8,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 2516284547,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 9,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 3655513600,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 10,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 2633739833,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 11,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 3210001534,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 12,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 267834847,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "negative_sound_divisor",
+    "programs": {
+      "1": [
+        11,
+        10,
+        13,
+        -3,
+        12,
+        5
+      ]
+    },
+    "inputs": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1103527590,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 2524885223,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 662824084,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 3295386429,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 5,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 4182499122,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 6,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 2516284547,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 7,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 3655513600,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 8,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 2633739833,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 9,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 3210001534,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 10,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 267834847,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 11,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 180171308,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:13:0:0:0"
+        ]
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 1,
+        "loop_start": 1,
+        "loop_end": 5,
+        "timer": 12,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 836760821,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "path_wait_pause_resume",
+    "programs": {
+      "1": [
+        2,
+        15,
+        0,
+        0,
+        3,
+        16,
+        6
+      ]
+    },
+    "inputs": [
+      {},
+      {
+        "path_flags": 1048576
+      },
+      {
+        "path_flags": 131072
+      },
+      {},
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 2,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": true,
+        "program": 1,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 3,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": 0,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": 1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 6,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 4,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_0",
+    "programs": {
+      "1": [
+        13,
+        0,
+        0,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_1",
+    "programs": {
+      "1": [
+        13,
+        0,
+        1,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_2",
+    "programs": {
+      "1": [
+        13,
+        0,
+        2,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_3",
+    "programs": {
+      "1": [
+        13,
+        0,
+        3,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_4",
+    "programs": {
+      "1": [
+        13,
+        0,
+        4,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_5",
+    "programs": {
+      "1": [
+        13,
+        0,
+        5,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_6",
+    "programs": {
+      "1": [
+        13,
+        0,
+        6,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1103527590,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1103527590,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1103527590,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_7",
+    "programs": {
+      "1": [
+        13,
+        0,
+        7,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 7,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_8",
+    "programs": {
+      "1": [
+        13,
+        0,
+        8,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "branch_condition_9",
+    "programs": {
+      "1": [
+        13,
+        0,
+        9,
+        2,
+        2,
+        4,
+        14,
+        6
+      ],
+      "2": [
+        4,
+        15,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:15:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 2,
+        "cursor": 2,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_0",
+    "programs": {
+      "1": [
+        20,
+        0,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_1",
+    "programs": {
+      "1": [
+        20,
+        1,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_2",
+    "programs": {
+      "1": [
+        20,
+        2,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_3",
+    "programs": {
+      "1": [
+        20,
+        3,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_4",
+    "programs": {
+      "1": [
+        20,
+        4,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_5",
+    "programs": {
+      "1": [
+        20,
+        5,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_7",
+    "programs": {
+      "1": [
+        20,
+        7,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_8",
+    "programs": {
+      "1": [
+        20,
+        8,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": [
+          "sound:14:0:0:0"
+        ]
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 4,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  },
+  {
+    "name": "return_condition_9",
+    "programs": {
+      "1": [
+        20,
+        9,
+        4,
+        14,
+        6
+      ]
+    },
+    "inputs": [
+      {
+        "hit": true,
+        "carry": true,
+        "path_flags": 262144
+      },
+      {},
+      {}
+    ],
+    "expected": [
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 0,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 1,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      },
+      {
+        "active": false,
+        "program": 1,
+        "cursor": 0,
+        "loop_start": -1,
+        "loop_end": -1,
+        "timer": 1,
+        "deviation": 0,
+        "delta": 0,
+        "destination": 0,
+        "remaining": 0,
+        "action": 0,
+        "cel": 2,
+        "rng": 1,
+        "return_frame": [],
+        "path_active_request": -1,
+        "requests": []
+      }
+    ]
+  }
+]

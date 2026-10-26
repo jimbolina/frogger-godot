@@ -69,8 +69,6 @@ func validate() -> String:
 				return "Entity primitives require detached animated frog probes"
 			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty():
 				return "Entity primitives require supported contact and FORM fallback"
-			if contact.death_type != 0:
-				return "Entity primitive reaction currently requires SQUISHED death"
 			for primitive: EntityPrimitiveDefinition in contact.primitives:
 				if primitive == null:
 					return "Entity primitive definition is null"

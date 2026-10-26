@@ -235,17 +235,22 @@ func update_script(entity_index: int, context: EntityUpdateContext, random: Sour
 	return _update_script(slot, context, random, false)
 
 func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool) -> EntityUpdateResult:
-	if slot < 0 or _state == null or not _state.entities[slot].live or _definitions[slot].script_definition == null:
+	if context == null or slot < 0 or _state == null or not _state.entities[slot].live or _definitions[slot].script_definition == null:
 		var failed := EntityUpdateResult.new()
 		failed.error = "Entity has no script state"
 		return failed
 	var entity: EntitySnapshot = _state.entities[slot]
+	context = context.copy()
+	context.path_flags = entity.path.flags if entity.path != null else 0
 	var result: EntityUpdateResult
 	if owned and _scripts[slot].matches(entity.animation, context):
 		result = EntityScriptRunner._update_validated(_scripts[slot]._definition, entity.script_state, entity.animation, context, random, _scripts[slot], true)
 	else:
 		result = EntityScriptRunner.update_prepared(_scripts[slot], entity.script_state, entity.animation, context, random)
 	if result.error.is_empty():
+		if result.path_active_request >= 0:
+			_runners[slot].set_active(result.path_active_request == 1)
+			entity.path = _runners[slot].snapshot()
 		entity.script_state = result.script_state if owned else result.script_state.copy()
 		entity.animation = result.animation if owned else result.animation.copy()
 		entity.matrix12 = result.matrix12.duplicate()

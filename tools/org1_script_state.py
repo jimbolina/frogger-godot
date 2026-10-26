@@ -23,6 +23,7 @@ class Script:
     """Detached instruction, callback, animation and sound-owner state."""
     def __init__(self,programs,root,registers,actions):
         self.programs=programs;self.root=self.program=root;self.cursor=0
+        self.active=True;self.return_frame=None;self.path_active_request=-1
         self.start=self.end=-1;self.timer=0;self.registers=registers
         self.deviation=self.delta=self.destination=self.remaining=0
         self.callbacks={};self.moving_sound=False
@@ -30,17 +31,53 @@ class Script:
         self.colours=[0,0,0];self.ambient=[0,0,0];self.no_fade=False
         self.requests=[]
 
-    def update(self,seed,matrix,frog,hit=False,carry=False,form_id=0,fade=None,no_display=False,allocation=True):
+    def update(self,seed,matrix,frog,hit=False,carry=False,form_id=0,fade=None,no_display=False,allocation=True,path_flags=0):
         """Run until a source yield, then deviation, callbacks and timer."""
-        sounds=[];sprites=[];drown=False;self.requests=[]
+        sounds=[];sprites=[];drown=False;self.requests=[];ended=False;self.path_active_request=-1
+        if not self.active:return seed,sounds,sprites,drown
         def value(mode,operand):
             if mode not in (0,1) or (mode and not 0<=operand<len(self.registers)):raise ValueError('invalid register operand')
             return self.registers[operand] if mode else operand
+        def condition(mode,operand=0):
+            nonlocal seed
+            if mode==0:return hit
+            if mode==1:return not hit
+            if mode==2:return self.remaining==0
+            if mode==3:return True
+            if mode==4:return carry
+            if mode==5:return not carry
+            if mode==6:
+                seed=(seed*0x41c64e6d+0x3039)&0xffffffff
+                return ((seed>>16)&32767)%operand==1
+            if mode==8:return bool(path_flags&0xf0000)
+            return mode==9
         for _ in range(4096):
             if self.program not in self.programs:raise ValueError('unknown script target')
             words=self.programs[self.program];op,args,following=instruction(words,self.cursor)
             stop=False
-            if op=='PREPARE_REGISTERS':
+            if op=='WAIT_UNTIL_ACTION_FINISHED':
+                if self.cel<self.actions[self.action]-1:following=self.cursor;stop=True
+            elif op=='WAIT_UNTIL_PATH_END':
+                if not condition(8):following=self.cursor;stop=True
+            elif op=='PLAY_SOUND':
+                if allocation:sounds.append(short(args[0]));self.requests.append(f'sound:{sounds[-1]}:0:0:0')
+            elif op=='PLAY_RNDSOUND':
+                if allocation:
+                    seed=(seed*0x41c64e6d+0x3039)&0xffffffff
+                    if ((seed>>16)&32767)%abs(short(args[1]))==1:
+                        sounds.append(short(args[0]));self.requests.append(f'sound:{sounds[-1]}:0:0:0')
+            elif op=='END':following=self.cursor;stop=ended=True
+            elif op=='BREAKLOOP_IF_TIMER':
+                if self.start<0 or self.end<0:raise ValueError('timer break outside loop')
+                if self.timer>=value(*args):following=self.end;self.start=self.end=-1
+            elif op in ('PAUSE_ENTITY_ON_PATH','UNPAUSE_ENTITY_ON_PATH'):
+                self.path_active_request=int(op=='UNPAUSE_ENTITY_ON_PATH')
+            elif op=='RETURN_GOSUB_IF':
+                if args[0]==6:raise ValueError('unsafe RANDOM return reads beyond instruction')
+                if args[0]!=8 and condition(args[0]):following=self.cursor;stop=ended=True
+            elif op=='STOP_DEVIATE':self.remaining=0
+            elif op=='CLEAR_DEVIATE':self.deviation=self.delta=self.destination=self.remaining=0
+            elif op=='PREPARE_REGISTERS':
                 if args not in ([12,3],[32,2]) or len(self.registers)!=args[1]:raise ValueError('unaudited register payload')
             elif op=='SET_ENTITY_TYPE':
                 if args!=[0]:raise ValueError('unaudited script entity type')
@@ -71,9 +108,9 @@ class Script:
             elif op=='WAIT_DEVIATED':
                 if self.remaining:following=self.cursor;stop=True
             elif op=='SCRIPT_IF':
-                if args[:2]!=[0,6] or args[3]<=0 or args[2] not in self.programs:raise ValueError('unaudited branch')
-                seed=(seed*0x41c64e6d+0x3039)&0xffffffff
-                if ((seed>>16)&32767)%args[3]==1:
+                if args[0] not in (0,1) or args[2] not in self.programs:raise ValueError('invalid branch')
+                if condition(args[1],args[3]):
+                    if args[0]==1:self.return_frame=(self.program,following,self.start,self.end)
                     self.program=args[2];following=0;self.start=self.end=-1
             elif op=='PLAY_MOVING_SOUND':
                 if not self.moving_sound and allocation:
@@ -120,6 +157,10 @@ class Script:
                 ids={0:[13],1:[19],8:[14,15]}[callback];sounds.extend(ids)
                 self.requests += [f'sound:{i}:0:0:0' for i in ids]
         self.timer=(self.timer+1)&65535
+        if ended:
+            if self.return_frame is not None:
+                self.program,self.cursor,self.start,self.end=self.return_frame;self.return_frame=None
+            else:self.active=False
         return seed,sounds,sprites,drown
 
     def advance_animation(self):

@@ -195,3 +195,26 @@ func test_entity_run_owns_script_and_animation_snapshots() -> void:
 	assert_eq(clone.reset(), "")
 	assert_eq(clone.snapshot().entities[0].animation.cel, -1)
 	assert_eq(run.snapshot().entities[0].animation.cel, 0)
+
+func test_new_instruction_validation_rejects_unsafe_contexts() -> void:
+	var malformed: Array[PackedInt32Array] = [PackedInt32Array([10, 13, 65536, 6]), PackedInt32Array([14, 0, 3, 6]), PackedInt32Array([20, 6, 6]), PackedInt32Array([13, 1, 9, 99, 0, 6])]
+	for words: PackedInt32Array in malformed:
+		assert_ne(_update(_definition(words), EntityScriptState.create(1)).error, "", str(words))
+	var context: EntityUpdateContext = _context()
+	context.has_path = false
+	for opcode: int in [2, 15, 16]:
+		assert_ne(_update(_definition(PackedInt32Array([opcode, 6])), EntityScriptState.create(1), context).error, "")
+	assert_ne(_update(_definition([1, 6]), EntityScriptState.create(1), context, EntityAnimationState.create([])).error, "")
+
+func test_path_and_random_requests_disappear_on_late_script_failure() -> void:
+	var definition: EntityScriptDefinition = _definition([15, 10, 13, 2, 5])
+	var state: EntityScriptState = EntityScriptState.create(1)
+	var random: SourceRandom = SourceRandom.create(1)
+	var result: EntityUpdateResult = EntityScriptRunner.update(definition, state, EntityAnimationState.create([3]), _context(), random)
+	assert_string_contains(result.error, "Non-yielding")
+	assert_eq(result.path_active_request, -1)
+	assert_null(result.script_state)
+	assert_null(result.random)
+	assert_eq(result.requests.size(), 0)
+	assert_eq(state.cursor, 0)
+	assert_eq(random.state, 1)

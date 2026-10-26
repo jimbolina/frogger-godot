@@ -591,6 +591,33 @@ python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop
 python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --verify
 ```
 
+## Script control and entity death policy
+
+`synthetic/script_control.json` contains invented programs, per-tick inputs and
+expected control state from the independent Python `Script` implementation of
+frozen `scripter.c`. Rows include active state, program/cursor/loop pointers,
+timer, deviation, animation, RNG, one GOSUB return frame, path-active requests
+and ordered sound requests. Both ordinary and prepared runtime paths consume
+these facts. Existing C-checked `entity_scripts.tsv` remains unchanged.
+
+`synthetic/entity_deaths.json` independently represents the frozen `COLLIDE.C`
+FORM/primitive death switches and `FrogKill` velocity policy. Cases cover eight
+death values, both contact kinds, ORG1/CAV3 and stationary/jumping-to-land frogs.
+The facts assert animation, shadow visibility and velocity; runtime checks also
+require one accepted killer and no duplicate death requests. These two corpora
+are Python/source comparisons, not native C adapter observations.
+
+```sh
+python3 -B tools/make_golden_script_control.py
+python3 -B tools/make_golden_entity_reactions.py --death-policy --verify
+```
+
+Use `--write` for script regeneration; omit `--verify` for death-policy
+regeneration. Change an expected timer in the script corpus and an animation in
+the death corpus, require each corresponding golden test to fail, then restore
+both facts and rerun. Integrated unit checks cover path pause/resume ownership,
+late script failure, death rollback and detached copies.
+
 ## Synthetic SAFE interaction and camera correction
 
 `fixtures/platforms.json` supplies invented platform scenarios through the

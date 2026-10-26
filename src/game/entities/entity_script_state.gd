@@ -2,6 +2,11 @@ class_name EntityScriptState
 extends RefCounted
 ## Owned script cursors, source-width timer/deviation and callback slots.
 
+var active: bool = true
+var return_program: int = -1
+var return_cursor: int = -1
+var return_loop_start: int = -1
+var return_loop_end: int = -1
 var root_id: int = -1
 var program_id: int = -1
 var cursor: int = 0
@@ -30,6 +35,11 @@ static func create(root: int) -> EntityScriptState:
 ## Copies all state for an unpublished candidate update.
 func copy() -> EntityScriptState:
 	var result: EntityScriptState = EntityScriptState.create(root_id)
+	result.active = active
+	result.return_program = return_program
+	result.return_cursor = return_cursor
+	result.return_loop_start = return_loop_start
+	result.return_loop_end = return_loop_end
 	result.program_id = program_id
 	result.cursor = cursor
 	result.loop_start = loop_start

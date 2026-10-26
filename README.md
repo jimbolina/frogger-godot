@@ -289,7 +289,7 @@ Dragging switches to a custom inspection pose; R restores the preset.
 Maps include stored terrain colours, cave illumination, animated textures,
 water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
 and can inspect one entity's FORM contact against a fixed point. The separate
-terrain inspector supports bounded POP, SAFE-platform and SQUISHED interactions,
+terrain inspector supports bounded SAFE-platform interactions and all FORM death policies,
 plus the admitted ORG1 scripts and vehicle cuboids; HUD and
 complete level play remain deferred.
 The explicit hidden-geometry inspection

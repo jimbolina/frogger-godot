@@ -190,3 +190,32 @@ func test_resolved_behavior_is_independent_of_diagnostic_name_and_setup_mutation
 	definition.behavior.layout = EntityBehavior.Layout.MATRIX
 	assert_eq(run.step(0), "")
 	assert_eq(run.snapshot().entities[0].path.position.x, 10)
+
+func test_script_path_pause_is_transactional_and_resume_uses_next_path_tick() -> void:
+	var definition: EntityDefinition = _moving(0, _path())
+	var script := EntityScriptDefinition.new()
+	script.root_id = 1
+	script.names[1] = "SCRIPT_TURTLE"
+	script.programs[1] = PackedInt32Array([15, 0, 0, 2, 16, 6])
+	definition.script_definition = script
+	var run: EntityRun = EntityRun.create([definition])
+	assert_eq(run.error, "")
+	var context := EntityUpdateContext.new()
+	context.has_path = true
+	context.path_flags = 123
+	var random: SourceRandom = SourceRandom.create(1)
+	var candidate: EntityRun = run.begin_candidate(0)
+	assert_eq(candidate.update_candidate_script(0, context, random).error, "")
+	assert_eq(context.path_flags, 123, "Caller context stays detached")
+	assert_true(bool(run.snapshot().entities[0].path.flags & PathStart.ACTIVE))
+	assert_false(bool(candidate.snapshot().entities[0].path.flags & PathStart.ACTIVE))
+	assert_eq(run.snapshot().entities[0].path.position.x, 0)
+	run.commit_candidate(candidate)
+	for tick: int in [1, 2]:
+		candidate = run.begin_candidate(tick)
+		assert_eq(candidate.update_candidate_script(0, context, random).error, "")
+		assert_eq(candidate.snapshot().entities[0].path.position.x, 10)
+		run.commit_candidate(candidate)
+	assert_true(bool(run.snapshot().entities[0].path.flags & PathStart.ACTIVE))
+	assert_eq(run.step(3), "")
+	assert_eq(run.snapshot().entities[0].path.position.x, 20)
