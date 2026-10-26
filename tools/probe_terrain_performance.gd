@@ -26,7 +26,7 @@ func _run() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file(ViewerArguments.value(arguments, "--scenario-file="))
 	issue = scenario.error
 	if issue.is_empty():
-		issue = scenario.apply_arguments(arguments)
+		issue = TerrainScenarioArguments.apply(scenario, arguments)
 	scenario.level_code = "ORG1"
 	if not issue.is_empty():
 		data.close()
@@ -43,7 +43,7 @@ func _run() -> void:
 	if not issue.is_empty():
 		_fail(issue)
 		return
-	if scenario.map_scene == null or scenario.level.exploration_guard == null or viewer._current.entities == null:
+	if scenario.map_scene == null or scenario.level.tick_guard == null or viewer._current.entities == null:
 		_fail("Performance measurement requires the guarded retail ORG1 world")
 		return
 	viewer.smoothing = ViewerArguments.value(arguments, "--smoothing=") == "true"

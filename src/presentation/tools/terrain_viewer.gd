@@ -64,7 +64,7 @@ func _ready() -> void:
 		var name_arg: String = ViewerArguments.value(arguments, "--scenario=")
 		var selected: TerrainScenario = TerrainScenario.from_file(path) if not path.is_empty() else TerrainScenario.builtin(name_arg if not name_arg.is_empty() else "normal")
 		if selected.error.is_empty():
-			selected.error = selected.apply_arguments(arguments)
+			selected.error = TerrainScenarioArguments.apply(selected, arguments)
 		open_scenario(selected)
 		if ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty():
 			var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
@@ -355,15 +355,15 @@ func draw_state(fraction: float) -> void:
 	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.mode, _current.cell, _current.square_index]
 	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.position_16, _current.velocity_16, _current.remaining_ticks, _current.flags, _current.buffered_keys, _current.buffered_input_count]
 	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.destination_cell, _current.square_flags, _current.source_id, camera_facts, _current.death_equate, _current.death_count, str(_current.completed), "; ".join(_outcomes)]
-	if scenario.entity_reactions:
-		if scenario.entity_lifecycle and _current.entities != null:
+	if scenario.options.entity_reactions:
+		if scenario.options.entity_lifecycle and _current.entities != null:
 			var selected: PackedInt32Array = _current.entities.selected_groups
 			var subjects := PackedStringArray()
 			for slot: int in mini(3, _current.entities.entities.size()):
 				var subject: EntitySnapshot = _current.entities.entities[slot]
 				subjects.append("#%d support=%s live=%s pending=%s gen=%d" % [subject.entity_index, str(subject.lifecycle_supported), str(subject.live), str(subject.destroy_pending), subject.generation])
 			_label.text += "live %d | groups %d %s | events %s\n%s\n" % [_current.entities.live_order.size(), selected.size(), selected.slice(0, mini(4, selected.size())), TickEvent.trace_lines(_current.entities.lifecycle_events.slice(0, 3)), "; ".join(subjects)]
-		if scenario.platforms_enabled:
+		if scenario.options.platforms_enabled:
 			_label.text += "platform %d | local cell %s | carrying %s\n" % [_current.current_entity_index, _current.entity_cell, _current.entity_carry_indices]
 		var contact_lines := PackedStringArray()
 		var nearby_count: int = _last_contacts.size()
@@ -379,22 +379,19 @@ func draw_state(fraction: float) -> void:
 			_label.text += " (+%d)" % (contact_lines.size() - visible.size())
 		_label.text += "\n"
 		_label.tooltip_text = "\n".join(contact_lines) + "\n" + "\n".join(scenario.diagnostics)
-	if scenario.level.exploration_guard != null:
-		var bounds: Rect2i = scenario.level.exploration_guard.world_bounds
-		var org1: bool = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
-		var road: bool = scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET
-		var title: String = "ORG1 ROAD / RIVER EXPLORATION" if road else "ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION"
+	if scenario.level.tick_guard != null:
+		var bounds: Rect2i = (scenario.level.tick_guard as ExplorationGuard).world_bounds
+		var overlay: Dictionary[String, String] = TerrainCaptureStages.overlay(scenario)
+		var title: String = overlay.title
 		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
-		_label.text += "Visibility lifetime | pink frog pickup and riding\n" if scenario.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
-		if road:
-			_label.text += "Cross traffic north to the bank, then turtle and log.\n"
+		_label.text += "Visibility lifetime | pink frog pickup and riding\n" if scenario.options.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
+		_label.text += overlay.instructions
+		if overlay.detail == "road":
 			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.death_equate, _current.death_entity_index, _current.entity_hit_indices]
 			for contact: EntityPrimitiveContact in _last_primitive_contacts:
 				if contact.status == EntityPrimitiveQuery.CONTACT:
 					_label.text += "cuboid #%d | frog part %d point %d\n" % [contact.entity_index, contact.frog_part_index, contact.hilite_index]
-		else:
-			_label.text += "Hop Up to turtle, Up to log; return Down twice.\n" if org1 else "From reset: Left onto log, then Right after centring.\n"
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
@@ -581,7 +578,7 @@ func _build_entity_visuals() -> void:
 	_clear_entity_visuals()
 	_entity_pose_tick = -1
 	_entity_lighting = null
-	if scenario == null or not scenario.entity_reactions or scenario.level.entity_collision == null:
+	if scenario == null or not scenario.options.entity_reactions or scenario.level.entity_collision == null:
 		return
 	var definitions: EntityCollisionDefinition = scenario.level.entity_collision
 	_entity_inspection.configure(definitions.entities)
@@ -594,7 +591,7 @@ func _build_entity_visuals() -> void:
 		_entity_generations.append(-1)
 	if data == null or not data.is_valid() or scenario.map_scene == null:
 		return
-	if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
+	if TerrainCaptureStages.entity_lighting(scenario):
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scenario.map_scene.map.lights)
 	var meshes: Dictionary[int, ModelMesh] = {}
@@ -713,13 +710,13 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 	var had_lifecycle_creation: bool = false
 	var had_global_absence: bool = false
 	var captured: Dictionary[String, bool] = {}
-	if scenario.entity_lifecycle and not folder.is_empty():
+	if scenario.options.entity_lifecycle and not folder.is_empty():
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "lifecycle-initial", captured)
-	if scenario.platforms_enabled and not folder.is_empty():
+	if scenario.options.platforms_enabled and not folder.is_empty():
 		await RenderingServer.frame_post_draw
-		last_error = _save_stage(folder, "platform-safe-start" if scenario.level.exploration_guard != null else "platform-approach", captured)
-	if scenario.entity_reactions and not scenario.entity_lifecycle and not scenario.platforms_enabled and not folder.is_empty() and scenario.level_code.to_upper() != "DES2":
+		last_error = _save_stage(folder, "platform-safe-start" if scenario.level.tick_guard != null else "platform-approach", captured)
+	if scenario.options.entity_reactions and not scenario.options.entity_lifecycle and not scenario.options.platforms_enabled and not folder.is_empty() and TerrainCaptureStages.before_contact(scenario, _current):
 		await RenderingServer.frame_post_draw
 		last_error = _save_stage(folder, "before-contact", captured)
 	if not last_error.is_empty():
@@ -741,7 +738,7 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				push_error(last_error)
 				get_tree().quit(1)
 				return
-		if scenario.entity_lifecycle and not folder.is_empty() and _current.entities != null:
+		if scenario.options.entity_lifecycle and not folder.is_empty() and _current.entities != null:
 			var lifecycle_stages: Array[String] = []
 			for event: TickEvent in _current.entities.lifecycle_events:
 				if event.kind == TickEvent.Kind.CREATE:
@@ -767,39 +764,8 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				push_error(last_error)
 				get_tree().quit(1)
 				return
-		if scenario.platforms_enabled and not folder.is_empty():
-			var platform_stages: Array[String] = []
-			if scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
-				var stages: Dictionary[int, String] = {4: "org1-turtle-out", 19: "org1-log", 40: "org1-turtle-return", 52: "org1-bank-return", 60: "org1-diving", 90: "org1-rising", 1234: "org1-diver-attachment", 1255: "org1-diver-drowning"}
-				if scenario.entity_lifecycle:
-					stages[174] = "org1-diver-attachment"
-					stages[203] = "org1-diver-drowning"
-					stages[445] = "org1-pink-contact"
-					stages[446] = "org1-pink-pickup"
-					stages[460] = "org1-pink-riding"
-					stages[469] = "org1-pink-death"
-				if stages.has(_current.tick_index):
-					platform_stages.append(stages[_current.tick_index])
-			elif scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET:
-				if _current.tick_index == 1:
-					platform_stages.append("org1-road-start")
-				if _current.cell.y >= 2 and _current.cell.y <= 6:
-					platform_stages.append("org1-road-traffic")
-				if _current.cell.y == 7 and _current.mode == 0:
-					platform_stages.append("org1-road-bank")
-				if _current.current_entity_index >= 0 and _current.current_entity_index < 24:
-					platform_stages.append("org1-road-river")
-				if _current.death_entity_index >= 24 and _current.death_entity_index <= 47:
-					platform_stages.append("org1-road-vehicle-death")
-			elif scenario.level.exploration_guard != null:
-				if _current.tick_index == 3:
-					platform_stages.append("platform-approach")
-				if _current.tick_index == 8:
-					platform_stages.append("platform-centring")
-				if _current.tick_index == 12:
-					platform_stages.append("platform-carry")
-				if _current.tick_index == 18:
-					platform_stages.append("platform-safe-return")
+		if scenario.options.platforms_enabled and not folder.is_empty():
+			var platform_stages: Array[String] = TerrainCaptureStages.platform(scenario, _current)
 			if hit_tick < 0 and _current.current_entity_index >= 0:
 				hit_tick = _current.tick_index
 				platform_stages.append("platform-attachment")
@@ -821,11 +787,11 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				push_error(last_error)
 				get_tree().quit(1)
 				return
-		elif scenario.entity_reactions and not folder.is_empty():
+		elif scenario.options.entity_reactions and not folder.is_empty():
 			if hit_tick < 0 and _current.death_entity_index >= 0:
 				hit_tick = _current.tick_index
 				last_error = _save_stage(folder, "hit", captured)
-			elif hit_tick < 0 and (scenario.level_code.to_upper() != "DES2" or _current.tick_index == 4):
+			elif hit_tick < 0 and TerrainCaptureStages.before_contact(scenario, _current):
 				last_error = _save_stage(folder, "before-contact", captured)
 			if hit_tick >= 0 and _current.tick_index >= hit_tick + 2 and _current.animation != null and _current.animation.action == FrogAnimationCatalog.POP:
 				last_error = _save_stage(folder, "pop-animation", captured)

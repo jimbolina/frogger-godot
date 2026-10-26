@@ -363,7 +363,7 @@ X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
 all-attached lifetime. The guarded `org1-turtle-log-bank` preset validates the
 proof before enabling scripts or excluding contact. The proof pins map, source-ordered form/behavior rows, script
 streams, model mappings, counterpart models and the selected frog resource in
-`src/presentation/setup/org1_exploration_admission.json`.
+`src/inspection/org1_exploration_admission.json`.
 
 Starting at cell `(10,7)`, world `(128,-256,-128)`, north, normal NORTH commands
 at ticks 0 and 12 and SOUTH commands at 34 and 46 connect turtle 1, small log

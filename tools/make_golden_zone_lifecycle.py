@@ -216,7 +216,7 @@ def main():
             cases.append(dict(workload=workload,expected=rows))
         save(ROOT/f'tests/golden/{label}/zone_lifecycle.json',dict(schema='zone-lifecycle-facts-v1',cases=cases),args.verify)
     save(ROOT/'tests/golden/fixtures/lifecycle_zones.json',authored,args.verify)
-    save(ROOT/'src/presentation/setup/jun1_zone_lifecycle_admission.json',proof,args.verify)
+    save(ROOT/'src/inspection/jun1_zone_lifecycle_admission.json',proof,args.verify)
     print('Synthetic and JUN1 zone/lifecycle facts agree with frozen C.')
 
 

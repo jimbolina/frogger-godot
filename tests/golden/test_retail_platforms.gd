@@ -73,8 +73,8 @@ func test_jun1_log_setup_and_first_safe_contact_match_independent_facts() -> voi
 	if not grid_setup.error.is_empty():
 		return
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	scenario.entity_reactions = true
-	scenario.platforms_enabled = true
+	scenario.options.reactions = ScenarioOptions.Reaction.POP
+	scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
 	assert_eq(scenario.attach_data(_data, "JUN1"), "")
 	var spawn: Vector2i = scenario.initial.spawn_cell
 	var stack: GridStackDefinition = grid_setup.definition.stack_at(spawn)

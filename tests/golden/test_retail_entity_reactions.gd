@@ -81,7 +81,7 @@ func test_des2_cactus_reaction_setup_matches_independent_facts() -> void:
 
 func test_des2_airborne_pop_precedes_terrain_landing() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	scenario.entity_reactions = true
+	scenario.options.reactions = ScenarioOptions.Reaction.POP
 	assert_eq(scenario.attach_data(_data, "DES2"), "")
 	assert_eq(scenario.initial.spawn_cell, Vector2i(17, 30))
 	assert_eq(scenario.initial.spawn_direction, 1)

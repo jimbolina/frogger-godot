@@ -48,7 +48,7 @@ def check_source(path,repo,name,ticks,preset='org1-turtle-log-bank'):
         metadata=json.loads(next(stream))
         if metadata['exploration']!=preset or metadata['tick_limit']!=ticks:raise ValueError('wrong ORG1 metadata')
         manifest='org1_visibility_admission.json' if preset.endswith('-visibility') else 'org1_road_river_admission.json' if preset=='org1-road-river' else 'org1_exploration_admission.json'
-        admission=json.loads((repo/'src/presentation/setup'/manifest).read_text())
+        admission=json.loads((repo/'src/inspection'/manifest).read_text())
         x,z=admission['admitted_x'],admission['admitted_z']
         if metadata['exploration_guard']['world_bounds']!=[x[0],z[0],x[1]-x[0],z[1]-z[0]]:raise ValueError('admission bounds changed')
         for record,source in itertools.zip_longest((json.loads(line) for line in stream),expected):

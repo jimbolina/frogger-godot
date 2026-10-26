@@ -67,7 +67,7 @@ func validate() -> String:
 				return "Entity primitive squared radius must fit signed32"
 			if frog_collision == null:
 				return "Entity primitives require detached animated frog probes"
-			if not contact.unsupported_reason.is_empty() or not contact.admission_exclusion.is_empty():
+			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty():
 				return "Entity primitives require supported contact and FORM fallback"
 			if contact.death_type != 0:
 				return "Entity primitive reaction currently requires SQUISHED death"
@@ -86,7 +86,7 @@ func validate() -> String:
 		if (entity.behavior.execution == EntityBehavior.Execution.CONTACT):
 			if entity.behavior.kind != EntityBehavior.Kind.BABY_FROG or not entity.behavior.has_custom_update() or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
 				return "Pink frog pickup requires admitted scripted visibility and callback-free behavior"
-			if not contact.unsupported_reason.is_empty() or not contact.admission_exclusion.is_empty() or not contact.primitives.is_empty() or contact.grid_flags != PackedInt32Array([1]):
+			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty() or not contact.primitives.is_empty() or contact.grid_flags != PackedInt32Array([1]):
 				return "Pink frog pickup requires its primitive-free usable FORM"
 		if entity.entity_index <= previous_index:
 			return "Entity collision indices must be strictly increasing"

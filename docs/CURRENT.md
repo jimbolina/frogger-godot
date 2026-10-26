@@ -17,8 +17,7 @@ Python/frozen-C facts cover the round trip, pickup/return and carried drowning.
 Verified pink frog contact replaces her proximity exclusion within the existing
 corridor. See the [scripted visibility contract](reference/gameplay/entities.md#scripted-visibility-route).
 
-Combined active zones and script-free visibility retain synthetic gameplay and
-the prescribed JUN1 log probe. Ordinary retail terrain still requires zero-zone
+Combined zones and script-free visibility retain synthetic gameplay and the JUN1 probe. Ordinary retail terrain still requires zero-zone
 maps. [PORTING](PORTING.md) owns the revised phases: next is P8a, a behaviour
 catalog with typed tick events and the remaining DDD refactor before P8b
 demo playback as the oracle for
@@ -29,7 +28,8 @@ Audio playback, splash/particle effects and
 
 Explicit entity candidate/commit methods and discovered copy-contract checks
 protect transaction ownership. Typed tick events preserve text traces. Setup
-resolves entity behaviors once; gameplay uses kinds and named source constants. Prepared scripts, asynchronous playback and rendering
+resolves entity behaviors once; gameplay uses kinds and named source constants. Inspection owns corridor guards and presets; application owns source adapters.
+Prepared scripts, asynchronous playback and rendering
 caches are implemented. Sustained performance acceptance remains open and must
 be measured on an idle system separately from correctness checks.
 Hosted CI awaits a repository host. The licence remains the owner's decision

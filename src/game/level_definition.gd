@@ -5,7 +5,7 @@ extends RefCounted
 var grid: GridDefinition = null
 var entity_collision: EntityCollisionDefinition = null
 ## Optional inspection restriction; null leaves ordinary terrain behavior unchanged.
-var exploration_guard: ExplorationGuard = null
+var tick_guard: TickGuard = null
 ## Optional executable camera zones, independent of inspection restrictions.
 var camera_zones: Array[ZoneDefinition] = []
 var source_id: String = ""

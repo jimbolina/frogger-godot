@@ -2,12 +2,12 @@ class_name Jun1ExplorationSetup
 extends RefCounted
 ## Admits only the independently audited JUN1 inputs for bounded bank/log inspection.
 
-const MANIFEST_PATH: String = "res://src/presentation/setup/jun1_exploration_admission.json"
+const MANIFEST_PATH: String = "res://src/inspection/jun1_exploration_admission.json"
 const PRESET: String = "jun1-log-bank"
 
 ## Validates proof dependencies and copies decoded zones into an inspection guard.
 static func apply(scenario: TerrainScenario, data: GameData) -> String:
-	if scenario.level_code.to_upper() != "JUN1" or scenario.entity_lifecycle:
+	if scenario.level_code.to_upper() != "JUN1" or scenario.options.entity_lifecycle:
 		return "jun1-log-bank requires high-detail JUN1 and all-attached lifetime"
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
 	if not parsed is Dictionary:
@@ -30,15 +30,15 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	issue = guard.validate()
 	if not issue.is_empty():
 		return issue
-	scenario.level.exploration_guard = guard
+	scenario.level.tick_guard = guard
 	scenario.initial.spawn_cell = Vector2i(22, 10)
 	scenario.initial.spawn_direction = 3
 	scenario.initial.controller_directions = PackedInt32Array()
 	scenario.initial.camera_startup = false
 	scenario.identifier = PRESET
-	if not scenario.tick_limit_override and not scenario.authored_fixture:
+	if not scenario.options.tick_limit_override and not scenario.options.authored_fixture:
 		scenario.tick_limit = 60
-	if not scenario.authored_fixture:
+	if not scenario.options.authored_fixture:
 		scenario.commands.clear()
 	scenario.diagnostics.append("JUN1 bounded exploration: audited inputs only; all-attached lifetime; active camera zones unsupported")
 	scenario.diagnostics.append("World boundary X[1900,2304), Z[-5376,-4864); rejected ticks roll back and pause")

@@ -2,16 +2,20 @@
 
 ## Dependencies
 
-- `src/legacy/` decodes source facts, with file I/O where needed. Classes derive
+- `src/source/` decodes source facts, with file I/O where needed. Classes derive
   from `RefCounted` and depend on neither Nodes/tree access nor conversion,
   gameplay, scenes or presentation.
 - `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
   path, entity, camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;
-  it does not depend on legacy readers, conversion or presentation, open files,
+  it does not depend on source readers, conversion or presentation, open files,
   poll input, consult wall time or access Nodes. Godot math types are allowed.
-- Setup adapters belong with their first real consumer. They resolve source
-  names and supply concrete dependencies; no container or global world is needed.
+- `src/application/` owns source-to-game adapters. They resolve source names
+  and supply concrete dependencies. Direct environment access is restricted to
+  explicit loader adapters; source readers retain ownership of file I/O.
+- `src/inspection/` owns scenarios, validated options, corridor guards, presets
+  and manifests. Presentation translates CLI/environment inputs into explicit
+  options. Gameplay and application never depend on inspection.
 - Conversion builds render resources from decoded data. Presentation owns
   scene lifetimes, input translation and drawing. `MapSceneData` is a rendering
   dependency bundle, not the future world's authoritative state.
@@ -112,16 +116,18 @@ candidates. Camera transitions and fall requests belong to that same candidate
 transaction. Missing attachment identities, invalid matrices and unsupported
 commanded destinations fail without publishing contacts, carries or requests.
 Reset clears current/forbidden links and transient observations. Detached
-platform helpers retain no legacy objects or live scene references.
+platform helpers retain no source objects or live scene references.
 
-`LevelDefinition.exploration_guard` is nullable; null preserves existing runs.
-`TerrainRun` validates and deep-copies its world rectangle and zone definitions.
+`LevelDefinition.tick_guard` is an optional `TickGuard`. Its `check(phase, candidate)`
+receives detached state at each existing validation boundary. `ExplorationGuard`
+in inspection owns corridor rectangles, zones and animated contact restrictions.
+The run copies the guard and validates setup before accepting any state.
 Spawn/reset must satisfy both guards. During a tick, the zone query uses the
 source grid cell after movement and before modifiers/collision. World X/Z is
 checked there, before each FORM query, after each FORM reaction/correction and
 before aggregate commit. A rejection discards the frog, entity/path, camera,
 animation, RNG and every candidate outcome. It neither clamps nor publishes a
-partial contact. `ZoneSetup` converts legacy records; pure `ZoneQueries` owns
+partial contact. `ZoneSetup` converts source records; pure `ZoneQueries` owns
 matching. Active zones are separately supplied through `LevelDefinition.camera_zones`.
 Frog selection (zone and region) and camera-consumed identity are detached
 transaction state; selection occurs here once, not again after contact correction.
@@ -150,7 +156,7 @@ Attachment, forbidden, hit and carry identities use authored indices with `-1`
 for absent links. Relative matrices and camera modification state are copied.
 
 `TerrainGridSetup` copies decoded geometry, flags and scalar source identities
-into grid definitions; those definitions retain no legacy or rendering objects.
+into grid definitions; those definitions retain no source or rendering objects.
 Treat definitions as immutable after setup. Grid queries return new result
 objects and do not retain or mutate caller state.
 
@@ -176,7 +182,7 @@ snapshot and one world point without changing run state. The viewer owns the
 selected probe and drawing resources. `EntityCollisionSetup` composes these
 definitions with copied map-group facts and reaction eligibility. Pure
 `EntityContactOrder` and `FormReaction` select traversal and outcomes; the run
-applies those outcomes to its candidates. No legacy object, callback address,
+applies those outcomes to its candidates. No source object, callback address,
 scene object or subscriber controls rule execution. Fixed-point contact inspection
 remains independently available without affecting the frog.
 See [paths](gameplay/paths.md) and [entities](gameplay/entities.md).

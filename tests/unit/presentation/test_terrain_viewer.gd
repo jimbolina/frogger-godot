@@ -143,10 +143,10 @@ func test_authored_json_inputs_and_command_line_overrides_are_detached() -> void
 	assert_eq(scenario.level.camera.source_offset, Vector3i(0, -700, -400))
 	assert_eq(scenario.level.theme_name, &"JUN")
 	assert_eq(scenario.initial.controller_directions, PackedInt32Array([1, 2, 3, 0]))
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--seed=11", "--tick-limit=24"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--seed=11", "--tick-limit=24"])), "")
 	assert_eq(scenario.initial.seed, 11)
 	assert_eq(scenario.tick_limit, 24)
-	assert_false(scenario.apply_arguments(PackedStringArray(["--tick-limit=-1"])).is_empty())
+	assert_false(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--tick-limit=-1"])).is_empty())
 	assert_false(TerrainScenarioJson.apply(scenario, {"start": {"seed": 1.5}}).is_empty())
 	assert_false(TerrainScenarioJson.apply(scenario, {"grid": {"dimensions": [4], "base": [0, 0]}}).is_empty())
 

@@ -2,7 +2,7 @@ extends GutTest
 ## Architecture checks use synthetic sources, independent of retail files.
 
 const Scanner = preload("res://tools/support/architecture_scanner.gd")
-const LEGACY: String = "res://src/legacy/example.gd"
+const LEGACY: String = "res://src/source/example.gd"
 const GAME: String = "res://src/game/example.gd"
 
 
@@ -131,7 +131,7 @@ func test_legacy_cannot_depend_on_gameplay() -> void:
 
 
 func test_gameplay_cannot_depend_on_outer_layers() -> void:
-	for target: String in ["src/legacy", "src/convert", "src/presentation", "scenes"]:
+	for target: String in ["src/source", "src/application", "src/inspection", "src/convert", "src/presentation", "scenes"]:
 		var source: String = "extends RefCounted\nconst BAD = preload(\"res://" \
 			+ target + "/bad.gd\")\n"
 		assert_true(_has_rule(_check({GAME: source}), "layer"), target)
@@ -234,3 +234,10 @@ func test_entity_name_dispatch_is_rejected_but_diagnostics_are_allowed() -> void
 		assert_true(_has_rule(_check({GAME: source}), "behavior"), expression)
 	var diagnostic: String = "extends RefCounted\nfunc describe(definition):\n\treturn \"Unknown behavior %s\" % definition.entity_name\n"
 	assert_eq(_check({GAME: diagnostic}).size(), 0)
+
+
+func test_application_adapters_reject_environment_and_inspection_dependencies() -> void:
+	var adapter: String = "res://src/application/adapter.gd"
+	assert_true(_has_rule(_check({adapter: "extends RefCounted\nfunc f():\n\treturn OS.get_environment(\"DATA\")\n"}), "environment"))
+	assert_true(_has_rule(_check({adapter: "extends RefCounted\nconst Guard = preload(\"res://src/inspection/guard.gd\")\n"}), "layer"))
+	assert_eq(_check({adapter: "extends RefCounted\nvar facts: SourceFacts\n", "res://src/source/facts.gd": "class_name SourceFacts\nextends RefCounted\nfunc read():\n\treturn FileAccess.open(\"data\", 1)\n"}).size(), 0)

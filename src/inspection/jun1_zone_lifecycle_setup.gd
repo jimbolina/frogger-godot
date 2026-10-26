@@ -2,7 +2,7 @@ class_name Jun1ZoneLifecycleSetup
 extends RefCounted
 ## Admits only independently pinned JUN1 logs for the prescribed camera probe.
 
-const MANIFEST: String = "res://src/presentation/setup/jun1_zone_lifecycle_admission.json"
+const MANIFEST: String = "res://src/inspection/jun1_zone_lifecycle_admission.json"
 var error: String = ""
 var definitions: Array[EntityDefinition] = []
 var lifecycle: EntityLifecycleDefinition = null

@@ -10,7 +10,7 @@ func _run() -> void:
 	var identifier: String = ViewerArguments.value(arguments, "--scenario=")
 	var scenario: TerrainScenario = TerrainScenario.from_file(filename) if not filename.is_empty() else TerrainScenario.builtin(identifier if not identifier.is_empty() else "normal")
 	if scenario.error.is_empty():
-		scenario.error = scenario.apply_arguments(arguments)
+		scenario.error = TerrainScenarioArguments.apply(scenario, arguments)
 	if not scenario.error.is_empty():
 		_fail(scenario.error)
 		return

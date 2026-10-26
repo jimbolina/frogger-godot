@@ -15,33 +15,33 @@ var _full_path: String = ""
 
 ## Records the supplied scenario identity and explicit component omissions once.
 func configure(scenario: TerrainScenario) -> void:
-	_entity_reactions = scenario.entity_reactions
-	_entity_lifecycle = scenario.entity_lifecycle
-	_guarded_exploration = scenario.level.exploration_guard != null
-	_scripted_exploration = scenario.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
+	_entity_reactions = scenario.options.entity_reactions
+	_entity_lifecycle = scenario.options.entity_lifecycle
+	_guarded_exploration = scenario.level.tick_guard != null
+	_scripted_exploration = scenario.options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
 	_primitive_exploration = scenario.level.entity_collision != null and scenario.level.entity_collision.frog_collision != null
-	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.entity_lifecycle else "entity-platform-v1" if scenario.platforms_enabled else "entity-pop-v1" if scenario.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
+	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.options.entity_lifecycle else "entity-platform-v1" if scenario.options.platforms_enabled else "entity-pop-v1" if scenario.options.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
 		"seed": scenario.initial.seed, "tick_limit": scenario.tick_limit, "start": facts(scenario.initial),
 		"camera_definition": facts(scenario.level.camera) if scenario.level.camera != null else null,
 		"action_lengths": Array(scenario.level.frog_action_lengths),
-		"omitted": ["platforms", "scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle"] if scenario.entity_reactions else ["entities", "forms", "zones", "audio", "effects", "game_flow"],
+		"omitted": ["platforms", "scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle"] if scenario.options.entity_reactions else ["entities", "forms", "zones", "audio", "effects", "game_flow"],
 		"diagnostics": Array(scenario.diagnostics)}
 	if not scenario.level.camera_zones.is_empty():
 		var zone_facts: Array[Dictionary] = []
 		for zone: ZoneDefinition in scenario.level.camera_zones:
 			zone_facts.append(facts(zone))
 		metadata["camera_zones"] = zone_facts
-	if scenario.entity_reactions:
-		if scenario.platforms_enabled:
+	if scenario.options.entity_reactions:
+		if scenario.options.platforms_enabled:
 			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
-		if scenario.entity_lifecycle:
+		if scenario.options.entity_lifecycle:
 			metadata["omitted"] = ["scripts", "zones", "audio", "effects", "game_flow", "particle_simulation", "entity_sliding_bouncing", "multiplayer"]
 		metadata["entity_collision"] = facts(scenario.level.entity_collision, _entity_lifecycle) if scenario.level.entity_collision != null else null
-		metadata["entity_lifetime"] = "visibility" if scenario.entity_lifecycle else "all_attached"
-	if scenario.level.exploration_guard != null:
-		metadata["exploration"] = scenario.exploration_preset
-		metadata["exploration_guard"] = facts(scenario.level.exploration_guard)
+		metadata["entity_lifetime"] = "visibility" if scenario.options.entity_lifecycle else "all_attached"
+	if scenario.level.tick_guard != null:
+		metadata["exploration"] = scenario.options.exploration_preset
+		metadata["exploration_guard"] = facts(scenario.level.tick_guard)
 		metadata["omitted"] = ["scripts", "active_camera_zones", "custom_behaviors", "primitives", "audio", "effects", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
 		if _scripted_exploration:
 			metadata["omitted"] = ["unsupported_scripts_and_custom_behaviors", "active_camera_zones", "primitives", "audio_playback", "splash_rendering", "game_flow", "particle_simulation", "visibility_driven_lifecycle", "entity_sliding_bouncing", "multiplayer"]
@@ -155,7 +155,7 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 				continue
 			if not include_lifecycle and _lifecycle_key(record, key):
 				continue
-			values[key] = _value(record.get(key), include_lifecycle)
+			values["admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
 	return values
 
 static func _lifecycle_key(record: RefCounted, key: String) -> bool:

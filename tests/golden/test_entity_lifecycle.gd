@@ -158,7 +158,7 @@ func test_signed_and_short_delta_source_raster_lines() -> void:
 func test_integrated_visibility_transitions_follow_independent_oracle() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_integrated.json")
 	assert_eq(scenario.error, "")
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=platforms", "--entity-lifecycle=visibility"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=platforms", "--entity-lifecycle=visibility"])), "")
 	if not scenario.error.is_empty():
 		return
 	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)

@@ -224,7 +224,7 @@ def run(args):
                 if int(row['mode'])!=2 and not int(row['flags'])&8 and tuple(int(row[f'm{r}{c}']) for r in range(3) for c in range(3)) not in roots:
                     raise ValueError('road frog root escaped the independently closed pose set')
             (output/'org1-road-admission-proof.json').write_text(json.dumps(dict(admission=proof,neighbors=geometry),indent=2)+'\n',encoding='ascii')
-            path=project/'src/presentation/setup/org1_road_river_admission.json';content=json.dumps(proof,indent=2)+'\n'
+            path=project/'src/inspection/org1_road_river_admission.json';content=json.dumps(proof,indent=2)+'\n'
             outputs[path]=content
         elif args.golden_name!=('org1_visibility_round_trip' if args.visibility else 'org1_round_trip'):raise ValueError('admission requires the complete frozen round trip')
     if args.admission and not args.road:
@@ -241,7 +241,7 @@ def run(args):
                 'Pink frog body contact, next-update pickup, riding and death are admitted; tongue input, checkpoints and fly collection remain unsupported.',
                 'Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically.']
             proof['attached_diver']=dict(commands=[[170,1]],observation_ticks=203,death_tick=202)
-        path=project/'src/presentation/setup'/('org1_visibility_admission.json' if args.visibility else 'org1_exploration_admission.json');content=json.dumps(proof,indent=2)+'\n'
+        path=project/'src/inspection'/('org1_visibility_admission.json' if args.visibility else 'org1_exploration_admission.json');content=json.dumps(proof,indent=2)+'\n'
         outputs[path]=content
     if args.visibility:
         frozen=list(csv.DictReader(open(str(source)+'.lifecycle.csv')))

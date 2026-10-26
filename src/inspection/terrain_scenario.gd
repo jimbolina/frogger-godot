@@ -2,6 +2,8 @@ class_name TerrainScenario
 extends RefCounted
 ## Decodes debug stimuli outside gameplay. Built-ins mirror the C component fixtures.
 
+var options: ScenarioOptions = ScenarioOptions.new()
+
 var error: String = ""
 var identifier: String = "normal"
 var scenario_index: int = 0
@@ -14,13 +16,6 @@ var frog_assets: TerrainFrogAssets = null
 var diagnostics: PackedStringArray = PackedStringArray()
 var level_code: String = ""
 var entity_collision: EntityCollisionDefinition = null
-var entity_reactions: bool = false
-var platforms_enabled: bool = false
-var entity_lifecycle: bool = false
-var collision_enabled_authored: bool = false
-var authored_fixture: bool = false
-var tick_limit_override: bool = false
-var exploration_preset: String = ""
 
 ## Creates authored flat terrain; these inputs contain no expected rule results.
 static func builtin(name: String) -> TerrainScenario:
@@ -91,7 +86,7 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.spawn_cell = map_scene.map.general.start_grid
 	level.spawn_direction = map_scene.map.general.start_rotation
 	level.theme = map_scene.map.general.theme
-	level.theme_name = &"JUN" if level.theme == 4 else &"VOL" if level.theme == 10 else &"SUB"
+	level.theme_name = FroggerIds.animation_theme(level.theme)
 	level.theme_death_height = theme.death_height
 	level.source_id = data.version.internal_name + ":" + level_code.to_upper()
 	level.resource_id = book.map_id(false)
@@ -102,26 +97,26 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_enabled = true
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
-	if entity_reactions:
-		if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
+	if options.entity_reactions:
+		if options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 			return Org1ExplorationSetup.apply(self, data)
 		else:
-			var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, platforms_enabled, entity_lifecycle)
+			var collision_setup: EntityCollisionSetup = EntityCollisionSetup.from_data(data, number, false, options.platforms_enabled, options.entity_lifecycle)
 			if not collision_setup.error.is_empty():
 				return collision_setup.error
 			entity_collision = collision_setup.definition
 			level.entity_collision = entity_collision.copy()
 			for diagnostic: EntitySetupDiagnostic in collision_setup.diagnostics:
 				diagnostics.append(diagnostic.to_text())
-		if not exploration_preset.is_empty():
+		if not options.exploration_preset.is_empty():
 			var exploration_error: String = Jun1ExplorationSetup.apply(self, data)
 			if not exploration_error.is_empty():
 				return exploration_error
-		elif entity_lifecycle:
+		elif options.entity_lifecycle:
 			diagnostics.append("Visibility inspection omits scripts, authored boundary markers and unsupported FORM reactions")
 		else:
-			diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
-		if exploration_preset.is_empty():
+			diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if options.platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
+		if options.exploration_preset.is_empty():
 			apply_des2_inspection_defaults()
 			apply_jun1_inspection_defaults()
 	else:
@@ -130,13 +125,13 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 
 ## Selects the bounded DES2 hop only for the uncustomized built-in run.
 func apply_des2_inspection_defaults() -> void:
-	if not entity_reactions or level_code.to_upper() != "DES2" or authored_fixture:
+	if not options.entity_reactions or level_code.to_upper() != "DES2" or options.authored_fixture:
 		return
 	initial.spawn_cell = Vector2i(17, 30)
 	initial.spawn_direction = 1
 	initial.controller_directions = PackedInt32Array()
 	initial.camera_startup = false
-	if not tick_limit_override:
+	if not options.tick_limit_override:
 		tick_limit = 80
 	commands.clear()
 	var east := TickCommand.new()
@@ -147,13 +142,13 @@ func apply_des2_inspection_defaults() -> void:
 
 ## Explicit water-cell start demonstrates contact; this is not a safe-bank route.
 func apply_jun1_inspection_defaults() -> void:
-	if not platforms_enabled or level_code.to_upper() != "JUN1" or authored_fixture:
+	if not options.platforms_enabled or level_code.to_upper() != "JUN1" or options.authored_fixture:
 		return
 	initial.spawn_cell = Vector2i(18, 5)
 	initial.spawn_direction = 0
 	initial.controller_directions = PackedInt32Array()
 	initial.camera_startup = false
-	if not tick_limit_override:
+	if not options.tick_limit_override:
 		tick_limit = 90
 	commands.clear()
 	var north := TickCommand.new()
@@ -186,7 +181,7 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 	var scenario: TerrainScenario = builtin(builtin_name)
 	if not scenario.error.is_empty():
 		return scenario
-	scenario.authored_fixture = true
+	scenario.options.authored_fixture = true
 	var limit: Variant = object.get("tick_limit", 16)
 	if not _integer(limit) or _to_int(limit) < 0 or _to_int(limit) > 100000:
 		scenario.error = "Scenario tick_limit must be an integer in 0..100000"
@@ -197,7 +192,7 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 		scenario.error = decode_error
 		return scenario
 	var authored_level: Dictionary = object.get("level", {})
-	scenario.collision_enabled_authored = authored_level.has("collision_enabled")
+	scenario.options.collision_enabled_authored = authored_level.has("collision_enabled")
 	if authored_level.has("entity_collision"):
 		if object.get("name") is String:
 			var case_name: String = object.name
@@ -254,70 +249,6 @@ func command_at(tick: int) -> TickCommand:
 		command.start_timer_context = commands[tick].start_timer_context
 		command.start_sequence_complete = commands[tick].start_sequence_complete
 	return command
-
-## Applies explicit command-line seed and duration overrides in both driver surfaces.
-func apply_arguments(arguments: PackedStringArray) -> String:
-	exploration_preset = ViewerArguments.value(arguments, "--exploration=")
-	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
-		return "exploration must be jun1-log-bank, org1-turtle-log-bank or org1-road-river"
-	var reaction: String = ViewerArguments.value(arguments, "--entity-reactions=")
-	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
-		return "entity-reactions must be pop or platforms"
-	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
-	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
-		return "entity-lifecycle must be all-attached or visibility"
-	if not exploration_preset.is_empty():
-		var required_level: String = "ORG1" if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET] else "JUN1"
-		if exploration_preset != Org1ExplorationSetup.VISIBILITY_PRESET and (lifetime == "visibility" or (entity_collision != null and entity_collision.lifecycle != null)):
-			return exploration_preset + " cannot be combined with visibility lifecycle"
-		if not reaction.is_empty() and reaction != "platforms":
-			return exploration_preset + " requires platform reactions"
-		if ViewerArguments.value(arguments, "--level=").to_upper() != required_level:
-			return exploration_preset + " requires --level=" + required_level
-		if not ViewerArguments.has_prefix(arguments, "--data-dir=") and OS.get_environment("FROGGER_DATA_DIR").is_empty():
-			return exploration_preset + " requires player data"
-		reaction = "platforms"
-		if exploration_preset == Org1ExplorationSetup.VISIBILITY_PRESET and lifetime == "all-attached":
-			return exploration_preset + " requires visibility lifecycle"
-		lifetime = "visibility" if exploration_preset == Org1ExplorationSetup.VISIBILITY_PRESET else "all-attached"
-	entity_reactions = reaction in ["pop", "platforms"] or not lifetime.is_empty() or (entity_collision != null and entity_collision.lifecycle != null)
-	platforms_enabled = entity_reactions and (reaction == "platforms" or (reaction.is_empty() and entity_collision != null and entity_collision.platforms_enabled))
-	entity_lifecycle = lifetime == "visibility" or (lifetime.is_empty() and entity_collision != null and entity_collision.lifecycle != null)
-	if entity_lifecycle and level.camera == null:
-		return "Visibility lifecycle requires a gameplay camera"
-	if entity_lifecycle and entity_collision == null:
-		var data_available: bool = ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty()
-		var requested_level: String = ViewerArguments.value(arguments, "--level=")
-		if not data_available or (requested_level.is_empty() and level_code.is_empty()):
-			return "Visibility lifecycle requires an authored entity fixture or player data with --level"
-	level.entity_collision = entity_collision.copy() if entity_reactions and entity_collision != null else null
-	if level.entity_collision != null:
-		level.entity_collision.platforms_enabled = platforms_enabled
-		if entity_lifecycle and level.entity_collision.lifecycle == null:
-			return "Visibility lifecycle requires map-group polygon counts"
-		if not entity_lifecycle:
-			level.entity_collision.lifecycle = null
-	if entity_reactions and entity_collision != null:
-		if collision_enabled_authored and not level.collision_enabled:
-			return "Entity reaction scenario requires collision_enabled=true"
-		level.collision_enabled = true
-	for key: String in ["seed", "tick-limit"]:
-		var text: String = ViewerArguments.value(arguments, "--" + key + "=")
-		if text.is_empty():
-			continue
-		if not text.is_valid_int():
-			return "%s must be an integer" % key
-		var number: int = text.to_int()
-		if key == "seed":
-			if number < 0 or number > 0xffffffff:
-				return "seed must be in 0..4294967295"
-			initial.seed = number
-		else:
-			if number < 0 or number > 100000:
-				return "tick-limit must be in 0..100000"
-			tick_limit = number
-			tick_limit_override = true
-	return ""
 
 static func _integer(value: Variant) -> bool:
 	if not (value is int or value is float):

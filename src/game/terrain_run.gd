@@ -32,7 +32,7 @@ var _entities: EntityRun = null
 var _candidate_entities: EntityRun = null
 var _source_id: String = ""
 var _resource_id: int = -1
-var _exploration_guard: ExplorationGuard = null
+var _tick_guard: TickGuard = null
 var _camera_zones: Array[ZoneDefinition] = []
 var _callback_error: String = ""
 var _has_entity_updates: bool = false
@@ -74,19 +74,16 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 				return run
 			identities[zone.zone_index] = true
 			run._camera_zones.append(zone.copy())
-	if level.exploration_guard != null:
-		run.error = level.exploration_guard.validate()
+	var requirements: TickGuardCandidate = TickGuardCandidate.from_level(level)
+	if level.tick_guard != null:
+		run._tick_guard = level.tick_guard.copy()
+		run.error = run._tick_guard.check(TickGuard.Phase.SETUP, requirements)
 		if not run.error.is_empty():
 			return run
-		if level.entity_collision != null and level.entity_collision.lifecycle != null and not level.exploration_guard.scripted_visibility_admitted:
-			run.error = "Guarded exploration requires all-attached entity lifetime"
-			return run
-		run._exploration_guard = level.exploration_guard.copy()
+	elif requirements.restricted_contacts:
+		run.error = "Contact exclusion requires animated inspection admission"
+		return run
 	if level.entity_collision != null:
-		for contact: FormContactDefinition in level.entity_collision.contacts:
-			if not contact.admission_exclusion.is_empty() and (run._exploration_guard == null or run._exploration_guard.frog_roots.is_empty()):
-				run.error = "Contact exclusion requires animated inspection admission"
-				return run
 		if level.entity_collision.lifecycle != null and level.camera == null:
 			run.error = "Visibility lifecycle requires an integrated camera"
 			return run
@@ -185,10 +182,8 @@ func reset(initial: RunStart = null) -> String:
 		state.target_y = state.old_y
 	elif state.start_mode == 1:
 		state.mode = FrogMode.WAIT_FOR_CAMERA
-	if _exploration_guard != null:
-		var guard_error: String = _exploration_guard.check_world(state.world_position)
-		if guard_error.is_empty():
-			guard_error = _exploration_guard.check_cell(state.cell)
+	if _tick_guard != null:
+		var guard_error: String = _check_guard(TickGuard.Phase.RESET_WORLD, state)
 		if not guard_error.is_empty():
 			return guard_error
 	_update_camera_zone(state)
@@ -214,8 +209,8 @@ func reset(initial: RunStart = null) -> String:
 		var pose_issue: String = state.frog_collision_pose.refresh(_entity_collision.frog_collision, state.animation.action, state.animation.cel, state.matrix12)
 		if not pose_issue.is_empty():
 			return pose_issue
-	if _exploration_guard != null:
-		var animated_issue: String = _exploration_guard.check_frog(state)
+	if _tick_guard != null:
+		var animated_issue: String = _check_guard(TickGuard.Phase.RESET_POSE, state)
 		if not animated_issue.is_empty():
 			return animated_issue
 	state.rng_state = random.state
@@ -283,8 +278,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	var entity_issue: String = _update_entity_scripts(next, result.events)
 	if not entity_issue.is_empty():
 		return _failed_tick(result, entity_issue)
-	if _exploration_guard != null:
-		var exclusion_issue: String = _exploration_guard.check_entities(next.entities)
+	if _tick_guard != null:
+		var exclusion_issue: String = _check_guard(TickGuard.Phase.ENTITY_UPDATE, next)
 		if not exclusion_issue.is_empty():
 			return _failed_tick(result, exclusion_issue)
 	next.entity_hit_indices = PackedInt32Array()
@@ -309,10 +304,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if next.flags & FrogFlags.ON_ENTITY and next.current_entity_index >= 0:
 		_mark_carry(next, next.current_entity_index)
 	_update_camera_zone(next)
-	if _exploration_guard != null:
-		var guard_error: String = _exploration_guard.check_cell(next.cell)
-		if guard_error.is_empty():
-			guard_error = _exploration_guard.check_world(next.world_position)
+	if _tick_guard != null:
+		var guard_error: String = _check_guard(TickGuard.Phase.MOVEMENT, next)
 		if not guard_error.is_empty():
 			return _failed_tick(result, guard_error)
 	_sync_systems(next)
@@ -325,8 +318,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
 	if continue_entities and _candidate_entities != null:
-		if _exploration_guard != null:
-			var animated_issue: String = _exploration_guard.check_frog(next)
+		if _tick_guard != null:
+			var animated_issue: String = _check_guard(TickGuard.Phase.BEFORE_CONTACT, next)
 			if not animated_issue.is_empty():
 				return _failed_tick(result, animated_issue)
 		var entity_error: String = _contact_entities(next, result)
@@ -385,10 +378,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		next.entities = _candidate_entities.snapshot()
 	next.rng_state = _candidate_random.state
 	next.rng_draw_count = _candidate_random.draw_count
-	if _exploration_guard != null:
-		var guard_error: String = _exploration_guard.check_world(next.world_position)
-		if guard_error.is_empty():
-			guard_error = _exploration_guard.check_frog(next)
+	if _tick_guard != null:
+		var guard_error: String = _check_guard(TickGuard.Phase.FINAL, next)
 		if not guard_error.is_empty():
 			return _failed_tick(result, guard_error)
 	result.rng_consumers.assign(_candidate_random.consumers)
@@ -959,10 +950,8 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 	var ordered: PackedInt32Array = EntityContactOrder._indices_validated(_entity_collision, state.entities, state.world_position)
 	var forbidden: int = state.forbidden_entity_index
 	for entity_id: int in ordered:
-		if _exploration_guard != null:
-			var guard_error: String = _exploration_guard.check_world(state.world_position)
-			if guard_error.is_empty():
-				guard_error = _exploration_guard.check_frog(state)
+		if _tick_guard != null:
+			var guard_error: String = _check_guard(TickGuard.Phase.CONTACT_POSE, state)
 			if not guard_error.is_empty():
 				return guard_error
 		if entity_id == state.current_entity_index or entity_id == forbidden:
@@ -1002,8 +991,8 @@ func _contact_entities(state: RunSnapshot, result: TickResult) -> String:
 		if not issue.is_empty():
 			return issue
 	if state.current_entity_index >= 0 and state.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) == (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY) and state.remaining_ticks == 1:
-		if _exploration_guard != null:
-			var guard_error: String = _exploration_guard.check_world(state.world_position)
+		if _tick_guard != null:
+			var guard_error: String = _check_guard(TickGuard.Phase.CONTACT_WORLD, state)
 			if not guard_error.is_empty():
 				return guard_error
 		var pose: EntitySnapshot = _platform_pose(state)
@@ -1078,8 +1067,8 @@ func _apply_form_reaction(state: RunSnapshot, definition: FormContactDefinition,
 		_kill(state, reaction.kill_animation, false, result.events)
 		state.death_entity_index = pose.entity_index
 		result.events.append(TickEvent.make(TickEvent.Kind.ENTITY_POP_EXPLOSION_REQUEST) if reaction.status == FormReactionResult.POP else TickEvent.make(TickEvent.Kind.ENTITY_SQUISH))
-	if _exploration_guard != null:
-		return _exploration_guard.check_world(state.world_position)
+	if _tick_guard != null:
+		return _check_guard(TickGuard.Phase.CONTACT_WORLD, state)
 	return ""
 
 func _failed_tick(result: TickResult, issue: String) -> TickResult:
@@ -1320,3 +1309,6 @@ func _apply_callback(state: RunSnapshot, callback: TerrainCallbackResult, events
 		_react(state, callback.react_flags & 65535, events)
 	if callback.callback_flags & TerrainCallbackResult.UPDATE_OLD_POS:
 		state.old_position_16 = state.position_16
+
+func _check_guard(phase: TickGuard.Phase, state: RunSnapshot) -> String:
+	return _tick_guard.check(phase, TickGuardCandidate.from_state(state)) if _tick_guard != null else ""

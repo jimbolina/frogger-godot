@@ -377,10 +377,12 @@ The complete retail and asset-free runs remain required before each commit.
 
 | Path | What |
 |---|---|
-| `src/legacy/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
+| `src/source/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
 | `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
-| `src/presentation/` | Screens (`frontend/`), runtime setup (`setup/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
+| `src/application/` | Source-to-game adapters and resolved behavior catalog. |
+| `src/inspection/` | Developer scenarios, validated options, guards and manifests. |
+| `src/presentation/` | Screens (`frontend/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |

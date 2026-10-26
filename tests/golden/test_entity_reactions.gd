@@ -23,7 +23,7 @@ func test_synthetic_entity_reactions_match_independent_facts() -> void:
 		assert_eq(scenario.error, "", name)
 		if not scenario.error.is_empty():
 			continue
-		assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "", name)
+		assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "", name)
 		var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
 		assert_eq(run.error, "", name)
 		if not run.error.is_empty():

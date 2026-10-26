@@ -4,7 +4,7 @@ extends GutTest
 func test_synthetic_zone_lifecycle_matches_frozen_gameplay() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_zones.json")
 	assert_eq(scenario.error, "")
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
 	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():

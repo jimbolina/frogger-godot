@@ -24,7 +24,7 @@ func test_opt_in_keeps_default_terrain_trace_and_detaches_definition() -> void:
 	var metadata: Dictionary = JSON.parse_string(original.full_rows[0])
 	var original_schema: String = metadata.schema
 	assert_eq(original_schema, "terrain-run-v1")
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "")
 	assert_not_null(scenario.level.entity_collision)
 	assert_ne(scenario.level.entity_collision, scenario.entity_collision)
 	var trace := TerrainTrace.new()
@@ -36,7 +36,7 @@ func test_opt_in_keeps_default_terrain_trace_and_detaches_definition() -> void:
 	assert_eq(reaction_schema, "entity-pop-v1")
 	assert_eq(group_base, [-512.0, 0.0, -512.0])
 	assert_false(collision_metadata.has("lifecycle"))
-	assert_eq(scenario.apply_arguments(PackedStringArray()), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray()), "")
 	assert_null(scenario.level.entity_collision)
 
 func test_authored_legacy_platforms_still_require_reaction_opt_in() -> void:
@@ -44,22 +44,22 @@ func test_authored_legacy_platforms_still_require_reaction_opt_in() -> void:
 	authored.level.entity_collision["platforms_enabled"] = true
 	var scenario: TerrainScenario = TerrainScenario.from_object(authored)
 	assert_eq(scenario.error, "")
-	assert_eq(scenario.apply_arguments(PackedStringArray()), "")
-	assert_false(scenario.entity_reactions)
-	assert_false(scenario.platforms_enabled)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray()), "")
+	assert_false(scenario.options.entity_reactions)
+	assert_false(scenario.options.platforms_enabled)
 	assert_null(scenario.level.entity_collision)
 	var trace := TerrainTrace.new()
 	trace.configure(scenario)
 	var metadata: Dictionary = JSON.parse_string(trace.full_rows[0])
 	var schema: String = metadata.schema
 	assert_eq(schema, "terrain-run-v1")
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=platforms"])), "")
-	assert_true(scenario.platforms_enabled)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=platforms"])), "")
+	assert_true(scenario.options.platforms_enabled)
 	assert_not_null(scenario.level.entity_collision)
 
 func test_viewer_draws_committed_entity_snapshot_and_contact_overlay() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_object(_authored())
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "")
 	var viewer := TerrainViewer.new()
 	viewer.auto_open = false
 	viewer.record_trace = true
@@ -99,12 +99,12 @@ func test_invalid_fixture_and_disabled_authored_collision_are_rejected() -> void
 	disabled.level.collision_enabled = false
 	var scenario: TerrainScenario = TerrainScenario.from_object(disabled)
 	assert_eq(scenario.error, "")
-	assert_string_contains(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "collision_enabled")
+	assert_string_contains(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "collision_enabled")
 
 func test_des2_demo_defaults_preserve_authored_inputs_and_tick_override() -> void:
 	var canned: TerrainScenario = TerrainScenario.builtin("normal")
 	canned.level_code = "DES2"
-	assert_eq(canned.apply_arguments(PackedStringArray(["--entity-reactions=pop", "--tick-limit=44"])), "")
+	assert_eq(TerrainScenarioArguments.apply(canned, PackedStringArray(["--entity-reactions=pop", "--tick-limit=44"])), "")
 	canned.apply_des2_inspection_defaults()
 	assert_eq(canned.initial.spawn_cell, Vector2i(17, 30))
 	assert_eq(canned.initial.spawn_direction, 1)
@@ -112,7 +112,7 @@ func test_des2_demo_defaults_preserve_authored_inputs_and_tick_override() -> voi
 	assert_eq(canned.command_at(0).pressed_mask, TickCommand.EAST)
 	var authored: TerrainScenario = TerrainScenario.from_object(_authored())
 	authored.level_code = "DES2"
-	assert_eq(authored.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "")
+	assert_eq(TerrainScenarioArguments.apply(authored, PackedStringArray(["--entity-reactions=pop"])), "")
 	var original_commands: int = authored.command_at(0).pressed_mask
 	authored.apply_des2_inspection_defaults()
 	assert_eq(authored.tick_limit, 3)
@@ -128,8 +128,8 @@ func test_authored_lifecycle_auto_selects_new_trace_without_changing_legacy_defa
 	var scenario: TerrainScenario = TerrainScenario.from_object(authored)
 	assert_eq(scenario.error, "")
 	assert_not_null(scenario.entity_collision.lifecycle)
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop"])), "")
-	assert_true(scenario.entity_lifecycle)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop"])), "")
+	assert_true(scenario.options.entity_lifecycle)
 	var trace := TerrainTrace.new()
 	trace.configure(scenario)
 	var metadata: Dictionary = JSON.parse_string(trace.full_rows[0])
@@ -143,19 +143,19 @@ func test_authored_lifecycle_auto_selects_new_trace_without_changing_legacy_defa
 	var lifecycle_facts: Dictionary = TerrainTrace.facts(EntityRunSnapshot.new(), true)
 	assert_false(legacy_facts.has("lifecycle_enabled"))
 	assert_true(lifecycle_facts.has("lifecycle_enabled"))
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-reactions=pop", "--entity-lifecycle=all-attached"])), "")
-	assert_false(scenario.entity_lifecycle)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-reactions=pop", "--entity-lifecycle=all-attached"])), "")
+	assert_false(scenario.options.entity_lifecycle)
 	assert_null(scenario.level.entity_collision.lifecycle)
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "")
-	assert_true(scenario.entity_reactions)
-	assert_true(scenario.entity_lifecycle)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
+	assert_true(scenario.options.entity_reactions)
+	assert_true(scenario.options.entity_lifecycle)
 	authored.level.entity_collision.lifecycle.polygon_counts = [0]
 	assert_string_contains(TerrainScenario.from_object(authored).error, "one polygon count")
 
 func test_visibility_requires_entity_source_before_tick_execution() -> void:
 	var builtin: TerrainScenario = TerrainScenario.builtin("normal")
-	assert_string_contains(builtin.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "authored entity fixture or player data")
-	assert_eq(builtin.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility", "--data-dir=C:/player"])), "Visibility lifecycle requires an authored entity fixture or player data with --level")
+	assert_string_contains(TerrainScenarioArguments.apply(builtin, PackedStringArray(["--entity-lifecycle=visibility"])), "authored entity fixture or player data")
+	assert_eq(TerrainScenarioArguments.apply(builtin, PackedStringArray(["--entity-lifecycle=visibility", "--data-dir=C:/player"])), "Visibility lifecycle requires an authored entity fixture or player data with --level")
 
 func test_lifecycle_overlay_releases_and_recreates_only_live_markers() -> void:
 	var overlay := EntityInspection.new()
@@ -199,28 +199,28 @@ func test_lifecycle_overlay_releases_and_recreates_only_live_markers() -> void:
 func test_exploration_arguments_require_audited_level_and_all_attached_platforms() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	var arguments := PackedStringArray(["--exploration=jun1-log-bank", "--level=JUN1", "--data-dir=player-owned"])
-	assert_eq(scenario.apply_arguments(arguments), "")
-	assert_true(scenario.entity_reactions)
-	assert_true(scenario.platforms_enabled)
-	assert_false(scenario.entity_lifecycle)
+	assert_eq(TerrainScenarioArguments.apply(scenario, arguments), "")
+	assert_true(scenario.options.entity_reactions)
+	assert_true(scenario.options.platforms_enabled)
+	assert_false(scenario.options.entity_lifecycle)
 	arguments.append("--entity-lifecycle=visibility")
-	assert_string_contains(scenario.apply_arguments(arguments), "cannot be combined")
+	assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "cannot be combined")
 	arguments.remove_at(arguments.size() - 1)
 	arguments.append("--entity-reactions=pop")
-	assert_string_contains(scenario.apply_arguments(arguments), "requires platform reactions")
+	assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "requires platform reactions")
 	arguments.remove_at(arguments.size() - 1)
 	arguments[1] = "--level=ORG1"
-	assert_string_contains(scenario.apply_arguments(arguments), "requires --level=JUN1")
+	assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "requires --level=JUN1")
 	arguments[0] = "--exploration=unknown"
-	assert_string_contains(scenario.apply_arguments(arguments), "must be jun1-log-bank")
+	assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "must be jun1-log-bank")
 
 func test_integrated_lifecycle_fixture_decodes_and_selects_visibility() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_integrated.json")
 	assert_eq(scenario.error, "")
 	assert_eq(scenario.tick_limit, 336)
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "")
-	assert_true(scenario.entity_reactions)
-	assert_true(scenario.entity_lifecycle)
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
+	assert_true(scenario.options.entity_reactions)
+	assert_true(scenario.options.entity_lifecycle)
 	assert_not_null(scenario.level.entity_collision)
 	assert_eq(scenario.level.entity_collision.lifecycle.polygon_counts.size(), 1024)
 
@@ -228,18 +228,18 @@ func test_org1_presets_require_org1_all_attached_platforms() -> void:
 	for preset: String in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
 		var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 		var arguments := PackedStringArray(["--exploration=" + preset, "--level=ORG1", "--data-dir=player-owned"])
-		assert_eq(scenario.apply_arguments(arguments), "")
-		assert_true(scenario.entity_reactions)
-		assert_true(scenario.platforms_enabled)
-		assert_false(scenario.entity_lifecycle)
+		assert_eq(TerrainScenarioArguments.apply(scenario, arguments), "")
+		assert_true(scenario.options.entity_reactions)
+		assert_true(scenario.options.platforms_enabled)
+		assert_false(scenario.options.entity_lifecycle)
 		arguments.append("--entity-lifecycle=visibility")
-		assert_string_contains(scenario.apply_arguments(arguments), "cannot be combined")
+		assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "cannot be combined")
 		arguments.remove_at(arguments.size() - 1)
 		arguments.append("--entity-reactions=pop")
-		assert_string_contains(scenario.apply_arguments(arguments), "requires platform reactions")
+		assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "requires platform reactions")
 		arguments.remove_at(arguments.size() - 1)
 		arguments[1] = "--level=JUN1"
-		assert_string_contains(scenario.apply_arguments(arguments), "requires --level=ORG1")
+		assert_string_contains(TerrainScenarioArguments.apply(scenario, arguments), "requires --level=ORG1")
 
 func test_lifecycle_model_allocation_resets_animation_on_new_generation() -> void:
 	var viewer := TerrainViewer.new()

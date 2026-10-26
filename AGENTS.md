@@ -25,7 +25,7 @@ FrogLord names, warn/fall back/report unknown entries.
 - `../froggy` is read-only. Never read or write `../frogger-multiplatform`.
 - Keep `third_party/froglord_cfg/` unmodified; update wholesale from upstream
   and record its commit. The project licence remains the owner's decision.
-- `src/legacy/` classes extend `RefCounted`, without nodes/tree dependencies.
+- `src/source/` classes extend `RefCounted`, without nodes/tree dependencies.
   Keep one responsibility per class; document classes/public methods with `##`.
 - Keep only genuine docstrings in project code, plus required directives and
   licence notices. Omit ordinary comments.

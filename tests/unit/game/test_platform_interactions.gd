@@ -22,8 +22,8 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	entity.script_definition.programs[2] = PackedInt32Array([38])
 	entity.script_definition.names[2] = "SCRIPT_ORG_TRUCK_SFX"
 	entity.action_lengths = PackedInt32Array([3, 4])
-	level.exploration_guard = ExplorationGuard.new()
-	level.exploration_guard.world_bounds = Rect2i(-129, -129, 2, 2)
+	level.tick_guard = ExplorationGuard.new()
+	(level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-129, -129, 2, 2)
 	var run: TerrainRun = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	var first: TickResult = _tick(run)
@@ -45,7 +45,7 @@ func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> v
 	assert_eq(run.snapshot().entities.entities[0].script_state.timer, 0)
 	assert_eq(run.snapshot().entities.entities[0].animation.cel, -1)
 	assert_eq(run.snapshot().rng_state, 1)
-	level.exploration_guard = null
+	level.tick_guard = null
 	run = TerrainRun.create(level)
 	assert_eq(_tick(run).error, "")
 	var second: TickResult = _tick(run)
@@ -929,8 +929,8 @@ func _guarded_mover() -> LevelDefinition:
 	entity.path_start = PathStart.new()
 	entity.path_start.speed = 20
 	level.entity_collision.contacts[0].entity_flags = entity.flags
-	level.exploration_guard = ExplorationGuard.new()
-	level.exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 1024)
+	level.tick_guard = ExplorationGuard.new()
+	(level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
 	return level
 
 func test_carry_guard_rejects_boundary_and_zone_without_advancing_paths() -> void:
@@ -939,9 +939,9 @@ func test_carry_guard_rejects_boundary_and_zone_without_advancing_paths() -> voi
 		if active_zone:
 			var zone := ZoneDefinition.new()
 			zone.bounds = PackedInt32Array([0, 1, 0, 1])
-			level.exploration_guard.zones.append(zone)
+			(level.tick_guard as ExplorationGuard).zones.append(zone)
 		else:
-			level.exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 392)
+			(level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 392)
 		var run: TerrainRun = TerrainRun.create(level)
 		assert_eq(run.error, "")
 		assert_eq(_tick(run).error, "")
@@ -966,8 +966,8 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 	level.entity_collision.entities[0].matrix12 = PackedInt32Array([4096, 0, 0, 0, 2896, -2896, 0, 2896, 2896, -100, 0, -128])
 	level.entity_collision.contacts[0].height = -20
 	level.entity_collision.contacts[0].grid_flags[0] = SAFE
-	level.exploration_guard = ExplorationGuard.new()
-	level.exploration_guard.world_bounds = Rect2i(-256, -130, 512, 386)
+	level.tick_guard = ExplorationGuard.new()
+	(level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-256, -130, 512, 386)
 	var run: TerrainRun = TerrainRun.create(level)
 	assert_eq(run.error, "")
 	run._state.old_y = -600
@@ -981,7 +981,7 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 	assert_true(failed.events.is_empty())
 	assert_true(failed.entity_contacts.is_empty())
 	assert_true(failed.rng_consumers.is_empty())
-	run._exploration_guard.world_bounds = Rect2i(-256, -256, 512, 512)
+	(run._tick_guard as ExplorationGuard).world_bounds = Rect2i(-256, -256, 512, 512)
 	var retry: TickResult = _tick(run)
 	assert_eq(retry.error, "")
 	if retry.error.is_empty():

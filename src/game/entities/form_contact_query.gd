@@ -20,9 +20,9 @@ static func query(definition: FormContactDefinition, entity_snapshot: EntitySnap
 		result.status = FormContactResult.DISABLED
 		result.reason = "Entity has no live instance"
 		return result
-	if not definition.admission_exclusion.is_empty():
+	if not definition.disabled_reason.is_empty():
 		result.status = FormContactResult.DISABLED
-		result.reason = definition.admission_exclusion
+		result.reason = definition.disabled_reason
 		return result
 	var matrix: PackedInt32Array = entity_snapshot.matrix12
 	if matrix.size() != 12:

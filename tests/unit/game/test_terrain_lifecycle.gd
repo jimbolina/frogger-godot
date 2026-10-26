@@ -118,7 +118,7 @@ func test_active_zone_safe_attachment_and_departure_keep_live_generation() -> vo
 func test_moving_safe_platform_composes_zone_camera_with_visibility() -> void:
 	var scenario: TerrainScenario = TerrainScenario.from_file("res://tests/golden/fixtures/lifecycle_safe_moving.json")
 	assert_eq(scenario.error, "")
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--entity-lifecycle=visibility"])), "")
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--entity-lifecycle=visibility"])), "")
 	scenario.level.camera_zones.append(_active_zone())
 	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")

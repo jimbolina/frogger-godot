@@ -25,7 +25,7 @@ var death_type: int = 0
 var form_book_flags: int = 0
 var reaction_unsupported_reason: String = ""
 ## Nonempty only after a complete guarded neighbor proof; logical updates remain live.
-var admission_exclusion: String = ""
+var disabled_reason: String = ""
 ## Optional admitted primitives checked before this FORM's fallback grid.
 var primitives: Array[EntityPrimitiveDefinition] = []
 
@@ -53,7 +53,7 @@ func copy() -> FormContactDefinition:
 	result.death_type = death_type
 	result.form_book_flags = form_book_flags
 	result.reaction_unsupported_reason = reaction_unsupported_reason
-	result.admission_exclusion = admission_exclusion
+	result.disabled_reason = disabled_reason
 	for primitive: EntityPrimitiveDefinition in primitives:
 		result.primitives.append(primitive.copy() if primitive != null else null)
 	return result

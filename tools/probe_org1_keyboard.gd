@@ -16,7 +16,7 @@ func _run() -> void:
 		return
 	var data: GameData = GameData.open(found.source, found.version)
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	var issue: String = scenario.apply_arguments(arguments)
+	var issue: String = TerrainScenarioArguments.apply(scenario, arguments)
 	if not issue.is_empty():
 		push_error(issue)
 		data.close()

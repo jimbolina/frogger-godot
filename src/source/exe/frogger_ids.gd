@@ -98,3 +98,8 @@ static func world_name(world: int) -> String:
 static func music_track_name(track: int) -> String:
 	var track_name: String = MUSIC_TRACK_NAMES.get(track, "")
 	return track_name
+
+
+## Animation tables currently distinguish jungle and volcano from the default set.
+static func animation_theme(theme: int) -> StringName:
+	return &"JUN" if theme == 4 else &"VOL" if theme == 10 else &"SUB"

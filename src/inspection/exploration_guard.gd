@@ -1,5 +1,5 @@
 class_name ExplorationGuard
-extends RefCounted
+extends TickGuard
 ## Immutable inspection admission bounds; rejecting a candidate never creates a wall.
 
 var world_bounds: Rect2i = Rect2i()
@@ -107,4 +107,34 @@ func check_entities(entities: EntityRunSnapshot) -> String:
 			break
 		if not found:
 			return "Dynamic collectable admission identity is missing"
+	return ""
+
+## Enforces inspection restrictions at each gameplay checkpoint.
+func check(phase: Phase, candidate: TickGuardCandidate) -> String:
+	if phase == Phase.SETUP:
+		var issue: String = validate()
+		if not issue.is_empty():
+			return issue
+		if candidate.visibility_enabled and not scripted_visibility_admitted:
+			return "Guarded exploration requires all-attached entity lifetime"
+		if candidate.restricted_contacts and frog_roots.is_empty():
+			return "Contact exclusion requires animated inspection admission"
+		return ""
+	var state: RunSnapshot = candidate.state
+	match phase:
+		Phase.RESET_WORLD:
+			var issue: String = check_world(state.world_position)
+			return issue if not issue.is_empty() else check_cell(state.cell)
+		Phase.RESET_POSE, Phase.BEFORE_CONTACT:
+			return check_frog(state)
+		Phase.ENTITY_UPDATE:
+			return check_entities(state.entities)
+		Phase.MOVEMENT:
+			var issue: String = check_cell(state.cell)
+			return issue if not issue.is_empty() else check_world(state.world_position)
+		Phase.CONTACT_WORLD:
+			return check_world(state.world_position)
+		Phase.CONTACT_POSE, Phase.FINAL:
+			var issue: String = check_world(state.world_position)
+			return issue if not issue.is_empty() else check_frog(state)
 	return ""

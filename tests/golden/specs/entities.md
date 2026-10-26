@@ -119,7 +119,7 @@ python -B tools/verify_jun1_admission.py --data-dir <game-folder>
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-fixture <external-route-input>
 & <external-oracle>/platform_oracle.exe <acos-table> --retail-route <external-route-input> > <external-route-csv>
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-trace <external-route-csv> --route-golden tests/golden/pc-retail-v3.0e/platform_jun1_route.tsv --verify
-python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-admission src/presentation/setup/jun1_exploration_admission.json --verify
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-admission src/inspection/jun1_exploration_admission.json --verify
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-records-golden tests/golden/pc-retail-v3.0e/jun1_zone_records.tsv --verify
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-fixture <external-zone-input>
 & <external-oracle>/platform_oracle.exe <acos-table> --zones <external-zone-input> > <external-zone-csv>
@@ -628,7 +628,7 @@ out-and-back workload with a relative-height camera zone. It crosses zone
 boundaries during real normal hops. Retail cases reuse the prescribed JUN1
 zone camera stimuli, with independent source decoding of eleven script-free
 logs, their paths and all group counts. Each sequence starts dormant and resets
-paths. `src/presentation/setup/jun1_zone_lifecycle_admission.json` is generated
+paths. `src/inspection/jun1_zone_lifecycle_admission.json` is generated
 from the same supplied inputs: map digest, named bindings and log-model digests.
 Neither file contains retail bytes or executable code.
 

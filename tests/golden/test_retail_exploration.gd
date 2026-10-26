@@ -56,7 +56,7 @@ func test_guarded_jun1_bank_log_bank_phases_match_frozen_c() -> void:
 	assert_eq(scenario.error, "")
 	if not scenario.error.is_empty():
 		return
-	assert_eq(scenario.apply_arguments(PackedStringArray(["--exploration=jun1-log-bank",
+	assert_eq(TerrainScenarioArguments.apply(scenario, PackedStringArray(["--exploration=jun1-log-bank",
 		"--level=JUN1", "--data-dir=retail-fixture"])), "")
 	assert_eq(scenario.attach_data(_data, "JUN1"), "")
 	if scenario.level == null:

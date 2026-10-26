@@ -19,9 +19,9 @@ func after_all() -> void:
 
 func _scenario(preset: String = Org1ExplorationSetup.PRESET) -> TerrainScenario:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	scenario.entity_reactions = true
-	scenario.platforms_enabled = true
-	scenario.exploration_preset = preset
+	scenario.options.reactions = ScenarioOptions.Reaction.POP
+	scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
+	scenario.options.exploration_preset = preset
 	scenario.error = scenario.attach_data(_data, "ORG1")
 	return scenario
 
@@ -42,8 +42,8 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 	assert_eq(scenario.error, "")
 	if not scenario.error.is_empty():
 		return
-	assert_true(scenario.level.exploration_guard.collectable_indices.is_empty())
-	assert_true(scenario.level.exploration_guard.scripted_visibility_admitted)
+	assert_true((scenario.level.tick_guard as ExplorationGuard).collectable_indices.is_empty())
+	assert_true((scenario.level.tick_guard as ExplorationGuard).scripted_visibility_admitted)
 	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
@@ -130,7 +130,7 @@ func test_road_admission_and_rejected_tick_are_atomic() -> void:
 	for contact: FormContactDefinition in scenario.level.entity_collision.contacts:
 		if contact.entity_index >= 24 and contact.entity_index <= 47:
 			assert_eq(contact.unsupported_reason, "")
-			assert_eq(contact.admission_exclusion, "")
+			assert_eq(contact.disabled_reason, "")
 			assert_eq(contact.primitives.size(), 1)
 			assert_false(contact.has_form_data)
 			traffic_count += 1
@@ -167,7 +167,7 @@ func test_admission_dependencies_and_complete_reset() -> void:
 		return
 	assert_eq(scenario.commands.size(), 0)
 	assert_eq(scenario.level.entity_collision.entities.size(), 64)
-	assert_eq(scenario.level.exploration_guard.world_bounds, Rect2i(-512, -128, 1024, 608))
+	assert_eq((scenario.level.tick_guard as ExplorationGuard).world_bounds, Rect2i(-512, -128, 1024, 608))
 	var form: FormBookEntry = _data.tables.theme_book().get_form(5, 3)
 	var old_radius: int = form.radius_squared
 	form.radius_squared += 1
@@ -192,7 +192,7 @@ func test_admission_dependencies_and_complete_reset() -> void:
 	scenario.initial.powerup_flags = 1
 	assert_string_contains(TerrainRun.create(scenario.level, scenario.initial).error, "unpowered")
 	scenario.initial.powerup_flags = 0
-	scenario.level.exploration_guard = null
+	scenario.level.tick_guard = null
 	assert_string_contains(TerrainRun.create(scenario.level, scenario.initial).error, "admission")
 
 func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org1ExplorationSetup.PRESET) -> void:

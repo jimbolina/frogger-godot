@@ -182,7 +182,7 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 		if layer == "game" and token.value == "entity_name" and _entity_name_dispatch(record.tokens, index):
 			into.append(Violation.new(path, token.line, "behavior",
 				"gameplay must dispatch on resolved behavior kinds, not entity names", origin))
-		if layer == "game" and not member and GAME_ENVIRONMENT.has(token.value):
+		if (layer == "game" or (layer == "application" and path.begins_with("res://src/application/") and not path.begins_with("res://src/application/loaders/"))) and not member and GAME_ENVIRONMENT.has(token.value):
 			into.append(Violation.new(path, token.line, "environment",
 				"gameplay must receive external data instead of using %s" % token.value, origin))
 		if invoked and (DYNAMIC_CALLS.has(token.value) \
@@ -277,22 +277,29 @@ func _is_literal_load(tokens: Array[Token], index: int) -> bool:
 
 
 func _protected_layer(path: String) -> String:
-	if path.begins_with("res://src/legacy/"):
-		return "legacy"
+	if path.begins_with("res://src/source/"):
+		return "source"
 	if path.begins_with("res://src/game/"):
 		return "game"
+	if path.begins_with("res://src/application/"):
+		return "application"
 	return ""
 
 
 func _forbidden_path(path: String, layer: String) -> bool:
 	if path.begins_with("res://src/convert/") \
 			or path.begins_with("res://src/presentation/") \
+			or path.begins_with("res://src/inspection/") \
 			or path.begins_with("res://scenes/") \
 			or path.get_extension() in ["tscn", "scn"]:
 		return true
-	if layer == "legacy":
+	if layer == "application":
+		return false
+	if path.begins_with("res://src/application/"):
+		return true
+	if layer == "source":
 		return path.begins_with("res://src/game/")
-	return path.begins_with("res://src/legacy/")
+	return path.begins_with("res://src/source/")
 
 
 func _resolve_path(source: String, target: String) -> String:

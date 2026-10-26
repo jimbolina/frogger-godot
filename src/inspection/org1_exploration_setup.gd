@@ -3,18 +3,18 @@ extends RefCounted
 ## Strict supplied-data admission for independently proved guarded ORG1 routes.
 
 const PRESET: String = "org1-turtle-log-bank"
-const MANIFEST_PATH: String = "res://src/presentation/setup/org1_exploration_admission.json"
+const MANIFEST_PATH: String = "res://src/inspection/org1_exploration_admission.json"
 const VISIBILITY_PRESET: String = "org1-turtle-log-bank-visibility"
-const VISIBILITY_MANIFEST_PATH: String = "res://src/presentation/setup/org1_visibility_admission.json"
+const VISIBILITY_MANIFEST_PATH: String = "res://src/inspection/org1_visibility_admission.json"
 const ROAD_PRESET: String = "org1-road-river"
-const ROAD_MANIFEST_PATH: String = "res://src/presentation/setup/org1_road_river_admission.json"
+const ROAD_MANIFEST_PATH: String = "res://src/inspection/org1_road_river_admission.json"
 
 ## Validates proof inputs before enabling any custom update or contact exclusion.
 static func apply(scenario: TerrainScenario, data: GameData) -> String:
-	var road: bool = scenario.exploration_preset == ROAD_PRESET
-	var visibility: bool = scenario.exploration_preset == VISIBILITY_PRESET
+	var road: bool = scenario.options.exploration_preset == ROAD_PRESET
+	var visibility: bool = scenario.options.exploration_preset == VISIBILITY_PRESET
 	var preset: String = VISIBILITY_PRESET if visibility else ROAD_PRESET if road else PRESET
-	if scenario.level_code.to_upper() != "ORG1" or (scenario.entity_lifecycle and not visibility):
+	if scenario.level_code.to_upper() != "ORG1" or (scenario.options.entity_lifecycle and not visibility):
 		return preset + " requires high-detail ORG1 and all-attached lifetime"
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(VISIBILITY_MANIFEST_PATH if visibility else ROAD_MANIFEST_PATH if road else MANIFEST_PATH))
 	if not parsed is Dictionary:
@@ -82,7 +82,10 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if not problems.is_empty():
 		return "; ".join(problems)
 	if visibility:
-		setup.definitions[53].behavior.execution = EntityBehavior.Execution.CONTACT
+		var baby: EntityDefinition = _unique_role(setup.definitions, EntityBehavior.Kind.BABY_FROG)
+		if baby == null:
+			return "ORG1 requires one baby frog binding"
+		baby.behavior.execution = EntityBehavior.Execution.CONTACT
 	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, setup.definitions, models, "", -1, "", road)
 	if not contacts.error.is_empty():
 		return contacts.error
@@ -92,7 +95,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 		if not lifecycle.error.is_empty():
 			return lifecycle.error
 		collision.lifecycle = lifecycle.definition
-		scenario.entity_lifecycle = true
+		scenario.options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
 	if road:
 		var probes: FrogCollisionSetup = FrogCollisionSetup.from_model(scenario.frog_assets.model)
 		if not probes.error.is_empty():
@@ -122,8 +125,8 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 		else:
 			for item: Dictionary in exclusions:
 				if _integer(item.index) == slot and _integer(item.unique_id) == entity.unique_id and _integer(item.offset) == entity.source_offset:
-					contact.admission_exclusion = item.reason
-			if contact.admission_exclusion.is_empty():
+					contact.disabled_reason = item.reason
+			if contact.disabled_reason.is_empty():
 				return "ORG1 missing exclusion evidence for entity %d" % slot
 		if entity.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			var checkpoint: int = entity.form_id & 32767
@@ -135,8 +138,12 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	issue = collision.validate()
 	if not issue.is_empty():
 		return issue
-	var top: PackedInt32Array = setup.definitions[61].matrix12
-	var bottom: PackedInt32Array = setup.definitions[60].matrix12
+	var top_entity: EntityDefinition = _unique_role(setup.definitions, EntityBehavior.Kind.BOUNDS_TOP_LEFT)
+	var bottom_entity: EntityDefinition = _unique_role(setup.definitions, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT)
+	if top_entity == null or bottom_entity == null:
+		return "ORG1 requires unique boundary bindings"
+	var top: PackedInt32Array = top_entity.matrix12
+	var bottom: PackedInt32Array = bottom_entity.matrix12
 	scenario.level.collision_bounds = Rect2i(top[9], bottom[11], bottom[9] - top[9], top[11] - bottom[11])
 	var guard := ExplorationGuard.new()
 	if visibility:
@@ -154,7 +161,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	issue = guard.validate()
 	if not issue.is_empty():
 		return issue
-	scenario.level.exploration_guard = guard
+	scenario.level.tick_guard = guard
 	scenario.entity_collision = collision
 	scenario.level.entity_collision = collision.copy()
 	if road:
@@ -167,9 +174,9 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	scenario.initial.controller_directions = PackedInt32Array()
 	scenario.initial.camera_startup = false
 	scenario.identifier = preset
-	if not scenario.tick_limit_override and not scenario.authored_fixture:
+	if not scenario.options.tick_limit_override and not scenario.options.authored_fixture:
 		scenario.tick_limit = _integer(proof.default_ticks) if road else 730
-	if not scenario.authored_fixture:
+	if not scenario.options.authored_fixture:
 		scenario.commands.clear()
 	if visibility:
 		scenario.diagnostics.append("ORG1 guarded scripted visibility; pink frog pickup and riding; eleven FORMs; active zones and primitive execution unsupported")
@@ -182,3 +189,12 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 static func _integer(value: Variant) -> int:
 	var number: float = value
 	return int(number)
+
+static func _unique_role(definitions: Array[EntityDefinition], kind: EntityBehavior.Kind) -> EntityDefinition:
+	var selected: EntityDefinition = null
+	for definition: EntityDefinition in definitions:
+		if definition.behavior.kind == kind:
+			if selected != null:
+				return null
+			selected = definition
+	return selected

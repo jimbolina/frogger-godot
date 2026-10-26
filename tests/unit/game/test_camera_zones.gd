@@ -35,13 +35,13 @@ func test_failure_after_camera_discards_zone_timers_and_animation_rng() -> void:
 	var run: TerrainRun = TerrainRun.create(scenario.level)
 	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
 	var late := LateGuard.new()
-	run._exploration_guard = late
+	run._tick_guard = late
 	var result: TickResult = run.step(_command(0))
 	assert_string_contains(result.error, "Injected final")
 	assert_eq(late.visits, 2)
 	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
 	assert_null(result.camera_snapshot)
-	run._exploration_guard = null
+	run._tick_guard = null
 	assert_eq(run.step(_command(0)).error, "")
 	assert_eq(run.snapshot().camera.zone_index, 0)
 	assert_eq(run.snapshot().camera.move_timer, 29)
@@ -78,18 +78,18 @@ func test_active_zone_validation_and_nested_ownership() -> void:
 func test_move_selects_zone_before_camera_and_failed_late_guard_rolls_back() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	scenario.level.camera_zones.append(_zone(5, PackedInt32Array([1, 2, 1, 2])))
-	scenario.level.exploration_guard = ExplorationGuard.new()
-	scenario.level.exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 1024)
+	scenario.level.tick_guard = ExplorationGuard.new()
+	(scenario.level.tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
 	var run: TerrainRun = TerrainRun.create(scenario.level)
 	assert_eq(run.error, "")
 	for tick: int in 3:
 		assert_eq(run.step(_command(tick, TickCommand.NORTH if tick == 0 else 0)).error, "")
 	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
-	run._exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 512)
+	(run._tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 512)
 	var rejected: TickResult = run.step(_command(3))
 	assert_false(rejected.error.is_empty())
 	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
-	run._exploration_guard.world_bounds = Rect2i(-512, -512, 1024, 1024)
+	(run._tick_guard as ExplorationGuard).world_bounds = Rect2i(-512, -512, 1024, 1024)
 	var accepted: TickResult = run.step(_command(3))
 	assert_eq(accepted.error, "")
 	assert_eq(accepted.move_snapshot.camera_zone_index, 5)
