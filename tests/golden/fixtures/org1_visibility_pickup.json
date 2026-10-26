@@ -1,0 +1,10 @@
+{
+  "builtin": "normal",
+  "tick_limit": 490,
+  "commands": [
+    {"tick": 406, "pressed": 1, "held": 1},
+    {"tick": 418, "pressed": 1, "held": 1},
+    {"tick": 442, "pressed": 4, "held": 4},
+    {"tick": 454, "pressed": 4, "held": 4}
+  ]
+}

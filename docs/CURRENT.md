@@ -10,18 +10,19 @@ presets retain their audited all-attached bounds. Complete level play remains
 unfinished.
 
 The separate ORG1 bank/turtle/log visibility preset adds scripted recreation,
-source live-list updates, immortal initialization and uncollected baby-frog
-parent loss/search/hops. Persistent paths outlive mortal instances; script,
+source live-list updates, immortal initialization and pink frog
+parent loss/search/hops, body-contact pickup, riding and death. Persistent paths outlive mortal instances; script,
 animation and logical sound ownership restart per generation. Independent
-Python/frozen-C facts cover the round trip and an attached-diver death.
-A dynamic collection-radius guard rejects extended play when the baby invalidates
-its contact exclusion. See the [scripted visibility contract](reference/gameplay/entities.md#scripted-visibility-route).
+Python/frozen-C facts cover the round trip, pickup/return and carried drowning.
+Verified pink frog contact replaces her proximity exclusion within the existing
+corridor. See the [scripted visibility contract](reference/gameplay/entities.md#scripted-visibility-route).
 
 Combined active zones and script-free visibility retain synthetic gameplay and
 the prescribed JUN1 log probe. Ordinary retail terrain still requires zero-zone
-maps. [PORTING](PORTING.md) owns remaining P8 work: broader behaviors/reactions,
-verified FORM callbacks, collection, selective reset, playable zone routes and
-broader scripted visibility workloads. FOR1 remains an unverified retail candidate.
+maps. [PORTING](PORTING.md) owns the revised phases: next is P8a, a behaviour
+catalog with typed tick events, then P8b demo playback as the oracle for
+completing ORG1 in P8c. The corridor presets retire there. FOR1 remains an
+unverified retail candidate.
 Audio playback, splash/particle effects and
 [animated per-part lighting](reference/rendering/gameplay-projection.md) remain deferred.
 

@@ -201,6 +201,9 @@ static int org_visibility_tail(int tick,FILE *out) {
     fprintf(out,",%d,",total);
     for(int j=0;j<org_order_count;j++)fprintf(out,"%s%d",j?";":"",org_order[j]);
     fprintf(out,",%d,%d,%d",org_baby.bf_mode,org_baby.bf_search_count,org_index(org_baby.bf_entity));
+    fprintf(out,",%d,%d,%d,%d,",org_baby.bf_frog==Frogs?0:-1,org_baby.bf_jump_time_count,!!(org_baby.bf_flags&ORG_BABY_FROG_DEAD_FLAG),!!((org_flips[53].ae_object->ob_flags&MR_OBJ_NO_DISPLAY) || !(org_envs[53].ae_flags&MR_ANIM_ENV_DISPLAY)));
+    for(int r=0;r<3;r++)for(int c=0;c<3;c++)fprintf(out,"%s%d",r||c?";":"",org_lives[53].le_matrix.m[r][c]);
+    for(int k=0;k<3;k++)fprintf(out,";%ld",(long)org_lives[53].le_matrix.t[k]);
     for(int i=0;i<64;i++)fprintf(out,",%d:%d:%d:%d:%d",org_live[i],!!(org_lives[i].le_flags&LIVE_ENTITY_DESTROY),org_generation[i],org_scripts[i].si_timer,(org_lives[i].le_flags&LIVE_ENTITY_FLIPBOOK)?org_flips[i].ae_cel_number:-1);
     fputc('\n',out);return 0;
 }
@@ -377,7 +380,7 @@ static int org1_route_run(const char *file) {
             }
         }
         char life_path[4096];snprintf(life_path,sizeof(life_path),"%s.lifecycle.csv",file);life=fopen(life_path,"w");if(!life)return 2;
-        fputs("tick,groups,polygons,order,baby_mode,baby_search,baby_parent",life);
+        fputs("tick,groups,polygons,order,baby_mode,baby_search,baby_parent,baby_carrier,baby_jump,baby_dead,baby_hidden,baby_matrix",life);
         for(int i=0;i<64;i++)fprintf(life,",entity%d",i);fputc('\n',life);
     }
     fclose(in);f->fr_lives=3;Cheat_collision_toggle=FALSE;Cheat_infinite_lives_toggle=FALSE;

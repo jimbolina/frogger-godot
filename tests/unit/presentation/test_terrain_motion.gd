@@ -83,6 +83,18 @@ func test_degenerate_basis_stays_finite_and_keeps_exact_endpoints() -> void:
 	assert_true(TerrainMotion.blend(before, current, 0.5).is_finite())
 	assert_eq(TerrainMotion.blend(before, current, 0.5).basis.y, Vector3(0, 0.5, 0))
 
+func test_pink_frog_pickup_collapses_previous_parent_history() -> void:
+	var before: RunSnapshot = _sample()
+	before.entities.entities[0].background = EntityBackgroundState.new()
+	before.entities.entities[0].background.parent_entity_index = 15
+	var current: RunSnapshot = before.copy()
+	current.entities.entities[0].background.carrier_index = 0
+	current.entities.entities[0].background.parent_entity_index = -1
+	current.entities.entities[0].matrix12[9] = 256
+	var motion := TerrainMotion.new()
+	motion.capture(before, current)
+	assert_eq(motion.entity(0, 0.0), motion.entity(0, 1.0))
+
 func test_inspector_axes_match_exact_pose_and_preserve_committed_contact_probe() -> void:
 	var inspection := EntityInspection.new()
 	add_child_autofree(inspection)

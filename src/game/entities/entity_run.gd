@@ -270,7 +270,7 @@ func advance_animations() -> void:
 			entity.animation.advance()
 
 ## Updates one admitted custom neighbor on detached candidate state.
-func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = []) -> EntityBackgroundResult:
+func update_background(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: RunSnapshot = null) -> EntityBackgroundResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
 		var failed := EntityBackgroundResult.new()
@@ -289,7 +289,7 @@ func update_background(entity_index: int, environment: EntityEnvironmentState, r
 				if parent_slot < contacts.size():
 					parent_form = contacts[parent_slot]
 				break
-	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form)
+	var result: EntityBackgroundResult = EntityBackground.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form, frog)
 	if result.error.is_empty():
 		_state.entities[slot] = result.entity.copy()
 	return result

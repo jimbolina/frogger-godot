@@ -1,5 +1,5 @@
 {
-  "schema": "org1-visibility-admission-v1",
+  "schema": "org1-visibility-admission-v2",
   "build": "pc-retail-v3.0e",
   "map_resource_id": 658,
   "map_sha256": "369c0eb23140ef408b1fa77363ddd608389ef6c1cf2cfc42960985c587a604b4",
@@ -1146,7 +1146,8 @@
     14,
     15,
     16,
-    23
+    23,
+    53
   ],
   "authored_count": 64,
   "contact_exclusions": [
@@ -1409,12 +1410,6 @@
       "reason": "excluded_by_origin_sphere"
     },
     {
-      "index": 53,
-      "unique_id": 991,
-      "offset": 3732,
-      "reason": "excluded_by_dynamic_collection_radius_guard"
-    },
-    {
       "index": 54,
       "unique_id": 968,
       "offset": 3792,
@@ -1526,9 +1521,8 @@
     "SAFE bank/platforms and WATER only; maximum landing-height difference is below the 512-unit stun threshold.",
     "All support-path orientations, cardinal hops, snapping, centring and inherited up axes are included.",
     "Death/MUST_DIE skips primitive scans before death animation changes; croak imports affect no hilite-bearing part.",
-    "No tongueable neighbor within 640 units, no collectable contact, no powerups or body scaling.",
     "All 64 authored identities retain paths and source-ordered applicable live updates, including immortal initialization.",
-    "Dynamic baby sphere and tongue exclusion requires XZ distance greater than 640 from every integer point in the corridor at each entity phase; otherwise reject the entire tick.",
+    "Pink frog body contact, next-update pickup, riding and death are admitted; tongue input, checkpoints and fly collection remain unsupported.",
     "Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically."
   ]
 }

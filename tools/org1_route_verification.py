@@ -63,6 +63,7 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             route.poses=[p[:] for p in previous_poses]
         if lifetime:route.live=set(lifetime.live)
         route.poses[55][9:]=fly_position
+        entity_phase_mode=route.mode
         for visit,index in enumerate(lifetime.visits(route.attached) if lifetime else range(63,-1,-1)):
             if lifetime:
                 route.live=set(lifetime.live)
@@ -70,8 +71,7 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             r=geometry['neighbors'][index];s=scripts.get(index)
             previous_flags=(4098 if actions[index] else 0)|(65536 if s and s.no_fade else 0)|(64 if index in hits else 0)|(4 if index==carried else 0)
             if lifetime:previous_flags|=int(index in lifetime.pending)
-            killed_here=False
-            if lifetime and index==53:lifetime.baby.update(baby_parent,lifetime.live,route.poses,route.forms,geometry['neighbors'],cels)
+            if lifetime and index==53:lifetime.baby.update(baby_parent,lifetime.live,route.poses,route.forms,geometry['neighbors'],cels,route,index in hits,entity_phase_mode)
             if index==55:
                 expired=fly_timer==0;fly_timer-=1
                 if expired:
@@ -88,7 +88,6 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
                     death_tick=tick;route.mode=2;route.flags&=~2048;route.velocity=[0,0,0];route.count=0
                     frog_anim.request(8)
                     s.requests.append('death_pgen')
-                    killed_here=True
                 sounds+=len(requested);route.poses[index][10]+=s.deviation
             wanted=dict(tick=tick,index=index,root=s.root if s else -1,program=s.program if s else -1,
                         cursor=s.cursor if s else -1,loop_start=s.start if s else -1,loop_end=s.end if s else -1,
@@ -100,7 +99,7 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             wanted.update(zip(('red','green','blue'),s.colours if s else [0,0,0]))
             wanted.update(zip(('ambient_red','ambient_green','ambient_blue'),s.ambient if s else [160,160,160] if r['entity_type']=='CHECKPOINT' else [0,0,0]))
             wanted.update(previous_flags=previous_flags,live_flags=(previous_flags&~65536)|(65536 if s and s.no_fade else 0))
-            if killed_here:wanted['live_flags']&=~4
+            if s and drown:wanted['live_flags']&=~4
             wanted.update(zip('xyz',route.poses[index][9:]))
             wanted.update(fly_mode=fly_mode,fly_timer=fly_timer,fly_checkpoint=fly_checkpoint,covered=0 if fly_checkpoint<0 else 1<<fly_checkpoint)
             for cb in range(2):wanted['callback'+str(cb)]=':'.join(map(str,s.callbacks.get(cb,(-1,0,0,0)) if s else (-1,0,0,0)))
@@ -120,15 +119,17 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
         if route.mode in (0,5):frog_anim.no_input_timer+=1
         if tick in commands:frog_anim.no_input_timer=0;sounds+=1
         previous=route.attached;route.control(commands.get(tick));camera.transfer(previous,route.attached,route.poses);event_cursor=0
+        if lifetime and tick in commands:route.update_root()
         for phase_index,phase in enumerate(('control','move','collision','camera','scripts','pose')):
             previous=route.attached
             if phase=='move':
                 route.move()
-                if route.flags&4 and route.mode!=2:carried=route.attached
+                if lifetime:route.update_root()
+                if route.flags&4:carried=route.attached
             elif phase=='collision':
                 route.collide();hits=route.hits.copy()
                 if geometry.get('road') and route.flags&8 and death_tick is None:death_tick=tick
-                if route.flags&4 and route.mode!=2:carried=route.attached
+                if route.flags&4:carried=route.attached
             camera.transfer(previous,route.attached,route.poses,route.mode==0)
             if phase=='camera' and route.mode!=2 and not route.flags&8:camera.update(route)
             for request in route.animations[event_cursor:]:frog_anim.request(request)

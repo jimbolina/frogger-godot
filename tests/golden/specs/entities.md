@@ -668,9 +668,14 @@ at 34/46, returning detached and alive at tick 51. `org1_visibility_diver`
 observes 203 ticks with NORTH at 170, attachment at 173 and drowning at 202.
 These are separate from the all-attached schedules.
 
+`org1_visibility_pickup` observes 490 ticks with NORTH at 406/418 and SOUTH
+at 442/454. Contact at 444 becomes pickup at 445; Frogger returns to the bank
+at 459 with the pink frog riding. `org1_visibility_pickup_death` omits the final
+SOUTH and observes 472 ticks: drowning at 467 precedes pink frog death at 468.
+
 The existing ORG1 generator composes independent Python path, script, frog,
 animation and camera models with `org1_visibility.py`. The latter implements
-source lifetime ordering and uncollected baby search/parent/hop state. The C
+source lifetime ordering and pink frog search/parent/hop/pickup/riding state. The C
 transport calls unchanged path, custom, script, camera, frog and animation
 functions and `CreateMapViewList`, with decoded model storage and explicit
 source-ordered lifetime allocation/retirement transport. Logical sound ownership
@@ -680,7 +685,8 @@ outside the oracle. Neither model derives expectations from Godot output.
 Phase TSVs retain the existing columns; the final pose includes tail visibility
 creation. Entity TSVs hash variable-length live-update lists using
 `org1_entity_update_fields.json`. Lifecycle JSON records one object per tick:
-selected groups, polygon total, live order, baby mode/search/parent and 64
+selected groups, polygon total, live order, pink frog mode/search/parent,
+carrier, riding timer, dead/hidden flags, full matrix and 64
 source-ordered `[live,pending,generation,timer,cel]` entries. Dormant script/cel
 values are diagnostic placeholders; tests compare their membership and generation,
 and compare timer/cel only while live. No retail bytes are stored.
@@ -688,12 +694,15 @@ and compare timer/cel only while live. No retail bytes are stored.
 ```sh
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round> --visibility --ticks 730 --golden-name org1_visibility_round_trip --admission
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-diver> --visibility --ticks 203 --commands 170:0 --expected-death-tick 202 --golden-name org1_visibility_diver
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-pickup> --visibility --ticks 490 --commands 406:0,418:0,442:2,454:2 --golden-name org1_visibility_pickup
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-pickup-death> --visibility --ticks 472 --commands 406:0,418:0,442:2 --expected-death-tick 467 --golden-name org1_visibility_pickup_death
 ```
 
 Build with `tools/build_platform_oracle.ps1`; append `--write-goldens` only to
-regenerate. The admission retains independent geometry/root checks, replaces the
-static baby exclusion with a runtime 640-unit corridor-distance guard and pins
-all source dependencies. The golden round trip verifies the dynamic exclusion;
-it does not establish unrestricted lifetime or collection support. Perform the
-deliberate-break check by changing a phase fact, ordered-update digest or live
-generation, running the matching retail test and restoring the exact original.
+regenerate. The v2 admission retains independent geometry/root checks and pins
+all source dependencies. Pink frog body contact replaces her proximity exclusion;
+checkpoint delivery and tongue pickup remain outside admission. The independent
+frog root calculation supplies her pre-control carrier pose; frozen C additionally
+checks her full matrix, continuation and display state. Perform the deliberate-break
+check for each new family by changing a phase fact or ordered-update digest, requiring
+the matching retail test to fail, then restoring and rerunning successfully.

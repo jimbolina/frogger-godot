@@ -20,7 +20,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if not parsed is Dictionary:
 		return "ORG1 admission manifest is unavailable"
 	var proof: Dictionary = parsed
-	var schema: String = "org1-visibility-admission-v1" if visibility else "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
+	var schema: String = "org1-visibility-admission-v2" if visibility else "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
 	if proof.get("schema") != schema or data.version.internal_name != proof.get("build"):
 		return "ORG1 exploration requires audited pc-retail-v3.0e inputs"
 	var map: MapFile = scenario.map_scene.map
@@ -81,6 +81,8 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 				return issue
 	if not problems.is_empty():
 		return "; ".join(problems)
+	if visibility:
+		setup.definitions[53].pink_frog_pickup = true
 	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, setup.definitions, models, "", -1, "", road)
 	if not contacts.error.is_empty():
 		return contacts.error
@@ -138,7 +140,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	scenario.level.collision_bounds = Rect2i(top[9], bottom[11], bottom[9] - top[9], top[11] - bottom[11])
 	var guard := ExplorationGuard.new()
 	if visibility:
-		guard.collectable_indices = PackedInt32Array([53])
+		guard.scripted_visibility_admitted = true
 	var x: Array = proof.admitted_x
 	var z: Array = proof.admitted_z
 	guard.world_bounds = Rect2i(_integer(x[0]), _integer(z[0]), _integer(x[1]) - _integer(x[0]), _integer(z[1]) - _integer(z[0]))
@@ -170,7 +172,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if not scenario.authored_fixture:
 		scenario.commands.clear()
 	if visibility:
-		scenario.diagnostics.append("ORG1 guarded scripted visibility; dynamic baby collection-radius guard; ten river FORMs; active zones and primitive execution unsupported")
+		scenario.diagnostics.append("ORG1 guarded scripted visibility; pink frog pickup and riding; eleven FORMs; active zones and primitive execution unsupported")
 	elif road:
 		scenario.diagnostics.append("ORG1 audited road-to-river exploration; all-attached lifetime; 64 logical updates; 24 primitive traffic contacts and ten river FORMs; active zones unsupported")
 	else:

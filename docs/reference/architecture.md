@@ -189,6 +189,9 @@ script/animation state, RNG, ordered requests and a frog effect; failures
 discard all candidate outputs. `EntityScriptSetup` supplies decoded named
 programs and callbacks, including turtle creation's script replacement.
 `TerrainRun` owns frog reactions, shared checkpoint covered bits and commit.
+Admitted pink frog updates receive the candidate frog pose/mode and previous HIT;
+their owned carrier/timer/death state commits with the same aggregate. Presentation
+consumes the resulting pose and hides the dead frog without deciding pickup.
 Snapshot and contact-scan order stay
 separate from the source live-update order.
 The [entity contract](gameplay/entities.md#org1-admission) owns the

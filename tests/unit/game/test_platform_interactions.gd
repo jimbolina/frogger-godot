@@ -115,7 +115,7 @@ func test_diver_callback_death_reaches_same_control_phase() -> void:
 	assert_eq(killed.error, "")
 	assert_eq(killed.control_snapshot.mode, 2)
 	assert_eq(killed.control_snapshot.death_equate, FrogAnimationCatalog.DROWN)
-	assert_eq(killed.final_snapshot.entity_carry_indices, PackedInt32Array())
+	assert_eq(killed.final_snapshot.entity_carry_indices, PackedInt32Array([4]))
 	assert_eq(killed.final_snapshot.entities.entities[0].script_state.colours, Vector3i(0, 64, 255))
 
 func _level(width: int = 2) -> LevelDefinition:

@@ -23,14 +23,14 @@ import org1_hilite_admission as hilite
 
 def admission_manifest(context,geometry,probes):
     """Pin independently decoded inputs and the state-space proof conditions."""
-    if geometry['zone_count'] or geometry['included_FORM_indices']!=[0,1,2,3,12,13,14,15,16,23]:
+    if geometry['zone_count'] or [i for i in geometry['included_FORM_indices'] if i!=53]!=[0,1,2,3,12,13,14,15,16,23]:
         raise ValueError('ORG1 contact/zone closure changed')
     if geometry['unresolved_contact_indices']!=list(range(24,48)) or not probes['separated']:
         raise ValueError('ORG1 neighbor exclusion is incomplete')
     for r in geometry['neighbors']:
         if r['entity_index'] in geometry['included_FORM_indices']:
             form=geometry['form_grids'][r['form_grid_id']]
-            if r['primitive_count'] or r['book_flags']&2 or set(form['flags'])!={3}:
+            if r['primitive_count'] or r['book_flags']&2 or set(form['flags'])!=({1} if r['entity_index']==53 else {3}):
                 raise ValueError('supported contact no longer has a snapped primitive-free SAFE FORM')
         if r['entity_type'] in ('CHECKPOINT','ORG_FLY','ORG_BABY_FROG'):
             if r['minimum_candidate_xz_distance_squared']<=640**2:
@@ -95,6 +95,12 @@ def transport(root, ticks, commands, road=False, visibility=False):
     facts, c = admission.retail_counterexamples(root, True)
     data = c['data']; read = admission.contacts.read
     geometry = neighbor.neighbor_admission(facts, c,(-512,512,-1792,480)) if road else neighbor.neighbor_admission(facts,c)
+    if visibility:
+        pink=geometry['neighbors'][53]
+        form=geometry['form_grids'][pink['form_grid_id']]
+        if pink['entity_type']!='ORG_BABY_FROG' or pink['primitive_count'] or pink['collision_callback'] or pink['bonus_callback'] or form['flags']!=[1]:
+            raise ValueError('pink frog contact closure changed')
+        geometry['included_FORM_indices'].append(53)
     if road: geometry['road']=True
     grap = read(data,80,'<I'); grid = read(data,grap+20,'<I'); vertices = read(data,grap+16,'<I')
     width,depth = struct.unpack_from('<2H',data,grid+4)
@@ -192,6 +198,8 @@ def run(args):
     outputs={}
     if args.golden_name:
         schedules={'org1_visibility_round_trip':(730,{0:0,12:0,34:2,46:2},None),
+                   'org1_visibility_pickup':(490,{406:0,418:0,442:2,454:2},None),
+                   'org1_visibility_pickup_death':(472,{406:0,418:0,442:2},467),
                    'org1_visibility_diver':(203,{170:0},202),
                    'org1_round_trip':(730,{0:0,12:0,34:2,46:2},None),
                    'org1_attached_diver':(1255,{1230:0},1254),
@@ -227,15 +235,12 @@ def run(args):
                 raise ValueError('integrated frog root escaped the independently closed pose set')
         proof=admission_manifest(context,geometry,probes)
         if args.visibility:
-            proof['schema']='org1-visibility-admission-v1';proof['lifetime']='visibility'
-            proof['conditions']=[v for v in proof['conditions'] if not v.startswith(('All 64','Checkpoint croak'))]
+            proof['schema']='org1-visibility-admission-v2';proof['lifetime']='visibility'
+            proof['conditions']=[v for v in proof['conditions'] if not v.startswith(('All 64','Checkpoint croak','No tongueable'))]
             proof['conditions'] += ['All 64 authored identities retain paths and source-ordered applicable live updates, including immortal initialization.',
-                'Dynamic baby sphere and tongue exclusion requires XZ distance greater than 640 from every integer point in the corridor at each entity phase; otherwise reject the entire tick.',
+                'Pink frog body contact, next-update pickup, riding and death are admitted; tongue input, checkpoints and fly collection remain unsupported.',
                 'Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically.']
             proof['attached_diver']=dict(commands=[[170,1]],observation_ticks=203,death_tick=202)
-            for r in proof['contact_exclusions']:
-                if r['index']==53:r['reason']='excluded_by_dynamic_collection_radius_guard'
-            if any(max(-512-int(r['x']),0,int(r['x'])-511)**2+max(-128-int(r['z']),0,int(r['z'])-479)**2<=640**2 for r in entities if r['index']==53):raise ValueError('baby exclusion failed')
         path=project/'src/presentation/setup'/('org1_visibility_admission.json' if args.visibility else 'org1_exploration_admission.json');content=json.dumps(proof,indent=2)+'\n'
         outputs[path]=content
     if args.visibility:
@@ -243,9 +248,9 @@ def run(args):
         expected=geometry['lifecycle_facts']
         if len(frozen)!=len(expected):raise ValueError('incomplete lifecycle trace')
         for a,b in zip(expected,frozen):
-            for k in ('tick','polygons','baby_mode','baby_search','baby_parent'):
+            for k in ('tick','polygons','baby_mode','baby_search','baby_parent','baby_carrier','baby_jump','baby_dead','baby_hidden'):
                 if str(a[k])!=b[k]:raise ValueError(f"Lifecycle {a['tick']} {k}: {a[k]} != {b[k]}")
-            for k in ('groups','order'):
+            for k in ('groups','order','baby_matrix'):
                 if ';'.join(map(str,a[k]))!=b[k]:raise ValueError(f"Lifecycle {a['tick']} {k} differs")
             for i in range(64):
                 if not a['entities'][i][0]:continue

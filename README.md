@@ -121,10 +121,10 @@ godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder
 ```
 
 This separate v3.0e preset creates and retires entities with camera visibility.
-It opens LIVE and paused with the same movement controls. A moving baby frog
-can invalidate the collection exclusion during extended play; the viewer then
-rejects the tick and pauses with a diagnostic. R restores the complete
-inspection. See the [scripted visibility contract](docs/reference/gameplay/entities.md#scripted-visibility-route).
+It opens LIVE and paused with the same movement controls. Touch the pink frog
+to pick her up; she rides on Frogger and disappears if he dies. R restores the
+complete inspection. Checkpoint delivery and tongue pickup are not implemented;
+the corridor bounds still apply. See the [scripted visibility contract](docs/reference/gameplay/entities.md#scripted-visibility-route).
 
 For the synthetic visibility lifecycle demonstration, use
 `python tools/run_terrain.py --godot <executable> --scenario-file

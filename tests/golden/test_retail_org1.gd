@@ -31,6 +31,46 @@ func test_round_trip_and_complete_dive_cycles_match_source() -> void:
 func test_visibility_round_trip_and_background_lifetimes_match_source() -> void:
 	_route("org1_visibility_round_trip", 730, {0: 1, 12: 1, 34: 4, 46: 4}, Org1ExplorationSetup.VISIBILITY_PRESET)
 
+func test_visibility_pink_frog_pickup_matches_source() -> void:
+	_route("org1_visibility_pickup", 490, {406: 1, 418: 1, 442: 4, 454: 4}, Org1ExplorationSetup.VISIBILITY_PRESET)
+
+func test_visibility_pink_frog_death_matches_source() -> void:
+	_route("org1_visibility_pickup_death", 472, {406: 1, 418: 1, 442: 4}, Org1ExplorationSetup.VISIBILITY_PRESET)
+
+func test_visibility_pickup_rollback_and_full_reset() -> void:
+	var scenario: TerrainScenario = _scenario(Org1ExplorationSetup.VISIBILITY_PRESET)
+	assert_eq(scenario.error, "")
+	if not scenario.error.is_empty():
+		return
+	assert_true(scenario.level.exploration_guard.collectable_indices.is_empty())
+	assert_true(scenario.level.exploration_guard.scripted_visibility_admitted)
+	var run: TerrainRun = TerrainRun.create(scenario.level, scenario.initial)
+	assert_eq(run.error, "")
+	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	for tick: int in 446:
+		var command := TickCommand.new()
+		command.tick_index = tick
+		command.pressed_mask = 1 if tick in [406, 418] else 4 if tick == 442 else 0
+		command.held_mask = command.pressed_mask
+		if tick == 445:
+			var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+			assert_true(run.snapshot().entity_hit_indices.has(53))
+			assert_eq(run.snapshot().entities.entities[53].background.carrier_index, -1)
+			run._entities._lifecycle.polygon_counts.fill(2500)
+			var rejected: TickResult = run.step(command)
+			assert_ne(rejected.error, "")
+			assert_null(rejected.final_snapshot)
+			assert_true(rejected.events.is_empty())
+			assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+			run._entities._lifecycle.polygon_counts = scenario.level.entity_collision.lifecycle.polygon_counts.duplicate()
+		var result: TickResult = run.step(command)
+		assert_eq(result.error, "", "tick %d" % tick)
+		if not result.error.is_empty():
+			return
+	assert_eq(run.snapshot().entities.entities[53].background.carrier_index, 0)
+	assert_eq(run.reset(scenario.initial), "")
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), initial)
+
 func test_visibility_attached_diver_matches_source() -> void:
 	_route("org1_visibility_diver", 203, {170: 1}, Org1ExplorationSetup.VISIBILITY_PRESET)
 	var scenario: TerrainScenario = _scenario(Org1ExplorationSetup.VISIBILITY_PRESET)
@@ -238,6 +278,12 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 			assert_eq(baby.mode, _number(expected_life.baby_mode))
 			assert_eq(baby.search_count, _number(expected_life.baby_search))
 			assert_eq(baby.parent_entity_index, _number(expected_life.baby_parent))
+			assert_eq(baby.carrier_index, _number(expected_life.baby_carrier))
+			assert_eq(baby.carried_jump_ticks, _number(expected_life.baby_jump))
+			assert_eq(int(baby.dead), _number(expected_life.baby_dead))
+			assert_eq(int(baby.model_hidden), _number(expected_life.baby_hidden))
+			var baby_matrix: Array = expected_life.baby_matrix
+			assert_eq(actual_life.entities[53].matrix12, PackedInt32Array(baby_matrix))
 			for slot: int in 64:
 				var pose: EntitySnapshot = actual_life.entities[slot]
 				var expected_pose: Array = expected_life.entities[slot]

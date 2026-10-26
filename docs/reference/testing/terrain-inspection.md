@@ -225,13 +225,15 @@ directory, using the isolated-profile, hidden/awaited process rules in the
 ## Scripted ORG1 visibility
 
 The separate `org1-turtle-log-bank-visibility` preset uses the existing river
-corridor with source live-list updates and immortal initialization. Its dynamic
-collection exclusion can reject extended play; see the
+corridor with source live-list updates, immortal initialization and pink frog
+pickup/riding. Bounds and other exclusions remain; see the
 [contract](../gameplay/entities.md#scripted-visibility-route).
 
 ```sh
 python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_round_trip.json --output-directory <external-output>
 python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_diver.json --output-directory <external-output>
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup.json --output-directory <external-output>
+python -B tools/verify_platform_schedules.py --godot <godot-executable> --data-dir <game-folder> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup_death.json --output-directory <external-output>
 ```
 
 These compare headless state and 30/60/144 Hz rendered schedules. The existing

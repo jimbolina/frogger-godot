@@ -1,10 +1,12 @@
 # Porting plan and status
 
-The game is rebuilt in phases. Each phase is independently demonstrable and has a stated way of checking it. Sizes are relative: S, M, L, XL.
+The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-The original is roughly 80,000 lines of C game code. The estimate for this project is 35,000 to 45,000 lines of GDScript. The entity, frog and front-end phases dominate. The first milestone that matters is one playable level, at the end of P8.
+The original is roughly 80,000 lines of C game code. About 24,000 lines of GDScript under `src/` cover the data formats, rendering, terrain movement and a bounded part of the entity system. The C still to port (entities, script interpreter, HUD, game flow, front end, saves, sound, effects) is about 53,000 lines, so the finished port is estimated at 45,000 to 60,000 lines. The first milestone that matters is one complete playable level, at the end of P8c.
 
 ## Status
+
+P8 is split into exit-sized pieces, and P10 (level loop and HUD) runs before P9 because a level is not playable without checkpoints, a timer, lives and level-complete flow. Cross-cutting work has its own rows (X1–X3).
 
 | # | Phase | Size | Checked against | Status |
 |---|---|---|---|---|
@@ -16,98 +18,51 @@ The original is roughly 80,000 lines of C game code. The estimate for this proje
 | P5 | Animated models, flipbooks, texture animation | L | Independent animation facts, every retail action, C matrix hashes and inspected animation sequences; optional presentation smoothing | Done, `957b9a0` |
 | P6 | Map parsing and rendering, camera | L | The reference engine's map pictures, with tolerance. Includes a first load of a FrogLord-saved map. | Done |
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
-| P8 | Entity framework, paths, zones, script interpreter, the general theme plus the original and suburbia themes | XL | First levels of those themes playable | In progress: bounded POP/SAFE/SQUISHED, guarded JUN1 and ORG1 road/river exploration, vehicle cuboids, combined active zones/script-free visibility and guarded ORG1 scripted visibility |
-| P9 | The remaining seven themes | XL | A checklist per level | |
-| P10 | HUD, score, timer, game flow, checkpoints, demo playback | L | Attract demos run to completion with the same end state | |
-| P11 | Effects and particles | L | By eye | |
-| P12 | Sound banks and music | M | By ear | |
-| P13 | Front end, level select, options, saves, high scores | XL | A flow checklist | |
-| P14 | FrogLord round trip and reload on change | M | An edited map, script, remap and demo all load | |
+| P8a | Behaviour catalog and typed tick outbox | M | Every existing golden unchanged; architecture scanner rejects entity-name string dispatch in `src/game` | Next |
+| P8b | Demo playback harness | S–M | This project's per-tick trace in the reference CSV layout compared with the reference engine's attract-demo traces | |
+| P8c | ORG1 complete: every original-theme and general form, all script opcodes and callbacks, per-build FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Bounded corridors only: 9 of 121 entity types, 16 of 49 opcodes, 15 of 125 scripts, 4 of 24 script callbacks, 2 of 8 death types, no FORM callbacks |
+| P8d | Inspection module split: guards, presets, scenario options and manifests leave the gameplay and setup layers | S | Scanner and both test modes | |
+| P10 | Level loop and HUD: shared gameplay host, game scene, HUD/score/timer/lives/font, checkpoint flow, level complete, game over, selective reset, generic camera zones | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
+| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | |
+| P11 | Effects and particles | L | By eye against reference pictures | |
+| P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | |
+| P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
+| P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
 | P15 | Split-screen for two to four players | L | By eye | |
-| P16 | Videos, credits, ending | M | | |
-| P17 | Export for Windows, Linux and macOS | S | A run on a clean machine | Mac source setup and isolated verification available; packaged exports pending |
+| P16 | Videos, credits, ending | M–L | By eye | Blocked on the FMV codec decision below |
+| P17 | Export for Windows, Linux and macOS; hosted asset-free CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs and named skips | Mac source setup and isolated verification available; packaged exports and CI pending |
+| X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Launcher and profiling exist; 200+ FPS at 1440p on the owner's machine is the target |
+| X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md) | M | Independent colour samples after each part's animation transform | Any time after P8a |
+| X3 | Owner decisions | | | See below |
 
-Network play is deferred.
-
-The graphics follow-up for [animated per-part lighting](reference/rendering/gameplay-projection.md)
-needs source light/color matrices applied after each part's animation transform,
-with independent color samples. Existing static-probe prelighting does not
-provide this. P7's declared foreground checks cover geometry and silhouette;
-the visible color difference remains explicit.
+Network play is deferred. Multiplayer levels belong to P15.
 
 ## Needed from the owner
 
 | What | Needed by | Why |
 |---|---|---|
 | A licence for this project's own code | Before the repository is made public | |
+| A repository host | Before P17's CI | CI needs a runner and retained logs |
+| A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: entities and the first playable level
+## Next: P8a, P8b, P8c
 
-The [bounded entity reactions](reference/gameplay/entities.md) include POP,
-platform landing, centring, carrying, local hops, departure and camera attachment.
-ORG1 vehicle cuboids now use stored animated frog points and source squish deaths.
-Other lethal reactions, entity-specific sliding/bouncing and broader primitive
-shapes remain unimplemented. P8 remains in progress; complete level play is unfinished.
-Live keyboard terrain exploration is available through the [terrain viewer](../README.md).
-Opt-in visibility lifecycle covers script-free generic entities within its
-selected-group budget guard. Combined active-zone coverage includes synthetic
-gameplay and a prescribed JUN1 log probe; ordinary retail terrain setup still
-requires zero-zone maps. Guarded JUN1 exploration connects safe terrain to a moving log
-and back, with all-attached lifetime and transactional world/zone restrictions.
-Complete level collision still needs broader script/custom behavior coverage,
-collection, selective game-flow reset and broader visibility workloads.
-FOR1's automatic retail lifecycle sequence remains unverified.
-The ORG1 bank/turtle/log proof now closes the animated frog-probe and
-excluded-neighbor obligations for a narrower rectangle. Independent traces
-cover the normal round trip, full dive/rise cycles and an attached-diver death.
-The [entity contract](reference/gameplay/entities.md#org1-admission) owns
-bounds, routes and the expanded script/background closure. Bounded script
-components, source-ordered atomic integration and guarded live exploration are
-implemented, with independent retail goldens and rendered/keyboard checks.
-Interactive playback omits diagnostic phase capture and reuses draw resources;
-the [inspection probe](reference/testing/terrain-inspection.md) checks host pacing.
-The separate guarded road preset adds all 24 traffic cuboids, a timed crossing
-to the turtle/log corridor and an independently verified vehicle death with the
-following traffic-splat callback. The original river preset remains available.
-Active camera zones have independent transition/control facts and combined
-visibility coverage through synthetic gameplay and the prescribed JUN1 log
-inspection. This does not extend guarded playable routes or ordinary retail
-terrain admission. Remaining work includes broader instruction/custom-behavior
-coverage, playable zone routes, broader scripted visibility, verified form callbacks, selective reset and other
-primitive shapes.
-The separate [ORG1 scripted visibility route](reference/gameplay/entities.md#scripted-visibility-route)
-adds source-ordered mortal recreation, immortal initialization and baby-frog
-parent loss/search/autonomous hops to the bank/turtle/log corridor. Its dynamic
-collection exclusion rejects unsupported proximity during extended play.
-The road preset remains all-attached. Collection and broader route admission
-are still required; the new guard must not be removed without replacing its proof.
-A complete playable level is still required.
-Resolve callbacks through verified names and supported implementations;
-preserve source ordering and test unknown mappings. Per-build form callback
-address mappings still need investigation.
-Mods may repoint supported behaviors but never load new code.
+P8a resolves each entity to one behaviour value in setup, from FrogLord names,
+with a documented fallback and diagnostic for unknown names; the game layer
+dispatches on that value instead of name strings. Tick requests and events
+become typed values with a text projection so existing goldens stay identical.
+Named mode and flag catalogs replace raw bit tests. `EntityRun` gets a
+candidate/commit API and one test checks every state copy is complete.
+This is behaviour-preserving and is what makes "mods repoint behaviours"
+possible.
 
-Extend current entity diagnostics and inspection as behaviors are added. Use the first additional behavior
-to check that the registry and setup adapters stay small, then reassess at the
-first playable level.
+P8b parses the demo input files already located by the demo table, feeds them
+as tick commands and compares this project's trace with the reference engine's
+attract-demo traces on end state and path. It is the acceptance test for P8c,
+P10 and every theme in P9.
 
-Measure tick/load/conversion costs and resource counts as real level workloads
-arrive. Keep captures outside the repository; do not impose limits from
-uncalibrated shared runners. Add progression, save and reload boundaries with
-their owning features.
-The ORG1 performance launcher measures complete routes and separates throughput
-from schedule correctness. Smooth 200+ FPS at 1440p on the owner's machine is the
-current optimization target; see [inspection](reference/testing/terrain-inspection.md).
-Prepared scripts, transaction ownership and rendering caches reduce repeated work;
-the presentation worker keeps ordered simulation off the rendering thread.
-Coherent frog, camera, platform and model smoothing is implemented, with exact
-capture mode retained. The [renderer](reference/rendering/README.md) now caches
-animation and lighting work. Performance workload checks and separate visual
-profiling are implemented. The frame-time target remains open until measured
-acceptance on an idle system with application-controlled driver VSync.
-
-## Infrastructure
-
-When a repository host is selected, add asset-free CI pinned to Godot 4.5.1,
-starting with one verified desktop runner. Retain logs, enforce named skips,
-and keep legally held retail data in local/private gates.
+P8c completes ORG1 as listed in the table. The guarded JUN1 and ORG1 corridor
+presets and their admission manifests are scaffolding: they proved the
+transaction, ordering and visibility rules on bounded routes, and they retire
+when ORG1 plays whole. Route facts stay in the
+[entity contract](reference/gameplay/entities.md) and the golden specifications.

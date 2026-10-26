@@ -1,4 +1,4 @@
-"""Independent frozen entity lifetime and uncollected baby-frog model for ORG1."""
+"""Independent frozen entity lifetime and pink frog model for ORG1."""
 import struct
 from copy import deepcopy
 from make_golden_entity_lifecycle import select
@@ -56,18 +56,20 @@ class Lifetime:
                         if i in self.scripts:self.scripts[i]=deepcopy(self.initial[i])
                     self.pending.discard(i)
         self.facts.append(dict(tick=tick,groups=groups,polygons=total,order=self.live[:],baby_mode=self.baby.mode,baby_search=self.baby.search,baby_parent=self.baby.parent,
+            baby_carrier=self.baby.carrier,baby_jump=self.baby.jump_ticks,baby_dead=int(self.baby.dead),baby_hidden=int(self.baby.hidden),baby_matrix=route.poses[53][:],
             entities=[[int(i in self.live),int(i in self.pending),self.generation[i],self.scripts[i].timer if i in self.scripts else 0,
                        self.scripts[i].cel if i in self.scripts else self.cels[i]] for i in range(64)]))
 
 
 class Baby:
-    """Frozen uncollected SEARCHING, WAIT, ON_ENTITY and JUMPING branches."""
+    """Frozen search, autonomous hops, body pickup, riding and death branches."""
     def __init__(self):
         self.mode=0;self.search=0;self.parent=-1;self.direction=0;self.delay=0;self.count=0
         self.cell=[0,0];self.offset=[0,0,0];self.velocity=[0,0,0];self.target=[0,0,0]
         self.action=0;self.sound=False;self.requests=[]
+        self.carrier=-1;self.jump_ticks=0;self.dead=False;self.hidden=True
 
-    def update(self,parent_id,live,poses,forms,records,cels):
+    def update(self,parent_id,live,poses,forms,records,cels,frog=None,hit=False,frog_mode=None):
         self.requests=[]
         def action(value):self.action=value;cels[53]=-1
         if self.mode==0:
@@ -104,7 +106,20 @@ class Baby:
             if self.count==0:
                 self.offset=[v<<16 for v in self.target];self.velocity=[0,0,0];self.mode=1;self.delay=30;action(1)
             else:self.offset=[v+d for v,d in zip(self.offset,self.velocity)]
-        else:raise ValueError('unadmitted collected baby mode')
-        if self.parent>=0 and self.parent in live:
-            m=poses[self.parent];point=apply(m,[((v>>16)+32768)%65536-32768 for v in self.offset])
+        elif self.mode==3:
+            self.direction=0
+            if self.jump_ticks:self.jump_ticks-=1
+            if frog_mode==2 and not self.dead:
+                self.dead=True;self.mode=4;self.requests.append('death_pgen')
+            if frog_mode==1 and not self.jump_ticks:action(0);self.jump_ticks=6
+        elif self.mode==4:
+            self.hidden=True
+            return
+        else:raise ValueError('unsupported pink frog mode')
+        if hit and self.mode!=3:
+            self.offset=[0,-20<<16,-20<<16];self.parent=-1;self.carrier=0;self.mode=3;action(0)
+        m=list(frog.frog_root)+frog.world() if self.carrier==0 else poses[self.parent] if self.parent>=0 and self.parent in live else None
+        self.hidden=self.dead or m is None
+        if m is not None:
+            point=apply(m,[((v>>16)+32768)%65536-32768 for v in self.offset])
             poses[53]=multiply(m[:9],yaw(self.direction*1024))+[m[9+k]+point[k] for k in range(3)]

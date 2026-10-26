@@ -49,6 +49,26 @@ class Route:
         self.poses=[];self.animations=[]
         self.hits=set()
         self.hidden=set()
+        self.frog_root=(4096,0,0,0,4096,0,0,0,4096)
+        self.relative_root=self.frog_root
+
+    def update_root(self):
+        """Frozen unscaled UpdateFrogMatrix for this bounded terrain/support route."""
+        from org1_hilite_admission import ROOTS,axes,multiply
+        from make_golden_grid import cross,normal
+        if self.flags&4:
+            self.frog_root=multiply(self.poses[self.attached],self.relative_root)
+        elif not self.flags&128:
+            up=paths.normalised([-self.frog_root[k] for k in (1,4,7)])
+            facing=list(ROOTS[self.direction][1][2::3])
+            if self.flags&(64|16)==16:
+                facing=apply(self.poses[self.attached],facing)
+            elif not self.flags&32:
+                point=self.target if self.flags&64 else self.world()
+                cell=next((c for c in self.geometry['terrain'] if c['world_x'][0]<=point[0]<c['world_x'][1] and c['world_z'][0]<=point[2]<c['world_z'][1]),None)
+                if cell:up=normal(cell['layers'][0]['vertices'])
+            x=paths.normalised(cross(facing,up));z=cross(up,x)
+            self.frog_root=axes(x,[-v for v in up],z)
 
     def world(self):return [v>>16 for v in self.pos]
 
@@ -164,7 +184,11 @@ class Route:
             if 'turtle' in r and r['turtle']['type']==0 and not self.scripted_poses:
                 raise ValueError('diving FORM contact requires source script deviation')
             cell=[(local[0]-ox)>>8,(local[2]-oz)>>8]
-            if form[8][0][5][cell[1]*nx+cell[0]]!=3:raise ValueError('route FORM changed SAFE reaction')
+            flags=form[8][0][5][cell[1]*nx+cell[0]]
+            if index==53 and flags==1:
+                self.hits.add(index)
+                continue
+            if flags!=3:raise ValueError('route FORM changed SAFE reaction')
             self.cell=cell;self.offset=[local[0]<<16,height<<16,local[2]<<16]
             self.target=[local[0],height,local[2]]
             for axis,dim,origin,ci,flag in ((0,nx,ox,cell[0],64),(2,nz,oz,cell[1],128)):
@@ -176,6 +200,10 @@ class Route:
             self.attached=index;self.carry();self.y=self.old_y=self.world()[1]
             self.flags=(self.flags&~(2|16|32|64|128|256|16384|65536))|4
             self.direction=quadrant(apply(transpose(matrix),[0,0,4096 if self.heading==0 else -4096]))
+            from org1_hilite_admission import ROOTS,multiply
+            from org1_route_camera import projected
+            self.frog_root=multiply(ROOTS[self.direction][1],matrix)
+            self.relative_root=projected(multiply(self.frog_root,transpose(matrix)))
             self.hits.add(index)
 
     def snapshot(self,tick,phase):

@@ -1,9 +1,9 @@
 class_name EntityBaby
 extends RefCounted
-## Frozen uncollected ORG baby search, parent loss and autonomous FORM hops.
+## Frozen pink frog search, autonomous hops, pickup and riding behavior.
 
 ## Advances one privately owned baby against the parent's pose at this live-list visit.
-static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition) -> String:
+static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: RunSnapshot = null, hit: bool = false) -> String:
 	var state: EntityBackgroundState = entity.background
 	if parent == null or form == null or form.dimensions.x <= 0 or form.dimensions.y <= 0:
 		return "Baby requires a resolved authored parent and FORM"
@@ -51,12 +51,39 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 				entity.animation.select(1)
 			else:
 				state.offset_16 += state.velocity_16
+		3:
+			if frog == null or state.carrier_index != 0:
+				return "Pink frog requires its single-player carrier"
+			state.direction = 0
+			if state.carried_jump_ticks != 0:
+				state.carried_jump_ticks -= 1
+			if frog.mode == 2 and not state.dead:
+				state.dead = true
+				state.model_hidden = true
+				state.mode = 4
+				entity.requests.append("death_pgen")
+			if frog.mode == 1 and state.carried_jump_ticks == 0:
+				entity.animation.select(0)
+				state.carried_jump_ticks = 6
+		4:
+			state.model_hidden = true
+			return ""
 		_:
-			return "Collected baby behavior is outside guarded exploration"
-	state.model_hidden = state.parent_entity_index < 0 or not parent.live
-	if not state.model_hidden:
-		var world: Vector3i = PlatformMath.world(parent.matrix12, state.offset_16)
-		entity.matrix12 = PlatformMath.multiply(parent.matrix12, PlatformMath.yaw(state.direction * 1024))
+			return "Unsupported pink frog mode"
+	if hit and state.mode != 3:
+		if frog == null:
+			return "Pink frog pickup requires its single-player carrier"
+		state.offset_16 = Vector3i(0, -(20 << 16), -(20 << 16))
+		state.parent_entity_index = -1
+		state.carrier_index = 0
+		state.mode = 3
+		entity.animation.select(0)
+	var carrier: PackedInt32Array = frog.matrix12 if state.carrier_index == 0 and frog != null else parent.matrix12
+	var has_parent: bool = state.carrier_index == 0 or (state.parent_entity_index >= 0 and parent.live)
+	state.model_hidden = state.dead or not has_parent
+	if has_parent:
+		var world: Vector3i = PlatformMath.world(carrier, state.offset_16)
+		entity.matrix12 = PlatformMath.multiply(carrier, PlatformMath.yaw(state.direction * 1024))
 		entity.matrix12[9] = world.x
 		entity.matrix12[10] = world.y
 		entity.matrix12[11] = world.z

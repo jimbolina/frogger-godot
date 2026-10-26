@@ -80,7 +80,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> TerrainR
 		run.error = level.exploration_guard.validate()
 		if not run.error.is_empty():
 			return run
-		if level.entity_collision != null and level.entity_collision.lifecycle != null and level.exploration_guard.collectable_indices.is_empty():
+		if level.entity_collision != null and level.entity_collision.lifecycle != null and not level.exploration_guard.scripted_visibility_admitted:
 			run.error = "Guarded exploration requires all-attached entity lifetime"
 			return run
 		run._exploration_guard = level.exploration_guard.copy()
@@ -308,7 +308,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_move(next, result.events)
 	if not _callback_error.is_empty():
 		return _failed_tick(result, _callback_error)
-	if next.flags & 4 and next.current_entity_index >= 0 and next.mode != 2:
+	if next.flags & 4 and next.current_entity_index >= 0:
 		_mark_carry(next, next.current_entity_index)
 	_update_camera_zone(next)
 	if _exploration_guard != null:
@@ -427,7 +427,7 @@ func _visit_entity(slot: int, previous_flags: int, state: RunSnapshot, events: A
 	var definition: EntityDefinition = _entity_collision.entities[slot]
 	if definition.background_admitted:
 		var frog_position := Vector3i(state.matrix12[9], state.matrix12[10], state.matrix12[11])
-		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts)
+		var background: EntityBackgroundResult = _candidate_entities.update_background(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
 		if not background.error.is_empty():
 			return background.error
 		state.entity_environment = background.environment

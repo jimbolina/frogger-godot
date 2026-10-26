@@ -35,6 +35,7 @@ var animation_one_shot: bool = false
 ## Enables only the source-proved background branches.
 var background_admitted: bool = false
 var parent_unique_id: int = -1
+var pink_frog_pickup: bool = false
 
 ## Returns a copy with independently owned matrix and path records.
 func copy() -> EntityDefinition:
@@ -61,6 +62,7 @@ func copy() -> EntityDefinition:
 	result.animation_one_shot = animation_one_shot
 	result.background_admitted = background_admitted
 	result.parent_unique_id = parent_unique_id
+	result.pink_frog_pickup = pink_frog_pickup
 	return result
 
 ## Resolves the frozen entity-book immortal capability by supported behavior name.

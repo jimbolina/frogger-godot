@@ -30,6 +30,8 @@ func capture(previous: RunSnapshot, current: RunSnapshot) -> void:
 		var before: EntitySnapshot = previous.entities.entities[slot] if previous.entities != null and slot < previous.entities.entities.size() else null
 		var transform_now: Transform3D = GameSpace.transform(now.matrix12)
 		var continuous: bool = before != null and before.entity_index == now.entity_index and before.unique_id == now.unique_id and before.generation == now.generation and before.live and now.live
+		if continuous and before.background != null and now.background != null:
+			continuous = before.background.carrier_index == now.background.carrier_index and before.background.parent_entity_index == now.background.parent_entity_index
 		var transform_before: Transform3D = GameSpace.transform(before.matrix12) if continuous else transform_now
 		_entities.append(transform_now)
 		_before_entities.append(transform_before)

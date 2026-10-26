@@ -517,21 +517,31 @@ releases that ownership. Prepared immutable programs and persistent paths
 survive instances. Generation changes replace presentation instances and clear
 interpolation history. Failures discard the entire aggregate and all requests.
 
-The uncollected baby follows frozen `ent_org.c` search/wait, parent loss,
-attachment and autonomous six-tick FORM hops. Its parent may retire and recreate;
-the former permanent-parent assumption does not apply. Collection remains
-unsupported. After entity updates, before frog control, a dynamic guard requires
-the baby's XZ origin to remain more than 640 units from every integer point of
-the admitted rectangle. This excludes its smaller contact sphere and tongue
-reach for every allowed frog position, including while the model is hidden.
-Failure rejects and pauses the whole tick. Consequently extended waiting or
-other live camera/input sequences can reach an explicit admission boundary.
-No neighbor is silently removed to preserve a successful trace.
+The pink frog (`ORG_BABY_FROG`, distinct from the five checkpoint frogs) follows
+frozen `ent_org.c` search/wait, parent loss, attachment and six-tick FORM hops.
+Her parent may retire and recreate. The v2 admission adds her primitive-free
+flipbook model and USABLE-only FORM to the ten river contacts, with no collision
+or bonus callback. Source sphere and strict FORM bounds record HIT without
+mounting Frogger on her. Hidden presentation does not suppress source contact.
+
+The next entity visit consumes HIT and replaces the log parent with player 0,
+using the source `(0,-20,-20)` local offset. Subsequent visits follow the frog's
+pre-control pose and restart the hop animation on its six-tick riding timer.
+Repeated HIT while riding does not restart pickup. Drowning requests made during
+entity updates become DYING at control; the pink frog therefore hides on her
+next visit, records the dead flag and emits one logical `death_pgen` request.
+The inactive state remains hidden. All continuation fields and requests share
+the run transaction; pickup and parent changes collapse presentation history.
+
+Explicit scripted-visibility admission replaces reliance on a nonempty dynamic
+exclusion list. Only the pink frog's proximity exclusion is removed; world bounds,
+animated frog closure, other neighbor exclusions and polygon limits remain.
 
 The independent round trip retains the existing movement commands and returns
 to the bank. A separately timed attached-diver route verifies drowning before
 control under the new script lifetime. Full reset reconstructs immortal state,
-paths and dormant mortals; selective game-flow reset, collection, new FORM
+paths and dormant mortals, clearing pickup/death state. Checkpoint collection,
+pink frog delivery rewards, tongue pickup, selective game-flow reset, new FORM
 callbacks, active zones, road traversal, audio playback and effects remain
 outside this preset. The [golden specification](../../../tests/golden/specs/entities.md#scripted-visibility)
 owns schedules and independent evidence; [inspection](../testing/terrain-inspection.md#scripted-org1-visibility)
@@ -572,5 +582,6 @@ live-parent invariant; checkpoint croak/contact and parent retirement reject.
 Presentation reads committed entity actions/cels and hidden state.
 ORG1 draws the diving callback's blue tint through the bounded
 [model lighting](../rendering/README.md#model-lighting) path.
-Dying attached frogs retain source platform
-carry before death velocity; they do not reassert live carry flags.
+Dying attached frogs retain source platform carry before death velocity and
+reassert CARRY for the next entity update. A deep turtle clears that flag on
+each visit; repeated death requests do not repeat the accepted death or effect.

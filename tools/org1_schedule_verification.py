@@ -85,7 +85,7 @@ def run(args):
         if output==protected or protected in output.parents:raise ValueError('Evidence must be external')
     fixture=json.loads(args.scenario_file.read_text());ticks=fixture['tick_limit']
     if args.exploration.endswith('-visibility'):
-        names=('org1_visibility_round_trip','org1_visibility_diver')
+        names=('org1_visibility_round_trip','org1_visibility_diver','org1_visibility_pickup','org1_visibility_pickup_death')
         name=next((candidate for candidate in names if fixture==json.loads((repo/'tests/golden/fixtures'/(candidate+'.json')).read_text())),None)
     elif args.exploration=='org1-road-river':
         names=('org1_road_river','org1_road_vehicle_death')
@@ -128,6 +128,9 @@ def run(args):
         from verify_platform_schedules import check_png
         if args.exploration=='org1-road-river':
             required=('org1-road-start','org1-road-traffic','org1-road-bank','org1-road-river') if name=='org1_road_river' else ('org1-road-start','org1-road-traffic','org1-road-vehicle-death')
+        elif name.startswith('org1_visibility_pickup'):
+            required=('org1-pink-contact','org1-pink-pickup','org1-pink-riding')
+            if name.endswith('_death'):required+=('org1-pink-death',)
         else:
             required=('org1-turtle-out','org1-log','org1-turtle-return','org1-bank-return') if ticks==730 else ('org1-diver-attachment','org1-diver-drowning')
             required=(*required,'org1-diving','org1-rising')

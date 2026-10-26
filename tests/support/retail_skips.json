@@ -71,5 +71,8 @@
   "res://tests/golden/test_retail_org1.gd::test_road_vehicle_death_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_org1.gd::test_road_admission_and_rejected_tick_are_atomic": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_org1.gd::test_visibility_round_trip_and_background_lifetimes_match_source": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_org1.gd::test_visibility_attached_diver_matches_source": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_org1.gd::test_visibility_attached_diver_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_visibility_pink_frog_pickup_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_visibility_pink_frog_death_matches_source": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_org1.gd::test_visibility_pickup_rollback_and_full_reset": "SKIP: FROGGER_DATA_DIR is not set"
 }

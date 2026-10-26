@@ -9,9 +9,13 @@ var frog_roots: Array[PackedInt32Array] = []
 var frog_actions: PackedInt32Array = PackedInt32Array()
 ## Authored moving collectables whose excluded sphere must stay beyond the corridor.
 var collectable_indices: PackedInt32Array = PackedInt32Array()
+## Explicit source-proved scripted lifetime admission, independent of exclusions.
+var scripted_visibility_admitted: bool = false
 
 ## Validates a half-open world rectangle and every supported zone definition.
 func validate() -> String:
+	if scripted_visibility_admitted and frog_roots.is_empty():
+		return "Scripted visibility requires the complete animated admission"
 	if frog_roots.is_empty() != frog_actions.is_empty():
 		return "Animated admission requires both root and action closure"
 	for root: PackedInt32Array in frog_roots:
@@ -39,6 +43,7 @@ func copy() -> ExplorationGuard:
 	var result := ExplorationGuard.new()
 	result.world_bounds = world_bounds
 	result.collectable_indices = collectable_indices.duplicate()
+	result.scripted_visibility_admitted = scripted_visibility_admitted
 	for root: PackedInt32Array in frog_roots:
 		result.frog_roots.append(root.duplicate())
 	result.frog_actions = frog_actions.duplicate()

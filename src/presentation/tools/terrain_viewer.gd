@@ -386,7 +386,7 @@ func draw_state(fraction: float) -> void:
 		var title: String = "ORG1 ROAD / RIVER EXPLORATION" if road else "ORG1 BANK / TURTLE / LOG EXPLORATION" if org1 else "JUN1 BANK / LOG EXPLORATION"
 		_label.text = title + "\ntick %d | cell %s | platform %d\n" % [_current.tick_index, _current.cell, _current.current_entity_index]
 		_label.text += "World X[%d,%d), Z[%d,%d)\n" % [bounds.position.x, bounds.end.x, bounds.position.y, bounds.end.y]
-		_label.text += "Visibility lifetime | dynamic collectable proximity guard\n" if scenario.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
+		_label.text += "Visibility lifetime | pink frog pickup and riding\n" if scenario.entity_lifecycle else "All-attached lifetime | active camera zones unsupported\n"
 		if road:
 			_label.text += "Cross traffic north to the bank, then turtle and log.\n"
 			_label.text += "death %d | vehicle %d | hits %s\n" % [_current.death_equate, _current.death_entity_index, _current.entity_hit_indices]
@@ -775,6 +775,10 @@ func _capture_scenario(arguments: PackedStringArray) -> void:
 				if scenario.entity_lifecycle:
 					stages[174] = "org1-diver-attachment"
 					stages[203] = "org1-diver-drowning"
+					stages[445] = "org1-pink-contact"
+					stages[446] = "org1-pink-pickup"
+					stages[460] = "org1-pink-riding"
+					stages[469] = "org1-pink-death"
 				if stages.has(_current.tick_index):
 					platform_stages.append(stages[_current.tick_index])
 			elif scenario.exploration_preset == Org1ExplorationSetup.ROAD_PRESET:
