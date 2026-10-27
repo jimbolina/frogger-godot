@@ -318,3 +318,152 @@ func test_colour_switch_callback_roles_require_compatible_behavior() -> void:
 		setup = EntitySetup.from_map(map, book, "callback-mod.map", 1, "pc-retail-v3.0e", true)
 		assert_eq(setup.definitions.size(), 1)
 		assert_eq(setup.error, "")
+
+func _light(min_radius: int, max_radius: int, die_speed: int) -> PackedByteArray:
+	var payload: PackedByteArray = _matrix()
+	payload.resize(48)
+	payload.encode_s32(32, min_radius)
+	payload.encode_s32(36, max_radius)
+	payload.encode_s32(40, die_speed)
+	return payload
+
+func test_frogger_light_precomputes_unsigned_radii_and_rejects_invalid_operands() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "CAV_FROGGER_LIGHT"
+	book.entries[1].forms[0].flags = FormBookEntry.FLAG_NO_MODEL
+	var map: MapFile = _map()
+	_add_entity(map, 0, 0, _light(2, 4, 90), 1)
+	_add_entity(map, 0, 0, _light(5, 10, 100), 2)
+	_add_entity(map, 0, 0, _light(2, 255, -1), 3)
+	var truncated: PackedByteArray = _light(2, 4, 90)
+	truncated.resize(47)
+	_add_entity(map, 0, 0, truncated, 4)
+	_add_entity(map, 0, 0, _light(1, 4, 90), 5)
+	_add_entity(map, 0, 0, _light(4, 4, 90), 6)
+	_add_entity(map, 0, 0, _light(2, 256, 90), 7)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 3)
+	if setup.definitions.size() != 3:
+		return
+	var light: EntityCaveDefinition = setup.definitions[0].cave
+	assert_eq(setup.definitions[0].behavior.kind, EntityBehavior.Kind.CAVE_LIGHT)
+	assert_eq(setup.definitions[0].behavior.execution, EntityBehavior.Execution.UPDATE)
+	assert_eq([light.min_radius, light.max_radius, light.die_speed], [2, 4, 90])
+	assert_eq(light.light_min_squared, 262144)
+	assert_eq(light.light_max_squared, 1048576)
+	assert_eq(light.light_die, 2304)
+	assert_eq(setup.definitions[1].cave.light_min_squared, 1638400)
+	assert_eq(setup.definitions[1].cave.light_max_squared, 6553600)
+	assert_eq(setup.definitions[1].cave.light_die, 2842)
+	assert_eq(setup.definitions[2].cave.light_max_squared, 4261478400)
+	assert_eq(setup.definitions[2].cave.light_die, 5294144)
+	var copied: EntityDefinition = setup.definitions[0].copy()
+	assert_eq(copied.cave.light_die, 2304)
+	assert_ne(copied.cave, light)
+	assert_eq(setup.diagnostics.size(), 4)
+	for diagnostic: EntitySetupDiagnostic in setup.diagnostics:
+		assert_eq(diagnostic.code, "invalid_payload")
+		assert_eq(diagnostic.source_id, "cave.map")
+	assert_string_contains(setup.diagnostics[0].message, "min/max radii and die speed")
+	assert_eq(setup.diagnostics[1].entity_index, 4)
+	assert_eq(setup.diagnostics[2].entity_index, 5)
+	assert_eq(setup.diagnostics[3].entity_index, 6)
+
+func test_cave_lights_and_fat_fire_flies_require_custom_behaviors() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "CAV_FROGGER_LIGHT"
+	var map: MapFile = _map()
+	_add_entity(map, 0, 0, _light(2, 4, 90))
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e")
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "unknown_behavior")
+
+func test_fat_fire_fly_reads_bonus_fly_reward_type() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "CAV_FAT_FIRE_FLY"
+	book.entries[1].forms[0].flags = FormBookEntry.FLAG_NO_MODEL
+	var map: MapFile = _map()
+	for fly_type: int in 20:
+		var payload: PackedByteArray = _matrix()
+		payload.resize(44)
+		payload.encode_u16(32, fly_type)
+		_add_entity(map, 0, 0, payload, fly_type + 1)
+	_add_entity(map, 0, 0, _matrix(), 30)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 19)
+	for index: int in setup.definitions.size():
+		assert_eq(setup.definitions[index].pickup_type, index)
+		assert_eq(setup.definitions[index].behavior.kind, EntityBehavior.Kind.FAT_FIRE_FLY)
+		assert_eq(setup.definitions[index].behavior.execution, EntityBehavior.Execution.UPDATE)
+	assert_eq(setup.diagnostics.size(), 2)
+	assert_eq(setup.diagnostics[0].code, "invalid_payload")
+	assert_eq(setup.diagnostics[0].entity_index, 19)
+	assert_eq(setup.diagnostics[1].entity_index, 20)
+
+func test_firefly_follows_path_and_requires_bonus_callback() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[1].entity_name = "FIREFLY"
+	book.entries[1].forms[1].flags = FormBookEntry.FLAG_NO_MODEL | FormBookEntry.FLAG_DONT_FADE_COLOR
+	var map: MapFile = _map()
+	_add_path(map)
+	_add_entity(map, 1, 0, _path_info(0))
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "incompatible_callback")
+	assert_string_contains(setup.diagnostics[0].message, "Firefly requires a verified bonus callback")
+	book.entries[1].forms[1].bonus_callback = 0x43d060
+	setup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
+	assert_eq(setup.definitions.size(), 1)
+	if setup.definitions.is_empty():
+		return
+	assert_eq(setup.definitions[0].behavior.kind, EntityBehavior.Kind.FIREFLY)
+	assert_eq(setup.definitions[0].bonus_kind, FormCallback.Kind.CAV_FIREFLY_SCORE)
+	assert_eq(setup.definitions[0].path_definition.path_index, 0)
+	assert_true(setup.definitions[0].behavior.tongueable)
+
+func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> void:
+	var book: ThemeBook = _book()
+	var map: MapFile = _map()
+	_add_path(map)
+	_add_entity(map, 1, 32, _path_info(0), 1)
+	_add_entity(map, 1, 64, _path_info(0), 2)
+	_add_entity(map, 0, 32, _matrix(), 3)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
+	assert_eq(setup.definitions.size(), 1)
+	if setup.definitions.is_empty():
+		return
+	assert_eq(setup.definitions[0].unique_id, 1)
+	assert_eq(setup.definitions[0].flags, 32)
+	assert_eq(setup.diagnostics.size(), 2)
+	assert_eq(setup.diagnostics[0].code, "unsupported_transform")
+	assert_eq(setup.diagnostics[1].code, "unsupported_transform")
+	setup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", false)
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "unsupported_transform")
+
+func test_froglord_entity_override_is_reported_without_omission() -> void:
+	var library := FrogLordConfigLibrary.new()
+	var names: GameNameLists = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var book: ThemeBook = _book()
+	var form: FormBookEntry = book.entries[1].forms[1]
+	form.form_name = "CAV_SNAIL"
+	form.entity_type = names.entities.index_of("STATIC")
+	form.entity_name = names.entity_name_for(form.form_name, form.entity_type)
+	book.entries[1].forms[0].entity_type = names.entities.index_of("STATIC")
+	var map: MapFile = _map()
+	_add_path(map)
+	_add_entity(map, 1, 0, _path_info(0), 1)
+	_add_entity(map, 0, 0, _matrix(), 2)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "CAV3", 3, "pc-retail-v3.0e", true, names)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 2)
+	assert_eq(setup.definitions[0].behavior.kind, EntityBehavior.Kind.PATH_FOLLOWER)
+	assert_eq(setup.diagnostics.size(), 1)
+	if setup.diagnostics.is_empty():
+		return
+	assert_eq(setup.diagnostics[0].code, "entity_override")
+	assert_eq(setup.diagnostics[0].entity_index, 0)
+	assert_eq(setup.diagnostics[0].message, "FrogLord names this form MOVING; the executable entity type is STATIC")
+	assert_eq(setup.diagnostics[0].fallback, "Base transform remains available for inspection")

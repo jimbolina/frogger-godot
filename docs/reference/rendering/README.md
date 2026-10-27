@@ -34,7 +34,9 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 - A flat polygon is lit once from its one normal; a gouraud polygon once per corner.
 - A level's lights are stored in its map file. The options screens use an ambient light of (0x60, 0x60, 0x60) and one parallel light of (0xA0, 0xA0, 0xC0).
 - Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
-- Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag. Entity fade behavior is not implemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
+- Cave levels scale every live entity's colour by XZ distance from the frog's light: models unconditionally, model-free sprite forms unless the form's "don't fade colour" flag is set. Gameplay commits the scale and the live radii each tick ([entity contract](../gameplay/entities.md#cave-whole-map-behavior)); presentation applies committed scales, including an applied black, and feeds the committed radii to the terrain ramp uniforms. The non-cave edge fade remains unimplemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
+
+Fireflies draw as unlit two-image sprites in the entity's local XY plane at twice the image size; pickups draw the source glow and image quads from the pickup table with fixed colours, and both resolve images from the general and theme banks, then the resident `FIXE_VRAM`/`GEN_VRAM` banks. Sprite animation phases use the committed tick rather than a per-instance creation tick.
 
 ORG1 flipbooks consume committed colour scaling and custom ambient,
 including the diving turtle's blue tint. `AnimatedModelInstance` clones materials

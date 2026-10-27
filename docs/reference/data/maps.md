@@ -118,7 +118,7 @@ texture changes overlap order for depth-clamped tiles and is incorrect.
 Terrain normally uses baked polygon colours. Cave rendering replaces Gouraud
 colours with the C squared-distance grey ramp; it does not apply model lights
 to all terrain. The named cave-light entity payload supplies initial radii
-(`ent_cav.c`, `FroggerEntityDataCaveLight`); gameplay decay remains deferred.
+(`ent_cav.c`, `FroggerEntityDataCaveLight`); gameplay owns the per-tick radii and the game scene feeds them to the ramp, while the map viewer keeps this static initial ramp.
 The static adapter accepts maximum radii 1..255 (FrogLord's grid-width editor
 limit), preserving C unsigned squared-radius arithmetic and underflow clamping.
 Radius one is a valid initial ramp; zero has no usable range. Gameplay's

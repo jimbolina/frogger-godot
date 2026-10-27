@@ -2,13 +2,16 @@ class_name EntitySetup
 extends RefCounted
 ## Resolves authored map entities into detached base-transform definitions.
 
+## Path movers that frozen ENTSTRUpdateMovingMOF projects onto the landscape.
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
+
 var definitions: Array[EntityDefinition] = []
 var diagnostics: Array[EntitySetupDiagnostic] = []
 ## Structural setup error; individual unsupported records use diagnostics.
 var error: String = ""
 
-## Resolves source-ordered entity spans and attaches validated source paths.
-static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "", custom_behaviors_enabled: bool = false) -> EntitySetup:
+## Resolves source-ordered entity spans and attaches validated source paths; supplied names report entity-type overrides.
+static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = "", resource_id: int = -1, build_id: String = "", custom_behaviors_enabled: bool = false, names: GameNameLists = null) -> EntitySetup:
 	var result := EntitySetup.new()
 	if map == null or theme_book == null:
 		result.error = "Entity setup requires a map and theme book"
@@ -44,7 +47,8 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		if span.flags & ~127:
 			result._issue("unknown_flags", "Entity has unknown flags 0x%X" % span.flags, span, form, index, source_id, resource_id, build_id)
 			continue
-		if span.flags & 64 or (span.flags & 32 and not (custom_behaviors_enabled and form.entity_name == "FOR_HEDGEHOG")):
+		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(form.entity_name)
+		if span.flags & 64 or (span.flags & 32 and not (custom_behaviors_enabled and behavior.kind in PROJECTED_KINDS)):
 			result._issue("unsupported_transform", "PROJECT_ON_LAND or LOCAL_ALIGN transform is unsupported", span, form, index, source_id, resource_id, build_id)
 			continue
 		var definition := EntityDefinition.new()
@@ -59,13 +63,16 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.form_name = form.form_name
 		definition.radius_squared = form.radius_squared
 		definition.entity_name = form.entity_name
-		definition.behavior = EntityBehaviorCatalog.resolve(form.entity_name)
+		definition.behavior = behavior
 		definition.script_id = form.script_id
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
 		definition.bonus_kind = FormCallbackCatalog.resolve(build_id, form.bonus_callback, true)
 		if (FormCallbackCatalog.resolve(build_id, form.collision_callback) == FormCallback.Kind.VOL_COLOUR_SWITCH or definition.bonus_kind == FormCallback.Kind.VOL_COLOUR_SWITCH) and definition.behavior.kind != EntityBehavior.Kind.VOL_COLOUR_SWITCH:
 			result._issue("incompatible_callback", "Colour-switch callback requires colour-switch behavior and payload", span, form, index, source_id, resource_id, build_id)
+			continue
+		if definition.behavior.kind == EntityBehavior.Kind.FIREFLY and definition.bonus_kind == FormCallback.Kind.NONE:
+			result._issue("incompatible_callback", "Firefly requires a verified bonus callback", span, form, index, source_id, resource_id, build_id)
 			continue
 		definition.form_flags = form.flags
 		definition.flags = span.flags
@@ -90,7 +97,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY]):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -142,7 +149,16 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				continue
 			definition.volcano.play_chain_sound = map.general.theme == FroggerIds.THEMES.find("VOLCANO")
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE
+		if definition.behavior.kind in [EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY]:
+			var payload_issue: String = _cave_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		result.definitions.append(definition)
+		var stored_type: String = _stored_entity_name(names, form)
+		if stored_type != form.entity_name:
+			result._issue("entity_override", "FrogLord names this form %s; the executable entity type is %s" % [form.entity_name, stored_type], span, form, index, source_id, resource_id, build_id, false)
 		if form.script_id != 0 or form.collision_callback != 0 or form.bonus_callback != 0:
 			result._issue("unexecuted_hooks", "Script or callback addresses are retained but unexecuted in base-transform inspection", span, form, index, source_id, resource_id, build_id, false)
 	return result
@@ -213,3 +229,33 @@ static func _volcano_payload(definition: EntityDefinition, payload: PackedByteAr
 			volcano.hops_before = payload.decode_u16(34)
 	definition.volcano = volcano
 	return ""
+
+## Copies FrogLord Cave operands and the frozen unsigned frogger-light precomputation.
+static func _cave_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	match definition.behavior.kind:
+		EntityBehavior.Kind.CAVE_LIGHT:
+			if payload.size() < 48:
+				return "Frogger light requires min/max radii and die speed"
+			var cave := EntityCaveDefinition.new()
+			cave.min_radius = payload.decode_s32(32)
+			cave.max_radius = payload.decode_s32(36)
+			cave.die_speed = payload.decode_s32(40)
+			if cave.min_radius <= 1 or cave.min_radius >= cave.max_radius or cave.max_radius > 255:
+				return "Frogger light requires 1 < minimum radius < maximum radius <= 255"
+			cave.light_min_squared = _unsigned_square(cave.min_radius << 8)
+			cave.light_max_squared = _unsigned_square(cave.max_radius << 8)
+			cave.light_die = _unsigned_square(((cave.die_speed << 8) & 0xffffffff) / 30) >> 8
+			definition.cave = cave
+		EntityBehavior.Kind.FAT_FIRE_FLY:
+			if payload.size() < 34 or payload.decode_u16(32) >= EntityBonusFly.REWARD_IDS.size():
+				return "Fat fire fly requires a fly type from 0 through 18"
+			definition.pickup_type = payload.decode_u16(32)
+	return ""
+
+static func _unsigned_square(value: int) -> int:
+	return (value * value) & 0xffffffff
+
+static func _stored_entity_name(names: GameNameLists, form: FormBookEntry) -> String:
+	if names == null or names.entities == null:
+		return form.entity_name
+	return names.entities.get_name(form.entity_type) if names.entities.has_name(form.entity_type) else "unnamed type %d" % form.entity_type

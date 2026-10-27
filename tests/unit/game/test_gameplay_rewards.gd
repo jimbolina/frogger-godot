@@ -112,3 +112,30 @@ func test_checkpoint_does_not_accept_an_unlanded_jump() -> void:
 	assert_eq(CheckpointCollection.collect(frog, state, entity, events), "")
 	assert_eq(state.entity_environment.collected, 1)
 	assert_eq(state.frog.remaining_ticks, 3)
+
+func test_light_rewards_widen_shared_cave_radii_as_unsigned32() -> void:
+	var reward := RewardDefinition.new()
+	reward.flags = RewardDefinition.LIGHT
+	reward.value = 2
+	var state := GameplayState.new()
+	var events: Array[TickEvent] = []
+	assert_eq(GameplayRewards.apply(reward, state, events), "Light reward requires the shared entity environment")
+	state.entity_environment = EntityEnvironmentState.new()
+	state.entity_environment.light_min_squared = 0xFFFF0000
+	state.entity_environment.light_max_squared = 0x7FFF0000
+	assert_eq(GameplayRewards.apply(reward, state, events), "")
+	assert_eq(state.entity_environment.light_min_squared, 0x10000)
+	assert_eq(state.entity_environment.light_max_squared, 0x80010000)
+	reward.value = -1
+	assert_eq(GameplayRewards.apply(reward, state, events), "")
+	assert_eq(state.entity_environment.light_min_squared, 0)
+	assert_eq(state.entity_environment.light_max_squared, 0x80000000)
+	reward.flags = RewardDefinition.POWERUP
+	reward.value = PowerupFlags.SUPER_LIGHT
+	assert_eq(GameplayRewards.apply(reward, state, events), "")
+	assert_eq(state.entity_environment.light_min_squared, PowerupFlags.SUPER_LIGHT << 16)
+	assert_eq(state.entity_environment.light_max_squared, 0x80000000 + (PowerupFlags.SUPER_LIGHT << 16))
+	assert_eq(state.frog.powerup_flags, PowerupFlags.SUPER_LIGHT)
+	assert_eq(state.copy().entity_environment.light_max_squared, state.entity_environment.light_max_squared)
+	assert_eq(state.flow.score, 0)
+	assert_true(events.is_empty())

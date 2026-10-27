@@ -38,5 +38,13 @@
     "length": 28,
     "kind": "bonus",
     "sha256": "4b6f96dd0daf0310af54792da709f6b90f7365e2e64ee2a9847a83e9c45ef446"
+  },
+  {
+    "name": "CavFireFlyCallBack",
+    "address": 4444256,
+    "file_offset": 246880,
+    "length": 30,
+    "kind": "bonus",
+    "sha256": "638740759ffac25404aa63764119b91377545f50f21559cc190fae605979edb6"
   }
 ]

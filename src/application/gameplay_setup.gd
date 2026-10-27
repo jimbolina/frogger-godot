@@ -2,7 +2,11 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4"]
+## Named sprite images the frozen firefly animation list draws.
+const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
+## Resident general sprite bank holding the standard-resolution pickup and firefly images.
+const RESIDENT_SPRITE_BANK: String = "GEN_VRAM.VLO"
 
 var error: String = ""
 var definition: LevelDefinition = null
@@ -22,7 +26,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2 or VOL1–VOL3"
+		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 or CAV1/CAV3/CAV4"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)
@@ -44,7 +48,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 			return issue
 	if code in ["VOL1", "VOL2", "VOL3"]:
 		lifecycle.definition.source_allocation = true
-	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true)
+	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true, data.tables.names)
 	diagnostics.append_array(entities.diagnostics)
 	if not entities.error.is_empty():
 		return entities.error
@@ -58,11 +62,18 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	var problems := PackedStringArray()
 	var identities: Dictionary[int, EntityDefinition] = {}
 	var needs_swarm: bool = false
+	var needs_firefly: bool = false
+	var light: EntityDefinition = null
 	for entity: EntityDefinition in entities.definitions:
 		if identities.has(entity.unique_id):
 			return code + " entity unique ID %d is duplicated" % entity.unique_id
 		identities[entity.unique_id] = entity
 		needs_swarm = needs_swarm or entity.behavior.kind == EntityBehavior.Kind.HIVE
+		needs_firefly = needs_firefly or entity.behavior.kind == EntityBehavior.Kind.FIREFLY
+		if entity.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT and entity.cave != null:
+			if light != null:
+				return code + " has duplicate frogger light entities"
+			light = entity
 		var form: FormBookEntry = data.tables.theme_book().get_form(map.general.theme, entity.form_id)
 		if form == null:
 			return code + " entity %d has no form" % entity.entity_index
@@ -85,7 +96,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 			entity.action_lengths = model_action_lengths(model)
 		if entity.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM and (entity.action_lengths.is_empty() or entity.action_lengths[0] <= 0):
 			return code + " entity %d requires a falling-platform animation" % entity.entity_index
-		if entity.behavior.kind == EntityBehavior.Kind.PICKUP:
+		if entity.behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.FAT_FIRE_FLY]:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
 		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
 			if entity.butterfly_type < 0 or entity.butterfly_type >= EntityBonusFly.REWARD_IDS.size():
@@ -108,6 +119,12 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 		var swarm_issue: String = _swarm_texture_issue(data, theme)
 		if not swarm_issue.is_empty():
 			return code + ": " + swarm_issue
+	if book.use_cave_lights and light == null:
+		return code + " requires exactly one frogger light entity"
+	if needs_firefly:
+		var firefly_issue: String = _firefly_texture_issue(data, theme)
+		if not firefly_issue.is_empty():
+			return code + ": " + firefly_issue
 	for entity: EntityDefinition in entities.definitions:
 		if entity.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and not identities.has(entity.parent_unique_id):
 			return code + " entity %d has an unresolved parent %d" % [entity.entity_index, entity.parent_unique_id]
@@ -178,6 +195,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	definition.theme = map.general.theme
 	definition.theme_name = FroggerIds.animation_theme(definition.theme)
 	definition.theme_death_height = theme.death_height
+	definition.cave_light = book.use_cave_lights
 	definition.collision_enabled = true
 	definition.collision_bounds = bounds_for(top, bottom)
 	definition.camera = GameplayCameraDefinition.new()
@@ -228,3 +246,31 @@ static func _swarm_texture_issue(data: GameData, theme: ThemeBookEntry) -> Strin
 			return "Hive swarm texture bank is unavailable: " + "; ".join(problems)
 		found = found or bank.find_texture(texture_id) != null
 	return "" if found else "Hive swarm image for_swarm is missing from the supplied banks"
+
+static func _firefly_texture_issue(data: GameData, theme: ThemeBookEntry) -> String:
+	if data.tables.names.images == null:
+		return "Firefly requires named player textures"
+	var texture_ids := PackedInt32Array()
+	for image: String in FIREFLY_IMAGES:
+		var texture_id: int = data.tables.names.images.index_of(image)
+		if texture_id < 0:
+			return "Firefly image %s is not named in the supplied configuration" % image
+		texture_ids.append(texture_id)
+	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
+	var resident: MwiEntry = data.find_resource(RESIDENT_SPRITE_BANK)
+	if general == null or theme == null or resident == null:
+		return "Firefly requires general, theme and %s texture banks" % RESIDENT_SPRITE_BANK
+	var found := PackedByteArray()
+	found.resize(texture_ids.size())
+	var problems := PackedStringArray()
+	for bank_id: int in [general.vlo_id(false, false), theme.vlo_id(false, false), resident.index]:
+		var bank: VloFile = data.read_texture_bank(bank_id, problems)
+		if bank == null:
+			return "Firefly texture bank is unavailable: " + "; ".join(problems)
+		for slot: int in texture_ids.size():
+			if bank.find_texture(texture_ids[slot]) != null:
+				found[slot] = 1
+	for slot: int in texture_ids.size():
+		if found[slot] == 0:
+			return "Firefly image %s is missing from the supplied banks" % FIREFLY_IMAGES[slot]
+	return ""

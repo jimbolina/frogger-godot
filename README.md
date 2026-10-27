@@ -15,8 +15,8 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3, with the original-style
-single-player HUD, tongue collection and the complete level loop.
+The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4, with the original-style
+single-player HUD, tongue collection, pickup and firefly sprites, the cave light and the complete level loop.
 
 Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port's 30 Hz target; see the
@@ -35,7 +35,12 @@ To launch a level directly:
 godot --path . res://scenes/game/gameplay.tscn -- --data-dir=<game-folder> --level=SUB1
 ```
 
-The default is high-detail ORG1. The HUD uses the player's English retail UI
+The default is high-detail ORG1. Add `--record-inputs` to record your play: when
+the level completes, the held keys of every tick are written as a replay fixture
+to `user://playthroughs/<level>_keyboard_playthrough.json` (the completion message
+shows the absolute path; `--record-inputs=<file>` chooses another). The capture
+launcher replays such files through real key events with per-tick parity checks,
+which is how level completion evidence is produced. The HUD uses the player's English retail UI
 assets. Full menus, progression between levels, saves, audio playback and
 decorative particles remain future work. Forest bee swarms are visible gameplay hazards.
 

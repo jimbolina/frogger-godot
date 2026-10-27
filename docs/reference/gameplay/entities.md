@@ -12,8 +12,10 @@ decoded map record for later behavior work.
 
 Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start,
 unknown entity flag bits and `LOCAL_ALIGN` omit only that entity.
-`PROJECT_ON_LAND` is supported for whole-map hedgehog updates; other unimplemented
-projected transforms remain omitted. Diagnostics include source/build/resource, authored index, form and
+`PROJECT_ON_LAND` is supported for whole-map path followers, fireflies, moving
+platforms and hedgehogs, which project onto the first terrain layer during live
+updates while creation and reset keep the plain path pose; other projected
+transforms remain omitted. Diagnostics include source/build/resource, authored index, form and
 offset with the reason and fallback. `HIDDEN`, `NO_DISPLAY` and `NO_COLLISION`
 are retained as flags; the default component attaches every supported
 record. The opt-in visibility lifetime below narrows that set. Script and callback
@@ -528,7 +530,7 @@ durations to resolve that gate. Voice allocation, completion, radius changes and
 entity retirement commit with gameplay. Rendering and audio-device completion
 never control the gate; see [logical sound](simulation.md#logical-sound-clock).
 
-Executable disassembly verifies these five v3.0e identities against frozen C.
+Executable disassembly verifies these six v3.0e identities against frozen C.
 The application resolves addresses to names and then typed callback kinds;
 gameplay never dispatches executable addresses. FrogLord may repoint a form
 to any of these verified callbacks. Unknown mappings remain excluded with
@@ -542,8 +544,9 @@ source-located diagnostics. Text-only code digests and function lengths are in
 | GEN_STAT_FALL_BLOCK | Collision | 0x4287C0 | GenBlockFallCollPrimCallback |
 | ORG_FLY | Bonus | 0x4231D0 | OrgFlyCallBack |
 | SUB_BUTTERFLY | Bonus | 0x4284E0 | GenButterFlyCallBack |
+| CAV_FIREFLY | Bonus | 0x43D060 | CavFireFlyCallBack |
 
-All other GENERAL/ORIGINAL callback fields are zero in that inventory.
+All other GENERAL/ORIGINAL callback fields are zero in that inventory; the Cave web wall collision callback (0x43CF20) is unmapped because no retail map places it.
 Compatibility verification currently targets v3.0e, including FrogLord-saved
 edits based on that build. v1.0 and Vogons verification is outside scope and
 does not block ORG1 implementation or P8c acceptance. Do not infer FORM callback
@@ -584,7 +587,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -722,3 +725,57 @@ does not descend. Paused polygon texture animation retains its current cell;
 switches explicitly select their on/off cell. Reset and recreation restore
 source initial state. Independent transition facts and deliberate-break checks
 are documented in the [entity golden specification](../../../tests/golden/specs/entities.md#volcano-entities).
+
+## Cave whole-map behavior
+
+CAV1, CAV3 and CAV4 use whole-map setup. CAV2 and CAVM are dummy map-book rows
+and CAV5 has no map. Spiders, vampire bats and snails are generic path followers
+with existing scripts; glow worms and other pickups are generic `BONUS_FLY`
+records. Rockfall floor, bat, cobweb, web wall, lava drop, slime, rope bridge
+and race snail forms are not placed in retail maps and remain unsupported with
+diagnostics.
+
+The frogger light (`CAV_FROGGER_LIGHT`) is an immortal model-free entity whose
+payload gives minimum and maximum radii in grid squares and a die speed. Setup
+precomputes the unsigned squared radii `(radius<<8)²` and the per-tick decay
+`(((die<<8)/30)²)>>8`, rejecting min ≤ 1, min ≥ max and max > 255. Creation
+seeds the shared radii: the maximum, and the maximum less 0x100000, or 1 when
+unsigned wrap would exceed the maximum. Each visit crops an enlarged light back
+to its maximum, then subtracts the decay while the maximum exceeds the squared
+minimum radius, recomputing the minimum the same way (`ent_cav.c`). The radii
+live in `EntityEnvironmentState` so rewards, callbacks, fade and presentation
+read one committed value. The light form has no reset bits and no source reset
+path touches the radii, so they persist across deaths and checkpoints. Light
+pickups add `value<<16`; the firefly callback (`0x43D060`) scores 250 and adds
+the raw constant 8 to both radii, reproduced literally.
+
+On cave-light maps every live entity without `NO_SCREEN_FADE` or `NO_DISPLAY`
+is colour-scaled after its own visit and before its transient flags clear, using
+the XZ squared distance to the frog against the radii as they then stand: 128 at
+or inside the minimum, 0 at or beyond the maximum, and the integer ramp between,
+with unsigned comparisons (`ENTITY.C FadeLiveEntity`). Models multiply existing
+scale colours when `RESPECT_SCALE_COLOURS` is set and otherwise take the grey
+directly; `NO_MODEL` sprite forms take `min(128, grey<<2)` unless the form's
+don't-fade flag or `NO_COLOUR_FADE` is set. An applied scale sets
+`colour_scaled`, so an applied black is distinct from an unscaled entity.
+Creation performs no fade, matching the source skip on Cave maps; the non-cave
+edge fade remains unimplemented. The fat fire fly's form fades in C against a
+particle generator object; the port records the colour and presentation ignores
+it for pickup particles.
+
+Fireflies (`FIREFLY`) are tongueable path followers drawn as source sprites;
+gameplay owns their path translation. The fat fire fly (`CAV_FAT_FIRE_FLY`) is a
+static tongueable pickup at its authored translation, bobbing by
+`rsin(((uid&7)<<7)+(frame<<8))>>5` on the source frame clock unless
+`NO_MOVEMENT`, drawing one RNG value per update and requesting the buzz sound
+through the shared `PlaySoundDistance` gate when `rand()%20==1`. It rewards
+through its fly type like generic pickups; type 9 is super light.
+
+Source disagreement: the executable and frozen `formlib.C` give `CAV_SNAIL` the
+STATIC entity type, while FrogLord's entity names override it to MOVING and the
+CAV3 records carry PATH_INFO. Frozen `mapload.C` creates path runners only for
+path-runner entity types, so retail reads those bytes as a matrix. The port
+follows the FrogLord name and reports a non-omitting `entity_override`
+diagnostic. The player croak light swell and the web wall bounce remain
+unimplemented; the source croak never runs in demos. Independent facts and
+deliberate-break checks are in the [entity golden specification](../../../tests/golden/specs/entities.md#cave-entities).

@@ -12,6 +12,8 @@ var _owns_data: bool = false
 var _definition: LevelDefinition
 var _host := GameplayHost.new()
 var _held: int = 0
+## Optional owner playthrough recording requested on the command line.
+var recorder: InputRecorder = null
 var _hud: GameplayHud
 var _status: Label
 var _actions: HBoxContainer
@@ -24,6 +26,7 @@ func _ready() -> void:
 	_build_interface()
 	if auto_open:
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
+		recorder = InputRecorder.from_arguments(arguments)
 		level_code = selected_level if not selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
 		if level_code.is_empty():
 			level_code = "ORG1"
@@ -51,7 +54,7 @@ func open_data(data: GameData, code: String, take_ownership: bool = false) -> St
 	level_code = code
 	var level_number: int = FroggerIds.level_from_code(code)
 	if not GameplaySetup.supports_level(level_number):
-		return _show_error("Playable levels are ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3")
+		return _show_error("Playable levels are ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4")
 	if data == null or not data.is_valid():
 		return _show_error("A valid player data folder is required")
 	var scene_data: MapSceneData = MapSceneData.load_level(data, level_number)
@@ -136,6 +139,8 @@ func open_run(definition: LevelDefinition, start: RunStart) -> String:
 	run = replacement
 	_host.open(run)
 	_held = 0
+	if recorder != null:
+		recorder.reset(level_code)
 	_previous = null
 	_current = null
 	for slot: int in _entity_models.size():
@@ -180,7 +185,10 @@ func _process(delta: float) -> void:
 		_accept(result)
 	if _host.advance(delta, playing):
 		_host.consume_period()
-		if not _host.submit(_host.sample(_current.tick_index, _held)):
+		var command: TickCommand = _host.sample(_current.tick_index, _held)
+		if recorder != null:
+			recorder.record(command)
+		if not _host.submit(command):
 			_show_error(_host.error)
 	draw_state(_host.render_elapsed / GameplayHost.PERIOD if playing else 1.0)
 
@@ -194,6 +202,10 @@ func _accept(result: TickResult) -> void:
 	if _current.completed:
 		playing = false
 		reset_interpolation()
+		if recorder != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE:
+			var issue: String = recorder.save(_current.tick_index)
+			if not issue.is_empty():
+				last_error = issue
 	_update_interface(result.events)
 
 func _finish_pending() -> void:
@@ -265,6 +277,8 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 		_status.text = last_error
 	elif terminal:
 		_status.text = "Level complete" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "Game over"
+		if recorder != null and not recorder.saved_path.is_empty():
+			_status.text += "\nRecorded " + recorder.saved_path
 	else:
 		_status.text = "" if playing else "Paused — Space to resume"
 

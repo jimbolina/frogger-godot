@@ -6,6 +6,8 @@ var _data: GameData
 var _folder: String
 var _forest_captures: Dictionary[String, bool] = {}
 var _volcano_captures: Dictionary[String, bool] = {}
+var _cave_captures: Dictionary[String, bool] = {}
+var _prior_light_max: int = -1
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -119,6 +121,10 @@ func _run() -> void:
 		if not issue.is_empty():
 			_finish(issue)
 			return
+		issue = await _capture_cave_states(actual)
+		if not issue.is_empty():
+			_finish(issue)
+			return
 		timeout_seen = timeout_seen or actual.frog.death_equate == FrogAnimationCatalog.TIMEOUT
 		respawn_seen = respawn_seen or (actual.frog.lives < 3 and actual.flow.phase == LevelFlowState.Phase.PLAY)
 		for event: TickEvent in actual_result.events:
@@ -167,7 +173,7 @@ func _run() -> void:
 	if report == null:
 		_finish("Cannot write capture report")
 		return
-	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "forest_captures": _forest_captures.keys(), "volcano_captures": _volcano_captures.keys(), "final": TerrainTrace.facts(final, true)}, "\t"))
+	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "forest_captures": _forest_captures.keys(), "volcano_captures": _volcano_captures.keys(), "cave_captures": _cave_captures.keys(), "final": TerrainTrace.facts(final, true)}, "\t"))
 	report.close()
 	_finish("")
 
@@ -266,6 +272,45 @@ func _capture_volcano_states(state: GameplayState) -> String:
 		if label.is_empty() or _volcano_captures.has(label):
 			continue
 		_volcano_captures[label] = true
+		var issue: String = await _capture(label + "-tick-%04d" % state.tick_index)
+		if not issue.is_empty():
+			return issue
+	return ""
+
+func _capture_cave_states(state: GameplayState) -> String:
+	if not _screen._definition.cave_light or state.entity_environment == null:
+		return ""
+	var labels: PackedStringArray = []
+	var maximum: int = state.entity_environment.light_max_squared
+	if _prior_light_max >= 0:
+		if maximum < _prior_light_max:
+			labels.append("cave-light-decay-first")
+		elif maximum == _prior_light_max + 8:
+			labels.append("cave-light-gain-firefly")
+		elif maximum >= _prior_light_max + 65536:
+			labels.append("cave-light-gain-pickup")
+	_prior_light_max = maximum
+	if state.entities != null and _screen._definition.entity_collision != null:
+		for slot: int in state.entities.entities.size():
+			var entity: EntitySnapshot = state.entities.entities[slot]
+			if not entity.live or entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY):
+				continue
+			if not _screen._camera.is_position_in_frustum(GameSpace.transform(entity.matrix12).origin):
+				continue
+			var kind: EntityBehavior.Kind = _screen._definition.entity_collision.entities[slot].behavior.kind
+			if kind == EntityBehavior.Kind.FIREFLY:
+				labels.append("cave-firefly-visible")
+			elif kind == EntityBehavior.Kind.FAT_FIRE_FLY:
+				labels.append("cave-fat-fire-fly-visible")
+			if entity.colour_scaled and entity.model_present:
+				if entity.colour_scale == Vector3i.ZERO:
+					labels.append("cave-fade-dark")
+				elif entity.colour_scale.x < 128:
+					labels.append("cave-fade-partial")
+	for label: String in labels:
+		if _cave_captures.has(label):
+			continue
+		_cave_captures[label] = true
 		var issue: String = await _capture(label + "-tick-%04d" % state.tick_index)
 		if not issue.is_empty():
 			return issue

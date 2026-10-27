@@ -264,7 +264,10 @@ immortality, map-group movement and animation capabilities. Execution selection
 keeps transform-only inspection separate from enabled updates and contacts.
 Unknown names retain the existing diagnostic-and-omission fallback; recognizing
 a supported kind does not enable unsupported interactions. Fly, baby-frog and
-checkpoint updates have separate modules behind the typed dispatcher.
+checkpoint updates have separate modules behind the typed dispatcher. Shared
+cave light radii belong to the entity environment, written by the immortal
+light before the first tick and read by rewards, callbacks and the per-visit
+fade.
 
 Implementing another original behavior is a code change. A mod only repoints
 data to already supported behavior. Keep raw identifiers for diagnostics;

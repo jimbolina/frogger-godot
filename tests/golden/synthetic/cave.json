@@ -1,0 +1,7339 @@
+{
+  "light_create": [
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 1,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 4,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1048576,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 5,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1638400,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 16,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 16777216,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 128,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 1073741824,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 255,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 4261478400,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 256,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 0,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 1,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 2,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 262144,
+        "die": 2304,
+        "map_max": 262144,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 5,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1638400,
+        "die": 2304,
+        "map_max": 1638400,
+        "map_min": 589824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 16,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 16777216,
+        "die": 2304,
+        "map_max": 16777216,
+        "map_min": 15728640,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 128,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 1073741824,
+        "die": 2304,
+        "map_max": 1073741824,
+        "map_min": 1072693248,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 255,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 4261478400,
+        "die": 2304,
+        "map_max": 4261478400,
+        "map_min": 4260429824,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 256,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 0,
+        "die": 2304,
+        "map_max": 0,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 65535,
+        "max_radius": 65535,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 65536,
+        "max_r2": 65536,
+        "die": 2304,
+        "map_max": 65536,
+        "map_min": 1,
+        "debug_valid": false
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 0
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 0,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 1
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 0,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 29
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 238,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 30
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 256,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 31
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 272,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 90
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 2304,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 95
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 2562,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 100
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 2842,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 255
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 18496,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 4096
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 4772040,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 16777215
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 5294144,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    },
+    {
+      "input": {
+        "min_radius": 2,
+        "max_radius": 4,
+        "die_speed": 4294967295
+      },
+      "expected": {
+        "min_r2": 262144,
+        "max_r2": 1048576,
+        "die": 5294144,
+        "map_max": 1048576,
+        "map_min": 0,
+        "debug_valid": true
+      }
+    }
+  ],
+  "light_decay": [
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 2303,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 2303,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262143,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 262143,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262144,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 262144,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262145,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 259841,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048575,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046271,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046272,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048577,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046272,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 262144,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046272,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 2841,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 2841,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1638399,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 1638399,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1638400,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 1638400,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1638401,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 1635559,
+        "map_min": 586983
+      }
+    },
+    {
+      "input": {
+        "map_max": 6553599,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 6550757,
+        "map_min": 5502181
+      }
+    },
+    {
+      "input": {
+        "map_max": 6553600,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 6550758,
+        "map_min": 5502182
+      }
+    },
+    {
+      "input": {
+        "map_max": 6553601,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 6550758,
+        "map_min": 5502182
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 6553600,
+        "fl_min": 1638400,
+        "die": 2842
+      },
+      "expected": {
+        "map_max": 6550758,
+        "map_min": 5502182
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 2561,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 2561,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262143,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 262143,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262144,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 262144,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 262145,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 259583,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 2359295,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 2356733,
+        "map_min": 1308157
+      }
+    },
+    {
+      "input": {
+        "map_max": 2359296,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 2356734,
+        "map_min": 1308158
+      }
+    },
+    {
+      "input": {
+        "map_max": 2359297,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 2356734,
+        "map_min": 1308158
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 2359296,
+        "fl_min": 262144,
+        "die": 2562
+      },
+      "expected": {
+        "map_max": 2356734,
+        "map_min": 1308158
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048575,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 1048575,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 1048576,
+        "map_min": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048577,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 1048576,
+        "map_min": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 1048576,
+        "fl_min": 0,
+        "die": 0
+      },
+      "expected": {
+        "map_max": 1048576,
+        "map_min": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 4,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 4,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 5,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 5,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 6,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 4294964998,
+        "map_min": 4293916422
+      }
+    },
+    {
+      "input": {
+        "map_max": 2303,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 4294967295,
+        "map_min": 4293918719
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048574,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046270,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048575,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046271,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046271,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 1048575,
+        "fl_min": 5,
+        "die": 2304
+      },
+      "expected": {
+        "map_max": 1046271,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 3999,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 3999,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 4000,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 4000,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 4001,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 4002,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4999,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 5000,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 5000,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 5001,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 5001,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 5001,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967294,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 5001,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 5000,
+        "fl_min": 4000,
+        "die": 4294967295
+      },
+      "expected": {
+        "map_max": 5001,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 6,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 6,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 999,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 999,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1000,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 12345
+      }
+    },
+    {
+      "input": {
+        "map_max": 1001,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 1999,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 2000,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 2001,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 1
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967295,
+        "map_min": 12345,
+        "fl_max": 1000,
+        "fl_min": 2000,
+        "die": 7
+      },
+      "expected": {
+        "map_max": 1000,
+        "map_min": 1
+      }
+    }
+  ],
+  "light_add": [
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "firefly",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1048584,
+        "map_min": 8,
+        "score_delta": 250
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "firefly",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 1048600,
+        "map_min": 24,
+        "score_delta": 750
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "light_5",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1376256,
+        "map_min": 327680,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "light_5",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 2031616,
+        "map_min": 983040,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "light_8",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1572864,
+        "map_min": 524288,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "light_8",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 2621440,
+        "map_min": 1572864,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "super_light",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 2097152,
+        "map_min": 1048576,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 1048576,
+        "map_min": 0,
+        "source": "super_light",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 4194304,
+        "map_min": 3145728,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "firefly",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 2312,
+        "map_min": 9,
+        "score_delta": 250
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "firefly",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 2328,
+        "map_min": 25,
+        "score_delta": 750
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "light_5",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 329984,
+        "map_min": 327681,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "light_5",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 985344,
+        "map_min": 983041,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "light_8",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 526592,
+        "map_min": 524289,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "light_8",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 1575168,
+        "map_min": 1572865,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "super_light",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1050880,
+        "map_min": 1048577,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 2304,
+        "map_min": 1,
+        "source": "super_light",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 3148032,
+        "map_min": 3145729,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "firefly",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 0,
+        "map_min": 4293918720,
+        "score_delta": 250
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "firefly",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 16,
+        "map_min": 4293918736,
+        "score_delta": 750
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "light_5",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 327672,
+        "map_min": 4294246392,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "light_5",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 983032,
+        "map_min": 4294901752,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "light_8",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 524280,
+        "map_min": 4294443000,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "light_8",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 1572856,
+        "map_min": 524280,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "super_light",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1048568,
+        "map_min": 4294967288,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294967288,
+        "map_min": 4293918712,
+        "source": "super_light",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 3145720,
+        "map_min": 2097144,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "firefly",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 4294901768,
+        "map_min": 4293853192,
+        "score_delta": 250
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "firefly",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 4294901784,
+        "map_min": 4293853208,
+        "score_delta": 750
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "light_5",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 262144,
+        "map_min": 4294180864,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "light_5",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 917504,
+        "map_min": 4294836224,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "light_8",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 458752,
+        "map_min": 4294377472,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "light_8",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 1507328,
+        "map_min": 458752,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "super_light",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 983040,
+        "map_min": 4294901760,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 4294901760,
+        "map_min": 4293853184,
+        "source": "super_light",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 3080192,
+        "map_min": 2031616,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "firefly",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 8,
+        "map_min": 8,
+        "score_delta": 250
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "firefly",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 24,
+        "map_min": 24,
+        "score_delta": 750
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "light_5",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 327680,
+        "map_min": 327680,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "light_5",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 983040,
+        "map_min": 983040,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "light_8",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 524288,
+        "map_min": 524288,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "light_8",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 1572864,
+        "map_min": 1572864,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "super_light",
+        "repeats": 1
+      },
+      "expected": {
+        "map_max": 1048576,
+        "map_min": 1048576,
+        "score_delta": 0
+      }
+    },
+    {
+      "input": {
+        "map_max": 0,
+        "map_min": 0,
+        "source": "super_light",
+        "repeats": 3
+      },
+      "expected": {
+        "map_max": 3145728,
+        "map_min": 3145728,
+        "score_delta": 0
+      }
+    }
+  ],
+  "entity_fade": [
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 360000,
+        "map_max": 1408576,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 360000,
+        "map_max": 1408576,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 359999,
+        "map_max": 1408575,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 359999,
+        "map_max": 1408575,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 360001,
+        "map_max": 1408577,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 360001,
+        "map_max": 1408577,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 4294278721,
+        "map_max": 360001,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 4294278721,
+        "map_max": 360001,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 4294278720,
+        "map_max": 360000,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 4294278720,
+        "map_max": 360000,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 4294278719,
+        "map_max": 359999,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 4294278719,
+        "map_max": 359999,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 700,
+        "entity_z": 200,
+        "map_min": 4294803008,
+        "map_max": 884288,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 100,
+        "frog_z": 200,
+        "entity_x": 100,
+        "entity_z": -400,
+        "map_min": 4294803008,
+        "map_max": 884288,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 360000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 0,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 0,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1,
+        "frog_z": 1,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 2,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 4,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 32767,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 65536,
+        "map_max": 1114112,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1073676289,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 32767,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2147483648,
+        "map_max": 2148532224,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1073676289,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 32767,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1072693248,
+        "map_max": 1073741824,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1073676289,
+        "colour": 8,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          8,
+          8,
+          8
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 65536,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 65536,
+        "map_max": 1114112,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 0,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 65536,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2147483648,
+        "map_max": 2148532224,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 0,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 65536,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1072693248,
+        "map_max": 1073741824,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 0,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 70000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 65536,
+        "map_max": 1114112,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 605032704,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 70000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2147483648,
+        "map_max": 2148532224,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 605032704,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 70000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1072693248,
+        "map_max": 1073741824,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 605032704,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 65536,
+        "map_max": 1114112,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2147483648,
+        "map_max": 2148532224,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1072693248,
+        "map_max": 1073741824,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 46341,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 65536,
+        "map_max": 1114112,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9266,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 46341,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2147483648,
+        "map_max": 2148532224,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9266,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 46341,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1072693248,
+        "map_max": 1073741824,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9266,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 2147483647,
+        "frog_z": 0,
+        "entity_x": -2147483648,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": -2147483648,
+        "frog_z": 0,
+        "entity_x": 2147483647,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 2,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967295,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 640,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          130,
+          130
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967295,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 6464,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          89,
+          89
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967295,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967295,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 470,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          214,
+          215,
+          215
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 4352,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          17,
+          17
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 1152,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          132,
+          132
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 29001,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          73,
+          186,
+          186
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967293,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 384,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          129,
+          129
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967293,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 3296,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          224,
+          236,
+          236
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967293,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 17280,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          195,
+          195
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967293,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 32864,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          96,
+          224,
+          224
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483649,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483649,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483649,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483649,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483648,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483648,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483648,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483648,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 3,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483647,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 9,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 10,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483647,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 100,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 46341,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483647,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 2147488281,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 60000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 2147483647,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 3600000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          246,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 205376,
+        "map_max": 1253952,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 31,
+        "sprite": 124,
+        "scaled": true,
+        "scale": [
+          124,
+          124,
+          124
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 221760,
+        "map_max": 1270336,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 33,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 4294918720,
+        "map_max": 1000000,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": 0,
+        "scaled": true,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 0,
+        "map_max": 1,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 0,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          64,
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 475712,
+        "map_max": 1524288,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 64,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          32,
+          32,
+          32
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          32,
+          32,
+          32
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          32,
+          32,
+          32
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 213568,
+        "map_max": 1262144,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 32,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 2000000,
+        "map_max": 3000000,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 128,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          246,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          246,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": true,
+        "scale": [
+          246,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": false,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": 128,
+        "scaled": true,
+        "scale": [
+          128,
+          128,
+          128
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 0,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 1,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": false
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "input": {
+        "frog_x": 1000,
+        "frog_z": 0,
+        "entity_x": 0,
+        "entity_z": 0,
+        "map_min": 1,
+        "map_max": 4294967294,
+        "no_model": true,
+        "dont_fade": 2,
+        "no_display": true
+      },
+      "expected": {
+        "distance": 1000000,
+        "colour": 2806,
+        "sprite": -1,
+        "scaled": false,
+        "scale": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "fat_fire_fly_bob": [
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -152,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483601,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -249,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483598,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -249,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483598,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -32768,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": -1,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -152,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483601,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -249,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483598,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -249,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483598,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -200,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 0,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 7,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 0,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 0,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 1,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 1,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 15,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 15,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 16,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 16,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -94,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65535,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483543,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65535,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": false
+      },
+      "expected": {
+        "y": -75,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65536,
+        "base_y": -200,
+        "stopped": true
+      },
+      "expected": {
+        "y": -200,
+        "draws": 0
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": false
+      },
+      "expected": {
+        "y": -2147483524,
+        "draws": 1
+      }
+    },
+    {
+      "input": {
+        "uid": 32767,
+        "frame": 65536,
+        "base_y": 2147483647,
+        "stopped": true
+      },
+      "expected": {
+        "y": 2147483647,
+        "draws": 0
+      }
+    }
+  ],
+  "firefly_frames": [
+    {
+      "input": {
+        "age": 0
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 1
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 2
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 3
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 4
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 5
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 6
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 7
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 8
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 9
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 15
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 16
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 17
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 32767
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 32768
+      },
+      "expected": {
+        "image": 0
+      }
+    },
+    {
+      "input": {
+        "age": 65535
+      },
+      "expected": {
+        "image": 1
+      }
+    },
+    {
+      "input": {
+        "age": 65536
+      },
+      "expected": {
+        "image": 0
+      }
+    }
+  ]
+}

@@ -30,6 +30,7 @@ var _tick_guard: TickGuard = null
 var _camera_zones: Array[ZoneDefinition] = []
 var _frog: Frog = Frog.new()
 var _has_entity_updates: bool = false
+var _cave_light: bool = false
 
 ## Validates and copies ordinary terrain, then creates a stationary component start.
 static func create(level: LevelDefinition, initial: RunStart = null) -> GameplayRun:
@@ -66,6 +67,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> Gameplay
 	run._camera_definition = level.camera.copy() if level.camera != null else null
 	run._action_lengths = level.frog_action_lengths.duplicate()
 	run._theme_name = level.theme_name
+	run._cave_light = level.cave_light
 	run._frog.source_id = level.source_id
 	run._frog.resource_id = level.resource_id
 	if not level.camera_zones.is_empty():
@@ -186,11 +188,12 @@ func reset(initial: RunStart = null) -> String:
 		return "Start timer must be nonnegative"
 	var candidate_entities: EntityRun = _entities.copy() if _entities != null else null
 	if candidate_entities != null:
-		var entity_error: String = candidate_entities.reset()
+		var environment: EntityEnvironmentState = _entity_collision.environment.copy() if _entity_collision.environment != null else null
+		var entity_error: String = candidate_entities.reset(environment)
 		if not entity_error.is_empty():
 			return entity_error
 		state.entities = candidate_entities.snapshot()
-		state.entity_environment = _entity_collision.environment.copy() if _entity_collision.environment != null else null
+		state.entity_environment = environment
 	var sound_issue: String = _synchronize_sound_entities(state)
 	if not sound_issue.is_empty():
 		return sound_issue
@@ -247,7 +250,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_candidate_random = _random.copy()
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
-	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.attachment.current_entity_index, _has_entity_updates) if _entities != null else null
+	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.attachment.current_entity_index, _has_entity_updates, _grid) if _entities != null else null
 	_frog.candidate_entities = _candidate_entities
 	_frog.begin_tick(_candidate_camera, _candidate_random, _candidate_animation, _frog.controller_directions)
 	var next: GameplayState = _state.copy(false)
@@ -409,7 +412,10 @@ func _update_entity_scripts(state: GameplayState, events: Array[TickEvent]) -> S
 	if _candidate_entities == null or not _has_entity_updates:
 		return ""
 	for slot: int in _candidate_entities.update_slots():
-		if not _candidate_entities.begin_update(slot, state.attachment.current_entity_index):
+		var visiting: bool = _candidate_entities.begin_update(slot, state.attachment.current_entity_index, _grid)
+		if not _candidate_entities.error.is_empty():
+			return _candidate_entities.error
+		if not visiting:
 			state.entities = _candidate_entities.snapshot()
 			var sound_issue: String = _synchronize_sound_entities(state)
 			if not sound_issue.is_empty():
@@ -422,6 +428,8 @@ func _update_entity_scripts(state: GameplayState, events: Array[TickEvent]) -> S
 		if not issue.is_empty():
 			return issue
 		var killed: bool = was_alive and bool(state.frog.flags & FrogFlags.MUST_DIE)
+		if _cave_light:
+			_candidate_entities.apply_cave_fade(slot, Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]), state.entity_environment)
 		if killed:
 			events.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN).for_entity(_entity_collision.entities[slot].entity_index))
 		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.requests.sound_requests, state.entity_environment, killed, _capture_phases)

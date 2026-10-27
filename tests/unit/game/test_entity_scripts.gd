@@ -555,3 +555,20 @@ func test_pitch_bend_requires_logical_sound_and_rejects_unsafe_shifts() -> void:
 	assert_null(result.script_state)
 	assert_eq(result.requests.size(), 0)
 	assert_eq(state.timer, 32)
+
+func test_distance_sound_offsets_narrows_and_compares_by_operand_mode() -> void:
+	var definition: EntityScriptDefinition = _definition([36, 0, 20, 13, 0, 300, 38])
+	var context: EntityUpdateContext = _context()
+	context.base_matrix[9] = 65636
+	context.frog_position = Vector3i(799, 0, 0)
+	assert_eq(TickEvent.trace_lines(_update(definition, EntityScriptState.create(1), context).requests), ["sound:13:0:0:0"])
+	context.frog_position = Vector3i(800, 0, 0)
+	assert_eq(_update(definition, EntityScriptState.create(1), context).requests.size(), 0)
+	var registers: EntityScriptDefinition = _definition([36, 1, 0, 1, 0, 300, 38])
+	registers.payload_registers = PackedInt32Array([19, 14])
+	var state: EntityScriptState = EntityScriptState.create(1)
+	state.registers[0] = 19
+	state.registers[1] = 14
+	assert_eq(TickEvent.trace_lines(_update(registers, state, context).requests), ["sound:14:0:0:0"])
+	context.frog_position = Vector3i(799, 0, 0)
+	assert_eq(_update(registers, state, context).requests.size(), 0)

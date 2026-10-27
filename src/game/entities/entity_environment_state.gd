@@ -8,6 +8,9 @@ var covered: int = 0
 var collected: int = 0
 var collision_disabled: int = 0
 var croak_modes: PackedInt32Array = PackedInt32Array([0, 0, 0, 0, 0])
+## Unsigned 32-bit cave light squared radii shared by terrain, entities and rewards.
+var light_min_squared: int = 0
+var light_max_squared: int = 0
 
 ## Copies positions and mutable covered bits for the aggregate transaction.
 func copy() -> EntityEnvironmentState:
@@ -18,6 +21,8 @@ func copy() -> EntityEnvironmentState:
 	result.collected = collected
 	result.collision_disabled = collision_disabled
 	result.croak_modes = croak_modes.duplicate()
+	result.light_min_squared = light_min_squared
+	result.light_max_squared = light_max_squared
 	return result
 
 ## Validates five checkpoint positions and the corresponding collected-bit mask.
@@ -26,6 +31,9 @@ func validate() -> String:
 		return "Entity environment requires five checkpoints and bounded covered bits"
 	if croak_modes.size() != 5:
 		return "Entity environment requires five checkpoint animation modes"
+	for radius: int in [light_min_squared, light_max_squared]:
+		if radius < 0 or radius > 0xffffffff:
+			return "Cave light radii must fit unsigned32"
 	for mode: int in croak_modes:
 		if mode < 0 or mode > 3:
 			return "Invalid checkpoint animation mode"

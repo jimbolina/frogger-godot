@@ -51,6 +51,9 @@ class Instance extends Node3D:
 	var camera_position: Vector3i = Vector3i.ZERO
 	var reference_target: Vector3i = Vector3i.ZERO
 	var cave_frog: Vector3i = Vector3i.ZERO
+	## Live unsigned squared cave light radii; reconfiguration keeps these values.
+	var cave_min_r2: int = 0
+	var cave_max_r2: int = 0
 	var projection_scale: Vector2 = Vector2.ONE
 	var reference_projection: bool = false
 	var _nodes: Array[MeshInstance3D] = []
@@ -72,6 +75,8 @@ class Instance extends Node3D:
 		diagnostics = source.diagnostics.duplicate()
 		reference_target = source.scene.midpoint
 		cave_frog = _start_position()
+		cave_min_r2 = source.scene.cave_min_r2 & 0xffffffff
+		cave_max_r2 = source.scene.cave_max_r2 & 0xffffffff
 		animation.configure(source.scene.map.polygons, source.scene.map.animations,
 			source.scene.remap, source.scene.library, source.scene.preferred)
 		water.configure(source.scene.map.vertices, source.scene.map.polygons)
@@ -183,6 +188,18 @@ class Instance extends Node3D:
 		for material: ShaderMaterial in _cave_materials:
 			material.set_shader_parameter("cave_frog", Vector3(value))
 
+	## Replaces the live squared cave light radii on cave terrain materials only.
+	func set_cave_radii(min_r2: int, max_r2: int) -> void:
+		var minimum: int = min_r2 & 0xffffffff
+		var maximum: int = max_r2 & 0xffffffff
+		if cave_min_r2 == minimum and cave_max_r2 == maximum:
+			return
+		cave_min_r2 = minimum
+		cave_max_r2 = maximum
+		for material: ShaderMaterial in _cave_materials:
+			material.set_shader_parameter("cave_min_r2", float(minimum))
+			material.set_shader_parameter("cave_max_r2", float(maximum))
+
 	## Changes cached shader variants; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
 		_linear_filter = value
@@ -234,8 +251,8 @@ class Instance extends Node3D:
 					material.set_shader_parameter("cave_frog", Vector3(cave_frog))
 					if spec.cave:
 						_cave_materials[material] = true
-					material.set_shader_parameter("cave_min_r2", float(source.scene.cave_min_r2))
-					material.set_shader_parameter("cave_max_r2", float(source.scene.cave_max_r2))
+					material.set_shader_parameter("cave_min_r2", float(cave_min_r2))
+					material.set_shader_parameter("cave_max_r2", float(cave_max_r2))
 					_configured[material] = true
 				var animated: bool = spec.animation_index >= 0 and tick >= 0
 				var animation_value := Vector3i(offset.x, offset.y, int(animated))

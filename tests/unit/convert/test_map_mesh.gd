@@ -280,6 +280,71 @@ func test_environment_cave_water_attributes_and_affine_shader() -> void:
 	instance.free()
 
 
+func test_live_cave_radii_update_cave_materials_and_survive_reconfiguration() -> void:
+	var scene: MapSceneData = _scene()
+	scene.cave_enabled = true
+	scene.cave_min_r2 = 100
+	scene.cave_max_r2 = 1000
+	scene.map.polygons[0].type_index = 7
+	var plain := MapPolygon.new()
+	plain.type_index = 3
+	plain.vertex_indices = PackedInt32Array([0, 1, 2, 3])
+	plain.colors = PackedColorArray([Color8(128, 128, 128)])
+	plain.uvs = PackedVector2Array([Vector2.ZERO, Vector2(1, 0), Vector2(0, 1), Vector2.ONE])
+	plain.texture_id = 1
+	plain.visible = true
+	scene.map.polygons.append(plain)
+	scene.map.groups[0].polygon_indices = PackedInt32Array([0, 1])
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	var instance: MapMesh.Instance = built.create_instance()
+	instance.set_tick(0)
+	var node: MeshInstance3D = instance.get_child(0)
+	var cave: ShaderMaterial = null
+	var other: ShaderMaterial = null
+	for surface: int in node.mesh.get_surface_count():
+		var material: ShaderMaterial = node.get_surface_override_material(surface)
+		if built.surface_specs[0][surface].cave:
+			cave = material
+		else:
+			other = material
+	assert_not_null(cave)
+	assert_not_null(other)
+	assert_eq(instance.cave_min_r2, 100)
+	assert_eq(instance.cave_max_r2, 1000)
+	instance.set_cave_radii(-1, 5000)
+	var minimum: float = cave.get_shader_parameter("cave_min_r2")
+	var maximum: float = cave.get_shader_parameter("cave_max_r2")
+	assert_eq(minimum, 4294967295.0, "radii are unsigned 32-bit values")
+	assert_eq(maximum, 5000.0)
+	var untouched: float = other.get_shader_parameter("cave_max_r2")
+	assert_eq(untouched, 1000.0, "non-cave materials are not visited")
+	cave.set_shader_parameter("cave_max_r2", 7.0)
+	instance.set_cave_radii(0xffffffff, 5000)
+	maximum = cave.get_shader_parameter("cave_max_r2")
+	assert_eq(maximum, 7.0, "an unchanged pair is inert")
+	instance.set_cave_radii(200, 3000)
+	instance.set_projection_scale(Vector2(1, 0.9375))
+	instance.set_filtering(true)
+	minimum = cave.get_shader_parameter("cave_min_r2")
+	maximum = cave.get_shader_parameter("cave_max_r2")
+	assert_eq(minimum, 200.0, "reconfiguration keeps live radii")
+	assert_eq(maximum, 3000.0)
+	assert_eq(scene.cave_min_r2, 100, "scene initial radii are unchanged")
+	instance.free()
+
+
+func test_scene_without_cave_light_has_no_cave_materials() -> void:
+	var instance: MapMesh.Instance = MapMeshBuilder.new().build(_scene()).create_instance()
+	instance.set_tick(0)
+	instance.set_cave_radii(10, 20)
+	assert_true(instance._cave_materials.is_empty())
+	var node: MeshInstance3D = instance.get_child(0)
+	var material: ShaderMaterial = node.get_surface_override_material(0)
+	var enabled: bool = material.get_shader_parameter("cave_enabled")
+	assert_false(enabled)
+	instance.free()
+
+
 func test_sky_rotations_camera_translation_and_fixed_height() -> void:
 	var scene: MapSceneData = _scene()
 	scene.sky_land = SkyLandFile.new()

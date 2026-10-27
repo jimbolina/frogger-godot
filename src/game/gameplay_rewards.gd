@@ -9,7 +9,9 @@ static func apply(reward: RewardDefinition, state: GameplayState, events: Array[
 	if reward.flags & RewardDefinition.SCORE:
 		points(value, state)
 	elif reward.flags & RewardDefinition.LIGHT:
-		_light(value, state)
+		var light_issue: String = _light(value, state)
+		if not light_issue.is_empty():
+			return light_issue
 	elif reward.flags & RewardDefinition.TIME:
 		state.flow.remaining_time = mini(2250, PlatformMath.s32(state.flow.remaining_time + value))
 	elif reward.flags & RewardDefinition.REDUCE:
@@ -33,7 +35,9 @@ static func apply(reward: RewardDefinition, state: GameplayState, events: Array[
 				state.frog.quick_jump_timer = 240
 				sound_offset = 384
 			PowerupFlags.SUPER_LIGHT:
-				_light(value, state)
+				var light_issue: String = _light(value, state)
+				if not light_issue.is_empty():
+					return light_issue
 		state.frog.powerup_flags |= value
 	if sound_offset >= 0:
 		events.append(TickEvent.sound(26))
@@ -50,9 +54,13 @@ static func points(value: int, state: GameplayState) -> void:
 		state.frog.lives = mini(state.frog.lives + 1, 10)
 		state.flow.life_bonus_score = (state.flow.life_bonus_score + 10000) & 0xffffffff
 
-static func _light(value: int, state: GameplayState) -> void:
-	state.flow.light_min_squared = PlatformMath.s32(state.flow.light_min_squared + (value << 16))
-	state.flow.light_max_squared = PlatformMath.s32(state.flow.light_max_squared + (value << 16))
+static func _light(value: int, state: GameplayState) -> String:
+	if state.entity_environment == null:
+		return "Light reward requires the shared entity environment"
+	var increase: int = PlatformMath.s32(value << 16)
+	state.entity_environment.light_min_squared = (state.entity_environment.light_min_squared + increase) & 0xffffffff
+	state.entity_environment.light_max_squared = (state.entity_environment.light_max_squared + increase) & 0xffffffff
+	return ""
 
 ## Source constants for asset-free component definitions; retail setup supplies SCORE_BOOK.
 static func component_definitions() -> Array[RewardDefinition]:

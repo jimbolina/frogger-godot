@@ -25,6 +25,8 @@ var camera_bounds: Rect2i = Rect2i()
 var collision_enabled: bool = false
 var collision_bounds: Rect2i = Rect2i(Vector2i(-32767, -32767), Vector2i(65534, 65534))
 var theme_death_height: int = 30000
+## Whether the map book selects the cave lighting model for this level.
+var cave_light: bool = false
 var theme: int = 0
 ## Optional only for explicitly isolated component fixtures. Integrated runs supply both.
 var camera: GameplayCameraDefinition = null

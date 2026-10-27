@@ -22,12 +22,13 @@ static func update(definition: EntityDefinition, result: EntityCustomResult, fra
 	if entity.entity_flags & EntityDefinition.NO_MOVEMENT:
 		return
 	var angle: int = (((definition.unique_id & 7) << 7) + ((frame_number & 65535) << 6)) & 4095
-	entity.matrix12[10] = definition.matrix12[10] + (_sine(angle) >> 6) + 64
+	entity.matrix12[10] = definition.matrix12[10] + (sine(angle) >> 6) + 64
 	if not entity.custom_state.moving_sound.is_empty() and entity.custom_state.moving_voice_active:
 		var pitch: int = 64 - (result.random.next_value("entity:%d:pickup_pitch_base" % definition.entity_index) & 15)
 		pitch += (result.random.next_value("entity:%d:pickup_pitch_mod" % definition.entity_index) & 3) * 8
-		pitch -= _sine(frame_number << 8) >> 8
+		pitch -= sine(frame_number << 8) >> 8
 		entity.requests.append(TickEvent.pitch_bend(pitch))
 
-static func _sine(angle: int) -> int:
+## Port approximation of the source rsin table shared by pickup-style bobbing.
+static func sine(angle: int) -> int:
 	return roundi(sin(float(angle & 4095) * TAU / 4096.0) * 4096.0)

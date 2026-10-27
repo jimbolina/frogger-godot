@@ -40,6 +40,7 @@ commands run from the repository root; generated facts live in
 | Tongue, rewards, start clocks, custom entities and verified FORM callbacks | [Gameplay flow](specs/entities.md#tongue-rewards-and-level-flow) |
 | Forest hive, branch, animal, visibility and terrain-projection behavior | [Forest entities](specs/entities.md#forest-entities) |
 | Volcano switch, controlled-platform and falling-platform behavior | [Volcano entities](specs/entities.md#volcano-entities) |
+| Cave light radii, fade, firefly pickups, fat fire fly bob and retail light payloads | [Cave entities](specs/entities.md#cave-entities) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

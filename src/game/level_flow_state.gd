@@ -23,8 +23,6 @@ var timer_fraction: int = 0
 var timer_count_up: bool = true
 var timer_accumulator: int = 0
 var last_timer_sound: int = 0
-var light_min_squared: int = 0
-var light_max_squared: int = 0
 var transition_ticks: int = 0
 var gold_collected: bool = false
 
@@ -51,8 +49,6 @@ func copy() -> LevelFlowState:
 	result.timer_count_up = timer_count_up
 	result.timer_accumulator = timer_accumulator
 	result.last_timer_sound = last_timer_sound
-	result.light_min_squared = light_min_squared
-	result.light_max_squared = light_max_squared
 	result.transition_ticks = transition_ticks
 	result.gold_collected = gold_collected
 	return result

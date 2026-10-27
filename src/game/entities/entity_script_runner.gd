@@ -286,24 +286,14 @@ static func _value(state: EntityScriptState, mode: int, operand: int) -> int:
 static func _distance_sound(state: EntityScriptState, args: PackedInt32Array, context: EntityUpdateContext, result: EntityUpdateResult) -> void:
 	if not context.sound_allocation_enabled:
 		return
-	var squared: int = 0
+	var point := Vector3i.ZERO
 	for axis: int in 3:
 		var local: int = _short(_signed32((context.base_matrix[axis * 3 + args[3]] * _short(args[4])) >> 12))
-		var point: int = _short(local + context.base_matrix[9 + axis])
-		var difference: int = _short(context.frog_position[axis] - point)
-		squared += difference * difference
-	var distance: int = _isqrt(_isqrt(squared))
+		point[axis] = _short(local + context.base_matrix[9 + axis])
+	var distance: int = EntityDistanceSound.root_distance(point, context.frog_position)
 	var threshold: int = _value(state, args[0], args[1])
 	if (args[0] == 1 and threshold < distance) or (args[0] == 0 and threshold > distance):
 		result.add_request(TickEvent.sound(_short(_value(state, args[0], args[2]))))
-
-static func _isqrt(value: int) -> int:
-	var root: int = int(sqrt(float(value)))
-	while (root + 1) * (root + 1) <= value:
-		root += 1
-	while root * root > value:
-		root -= 1
-	return root
 
 static func _short(value: int) -> int:
 	var low: int = value & 65535

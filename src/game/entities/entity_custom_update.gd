@@ -48,6 +48,10 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 			issue = EntityBaby.update_custom(definition, result.entity, parent_live, parent, parent_form, frog, hit)
 		EntityBehavior.Kind.CHECKPOINT:
 			issue = EntityCheckpoint.update(definition, result, frog_position)
+		EntityBehavior.Kind.CAVE_LIGHT:
+			issue = EntityCaveLight.update(definition, result)
+		EntityBehavior.Kind.FAT_FIRE_FLY:
+			issue = EntityFatFireFly.update(definition, result, frog, frame_number)
 		EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT:
 			pass
 		_:

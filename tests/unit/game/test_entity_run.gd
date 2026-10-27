@@ -134,7 +134,10 @@ func test_invalid_definitions_and_failed_create_reset() -> void:
 	assert_false(run.error.is_empty())
 	assert_eq(run.snapshot(), null)
 	assert_false(run.reset().is_empty())
-	bad.flags = EntityDefinition.PROJECT_ON_LAND
+	var grounded: EntityDefinition = _static(0)
+	grounded.flags = EntityDefinition.PROJECT_ON_LAND
+	assert_false(EntityRun.create([grounded]).error.is_empty())
+	bad.flags = EntityDefinition.PROJECT_ON_LAND | EntityDefinition.LOCAL_ALIGN
 	assert_false(EntityRun.create([bad]).error.is_empty())
 	bad.flags = 128
 	assert_false(EntityRun.create([bad]).error.is_empty())
@@ -329,3 +332,83 @@ func test_selective_croc_retirement_releases_checkpoint_coverage() -> void:
 	assert_eq(environment.covered, 0)
 	assert_eq(environment.collision_disabled, 0)
 	assert_eq(run.snapshot().entities[0].entity_flags & EntityDefinition.NO_COLLISION, 0)
+
+func _sloped_grid(square_count: int = 1) -> GridDefinition:
+	var grid := GridDefinition.new()
+	grid.dimensions = Vector2i(2, 2)
+	grid.base = Vector2i(-256, -256)
+	for index: int in 4:
+		var stack := GridStackDefinition.new()
+		stack.first_square_index = grid.squares.size()
+		stack.square_count = square_count
+		grid.stacks.append(stack)
+		for layer: int in square_count:
+			var square := GridSquareDefinition.new()
+			var x: int = -256 + (index % 2) * 256
+			var z: int = -256 + (index >> 1) * 256
+			square.vertices = [Vector3i(x, -(x >> 2) - 64, z + 256), Vector3i(x + 256, -((x + 256) >> 2) - 64, z + 256), Vector3i(x, -(x >> 2) - 64, z), Vector3i(x + 256, -((x + 256) >> 2) - 64, z)]
+			grid.squares.append(square)
+	return grid
+
+func test_projected_path_follower_uses_first_terrain_layer_only_during_updates() -> void:
+	var definition: EntityDefinition = _moving(0, _path(), 10, EntityDefinition.PROJECT_ON_LAND)
+	var run: EntityRun = EntityRun.create([definition])
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var start: EntitySnapshot = run.snapshot().entities[0]
+	assert_eq(start.matrix12, EntityTransform.moving(start.path, definition.flags), "Creation keeps the plain path pose")
+	var grid: GridDefinition = _sloped_grid()
+	var candidate: EntityRun = run.begin_candidate(0, -1, false, grid)
+	assert_eq(candidate.error, "")
+	var moved: EntitySnapshot = candidate.snapshot().entities[0]
+	var expected: PackedInt32Array = EntityTransform.moving_on_land(moved.path, definition.flags, grid)
+	assert_false(expected.is_empty())
+	assert_eq(moved.matrix12, expected)
+	assert_ne(moved.matrix12, EntityTransform.moving(moved.path, definition.flags))
+	assert_eq(run.begin_candidate(0).snapshot().entities[0].matrix12, EntityTransform.moving(moved.path, definition.flags), "No grid keeps inspection transforms")
+
+func test_projected_path_without_terrain_fails_and_preserves_run() -> void:
+	var run: EntityRun = EntityRun.create([_moving(4, _path(), 10, EntityDefinition.PROJECT_ON_LAND)])
+	assert_eq(run.error, "")
+	var before: EntityRunSnapshot = run.snapshot()
+	var candidate: EntityRun = run.begin_candidate(0, -1, false, _sloped_grid(0))
+	assert_eq(candidate.error, "Entity 4 projected path requires a valid first terrain square")
+	assert_eq(run.step(0, -1, false, _sloped_grid(0)), "Entity 4 projected path requires a valid first terrain square")
+	assert_eq(run.snapshot().tick_index, before.tick_index)
+	assert_eq(run.snapshot().entities[0].matrix12, before.entities[0].matrix12)
+	assert_eq(run.step(0, -1, false, _sloped_grid()), "")
+
+func test_cave_light_requires_decoded_radii() -> void:
+	var light := EntityDefinition.new()
+	light.entity_index = 0
+	light.entity_name = "CAV_FROGGER_LIGHT"
+	light.behavior = EntityBehaviorCatalog.resolve(light.entity_name)
+	light.behavior.execution = EntityBehavior.Execution.UPDATE
+	assert_eq(EntityRun.create([light]).error, "Cave light requires decoded radii")
+	light.cave = EntityCaveDefinition.new()
+	assert_eq(EntityRun.create([light]).error, "")
+
+func test_cave_fade_applies_only_on_request_to_the_private_candidate() -> void:
+	var rock: EntityDefinition = _static(0)
+	rock.matrix12[9] = 0
+	var screened: EntityDefinition = _static(1)
+	screened.matrix12[9] = 0
+	var run: EntityRun = EntityRun.create([rock, screened])
+	assert_eq(run.error, "")
+	var environment := EntityEnvironmentState.new()
+	environment.light_min_squared = 0x100000
+	environment.light_max_squared = 0x200000
+	var candidate: EntityRun = run.begin_candidate(0)
+	assert_false(candidate.snapshot().entities[0].colour_scaled)
+	candidate._state.entities[1].live_flags |= EntityLiveFlags.NO_SCREEN_FADE
+	candidate.apply_cave_fade(0, Vector3i(1024, 0, 725), environment)
+	candidate.apply_cave_fade(1, Vector3i(1024, 0, 725), environment)
+	assert_eq(candidate.snapshot().entities[0].colour_scale, Vector3i(64, 64, 64))
+	assert_true(candidate.snapshot().entities[0].colour_scaled)
+	assert_false(candidate.snapshot().entities[1].colour_scaled)
+	assert_false(run.snapshot().entities[0].colour_scaled, "Discarding the candidate rolls the fade back")
+	run.commit_candidate(candidate)
+	assert_eq(run.step(1), "")
+	assert_true(run.snapshot().entities[0].colour_scaled, "Applied scale persists across ticks")
+	assert_eq(run.snapshot().entities[0].colour_scale, Vector3i(64, 64, 64))

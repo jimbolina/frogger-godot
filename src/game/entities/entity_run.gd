@@ -2,6 +2,8 @@ class_name EntityRun
 extends RefCounted
 ## Owns attached entity transforms and independent path cursors for one run.
 
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
+const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY]
 var error: String = ""
 var _definitions: Array[EntityDefinition] = []
 var _scripts: Array[PreparedEntityScript] = []
@@ -24,7 +26,8 @@ func copy() -> EntityRun:
 	return result
 
 ## Builds the next independent tick directly, avoiding a redundant pre-step deep copy.
-func begin_candidate(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> EntityRun:
+## A supplied grid projects live PROJECT_ON_LAND path poses onto the first terrain layer.
+func begin_candidate(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false, grid: GridDefinition = null) -> EntityRun:
 	var result := EntityRun.new()
 	result._ready = _ready
 	result._lifecycle = _lifecycle
@@ -32,7 +35,7 @@ func begin_candidate(tick_index: int, attached_entity_index: int = -1, deferred_
 	result._scripts.assign(_scripts)
 	result._runners.assign(_runners)
 	result._state = _state
-	result.error = result.step(tick_index, attached_entity_index, deferred_updates)
+	result.error = result.step(tick_index, attached_entity_index, deferred_updates, grid)
 	if not result.error.is_empty():
 		result._runners.clear()
 		result._state = null
@@ -86,7 +89,7 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & ~EntityDefinition.ALL_FLAGS:
 			result.error = "Entity %d has unsupported flags" % definition.entity_index
 			return result
-		if definition.flags & EntityDefinition.LOCAL_ALIGN or (definition.flags & EntityDefinition.PROJECT_ON_LAND and definition.behavior.kind != EntityBehavior.Kind.HEDGEHOG):
+		if definition.flags & EntityDefinition.LOCAL_ALIGN or (definition.flags & EntityDefinition.PROJECT_ON_LAND and definition.behavior.kind not in PROJECTED_KINDS):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
 		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or definition.behavior.has_custom_update()):
@@ -106,6 +109,9 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 			return result
 		if definition.behavior.kind in [EntityBehavior.Kind.HIVE, EntityBehavior.Kind.HEDGEHOG] and definition.forest == null:
 			result.error = "Forest behavior requires decoded subtype operands"
+			return result
+		if definition.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT and definition.cave == null:
+			result.error = "Cave light requires decoded radii"
 			return result
 		if definition.behavior.kind in [EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] and definition.action_lengths.size() < 2:
 			result.error = "Forest animal requires both source animation actions"
@@ -143,7 +149,8 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 	return result
 
 ## Recreates all path cursors and transforms atomically at tick zero.
-func reset() -> String:
+## Immortal cave light creation seeds the supplied shared environment's radii.
+func reset(environment: EntityEnvironmentState = null) -> String:
 	if not _ready:
 		return "Entity run has no validated definitions"
 	var candidates: Array[PathRunner] = []
@@ -165,7 +172,7 @@ func reset() -> String:
 		var entity: EntitySnapshot = next_state.entities[index]
 		entity.lifecycle_supported = definition.script_id == 0 or definition.script_definition != null
 		if _lifecycle == null or definition.is_immortal():
-			_initialize_instance(entity, definition, null, false, candidates[index])
+			_initialize_instance(entity, definition, environment if definition.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT else null, false, candidates[index])
 			if _lifecycle != null:
 				entity.generation = 1
 				next_state.live_order.insert(0, entity.entity_index)
@@ -178,7 +185,7 @@ func reset() -> String:
 	return ""
 
 ## Advances all paths, then updates moving transforms, with aggregate rollback.
-func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false) -> String:
+func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bool = false, grid: GridDefinition = null) -> String:
 	if _state == null:
 		return "Entity run has no valid start"
 	if tick_index < 0 or tick_index != _state.tick_index:
@@ -215,9 +222,14 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].custom_state = previous.custom_state.copy() if previous.custom_state != null else null
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
+		next_state.entities[index].colour_scaled = previous.colour_scaled
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in RETAINED_MATRIX_KINDS or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
+		elif previous.live and candidates[index] != null and _projects(index, _definitions[index].flags, grid):
+			next_state.entities[index].matrix12 = EntityTransform.moving_on_land(next_state.entities[index].path, _definitions[index].flags, grid)
+			if next_state.entities[index].matrix12.is_empty():
+				return _projection_error(index)
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		next_state.live_order = _state.live_order.duplicate()
@@ -292,6 +304,8 @@ func reset_in_level(checkpoint: bool, environment: EntityEnvironmentState = null
 		environment.active_swarms = next_environment.active_swarms
 		environment.covered = next_environment.covered
 		environment.collision_disabled = next_environment.collision_disabled
+		environment.light_min_squared = next_environment.light_min_squared
+		environment.light_max_squared = next_environment.light_max_squared
 	return ""
 
 ## Returns a fully detached source-ordered run snapshot.
@@ -474,6 +488,11 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 					parent_form = contacts[parent_slot]
 				break
 	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null or definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE else null, parent_form, frog, _state.entities, _definitions, _state.tick_index - 1, grid, collision, contacts)
+	if result.error.is_empty() and definition.behavior.kind == EntityBehavior.Kind.MOVING_PLATFORM and result.entity.path != null and _projects(slot, result.entity.entity_flags, grid):
+		result.entity.matrix12 = EntityTransform.moving_on_land(result.entity.path, result.entity.entity_flags, grid)
+		if result.entity.matrix12.is_empty():
+			result.error = _projection_error(slot)
+			return result
 	if result.error.is_empty():
 		if result.path_reset_requested:
 			var start: PathStart = definition.path_start.copy()
@@ -485,7 +504,10 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 			if not result.error.is_empty():
 				return result
 			result.entity.path = _runners[slot].snapshot()
-			result.entity.matrix12 = EntityTransform.moving(result.entity.path, result.entity.entity_flags)
+			result.entity.matrix12 = _path_pose(slot, result.entity.path, result.entity.entity_flags, grid)
+			if result.entity.matrix12.is_empty():
+				result.error = _projection_error(slot)
+				return result
 		if result.path_active_request >= 0:
 			_runners[slot].set_active(result.path_active_request == 1)
 			result.entity.path = _runners[slot].snapshot()
@@ -605,6 +627,7 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 	entity.live_flags = EntityLiveFlags.ANIMATED | EntityLiveFlags.FLIPBOOK if not definition.action_lengths.is_empty() else 0
 	entity.script_state = EntityScriptState.create(definition.script_definition.root_id) if definition.script_definition != null else null
 	entity.colour_scale = Vector3i.ZERO
+	entity.colour_scaled = false
 	entity.ambient = Vector3i.ZERO
 	entity.pop_allocated = false
 	entity.pop_remaining = 0
@@ -642,6 +665,10 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 				entity.path = runner.snapshot()
 		elif definition.behavior.kind == EntityBehavior.Kind.PICKUP:
 			EntityBonusFly.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT:
+			EntityCaveLight.initialize(definition, entity, environment)
+		elif definition.behavior.kind == EntityBehavior.Kind.FAT_FIRE_FLY:
+			EntityFatFireFly.initialize(definition, entity)
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true
@@ -684,6 +711,7 @@ func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
 	entity.pop_remaining = 0
 	entity.requests.clear()
 	entity.colour_scale = Vector3i.ZERO
+	entity.colour_scaled = false
 	entity.ambient = Vector3i.ZERO
 	state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.DESTROY, entity.entity_index, entity.generation))
 
@@ -699,7 +727,8 @@ func update_slots() -> PackedInt32Array:
 	return result
 
 ## Applies retirement and base update at the source visit, before custom/script work.
-func begin_update(slot: int, attached: int) -> bool:
+## Returns false after retirement; a failed land projection sets `error` instead.
+func begin_update(slot: int, attached: int, grid: GridDefinition = null) -> bool:
 	if _lifecycle == null:
 		return true
 	var entity: EntitySnapshot = _state.entities[slot]
@@ -709,8 +738,28 @@ func begin_update(slot: int, attached: int) -> bool:
 		return false
 	entity.live_flags = (entity.live_flags & ~EntityLiveFlags.DESTROY) | int(entity.destroy_pending)
 	if entity.path != null:
-		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[slot].flags)
+		entity.matrix12 = _path_pose(slot, entity.path, _definitions[slot].flags, grid)
+		if entity.matrix12.is_empty():
+			error = _projection_error(slot)
 	return true
+
+## Applies the frozen cave fade to a live candidate entity unless it opts out of screen fades.
+func apply_cave_fade(slot: int, frog_position: Vector3i, environment: EntityEnvironmentState) -> void:
+	var entity: EntitySnapshot = _state.entities[slot]
+	if environment == null or not entity.live or entity.live_flags & EntityLiveFlags.NO_SCREEN_FADE:
+		return
+	var position := Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+	EntityCaveFade.apply(entity, _definitions[slot], EntityCaveFade.colour(position, frog_position, environment.light_min_squared, environment.light_max_squared))
+
+func _projects(slot: int, flags: int, grid: GridDefinition) -> bool:
+	var kind: EntityBehavior.Kind = _definitions[slot].behavior.kind
+	return grid != null and flags & EntityDefinition.PROJECT_ON_LAND and kind != EntityBehavior.Kind.HEDGEHOG and kind in PROJECTED_KINDS
+
+func _path_pose(slot: int, path: PathSnapshot, flags: int, grid: GridDefinition) -> PackedInt32Array:
+	return EntityTransform.moving_on_land(path, flags, grid) if _projects(slot, flags, grid) else EntityTransform.moving(path, flags)
+
+func _projection_error(slot: int) -> String:
+	return "Entity %d projected path requires a valid first terrain square" % _definitions[slot].entity_index
 
 ## Synchronizes source moving-object and voice ownership before entity updates.
 func set_sound_state(entity_index: int, has_object: bool, has_voice: bool) -> void:

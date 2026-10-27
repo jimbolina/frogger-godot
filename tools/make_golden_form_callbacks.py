@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify code identity facts for the five independently inspected v3.0e callbacks."""
+"""Verify code identity facts for the independently inspected v3.0e callbacks."""
 import argparse
 import hashlib
 import json
@@ -13,6 +13,7 @@ FUNCTIONS = (
     ('GenBlockFallCollPrimCallback', 0x4287c0, 0x428942, 'collision'),
     ('OrgFlyCallBack', 0x4231d0, 0x4231e0, 'bonus'),
     ('GenButterFlyCallBack', 0x4284e0, 0x4284fc, 'bonus'),
+    ('CavFireFlyCallBack', 0x43d060, 0x43d07e, 'bonus'),
 )
 
 

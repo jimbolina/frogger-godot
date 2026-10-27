@@ -22,6 +22,8 @@ var flags_authoritative: bool = false
 var custom_state: EntityCustomState = null
 var live_flags: int = 0
 var colour_scale: Vector3i = Vector3i.ZERO
+## Whether source colour scaling was applied; an applied zero scale draws black.
+var colour_scaled: bool = false
 var ambient: Vector3i = Vector3i.ZERO
 
 ## Returns an independent transform and nested path snapshot.
@@ -46,6 +48,7 @@ func copy() -> EntitySnapshot:
 	result.custom_state = custom_state.copy() if custom_state != null else null
 	result.live_flags = live_flags
 	result.colour_scale = colour_scale
+	result.colour_scaled = colour_scaled
 	result.ambient = ambient
 	return result
 

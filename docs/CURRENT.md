@@ -1,29 +1,30 @@
 # Current checkpoint
 
-P9b Volcano is complete. The dedicated game scene opens independent ORG1–ORG5,
-SUB1, FOR1–FOR2 and VOL1–VOL3 sessions with the original-style English HUD from
-player assets. See [controls](../README.md), [roadmap](PORTING.md) and the
-[entity contract](reference/gameplay/entities.md).
+P9c Cave is complete. The dedicated game scene opens independent ORG1–ORG5,
+SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4 sessions with the original-style
+English HUD from player assets. See [controls](../README.md), [roadmap](PORTING.md)
+and the [entity contract](reference/gameplay/entities.md).
 
-Whole-map Volcano includes colour switches, controlled immortal platforms,
-falling platforms and its scripted hazards. Target changes, collision, animation
-and logical sound ownership commit atomically. Source polygon allocation history
-supports Volcano visibility. Shared collision bounds include model primitives,
-and contact/jump reads preserve callback-modified matrix positions. Named
-behavior and callback mappings support compatible FrogLord repoints with
-explicit diagnostics for unsupported entries.
+Whole-map Cave includes the frogger light with source decay, crop and pickup
+growth, per-visit entity fade on models and sprites, firefly path sprites with
+their score callback, the fat fire fly pickup and land projection for generic
+path followers. Light radii live in the shared entity environment and commit
+with each tick; presentation drives the terrain ramp from committed radii and
+draws pickups and fireflies as source sprites.
 
-All eleven playable levels have normal-start keyboard completion replays with
-per-tick parity against fresh detached runs. ORG1, SUB1, FOR1 and VOL1 attract
-demos match native terminal states, routes and consumed inputs across headless
-and rendered schedules. Independent Volcano behavior/allocation facts have
-deliberate-break checks; switches, carrying, collapse and hazards were inspected.
-Both complete test modes, strict compilation and architecture checks pass.
+Thirteen of the fourteen playable levels have normal-start keyboard completion
+replays with per-tick parity against fresh detached runs; CAV3's replay awaits an
+owner-recorded playthrough. ORG1, SUB1, FOR1 and VOL1 attract
+demos match native terminal states; CAV1 and CAV4 demos complete with schedule
+parity but have no native baseline, because the fresh-boot native export never
+unlocks Cave. Independent Cave facts have deliberate-break checks. Both complete
+test modes, strict compilation and architecture checks pass.
 
-Next is Cave, followed by the remaining themes. Guarded JUN1 and ORG1 fixtures
-remain separate regression coverage. VOL4/VOL5 have no playable maps; VOLM is
-multiplayer. Audio playback, other effects, animated per-part lighting, the full
-front end, multiplayer, exports and hosted CI retain separate scope. Further
-performance tuning remains deferred at the owner's request; the original-hardware
+Next is Desert, followed by Jungle, Swamp and Sky. The player croak light swell
+and the web wall bounce are deferred; CAV_SNAIL follows FrogLord's MOVING override
+with a recorded disagreement. Guarded JUN1 and ORG1 fixtures remain separate
+regression coverage. Audio playback, other effects, animated per-part lighting,
+the full front end, multiplayer, exports and hosted CI retain separate scope.
+Performance tuning remains deferred at the owner's request; the original-hardware
 target is unverified. Compatibility stays `pc-retail-v3.0e`. Logs and captures
 remain external. Never push.

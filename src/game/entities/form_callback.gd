@@ -2,7 +2,7 @@ class_name FormCallback
 extends RefCounted
 ## Typed source FORM reactions, independent of executable addresses.
 
-enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH }
+enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE }
 
 ## Applies a verified primitive callback to the private gameplay candidate.
 static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: int, events: Array[TickEvent]) -> String:
@@ -18,6 +18,15 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 		return ""
 	if kind == Kind.ORG_FLY_SCORE:
 		return GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
+	if kind == Kind.CAV_FIREFLY_SCORE:
+		if state.entity_environment == null:
+			return "Firefly callback requires the shared entity environment"
+		var issue: String = GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
+		if not issue.is_empty():
+			return issue
+		state.entity_environment.light_max_squared = (state.entity_environment.light_max_squared + 8) & 0xffffffff
+		state.entity_environment.light_min_squared = (state.entity_environment.light_min_squared + 8) & 0xffffffff
+		return ""
 	if kind == Kind.BUTTERFLY_SCORE:
 		if frog.entity_collision != null:
 			for definition: EntityDefinition in frog.entity_collision.entities:

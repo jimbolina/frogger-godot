@@ -17,6 +17,8 @@ var _ground: Node3D
 var _frog: MeshInstance3D
 var _tongue_view: TongueView
 var _swarm_view: ForestSwarmView
+var _cave_sprite_view: CaveSpriteView
+var _sprite_definitions: Array[EntityDefinition] = []
 var _camera: Camera3D
 var _map_instance: MapMesh.Instance
 var _frog_pose_tick: int = -1
@@ -54,6 +56,8 @@ func draw_state(fraction: float) -> void:
 		_tongue_view.draw_state(_current)
 	if _swarm_view != null:
 		_swarm_view.draw_state(_current)
+	if _cave_sprite_view != null:
+		_cave_sprite_view.draw_state(_current, _sprite_definitions)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
 	if _frog_model != null:
 		_frog_model.transform = frog_transform
@@ -79,6 +83,8 @@ func draw_state(fraction: float) -> void:
 				_map_instance.set_tick(_current.tick_index - 1)
 		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
 		_map_instance.set_cave_frog(_current.frog.world_position)
+		if _map_instance.source.scene.cave_enabled and _current.entity_environment != null:
+			_map_instance.set_cave_radii(_current.entity_environment.light_min_squared, _current.entity_environment.light_max_squared)
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
 	if _current.entities != null:
 		_entity_pose_tick = _current.tick_index
@@ -90,7 +96,7 @@ func draw_state(fraction: float) -> void:
 				if model.transform != transform_now:
 					model.transform = transform_now
 				if update_entities and _entity_lighting != null:
-					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
+					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scaled or entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
 				if update_entities:
 					if entity.custom_state != null:
 						model.player.texture_animation_paused = entity.custom_state.texture_animation_paused
@@ -120,6 +126,8 @@ func build_world() -> void:
 	add_child(_tongue_view)
 	_swarm_view = ForestSwarmView.new()
 	add_child(_swarm_view)
+	_cave_sprite_view = CaveSpriteView.new()
+	add_child(_cave_sprite_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -131,6 +139,9 @@ func build_world() -> void:
 func _clear_entity_visuals() -> void:
 	if _swarm_view != null:
 		_swarm_view.clear()
+	if _cave_sprite_view != null:
+		_cave_sprite_view.clear()
+	_sprite_definitions = []
 	for model: AnimatedModelInstance in _entity_models:
 		if model != null:
 			remove_child(model)
@@ -159,6 +170,13 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 			var issue: String = _swarm_view.configure(scene_data, selected_data)
 			if not issue.is_empty():
 				scene_data.diagnostics.append(issue)
+			break
+	for entity: EntityDefinition in definitions.entities:
+		if entity.behavior.kind in [EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.PICKUP]:
+			var sprite_issue: String = _cave_sprite_view.configure(scene_data, selected_data, definitions.entities)
+			if not sprite_issue.is_empty():
+				scene_data.diagnostics.append(sprite_issue)
+			_sprite_definitions = definitions.entities
 			break
 	if use_lighting:
 		_entity_lighting = MapLighting.new()
@@ -237,6 +255,8 @@ func _update_projection() -> void:
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
 	if _swarm_view != null:
 		_swarm_view.set_projection_scale(scale)
+	if _cave_sprite_view != null:
+		_cave_sprite_view.set_projection_scale(scale)
 	if _map_instance != null:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:
