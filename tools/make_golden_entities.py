@@ -88,23 +88,28 @@ def decode_entity_map(data, forms, entity_names, overrides):
                          -1 if form is None else form["collision"],
                          -1 if form is None else form["bonus"]))
         payload = start + 24
-        if entity_name == "STATIC":
+        butterfly_callback = form is not None and 0x4284e0 in (form['collision'], form['bonus'])
+        callback_payload_valid = (not butterfly_callback or
+                                  (payload + 14 <= end and number(data, payload + 12, '<H') < 19))
+        if entity_name in ("STATIC", "DYNAMIC"):
             if payload + 32 > end:
                 raise ValueError(f"short STATIC matrix at entity {index}")
             matrix = struct.unpack_from("<10h3i", data, payload)
-            records.extend((index, 0, *matrix[:9], *matrix[10:]))
-            static_count += 1
-            if not flags & ~127 and not flags & (32 | 64):
+            if entity_name == "STATIC":
+                records.extend((index, 0, *matrix[:9], *matrix[10:]))
+                static_count += 1
+            if not flags & ~127 and not flags & (32 | 64) and callback_payload_valid:
                 accepted.extend((index, unique_id))
-        elif entity_name == "MOVING":
+        elif entity_name in ("MOVING", "MOVING_TONGUEABLE"):
             if payload + 12 > end:
                 raise ValueError(f"short MOVING PATH_INFO at entity {index}")
             path_id, segment, distance, motion, speed, padding = struct.unpack_from("<6H", data, payload)
-            records.extend((index, 1, path_id, segment, distance, motion, speed))
-            moving_count += 1
+            if entity_name == "MOVING":
+                records.extend((index, 1, path_id, segment, distance, motion, speed))
+                moving_count += 1
             lengths = paths_by_index.get(path_id, [])
             if (not flags & ~127 and not flags & (32 | 64) and padding == 0 and
-                    not motion & ~14 and segment < len(lengths) and distance <= lengths[segment]):
+                    not motion & ~14 and segment < len(lengths) and distance <= lengths[segment] and callback_payload_valid):
                 accepted.extend((index, unique_id))
         elif entity_name and entity_name not in entity_names:
             raise ValueError(f"unknown resolved entity name {entity_name} from {form_name}")

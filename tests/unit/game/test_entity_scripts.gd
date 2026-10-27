@@ -40,6 +40,22 @@ func test_prepared_definition_detaches_and_matches_standalone_execution() -> voi
 	assert_eq(state.timer, 0)
 	assert_ne(_update(definition, state).error, "")
 
+func test_nonoriginal_splash_uses_one_origin_sprite_without_turtle_form_arithmetic() -> void:
+	var definition: EntityScriptDefinition = _definition([44, 0, 38])
+	var context: EntityUpdateContext = _context()
+	context.form_id = 4
+	assert_ne(definition.validate(PackedInt32Array([3, 4]), context.form_id, true), "")
+	definition.original_turtle_splashes = false
+	var result: EntityUpdateResult = _update(definition, EntityScriptState.create(1), context)
+	assert_eq(result.error, "")
+	assert_eq(TickEvent.trace_lines(result.requests), ["sprite:0:0:0:1:-16"])
+	var prepared: PreparedEntityScript = PreparedEntityScript.create(definition, PackedInt32Array([3, 4]), context.form_id, true)
+	assert_eq(prepared.error, "")
+	definition.original_turtle_splashes = true
+	result = EntityScriptRunner.update_prepared(prepared, EntityScriptState.create(1), EntityAnimationState.create([3, 4]), context, SourceRandom.create(1))
+	assert_eq(result.error, "")
+	assert_eq(TickEvent.trace_lines(result.requests), ["sprite:0:0:0:1:-16"])
+
 func test_prepared_dependencies_and_runtime_cursor_are_checked() -> void:
 	var definition: EntityScriptDefinition = _definition([3, 1, 44, 0, 8, 0, 1, 128, 2048, -1, 9, 38])
 	var prepared: PreparedEntityScript = PreparedEntityScript.create(definition, PackedInt32Array([3, 4]), 21, true)

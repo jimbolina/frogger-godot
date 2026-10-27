@@ -262,8 +262,11 @@ static func _execute(definition: EntityScriptDefinition, context: EntityUpdateCo
 			36:
 				_distance_sound(state, a, context, result)
 			44:
-				for splash: int in context.form_id - 18:
-					result.add_request(TickEvent.sprite(Vector3i(0, -64, -(context.form_id - 19) * 128 + splash * 256), Vector2i(1, -16)))
+				if definition.original_turtle_splashes:
+					for splash: int in context.form_id - 18:
+						result.add_request(TickEvent.sprite(Vector3i(0, -64, -(context.form_id - 19) * 128 + splash * 256), Vector2i(1, -16)))
+				else:
+					result.add_request(TickEvent.sprite(Vector3i.ZERO, Vector2i(1, -16)))
 		state.cursor = following
 		if yielded:
 			return ""

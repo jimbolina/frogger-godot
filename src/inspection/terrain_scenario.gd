@@ -101,8 +101,8 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_enabled = true
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
-	if level_code.to_upper() == "ORG1" and options.exploration_preset.is_empty():
-		var gameplay: Org1GameplaySetup = Org1GameplaySetup.from_data(data, map_scene.map, frog_assets.model, frog_assets.action_lengths)
+	if GameplaySetup.supports_level(number) and options.exploration_preset.is_empty():
+		var gameplay: GameplaySetup = GameplaySetup.from_data(data, number, map_scene.map, frog_assets.model, frog_assets.action_lengths)
 		if not gameplay.error.is_empty():
 			return gameplay.error
 		level = gameplay.definition

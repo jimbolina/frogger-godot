@@ -8,6 +8,9 @@ const KINDS: Dictionary[String, EntityBehavior.Kind] = {
 	"ORG_LOG_SNAKE": EntityBehavior.Kind.LOG_SNAKE,
 	"ORG_BEAVER": EntityBehavior.Kind.BEAVER,
 	"STATIC": EntityBehavior.Kind.STATIC,
+	"DYNAMIC": EntityBehavior.Kind.STATIC,
+	"MOVING_TONGUEABLE": EntityBehavior.Kind.PATH_FOLLOWER,
+	"SUB_DOG": EntityBehavior.Kind.DOG,
 	"MOVING": EntityBehavior.Kind.PATH_FOLLOWER,
 	"SUB_TURTLE": EntityBehavior.Kind.TURTLE,
 	"ORG_BABY_FROG": EntityBehavior.Kind.BABY_FROG,
@@ -25,10 +28,10 @@ static func resolve(name: String) -> EntityBehavior:
 	result.kind = KINDS.get(name, EntityBehavior.Kind.UNKNOWN)
 	if result.kind == EntityBehavior.Kind.UNKNOWN:
 		return result
-	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER] else EntityBehavior.Layout.MATRIX
-	result.immortal = result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
-	result.group_moving = result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
-	result.tongueable = result.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.PICKUP]
+	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG] else EntityBehavior.Layout.MATRIX
+	result.immortal = name == "DYNAMIC" or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
+	result.group_moving = name == "DYNAMIC" or result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
+	result.tongueable = name == "MOVING_TONGUEABLE" or result.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.PICKUP]
 	result.one_shot = result.kind == EntityBehavior.Kind.BABY_FROG
 	if result.kind == EntityBehavior.Kind.TURTLE:
 		result.payload_offset = 12

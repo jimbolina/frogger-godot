@@ -18,6 +18,53 @@ func _book() -> ThemeBook:
 	book.entries[FroggerIds.THEME_GENERAL].forms.append(general)
 	return book
 
+func test_dog_wait_payload_is_unsigned_and_truncation_is_reported() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[1].entity_name = "SUB_DOG"
+	var map: MapFile = _map()
+	_add_path(map)
+	var payload: PackedByteArray = _path_info(0)
+	payload.resize(16)
+	payload.encode_u32(12, 4294967295)
+	_add_entity(map, 1, 0, payload)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "dog.map", 1, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 1)
+	assert_eq(setup.definitions[0].authored_delay, 4294967295)
+	map.entities[0].payload.resize(12)
+	setup = EntitySetup.from_map(map, book, "dog.map", 1, "pc-retail-v3.0e", true)
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "invalid_payload")
+	assert_eq(setup.diagnostics[0].source_id, "dog.map")
+
+func test_butterfly_callback_reads_its_payload_in_both_roles_and_repointed_types() -> void:
+	for bonus: bool in [true, false]:
+		var book: ThemeBook = _book()
+		book.entries[1].forms[0].entity_name = "BONUS_FLY"
+		if bonus:
+			book.entries[1].forms[0].bonus_callback = 0x4284e0
+		else:
+			book.entries[1].forms[0].collision_callback = 0x4284e0
+		var map: MapFile = _map()
+		var payload: PackedByteArray = _matrix()
+		payload.resize(36)
+		payload.encode_u16(12, 13)
+		payload.encode_u16(32, 7)
+		_add_entity(map, 0, 0, payload)
+		var setup: EntitySetup = EntitySetup.from_map(map, book, "butterfly.map", 1, "pc-retail-v3.0e", true)
+		assert_eq(setup.error, "")
+		assert_eq(setup.definitions.size(), 1)
+		assert_eq(setup.definitions[0].butterfly_type, 13)
+		assert_eq(setup.definitions[0].pickup_type, 7)
+		map.entities[0].payload.encode_u16(12, 19)
+		setup = EntitySetup.from_map(map, book, "butterfly.map", 1, "pc-retail-v3.0e", true)
+		assert_true(setup.definitions.is_empty())
+		assert_eq(setup.diagnostics[0].code, "invalid_payload")
+		map.entities[0].payload.resize(12)
+		setup = EntitySetup.from_map(map, book, "butterfly.map", 1, "pc-retail-v3.0e", true)
+		assert_true(setup.definitions.is_empty())
+		assert_eq(setup.diagnostics[0].source_id, "butterfly.map")
+
 func test_multipoint_has_explicit_source_located_multiplayer_exclusion() -> void:
 	var book: ThemeBook = _book()
 	book.entries[1].forms[0].entity_name = "MULTIPOINT"

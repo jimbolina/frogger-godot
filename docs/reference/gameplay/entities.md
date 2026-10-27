@@ -271,8 +271,10 @@ animation/sound/score requests. A requested in-FORM destination requiring an
 unsupported reaction fails the whole tick before commit. An unusable destination
 blocks with OUCH, except source `BOUNCE_WALL_N` permits departure. Same-platform
 hops perform their special FORM re-reaction after movement reduces count to 1;
-the next tick completes the jump with terrain-style grid-flag reaction order.
-Usable no-op and existing POP destinations remain supported; they are not
+a surviving frog completes the jump on the next tick with terrain-style grid-flag
+reaction order. Authored DEADLY reactions kill at count one and prevent normal
+landing from replacing the selected death.
+Usable no-op, POP and authored DEADLY destinations remain supported; they are not
 reclassified as SAFE. The special count-one path reasserts HIT outside the FORM
 reaction, even if that reaction rejects a now-vertical SAFE surface.
 
@@ -496,7 +498,7 @@ Dying attached frogs retain source platform carry before death velocity and
 reassert CARRY for the next entity update. A deep turtle clears that flag on
 each visit; repeated death requests do not repeat the accepted death or effect.
 
-## Whole-map ORG1 coverage
+## Whole-map single-player coverage
 
 The existing independent `exe_forms.tsv` inventory has 23 GENERAL and 25
 ORIGINAL forms for `pc-retail-v3.0e`. GENERAL selects STATIC, CHECKPOINT,
@@ -511,7 +513,7 @@ durations to resolve that gate. Voice allocation, completion, radius changes and
 entity retirement commit with gameplay. Rendering and audio-device completion
 never control the gate; see [logical sound](simulation.md#logical-sound-clock).
 
-Executable disassembly verifies these four v3.0e identities against frozen C.
+Executable disassembly verifies these five v3.0e identities against frozen C.
 The application resolves addresses to names and then typed callback kinds;
 gameplay never dispatches executable addresses. FrogLord may repoint a form
 to any of these verified callbacks. Unknown mappings remain excluded with
@@ -524,6 +526,7 @@ source-located diagnostics. Text-only code digests and function lengths are in
 | GEN_STAT_WATER_FALL_BLOCK | Collision | 0x4287A0 | GenBlockWaterFallCollPrimCallback |
 | GEN_STAT_FALL_BLOCK | Collision | 0x4287C0 | GenBlockFallCollPrimCallback |
 | ORG_FLY | Bonus | 0x4231D0 | OrgFlyCallBack |
+| SUB_BUTTERFLY | Bonus | 0x4284E0 | GenButterFlyCallBack |
 
 All other GENERAL/ORIGINAL callback fields are zero in that inventory.
 Compatibility verification currently targets v3.0e, including FrogLord-saved
@@ -566,7 +569,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map ORG1 setup resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5 and SUB1 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -578,7 +581,7 @@ Live entities track source model presence separately from animation. Recreated
 collected checkpoint and gold-frog instances have no model: primitive checks
 miss, while FORM fallback remains eligible (`collide.c:445`).
 
-Normal ORG1 play uses the single-start bounce. The logical start HUD waits for the
+Normal single-player play uses the single-start bounce. The logical start HUD waits for the
 first bounce, consumes one random phrase selection, then runs the five staggered
 checkpoint gather/scatter clocks and the timer count-up. The count-up includes
 its source overshoot before clamping to the authored time. Rendering completion
@@ -589,3 +592,40 @@ awards only remaining whole seconds, plays the croak request and commits once.
 A later transaction failure restores both the award and transition clock.
 Simultaneous tongue/directional input on a `NO_ENTITY_ANGLE` platform is rejected:
 the frozen source indexes its four direction vectors with the unmasked input.
+
+### Broader level dependencies
+
+`GameplaySetup` selects map, theme, logical sound banks and model resources from
+the supplied executable. Whole-map play rejects unresolved required dependencies;
+inspection keeps its diagnostic omissions. Missing fade-bound markers retain
+frozen `mapload.C` defaults of ±32767; either authored marker overrides its corner.
+SUB1 has no markers. Primitive-free single-model skeletal resources may use FORM
+contacts, their source model-set maximum Y and global animated bounding-box
+radius. A valid model with no FORM data or collision primitives contributes no
+contact. These broader model cases are opt-in for whole-map setup. Animated collision primitives
+remain an explicit unsupported dependency.
+
+Suburbia dogs follow `ent_sub.c`: unsigned postdecrement wait, endpoint pause,
+one walking RNG draw even at bounced ends, fall-before-hit arbitration, and a
+50-tick biting continuation. Biting changes the frog matrix using the prior dog
+pose, without changing its authoritative position or repeating FORM death.
+Logical bark/bite requests participate in the same transaction. Moving tongueable
+entities retain path movement and tongue eligibility. Dynamic entities are
+immortal and join moving-group ordering despite their matrix payload.
+
+For MOVING entities running `SCRIPT_TURTLE`, frozen loader behavior reserves three
+zeroed register words after the 12-byte path payload. Setup reproduces that narrow
+policy rather than reading adjacent entity bytes. Other truncated register
+payloads fail. Original-theme turtle splash commands use form-specific offsets;
+other themes request one splash at the entity origin. Rendering splashes remains
+deferred.
+
+Butterfly callbacks read their unsigned type at payload offset 12 and select a
+reward through the supplied score table. That callback payload and reward are
+separate from a generic pickup's own type/reward, including when a saved form
+repoints either callback role. Truncated records and invalid types are rejected
+during setup; collection commits the reward and hidden state together.
+
+The pinned JUN1 bank/log fixture continues to omit moving tongue collectables
+from its collision aggregate, with a diagnostic. General transform inspection
+can recognize those entities without expanding that fixture's proven behavior.

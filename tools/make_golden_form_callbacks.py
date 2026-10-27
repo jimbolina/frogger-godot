@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify code identity facts for the four independently inspected v3.0e callbacks."""
+"""Verify code identity facts for the five independently inspected v3.0e callbacks."""
 import argparse
 import hashlib
 import json
@@ -12,6 +12,7 @@ FUNCTIONS = (
     ('GenBlockWaterFallCollPrimCallback', 0x4287a0, 0x4287b8, 'collision'),
     ('GenBlockFallCollPrimCallback', 0x4287c0, 0x428942, 'collision'),
     ('OrgFlyCallBack', 0x4231d0, 0x4231e0, 'bonus'),
+    ('GenButterFlyCallBack', 0x4284e0, 0x4284fc, 'bonus'),
 )
 
 
@@ -51,7 +52,7 @@ def main():
         OUTPUT.write_text(text, encoding='utf-8')
     elif OUTPUT.read_text(encoding='utf-8') != text:
         raise ValueError('Callback code identities differ from the verified v3.0e functions')
-    print('Verified four v3.0e FORM callback code identities.')
+    print(f'Verified {len(FUNCTIONS)} v3.0e FORM callback code identities.')
 
 
 if __name__ == '__main__':

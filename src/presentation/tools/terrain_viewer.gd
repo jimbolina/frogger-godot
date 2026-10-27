@@ -1,47 +1,23 @@
 class_name TerrainViewer
-extends Node3D
+extends GameplayWorldView
 ## Synthetic terrain driver. Scene input, clocks and drawing consume the same pure run API.
 
 var auto_open: bool = true
 var scenario: TerrainScenario
 var run: GameplayRun
-var playing: bool = false
-var smoothing: bool = false:
-	set(value):
-		if smoothing == value:
-			return
-		smoothing = value
-		reset_interpolation()
 var replay_commands: bool = true
 ## Capture is opt-in so an interactive session does not accumulate an unbounded trace.
 var record_trace: bool = false
 var trace: TerrainTrace
 var last_error: String = ""
 var data: GameData
-var frog_assets: TerrainFrogAssets
 var _owns_data: bool = false
-var _frog_model: AnimatedModelInstance
 var _held: int = 0
-var _previous: GameplayState
-var _current: GameplayState
-var _ground: Node3D
-var _frog: MeshInstance3D
-var _tongue_view: TongueView
-var _camera: Camera3D
 var _label: Label
-var _map_instance: MapMesh.Instance
-var _frog_pose_tick: int = -1
 var _outcomes: PackedStringArray = PackedStringArray()
-var _projection_size: Vector2i = Vector2i.ZERO
-var _entity_models: Array[AnimatedModelInstance] = []
-var _entity_meshes: Array[ModelMesh] = []
-var _entity_files: Array[MofFile] = []
-var _entity_generations: Array[int] = []
 var _entity_inspection: EntityInspection
 var _last_contacts: Array[FormReactionResult] = []
 var _last_primitive_contacts: Array[EntityPrimitiveContact] = []
-var _entity_pose_tick: int = -1
-var _entity_lighting: MapLighting = null
 var _full_trace_destination: String = ""
 var _host: GameplayHost = GameplayHost.new()
 var _host_step: bool = false
@@ -51,7 +27,6 @@ var last_tick_usec: int = 0
 var _performance_started_usec: int = 0
 var _performance_frames: int = 0
 var _performance_text: String = "FPS measuring…"
-var _motion := TerrainMotion.new()
 
 func _ready() -> void:
 	_build_scene()
@@ -143,19 +118,7 @@ func open_data(selected: GameData, take_ownership: bool = false) -> String:
 			last_error = open_scenario(scenario)
 		if not last_error.is_empty():
 			return last_error
-	_frog_model = AnimatedModelInstance.new()
-	add_child(_frog_model)
-	_frog_model.setup(frog_assets.mesh, frog_assets.player)
-	_frog_model.smoothing_enabled = smoothing
-	for mesh: ArrayMesh in frog_assets.mesh.part_meshes:
-		if mesh != null:
-			for surface: int in mesh.get_surface_count():
-				var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
-				if material != null:
-					material.set_shader_parameter("projection_scale", GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
-	for index: int in _frog_model.part_nodes.size():
-		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
-	_frog.visible = false
+	build_frog(frog_assets)
 	_build_entity_visuals()
 	draw_state(1.0)
 	return ""
@@ -281,37 +244,9 @@ func reset_interpolation() -> void:
 func draw_state(fraction: float) -> void:
 	if _current == null or _frog == null:
 		return
-	_update_projection()
-	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing else 1.0
-	var frog_transform: Transform3D = _motion.frog(weight)
-	if _tongue_view != null:
-		_tongue_view.draw_state(_current)
-	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
-	if _frog_model != null:
-		_frog_model.transform = frog_transform
-		if _current.animation != null and _frog_pose_tick != _current.tick_index:
-			var player: ModelAnimationPlayer = frog_assets.player
-			if _frog_pose_tick < 0:
-				player.restart()
-			else:
-				player.advance_tick()
-			if player.action_index != _current.animation.action:
-				player.set_action(_current.animation.action)
-			player.frame = _current.animation.cel
-			_frog_model.capture_pose(not playing)
-			_frog_pose_tick = _current.tick_index
-		_frog_model.render(weight)
-	if _current.camera != null:
-		_camera.transform = _motion.camera(weight)
-	if _map_instance != null:
-		if _map_instance.tick != _current.tick_index - 1:
-			if _map_instance.tick == _current.tick_index - 2:
-				_map_instance.step()
-			else:
-				_map_instance.set_tick(_current.tick_index - 1)
-		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
-		_map_instance.set_cave_frog(_current.frog.world_position)
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
+	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing else 1.0
+	super.draw_state(fraction)
 	if update_entities and _entity_inspection != null and _current.entities != null:
 		var selected_index: int = _selected_contact_index()
 		_entity_inspection.set_selected(selected_index)
@@ -324,25 +259,6 @@ func draw_state(fraction: float) -> void:
 		_entity_inspection.set_contact(_current.frog.world_position, hit_contact)
 	if smoothing and _entity_inspection != null and _entity_inspection.visible and _current.entities != null:
 		_entity_inspection.draw_motion(_motion, weight)
-	if _current.entities != null:
-		_entity_pose_tick = _current.tick_index
-		for index: int in mini(_entity_models.size(), _current.entities.entities.size()):
-			if _entity_models[index] != null:
-				var entity: EntitySnapshot = _current.entities.entities[index]
-				var model: AnimatedModelInstance = _entity_models[index]
-				var transform_now: Transform3D = _motion.entity(index, weight)
-				if model.transform != transform_now:
-					model.transform = transform_now
-				if update_entities and _entity_lighting != null:
-					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
-				if update_entities:
-					if entity.animation != null and entity.animation.action >= 0:
-						if model.player.action_index != entity.animation.action:
-							model.player.set_action(entity.animation.action)
-						model.player.frame = entity.animation.cel
-					model.capture_pose(not playing)
-				model.render(weight)
-				model.visible = entity.live and not entity.pop_allocated and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
 	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size, _performance_text]
 	if overlay_key == _overlay_key:
 		return
@@ -395,7 +311,8 @@ func draw_state(fraction: float) -> void:
 			if _current.entity_environment != null and _current.entity_environment.collected & (1 << checkpoint):
 				checkpoint_count += 1
 		var phase_name: String = LevelFlowState.Phase.keys()[_current.flow.phase]
-		_label.text = "ORG1 | %s\nScore %d | Time %d | Lives %d | Checkpoints %d/5\n" % [phase_name, _current.flow.score, ceili(_current.flow.remaining_time / 30.0), _current.frog.lives, checkpoint_count]
+		var level_name: String = FroggerIds.level_code(scenario.map_scene.level) if scenario.map_scene != null else scenario.level_code
+		_label.text = "%s | %s\nScore %d | Time %d | Lives %d | Checkpoints %d/5\n" % [level_name, phase_name, _current.flow.score, ceili(_current.flow.remaining_time / 30.0), _current.frog.lives, checkpoint_count]
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
@@ -503,27 +420,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	draw_state(1.0)
 
 func _build_scene() -> void:
-	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_ground = Node3D.new()
-	add_child(_ground)
+	build_world()
 	_entity_inspection = EntityInspection.new()
 	add_child(_entity_inspection)
-	_frog = MeshInstance3D.new()
-	var marker := SphereMesh.new()
-	marker.radius = 0.12
-	marker.height = 0.24
-	_frog.mesh = marker
-	_frog.material_override = _material(Color(0.35, 1.0, 0.3))
-	add_child(_frog)
-	_tongue_view = TongueView.new()
-	add_child(_tongue_view)
-	_camera = Camera3D.new()
-	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_camera.position = Vector3(3.5, 4.5, 5.5)
-	_camera.fov = 45.0
-	add_child(_camera)
-	_camera.look_at(Vector3.ZERO)
-	_camera.current = true
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	_label = Label.new()
@@ -566,94 +465,22 @@ func _build_terrain() -> void:
 		layer += 1
 
 func _clear_entity_visuals() -> void:
-	for model: AnimatedModelInstance in _entity_models:
-		if model != null:
-			remove_child(model)
-			model.queue_free()
-	_entity_models.clear()
-	_entity_meshes.clear()
-	_entity_files.clear()
-	_entity_generations.clear()
+	super._clear_entity_visuals()
 	if _entity_inspection != null:
 		var empty: Array[EntityDefinition] = []
 		_entity_inspection.configure(empty)
 
 func _build_entity_visuals() -> void:
-	_clear_entity_visuals()
-	_entity_pose_tick = -1
-	_entity_lighting = null
 	if scenario == null or not scenario.options.entity_reactions or scenario.level.entity_collision == null:
+		_clear_entity_visuals()
 		return
-	var definitions: EntityCollisionDefinition = scenario.level.entity_collision
-	_entity_inspection.configure(definitions.entities)
-	_entity_inspection.configure_contacts(definitions.contacts)
+	build_entities(scenario.level.entity_collision, scenario.map_scene, data, TerrainCaptureStages.entity_lighting(scenario))
+	_entity_inspection.configure(scenario.level.entity_collision.entities)
+	_entity_inspection.configure_contacts(scenario.level.entity_collision.contacts)
 	_entity_inspection.visible = true
-	for _entity: EntityDefinition in definitions.entities:
-		_entity_models.append(null)
-		_entity_meshes.append(null)
-		_entity_files.append(null)
-		_entity_generations.append(-1)
-	if data == null or not data.is_valid() or scenario.map_scene == null:
-		return
-	if TerrainCaptureStages.entity_lighting(scenario):
-		_entity_lighting = MapLighting.new()
-		_entity_lighting.configure(scenario.map_scene.map.lights)
-	var meshes: Dictionary[int, ModelMesh] = {}
-	var files: Dictionary[int, MofFile] = {}
-	for slot: int in definitions.entities.size():
-		var entity: EntityDefinition = definitions.entities[slot]
-		var form: FormBookEntry = data.tables.theme_book().get_form(scenario.map_scene.map.general.theme, entity.form_id)
-		if form == null:
-			continue
-		var resource: int = data.model_resource_for(form, scenario.map_scene.level)
-		if resource < 0:
-			continue
-		if not meshes.has(resource):
-			var file: MofFile = data.read_model(resource, scenario.diagnostics)
-			if file == null or not file.error.is_empty() or file.static_models.is_empty():
-				continue
-			files[resource] = file
-			meshes[resource] = ModelMeshBuilder.new(scenario.map_scene.library, scenario.map_scene.preferred).build_animated(file)
-		if not meshes.has(resource):
-			continue
-		_entity_meshes[slot] = meshes[resource]
-		_entity_files[slot] = files[resource]
-	_sync_entity_models()
+	_entity_pose_tick = -1
 	if _current != null:
-		_projection_size = Vector2i.ZERO
 		draw_state(1.0)
-
-## Reconciles visual lifetimes with the committed run, resetting animation on recreation.
-func _sync_entity_models() -> PackedInt32Array:
-	var created := PackedInt32Array()
-	if _current == null or _current.entities == null:
-		return created
-	for slot: int in mini(_entity_models.size(), _current.entities.entities.size()):
-		var entity: EntitySnapshot = _current.entities.entities[slot]
-		var should_live: bool = not _current.entities.lifecycle_enabled or entity.live
-		if not should_live:
-			if _entity_models[slot] != null:
-				remove_child(_entity_models[slot])
-				_entity_models[slot].queue_free()
-				_entity_models[slot] = null
-			_entity_generations[slot] = -1
-			continue
-		if _entity_files[slot] == null or _entity_meshes[slot] == null:
-			continue
-		if _entity_models[slot] != null and _entity_generations[slot] == entity.generation:
-			continue
-		if _entity_models[slot] != null:
-			remove_child(_entity_models[slot])
-			_entity_models[slot].queue_free()
-		var model := AnimatedModelInstance.new()
-		add_child(model)
-		model.setup(_entity_meshes[slot], ModelAnimationPlayer.new(_entity_files[slot]))
-		model.smoothing_enabled = smoothing
-		_set_model_projection(_entity_meshes[slot], GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
-		_entity_models[slot] = model
-		_entity_generations[slot] = entity.generation
-		created.append(slot)
-	return created
 
 func _selected_contact_index() -> int:
 	if scenario == null or scenario.level.entity_collision == null:
@@ -676,13 +503,6 @@ func _selected_contact_index() -> int:
 			nearest = slot
 			nearest_distance = distance
 	return nearest
-
-func _material(colour: Color) -> ShaderMaterial:
-	var material := ShaderMaterial.new()
-	material.shader = preload("res://src/presentation/tools/terrain_debug.gdshader")
-	material.set_shader_parameter("tint", colour)
-	material.set_shader_parameter("projection_scale", GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
-	return material
 
 func _capture_scenario(arguments: PackedStringArray) -> void:
 	set_process(false)
@@ -824,45 +644,6 @@ func _save_stage(folder: String, name: String, captured: Dictionary[String, bool
 	return ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("entity-" + name + ".png"))
 
 func _update_projection() -> void:
+	super._update_projection()
 	var size := Vector2i(get_viewport().get_visible_rect().size)
-	if size == _projection_size:
-		return
-	_projection_size = size
-	_camera.fov = GameplayProjection.vertical_fov_degrees(size)
-	_entity_pose_tick = -1
 	_label.size = Vector2(maxf(1.0, float(size.x) - 24.0), maxf(1.0, float(size.y) - 40.0))
-	var scale: Vector2 = GameplayProjection.clip_scale(size)
-	if _map_instance != null:
-		_map_instance.set_projection_scale(scale)
-	if frog_assets != null and frog_assets.mesh != null:
-		_set_model_projection(frog_assets.mesh, scale)
-		if _frog_model != null:
-			_frog_model.refresh_materials()
-	for instance: AnimatedModelInstance in _entity_models:
-		if instance != null and instance.model_mesh != null:
-			_set_model_projection(instance.model_mesh, scale)
-			instance.refresh_materials()
-	for child: Node in _ground.get_children():
-		var face: MeshInstance3D = child as MeshInstance3D
-		if face != null:
-			var material: ShaderMaterial = face.material_override as ShaderMaterial
-			if material != null:
-				material.set_shader_parameter("projection_scale", scale)
-	var marker: ShaderMaterial = _frog.material_override as ShaderMaterial
-	if marker != null:
-		marker.set_shader_parameter("projection_scale", scale)
-
-func _set_model_projection(model_mesh: ModelMesh, scale: Vector2) -> void:
-	for mesh: ArrayMesh in model_mesh.part_meshes:
-		if mesh == null:
-			continue
-		for surface: int in mesh.get_surface_count():
-			var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
-			if material != null:
-				material.set_shader_parameter("projection_scale", scale)
-	for tracks: Array in model_mesh.texture_tracks:
-		for track: ModelMesh.TextureTrack in tracks:
-			if track.original != null:
-				track.original.set_shader_parameter("projection_scale", scale)
-			for material: ShaderMaterial in track.frames:
-				material.set_shader_parameter("projection_scale", scale)

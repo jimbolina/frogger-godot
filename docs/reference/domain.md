@@ -11,7 +11,7 @@ disagreements in the relevant technical reference; do not invent rules.
 |---|---|
 | Source data | [Build recognition](data/build-detection.md), [archives](data/archives.md), [executable tables](data/executable-tables.md), [textures](data/textures.md), [models](data/models.md), [model animation](data/animation.md), [maps](data/maps.md) |
 | Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [paths](gameplay/paths.md), [entities](gameplay/entities.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md) |
-| Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [gameplay projection](rendering/gameplay-projection.md) |
+| Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [single-player HUD](rendering/README.md#single-player-hud), [gameplay projection](rendering/gameplay-projection.md) |
 | Verification | [Testing and inspection guide](testing/README.md), [golden specifications](../../tests/golden/README.md) |
 
 ## Contexts and identities

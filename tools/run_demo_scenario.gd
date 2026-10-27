@@ -46,15 +46,15 @@ func _run() -> void:
 					"demo_resource_name": setup.resource_name})
 				if issue.is_empty():
 					scenario = TerrainScenario.builtin("normal")
-					if level_code.to_upper() == "ORG1":
+					if GameplaySetup.supports_level(map_index):
 						scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
 						scenario.options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
 					issue = scenario.attach_data(data, level_code)
 					if issue.is_empty():
 						trace.configure(data, scenario.map_scene)
-						if level_code.to_upper() != "ORG1" and not scenario.map_scene.map.zones.is_empty():
+						if not GameplaySetup.supports_level(map_index) and not scenario.map_scene.map.zones.is_empty():
 							issue = "Demo requires unsupported retail camera-zone admission"
-						elif level_code.to_upper() != "ORG1" and not scenario.map_scene.map.entities.is_empty():
+						elif not GameplaySetup.supports_level(map_index) and not scenario.map_scene.map.entities.is_empty():
 							issue = "Demo requires complete entity/checkpoint admission for " + level_code
 			if ViewerArguments.has_flag(args, "--viewer") and issue.is_empty():
 				visual_data = data

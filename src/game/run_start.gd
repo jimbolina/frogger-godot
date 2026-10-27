@@ -8,7 +8,7 @@ var spawn_cell: Vector2i = Vector2i(-1, -1)
 var spawn_direction: int = -1
 ## Run-owned camera-relative control mapping; empty selects identity for this component start.
 var controller_directions: PackedInt32Array = PackedInt32Array()
-## Authored local modifier state; pickups belong to P10.
+## Authored local modifier state.
 var powerup_flags: int = 0
 var quick_jump_timer: int = 0
 var auto_hop_timer: int = 0

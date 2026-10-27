@@ -8,7 +8,7 @@
 - The black-is-transparent rule is a colour key over a whole 256x256 texture page in the original, not per image.
 - Models use one clamped texture per VLO image; maps reconstruct physical PC pages for byte-wrapped UVs. No mipmaps. Filtering is a user option; the font is always nearest.
 - One mesh per map group, split by material. Polygons with animated textures get their own surfaces.
-- Map captures use a fixed 640x480 viewport; projection is explicit. The original-style gameplay HUD remains deferred; the terrain viewer has a basic status overlay.
+- Map captures use a fixed 640x480 viewport; projection is explicit. The dedicated game scene adds the single-player HUD; the terrain viewer retains its inspection status overlay.
 
 Map instances cache static material settings separately from animated UVs,
 water offsets and texture bindings. Filtering, projection and reference-mode
@@ -86,3 +86,30 @@ blend-shape and cel-shader captures at five interpolation fractions, both unlit
 and with changing normals under source lighting. It requires a rendered window
 and writes paired PNGs plus pixel comparison facts outside the repository. The
 existing one-byte-per-channel shader colour tolerance applies; geometry differences fail.
+
+## Single-player HUD
+
+The game scene uses a 640×480 canvas with proportional scaling and letterboxing.
+`GameplayHud` reads detached committed state and events; its sprite animation,
+help fade and counters never advance gameplay. Pause freezes the display clock.
+Restart clears presentation history; source replacement releases HUD textures.
+The shared world view keeps interpolation separate from the 30 Hz rules clock.
+
+HUD textures resolve by FrogLord image names from the player's GENERAL, English
+fixed-UI and level-select banks. The font uses its source 8×8 atlas with opaque glyph colours. Grey panels
+average with the background; the timer panel draws over its coloured fill. Timers, spare-life groups,
+checkpoint gather/return and bonus displays follow `HUD.C`; start release and
+bonus awards remain owned by gameplay. Rendering consumes the existing checkpoint
+mask rather than maintaining a second progress value.
+
+P10 uses English UI assets. It does not yet read the options-language texture
+pointer table or support repointing those UI entries; localization and full
+options remain P13. Audio playback and particles retain their separate roadmap
+scope. The rendering limitations above also apply to the dedicated scene.
+
+The frozen port differs from unsanitized `HUD.C` here: its sanitizer changes
+the score and timer background carriers from subtractive ABR2 to average ABR0.
+Ordering-table insertion draws the opaque timer gradient before the averaged
+RGB64 panel. `GAMEFONT.C` specifies font ABR1 but does not set the translucent
+flag, so the native sprite path draws opaque glyphs. The game scene follows
+these verified native results, rather than the unsanitized blend declarations.

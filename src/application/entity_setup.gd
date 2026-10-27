@@ -66,6 +66,11 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.bonus_kind = FormCallbackCatalog.resolve(build_id, form.bonus_callback, true)
 		definition.form_flags = form.flags
 		definition.flags = span.flags
+		if definition.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(build_id, definition.collision_callback, false) == FormCallback.Kind.BUTTERFLY_SCORE:
+			if span.payload.size() < 14 or span.payload.decode_u16(12) >= EntityBonusFly.REWARD_IDS.size():
+				result._issue("invalid_payload", "Butterfly score callback requires an unsigned type from 0 through 18 at payload offset 12", span, form, index, source_id, resource_id, build_id)
+				continue
+			definition.butterfly_type = span.payload.decode_u16(12)
 		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or custom_behaviors_enabled):
 			var matrix: MapEntityPayload = MapEntityPayload.read_matrix(span)
 			if not matrix.error.is_empty():
@@ -82,7 +87,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER]):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG]):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -106,6 +111,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				result._issue("invalid_path_start", runner.error, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.path_start = start
+			if definition.behavior.kind == EntityBehavior.Kind.DOG:
+				if span.payload.size() < 16:
+					result._issue("invalid_payload", "Dog requires its unsigned wait delay", span, form, index, source_id, resource_id, build_id)
+					continue
+				definition.authored_delay = span.payload.decode_u32(12)
+				definition.behavior.execution = EntityBehavior.Execution.UPDATE
 			if definition.behavior.kind == EntityBehavior.Kind.BEAVER:
 				if span.payload.size() < 16 or not definition.path_definition.entity_list_error.is_empty():
 					result._issue("invalid_payload", "Beaver requires its delay and a valid PATH entity list", span, form, index, source_id, resource_id, build_id)

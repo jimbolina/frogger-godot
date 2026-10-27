@@ -23,3 +23,22 @@ func test_known_capabilities_and_unknown_fallback() -> void:
 	assert_eq(unknown.layout, EntityBehavior.Layout.NONE)
 	assert_false(unknown.has_custom_update())
 	assert_false(unknown.has_form_contact())
+
+func test_suburbia_reuses_moving_and_matrix_capabilities() -> void:
+	var moving: EntityBehavior = EntityBehaviorCatalog.resolve("MOVING_TONGUEABLE")
+	assert_eq(moving.kind, EntityBehavior.Kind.PATH_FOLLOWER)
+	assert_true(moving.tongueable)
+	assert_true(moving.group_moving)
+	assert_false(moving.immortal)
+	var dynamic: EntityBehavior = EntityBehaviorCatalog.resolve("DYNAMIC")
+	assert_eq(dynamic.kind, EntityBehavior.Kind.STATIC)
+	assert_eq(dynamic.layout, EntityBehavior.Layout.MATRIX)
+	assert_true(dynamic.immortal)
+	assert_true(dynamic.group_moving)
+	assert_false(dynamic.has_custom_update())
+	var dog: EntityBehavior = EntityBehaviorCatalog.resolve("SUB_DOG")
+	assert_eq(dog.layout, EntityBehavior.Layout.PATH)
+	assert_false(dog.immortal)
+	dog.execution = EntityBehavior.Execution.CONTACT
+	assert_true(dog.has_custom_update())
+	assert_true(dog.has_form_contact())

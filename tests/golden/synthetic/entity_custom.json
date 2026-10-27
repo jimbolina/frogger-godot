@@ -32766,5 +32766,313 @@
         }
       ]
     }
+  ],
+  "dogs": [
+    {
+      "name": "wait_postdecrement",
+      "mode": 0,
+      "timer": 2,
+      "ticks": 3,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 0,
+          "timer": 1,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": -1,
+          "sounds": [],
+          "pose": []
+        },
+        {
+          "tick": 1,
+          "mode": 0,
+          "timer": 0,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": -1,
+          "sounds": [],
+          "pose": []
+        },
+        {
+          "tick": 2,
+          "mode": 1,
+          "timer": 4294967295,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": 1,
+          "sounds": [
+            153
+          ],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "bark_strict_radius",
+      "mode": 0,
+      "timer": 0,
+      "distance": 1024,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 1,
+          "timer": 4294967295,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": 1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "inactive_frog",
+      "mode": 0,
+      "timer": 0,
+      "frog_active": false,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 1,
+          "timer": 4294967295,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": 1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "unsigned_wait_wrap",
+      "mode": 0,
+      "timer": 4294967295,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 0,
+          "timer": 4294967294,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": -1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "bounce_then_random",
+      "mode": 1,
+      "bounce": true,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 0,
+          "timer": 2,
+          "count": 0,
+          "rng": 1103527590,
+          "draws": 1,
+          "action": 0,
+          "active": 0,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "bounce_then_fall",
+      "mode": 1,
+      "bounce": true,
+      "seed": 101,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 2,
+          "timer": 50,
+          "count": 0,
+          "rng": 4080869690,
+          "draws": 1,
+          "action": 1,
+          "active": 0,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "fall_then_bite",
+      "mode": 1,
+      "seed": 101,
+      "hit": true,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 3,
+          "timer": 50,
+          "count": 50,
+          "rng": 4080869690,
+          "draws": 1,
+          "action": 2,
+          "active": 0,
+          "sounds": [
+            154
+          ],
+          "pose": [
+            0,
+            0,
+            4096,
+            0,
+            4096,
+            0,
+            -4096,
+            0,
+            0,
+            0,
+            0,
+            192
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fall_expiry_then_bite",
+      "mode": 2,
+      "timer": 1,
+      "hit": true,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 3,
+          "timer": 0,
+          "count": 50,
+          "rng": 1,
+          "draws": 0,
+          "action": 2,
+          "active": 0,
+          "sounds": [
+            154
+          ],
+          "pose": [
+            0,
+            0,
+            4096,
+            0,
+            4096,
+            0,
+            -4096,
+            0,
+            0,
+            0,
+            0,
+            192
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fall_expiry",
+      "mode": 2,
+      "timer": 1,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 1,
+          "timer": 0,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": 1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "bite_refresh",
+      "mode": 3,
+      "count": 1,
+      "hit": true,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 3,
+          "timer": 2,
+          "count": 50,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": -1,
+          "sounds": [
+            154
+          ],
+          "pose": [
+            0,
+            0,
+            4096,
+            0,
+            4096,
+            0,
+            -4096,
+            0,
+            0,
+            0,
+            0,
+            192
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bite_expiry",
+      "mode": 3,
+      "count": 1,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 1,
+          "timer": 2,
+          "count": 0,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": 1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    },
+    {
+      "name": "bite_unsigned_wrap",
+      "mode": 3,
+      "count": 0,
+      "rows": [
+        {
+          "tick": 0,
+          "mode": 3,
+          "timer": 2,
+          "count": 4294967295,
+          "rng": 1,
+          "draws": 0,
+          "action": 0,
+          "active": -1,
+          "sounds": [],
+          "pose": []
+        }
+      ]
+    }
   ]
 }

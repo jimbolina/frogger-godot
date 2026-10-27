@@ -39,6 +39,8 @@ var movement_speed: int = 0
 var authored_delay: int = 0
 var pickup_reward: RewardDefinition = null
 var pickup_type: int = 0
+var butterfly_type: int = -1
+var butterfly_reward: RewardDefinition = null
 var parent_unique_id: int = -1
 
 ## Returns a copy with independently owned matrix and path records.
@@ -71,6 +73,8 @@ func copy() -> EntityDefinition:
 	result.authored_delay = authored_delay
 	result.pickup_reward = pickup_reward.copy() if pickup_reward != null else null
 	result.pickup_type = pickup_type
+	result.butterfly_type = butterfly_type
+	result.butterfly_reward = butterfly_reward.copy() if butterfly_reward != null else null
 	result.parent_unique_id = parent_unique_id
 	return result
 

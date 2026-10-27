@@ -4,6 +4,7 @@ extends RefCounted
 
 var path_active_request: int = -1
 var path_reset_requested: bool = false
+var frog_matrix12: PackedInt32Array = PackedInt32Array()
 var death_animation: int = -1
 var error: String = ""
 var entity: EntitySnapshot = null

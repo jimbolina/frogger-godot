@@ -30,5 +30,13 @@
     "length": 16,
     "kind": "bonus",
     "sha256": "af44c49d066dcba2435cf1d8ada5119a78b7dce9d0f4b6df59224509030b5252"
+  },
+  {
+    "name": "GenButterFlyCallBack",
+    "address": 4359392,
+    "file_offset": 162016,
+    "length": 28,
+    "kind": "bonus",
+    "sha256": "4b6f96dd0daf0310af54792da709f6b90f7365e2e64ee2a9847a83e9c45ef446"
   }
 ]

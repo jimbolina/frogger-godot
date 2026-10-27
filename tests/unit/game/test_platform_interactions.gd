@@ -370,6 +370,32 @@ func test_same_platform_pop_destination_kills_on_count_one() -> void:
 	assert_true(bool(count_one.collision_snapshot.frog.flags & 8))
 	assert_true(TickEvent.trace_lines(count_one.events).has("entity_pop_explosion_request"))
 
+func test_same_platform_deadly_destinations_apply_authored_death_before_landing() -> void:
+	var animations: Array[int] = [FrogAnimationCatalog.SQUISHED, FrogAnimationCatalog.SQUISHED, FrogAnimationCatalog.DROWN, FrogAnimationCatalog.BITTEN, FrogAnimationCatalog.FLOP, FrogAnimationCatalog.POP, FrogAnimationCatalog.CRASH, FrogAnimationCatalog.MOWN, FrogAnimationCatalog.SQUISHED]
+	for death_type: int in animations.size():
+		var level: LevelDefinition = _level()
+		level.entity_collision.contacts[0].grid_flags[1] = GridSquareFlags.USABLE | GridSquareFlags.DEADLY
+		level.entity_collision.contacts[0].death_type = death_type
+		var run: GameplayRun = GameplayRun.create(level)
+		assert_eq(run.error, "")
+		for unused: int in 3:
+			assert_eq(_tick(run).error, "")
+		assert_eq(_tick(run, TickCommand.EAST).error, "")
+		for unused: int in 3:
+			assert_eq(_tick(run).error, "")
+		var count_one: TickResult = _tick(run)
+		assert_eq(count_one.error, "")
+		if not count_one.error.is_empty():
+			continue
+		assert_eq(count_one.collision_snapshot.attachment.death_entity_index, 4)
+		assert_eq(count_one.collision_snapshot.frog.death_equate, animations[death_type])
+		assert_true(bool(count_one.collision_snapshot.frog.flags & FrogFlags.MUST_DIE))
+		var following: TickResult = _tick(run)
+		assert_eq(following.error, "")
+		if following.error.is_empty():
+			assert_eq(following.final_snapshot.frog.death_equate, animations[death_type])
+			assert_false(TickEvent.trace_lines(following.events).has("platform_attachment"))
+
 func test_vertical_same_platform_safe_rejection_still_marks_source_special_hit() -> void:
 	var run: GameplayRun = GameplayRun.create(_level())
 	assert_eq(run.error, "")
@@ -663,7 +689,7 @@ func test_source_order_allows_pop_after_safe_mount_in_same_pass() -> void:
 
 func test_unsupported_same_platform_destination_rolls_back_whole_hop() -> void:
 	var level: LevelDefinition = _level()
-	level.entity_collision.contacts[0].grid_flags[1] = 1 | 4
+	level.entity_collision.contacts[0].grid_flags[1] = GridSquareFlags.USABLE | GridSquareFlags.BOUNCY
 	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():

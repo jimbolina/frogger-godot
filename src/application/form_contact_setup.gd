@@ -6,8 +6,8 @@ var definitions: Array[FormContactDefinition] = []
 var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
-## Resolves all authored model writers before attaching contact to accepted entities.
-static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", primitive_contacts: bool = false) -> FormContactSetup:
+## Resolves authored writers; whole-map callers opt into skeletal and decorative model contacts.
+static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", primitive_contacts: bool = false, complete_model_contacts: bool = false) -> FormContactSetup:
 	var result := FormContactSetup.new()
 	if map == null or theme_book == null:
 		result.error = "Form contact setup requires a map and theme book"
@@ -115,6 +115,13 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		elif grid.data_count == 0 and grid.data.is_empty() and selected_model != null and selected_model.kind == MofFile.Kind.DUMMY:
 			definition.has_form_data = false
 			definition.radius_squared = form.radius_squared
+		elif complete_model_contacts and grid.data_count == 0 and grid.data.is_empty() and selected_model != null and selected_model.error.is_empty() and selected_model.kind in [MofFile.Kind.STATIC, MofFile.Kind.ANIMATED] and selected_model.static_models.size() == 1 and not _has_collprims(selected_model):
+			var radius: Array[int] = _radius_squared(form, selected_model)
+			if radius.is_empty():
+				reason = "Model has no usable bounding radius"
+			else:
+				definition.has_form_data = false
+				definition.radius_squared = radius[0]
 		elif grid.data_count < 1 or grid.data.size() != grid.data_count:
 			reason = "FORM grid has no usable data record"
 		elif grid.dimensions.x <= 0 or grid.dimensions.y <= 0:
@@ -129,8 +136,8 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			reason = "FORM grid has no resolved runtime maximum Y"
 		else:
 			var model: MofFile = models_by_form.get(span.form_id)
-			if model == null or not model.error.is_empty() or model.kind != MofFile.Kind.STATIC or model.static_models.size() != 1:
-				reason = "Contact requires a static or flipbook model"
+			if model == null or not model.error.is_empty() or (model.kind != MofFile.Kind.STATIC and not (complete_model_contacts and model.kind == MofFile.Kind.ANIMATED)) or model.static_models.size() != 1:
+				reason = "Contact requires one static, flipbook or skeletal model"
 			elif _has_collprims(model) and not primitive_contacts:
 				reason = "Model collision primitives take precedence over FORM"
 			else:
@@ -225,19 +232,26 @@ static func _radius_squared(form: FormBookEntry, model: MofFile) -> Array[int]:
 		return result
 	var radius: int = 0
 	var found: bool = false
-	for static_model: MofStatic in model.static_models:
-		for part: MofPart in static_model.parts:
-			for cel: MofPart.Partcel in part.partcels:
-				var box: PackedInt32Array = cel.bounding_box
-				if box.size() != 24:
-					continue
-				found = true
-				for corner: int in 8:
-					var at: int = corner * 3
-					var distance: int = (box[at] * box[at] + box[at + 1] * box[at + 1] + box[at + 2] * box[at + 2]) & 0xffffffff
-					if distance >= 0x80000000:
-						distance -= 0x100000000
-					radius = maxi(radius, distance)
+	var boxes: Array[PackedInt32Array] = []
+	if model.kind == MofFile.Kind.ANIMATED:
+		if model.animated == null or model.animated.model_sets.is_empty() or model.animated.model_sets[0].models.is_empty():
+			return result
+		boxes.append(model.animated.model_sets[0].models[0].bounding_box)
+	else:
+		for static_model: MofStatic in model.static_models:
+			for part: MofPart in static_model.parts:
+				for cel: MofPart.Partcel in part.partcels:
+					boxes.append(cel.bounding_box)
+	for box: PackedInt32Array in boxes:
+		if box.size() != 24:
+			continue
+		found = true
+		for corner: int in 8:
+			var at: int = corner * 3
+			var distance: int = (box[at] * box[at] + box[at + 1] * box[at + 1] + box[at + 2] * box[at + 2]) & 0xffffffff
+			if distance >= 0x80000000:
+				distance -= 0x100000000
+			radius = maxi(radius, distance)
 	if not found:
 		return result
 	radius = (radius + 100) & 0xffffffff

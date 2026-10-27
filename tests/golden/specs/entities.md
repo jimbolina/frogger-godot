@@ -908,8 +908,10 @@ occupied checkpoint selection, RNG order, bite and checkpoint-triggered reset.
 Gold-frog cases cover repeated HIT and pop clocks plus collected recreation.
 Log-snake cases cover narrowed ranges/offsets, parent visibility and recreation;
 beaver cases cover authored neighbor order, narrowed hit distance, strict bite
-range, gap/bite/dive clocks and parent retirement. Sources are `ent_gen.c` and
-`ent_org.c`; the generator does not call gameplay code. Change one expected
+range, gap/bite/dive clocks and parent retirement. Dog cases cover unsigned
+postdecrement and wrap, bark distance, bounced-end RNG, fall/hit precedence and
+bite expiry/refresh. Sources are `ent_gen.c`, `ent_org.c` and `ent_sub.c`; the
+generator does not call gameplay code. Change one expected
 state value in each new family for deliberate-break checks, then restore it.
 
 `synthetic/bonus_fly.json` comes from `tools/make_golden_bonus_fly.py` and

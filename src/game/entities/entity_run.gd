@@ -149,7 +149,7 @@ func reset() -> String:
 		var entity: EntitySnapshot = next_state.entities[index]
 		entity.lifecycle_supported = definition.script_id == 0 or definition.script_definition != null
 		if _lifecycle == null or definition.is_immortal():
-			_initialize_instance(entity, definition)
+			_initialize_instance(entity, definition, null, false, candidates[index])
 			if _lifecycle != null:
 				entity.generation = 1
 				next_state.live_order.insert(0, entity.entity_index)
@@ -200,7 +200,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
@@ -266,7 +266,7 @@ func reset_in_level(checkpoint: bool, environment: EntityEnvironmentState = null
 		var definition: EntityDefinition = candidate._definitions[slot]
 		var entity: EntitySnapshot = candidate._state.entities[slot]
 		if not entity.live and (definition.is_immortal() or candidate._lifecycle == null):
-			candidate._initialize_instance(entity, definition, next_environment, gold_collected)
+			candidate._initialize_instance(entity, definition, next_environment, gold_collected, candidate._runners[slot])
 			entity.generation += 1
 			candidate._state.live_order.insert(0, entity.entity_index)
 			candidate._state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
@@ -450,7 +450,7 @@ func apply_visibility(camera: GameplayCameraSnapshot, environment: EntityEnviron
 				entity.destroy_pending = false
 				entity.live_flags &= ~EntityLiveFlags.DESTROY
 			else:
-				_initialize_instance(entity, definition, environment, gold_collected)
+				_initialize_instance(entity, definition, environment, gold_collected, _runners[slot])
 				entity.generation += 1
 				next_state.live_order.insert(0, entity.entity_index)
 				next_state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
@@ -523,7 +523,7 @@ func _make_snapshot(runners: Array[PathRunner], tick_index: int) -> EntityRunSna
 		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[index].flags)
 	return result
 
-func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, environment: EntityEnvironmentState = null, gold_collected: bool = false) -> void:
+func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, environment: EntityEnvironmentState = null, gold_collected: bool = false, runner: PathRunner = null) -> void:
 	entity.live = true
 	entity.model_present = true
 	entity.matrix12 = definition.matrix12.duplicate()
@@ -545,6 +545,11 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true
+		elif definition.behavior.kind == EntityBehavior.Kind.DOG:
+			entity.custom_state.timer = definition.authored_delay
+			if runner != null:
+				runner.set_active(false)
+				entity.path = runner.snapshot()
 		elif definition.behavior.kind == EntityBehavior.Kind.BEAVER:
 			entity.custom_state.mode = EntityBeaver.Mode.WAITING_FIRST
 		elif definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:

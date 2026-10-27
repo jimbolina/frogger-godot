@@ -439,6 +439,8 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 			_candidate_entities.apply_checkpoint_collision(background.environment.collision_disabled)
 			state.entities = _candidate_entities.snapshot()
 		state.entity_environment = background.environment
+		if not background.frog_matrix12.is_empty():
+			state.frog.matrix12 = background.frog_matrix12.duplicate()
 		_candidate_random.state = background.random.state
 		_candidate_random.draw_count = background.random.draw_count
 		_candidate_random.consumers.assign(background.random.consumers)

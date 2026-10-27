@@ -16,6 +16,8 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 	result.random = random.copy()
 	var issue: String = ""
 	match definition.behavior.kind:
+		EntityBehavior.Kind.DOG:
+			issue = EntityDog.update(definition, result, frog, hit)
 		EntityBehavior.Kind.BEAVER:
 			issue = EntityBeaver.update(definition, result, neighbors, definitions, frog)
 		EntityBehavior.Kind.LOG_SNAKE:

@@ -102,7 +102,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 		if cell.x >= 0 and cell.y >= 0 and cell.x < definition.dimensions.x and cell.y < definition.dimensions.y:
 			var flags: int = definition.grid_flags[cell.y * definition.dimensions.x + cell.x]
 			if flags & GridSquareFlags.USABLE:
-				if not _supported_destination(flags, definition.death_type):
+				if not _supported_destination(flags):
 					result.error = "Platform hop destination requires an unsupported FORM reaction"
 					return result
 				state.frog.flags |= FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_ENTITY
@@ -151,13 +151,13 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	result.moved = true
 	return result
 
-static func _supported_destination(flags: int, death_type: int) -> bool:
+static func _supported_destination(flags: int) -> bool:
 	if flags & (GridSquareFlags.CHECKPOINT | GridSquareFlags.CLIFF):
 		return false
 	if flags & GridSquareFlags.SAFE or flags & GridSquareFlags.POPDEATH:
 		return true
 	if flags & GridSquareFlags.DEADLY:
-		return death_type == 5
+		return true
 	return not flags & (GridSquareFlags.SLIPPY | GridSquareFlags.BOUNCY | GridSquareFlags.FREEFORM_SLIPPY | GridSquareFlags.SIMPLE_SLIPPY)
 
 static func _block(state: GameplayState, original: Vector2i, result: PlatformJumpResult) -> void:

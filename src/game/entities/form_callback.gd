@@ -2,12 +2,19 @@ class_name FormCallback
 extends RefCounted
 ## Typed source FORM reactions, independent of executable addresses.
 
-enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN }
+enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE }
 
 ## Applies a verified primitive callback to the private gameplay candidate.
 static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: int, events: Array[TickEvent]) -> String:
 	if kind == Kind.ORG_FLY_SCORE:
 		return GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
+	if kind == Kind.BUTTERFLY_SCORE:
+		if frog.entity_collision != null:
+			for definition: EntityDefinition in frog.entity_collision.entities:
+				if definition.entity_index == entity_index and definition.butterfly_reward != null and definition.butterfly_type >= 0 and definition.butterfly_type < EntityBonusFly.REWARD_IDS.size():
+					events.append(TickEvent.reward(EntityBonusFly.REWARD_IDS[definition.butterfly_type]).for_entity(entity_index))
+					return GameplayRewards.apply(definition.butterfly_reward, state, events, frog.random)
+		return "Butterfly callback requires its decoded pickup reward"
 	if kind == Kind.BLOCK and state.frog.mode != FrogMode.STATIONARY:
 		frog.kill(state, FrogAnimationCatalog.SQUISHED, false, events)
 		state.frog.remaining_ticks = 0

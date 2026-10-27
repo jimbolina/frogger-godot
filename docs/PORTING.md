@@ -2,8 +2,8 @@
 
 The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-ORG1 is the first whole-map playable level. Remaining work expands level coverage,
-adds the dedicated game presentation and completes the systems listed below.
+The dedicated game scene opens ORG1–ORG5 and SUB1 with the original-style HUD.
+Remaining work expands theme coverage and completes the systems listed below.
 
 ## Status
 
@@ -23,7 +23,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8b | Demo playback harness | S–M | Recorded input decoding, atomic playback and reference-layout comparison reporting, including incomplete runs against native reference traces | Done; complete ORG1 acceptance belongs to P8c |
 | P8c | ORG1 complete: single-player original-theme and general forms, all script opcodes and callbacks, v3.0e FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Done; native attract, keyboard completion/collections, schedule parity and both test modes pass |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
-| P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
+| P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | |
 | P11 | Effects and particles | L | By eye against reference pictures | |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
@@ -46,16 +46,15 @@ Network play is deferred. Multiplayer levels belong to P15.
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: P10 presentation and broader levels
+## Next: P9 theme coverage
 
-Build the dedicated game scene and original-style HUD around the existing
-transactional gameplay host. Extend dependency setup to ORG2–ORG5 and SUB1,
-retaining complete native attract-demo comparisons as the exit check for levels
-with recorded demos. See [demo verification](reference/testing/README.md#demo-playback-and-comparison).
+Extend whole-map setup to FOR and VOL using their attract demos, then continue
+through CAV, DES, JUN, SWP and SKY. Retain the existing six-level keyboard
+completion checks and ORG1/SUB1 native attract comparisons; see
+[demo verification](reference/testing/README.md#demo-playback-and-comparison).
 
-Normal ORG1 play and demos use whole-map dependency validation. The guarded
-JUN1 and ORG1 corridor fixtures remain regression coverage; their launch
-restrictions do not apply to normal ORG1 play.
+Normal play and demos use whole-map dependency validation. The guarded JUN1
+and ORG1 corridor fixtures remain separate regression coverage.
 
 Audio playback, particles/splashes, animated per-part lighting, multiplayer,
 packaged exports and hosted CI retain their separate phases above. Performance

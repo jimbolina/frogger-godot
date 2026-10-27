@@ -1,6 +1,44 @@
 extends GutTest
 ## Independent frozen custom-entity state machines and source integer narrowing.
 
+func test_dog_clocks_rng_and_bite_match_independent_facts() -> void:
+	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
+	for fixture: Dictionary in facts.dogs:
+		var definition := EntityDefinition.new()
+		definition.entity_index = 11
+		definition.behavior = EntityBehaviorCatalog.resolve("SUB_DOG")
+		definition.behavior.execution = EntityBehavior.Execution.CONTACT
+		definition.authored_delay = 2
+		var entity := EntitySnapshot.new()
+		entity.custom_state = EntityCustomState.new()
+		entity.custom_state.mode = fixture.mode
+		entity.custom_state.timer = fixture.get("timer", 2)
+		entity.custom_state.count = fixture.get("count", 0)
+		entity.animation = EntityAnimationState.create([20, 20, 20])
+		entity.animation.action = fixture.get("action", 0)
+		entity.path = PathSnapshot.new()
+		entity.path.tangent = Vector3i(0, 0, 4096)
+		if fixture.get("bounce", false):
+			entity.path.flags |= PathStart.JUST_BOUNCED_END
+		var frog := GameplayState.new()
+		frog.frog.flags = FrogFlags.ACTIVE if fixture.get("frog_active", true) else 0
+		frog.frog.matrix12[9] = fixture.get("distance", 0)
+		var seed: int = fixture.get("seed", 1)
+		var hit: bool = fixture.get("hit", false)
+		var random: SourceRandom = SourceRandom.create(seed)
+		for row: Dictionary in fixture.rows:
+			entity.requests.clear()
+			var result: EntityCustomResult = EntityCustomUpdate.update(definition, entity, _environment(), random, Vector3i.ZERO, hit, false, null, null, frog)
+			assert_eq(result.error, "")
+			if not result.error.is_empty():
+				return
+			entity = result.entity
+			random = result.random
+			var sounds: Array[int] = []
+			for request: TickEvent in entity.requests:
+				sounds.append(request.sound_id)
+			_assert_custom_row({"mode": entity.custom_state.mode, "timer": entity.custom_state.timer, "count": entity.custom_state.count, "rng": random.state, "draws": random.draw_count, "action": entity.animation.action, "active": result.path_active_request, "sounds": sounds, "pose": Array(result.frog_matrix12)}, row, "%s tick %d" % [fixture.name, row.tick])
+
 func test_crocodile_state_machine_matches_independent_facts() -> void:
 	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
 	for fixture: Dictionary in facts.crocodiles:

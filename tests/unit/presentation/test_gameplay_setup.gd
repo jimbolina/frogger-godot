@@ -1,0 +1,44 @@
+extends GutTest
+## Whole-map selection and source boundary defaults remain independent of retail files.
+
+func test_supported_levels_are_limited_to_verified_single_player_scope() -> void:
+	for code: String in ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1"]:
+		assert_true(GameplaySetup.supports_level(FroggerIds.level_from_code(code)), code)
+	for code: String in ["ORGM", "SUBM", "SUB2", "FOR1", "JUN1", "ISLAND", "unknown"]:
+		assert_false(GameplaySetup.supports_level(FroggerIds.level_from_code(code)), code)
+	assert_false(GameplaySetup.supports_level(-1))
+	assert_false(GameplaySetup.supports_level(100))
+
+func test_missing_boundary_markers_use_native_map_load_limits() -> void:
+	assert_eq(GameplaySetup.bounds_for(null, null), Rect2i(-32767, -32767, 65534, 65534))
+
+func test_each_boundary_marker_overrides_only_its_own_native_corner() -> void:
+	var top := EntityDefinition.new()
+	top.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, -2000, 0, 1000])
+	var bottom := EntityDefinition.new()
+	bottom.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 2500, 0, -1500])
+	assert_eq(GameplaySetup.bounds_for(top, null), Rect2i(-2000, -32767, 34767, 33767))
+	assert_eq(GameplaySetup.bounds_for(null, bottom), Rect2i(-32767, -1500, 35267, 34267))
+	assert_eq(GameplaySetup.bounds_for(top, bottom), Rect2i(-2000, -1500, 4500, 2500))
+
+func test_invalid_dependencies_fail_without_a_partial_definition() -> void:
+	var setup: GameplaySetup = GameplaySetup.from_data(null, FroggerIds.level_from_code("SUB1"), null, null, PackedInt32Array())
+	assert_ne(setup.error, "")
+	assert_null(setup.definition)
+
+func test_skeletal_action_lengths_preserve_unsafe_action_slots() -> void:
+	var model := MofFile.new()
+	model.kind = MofFile.Kind.ANIMATED
+	model.animated = MofAnimated.new()
+	var set := MofAnimated.ModelSet.new()
+	var info := MofAnimated.ModelInfo.new()
+	info.static_model_index = 0
+	set.models.append(info)
+	for index: int in 3:
+		var action := MofAnimated.Action.new()
+		action.frame_count = 10 + index
+		if index == 1:
+			action.error = "invalid fixture transform"
+		set.actions.append(action)
+	model.animated.model_sets.append(set)
+	assert_eq(GameplaySetup.model_action_lengths(model), PackedInt32Array([10, 0, 12]))

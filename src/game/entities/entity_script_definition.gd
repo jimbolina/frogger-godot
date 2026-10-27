@@ -40,6 +40,7 @@ var callbacks: Dictionary[int, CallbackKind] = {}
 var callback_programs: Dictionary[int, int] = {}
 var payload_offset: int = 0
 var payload_registers: PackedInt32Array = PackedInt32Array()
+var original_turtle_splashes: bool = true
 
 ## Copies all supplied facts; no decoded executable objects are retained.
 func copy() -> EntityScriptDefinition:
@@ -50,6 +51,7 @@ func copy() -> EntityScriptDefinition:
 	result.callback_programs.assign(callback_programs)
 	result.payload_offset = payload_offset
 	result.payload_registers = payload_registers.duplicate()
+	result.original_turtle_splashes = original_turtle_splashes
 	for id: int in programs:
 		result.programs[id] = programs[id].duplicate()
 	return result
@@ -158,7 +160,7 @@ func validate(action_lengths: PackedInt32Array, form_id: int, has_path: bool) ->
 					if not _operand(a[1], a[2]) or not _operand(a[1], a[3]):
 						return "Invalid moving sound operands"
 				44:
-					if form_id not in [19, 20, 21] or a[0] != 0:
+					if (original_turtle_splashes and form_id not in [19, 20, 21]) or a[0] != 0:
 						return "Unsupported splash sprite operands or form"
 			cursor += WIDTHS[opcode]
 		if loop_open:

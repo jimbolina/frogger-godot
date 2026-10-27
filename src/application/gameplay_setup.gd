@@ -1,34 +1,44 @@
-class_name Org1GameplaySetup
+class_name GameplaySetup
 extends RefCounted
-## Whole-map ORG1 dependency validation without route or byte-identity admission.
+## Whole-map single-player dependency validation using supplied executable tables.
+
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1"]
 
 var error: String = ""
 var definition: LevelDefinition = null
 var diagnostics: Array[EntitySetupDiagnostic] = []
 
+## Whether the selected level has complete single-player dependency support.
+static func supports_level(level_number: int) -> bool:
+	return FroggerIds.level_code(level_number) in LEVEL_CODES
+
 ## Resolves player tables, scripts, callbacks, geometry and visibility once at setup.
-static func from_data(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> Org1GameplaySetup:
-	var result := Org1GameplaySetup.new()
-	result.error = result._build(data, map, frog_model, action_lengths)
+static func from_data(data: GameData, level_number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> GameplaySetup:
+	var result := GameplaySetup.new()
+	result.error = result._build(data, level_number, map, frog_model, action_lengths)
 	if not result.error.is_empty():
 		result.definition = null
 	return result
 
-func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
+func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
+	if not supports_level(number):
+		return "Gameplay setup requires ORG1–ORG5 or SUB1"
+	if data == null or not data.is_valid() or map == null or frog_model == null:
+		return "Gameplay setup requires valid player data, map and frog model"
+	var code: String = FroggerIds.level_code(number)
 	if data.version.internal_name != "pc-retail-v3.0e":
-		return "ORG1 gameplay requires the verified pc-retail-v3.0e build"
-	var number: int = FroggerIds.level_from_code("ORG1")
+		return "Gameplay requires the verified pc-retail-v3.0e build"
 	var book: MapBookEntry = data.map_book_entry(number)
 	var theme: ThemeBookEntry = data.theme_book_entry(map.general.theme)
 	if book == null or theme == null:
-		return "ORG1 gameplay requires map and theme definitions"
-	var source: String = data.version.internal_name + ":ORG1"
+		return "Gameplay requires map and theme definitions"
+	var source: String = data.version.internal_name + ":" + code
 	var grid: TerrainGridSetup = TerrainGridSetup.from_map(map)
 	var zones: ZoneSetup = ZoneSetup.from_map(map, source, book.map_id(false), data.version.internal_name)
 	var lifecycle: EntityLifecycleSetup = EntityLifecycleSetup.from_map(map)
 	var frog: FrogCollisionSetup = FrogCollisionSetup.from_model(frog_model)
 	var rewards: RewardSetup = RewardSetup.from_table(data.tables.scores())
-	var sounds: LogicalSoundSetup = LogicalSoundSetup.from_data(data, PackedInt32Array([0, 5]))
+	var sounds: LogicalSoundSetup = LogicalSoundSetup.from_data(data, PackedInt32Array([FroggerIds.THEME_GENERAL, map.general.theme]))
 	for issue: String in [grid.error, zones.error, lifecycle.error, frog.error, rewards.error, sounds.error]:
 		if not issue.is_empty():
 			return issue
@@ -40,19 +50,19 @@ func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: P
 		var messages := PackedStringArray()
 		for diagnostic: EntitySetupDiagnostic in diagnostics:
 			messages.append(diagnostic.to_text())
-		return "Whole-map ORG1 requires every entity dependency: " + "; ".join(messages)
+		return "Whole-map " + code + " requires every entity dependency: " + "; ".join(messages)
 	var models: Dictionary[int, MofFile] = {}
 	var problems := PackedStringArray()
 	var identities: Dictionary[int, EntityDefinition] = {}
 	for entity: EntityDefinition in entities.definitions:
 		if identities.has(entity.unique_id):
-			return "ORG1 entity unique ID %d is duplicated" % entity.unique_id
+			return code + " entity unique ID %d is duplicated" % entity.unique_id
 		identities[entity.unique_id] = entity
 		var form: FormBookEntry = data.tables.theme_book().get_form(map.general.theme, entity.form_id)
 		if form == null:
-			return "ORG1 entity %d has no form" % entity.entity_index
+			return code + " entity %d has no form" % entity.entity_index
 		if entity.bonus_kind == FormCallback.Kind.UNKNOWN:
-			return "ORG1 entity %d at 0x%X has unknown bonus callback 0x%X" % [entity.entity_index, entity.source_offset, entity.bonus_callback]
+			return code + " entity %d at 0x%X has unknown bonus callback 0x%X" % [entity.entity_index, entity.source_offset, entity.bonus_callback]
 		if form.model_id >= 0 and not models.has(entity.form_id):
 			var model_id: int = data.model_resource_at(data.model_wad_for(form, number, false), form.wad_index())
 			if model_id >= 0:
@@ -60,27 +70,31 @@ func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: P
 		var model: MofFile = models.get(entity.form_id)
 		if model != null and model.kind != MofFile.Kind.DUMMY and not form.has_flag(FormBookEntry.FLAG_NO_MODEL):
 			if model.static_models.is_empty() or model.static_models[0].parts.is_empty():
-				return "ORG1 entity %d lacks source model parts" % entity.entity_index
-			for action: MofPart.FlipbookAction in model.static_models[0].parts[0].flipbook_actions:
-				entity.action_lengths.append(action.frame_count)
+				return code + " entity %d lacks source model parts" % entity.entity_index
+			entity.action_lengths = model_action_lengths(model)
 		if entity.behavior.kind == EntityBehavior.Kind.PICKUP:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
+		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
+			if entity.butterfly_type < 0 or entity.butterfly_type >= EntityBonusFly.REWARD_IDS.size():
+				return code + " entity %d has no valid butterfly reward type" % entity.entity_index
+			entity.butterfly_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.butterfly_type]].copy()
 		if entity.behavior.has_custom_update():
 			entity.behavior.execution = EntityBehavior.Execution.CONTACT
 		if entity.script_id != 0:
 			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.tables.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
 			if not scripts.error.is_empty():
-				return "ORG1 entity %d: %s" % [entity.entity_index, scripts.error]
+				return code + " entity %d: %s" % [entity.entity_index, scripts.error]
 			entity.script_definition = scripts.definition
+			entity.script_definition.original_turtle_splashes = map.general.theme == FroggerIds.THEMES.find("ORIGINAL")
 			var issue: String = entity.script_definition.validate(entity.action_lengths, entity.form_id, entity.path_definition != null)
 			if not issue.is_empty():
-				return "ORG1 entity %d: %s" % [entity.entity_index, issue]
+				return code + " entity %d: %s" % [entity.entity_index, issue]
 	if not problems.is_empty():
 		return "; ".join(problems)
 	for entity: EntityDefinition in entities.definitions:
 		if entity.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and not identities.has(entity.parent_unique_id):
-			return "ORG1 entity %d has an unresolved parent %d" % [entity.entity_index, entity.parent_unique_id]
-	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version.internal_name, true)
+			return code + " entity %d has an unresolved parent %d" % [entity.entity_index, entity.parent_unique_id]
+	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version.internal_name, true, true)
 	diagnostics.append_array(contacts.diagnostics)
 	if not contacts.error.is_empty():
 		return contacts.error
@@ -103,23 +117,23 @@ func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: P
 		var contact: FormContactDefinition = collision.contacts[slot]
 		contact.form_book_flags = entity.form_flags
 		if not contact.unsupported_reason.is_empty():
-			return "ORG1 entity %d at 0x%X: %s" % [entity.entity_index, entity.source_offset, contact.unsupported_reason]
+			return code + " entity %d at 0x%X: %s" % [entity.entity_index, entity.source_offset, contact.unsupported_reason]
 		if entity.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			var index: int = entity.form_id & 32767
 			if index >= 5 or checkpoint_bits & (1 << index):
-				return "ORG1 requires five distinct single-player checkpoints"
+				return code + " requires five distinct single-player checkpoints"
 			checkpoint_bits |= 1 << index
 			collision.environment.checkpoint_positions[index] = Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
 		if entity.behavior.kind == EntityBehavior.Kind.BOUNDS_TOP_LEFT:
 			if top != null:
-				return "ORG1 has duplicate top-left bounds"
+				return code + " has duplicate top-left bounds"
 			top = entity
 		if entity.behavior.kind == EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT:
 			if bottom != null:
-				return "ORG1 has duplicate bottom-right bounds"
+				return code + " has duplicate bottom-right bounds"
 			bottom = entity
-	if checkpoint_bits != 31 or top == null or bottom == null:
-		return "ORG1 requires five checkpoints and authored bounds"
+	if checkpoint_bits != 31:
+		return code + " requires five distinct single-player checkpoints"
 	var issue: String = collision.validate()
 	if not issue.is_empty():
 		return issue
@@ -139,7 +153,7 @@ func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: P
 	definition.theme_name = FroggerIds.animation_theme(definition.theme)
 	definition.theme_death_height = theme.death_height
 	definition.collision_enabled = true
-	definition.collision_bounds = Rect2i(top.matrix12[9], bottom.matrix12[11], bottom.matrix12[9] - top.matrix12[9], top.matrix12[11] - bottom.matrix12[11])
+	definition.collision_bounds = bounds_for(top, bottom)
 	definition.camera = GameplayCameraDefinition.new()
 	definition.camera.source_offset = map.general.camera_source_offset
 	definition.camera.target_offset = map.general.camera_target_offset
@@ -147,3 +161,26 @@ func _build(data: GameData, map: MapFile, frog_model: MofFile, action_lengths: P
 	definition.flow_enabled = true
 	definition.level_time = map.general.time_limit * 30
 	return ""
+
+## Applies authored fade markers independently to the native map-load defaults.
+static func bounds_for(top: EntityDefinition, bottom: EntityDefinition) -> Rect2i:
+	var top_left := Vector2i(-32767, 32767)
+	var bottom_right := Vector2i(32767, -32767)
+	if top != null:
+		top_left = Vector2i(top.matrix12[9], top.matrix12[11])
+	if bottom != null:
+		bottom_right = Vector2i(bottom.matrix12[9], bottom.matrix12[11])
+	return Rect2i(top_left.x, bottom_right.y, bottom_right.x - top_left.x, top_left.y - bottom_right.y)
+
+## Reads source virtual-action lengths for skeletal and flipbook entities.
+static func model_action_lengths(model: MofFile) -> PackedInt32Array:
+	var lengths := PackedInt32Array()
+	if model == null or not model.error.is_empty():
+		return lengths
+	if model.kind == MofFile.Kind.ANIMATED and model.animated != null:
+		for action: MofAnimated.Action in model.animated.actions_for(0):
+			lengths.append(action.frame_count if action.error.is_empty() else 0)
+	elif model.kind == MofFile.Kind.STATIC and not model.static_models.is_empty() and not model.static_models[0].parts.is_empty():
+		for action: MofPart.FlipbookAction in model.static_models[0].parts[0].flipbook_actions:
+			lengths.append(action.frame_count)
+	return lengths

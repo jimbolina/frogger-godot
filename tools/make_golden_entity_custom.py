@@ -1,4 +1,4 @@
-"""Independent ent_org.c/ent_gen.c custom entity clocks, narrowing and lifecycle facts."""
+"""Independent ent_org.c/ent_gen.c/ent_sub.c custom entity state-machine facts."""
 import json
 from pathlib import Path
 
@@ -204,7 +204,66 @@ def beavers():
     return specifications
 
 
+def dogs():
+    specifications = [
+        dict(name='wait_postdecrement', mode=0, timer=2, ticks=3),
+        dict(name='bark_strict_radius', mode=0, timer=0, distance=1024),
+        dict(name='inactive_frog', mode=0, timer=0, frog_active=False),
+        dict(name='unsigned_wait_wrap', mode=0, timer=0xffffffff),
+        dict(name='bounce_then_random', mode=1, bounce=True),
+        dict(name='bounce_then_fall', mode=1, bounce=True, seed=101),
+        dict(name='fall_then_bite', mode=1, seed=101, hit=True),
+        dict(name='fall_expiry_then_bite', mode=2, timer=1, hit=True),
+        dict(name='fall_expiry', mode=2, timer=1),
+        dict(name='bite_refresh', mode=3, count=1, hit=True),
+        dict(name='bite_expiry', mode=3, count=1),
+        dict(name='bite_unsigned_wrap', mode=3, count=0),
+    ]
+    for spec in specifications:
+        mode, timer, count = spec['mode'], spec.get('timer', 2), spec.get('count', 0)
+        rng, draws, action = spec.get('seed', 1), 0, spec.get('action', 0)
+        rows = []
+        for tick in range(spec.get('ticks', 1)):
+            active, sounds, pose = -1, [], []
+            hit = spec.get('hit', False)
+            if mode == 0:
+                old = timer
+                timer = (timer - 1) & 0xffffffff
+                if old == 0:
+                    mode, active = 1, 1
+                    if spec.get('frog_active', True) and spec.get('distance', 0) < 1024:
+                        sounds.append(153)
+            elif mode == 1:
+                if spec.get('bounce', False):
+                    mode, timer, active = 0, 2, 0
+                rng = (rng * 1103515245 + 12345) & 0xffffffff
+                draws += 1
+                if ((rng >> 16) & 32767) % 500 == 1:
+                    mode, timer, active, action = 2, 50, 0, 1
+                if hit:
+                    mode, active, action = 3, 0, 2
+            elif mode == 2:
+                timer = (timer - 1) & 0xffffffff
+                if timer == 0:
+                    mode, active, action = 1, 1, 0
+                if hit:
+                    mode, active, action = 3, 0, 2
+            if mode == 3:
+                if hit:
+                    count = 50
+                    sounds.append(154)
+                    pose = [0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 0, 0, 192]
+                else:
+                    count = (count - 1) & 0xffffffff
+                    if count == 0:
+                        mode, active, action = 1, 1, 0
+            rows.append(dict(tick=tick, mode=mode, timer=timer, count=count, rng=rng,
+                             draws=draws, action=action, active=active, sounds=sounds, pose=pose))
+        spec['rows'] = rows
+    return specifications
+
+
 if __name__ == '__main__':
-    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), snakes=snakes(), beavers=beavers())
+    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), snakes=snakes(), beavers=beavers(), dogs=dogs())
     path = Path(__file__).resolve().parents[1] / 'tests/golden/synthetic/entity_custom.json'
     path.write_text(json.dumps(value, indent=2) + '\n')

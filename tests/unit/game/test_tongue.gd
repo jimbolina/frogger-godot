@@ -66,3 +66,26 @@ func test_curve_quantizes_endpoints_and_uses_source_origin() -> void:
 	assert_eq(TongueCurve.tip(matrix, 0, Vector3i(107, -3, 509), true), Vector3i(0, -32, 48))
 	assert_eq(TongueCurve.tip(matrix, 8, Vector3i(107, -3, 509), true), Vector3i(104, -8, 504))
 	assert_eq(TongueCurve.tip(matrix, 8, Vector3i.ZERO, false), Vector3i(8, -80, 48))
+
+func test_butterfly_callback_uses_supplied_reward_and_authored_identity() -> void:
+	var frog := Frog.new()
+	frog.entity_collision = EntityCollisionDefinition.new()
+	var definition := EntityDefinition.new()
+	definition.entity_index = 42
+	definition.butterfly_type = 0
+	definition.butterfly_reward = RewardDefinition.new()
+	definition.butterfly_reward.flags = RewardDefinition.SCORE
+	definition.butterfly_reward.value = 375
+	frog.entity_collision.entities.append(definition)
+	var state := GameplayState.new()
+	var events: Array[TickEvent] = []
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.BUTTERFLY_SCORE, frog, state, 0, events), "decoded pickup reward")
+	assert_eq(state.flow.score, 0)
+	assert_eq(FormCallback.apply(FormCallback.Kind.BUTTERFLY_SCORE, frog, state, 42, events), "")
+	assert_eq(state.flow.score, 375)
+	assert_eq(events.size(), 1)
+	assert_eq(events[0].kind, TickEvent.Kind.REWARD)
+	assert_eq(events[0].entity_index, 42)
+	definition.butterfly_reward = null
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.BUTTERFLY_SCORE, frog, state, 42, events), "decoded pickup reward")
+	assert_eq(state.flow.score, 375)

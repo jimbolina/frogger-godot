@@ -7,12 +7,14 @@ const NAMES: Dictionary[int, String] = {
 	0x4287a0: "GenBlockWaterFallCollPrimCallback",
 	0x4287c0: "GenBlockFallCollPrimCallback",
 	0x4231d0: "OrgFlyCallBack",
+	0x4284e0: "GenButterFlyCallBack",
 }
 const KINDS: Dictionary[String, FormCallback.Kind] = {
 	"GenBlockCollPrimCallback": FormCallback.Kind.BLOCK,
 	"GenBlockWaterFallCollPrimCallback": FormCallback.Kind.WATERFALL_BLOCK,
 	"GenBlockFallCollPrimCallback": FormCallback.Kind.FALL_BLOCK,
 	"OrgFlyCallBack": FormCallback.Kind.ORG_FLY_SCORE,
+	"GenButterFlyCallBack": FormCallback.Kind.BUTTERFLY_SCORE,
 }
 
 ## Resolves supported repointing without deriving identity from the owning form.

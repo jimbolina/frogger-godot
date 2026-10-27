@@ -78,5 +78,6 @@
   "res://tests/golden/test_retail_org1.gd::test_visibility_pickup_rollback_and_full_reset": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_demos.gd::test_demo_headers_and_input_summaries_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_sound.gd::test_retail_sound_tables_and_durations_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_sound.gd::test_saved_sound_table_edits_are_resolved_and_unknown_groups_diagnosed": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_sound.gd::test_saved_sound_table_edits_are_resolved_and_unknown_groups_diagnosed": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_gameplay_setup.gd::test_all_playable_levels_resolve_and_start_with_supplied_identity": "SKIP: FROGGER_DATA_DIR is not set"
 }

@@ -17,6 +17,7 @@ const MODEL_VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
 const MAP_VIEWER_SCENE: String = "res://scenes/tools/map_viewer.tscn"
 
 var _label: Label
+var _level_picker: OptionButton
 
 
 func _ready() -> void:
@@ -29,6 +30,18 @@ func _ready() -> void:
 	add_child(layout)
 	var menu := HBoxContainer.new()
 	layout.add_child(menu)
+	_level_picker = OptionButton.new()
+	for code: String in GameplaySetup.LEVEL_CODES:
+		_level_picker.add_item(code)
+	var requested_level: String = ViewerArguments.value(OS.get_cmdline_user_args(), "--level=").to_upper()
+	var requested_index: int = GameplaySetup.LEVEL_CODES.find(requested_level)
+	if requested_index >= 0:
+		_level_picker.select(requested_index)
+	menu.add_child(_level_picker)
+	var play_button := Button.new()
+	play_button.text = "Play"
+	play_button.pressed.connect(open_game)
+	menu.add_child(play_button)
 	var viewer_button := Button.new()
 	viewer_button.text = "Texture viewer"
 	viewer_button.pressed.connect(open_texture_viewer)
@@ -49,6 +62,12 @@ func _ready() -> void:
 	_label.text = report
 	print(report)
 	viewer_button.grab_focus()
+
+
+## Opens a fresh game in the selected supported level.
+func open_game() -> void:
+	GameplayScreen.selected_level = _level_picker.get_item_text(_level_picker.selected)
+	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
 
 
 ## Switches to the texture viewer.

@@ -18,6 +18,15 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	var issue: String = _validate_inputs(data, scenario.map_scene.map, proof)
 	if not issue.is_empty():
 		return "JUN1 exploration proof inputs changed: " + issue
+	if scenario.entity_collision == null:
+		return "JUN1 exploration requires detached entity collision setup"
+	for slot: int in range(scenario.entity_collision.entities.size() - 1, -1, -1):
+		var entity: EntityDefinition = scenario.entity_collision.entities[slot]
+		if entity.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER and entity.behavior.tongueable:
+			scenario.entity_collision.entities.remove_at(slot)
+			scenario.entity_collision.contacts.remove_at(slot)
+	scenario.level.entity_collision = scenario.entity_collision.copy()
+	scenario.diagnostics.append("JUN1 bounded proof omits moving tongue collectables; whole-map behavior is unaffected")
 	var zones: ZoneSetup = ZoneSetup.from_map(scenario.map_scene.map, scenario.level.source_id, scenario.level.resource_id, data.version.internal_name)
 	if not zones.error.is_empty():
 		return zones.error

@@ -33,7 +33,7 @@ const CALLBACK_KINDS: Dictionary[String, EntityScriptDefinition.CallbackKind] = 
 var error: String = ""
 var definition: EntityScriptDefinition = null
 
-## Copies only the reachable supported closure, with explicit turtle creation replacement.
+## Copies the reachable closure, turtle creation replacement and frozen MOVING turtle zero-fill.
 static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behavior: EntityBehavior, payload: PackedByteArray) -> EntityScriptSetup:
 	var result := EntityScriptSetup.new()
 	if table == null or names == null or not table.error.is_empty():
@@ -56,6 +56,10 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 		if decoded.payload_registers[2] == 1:
 			decoded.root_id = names.index_of("SCRIPT_TURTLE_NO_DIVE")
 			roots.append(decoded.root_id)
+	var register_payload: PackedByteArray = payload
+	if behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER and not behavior.tongueable and names.get_name(root_id) == "SCRIPT_TURTLE" and payload.size() >= 12:
+		register_payload = payload.slice(0, 12)
+		register_payload.resize(24)
 	var callback_names: NameBank = names.get_sub_bank("CallbackNames")
 	while not roots.is_empty():
 		var id: int = roots.pop_back()
@@ -77,6 +81,19 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 			if command.arguments.size() + 1 != EntityScriptDefinition.WIDTHS[command.opcode]:
 				result.error = "Invalid instruction width in %s" % program.name
 				return result
+			if command.opcode == 31:
+				var offset: int = command.arguments[0]
+				var count: int = command.arguments[1]
+				if not ((offset == 12 and count == 3) or (offset == 32 and count == 2)) or register_payload.size() < offset + count * 4:
+					result.error = "Unsupported or truncated register payload in %s at 0x%08x" % [program.name, source_address]
+					return result
+				if not decoded.payload_registers.is_empty() and (decoded.payload_offset != offset or decoded.payload_registers.size() != count):
+					result.error = "Conflicting register payloads in %s at 0x%08x" % [program.name, source_address]
+					return result
+				if decoded.payload_registers.is_empty():
+					decoded.payload_offset = offset
+					for index: int in count:
+						decoded.payload_registers.append(register_payload.decode_s32(offset + index * 4))
 			if command.opcode == 13:
 				roots.append(command.arguments[2])
 			elif command.opcode == 25:

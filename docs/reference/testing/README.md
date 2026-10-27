@@ -96,9 +96,10 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
-`GameplayHost`. ORG1 uses whole-map dependency setup with its recorded starting cell and
-FAST_RESET initialization. Other retail levels with entities or zones report
-their missing implementation dependencies.
+`GameplayHost`. ORG1–ORG5 and SUB1 share whole-map dependency setup; recorded
+playback uses the supplied demo starting cell and FAST_RESET initialization.
+A level without an enabled demo reports that missing resource. Other themes
+retain explicit unsupported-dependency diagnostics.
 
 ```text
 python tools/run_demo.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
@@ -151,9 +152,40 @@ runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect i
 
 Use the [verified external native build](../sources.md#exporting-reference-material-from-the-engine)
 and export traces to a folder outside the repositories. The ORG1 reference is
-map 24, segment 0. Whole-map ORG1 playback completes and matches the verified
-native terminal state, route and consumed input. Preserve that acceptance when
+map 24, segment 0; SUB1 is map 48, segment 0. Both whole-map demos complete
+and match the verified native terminal state, route and consumed input.
+Select SUB1 with `--level SUB1` for playback and schedule verification, and
+`--map 48` for comparison. Preserve that acceptance when
 changing gameplay; bounded incomplete fixtures still exercise rejection paths.
+
+## Dedicated game scene captures
+
+Use `python tools/run_gameplay_capture.py --godot <executable> --data-dir
+<game-folder> --level ORG1 --output-directory <external-folder>` to capture
+startup and normal play in the dedicated game scene. Select ORG1–ORG5 or SUB1;
+`--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
+replay the existing sparse keyboard stimulus format through actual key events.
+The ORG1 completion, pink-delivery and tongue-collection fixtures listed in the
+[playthrough guide](terrain-inspection.md#whole-map-keyboard-playthrough) work
+with this launcher too. ORG2–ORG5 completion stimuli are
+`tests/golden/fixtures/org2_keyboard_playthrough.json` through
+`org5_keyboard_playthrough.json`, plus `sub1_keyboard_playthrough.json`; select
+the matching `--level`. These are
+normal-start inputs, not expected-state goldens. An inspection run does not
+establish level completion.
+
+The launcher isolates writable user data, imports and strictly compiles scripts,
+checks architecture, then awaits the rendered process with explicit logs and the
+crash handler disabled. Each committed scene state must match a fresh pure run
+receiving the same sampled inputs. Captures cover startup, early HUD animation,
+checkpoint/bonus-stage transitions and the final state; `gameplay.json` records
+the goal, result and milestones. All evidence stays outside repositories.
+
+Use `--flow-check --ticks 10000` without a route to verify idle timeout,
+respawn, game over and a fresh session through the R key. Use
+`--resolution 960x540` to inspect widescreen letterboxing; the report records
+window and logical viewport sizes. These captures supplement the complete test
+wrappers and native reference comparisons.
 
 ## Focused iteration and guardrails
 

@@ -231,3 +231,43 @@ func test_primitive_only_model_admits_absent_form_data_but_not_malformed_records
 	models.clear()
 	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true)
 	assert_false(setup.definitions[0].unsupported_reason.is_empty())
+
+func test_skeletal_form_uses_authored_model_bound_and_preserves_primitive_rejection() -> void:
+	var map: MapFile = _map()
+	var entity: EntityDefinition = _authored(map, 0, 1)
+	var model: MofFile = _model(20)
+	model.kind = MofFile.Kind.ANIMATED
+	model.animated = MofAnimated.new()
+	var set := MofAnimated.ModelSet.new()
+	var info := MofAnimated.ModelInfo.new()
+	info.bounding_box.resize(24)
+	info.bounding_box[22] = 70
+	set.models.append(info)
+	model.animated.model_sets.append(set)
+	var models: Dictionary[int, MofFile] = {0: model}
+	var setup: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", false, true)
+	assert_eq(setup.definitions[0].unsupported_reason, "")
+	assert_eq(setup.definitions[0].max_y, 70)
+	assert_eq(setup.definitions[0].radius_squared, 5000, "Global animated bbox, not embedded partcel bbox")
+	var bounded: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models)
+	assert_ne(bounded.definitions[0].unsupported_reason, "", "Bounded inspection retains its original model scope")
+	model.static_models[0].parts[0].collprims.append(MofPart.Collprim.new())
+	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true, true)
+	assert_string_contains(setup.definitions[0].unsupported_reason, "static model")
+
+func test_decorative_model_with_no_form_data_has_no_contact() -> void:
+	var map: MapFile = _map()
+	var entity: EntityDefinition = _authored(map, 0, 1)
+	map.forms[0].data_count = 0
+	map.forms[0].data.clear()
+	var models: Dictionary[int, MofFile] = {0: _model(20)}
+	var setup: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", false, true)
+	assert_eq(setup.definitions[0].unsupported_reason, "")
+	assert_false(setup.definitions[0].has_form_data)
+	assert_eq(setup.definitions[0].radius_squared, 500)
+	assert_true(setup.definitions[0].primitives.is_empty())
+	var bounded: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models)
+	assert_ne(bounded.definitions[0].unsupported_reason, "", "Bounded inspection retains its original FORM scope")
+	map.forms[0].data_count = 1
+	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", false, true)
+	assert_string_contains(setup.definitions[0].unsupported_reason, "no usable data")

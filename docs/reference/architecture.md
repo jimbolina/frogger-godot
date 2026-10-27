@@ -31,7 +31,9 @@ remain authoritative for detailed rules.
 
 `GameplayHost` owns the gameplay period accumulator, source-style held/pressed
 sampling and one outstanding worker command. It returns completed results to
-the viewer, which owns drawing, overlays and trace capture. Long host stalls
+the presentation host. `GameplayScreen` owns the dedicated game input and HUD;
+`TerrainViewer` retains inspection overlays and trace capture. Both use
+`GameplayWorldView` for map, frog and entity drawing from committed snapshots. Long host stalls
 retain at most one fractional period. Pause, reset and explicit stepping join
 pending work before changing the run.
 `PathInspectionSession` and `EntityInspectionSession` own independently seekable

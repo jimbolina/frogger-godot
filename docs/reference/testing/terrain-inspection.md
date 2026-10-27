@@ -19,9 +19,9 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. ORG1 without an exploration preset uses whole-map
-dependency validation, authored zones, entity contacts, visibility lifecycle and
-level flow. Other levels omit entities, forms, platforms, zones and authored
+existing `GameData` APIs. ORG1–ORG5 and SUB1 without an exploration preset use
+whole-map dependency validation, authored zones, entity contacts, visibility
+lifecycle and level flow. Other levels omit entities, forms, platforms, zones and authored
 entity boundary markers by default. For those inspections,
 `--entity-reactions=pop` or `--entity-reactions=platforms` selects the bounded
 component modes below, and `--entity-lifecycle visibility` enables the bounded
