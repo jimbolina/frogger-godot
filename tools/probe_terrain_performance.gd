@@ -1,5 +1,5 @@
 extends SceneTree
-## Measures complete ORG1 routes on the real host clock; never synthesizes frame deltas.
+## Measures bounded ORG1 routes or whole-map startup/idle on the real host clock.
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -23,7 +23,17 @@ func _run() -> void:
 		return
 	var started: int = Time.get_ticks_usec()
 	var data: GameData = GameData.open(found.source, found.version)
-	var scenario: TerrainScenario = TerrainScenario.from_file(ViewerArguments.value(arguments, "--scenario-file="))
+	var workload: String = ViewerArguments.value(arguments, "--performance-workload=")
+	var whole_map: bool = workload in ["whole-map-idle", "whole-map-hops"]
+	var hopping: bool = workload == "whole-map-hops"
+	if not workload.is_empty() and workload != "bounded-route" and not whole_map:
+		data.close()
+		_fail("Unknown performance workload: " + workload)
+		return
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal") if whole_map else TerrainScenario.from_file(ViewerArguments.value(arguments, "--scenario-file="))
+	if whole_map:
+		scenario.commands.clear()
+		scenario.tick_limit = 600
 	issue = scenario.error
 	if issue.is_empty():
 		issue = TerrainScenarioArguments.apply(scenario, arguments)
@@ -43,9 +53,17 @@ func _run() -> void:
 	if not issue.is_empty():
 		_fail(issue)
 		return
-	if scenario.map_scene == null or scenario.level.tick_guard == null or viewer._current.entities == null:
-		_fail("Performance measurement requires the guarded retail ORG1 world")
+	if scenario.map_scene == null or viewer._current.entities == null or (not whole_map and scenario.level.tick_guard == null):
+		_fail("Performance measurement requires the selected retail ORG1 world")
 		return
+	if whole_map and (not scenario.level.flow_enabled or scenario.level.tick_guard != null or not scenario.options.exploration_preset.is_empty() or scenario.tick_limit != 600):
+		_fail("Whole-map measurement requires unbounded ORG1 flow and 600 startup/idle ticks")
+		return
+	if hopping:
+		issue = _prepare_hops(scenario)
+		if not issue.is_empty():
+			_fail(issue)
+			return
 	viewer.smoothing = ViewerArguments.value(arguments, "--smoothing=") == "true"
 	var mode: String = ViewerArguments.value(arguments, "--performance-mode=")
 	if mode == "no-inspector":
@@ -82,6 +100,7 @@ func _run() -> void:
 	var host_work := PackedFloat64Array()
 	var simulation := PackedFloat64Array()
 	var tick_intervals := PackedFloat64Array()
+	var landed_hops: Dictionary[int, Vector2i] = {}
 	var draw_calls: int = 0
 	var primitives: int = 0
 	viewer.playing = mode != "paused"
@@ -100,6 +119,11 @@ func _run() -> void:
 			if not result.error.is_empty():
 				_fail(result.error)
 				return
+			if hopping:
+				issue = _observe_hops(scenario, viewer.run.snapshot(), landed_hops)
+				if not issue.is_empty():
+					_fail(issue)
+					return
 	else:
 		while viewer._current.tick_index < scenario.tick_limit:
 			await process_frame
@@ -123,6 +147,11 @@ func _run() -> void:
 			if not viewer.last_error.is_empty():
 				_fail(viewer.last_error)
 				return
+			if hopping:
+				issue = _observe_hops(scenario, viewer._current, landed_hops)
+				if not issue.is_empty():
+					_fail(issue)
+					return
 			if mode == "paused" and (drawn - started) / 1000000.0 >= duration:
 				break
 			if (drawn - started) / 1000000.0 > duration * 5.0 + 30.0:
@@ -134,16 +163,24 @@ func _run() -> void:
 	viewer.playing = false
 	viewer._close_worker()
 	var final: GameplayState = viewer.run.snapshot()
-	var diver: bool = scenario.tick_limit == 1255
+	var diver: bool = not whole_map and scenario.tick_limit == 1255
 	var outcome_ok: bool = final.tick_index == scenario.tick_limit and (final.frog.mode == 2 and final.animation.action == FrogAnimationCatalog.DROWN if diver else final.attachment.current_entity_index == -1 and final.frog.cell == Vector2i(10, 7) and final.frog.mode != 2)
+	if whole_map:
+		outcome_ok = final.tick_index == 600 and final.flow.phase == LevelFlowState.Phase.PLAY and final.flow.elapsed_time > 0 and final.flow.remaining_time > 0 and final.frog.lives == 3 and final.flow.score == (80 if hopping else 0) and final.entity_environment.collected == 0 and final.frog.cell == scenario.level.spawn_cell and final.frog.mode == FrogMode.STATIONARY
+		if hopping:
+			outcome_ok = outcome_ok and landed_hops.size() == 16
 	var native_size := Vector2i(root.get_visible_rect().size * root.get_stretch_transform().get_scale())
 	var fps: float = frames.size() / seconds
 	var frame_stats: Dictionary = _stats(frames)
 	var cadence_ok: bool = absf(final.tick_index - seconds * 30.0) <= 1.0
 	var p99: float = frame_stats["p99_ms"]
-	var accepted: bool = mode == "full" and viewer.smoothing and outcome_ok and cadence_ok and fps > 200.0 and p99 <= 5.0
+	var accepted: bool = not whole_map and mode == "full" and viewer.smoothing and outcome_ok and cadence_ok and fps > 200.0 and p99 <= 5.0
 	var report: Dictionary = {
-		"schema": "terrain-performance-v1", "mode": mode, "smoothing": viewer.smoothing,
+		"schema": "terrain-performance-v1", "mode": mode,
+		"workload": workload if whole_map else "bounded-route", "diagnostic_only": whole_map,
+		"flow_phase": int(final.flow.phase), "remaining_time": final.flow.remaining_time,
+		"end_cell": [final.frog.cell.x, final.frog.cell.y], "landed_hops": landed_hops.size(),
+		"expected_hops": 16 if hopping else 0, "elapsed_time": final.flow.elapsed_time, "score": final.flow.score, "lives": final.frog.lives, "smoothing": viewer.smoothing,
 		"high_detail": not scenario.map_scene.low_poly and viewer.frog_assets != null,
 		"entity_count": final.entities.entities.size(), "overlay_visible": viewer._label.visible,
 		"inspector_visible": viewer._entity_inspection.visible,
@@ -157,7 +194,7 @@ func _run() -> void:
 		"vsync": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
 		"window_mode": root.mode, "screen_refresh_hz": DisplayServer.screen_get_refresh_rate(),
 		"threaded": viewer.threaded_playback,
-		"route": "diver" if diver else "round-trip", "tick_limit": scenario.tick_limit,
+		"route": workload if whole_map else ("diver" if diver else "round-trip"), "tick_limit": scenario.tick_limit,
 		"load_ms": load_ms, "reset_ms": reset_ms, "seconds": seconds, "fps": fps,
 		"frames": frame_stats, "tick_frames": _stats(tick_frames), "host_work": _stats(host_work),
 		"simulation": _stats(simulation), "ticks": final.tick_index, "ticks_per_second": final.tick_index / seconds,
@@ -179,6 +216,40 @@ func _run() -> void:
 		return
 	print("terrain_performance: %s %s %.2f FPS p99 %.3f ms ticks %d accepted=%s" % [mode, report["route"], fps, frame_stats["p99_ms"], final.tick_index, accepted])
 	quit(0 if outcome_ok or mode == "paused" else 1)
+
+
+func _prepare_hops(scenario: TerrainScenario) -> String:
+	for cell: Vector2i in [scenario.level.spawn_cell, scenario.level.spawn_cell + Vector2i.RIGHT]:
+		var stack: GridStackDefinition = scenario.level.grid.stack_at(cell)
+		if stack == null or stack.square_count != 1:
+			return "Whole-map hopping requires two bounded single-surface spawn-row cells"
+		var square: GridSquareDefinition = scenario.level.grid.squares[stack.first_square_index]
+		if (square.flags & 0xffff) != (GridSquareFlags.USABLE | GridSquareFlags.SAFE):
+			return "Whole-map hopping requires ordinary usable SAFE spawn-row terrain"
+	for hop: int in 16:
+		var command := TickCommand.new()
+		command.tick_index = 180 + hop * 24
+		command.pressed_mask = TickCommand.EAST if hop % 2 == 0 else TickCommand.WEST
+		command.held_mask = command.pressed_mask
+		scenario.commands[command.tick_index] = command
+	return ""
+
+func _observe_hops(scenario: TerrainScenario, state: GameplayState, landed: Dictionary[int, Vector2i]) -> String:
+	if state.tick_index < 180:
+		return ""
+	if state.flow.phase != LevelFlowState.Phase.PLAY or state.frog.lives != 3 or state.attachment.current_entity_index != -1:
+		return "Whole-map hopping left normal unattached PLAY after startup"
+	if state.frog.cell not in [scenario.level.spawn_cell, scenario.level.spawn_cell + Vector2i.RIGHT]:
+		return "Whole-map hopping left the validated spawn-row cells"
+	for hop: int in 16:
+		var at: int = 180 + hop * 24
+		if state.tick_index < at + 12 or state.tick_index >= at + 24:
+			continue
+		var expected: Vector2i = scenario.level.spawn_cell + (Vector2i.RIGHT if hop % 2 == 0 else Vector2i.ZERO)
+		if state.frog.mode != FrogMode.STATIONARY or state.frog.cell != expected:
+			return "Whole-map hopping did not land at the expected cell after hop %d" % hop
+		landed[hop] = state.frog.cell
+	return ""
 
 func _stats(samples: PackedFloat64Array) -> Dictionary:
 	var sorted: PackedFloat64Array = samples.duplicate()

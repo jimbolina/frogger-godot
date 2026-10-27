@@ -182,7 +182,7 @@ func test_primitive_hit_drives_traffic_splat_on_the_following_update() -> void:
 	script.root_id = 1
 	script.programs[1] = PackedInt32Array([34, 0, 0, 0, 0, 38])
 	script.names[1] = "SCRIPT_ORG_CAR_BLUE"
-	script.callbacks[0] = "SCRIPT_CB_FROG_TRAFFIC_SPLAT"
+	script.callbacks[0] = EntityScriptDefinition.CallbackKind.FROG_TRAFFIC_SPLAT
 	level.entity_collision.entities[0].script_definition = script
 	level.entity_collision.entities[0].action_lengths = PackedInt32Array([1])
 	var run: GameplayRun = GameplayRun.create(level)
@@ -199,3 +199,86 @@ func test_primitive_hit_drives_traffic_splat_on_the_following_update() -> void:
 	assert_eq(TickEvent.trace_lines(second.events).count("entity:2:sound:13:0:0:0"), 1)
 	assert_eq(second.control_snapshot.entities.updates[0].previous_flags & 64, 64)
 	assert_true(second.final_snapshot.attachment.entity_hit_indices.is_empty())
+
+func test_form_block_callback_restores_stationary_position_without_a_death() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision.contacts[0].primitives[0].reaction = 3
+	level.entity_collision.contacts[0].callback_kind = FormCallback.Kind.BLOCK
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	var result: TickResult = run.step(TickCommand.new())
+	assert_eq(result.error, "")
+	if not result.error.is_empty():
+		return
+	assert_eq(result.final_snapshot.frog.mode, FrogMode.STATIONARY)
+	assert_eq(result.final_snapshot.frog.remaining_ticks, 1)
+	assert_eq(result.final_snapshot.frog.flags & (FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY), FrogFlags.JUMP_TO_ENTITY | FrogFlags.JUMP_FROM_ENTITY)
+	assert_eq(result.final_snapshot.attachment.entity_hit_indices, PackedInt32Array([2]))
+
+func test_form_callback_mutation_rolls_back_after_late_failure() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision.contacts[0].primitives[0].reaction = 3
+	level.entity_collision.contacts[0].callback_kind = FormCallback.Kind.BLOCK
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	run._animation.error = "late callback failure"
+	var failed: TickResult = run.step(TickCommand.new())
+	assert_eq(failed.error, "late callback failure")
+	assert_true(failed.events.is_empty())
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+	run._animation.error = ""
+	assert_eq(run.step(TickCommand.new()).error, "")
+
+class RejectTongueCommit extends TickGuard:
+	func check(phase: Phase, _candidate: TickGuardCandidate) -> String:
+		return "late tongue failure" if phase == Phase.FINAL else ""
+
+func test_tongue_collection_reward_and_pose_roll_back_then_commit_once() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision.entities[0].behavior.tongueable = true
+	level.entity_collision.entities[0].bonus_kind = FormCallback.Kind.ORG_FLY_SCORE
+	level.entity_collision.entities[0].flags = EntityDefinition.NO_COLLISION
+	level.entity_collision.contacts[0].entity_flags = EntityDefinition.NO_COLLISION
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	var session := DemoPlaybackSession.new()
+	var inputs := PackedByteArray()
+	inputs.resize(22)
+	inputs.fill(128)
+	inputs[0] = 144
+	assert_eq(session.configure(22, inputs), "")
+	for tick: int in 19:
+		var result: TickResult = run.step(session.command(tick))
+		assert_eq(result.error, "")
+		if not result.error.is_empty():
+			return
+		assert_eq(session.accept(result), "")
+	assert_eq(run.snapshot().tongue.section, 1)
+	assert_eq(run.snapshot().flow.score, 0)
+	var before: EntitySnapshot = run.snapshot().entities.entities[0]
+	run._tick_guard = RejectTongueCommit.new()
+	var pending: TickCommand = session.command(19)
+	var failed: TickResult = run.step(pending)
+	assert_eq(failed.error, "late tongue failure")
+	assert_eq(failed.consumed_demo_byte, -1)
+	assert_true(failed.events.is_empty())
+	assert_eq(session.input_cursor, 19)
+	assert_eq(session.elapsed_ticks, 19)
+	assert_eq(run.snapshot().flow.score, 0)
+	assert_eq(run.snapshot().tongue.section, 1)
+	assert_eq(run.snapshot().entities.entities[0].matrix12, before.matrix12)
+	assert_eq(run.snapshot().entities.entities[0].entity_flags, before.entity_flags)
+	run._tick_guard = null
+	var collected: TickResult = run.step(pending)
+	assert_eq(collected.error, "")
+	assert_eq(session.accept(collected), "")
+	assert_eq(run.snapshot().flow.score, 250)
+	assert_eq(run.snapshot().tongue.mode, TongueState.Mode.IDLE)
+	assert_ne(run.snapshot().entities.entities[0].entity_flags & EntityDefinition.HIDDEN, 0)
+	assert_eq(TickEvent.trace_lines(collected.events).count("sound:5:0:0:0"), 1)
+	var following: TickResult = run.step(session.command(20))
+	assert_eq(following.error, "")
+	assert_eq(session.accept(following), "")
+	assert_eq(run.snapshot().flow.score, 250)
+	assert_false(TickEvent.trace_lines(following.events).has("sound:5:0:0:0"))

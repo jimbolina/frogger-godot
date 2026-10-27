@@ -131,6 +131,9 @@ func test_static_frog_cache_keeps_previous_root_for_repeated_actual_cel() -> voi
 	assert_eq(candidate.refresh(definition, 0, 2, moved), "")
 	assert_eq(candidate.probes.points[0], Vector3i(111, -1, 3))
 	assert_eq(pose.probes.points[0], Vector3i(1, -1, 3))
+	assert_eq(candidate.refresh(definition, 0, -1, IDENTITY), "")
+	assert_eq(candidate.probes.points[0], Vector3i(111, -1, 3))
+	assert_eq(candidate.actual_cel, 1)
 	assert_ne(candidate.refresh(definition, 0, 4, moved), "")
 	assert_eq(candidate.probes.points[0], Vector3i(111, -1, 3))
 
@@ -147,3 +150,69 @@ func test_detached_definition_and_samples_reject_invalid_dependencies() -> void:
 	assert_ne(copied.validate(), "")
 	assert_ne(FrogCollisionQuery.sample(definition, 1, 0, IDENTITY).error, "")
 	assert_ne(FrogCollisionQuery.sample(definition, 0, 9, IDENTITY).error, "")
+
+func test_collected_gold_omits_model_primitives_but_keeps_form_fallback() -> void:
+	var gold := EntityDefinition.new()
+	gold.entity_index = 0
+	gold.behavior = EntityBehaviorCatalog.resolve("GEN_GOLD_FROG")
+	gold.behavior.execution = EntityBehavior.Execution.CONTACT
+	gold.form_flags = 16
+	gold.action_lengths = PackedInt32Array([4])
+	var definitions: Array[EntityDefinition] = [gold]
+	var run: EntityRun = EntityRun.create(definitions)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var contact := FormContactDefinition.new()
+	contact.entity_index = 0
+	contact.radius_squared = 10000
+	contact.dimensions = Vector2i.ONE
+	contact.offsets = Vector2i(-128, -128)
+	contact.height = -10
+	contact.max_y = 10
+	contact.grid_flags = PackedInt32Array([GridSquareFlags.USABLE])
+	var primitive := EntityPrimitiveDefinition.new()
+	primitive.half_size = Vector3i(10, 10, 10)
+	contact.primitives.append(primitive)
+	var state := GameplayState.new()
+	state.frog.frog_collision_pose = FrogCollisionPose.new()
+	state.frog.frog_collision_pose.probes = _points([Vector3i.ZERO])
+	var frog := Frog.new()
+	var pose: EntitySnapshot = run.entity_snapshot(0)
+	assert_true(pose.model_present)
+	assert_eq(frog.contacts.contact_primitive(frog, state, contact, pose).status, EntityPrimitiveQuery.CONTACT)
+	var environment := EntityEnvironmentState.new()
+	environment.checkpoint_positions.resize(5)
+	assert_eq(run.reset_in_level(false, environment, true), "")
+	pose = run.entity_snapshot(0)
+	assert_true(pose.live)
+	assert_false(pose.model_present)
+	assert_null(pose.animation)
+	assert_eq(frog.contacts.contact_primitive(frog, state, contact, pose).status, EntityPrimitiveQuery.MISS)
+	assert_eq(FormContactQuery.query(contact, pose, Vector3i.ZERO).status, FormContactResult.CONTACT)
+	var collision := EntityCollisionDefinition.new()
+	collision.entities = definitions
+	collision.contacts.append(contact)
+	collision.group_dimensions = Vector2i.ONE
+	collision.group_size = Vector2i(1024, 1024)
+	frog.entity_collision = collision
+	state.entities = run.snapshot()
+	var result := TickResult.new()
+	assert_eq(frog.contacts.contact_entities(frog, state, result), "")
+	assert_eq(result.primitive_contacts.size(), 1)
+	assert_eq(result.primitive_contacts[0].status, EntityPrimitiveQuery.MISS)
+	assert_eq(result.entity_contacts.size(), 1)
+	assert_eq(result.entity_contacts[0].contact.status, FormContactResult.CONTACT)
+	assert_eq(state.frog.flags & FrogFlags.MUST_DIE, 0)
+	assert_eq(run.step(0), "")
+	assert_false(run.entity_snapshot(0).model_present)
+	var detached: EntitySnapshot = run.entity_snapshot(0)
+	detached.model_present = true
+	assert_false(run.entity_snapshot(0).model_present)
+	var trace: Dictionary = TerrainTrace.facts(run.entity_snapshot(0), true)
+	var traced_model: bool = trace.model_present
+	assert_false(traced_model)
+	assert_eq(run.reset_in_level(false, environment, false), "")
+	pose = run.entity_snapshot(0)
+	assert_true(pose.model_present)
+	assert_eq(frog.contacts.contact_primitive(frog, state, contact, pose).status, EntityPrimitiveQuery.CONTACT)

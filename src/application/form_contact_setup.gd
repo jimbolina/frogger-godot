@@ -81,16 +81,22 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		var selected_model: MofFile = models_by_form.get(span.form_id)
 		if form != null:
 			definition.death_type = form.death_type
+			definition.callback_kind = FormCallbackCatalog.resolve(entity.build_id, form.collision_callback)
 		var reason: String = ""
-		if grid == null:
+		if form != null and form.has_flag(FormBookEntry.FLAG_NO_MODEL) and definition.callback_kind not in [FormCallback.Kind.NONE, FormCallback.Kind.UNKNOWN]:
+			definition.sphere_callback = true
+			definition.has_form_data = false
+			definition.radius_squared = form.radius_squared
+		elif form != null and form.has_flag(FormBookEntry.FLAG_NO_MODEL) and definition.callback_kind == FormCallback.Kind.NONE:
+			definition.has_form_data = false
+			definition.radius_squared = form.radius_squared
+		elif grid == null:
 			reason = "Entity references an invalid FORM grid"
 		elif form == null:
 			reason = "Authored form does not resolve"
 		elif not entity.behavior.has_form_contact():
 			reason = "Entity behavior has no bounded contact transform"
-		elif entity.flags & EntityDefinition.NO_COLLISION:
-			reason = "Entity disables collision"
-		elif form.collision_callback != 0:
+		elif definition.callback_kind == FormCallback.Kind.UNKNOWN:
 			reason = "Form collision callback address has no verified mapping"
 		elif form.has_flag(FormBookEntry.FLAG_NO_MODEL):
 			reason = "Form has no model"
@@ -106,6 +112,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 				definition.radius_squared = radius[0]
 				definition.primitives = primitives.primitives
 				definition.has_form_data = false
+		elif grid.data_count == 0 and grid.data.is_empty() and selected_model != null and selected_model.kind == MofFile.Kind.DUMMY:
+			definition.has_form_data = false
+			definition.radius_squared = form.radius_squared
 		elif grid.data_count < 1 or grid.data.size() != grid.data_count:
 			reason = "FORM grid has no usable data record"
 		elif grid.dimensions.x <= 0 or grid.dimensions.y <= 0:
@@ -143,7 +152,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		result.definitions.append(definition)
 		if not reason.is_empty():
 			result._issue(reason, entity, definition)
-		elif grid.data_count > 1:
+		elif grid != null and grid.data_count > 1:
 			result._issue("Additional FORM_DATA records are retained; contact uses the first", entity, definition, "additional_form_data")
 	return result
 

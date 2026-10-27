@@ -320,3 +320,46 @@ func _route(name: String, ticks: int, commands: Dictionary, preset: String = Org
 func _number(value: Variant) -> int:
 	var number: float = value
 	return int(number)
+
+func test_whole_map_single_start_vehicle_death_completes_respawn() -> void:
+	var scenario: TerrainScenario = _scenario("")
+	assert_eq(scenario.error, "")
+	if not scenario.error.is_empty():
+		return
+	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var hopped: bool = false
+	var died: bool = false
+	var respawned: bool = false
+	for tick: int in 450:
+		var before: GameplayState = run.snapshot()
+		var command := TickCommand.new()
+		command.tick_index = tick
+		if not hopped and before.flow.phase == LevelFlowState.Phase.PLAY and before.frog.start_timer == 0 and before.frog.mode == FrogMode.STATIONARY:
+			command.pressed_mask = 1
+			command.held_mask = 1
+			hopped = true
+		var result: TickResult = run.step(command)
+		assert_eq(result.error, "", "single-start vehicle death tick %d" % tick)
+		if not result.error.is_empty():
+			return
+		var state: GameplayState = result.final_snapshot
+		if state.flow.phase == LevelFlowState.Phase.DEATH:
+			died = true
+		if died and state.flow.phase == LevelFlowState.Phase.PLAY:
+			respawned = true
+			assert_eq(state.frog.lives, 2)
+			assert_eq(state.animation.cel, -1)
+			assert_not_null(state.frog.frog_collision_pose.probes)
+			var next := TickCommand.new()
+			next.tick_index = tick + 1
+			var resumed: TickResult = run.step(next)
+			assert_eq(resumed.error, "")
+			if resumed.error.is_empty():
+				assert_eq(resumed.final_snapshot.animation.cel, 0)
+			break
+	assert_true(hopped)
+	assert_true(died)
+	assert_true(respawned)

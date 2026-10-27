@@ -60,6 +60,14 @@ func reset(start: PathStart = null) -> String:
 	_state = candidate
 	return ""
 
+## Resets authored motion while preserving the enclosing simulation tick sequence.
+func reset_motion(start: PathStart) -> String:
+	var tick: int = _state.tick_index if _state != null else 0
+	var issue: String = reset(start)
+	if issue.is_empty():
+		_state.tick_index = tick
+	return issue
+
 ## Advances exactly one source path update; errors leave the prior snapshot intact.
 func step(tick_index: int) -> String:
 	if _state == null:

@@ -1,10 +1,13 @@
 class_name GameplayRun
 extends RefCounted
 ## Ordered gameplay transaction: creates candidates, sequences systems and commits.
-## Owns detached frog/entity candidates; game-flow progression remains external.
+## Owns detached frog/entity, reward and optional level-flow candidates.
 
 const TICKS_PER_SECOND: int = 30
 var error: String = ""
+var _sound_definitions: Array[LogicalSoundDefinition] = []
+var _level_time: int = 2250
+var _demo_playback: bool = false
 var _grid: GridDefinition = null
 var _default_cell: Vector2i = Vector2i.ZERO
 var _default_direction: int = 0
@@ -36,6 +39,22 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> Gameplay
 		return run
 	run.error = run._copy_grid(level.grid)
 	if not run.error.is_empty():
+		return run
+	if not level.rewards.is_empty():
+		if level.rewards.size() != 24 or level.rewards.has(null):
+			run.error = "Gameplay requires all 24 non-null reward definitions"
+			return run
+		run._frog.rewards.clear()
+		for reward: RewardDefinition in level.rewards:
+			run._frog.rewards.append(reward.copy())
+	run._frog.music_pitch_offset = level.music_pitch_offset
+	for sound: LogicalSoundDefinition in level.sounds:
+		run._sound_definitions.append(sound.copy())
+	run._frog.flow_enabled = level.flow_enabled
+	run._level_time = level.level_time
+	run._demo_playback = level.demo_playback
+	if level.level_time < 0:
+		run.error = "Level timer must be nonnegative"
 		return run
 	run._default_cell = level.spawn_cell
 	run._default_direction = level.spawn_direction
@@ -122,6 +141,13 @@ func reset(initial: RunStart = null) -> String:
 	if not prepared.error.is_empty():
 		return prepared.error
 	var state: GameplayState = prepared.state
+	if not _sound_definitions.is_empty():
+		state.sound = LogicalSoundState.create(_sound_definitions)
+		if not state.sound.error.is_empty():
+			return state.sound.error
+	state.flow.remaining_time = _level_time
+	if _frog.flow_enabled and state.frog.start_mode == RunStart.Mode.SINGLE_START:
+		state.flow.phase = LevelFlowState.Phase.START
 	var controller_directions: PackedInt32Array = prepared.directions
 	if _tick_guard != null:
 		var guard_error: String = _check_guard(TickGuard.Phase.RESET_WORLD, state)
@@ -165,6 +191,9 @@ func reset(initial: RunStart = null) -> String:
 			return entity_error
 		state.entities = candidate_entities.snapshot()
 		state.entity_environment = _entity_collision.environment.copy() if _entity_collision.environment != null else null
+	var sound_issue: String = _synchronize_sound_entities(state)
+	if not sound_issue.is_empty():
+		return sound_issue
 	_state = state
 	_frog.controller_directions = controller_directions
 	_camera = camera
@@ -205,8 +234,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if (command.recorded_input_byte >= 0 or command.recorded_input_exhausted) and (command.pressed_mask != 0 or command.held_mask != 0):
 		result.error = "Recorded demo input cannot be mixed with live controller masks"
 		return result
-	if command.pressed_mask < 0 or command.held_mask < 0 or (command.pressed_mask | command.held_mask) & ~127:
-		result.error = "Terrain commands support directional, super-hop and camera-turn masks"
+	if command.pressed_mask < 0 or command.held_mask < 0 or (command.pressed_mask | command.held_mask) & ~255:
+		result.error = "Terrain commands support directional, super-hop, tongue and camera-turn masks"
 		return result
 	if _camera == null and (command.pressed_mask | command.held_mask) & 96:
 		result.error = "Camera-turn commands require an integrated camera definition"
@@ -226,6 +255,16 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		if not result.error.is_empty():
 			return _failed_tick(result, result.error)
 	next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
+	if next.sound != null:
+		var sound_issue: String = _synchronize_sound_entities(next)
+		if sound_issue.is_empty():
+			sound_issue = next.sound.advance(_candidate_random)
+		if not sound_issue.is_empty():
+			return _failed_tick(result, sound_issue)
+		if next.entities != null:
+			for entity: EntitySnapshot in next.entities.entities:
+				var moving: LogicalMovingSound = next.sound.moving_for(entity.entity_index)
+				_candidate_entities.set_sound_state(entity.entity_index, moving != null, moving != null and moving.voice_tag >= 0)
 	var entity_issue: String = _update_entity_scripts(next, result.events)
 	if not entity_issue.is_empty():
 		return _failed_tick(result, entity_issue)
@@ -322,11 +361,28 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if _candidate_entities != null:
 		_candidate_entities.advance_animations()
 		next.entities = _candidate_entities.snapshot()
+	var tongue_issue: String = TongueController.advance(_frog, next, _candidate_entities, result.events)
+	if not tongue_issue.is_empty():
+		return _failed_tick(result, tongue_issue)
 	if _candidate_entities != null and _entity_collision.lifecycle != null:
-		var visibility_error: String = _candidate_entities.apply_visibility(next.camera)
+		var visibility_error: String = _candidate_entities.apply_visibility(next.camera, next.entity_environment, next.flow.gold_collected)
 		if not visibility_error.is_empty():
 			return _failed_tick(result, visibility_error)
 		next.entities = _candidate_entities.snapshot()
+		var sound_issue: String = _synchronize_sound_entities(next)
+		if not sound_issue.is_empty():
+			return _failed_tick(result, sound_issue)
+	if _frog.flow_enabled:
+		var checkpoint_flow: bool = next.flow.phase == LevelFlowState.Phase.CHECKPOINT
+		var flow: LevelFlow = LevelFlow.advance(_frog, next, _candidate_entities, result.events, _demo_playback, _candidate_random, _level_time, command.recorded_input_byte < 0 and bool(command.pressed_mask & TickCommand.SUPER_HOP))
+		if not flow.error.is_empty():
+			return _failed_tick(result, flow.error)
+		if flow.reset != LevelFlow.Reset.NONE:
+			var reset_issue: String = _reset_in_level(next, flow.reset == LevelFlow.Reset.CHECKPOINT, result.events)
+			if not reset_issue.is_empty():
+				return _failed_tick(result, reset_issue)
+		if checkpoint_flow or flow.reset != LevelFlow.Reset.NONE:
+			next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
 	next.rng_state = _candidate_random.state
 	next.diagnostics.rng_draw_count = _candidate_random.draw_count
 	if _tick_guard != null:
@@ -354,6 +410,9 @@ func _update_entity_scripts(state: GameplayState, events: Array[TickEvent]) -> S
 	for slot: int in _candidate_entities.update_slots():
 		if not _candidate_entities.begin_update(slot, state.attachment.current_entity_index):
 			state.entities = _candidate_entities.snapshot()
+			var sound_issue: String = _synchronize_sound_entities(state)
+			if not sound_issue.is_empty():
+				return sound_issue
 			continue
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 		var previous_flags: int = state.entities.entities[slot].live_flags
@@ -366,6 +425,7 @@ func _update_entity_scripts(state: GameplayState, events: Array[TickEvent]) -> S
 			events.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN).for_entity(_entity_collision.entities[slot].entity_index))
 		_candidate_entities.finish_update(slot, previous_flags, _candidate_random, state.requests.sound_requests, state.entity_environment, killed, _capture_phases)
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+	_candidate_entities.sync_update_observations(state.entities)
 	return ""
 
 func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events: Array[TickEvent]) -> String:
@@ -375,38 +435,79 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 		var background: EntityCustomResult = _candidate_entities.update_custom(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
 		if not background.error.is_empty():
 			return background.error
+		if background.environment.collision_disabled != state.entity_environment.collision_disabled:
+			_candidate_entities.apply_checkpoint_collision(background.environment.collision_disabled)
+			state.entities = _candidate_entities.snapshot()
 		state.entity_environment = background.environment
 		_candidate_random.state = background.random.state
 		_candidate_random.draw_count = background.random.draw_count
 		_candidate_random.consumers.assign(background.random.consumers)
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+		if background.death_animation >= 0:
+			_frog.kill(state, background.death_animation, false, events)
 		for request: TickEvent in background.entity.requests:
+			if request.kind == TickEvent.Kind.REWARD:
+				if request.reward_id < 0 or request.reward_id >= _frog.rewards.size():
+					return "Entity requested an unknown reward"
+				var reward_issue: String = GameplayRewards.apply(_frog.rewards[request.reward_id], state, events, _candidate_random)
+				if not reward_issue.is_empty():
+					return reward_issue
+			var sound_issue: String = _apply_entity_sound(state, background.entity, request)
+			if not sound_issue.is_empty():
+				return sound_issue
 			events.append(request.for_entity(definition.entity_index))
 	if definition.script_definition == null:
 		return ""
 	var context := EntityUpdateContext.new()
+	var runtime: EntityScriptRuntime = null
+	if state.sound != null:
+		runtime = EntityScriptRuntime.new()
+		runtime.state = state
+		runtime.frog = _frog
+		runtime.events = events
+		runtime.entity_index = definition.entity_index
+		runtime.generation = state.entities.entities[slot].generation
+		context.sound_allocation_enabled = state.flow.phase != LevelFlowState.Phase.GAME_OVER
+		context.moving_allocation_enabled = context.sound_allocation_enabled and state.frog.mode not in [FrogMode.HIT_CHECKPOINT, FrogMode.CHECKPOINT_COLLECTED]
+		var moving: LogicalMovingSound = state.sound.moving_for(definition.entity_index)
+		context.moving_voice_active = moving != null and moving.voice_tag >= 0
 	context.entity_index = definition.entity_index
 	context.form_id = definition.form_id
 	context.base_matrix = state.entities.entities[slot].matrix12.duplicate()
 	context.frog_position = Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
+	context.frog_mode = state.frog.mode
 	context.previous_hit = bool(previous_flags & EntityLiveFlags.HIT_FROG_0)
 	context.previous_carry = bool(previous_flags & EntityLiveFlags.CARRIES_FROG_0)
 	context.has_path = definition.path_definition != null
 	context.no_display = bool(state.entities.entities[slot].entity_flags & EntityDefinition.NO_DISPLAY)
+	context.environment = state.entity_environment
 	context.fade_bounds = PackedInt32Array([_frog.collision_bounds.position.x, _frog.collision_bounds.end.x, _frog.collision_bounds.position.y, _frog.collision_bounds.end.y])
-	var update: EntityUpdateResult = _candidate_entities.update_candidate_script(slot, context, _candidate_random)
+	var update: EntityUpdateResult = _candidate_entities.update_candidate_script(slot, context, _candidate_random, runtime)
 	if not update.error.is_empty():
 		return "Entity %d script: %s" % [definition.entity_index, update.error]
+	if update.environment != null:
+		state.entity_environment = update.environment
+	if update.checkpoint_collision_changed:
+		_candidate_entities.apply_checkpoint_collision(update.environment.collision_disabled)
+		state.entities = _candidate_entities.snapshot()
 	if update.random != _candidate_random:
 		_candidate_random.state = update.random.state
 		_candidate_random.draw_count = update.random.draw_count
 		_candidate_random.consumers.assign(update.random.consumers)
-	for request: TickEvent in update.requests:
-		events.append(request.for_entity(definition.entity_index))
-		if request.kind == TickEvent.Kind.SOUND:
-			state.requests.sound_requests += 1
-	if update.drown:
-		_frog.kill(state, FrogAnimationCatalog.DROWN, false, events)
+	for effect: EntityScriptEffect in update.effects:
+		if effect.applied:
+			continue
+		if effect.eject:
+			var issue: String = _frog.eject(state, effect.grid_delta, effect.jump_duration, events)
+			if not issue.is_empty():
+				return issue
+		elif effect.death_animation >= 0:
+			_frog.kill(state, effect.death_animation, false, events)
+		else:
+			var request: TickEvent = effect.notification
+			events.append(request.for_entity(definition.entity_index))
+			if request.kind == TickEvent.Kind.SOUND:
+				state.requests.sound_requests += 1
 	state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
 	return ""
 
@@ -449,6 +550,83 @@ func _copy_grid(source: GridDefinition) -> String:
 	_grid = grid
 	return ""
 
+func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickEvent]) -> String:
+	if _candidate_entities != null:
+		var entity_issue: String = _candidate_entities.reset_in_level(checkpoint, state.entity_environment, state.flow.gold_collected)
+		if not entity_issue.is_empty():
+			return entity_issue
+		state.entities = _candidate_entities.snapshot()
+		var sound_issue: String = _synchronize_sound_entities(state)
+		if not sound_issue.is_empty():
+			return sound_issue
+	var start := RunStart.new()
+	start.spawn_cell = state.frog.initial_cell
+	start.spawn_direction = _default_direction
+	start.start_mode = RunStart.Mode.FAST_RESET
+	start.lives = state.frog.lives
+	var prepared: Frog.StartResult = _frog.prepare_start(start, _default_cell, _default_direction)
+	if not prepared.error.is_empty():
+		return prepared.error
+	var old: FrogState = state.frog
+	state.frog = prepared.state.frog
+	state.frog.velocity_16 = old.velocity_16
+	state.frog.current_input = old.current_input
+	state.frog.target_16 = old.target_16
+	state.frog.buffered_direction = old.buffered_direction
+	state.frog.user_target_cell = old.user_target_cell
+	state.frog.animation_condition_counter = old.animation_condition_counter
+	state.frog.no_input_timer = old.no_input_timer
+	state.frog.scale = old.scale
+	state.frog.scale_timer = old.scale_timer
+	state.frog.death_count = old.death_count
+	state.frog.death_equate = old.death_equate
+	state.frog.start_timer = 30
+	state.frog.matrix12 = TerrainMatrix.update(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, state.frog.world_position.x, state.frog.world_position.y, state.frog.world_position.z]), state.frog.flags, state.frog.direction, null)
+	state.attachment = AttachmentState.new()
+	_frog.sync_facts(state)
+	state.tongue.reset()
+	state.completed = false
+	state.requests.life_decrement_requested = false
+	state.requests.game_mode_request = -1
+	state.flow.phase = LevelFlowState.Phase.PLAY
+	state.flow.remaining_time = _level_time
+	state.flow.elapsed_time = 0
+	state.flow.timer_speed = 65536
+	state.flow.timer_fraction = 0
+	state.flow.timer_count_up = true
+	state.flow.timeout_ticks = 60
+	state.flow.bonus_stage = 0
+	_update_camera_zone(state)
+	if _candidate_animation != null:
+		_candidate_animation.initialise(FrogAnimationCatalog.PANT)
+		state.frog.no_input_timer = _candidate_animation.update_scripts(state.frog.no_input_timer)
+		if not _candidate_animation.error.is_empty():
+			return _candidate_animation.error
+		state.animation = _candidate_animation.state.copy()
+		state.frog.animation_condition_counter = _candidate_animation.context.if_counter
+	if _camera_definition != null:
+		_candidate_camera = GameplayCamera.create(_camera_definition, state.frog.world_position, true)
+		if not _candidate_camera.error.is_empty():
+			return _candidate_camera.error
+		var input := GameplayCameraTick.new()
+		input.frog_world = state.frog.world_position
+		input.frog_mode = state.frog.mode
+		input.old_y = state.frog.old_y
+		input.target_y = state.frog.target_y
+		input.start_timer = 30
+		input.camera_zone = ZoneQueries.definition_for(_camera_zones, state.frog.camera_zone_index)
+		var camera_issue: String = _candidate_camera.step(input)
+		if not camera_issue.is_empty():
+			return camera_issue
+		state.camera = _candidate_camera.snapshot()
+	if old.frog_collision_pose != null:
+		state.frog.frog_collision_pose = old.frog_collision_pose.copy()
+		var pose_issue: String = state.frog.frog_collision_pose.refresh(_entity_collision.frog_collision, state.animation.action, state.animation.cel, state.frog.matrix12)
+		if not pose_issue.is_empty():
+			return pose_issue
+	events.append(TickEvent.transition(LevelFlowState.Phase.PLAY, state.flow.last_checkpoint if checkpoint else -1))
+	return ""
+
 func _failed_tick(result: TickResult, issue: String) -> TickResult:
 	result.error = issue
 	result.consumed_demo_byte = -1
@@ -466,8 +644,7 @@ func _failed_tick(result: TickResult, issue: String) -> TickResult:
 
 func _sync_systems(state: GameplayState) -> void:
 	if _has_entity_updates:
-		_candidate_entities.set_contact_flags(state.attachment.entity_hit_indices, state.attachment.entity_carry_indices)
-		state.entities = _candidate_entities.snapshot()
+		_candidate_entities.set_contact_flags(state.attachment.entity_hit_indices, state.attachment.entity_carry_indices, state.entities)
 	state.camera = _candidate_camera.snapshot() if _candidate_camera != null else null
 	state.animation = _candidate_animation.state.copy() if _candidate_animation != null else null
 	state.rng_state = _candidate_random.state
@@ -476,3 +653,45 @@ func _sync_systems(state: GameplayState) -> void:
 
 func _check_guard(phase: TickGuard.Phase, state: GameplayState) -> String:
 	return _tick_guard.check(phase, TickGuardCandidate.from_state(state, phase == TickGuard.Phase.ENTITY_UPDATE)) if _tick_guard != null else ""
+
+func _apply_entity_sound(state: GameplayState, entity: EntitySnapshot, request: TickEvent) -> String:
+	if state.sound == null:
+		return ""
+	var runtime := EntityScriptRuntime.new()
+	runtime.state = state
+	runtime.entity_index = entity.entity_index
+	runtime.generation = entity.generation
+	return runtime.sound(request, _candidate_random, Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11]))
+
+func _synchronize_sound_entities(state: GameplayState) -> String:
+	if state.sound == null:
+		return ""
+	state.sound.listener = Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
+	state.sound.old_listener = state.sound.listener
+	if state.entities == null:
+		return ""
+	var by_id: Dictionary[int, EntitySnapshot] = {}
+	for entity: EntitySnapshot in state.entities.entities:
+		by_id[entity.entity_index] = entity
+	var previous: Array[LogicalMovingSound] = state.sound.moving.duplicate()
+	for moving: LogicalMovingSound in previous:
+		var entity: EntitySnapshot = by_id.get(moving.owner)
+		if entity == null or not entity.live or entity.generation != moving.generation:
+			state.sound.retire_moving(moving.owner)
+		else:
+			moving.position = Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+			moving.old_position = moving.position
+	var ordered: Array[EntitySnapshot] = []
+	for event: TickEvent in state.entities.lifecycle_events:
+		if event.kind == TickEvent.Kind.CREATE and by_id.has(event.entity_index):
+			ordered.append(by_id[event.entity_index])
+	if state.tick_index == 0 and ordered.is_empty():
+		ordered.assign(state.entities.entities)
+	for entity: EntitySnapshot in ordered:
+		if not entity.live or entity.custom_state == null or entity.custom_state.moving_sound.is_empty() or state.sound.moving_for(entity.entity_index) != null:
+			continue
+		var sound: PackedInt32Array = entity.custom_state.moving_sound
+		var issue: String = _apply_entity_sound(state, entity, TickEvent.moving_sound(sound[0], sound[1], sound[2]))
+		if not issue.is_empty():
+			return issue
+	return ""

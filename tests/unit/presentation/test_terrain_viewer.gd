@@ -205,6 +205,20 @@ func test_resize_updates_terrain_and_every_prepared_frog_texture_material() -> v
 		assert_eq(scale, Vector2(1, 0.75))
 	assert_almost_eq(viewer._camera.fov, GameplayProjection.vertical_fov_degrees(Vector2i(800, 480)), 0.00001)
 
+func test_scenario_tongue_input_is_detached_and_unknown_mask_is_rejected() -> void:
+	var scenario: TerrainScenario = TerrainScenario.from_object({"builtin": "normal", "tick_limit": 2,
+		"commands": [{"tick": 0, "pressed": TickCommand.TONGUE, "held": TickCommand.TONGUE}]})
+	assert_eq(scenario.error, "")
+	var command: TickCommand = scenario.command_at(0)
+	assert_eq(command.pressed_mask, TickCommand.TONGUE)
+	command.pressed_mask = 0
+	command.held_mask = 0
+	assert_eq(scenario.command_at(0).pressed_mask, TickCommand.TONGUE)
+	assert_eq(scenario.command_at(0).held_mask, TickCommand.TONGUE)
+	var rejected: TerrainScenario = TerrainScenario.from_object({"builtin": "normal", "tick_limit": 2,
+		"commands": [{"tick": 0, "pressed": 256, "held": 0}]})
+	assert_string_contains(rejected.error, "0..255")
+
 func test_json_start_completion_roundtrip_uint32_inputs_and_atomic_refusal() -> void:
 	var authored: Dictionary = {"tick_limit": 4, "start": {"seed": 4294967295, "start_mode": 2},
 		"level": {"spawn_cell": [0, 0]},

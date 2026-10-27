@@ -70,3 +70,20 @@ FrogLord's `FroggerDemoFile` editor reads at most 1800 bytes and writes a fixed
 buffers. This reader preserves all supplied bytes, allowing extended player
 recordings while enforcing bounds during playback. Bit 2 remains uninterpreted;
 raw bits are never normalized by decoding. See the [demo golden specification](../../../tests/golden/specs/demos.md).
+
+## Sound metadata
+
+For `pc-retail-v3.0e`, sound initialization at `0x42358B` passes sample table
+`0x46F938`, group table `0x46F920`, and bank table `0x46F890` to `0x44BDC0`.
+`SoundTables` reads twelve bank resource pairs, four voice groups, and 174 sample
+records. PC sample records are 32 bytes: the frozen C sample fields occupy the
+first 24 bytes and two additional runtime pointers occupy the final eight.
+Supplied sample flags, bank/group assignments, notes and pitch-modulation values
+remain authoritative. The sixty checkpoint/completion pitch pairs at `0x470F20`
+are signed 32-bit values; application setup resolves their semitone offsets.
+
+The retail sample fields match frozen `sound.c` except sound 142, whose supplied
+flag is LOOPED while frozen C says REPEAT. Preserve the supplied flag. The
+independent [sound facts](../../../tests/golden/specs/sound.md) verify every row,
+the initialization code identity and bank sample lengths. Unknown groups,
+unsupported flags and missing selected-bank samples retain explicit diagnostics.

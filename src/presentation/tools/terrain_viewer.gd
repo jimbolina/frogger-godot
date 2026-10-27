@@ -26,6 +26,7 @@ var _previous: GameplayState
 var _current: GameplayState
 var _ground: Node3D
 var _frog: MeshInstance3D
+var _tongue_view: TongueView
 var _camera: Camera3D
 var _label: Label
 var _map_instance: MapMesh.Instance
@@ -47,6 +48,9 @@ var _host_step: bool = false
 var _overlay_key: Array = []
 var threaded_playback: bool = false
 var last_tick_usec: int = 0
+var _performance_started_usec: int = 0
+var _performance_frames: int = 0
+var _performance_text: String = "FPS measuring…"
 var _motion := TerrainMotion.new()
 
 func _ready() -> void:
@@ -280,6 +284,8 @@ func draw_state(fraction: float) -> void:
 	_update_projection()
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing else 1.0
 	var frog_transform: Transform3D = _motion.frog(weight)
+	if _tongue_view != null:
+		_tongue_view.draw_state(_current)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
 	if _frog_model != null:
 		_frog_model.transform = frog_transform
@@ -336,8 +342,8 @@ func draw_state(fraction: float) -> void:
 						model.player.frame = entity.animation.cel
 					model.capture_pose(not playing)
 				model.render(weight)
-				model.visible = model.visible and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
-	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size]
+				model.visible = entity.live and not entity.pop_allocated and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
+	var overlay_key: Array = [_current.tick_index, playing, replay_commands, last_error, scenario, _projection_size, _performance_text]
 	if overlay_key == _overlay_key:
 		return
 	_overlay_key = overlay_key
@@ -383,17 +389,35 @@ func draw_state(fraction: float) -> void:
 			for contact: EntityPrimitiveContact in _last_primitive_contacts:
 				if contact.status == EntityPrimitiveQuery.CONTACT:
 					_label.text += "cuboid #%d | frog part %d point %d\n" % [contact.entity_index, contact.frog_part_index, contact.hilite_index]
+	if scenario.level.flow_enabled:
+		var checkpoint_count: int = 0
+		for checkpoint: int in 5:
+			if _current.entity_environment != null and _current.entity_environment.collected & (1 << checkpoint):
+				checkpoint_count += 1
+		var phase_name: String = LevelFlowState.Phase.keys()[_current.flow.phase]
+		_label.text = "ORG1 | %s\nScore %d | Time %d | Lives %d | Checkpoints %d/5\n" % [phase_name, _current.flow.score, ceili(_current.flow.remaining_time / 30.0), _current.frog.lives, checkpoint_count]
 	var input_status: String = "REPLAY" if replay_commands else "LIVE"
 	input_status += " | running" if playing else " | paused"
 	if _current.completed:
 		input_status += " | run ended: R resets"
 	elif replay_commands and _current.tick_index >= scenario.tick_limit:
 		input_status += " | replay finished: Tab selects live input"
-	_label.text += input_status + "\nSpace play/pause | . step | R reset | I interpolate\nArrows hop | Shift super hop | Q/E camera | Tab replay/live\n" + last_error
+	_label.text += input_status + "\n" + _performance_text + "\nSpace play/pause | . step | R reset | I interpolate\nArrows hop | Shift super hop | Ctrl tongue | Q/E camera | Tab replay/live\n" + last_error
 
 func _process(delta: float) -> void:
 	if run == null or _current == null:
 		return
+	var now_usec: int = Time.get_ticks_usec()
+	if _performance_started_usec == 0:
+		_performance_started_usec = now_usec
+	else:
+		_performance_frames += 1
+		var elapsed_usec: int = now_usec - _performance_started_usec
+		if elapsed_usec >= 500000:
+			var frame_ms: float = float(elapsed_usec) / float(_performance_frames) / 1000.0
+			_performance_text = "FPS %.1f | frame %.1f ms | last simulation tick %.1f ms" % [1000.0 / frame_ms, frame_ms, last_tick_usec / 1000.0]
+			_performance_started_usec = now_usec
+			_performance_frames = 0
 	_host.begin_frame(delta)
 	var completed: TickResult = _host.poll()
 	if completed != null:
@@ -444,6 +468,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_DOWN: action = TickCommand.SOUTH
 		KEY_LEFT: action = TickCommand.WEST
 		KEY_SHIFT: action = TickCommand.SUPER_HOP
+		KEY_CTRL: action = TickCommand.TONGUE
 		KEY_E: action = TickCommand.CAMERA_CLOCKWISE
 		KEY_Q: action = TickCommand.CAMERA_ANTICLOCKWISE
 	if action != 0:
@@ -490,6 +515,8 @@ func _build_scene() -> void:
 	_frog.mesh = marker
 	_frog.material_override = _material(Color(0.35, 1.0, 0.3))
 	add_child(_frog)
+	_tongue_view = TongueView.new()
+	add_child(_tongue_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -575,8 +602,6 @@ func _build_entity_visuals() -> void:
 	var files: Dictionary[int, MofFile] = {}
 	for slot: int in definitions.entities.size():
 		var entity: EntityDefinition = definitions.entities[slot]
-		if entity.flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY):
-			continue
 		var form: FormBookEntry = data.tables.theme_book().get_form(scenario.map_scene.map.general.theme, entity.form_id)
 		if form == null:
 			continue

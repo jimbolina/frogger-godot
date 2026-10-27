@@ -193,13 +193,25 @@ def parse_paths(data):
     if data[packet:packet + 4] != b"PATH":
         raise ValueError("PATH signature missing")
     count = number(data, packet + 4, "<I")
-    metadata, values = [], []
+    metadata, values, entity_lists = [], [], []
     types = [0, 0, 0]
     for path_index in range(count):
         path = number(data, packet + 8 + path_index * 4, "<I")
         entity_pointer = number(data, path, "<I")
         segments = number(data, path + 4, "<I")
         metadata.extend((path_index, path, entity_pointer, segments))
+        members = []
+        if entity_pointer:
+            cursor = entity_pointer
+            while True:
+                member = number(data, cursor, "<h")
+                cursor += 2
+                if member == -1:
+                    break
+                if member < 0:
+                    raise ValueError("negative PATH entity index")
+                members.append(member)
+        entity_lists.extend((path_index, len(members), *members))
         for segment_index in range(segments):
             offset = number(data, path + 8 + segment_index * 4, "<I")
             kind = number(data, offset, "<I")
@@ -220,7 +232,7 @@ def parse_paths(data):
             else:
                 for at in (8, 16):
                     values.extend(struct.unpack_from("<3h", data, offset + at))
-    return count, types, digest(metadata), digest(values)
+    return count, types, digest(metadata), digest(values), digest(entity_lists)
 
 
 def retail_rows(data_dir, version):
@@ -239,8 +251,8 @@ def retail_rows(data_dir, version):
     for resource_id, data in sorted(files.items()):
         name = archive.file_name(entries, resource_id)
         if name.upper().endswith(".MAP") and data[:4] == b"FROG":
-            count, types, metadata_hash, segment_hash = parse_paths(data)
-            yield (resource_id, name, count, *types, metadata_hash, segment_hash)
+            count, types, metadata_hash, segment_hash, entity_hash = parse_paths(data)
+            yield (resource_id, name, count, *types, metadata_hash, segment_hash, entity_hash)
 
 
 def main():
@@ -254,7 +266,7 @@ def main():
     if args.data_dir:
         with open(os.path.join(args.out_dir, "paths_retail.tsv"), "w", newline="", encoding="utf-8") as target:
             writer = csv.writer(target, delimiter="\t", lineterminator="\n")
-            writer.writerow(("resource_id", "name", "path_count", "spline_count", "arc_count", "line_count", "metadata_digest", "segment_digest"))
+            writer.writerow(("resource_id", "name", "path_count", "spline_count", "arc_count", "line_count", "metadata_digest", "segment_digest", "entity_list_digest"))
             writer.writerows(retail_rows(args.data_dir, args.version))
     if args.oracle:
         with open("tests/golden/fixtures/paths.json", encoding="utf-8") as source:

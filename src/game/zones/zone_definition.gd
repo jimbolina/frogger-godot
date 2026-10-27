@@ -2,6 +2,7 @@ class_name ZoneDefinition
 extends RefCounted
 ## Detached authored camera-zone bounds. Stored coordinates retain signed16 bits.
 
+const CHECKPOINT: int = 1 << 4
 const SEMIFORCED: int = 1 << 2
 const ABSOLUTE_Y: int = 1 << 3
 

@@ -53,6 +53,8 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 	_rendered_weight = -1.0
 	_lighting = null
 	model_mesh = mesh
+	if mesh.morph_meshes.is_empty():
+		mesh.morph_meshes.resize(mesh.part_meshes.size())
 	player = animation_player
 	_has_texture_tracks = false
 	for tracks: Array in mesh.texture_tracks:
@@ -60,7 +62,7 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 	for index: int in mesh.part_meshes.size():
 		var node := MeshInstance3D.new()
 		node.name = "Part%d" % index
-		node.mesh = mesh.part_meshes[index]
+		node.mesh = mesh.morph_meshes[index].mesh if mesh.morph_meshes[index] != null else mesh.part_meshes[index]
 		if index < mesh.part_bounds.size():
 			node.custom_aabb = mesh.part_bounds[index]
 		add_child(node)
@@ -75,7 +77,7 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector3i, scaled: bool, custom: bool) -> void:
 	if _lighting == lighting and _colour_scale == scale and _ambient == ambient and _scaled == scaled and _custom == custom and _lighting_ambient == lighting.ambient and _lighting_directions == lighting.directions and _lighting_colours == lighting.colours:
 		return
-	var first_lighting: bool = _materials.is_empty()
+	var first_lighting: bool = _lighting == null
 	var directions_changed: bool = first_lighting or _lighting_directions != lighting.directions
 	_lighting = lighting
 	_colour_scale = scale
@@ -117,12 +119,13 @@ func _prepare_material(original: ShaderMaterial) -> void:
 	if original != null and not _materials.has(original):
 		_materials[original] = original.duplicate() as ShaderMaterial
 
-func _material(original: ShaderMaterial) -> ShaderMaterial:
-	if _lighting == null or original == null:
+func _material(original: ShaderMaterial, local: bool = false) -> ShaderMaterial:
+	if (_lighting == null and not local) or original == null:
 		return original
 	if not _materials.has(original):
 		_materials[original] = original.duplicate() as ShaderMaterial
-		_update_lighting(_materials[original], original)
+		if _lighting != null:
+			_update_lighting(_materials[original], original)
 	var projection: Variant = original.get_shader_parameter("projection_scale")
 	if _materials[original].get_shader_parameter("projection_scale") != projection:
 		_materials[original].set_shader_parameter("projection_scale", projection)
@@ -221,8 +224,18 @@ func render(fraction: float) -> void:
 			for blend: int in _changed_blends[index]:
 				var amount: float = (weight if current_cel == blend + 1 else 0.0) + (1.0 - weight if previous_cel == blend + 1 else 0.0)
 				if _blend_values[index][blend] != amount:
-					node.set_blend_shape_value(blend, amount)
+					if model_mesh.morph_meshes[index] == null:
+						node.set_blend_shape_value(blend, amount)
 					_blend_values[index][blend] = amount
+
+			if model_mesh.morph_meshes[index] != null:
+				for surface: int in node.mesh.get_surface_count():
+					var material := node.get_surface_override_material(surface) as ShaderMaterial
+					_set_cel_pose(material, previous_cel, current_cel, weight)
+
+func _set_cel_pose(material: ShaderMaterial, previous_cel: int, current_cel: int, weight: float) -> void:
+	material.set_shader_parameter("cel_pair", Vector2i(previous_cel, current_cel))
+	material.set_shader_parameter("cel_weight", weight)
 
 func _prepare_blends() -> void:
 	for index: int in part_nodes.size():
@@ -247,7 +260,7 @@ func refresh_materials(textures_only: bool = false) -> void:
 		if mesh == null:
 			continue
 		var overrides: Dictionary[int, ShaderMaterial] = {}
-		if _lighting != null and not textures_only:
+		if (_lighting != null or model_mesh.morph_meshes[index] != null) and not textures_only:
 			for surface: int in mesh.get_surface_count():
 				overrides[surface] = mesh.surface_get_material(surface) as ShaderMaterial
 		if index < model_mesh.texture_tracks.size():
@@ -259,6 +272,14 @@ func refresh_materials(textures_only: bool = false) -> void:
 		for surface: int in overrides:
 			if textures_only and node.get_surface_override_material(surface) == _materials.get(overrides[surface], overrides[surface]):
 				continue
-			var material: ShaderMaterial = _material(overrides[surface])
+			var morph: ModelMorphMesh = model_mesh.morph_meshes[index]
+			var material: ShaderMaterial = _material(overrides[surface], morph != null)
+			if morph != null:
+				material.set_shader_parameter("cel_enabled", true)
+				material.set_shader_parameter("cel_texture", morph.textures[surface])
+				material.set_shader_parameter("cel_vertex_count", morph.vertex_counts[surface])
+				var now: int = _current.partcels[index] if index < _current.partcels.size() else 0
+				var before: int = _previous.partcels[index] if _previous != null and index < _previous.partcels.size() else now
+				_set_cel_pose(material, before, now, maxf(0.0, _rendered_weight))
 			if node.get_surface_override_material(surface) != material:
 				node.set_surface_override_material(surface, material)

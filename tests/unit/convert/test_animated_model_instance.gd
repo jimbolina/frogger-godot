@@ -27,6 +27,33 @@ func _instance(file: MofFile) -> AnimatedModelInstance:
 	return instance
 
 
+
+func _weight(instance: AnimatedModelInstance, blend: int) -> float:
+	var material := instance.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
+	var pair: Vector2i = material.get_shader_parameter("cel_pair")
+	var weight: float = material.get_shader_parameter("cel_weight")
+	return (weight if pair.y == blend + 1 else 0.0) + (1.0 - weight if pair.x == blend + 1 else 0.0)
+
+func test_cel_atlas_geometry_and_pose_uniforms_are_shared_only_when_immutable() -> void:
+	var first: AnimatedModelInstance = _instance(_flipbook())
+	var second := AnimatedModelInstance.new()
+	add_child_autofree(second)
+	second.setup(first.model_mesh, ModelAnimationPlayer.new(_flipbook()))
+	var morph: ModelMorphMesh = first.model_mesh.morph_meshes[0]
+	assert_eq(morph.mesh.get_blend_shape_count(), 0)
+	assert_same(first.part_nodes[0].mesh, second.part_nodes[0].mesh)
+	assert_eq(morph.vertex_counts, PackedInt32Array([6]))
+	var image: Image = morph.textures[0].get_image()
+	assert_eq(image.get_size(), Vector2i(12, 2))
+	assert_eq(image.get_pixel(0, 0), Color(0, 0, 0, 0))
+	assert_eq(image.get_pixel(0, 1), Color(2, 0, 0, 0))
+	first.smoothing_enabled = true
+	first.advance_tick()
+	first.render(0.25)
+	assert_eq(_weight(first, 0), 0.25)
+	assert_eq(_weight(second, 0), 0.0)
+	assert_ne(first.part_nodes[0].get_surface_override_material(0), second.part_nodes[0].get_surface_override_material(0))
+
 func test_matrix_changes_both_axes_and_scales_only_translation() -> void:
 	var converted: Transform3D = GameSpace.transform(PackedInt32Array([0, -4096, 0, 4096, 0, 0, 0, 0, 4096, 256, -512, 768]))
 	assert_eq(converted.origin, Vector3(1, 2, -3))
@@ -95,12 +122,12 @@ func test_flipbook_geometry_is_prebuilt_and_bounds_cover_all_cels() -> void:
 	assert_eq(instance.model_mesh.action_bounds[0], instance.model_mesh.bounds)
 	var material: Material = mesh.surface_get_material(0)
 	instance.advance_tick()
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
-	assert_same(instance.part_nodes[0].mesh, mesh)
+	assert_eq(_weight(instance, 0), 1.0)
+	assert_same(instance.part_nodes[0].mesh, instance.model_mesh.morph_meshes[0].mesh)
 	assert_same(mesh.surface_get_material(0), material)
 	instance.advance_tick()
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.0)
-	assert_same(instance.part_nodes[0].mesh, mesh)
+	assert_eq(_weight(instance, 0), 0.0)
+	assert_same(instance.part_nodes[0].mesh, instance.model_mesh.morph_meshes[0].mesh)
 
 
 func test_smoothing_reset_avoids_blending_across_loop_seek_and_toggle() -> void:
@@ -109,19 +136,19 @@ func test_smoothing_reset_avoids_blending_across_loop_seek_and_toggle() -> void:
 	instance.smoothing_enabled = true
 	instance.advance_tick()
 	instance.render(0.25)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.25)
+	assert_eq(_weight(instance, 0), 0.25)
 	instance.advance_tick()
 	instance.render(0.25)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.0, "a loop draws its first sample exactly")
+	assert_eq(_weight(instance, 0), 0.0, "a loop draws its first sample exactly")
 	instance.player.seek_tick(1)
 	instance.render(0.25)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0, "seeks reset the interpolation history")
+	assert_eq(_weight(instance, 0), 1.0, "seeks reset the interpolation history")
 	instance.player.restart()
 	instance.apply_exact()
 	instance.advance_tick()
 	instance.smoothing_enabled = false
 	instance.render(0.0)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
+	assert_eq(_weight(instance, 0), 1.0)
 	assert_eq(instance.physics_interpolation_mode, Node.PHYSICS_INTERPOLATION_MODE_OFF)
 
 func test_skipped_pose_drawing_clears_previously_displayed_morph_weights() -> void:
@@ -134,31 +161,31 @@ func test_skipped_pose_drawing_clears_previously_displayed_morph_weights() -> vo
 	instance.smoothing_enabled = true
 	instance.advance_tick()
 	instance.render(1.0)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
+	assert_eq(_weight(instance, 0), 1.0)
 	instance.player.frame = 2
 	instance.capture_pose()
 	instance.player.frame = 0
 	instance.capture_pose()
 	instance.render(0.5)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.0)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(1), 0.5)
+	assert_eq(_weight(instance, 0), 0.0)
+	assert_eq(_weight(instance, 1), 0.5)
 
 func test_unchanged_geometry_settles_interpolation_and_keeps_visibility_tick_driven() -> void:
 	var instance: AnimatedModelInstance = _instance(_flipbook())
 	instance.smoothing_enabled = true
 	instance.advance_tick()
 	instance.render(0.5)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 0.5)
+	assert_eq(_weight(instance, 0), 0.5)
 	var retained: ModelPose = instance._current
 	instance.player.end_mode = ModelAnimationPlayer.EndMode.HIDE
 	instance.advance_tick()
 	assert_same(instance._current, retained, "unchanged geometry does not allocate another pose")
 	assert_false(instance.visible, "same-cel hiding still changes on its authoritative tick")
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0, "holding settles the previous interpolation")
+	assert_eq(_weight(instance, 0), 1.0, "holding settles the previous interpolation")
 	for fraction: float in [0.25, 0.75, 1.0]:
 		instance.render(fraction)
 	assert_eq(instance.player.tick, 2)
-	assert_eq(instance.part_nodes[0].get_blend_shape_value(0), 1.0)
+	assert_eq(_weight(instance, 0), 1.0)
 
 
 func test_skeletal_smoothing_retains_exact_endpoints_and_authoritative_state() -> void:
@@ -244,7 +271,7 @@ func test_animated_texture_keeps_original_pixel_offsets_and_uses_current_blend_r
 	assert_eq(scale, Vector2(1.0 / 20.0, 1.0 / 12.0))
 	assert_eq(offset, Vector2(2.0 / 20.0, 2.0 / 12.0))
 	assert_string_contains(track.frames[0].shader.code, "blend_add", "original flag enables translucency, current image supplies rate")
-	assert_false(track.frames[1].shader.code.contains("sampler2D"))
+	assert_false(track.frames[1].shader.code.contains("sampler2D image"))
 	assert_eq(mesh.missing_image_ids, PackedInt32Array([999]))
 	var instance := AnimatedModelInstance.new()
 	add_child_autofree(instance)
@@ -302,4 +329,4 @@ func test_animated_texture_keeps_original_pixel_offsets_and_uses_current_blend_r
 	assert_string_contains(fallback.diagnostics[0], "pixel UVs cannot be resolved")
 	for frame_material: ShaderMaterial in fallback_track.frames:
 		assert_same(frame_material, fallback_track.original)
-		assert_false(frame_material.shader.code.contains("sampler2D"), "a known replacement cannot recover missing original image dimensions")
+		assert_false(frame_material.shader.code.contains("sampler2D image"), "a known replacement cannot recover missing original image dimensions")

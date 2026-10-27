@@ -30,6 +30,8 @@ static func from_map(map: MapFile, source_id: String = "", resource_id: int = -1
 		definition.resource_id = resource_id
 		definition.path_index = index
 		definition.source_offset = source.source_offset
+		definition.entity_indices = source.entity_indices.duplicate()
+		definition.entity_list_error = source.entity_list_error
 		var rejection: PathSetupDiagnostic = null
 		for segment_index: int in source.segments.size():
 			var source_segment: MapPathSegment = source.segments[segment_index]

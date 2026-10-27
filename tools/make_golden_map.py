@@ -105,6 +105,16 @@ def parse_map(data):
                 path_count=read(data, path+4, '<I')[0]), typed, anim_rows
 
 
+def visibility_budget(data):
+    """Decode visible groups counted by mapdisp.c ExpandMapGroup, excluding G2."""
+    grap = read(data, 80, '<I')[0]
+    group = read(data, grap + 8, '<I')[0]
+    gx, gz = read(data, group + 12, '<2H')
+    counts = [sum(read(data, group + 20 + index * 72, '<8B'))
+              for index in range(gx * gz)]
+    return [len(counts), sum(counts), h(counts)]
+
+
 def write(out, name, columns, rows):
     with open(os.path.join(out, name), 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f, delimiter='\t', lineterminator='\n')
@@ -202,7 +212,7 @@ def main():
         compressed = archive.is_compressed(entry['flags'])
         raw = mwd[start:start+(entry['packed'] if compressed else entry['unpacked'])]
         files[entry['index']] = archive.pp20_unpack(raw)[0] if compressed else raw
-    maps, polys, anims, sky = [], [], [], []
+    maps, polys, anims, sky, visibility = [], [], [], [], []
     fields = None
     for rid, data in sorted(files.items()):
         name = archive.file_name(entries, rid)
@@ -210,6 +220,7 @@ def main():
             continue
         if data[:4] == b'FROG':
             facts, typed, animations = parse_map(data)
+            visibility.append([rid, name] + visibility_budget(data))
             if args.c_oracle:
                 verify_c_oracle(args.c_oracle, data, facts, typed, animations)
             fields = list(facts)
@@ -225,6 +236,7 @@ def main():
     if (len(maps), len(sky)) != (78, 2):
         raise ValueError('unexpected map census %d/%d' % (len(maps), len(sky)))
     os.makedirs(args.out_dir, exist_ok=True)
+    write(args.out_dir, 'map_visibility_budget.tsv', ['resource_id', 'name', 'group_count', 'polygon_total', 'counts_sha256'], visibility)
     write(args.out_dir, 'map_facts.tsv', ['resource_id','name']+fields, maps)
     write(args.out_dir, 'map_polygons.tsv', ['resource_id','name','type','count','records_sha256'], polys)
     write(args.out_dir, 'map_animations.tsv', ['resource_id','name','animation','du','dv','duration','runtime_uv','cel_count','runtime_current_cel','cel_pointer','cel_period','runtime_cel_count','flags','target_count','runtime_texture','target_pointer','cels_sha256','targets_sha256'], anims)

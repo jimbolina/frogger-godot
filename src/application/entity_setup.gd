@@ -38,6 +38,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		if form == null:
 			result._issue("invalid_form", "Form id does not resolve in the map theme", span, null, index, source_id, resource_id, build_id)
 			continue
+		if form.entity_name == "MULTIPOINT":
+			result._issue("multiplayer_only", "MULTIPOINT requires multiplayer checkpoint rules", span, form, index, source_id, resource_id, build_id)
+			continue
 		if span.flags & ~127:
 			result._issue("unknown_flags", "Entity has unknown flags 0x%X" % span.flags, span, form, index, source_id, resource_id, build_id)
 			continue
@@ -54,22 +57,32 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.form_grid_id = span.form_grid_id
 		definition.form_id = span.form_id
 		definition.form_name = form.form_name
+		definition.radius_squared = form.radius_squared
 		definition.entity_name = form.entity_name
 		definition.behavior = EntityBehaviorCatalog.resolve(form.entity_name)
 		definition.script_id = form.script_id
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
+		definition.bonus_kind = FormCallbackCatalog.resolve(build_id, form.bonus_callback, true)
+		definition.form_flags = form.flags
 		definition.flags = span.flags
 		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or custom_behaviors_enabled):
 			var matrix: MapEntityPayload = MapEntityPayload.read_matrix(span)
 			if not matrix.error.is_empty():
 				result._issue("invalid_payload", matrix.error, span, form, index, source_id, resource_id, build_id)
 				continue
+			if definition.behavior.kind == EntityBehavior.Kind.PICKUP:
+				if span.payload.size() < 34 or span.payload.decode_u16(32) > 18:
+					result._issue("invalid_payload", "BONUS_FLY requires a pickup type from 0 through 18", span, form, index, source_id, resource_id, build_id)
+					continue
+				definition.pickup_type = span.payload.decode_u16(32)
 			definition.matrix12 = matrix.matrix12.duplicate()
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE if custom_behaviors_enabled else EntityBehavior.Execution.TRANSFORM
-			if definition.behavior.kind == EntityBehavior.Kind.BABY_FROG and span.payload.size() >= 36:
+			if definition.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and span.payload.size() >= 36:
 				definition.parent_unique_id = span.payload.decode_s16(32)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind == EntityBehavior.Kind.TURTLE):
+				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
+					definition.movement_speed = span.payload.decode_u16(34)
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER]):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -93,6 +106,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				result._issue("invalid_path_start", runner.error, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.path_start = start
+			if definition.behavior.kind == EntityBehavior.Kind.BEAVER:
+				if span.payload.size() < 16 or not definition.path_definition.entity_list_error.is_empty():
+					result._issue("invalid_payload", "Beaver requires its delay and a valid PATH entity list", span, form, index, source_id, resource_id, build_id)
+					continue
+				definition.authored_delay = span.payload.decode_s16(12)
+				definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		else:
 			result._issue("unknown_behavior", "No base-transform decoder for entity name %s" % form.entity_name, span, form, index, source_id, resource_id, build_id)
 			continue

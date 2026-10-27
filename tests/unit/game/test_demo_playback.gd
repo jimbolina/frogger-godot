@@ -64,8 +64,8 @@ func test_exhaustion_waits_for_consuming_control_and_failure_is_atomic() -> void
 	assert_eq(session.elapsed_ticks, 0)
 	assert_eq(session.input_cursor, 0)
 
-func test_tongue_and_camera_fail_without_consuming_or_advancing() -> void:
-	for byte: int in [0x90, 0xc0, 0xa0, 4]:
+func test_camera_and_reserved_input_fail_without_consuming_or_advancing() -> void:
+	for byte: int in [0xc0, 0xa0, 4]:
 		var run: GameplayRun = GameplayRun.create(_level())
 		var command := TickCommand.new()
 		command.recorded_input_byte = byte
@@ -189,3 +189,14 @@ func test_session_fast_start_countdown_advances_only_after_commit() -> void:
 	assert_eq(result.consumed_demo_byte, 128)
 	assert_eq(session.accept(result), "")
 	assert_eq(session.status, "complete")
+
+func test_recorded_tongue_consumes_byte_and_advances_effect_atomically() -> void:
+	var run: GameplayRun = GameplayRun.create(_level())
+	var command := TickCommand.new()
+	command.recorded_input_byte = 0x90
+	var result: TickResult = run.step(command)
+	assert_eq(result.error, "")
+	assert_eq(result.consumed_demo_byte, 0x90)
+	assert_eq(run.snapshot().frog.current_input, 0x90)
+	assert_eq(run.snapshot().tongue.section, 1)
+	assert_eq(run.snapshot().tongue.mode, TongueState.Mode.OUT)

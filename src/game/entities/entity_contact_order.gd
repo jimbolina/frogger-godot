@@ -22,7 +22,7 @@ static func _indices_validated(definition: EntityCollisionDefinition, snapshot: 
 		if snapshot.lifecycle_enabled and not pose.live:
 			continue
 		if _moving(entity):
-			if (entity.flags | pose.entity_flags) & EntityDefinition.HIDDEN:
+			if pose.effective_flags(entity.flags) & EntityDefinition.HIDDEN:
 				continue
 			var key: int = _group_z(definition, pose.matrix12[11]) * definition.group_dimensions.x + _group_x(definition, pose.matrix12[9])
 			if not moving.has(key):

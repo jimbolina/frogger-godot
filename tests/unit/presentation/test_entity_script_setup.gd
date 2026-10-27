@@ -31,7 +31,7 @@ func test_turtle_payload_replaces_script_by_name_and_remains_detached() -> void:
 	assert_eq(setup.error, "")
 	assert_eq(setup.definition.root_id, 2)
 	assert_eq(setup.definition.payload_registers, PackedInt32Array([30, 45, 1]))
-	assert_eq(setup.definition.callbacks[0], "SCRIPT_CB_HIT_TURTLE")
+	assert_eq(setup.definition.callbacks[0], EntityScriptDefinition.CallbackKind.HIT_TURTLE)
 	assert_eq(setup.definition.programs.size(), 2, "Validate the form script and replacement")
 	table.scripts[2].commands.clear()
 	payload.encode_s32(20, 0)
@@ -52,3 +52,51 @@ func test_unknown_name_and_callback_or_bad_payload_reject() -> void:
 	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")
 	table.scripts[1].name = "UNKNOWN"
 	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("SUB_TURTLE"), payload).error, "")
+
+func test_supplied_named_program_outside_old_allowlist_uses_dependency_checks() -> void:
+	var names: NameBank = _names()
+	var table: ScriptTable = _table(names)
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
+	assert_eq(setup.error, "")
+	assert_eq(setup.definition.names[0], "SCRIPT_NONE")
+	assert_eq(setup.definition.validate(PackedInt32Array(), 0, false), "")
+	table.scripts[0].commands[0].opcode = 999
+	assert_ne(EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray()).error, "")
+
+func test_start_script_and_helium_callback_copy_named_dependencies() -> void:
+	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nsynthetic_root\nSCRIPT_SKY_HELIUM_BALLOON_RISING\n[CallbackNames]\nSCRIPT_CB_SKY_HELIUM_BALLOON\n"), false, "Script")
+	var table: ScriptTable = _table(names)
+	var stop := EntityScript.Command.new()
+	stop.opcode = 38
+	table.scripts[2].commands = [stop]
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
+	assert_eq(setup.error, "")
+	assert_eq(setup.definition.callback_programs[0], 2)
+	assert_eq(setup.definition.programs.size(), 2)
+	assert_eq(setup.definition.validate(PackedInt32Array(), 0, false), "")
+	var detached: EntityScriptDefinition = setup.definition.copy()
+	setup.definition.callback_programs[0] = 99
+	assert_eq(detached.callback_programs[0], 2)
+	var start := EntityScript.Command.new()
+	start.opcode = 25
+	start.arguments = PackedInt32Array([2])
+	table.scripts[1].commands = [start, stop]
+	setup = EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
+	assert_eq(setup.error, "")
+	assert_true(setup.definition.programs.has(2))
+	start.arguments[0] = 99
+	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray()).error, "")
+
+func test_callback_repointing_resolves_names_to_detached_typed_kinds() -> void:
+	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE\nSCRIPT_TURTLE_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_LOG_SPLASH\n"), false, "Script")
+	var table: ScriptTable = _table(names)
+	table.scripts[0].pointer = 0x401000
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
+	assert_eq(setup.error, "")
+	assert_eq(setup.definition.callbacks[0], EntityScriptDefinition.CallbackKind.LOG_SPLASH)
+	var detached: EntityScriptDefinition = setup.definition.copy()
+	setup.definition.callbacks[0] = EntityScriptDefinition.CallbackKind.HIT_TURTLE
+	assert_eq(detached.callbacks[0], EntityScriptDefinition.CallbackKind.LOG_SPLASH)
+	table.scripts[0].commands[0].arguments[1] = 99
+	setup = EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
+	assert_eq(setup.error, "Unsupported supplied callback name 99 in SCRIPT_NONE at 0x00401000")

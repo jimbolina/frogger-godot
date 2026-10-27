@@ -18,6 +18,19 @@ func _book() -> ThemeBook:
 	book.entries[FroggerIds.THEME_GENERAL].forms.append(general)
 	return book
 
+func test_multipoint_has_explicit_source_located_multiplayer_exclusion() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "MULTIPOINT"
+	var map: MapFile = _map()
+	_add_entity(map, 0, 0, _matrix())
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "modified.map", 24, "pc-retail-v3.0e")
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 0)
+	assert_eq(setup.diagnostics.size(), 1)
+	assert_eq(setup.diagnostics[0].code, "multiplayer_only")
+	assert_eq(setup.diagnostics[0].source_offset, 100)
+	assert_eq(setup.diagnostics[0].source_id, "modified.map")
+
 func _matrix() -> PackedByteArray:
 	var bytes := PackedByteArray()
 	bytes.resize(32)
@@ -158,3 +171,26 @@ func test_all_supported_build_name_lists_include_base_types_and_override() -> vo
 		assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("MOVING")), "MOVING", build)
 		assert_eq(names.entity_name_for("CAV_SNAIL", names.entities.index_of("STATIC")), "MOVING", build)
 		assert_true(names.forms.get_sub_bank("GENERAL").index_of("GEN_CHECKPOINT_1") >= 0, build)
+
+func test_bonus_fly_payload_types_and_source_located_rejection() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "BONUS_FLY"
+	var map: MapFile = _map()
+	for pickup_type: int in 20:
+		var payload: PackedByteArray = _matrix()
+		payload.resize(36)
+		payload.encode_u16(32, pickup_type)
+		_add_entity(map, 0, 0, payload)
+	_add_entity(map, 0, 0, _matrix())
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "modified.map", 24, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 19)
+	for index: int in 19:
+		assert_eq(setup.definitions[index].pickup_type, index)
+		assert_eq(setup.definitions[index].behavior.kind, EntityBehavior.Kind.PICKUP)
+	assert_eq(setup.diagnostics.size(), 2)
+	assert_eq(setup.diagnostics[0].code, "invalid_payload")
+	assert_eq(setup.diagnostics[0].source_id, "modified.map")
+	assert_eq(setup.diagnostics[0].resource_id, 24)
+	assert_eq(setup.diagnostics[0].source_offset, 1050)
+	assert_eq(setup.diagnostics[1].source_offset, 1100)

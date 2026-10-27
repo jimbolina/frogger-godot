@@ -26,6 +26,8 @@ var grid_flags: PackedInt32Array = PackedInt32Array()
 ## False only when the source FORM contains no FORM_DATA fallback.
 var has_form_data: bool = true
 var unsupported_reason: String = ""
+var sphere_callback: bool = false
+var callback_kind: FormCallback.Kind = FormCallback.Kind.NONE
 var death_type: int = 0
 var form_book_flags: int = 0
 var reaction_unsupported_reason: String = ""
@@ -55,6 +57,8 @@ func copy() -> FormContactDefinition:
 	result.grid_flags = grid_flags.duplicate()
 	result.has_form_data = has_form_data
 	result.unsupported_reason = unsupported_reason
+	result.sphere_callback = sphere_callback
+	result.callback_kind = callback_kind
 	result.death_type = death_type
 	result.form_book_flags = form_book_flags
 	result.reaction_unsupported_reason = reaction_unsupported_reason

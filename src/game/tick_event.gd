@@ -41,10 +41,16 @@ enum Kind {
 	CREATE,
 	DESTROY,
 	DEATH_ANIMATION,
+	PITCH_BEND,
+	REWARD,
+	LEVEL_TRANSITION,
 }
 
-const TRACE_NAMES: PackedStringArray = ["camera_death", "camera_clockwise", "camera_anticlockwise", "ouch", "super_hop", "quick_hop", "auto_hop", "roll", "hop", "hop_sound", "score_10_request", "score_50_request", "score_5_request", "pant", "death_complete", "single_frog_died_request", "falling", "stun_sound", "crash", "camera_stun_shake", "unknown_terrain_flags_ignored", "death_fire_particle_request", "camera_fixed", "entity_squish", "entity_pop_explosion_request", "platform_attachment", "platform_departure", "slipping_loop_start", "slipping_loop_stop", "slide_particles_request", "slide_particles_stop", "death_pgen", "sound", "moving", "sprite", "create", "destroy", "death_animation"]
+const TRACE_NAMES: PackedStringArray = ["camera_death", "camera_clockwise", "camera_anticlockwise", "ouch", "super_hop", "quick_hop", "auto_hop", "roll", "hop", "hop_sound", "score_10_request", "score_50_request", "score_5_request", "pant", "death_complete", "single_frog_died_request", "falling", "stun_sound", "crash", "camera_stun_shake", "unknown_terrain_flags_ignored", "death_fire_particle_request", "camera_fixed", "entity_squish", "entity_pop_explosion_request", "platform_attachment", "platform_departure", "slipping_loop_start", "slipping_loop_stop", "slide_particles_request", "slide_particles_stop", "death_pgen", "sound", "moving", "sprite", "create", "destroy", "death_animation", "pitch_bend", "reward", "level_transition"]
 
+var reward_id: int = -1
+var flow_phase: int = -1
+var checkpoint_index: int = -1
 var kind: Kind = Kind.HOP
 var entity_index: int = -1
 var sound_id: int = 0
@@ -53,7 +59,21 @@ var minimum_distance: int = 0
 var maximum_distance: int = 0
 var velocity: Vector2i = Vector2i.ZERO
 var generation: int = 0
+var pitch: int = 64
 var animation_id: int = 0
+
+## Records a source reward request at the entity-update boundary.
+static func reward(id: int) -> TickEvent:
+	var result: TickEvent = make(Kind.REWARD)
+	result.reward_id = id
+	return result
+
+## Records a committed level-flow transition and its optional checkpoint.
+static func transition(phase: int, checkpoint: int = -1) -> TickEvent:
+	var result: TickEvent = make(Kind.LEVEL_TRANSITION)
+	result.flow_phase = phase
+	result.checkpoint_index = checkpoint
+	return result
 
 ## Creates a notification without parameters.
 static func make(event_kind: Kind) -> TickEvent:
@@ -74,6 +94,12 @@ static func moving_sound(id: int, near_distance: int, far_distance: int) -> Tick
 	result.sound_id = id
 	result.minimum_distance = near_distance
 	result.maximum_distance = far_distance
+	return result
+
+## Requests a pitch update for the entity's logical moving sound.
+static func pitch_bend(value: int) -> TickEvent:
+	var result: TickEvent = make(Kind.PITCH_BEND)
+	result.pitch = value
 	return result
 
 ## Requests a sprite with source-relative position and movement parameters.
@@ -105,6 +131,9 @@ func for_entity(index: int) -> TickEvent:
 ## Copies every parameter without retaining mutable containers.
 func copy() -> TickEvent:
 	var result := TickEvent.new()
+	result.reward_id = reward_id
+	result.flow_phase = flow_phase
+	result.checkpoint_index = checkpoint_index
 	result.kind = kind
 	result.entity_index = entity_index
 	result.sound_id = sound_id
@@ -113,6 +142,7 @@ func copy() -> TickEvent:
 	result.maximum_distance = maximum_distance
 	result.velocity = velocity
 	result.generation = generation
+	result.pitch = pitch
 	result.animation_id = animation_id
 	return result
 
@@ -120,6 +150,12 @@ func copy() -> TickEvent:
 func to_trace_line() -> String:
 	var line: String = TRACE_NAMES[kind]
 	match kind:
+		Kind.REWARD:
+			line += ":%d" % reward_id
+		Kind.LEVEL_TRANSITION:
+			line += ":%d:%d" % [flow_phase, checkpoint_index]
+		Kind.PITCH_BEND:
+			line += ":%d" % pitch
 		Kind.SOUND:
 			line += ":%d:%d:%d:%d" % [sound_id, position.x, position.y, position.z]
 		Kind.MOVING:

@@ -67,7 +67,7 @@ func validate() -> String:
 				return "Entity primitive squared radius must fit signed32"
 			if frog_collision == null:
 				return "Entity primitives require detached animated frog probes"
-			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty():
+			if not contact.unsupported_reason.is_empty() and contact.disabled_reason.is_empty():
 				return "Entity primitives require supported contact and FORM fallback"
 			for primitive: EntityPrimitiveDefinition in contact.primitives:
 				if primitive == null:
@@ -75,13 +75,15 @@ func validate() -> String:
 				var primitive_issue: String = primitive.validate()
 				if not primitive_issue.is_empty():
 					return primitive_issue
-				if primitive.reaction not in [0, 1]:
+				if primitive.reaction not in [0, 1, 3]:
 					return "Entity primitive reaction is unsupported"
+		if contact.callback_kind == FormCallback.Kind.UNKNOWN:
+			return "Entity has an unverified FORM collision callback"
 		if entity.behavior == null:
 			return "Entity collision requires a resolved behavior"
 		if entity.behavior.has_custom_update() and environment == null:
 			return "Admitted custom background requires its shared environment"
-		if (entity.behavior.execution == EntityBehavior.Execution.CONTACT):
+		if entity.behavior.execution == EntityBehavior.Execution.CONTACT and entity.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 			if entity.behavior.kind != EntityBehavior.Kind.BABY_FROG or not entity.behavior.has_custom_update() or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
 				return "Pink frog pickup requires scripted visibility and callback-free behavior"
 			if not contact.unsupported_reason.is_empty() or not contact.disabled_reason.is_empty() or not contact.primitives.is_empty() or contact.grid_flags != PackedInt32Array([1]):

@@ -106,6 +106,7 @@ def cases():
         group_dimensions=[4, 4], group_size=[512, 512])
     add('safe_precedes_pop_diagnostic', [authored_entity(0, 4099)], frozen_c=False)
     add('checkpoint_precedes_pop_diagnostic', [authored_entity(0, 4161)], frozen_c=False)
+    items[-1]['level']['entity_collision']['contacts'][0]['reaction_unsupported_reason'] = 'Checkpoint requires a shared environment outside this bounded fixture'
     return items
 
 

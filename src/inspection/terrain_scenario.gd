@@ -66,6 +66,10 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	frog_assets = assets if assets != null else TerrainFrogAssets.from_data(data)
 	if not frog_assets.error.is_empty():
 		return frog_assets.error
+	var reward_setup: RewardSetup = RewardSetup.from_table(data.tables.scores())
+	if not reward_setup.error.is_empty():
+		return reward_setup.error
+	level.rewards = reward_setup.definitions
 	level.frog_action_lengths = frog_assets.action_lengths.duplicate()
 	if level_code.is_empty():
 		return ""
@@ -97,6 +101,19 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_enabled = true
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
+	if level_code.to_upper() == "ORG1" and options.exploration_preset.is_empty():
+		var gameplay: Org1GameplaySetup = Org1GameplaySetup.from_data(data, map_scene.map, frog_assets.model, frog_assets.action_lengths)
+		if not gameplay.error.is_empty():
+			return gameplay.error
+		level = gameplay.definition
+		entity_collision = level.entity_collision
+		options.reactions = ScenarioOptions.Reaction.PLATFORMS
+		options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
+		initial.start_mode = RunStart.Mode.SINGLE_START
+		initial.camera_startup = true
+		initial.start_timer = 120
+		commands.clear()
+		return ""
 	if options.entity_reactions:
 		if options.exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
 			return Org1ExplorationSetup.apply(self, data)
@@ -230,8 +247,8 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 			scenario.error = "start_sequence_complete must be boolean"
 			return scenario
 		command.start_sequence_complete = completion
-		if command.pressed_mask < 0 or command.pressed_mask > 127 or command.held_mask < 0 or command.held_mask > 127:
-			scenario.error = "Command masks must be integers in 0..127"
+		if command.pressed_mask < 0 or command.pressed_mask > 255 or command.held_mask < 0 or command.held_mask > 255:
+			scenario.error = "Command masks must be integers in 0..255"
 			return scenario
 		if command.tick_index < 0 or command.tick_index >= scenario.tick_limit or scenario.commands.has(command.tick_index):
 			scenario.error = "Command ticks must be unique and within the scenario"

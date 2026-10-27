@@ -1,0 +1,973 @@
+{
+  "schema": "tongue-v1",
+  "cases": [
+    {
+      "name": "target",
+      "matrix": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        128,
+        -7,
+        128
+      ],
+      "target": [
+        333,
+        -100,
+        601
+      ],
+      "rows": [
+        {
+          "tick": 1,
+          "mode": 1,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            131,
+            -42,
+            263
+          ]
+        },
+        {
+          "tick": 2,
+          "mode": 1,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            144,
+            -46,
+            337
+          ]
+        },
+        {
+          "tick": 3,
+          "mode": 1,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            163,
+            -53,
+            398
+          ]
+        },
+        {
+          "tick": 4,
+          "mode": 1,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            189,
+            -60,
+            451
+          ]
+        },
+        {
+          "tick": 5,
+          "mode": 1,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            218,
+            -71,
+            493
+          ]
+        },
+        {
+          "tick": 6,
+          "mode": 1,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            252,
+            -81,
+            532
+          ]
+        },
+        {
+          "tick": 7,
+          "mode": 1,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            289,
+            -93,
+            566
+          ]
+        },
+        {
+          "tick": 8,
+          "mode": 2,
+          "section": 8,
+          "counter": 4,
+          "collected": false,
+          "tip": [
+            328,
+            -104,
+            600
+          ]
+        },
+        {
+          "tick": 9,
+          "mode": 2,
+          "section": 8,
+          "counter": 3,
+          "collected": false,
+          "tip": [
+            328,
+            -104,
+            600
+          ]
+        },
+        {
+          "tick": 10,
+          "mode": 2,
+          "section": 8,
+          "counter": 2,
+          "collected": false,
+          "tip": [
+            328,
+            -104,
+            600
+          ]
+        },
+        {
+          "tick": 11,
+          "mode": 2,
+          "section": 8,
+          "counter": 1,
+          "collected": false,
+          "tip": [
+            328,
+            -104,
+            600
+          ]
+        },
+        {
+          "tick": 12,
+          "mode": 3,
+          "section": 8,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            328,
+            -104,
+            600
+          ]
+        },
+        {
+          "tick": 13,
+          "mode": 3,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            289,
+            -93,
+            566
+          ]
+        },
+        {
+          "tick": 14,
+          "mode": 3,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            229,
+            -78,
+            509
+          ]
+        },
+        {
+          "tick": 15,
+          "mode": 3,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            172,
+            -62,
+            449
+          ]
+        },
+        {
+          "tick": 16,
+          "mode": 3,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            139,
+            -49,
+            405
+          ]
+        },
+        {
+          "tick": 17,
+          "mode": 3,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -44,
+            363
+          ]
+        },
+        {
+          "tick": 18,
+          "mode": 3,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -42,
+            316
+          ]
+        },
+        {
+          "tick": 19,
+          "mode": 3,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -41,
+            257
+          ]
+        },
+        {
+          "tick": 20,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": true,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        },
+        {
+          "tick": 21,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        },
+        {
+          "tick": 22,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        },
+        {
+          "tick": 23,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        },
+        {
+          "tick": 24,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        },
+        {
+          "tick": 25,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            128,
+            -40,
+            176
+          ]
+        }
+      ]
+    },
+    {
+      "name": "eyes",
+      "matrix": [
+        0,
+        0,
+        4096,
+        0,
+        4096,
+        0,
+        -4096,
+        0,
+        0,
+        512,
+        17,
+        -128
+      ],
+      "target": null,
+      "rows": [
+        {
+          "tick": 1,
+          "mode": 1,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            602,
+            -17,
+            -160
+          ]
+        },
+        {
+          "tick": 2,
+          "mode": 1,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            632,
+            -17,
+            -165
+          ]
+        },
+        {
+          "tick": 3,
+          "mode": 1,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            650,
+            -19,
+            -151
+          ]
+        },
+        {
+          "tick": 4,
+          "mode": 1,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            656,
+            -22,
+            -129
+          ]
+        },
+        {
+          "tick": 5,
+          "mode": 1,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            650,
+            -28,
+            -108
+          ]
+        },
+        {
+          "tick": 6,
+          "mode": 1,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            632,
+            -37,
+            -96
+          ]
+        },
+        {
+          "tick": 7,
+          "mode": 1,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            602,
+            -49,
+            -102
+          ]
+        },
+        {
+          "tick": 8,
+          "mode": 2,
+          "section": 8,
+          "counter": 8,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 9,
+          "mode": 2,
+          "section": 8,
+          "counter": 7,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 10,
+          "mode": 2,
+          "section": 8,
+          "counter": 6,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 11,
+          "mode": 2,
+          "section": 8,
+          "counter": 5,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 12,
+          "mode": 2,
+          "section": 8,
+          "counter": 4,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 13,
+          "mode": 2,
+          "section": 8,
+          "counter": 3,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 14,
+          "mode": 2,
+          "section": 8,
+          "counter": 2,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 15,
+          "mode": 2,
+          "section": 8,
+          "counter": 1,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 16,
+          "mode": 3,
+          "section": 8,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            560,
+            -64,
+            -136
+          ]
+        },
+        {
+          "tick": 17,
+          "mode": 3,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            602,
+            -49,
+            -102
+          ]
+        },
+        {
+          "tick": 18,
+          "mode": 3,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            632,
+            -37,
+            -96
+          ]
+        },
+        {
+          "tick": 19,
+          "mode": 3,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            650,
+            -28,
+            -108
+          ]
+        },
+        {
+          "tick": 20,
+          "mode": 3,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            656,
+            -22,
+            -129
+          ]
+        },
+        {
+          "tick": 21,
+          "mode": 3,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            650,
+            -19,
+            -151
+          ]
+        },
+        {
+          "tick": 22,
+          "mode": 3,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            632,
+            -17,
+            -165
+          ]
+        },
+        {
+          "tick": 23,
+          "mode": 3,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            602,
+            -17,
+            -160
+          ]
+        },
+        {
+          "tick": 24,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            560,
+            -16,
+            -128
+          ]
+        },
+        {
+          "tick": 25,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            560,
+            -16,
+            -128
+          ]
+        }
+      ]
+    },
+    {
+      "name": "narrow",
+      "matrix": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        32767,
+        -32760,
+        65539
+      ],
+      "target": [
+        65540,
+        32780,
+        -65539
+      ],
+      "rows": [
+        {
+          "tick": 1,
+          "mode": 1,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32023,
+            31271,
+            124
+          ]
+        },
+        {
+          "tick": 2,
+          "mode": 1,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            29944,
+            27114,
+            169
+          ]
+        },
+        {
+          "tick": 3,
+          "mode": 1,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            26714,
+            20653,
+            184
+          ]
+        },
+        {
+          "tick": 4,
+          "mode": 1,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            22524,
+            12274,
+            176
+          ]
+        },
+        {
+          "tick": 5,
+          "mode": 1,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            17565,
+            2358,
+            146
+          ]
+        },
+        {
+          "tick": 6,
+          "mode": 1,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            12030,
+            -8708,
+            103
+          ]
+        },
+        {
+          "tick": 7,
+          "mode": 1,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            6111,
+            -20543,
+            49
+          ]
+        },
+        {
+          "tick": 8,
+          "mode": 2,
+          "section": 8,
+          "counter": 4,
+          "collected": false,
+          "tip": [
+            0,
+            -32760,
+            -8
+          ]
+        },
+        {
+          "tick": 9,
+          "mode": 2,
+          "section": 8,
+          "counter": 3,
+          "collected": false,
+          "tip": [
+            0,
+            -32760,
+            -8
+          ]
+        },
+        {
+          "tick": 10,
+          "mode": 2,
+          "section": 8,
+          "counter": 2,
+          "collected": false,
+          "tip": [
+            0,
+            -32760,
+            -8
+          ]
+        },
+        {
+          "tick": 11,
+          "mode": 2,
+          "section": 8,
+          "counter": 1,
+          "collected": false,
+          "tip": [
+            0,
+            -32760,
+            -8
+          ]
+        },
+        {
+          "tick": 12,
+          "mode": 3,
+          "section": 8,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            0,
+            -32760,
+            -8
+          ]
+        },
+        {
+          "tick": 13,
+          "mode": 3,
+          "section": 7,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            6109,
+            -20543,
+            48
+          ]
+        },
+        {
+          "tick": 14,
+          "mode": 3,
+          "section": 6,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            15891,
+            -980,
+            138
+          ]
+        },
+        {
+          "tick": 15,
+          "mode": 3,
+          "section": 5,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            24934,
+            17098,
+            209
+          ]
+        },
+        {
+          "tick": 16,
+          "mode": 3,
+          "section": 4,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            30314,
+            27854,
+            242
+          ]
+        },
+        {
+          "tick": 17,
+          "mode": 3,
+          "section": 3,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32307,
+            31840,
+            229
+          ]
+        },
+        {
+          "tick": 18,
+          "mode": 3,
+          "section": 2,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32721,
+            32665,
+            188
+          ]
+        },
+        {
+          "tick": 19,
+          "mode": 3,
+          "section": 1,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32759,
+            32742,
+            129
+          ]
+        },
+        {
+          "tick": 20,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": true,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        },
+        {
+          "tick": 21,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        },
+        {
+          "tick": 22,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        },
+        {
+          "tick": 23,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        },
+        {
+          "tick": 24,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        },
+        {
+          "tick": 25,
+          "mode": 0,
+          "section": 0,
+          "counter": 0,
+          "collected": false,
+          "tip": [
+            32760,
+            32744,
+            48
+          ]
+        }
+      ]
+    }
+  ]
+}

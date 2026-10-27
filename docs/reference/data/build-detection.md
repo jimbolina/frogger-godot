@@ -1,6 +1,9 @@
 # Build detection
 
-Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../sources.md).
+The current compatibility target is `pc-retail-v3.0e`, including FrogLord-saved
+edits based on it. Existing recognition/configuration data for other builds
+does not establish verified gameplay compatibility. Retail counts below refer
+to v3.0e. See [source locations](../sources.md).
 
 File lookup ignores letter case but returns the directory entry's actual spelling,
 preferring an exact match when present. Checking only whether a requested spelling

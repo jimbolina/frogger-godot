@@ -8,12 +8,12 @@
 - The black-is-transparent rule is a colour key over a whole 256x256 texture page in the original, not per image.
 - Models use one clamped texture per VLO image; maps reconstruct physical PC pages for byte-wrapped UVs. No mipmaps. Filtering is a user option; the font is always nearest.
 - One mesh per map group, split by material. Polygons with animated textures get their own surfaces.
-- Map captures use a fixed 640x480 viewport; projection is explicit. Gameplay HUD remains deferred.
+- Map captures use a fixed 640x480 viewport; projection is explicit. The original-style gameplay HUD remains deferred; the terrain viewer has a basic status overlay.
 
 Map instances cache static material settings separately from animated UVs,
 water offsets and texture bindings. Filtering, projection and reference-mode
 changes invalidate settings for inactive animation frames too. Model instances
-retain material bindings and prepare changed morph-weight lists per tick;
+retain material bindings and prepare cel samples per tick;
 unchanged animation samples and constant geometry skip redundant work without
 stopping their animation clocks. Terrain
 playback draws once per host frame and refreshes its overlay when displayed
@@ -36,16 +36,18 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 - Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
 - Cave levels also scale each model's colour by distance from the frog's light, unless the form has the "don't fade colour" flag. Entity fade behavior is not implemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
 
-Guarded ORG1 flipbooks consume committed colour scaling and custom ambient,
+ORG1 flipbooks consume committed colour scaling and custom ambient,
 including the diving turtle's blue tint. `AnimatedModelInstance` clones materials
 per instance, preparing every texture-frame variant during initial lighting setup
 so playback never allocates those materials. Shared meshes and materials remain
 unchanged. The shader applies
 map parallel lights to transformed normals, source colour-matrix scaling and
-custom ambient narrowing before polygon modulation. This bounded path does not
-close animated frog per-part lighting or establish full retail pixel equality.
+custom ambient narrowing before polygon modulation. Animated frog per-part
+lighting remains deferred; this path does not establish full retail pixel equality.
 The terrain viewer samples entity poses once per committed tick, then interpolates
-continuous transforms and morph weights per rendered frame. Reset and replacement
+continuous transforms and cel geometry per rendered frame.
+[Cel atlases](../data/animation.md) move flipbook interpolation into the existing
+vertex shader without changing source lighting or fragment materials. Reset and replacement
 collapse history; resize refreshes projection bindings. Lighting uniforms update
 when their inputs change; camera/cave setters visit only affected materials.
 Inspector markers share selection materials, and unchanged FORM outlines/cells
@@ -77,3 +79,10 @@ background yields (150, 90, 30). The expected cases live in the probe.
 
 See [model animation](../data/animation.md) for animated UV/blend rules and
 [map rendering](../data/maps.md#rendering) for terrain sampling and ordering.
+
+`godot --path . --script tools/probe_model_morph.gd -- --output=<external-folder>`
+compares native
+blend-shape and cel-shader captures at five interpolation fractions, both unlit
+and with changing normals under source lighting. It requires a rendered window
+and writes paired PNGs plus pixel comparison facts outside the repository. The
+existing one-byte-per-channel shader colour tolerance applies; geometry differences fail.

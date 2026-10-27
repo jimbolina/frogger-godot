@@ -42,7 +42,7 @@ def main():
             raise RuntimeError(f'{label}: missing evidence path: {process.stdout}')
         folder = Path(matches[0])
         evidence = tuple((folder / name).read_bytes() for name in
-                         ('frog.csv', 'frog.csv.entities.csv', 'playback.json'))
+                         ('frog.csv', 'frog.csv.entities.csv', 'committed.jsonl', 'playback.json'))
         status = json.loads(evidence[-1])
         if status['elapsed_ticks'] <= 0:
             raise ValueError(f'{label}: zero committed ticks cannot establish schedule parity: {folder}')

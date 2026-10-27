@@ -2,6 +2,7 @@ class_name FormReactionResult
 extends RefCounted
 ## Detached reaction of one geometric FORM query.
 
+const CHECKPOINT: String = "checkpoint"
 const NONE: String = "none"
 const HIT: String = "hit"
 const POP: String = "pop"

@@ -95,7 +95,7 @@ func test_group_and_form_facts_are_detached_with_source_diagnostics() -> void:
 			unsupported += 1
 			assert_eq(diagnostic.source_offset, 100)
 			assert_eq(diagnostic.resource_id, 77)
-	assert_eq(unsupported, 3, "Safe, checkpoint and bounce cells need explicit diagnostics")
+	assert_eq(unsupported, 2, "Safe and bounce cells need explicit diagnostics")
 	map.forms[0].data[0].grid_flags[0] = 0
 	assert_eq(setup.definition.contacts[0].grid_flags[0], 4097)
 
@@ -132,3 +132,42 @@ func test_visibility_setup_copies_eight_terrain_counts_and_rejects_only_authored
 	map.packets["ZONE"] = zone
 	assert_string_contains(EntityCollisionSetup.from_map(map, _book(), {0: _model()}, "TEST", 77, "fixture", false, true).error, "zones")
 	assert_eq(EntityCollisionSetup.from_map(map, _book(), {0: _model()}).error, "")
+
+func test_verified_form_callbacks_repoint_independently_of_form_name_and_role() -> void:
+	var map: MapFile = _map()
+	var book: ThemeBook = _book()
+	var form: FormBookEntry = book.entries[1].forms[0]
+	form.flags |= FormBookEntry.FLAG_NO_MODEL
+	var models: Dictionary[int, MofFile] = {0: _model()}
+	for address: int in FormCallbackCatalog.NAMES:
+		form.collision_callback = address
+		form.bonus_callback = address
+		var entities: EntitySetup = EntitySetup.from_map(map, book, "edited-map", 77, "pc-retail-v3.0e", true)
+		assert_eq(entities.error, "")
+		assert_eq(entities.definitions.size(), 1)
+		var expected: FormCallback.Kind = FormCallbackCatalog.resolve("pc-retail-v3.0e", address)
+		assert_ne(expected, FormCallback.Kind.UNKNOWN)
+		assert_eq(entities.definitions[0].bonus_kind, expected)
+		var contacts: FormContactSetup = FormContactSetup.from_map(map, book, entities.definitions, models, "edited-map", 77, "pc-retail-v3.0e", true)
+		assert_eq(contacts.error, "")
+		assert_eq(contacts.definitions[0].callback_kind, expected)
+		assert_true(contacts.definitions[0].sphere_callback)
+		assert_eq(contacts.definitions[0].unsupported_reason, "")
+		assert_eq(entities.definitions[0].behavior.kind, EntityBehavior.Kind.STATIC)
+
+func test_unknown_form_callback_retains_source_location_and_excludes_contact() -> void:
+	var map: MapFile = _map()
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].collision_callback = 0x123456
+	var entities: EntitySetup = EntitySetup.from_map(map, book, "edited-map", 77, "pc-retail-v3.0e", true)
+	var models: Dictionary[int, MofFile] = {0: _model()}
+	var contacts: FormContactSetup = FormContactSetup.from_map(map, book, entities.definitions, models, "edited-map", 77, "pc-retail-v3.0e", true)
+	assert_eq(contacts.error, "")
+	assert_eq(contacts.definitions[0].callback_kind, FormCallback.Kind.UNKNOWN)
+	assert_string_contains(contacts.definitions[0].unsupported_reason, "no verified mapping")
+	assert_eq(contacts.diagnostics.size(), 1)
+	assert_eq(contacts.diagnostics[0].source_offset, 100)
+	assert_eq(contacts.diagnostics[0].source_id, "edited-map")
+	assert_eq(contacts.diagnostics[0].resource_id, 77)
+	assert_eq(contacts.diagnostics[0].form_name, "TEST_CACTUS")
+	assert_eq(FormCallbackCatalog.resolve("another-build", 0x428390), FormCallback.Kind.UNKNOWN)

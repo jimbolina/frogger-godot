@@ -41,6 +41,7 @@ resource ID; inner lists keep file order.
 | File | Coverage |
 |---|---|
 | `map_facts.tsv` | 78 FROG 2.00 files: sizes, general data, vertices, polygon lists, group references, lights, animation lists and retained section counts |
+| `map_visibility_budget.tsv` | Visible group count, total eight-type polygon count and ordered count digest; excludes the invisible group and wireframe G2 |
 | `map_polygons.tsv` | Nine polygon type rows per file, including empty types |
 | `map_animations.tsv` | All 297 animation headers, target and cel digests |
 | `map_animation_states.tsv` | Ten counter/offset samples per animation, from zero through tick 256 |
@@ -154,3 +155,17 @@ landmarks within two pixels. Preserve the source denominator.
 Clipping creates no artificial viewport-border edges.
 `python tools/test_map_capture_masks.py`
 checks the exact band width and that texture stripes retain their interior pixels.
+
+## Whole-map visibility bound
+
+`map_visibility_budget.tsv` is independently decoded by `visibility_budget` in
+`make_golden_map.py` from each GROU packet. Columns are resource ID, name,
+visible group count, polygon total and the ordered per-group count digest.
+The eight counted polygon types match `mapdisp.c:438–450`; the invisible extra
+group and G2 wireframe polygons do not participate in gameplay visibility.
+The retail map golden test compares the application lifecycle definition to
+these facts. For high-detail ORG1 (resource 658), it additionally checks that
+the entire map fits both the group pool and polygon budget. This proves the
+conservative lifecycle selector accepts every selected subset, without sampling
+camera routes. Deliberately change ORG1's total to exercise the assertion, then
+restore the generated row before acceptance.

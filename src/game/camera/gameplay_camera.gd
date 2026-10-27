@@ -119,6 +119,11 @@ func request_death() -> void:
 	_state.next_target_offset = Vector3i.ZERO
 	_state.move_timer = 45
 
+## Uses checkpoint offsets only when the active authored zone permits them.
+func request_checkpoint() -> void:
+	if _zone == null or not _zone.camera_flags & ZoneDefinition.CHECKPOINT:
+		request_death()
+
 ## Changes the source camera frame on mounting, transfer or dismounting.
 func transition_attachment(old_matrix12: PackedInt32Array, new_matrix12: PackedInt32Array, snap: bool) -> String:
 	if _state == null:

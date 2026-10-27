@@ -1,38 +1,31 @@
 # Current checkpoint
 
-Movement, collision/deaths, gameplay camera and animation follow frozen C at
-30 Hz. Retail exploration uses live input. See [launch and controls](../README.md)
-and the [domain index](reference/domain.md). Complete level play remains unfinished.
+P8c is complete: whole-map ORG1 is playable through five checkpoints in the
+existing viewer, including tongue collection, pink-frog delivery, death/respawn,
+timeout, game over and restart. See [controls](../README.md),
+[roadmap](PORTING.md) and the [entity contract](reference/gameplay/entities.md).
 
-SAFE and all FORM death policies advance frog, entity/path, camera, animation
-and RNG state atomically. Script control now supports waits, conditional branches,
-GOSUB/END, timer loop exits, sounds and transactional path pause/resume.
-Supported ORG1 visibility behavior includes scripted
-recreation, immortal initialization, pink frog parent loss/search/hops, pickup,
-riding and death. Persistent paths outlive mortal instances; instance state
-restarts per generation. Independent facts cover these behaviors.
+All 49 script opcodes, 25 named callbacks and four verified v3.0e FORM callbacks
+have typed implementation paths. Application setup resolves names and verified
+callback identities; unknown mappings retain source-located diagnostics.
+Documented unsafe operands remain rejected. MULTIPOINT remains multiplayer-only.
 
-The DDD refactor is complete. Application resolves behavior names once;
-source decoding, gameplay, inspection and presentation have separate ownership.
-GameplayRun coordinates Frog and contact components over composed GameplayState.
-Typed events retain the existing trace format. Candidate APIs and discovered
-copy contracts protect transaction ownership. GameplayHost owns pacing and worker
-handoff; map inspection retains its independent seek clock and capture workflow.
+Rewards, level flow, tongue, entity lifecycle, selective resets, animation,
+logical sound timing and RNG commit together. Full restart remains separate
+from selective in-level resets; the checkpoint mask has one authoritative value.
+Audio playback and rendered particles/splashes remain deferred.
 
-[PORTING](PORTING.md) owns remaining work. P8b's demo playback and comparison
-harness is complete: it resolves player-data demos, consumes recorded input
-atomically and reports reference-layout traces and explicit incomplete results.
-The verified native reference build exports traces and screenshots. Current
-ORG1 playback stops at its admission boundary before a
-committed tick; it does not match the reference. Complete ORG1 playback and
-end-state comparison belong to P8c. Bounded JUN1/ORG1 presets remain
-inspection scaffolding. Ordinary retail terrain still requires zero-zone maps;
-combined zones/visibility retain synthetic gameplay and the prescribed JUN1
-probe. FOR1 remains an unverified retail candidate.
+The complete high-detail ORG1 attract demo matches the verified native terminal
+state, route and consumed input. Committed traces and provenance match headless,
+rendered 30/60/144 Hz and irregular schedules. Repeatable
+[keyboard replays](reference/testing/terrain-inspection.md#whole-map-keyboard-playthrough)
+cover completion, pink delivery and tongue collection with per-tick rules parity.
+Manual keyboard checks cover death/respawn, timeout, game over and restart.
+Both complete test modes, strict compilation and architecture checks pass.
 
-Audio playback, splash/particle effects and [animated per-part lighting](reference/rendering/gameplay-projection.md)
-remain deferred. Performance acceptance requires an idle-system measurement.
-Hosted CI, packaged exports and native C oracle builders remain open.
-The licence remains the owner's decision before publication.
-Never push. [Mac source setup](../README.md#macos-setup) uses Godot 4.5.1 and isolated
-automated profiles.
+Next is P10: a dedicated game scene, original-style HUD and broader level
+coverage using the shared gameplay host. Animated per-part lighting, other
+themes, multiplayer, packaged exports and hosted CI retain their roadmap scope.
+Further performance tuning is deferred at the user’s request; the original-hardware
+target remains unverified. Compatibility remains `pc-retail-v3.0e`, including
+compatible FrogLord-saved edits. Raw logs and captures stay external. Never push.

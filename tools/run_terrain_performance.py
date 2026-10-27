@@ -14,7 +14,7 @@ from godot_profile import ProfileCapture
 
 def meets_target(report):
     """Require the actual workload and display state, not just requested CLI flags."""
-    return (report['accepted'] and report['window_size'] == [2560, 1440]
+    return (report.get('workload', 'bounded-route') == 'bounded-route' and report['accepted'] and report['window_size'] == [2560, 1440]
             and report['render_target_size'] == [1920, 1440] and report['bars'] == [320, 0]
             and report['renderer'] == 'gl_compatibility' and report['vsync'] == 0
             and report['max_fps'] == 0 and report['draw_calls_max'] > 0
@@ -29,13 +29,24 @@ def meets_target(report):
             and 'i7-10700K' in report['cpu'] and 'RTX 4070 Ti SUPER' in report['gpu'])
 
 
+def workload_arguments(repo, route):
+    """Keep whole-map diagnostics separate from the established bounded target."""
+    if route in ('whole-map-idle', 'whole-map-hops'):
+        return ['--performance-workload=' + route, '--tick-limit=600']
+    if route not in ('round-trip', 'diver'):
+        raise ValueError('Unknown performance workload: ' + route)
+    fixture = 'org1_turtle_log_bank.json' if route == 'round-trip' else 'org1_attached_diver.json'
+    return ['--performance-workload=bounded-route', '--exploration=org1-turtle-log-bank',
+            '--scenario-file=' + str(repo / 'tests/golden/fixtures' / fixture)]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--resolution', choices=('640x480', '2560x1440'), default='2560x1440')
-    parser.add_argument('--route', choices=('round-trip', 'diver', 'both'), default='both')
+    parser.add_argument('--route', choices=('round-trip', 'diver', 'both', 'whole-map-idle', 'whole-map-hops'), default='both')
     parser.add_argument('--repetitions', type=int, default=3)
     parser.add_argument('--mode', choices=('full', 'paused', 'simulation', 'no-inspector'), default='full')
     parser.add_argument('--sync', choices=('default', 'uncapped'), default='uncapped')
@@ -103,16 +114,15 @@ def main():
         'data_dir': str(args.data_dir), 'output_directory': str(output)}, sources=identities), indent=2))
     reports = []
     for route in (('round-trip', 'diver') if args.route == 'both' else (args.route,)):
-        fixture = 'org1_turtle_log_bank.json' if route == 'round-trip' else 'org1_attached_diver.json'
+        workload = workload_arguments(repo, route)
         for repetition in range(args.repetitions):
             name = f'{route}-{repetition + 1}'
             flags = ['--resolution', args.resolution, '--borderless', '--position', '0,0']
             if args.sync == 'uncapped':
                 flags += ['--disable-vsync', '--max-fps', '0']
             stage(name, [*flags, '-s', 'res://tools/probe_terrain_performance.gd', '--',
-                         '--level=ORG1', '--exploration=org1-turtle-log-bank',
+                         '--level=ORG1', *workload,
                          '--data-dir=' + str(args.data_dir.resolve()),
-                         '--scenario-file=' + str(repo / 'tests/golden/fixtures' / fixture),
                          '--performance-mode=' + args.mode, '--smoothing=' + args.smoothing,
                          '--performance-size=' + args.resolution,
                          '--window-mode=' + args.window_mode, '--threaded=' + args.threaded,
@@ -124,7 +134,7 @@ def main():
     if identities != {str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}:
         raise RuntimeError('Sources changed during measurement')
     accepted = all(meets_target(report) for report in reports)
-    (evidence / 'summary.json').write_text(json.dumps(dict(accepted=accepted, runs=reports), indent=2))
+    (evidence / 'summary.json').write_text(json.dumps(dict(accepted=accepted, target_scope='bounded routes on i7-10700K/RTX 4070 Ti SUPER', diagnostic_only=args.route.startswith('whole-map-'), runs=reports), indent=2))
     if args.require_target and not accepted:
         raise RuntimeError('Performance acceptance failed; see ' + str(evidence / 'summary.json'))
 

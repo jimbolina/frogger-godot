@@ -8,6 +8,8 @@ extends RefCounted
 
 ## One mesh per part, in part order; null for a part with nothing to draw.
 var part_meshes: Array[ArrayMesh] = []
+## Shared cel atlases and blend-free draw meshes for animated parts.
+var morph_meshes: Array[ModelMorphMesh] = []
 ## Triangles in all meshes.
 var triangle_count: int = 0
 ## Surfaces in all meshes.

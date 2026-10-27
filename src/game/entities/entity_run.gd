@@ -55,8 +55,8 @@ func commit_candidate(candidate: EntityRun) -> void:
 	candidate._ready = false
 
 ## Updates a private candidate script without exposing its mutable entity state.
-func update_candidate_script(slot: int, context: EntityUpdateContext, random: SourceRandom) -> EntityUpdateResult:
-	return _update_script(slot, context, random, true)
+func update_candidate_script(slot: int, context: EntityUpdateContext, random: SourceRandom, runtime: EntityScriptRuntime = null) -> EntityUpdateResult:
+	return _update_script(slot, context, random, true, runtime)
 
 ## Validates and copies source-ordered definitions, then creates tick zero.
 static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecycleDefinition = null) -> EntityRun:
@@ -188,6 +188,11 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 	var next_state: EntityRunSnapshot = _make_snapshot(candidates, tick_index + 1)
 	for index: int in next_state.entities.size():
 		var previous: EntitySnapshot = _state.entities[index]
+		next_state.entities[index].model_present = previous.model_present
+		next_state.entities[index].pop_allocated = previous.pop_allocated
+		next_state.entities[index].pop_remaining = previous.pop_remaining
+		if previous.live and previous.script_state != null and previous.path == null:
+			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 		next_state.entities[index].script_state = previous.script_state.copy() if previous.script_state != null else null
 		next_state.entities[index].animation = previous.animation.copy() if previous.animation != null else null
 		next_state.entities[index].entity_flags = previous.entity_flags
@@ -195,7 +200,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
@@ -225,6 +230,52 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 	_state = next_state
 	return ""
 
+## Resets only source-selected paths and instances, retaining the global tick clock.
+## FORM bits mean reset in frozen C despite FrogLord's inverse flag labels.
+func reset_in_level(checkpoint: bool, environment: EntityEnvironmentState = null, gold_collected: bool = false) -> String:
+	var candidate: EntityRun = copy()
+	var next_environment: EntityEnvironmentState = environment.copy() if environment != null else null
+	var reset_flag: int = 8 if checkpoint else 16
+	for slot: int in candidate._definitions.size():
+		var definition: EntityDefinition = candidate._definitions[slot]
+		var entity: EntitySnapshot = candidate._state.entities[slot]
+		if not definition.form_flags & reset_flag:
+			continue
+		if definition.path_definition != null:
+			var start: PathStart = definition.path_start.copy()
+			start.flags |= PathStart.ACTIVE
+			if entity.entity_flags & EntityDefinition.NO_MOVEMENT:
+				start.flags &= ~PathStart.ACTIVE
+			var runner: PathRunner = candidate._runners[slot].copy()
+			var issue: String = runner.reset_motion(start)
+			if not issue.is_empty():
+				return issue
+			candidate._runners[slot] = runner
+			entity.path = runner.snapshot()
+		if entity.live:
+			if next_environment != null and definition.behavior.kind == EntityBehavior.Kind.CROC_HEAD and entity.custom_state != null and entity.custom_state.checkpoint_index >= 0:
+				var bit: int = 1 << entity.custom_state.checkpoint_index
+				next_environment.covered &= ~bit
+				next_environment.collision_disabled &= ~bit
+				candidate.apply_checkpoint_collision(next_environment.collision_disabled)
+			candidate._retire_instance(candidate._state, entity)
+			var order_slot: int = candidate._state.live_order.find(entity.entity_index)
+			if order_slot >= 0:
+				candidate._state.live_order.remove_at(order_slot)
+	for slot: int in candidate._definitions.size():
+		var definition: EntityDefinition = candidate._definitions[slot]
+		var entity: EntitySnapshot = candidate._state.entities[slot]
+		if not entity.live and (definition.is_immortal() or candidate._lifecycle == null):
+			candidate._initialize_instance(entity, definition, next_environment, gold_collected)
+			entity.generation += 1
+			candidate._state.live_order.insert(0, entity.entity_index)
+			candidate._state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
+	commit_candidate(candidate)
+	if environment != null:
+		environment.covered = next_environment.covered
+		environment.collision_disabled = next_environment.collision_disabled
+	return ""
+
 ## Returns a fully detached source-ordered run snapshot.
 func snapshot() -> EntityRunSnapshot:
 	return _state.copy() if _state != null else null
@@ -234,17 +285,28 @@ func update_script(entity_index: int, context: EntityUpdateContext, random: Sour
 	var slot: int = _slot_for_id(entity_index)
 	return _update_script(slot, context, random, false)
 
-func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool) -> EntityUpdateResult:
+func _update_script(slot: int, context: EntityUpdateContext, random: SourceRandom, owned: bool, runtime: EntityScriptRuntime = null) -> EntityUpdateResult:
 	if context == null or slot < 0 or _state == null or not _state.entities[slot].live or _definitions[slot].script_definition == null:
 		var failed := EntityUpdateResult.new()
 		failed.error = "Entity has no script state"
 		return failed
 	var entity: EntitySnapshot = _state.entities[slot]
 	context = context.copy()
+	context.authored_matrix = _definitions[slot].matrix12.duplicate()
+	context.entity_flags = entity.entity_flags
+	context.pop_allocated = entity.pop_allocated
 	context.path_flags = entity.path.flags if entity.path != null else 0
 	var result: EntityUpdateResult
-	if owned and _scripts[slot].matches(entity.animation, context):
-		result = EntityScriptRunner._update_validated(_scripts[slot]._definition, entity.script_state, entity.animation, context, random, _scripts[slot], true)
+	if owned:
+		var prepared: PreparedEntityScript = _scripts[slot]
+		if not prepared.matches(entity.animation, context):
+			var issue: String = prepared._definition.validate(entity.animation.lengths, context.form_id, context.has_path)
+			if not issue.is_empty():
+				var failed := EntityUpdateResult.new()
+				failed.error = issue
+				return failed
+			prepared = null
+		result = EntityScriptRunner._update_validated(_scripts[slot]._definition, entity.script_state, entity.animation, context, random, prepared, true, runtime)
 	else:
 		result = EntityScriptRunner.update_prepared(_scripts[slot], entity.script_state, entity.animation, context, random)
 	if result.error.is_empty():
@@ -254,6 +316,10 @@ func _update_script(slot: int, context: EntityUpdateContext, random: SourceRando
 		entity.script_state = result.script_state if owned else result.script_state.copy()
 		entity.animation = result.animation if owned else result.animation.copy()
 		entity.matrix12 = result.matrix12.duplicate()
+		entity.entity_flags = result.entity_flags
+		if result.pop_started:
+			entity.pop_allocated = true
+			entity.pop_remaining = 32
 		entity.requests = TickEvent.copy_all(result.requests)
 		entity.colour_scale = result.script_state.colours
 		entity.ambient = result.script_state.ambient
@@ -262,12 +328,32 @@ func _update_script(slot: int, context: EntityUpdateContext, random: SourceRando
 			entity.live_flags &= ~EntityLiveFlags.CARRIES_FROG_0
 	return result
 
+## Applies an effect's detached pose and flags to its private candidate target.
+func apply_tongue_target(target: EntitySnapshot) -> void:
+	var slot: int = _slot_for_id(target.entity_index)
+	assert(slot >= 0 and _state.entities[slot].unique_id == target.unique_id)
+	_state.entities[slot] = target.copy()
+
 ## Copies one current authored slot without cloning the aggregate.
 func entity_snapshot(slot: int) -> EntitySnapshot:
 	return _state.entities[slot].copy()
 
+## Applies script checkpoint collision flags to the candidate's authored checkpoints.
+func apply_checkpoint_collision(disabled: int) -> void:
+	for slot: int in _definitions.size():
+		if _definitions[slot].behavior.kind != EntityBehavior.Kind.CHECKPOINT:
+			continue
+		var checkpoint: int = _definitions[slot].form_id & 32767
+		if checkpoint >= 5:
+			continue
+		var entity: EntitySnapshot = _state.entities[slot]
+		entity.entity_flags &= ~EntityDefinition.NO_COLLISION
+		if disabled & (1 << checkpoint):
+			entity.entity_flags |= EntityDefinition.NO_COLLISION
+
 ## Captures an ordered update, then applies UpdateLiveEntities' transient clear.
 func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds: int, environment: EntityEnvironmentState, death_requested: bool, capture_observation: bool = true) -> void:
+	_state.entities[slot].pop_remaining = maxi(0, _state.entities[slot].pop_remaining - 1)
 	if death_requested:
 		_state.entities[slot].requests.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN))
 	if capture_observation:
@@ -283,13 +369,23 @@ func finish_update(slot: int, previous_flags: int, random: SourceRandom, sounds:
 		_state.entities[slot].destroy_pending = not _definitions[slot].is_immortal()
 
 ## Publishes this tick's frog contact flags for the following entity update.
-func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array) -> void:
-	for entity: EntitySnapshot in _state.entities:
+func set_contact_flags(hits: PackedInt32Array, carries: PackedInt32Array, detached: EntityRunSnapshot = null) -> void:
+	for slot: int in _state.entities.size():
+		var entity: EntitySnapshot = _state.entities[slot]
 		entity.live_flags &= ~(EntityLiveFlags.CARRIES_FROG_0 | EntityLiveFlags.CARRIES_FROG_1 | EntityLiveFlags.CARRIES_FROG_2 | EntityLiveFlags.CARRIES_FROG_3 | EntityLiveFlags.HIT_FROG_0 | EntityLiveFlags.HIT_FROG_1 | EntityLiveFlags.HIT_FROG_2 | EntityLiveFlags.HIT_FROG_3)
 		if hits.has(entity.entity_index):
 			entity.live_flags |= EntityLiveFlags.HIT_FROG_0
 		if carries.has(entity.entity_index):
 			entity.live_flags |= EntityLiveFlags.CARRIES_FROG_0
+		if detached != null:
+			assert(detached.entities[slot].entity_index == entity.entity_index)
+			detached.entities[slot].live_flags = entity.live_flags
+
+## Copies aggregate visit observations after individually synchronized entity updates.
+func sync_update_observations(detached: EntityRunSnapshot) -> void:
+	detached.updates.clear()
+	for update: EntityUpdateObservation in _state.updates:
+		detached.updates.append(update.copy())
 
 ## Advances authoritative entity clocks once at the aggregate pose phase.
 func advance_animations() -> void:
@@ -308,7 +404,7 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 	var parent_live: bool = false
 	var parent: EntitySnapshot = null
 	var parent_form: FormContactDefinition = null
-	if definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
+	if definition.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE]:
 		for candidate: EntitySnapshot in _state.entities:
 			if candidate.unique_id == definition.parent_unique_id:
 				parent_live = candidate.live
@@ -317,13 +413,27 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 				if parent_slot < contacts.size():
 					parent_form = contacts[parent_slot]
 				break
-	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null else null, parent_form, frog)
+	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null or definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE else null, parent_form, frog, _state.entities, _definitions, _state.tick_index - 1)
 	if result.error.is_empty():
+		if result.path_reset_requested:
+			var start: PathStart = definition.path_start.copy()
+			if result.entity.entity_flags & EntityDefinition.NO_MOVEMENT:
+				start.flags &= ~PathStart.ACTIVE
+			else:
+				start.flags |= PathStart.ACTIVE
+			result.error = _runners[slot].reset_motion(start)
+			if not result.error.is_empty():
+				return result
+			result.entity.path = _runners[slot].snapshot()
+			result.entity.matrix12 = EntityTransform.moving(result.entity.path, result.entity.entity_flags)
+		if result.path_active_request >= 0:
+			_runners[slot].set_active(result.path_active_request == 1)
+			result.entity.path = _runners[slot].snapshot()
 		_state.entities[slot] = result.entity.copy()
 	return result
 
 ## Applies the post-camera source view list; new live objects first update next tick.
-func apply_visibility(camera: GameplayCameraSnapshot) -> String:
+func apply_visibility(camera: GameplayCameraSnapshot, environment: EntityEnvironmentState = null, gold_collected: bool = false) -> String:
 	if _state == null or _lifecycle == null:
 		return "Entity run has no lifecycle visibility"
 	var selection: MapGroupVisibilityResult = MapGroupVisibility.query(_lifecycle, camera)
@@ -331,35 +441,47 @@ func apply_visibility(camera: GameplayCameraSnapshot) -> String:
 		return selection.error
 	var next_state: EntityRunSnapshot = _state.copy()
 	next_state.selected_groups = selection.groups.duplicate()
+	var grouped_slots: Dictionary[int, PackedInt32Array] = _visibility_slots(next_state, selection.groups)
 	for group_index: int in selection.groups:
-		for pass_index: int in 2:
-			for slot: int in range(_definitions.size() - 1, -1, -1):
-				var definition: EntityDefinition = _definitions[slot]
-				if definition.is_group_moving() != (pass_index == 0):
-					continue
-				var pose: EntitySnapshot = next_state.entities[slot]
-				var group_point := Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
-				if pose.path != null:
-					group_point = pose.path.position
-				elif not definition.is_group_moving():
-					group_point = Vector3i(definition.matrix12[9], definition.matrix12[10], definition.matrix12[11])
-				if _group_for(group_point.x, group_point.z) != group_index:
-					continue
-				if next_state.entities[slot].entity_flags & EntityDefinition.HIDDEN:
-					continue
-				var entity: EntitySnapshot = next_state.entities[slot]
-				if not entity.lifecycle_supported:
-					continue
-				if entity.live:
-					entity.destroy_pending = false
-					entity.live_flags &= ~EntityLiveFlags.DESTROY
-				else:
-					_initialize_instance(entity, definition)
-					entity.generation += 1
-					next_state.live_order.insert(0, entity.entity_index)
-					next_state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
+		for slot: int in grouped_slots[group_index]:
+			var definition: EntityDefinition = _definitions[slot]
+			var entity: EntitySnapshot = next_state.entities[slot]
+			if entity.live:
+				entity.destroy_pending = false
+				entity.live_flags &= ~EntityLiveFlags.DESTROY
+			else:
+				_initialize_instance(entity, definition, environment, gold_collected)
+				entity.generation += 1
+				next_state.live_order.insert(0, entity.entity_index)
+				next_state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
 	_state = next_state
 	return ""
+
+
+func _visibility_slots(state: EntityRunSnapshot, selected: PackedInt32Array) -> Dictionary[int, PackedInt32Array]:
+	var groups: Dictionary[int, PackedInt32Array] = {}
+	for group_index: int in selected:
+		groups[group_index] = PackedInt32Array()
+	for pass_index: int in 2:
+		for slot: int in range(_definitions.size() - 1, -1, -1):
+			var definition: EntityDefinition = _definitions[slot]
+			var moving: bool = definition.is_group_moving()
+			if moving != (pass_index == 0):
+				continue
+			var entity: EntitySnapshot = state.entities[slot]
+			if entity.entity_flags & EntityDefinition.HIDDEN or not entity.lifecycle_supported:
+				continue
+			var point := Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+			if entity.path != null:
+				point = entity.path.position
+			elif not moving:
+				point = Vector3i(definition.matrix12[9], definition.matrix12[10], definition.matrix12[11])
+			var group_index: int = _group_for(point.x, point.z)
+			if groups.has(group_index):
+				var slots: PackedInt32Array = groups[group_index]
+				slots.append(slot)
+				groups[group_index] = slots
+	return groups
 
 func _slot_for_id(entity_index: int) -> int:
 	for slot: int in _definitions.size():
@@ -389,6 +511,7 @@ func _make_snapshot(runners: Array[PathRunner], tick_index: int) -> EntityRunSna
 		entity.entity_index = definition.entity_index
 		entity.unique_id = definition.unique_id
 		entity.entity_flags = definition.flags
+		entity.flags_authoritative = true
 		entity.matrix12 = definition.matrix12.duplicate()
 		result.entities.append(entity)
 	for index: int in range(_definitions.size() - 1, -1, -1):
@@ -400,8 +523,10 @@ func _make_snapshot(runners: Array[PathRunner], tick_index: int) -> EntityRunSna
 		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[index].flags)
 	return result
 
-func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) -> void:
+func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, environment: EntityEnvironmentState = null, gold_collected: bool = false) -> void:
 	entity.live = true
+	entity.model_present = true
+	entity.matrix12 = definition.matrix12.duplicate()
 	if entity.path != null:
 		entity.matrix12 = EntityTransform.moving(entity.path, definition.flags)
 	entity.destroy_pending = false
@@ -410,25 +535,48 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition) 
 	entity.script_state = EntityScriptState.create(definition.script_definition.root_id) if definition.script_definition != null else null
 	entity.colour_scale = Vector3i.ZERO
 	entity.ambient = Vector3i.ZERO
+	entity.pop_allocated = false
+	entity.pop_remaining = 0
 	entity.requests.clear()
 	if definition.behavior.has_custom_update():
 		entity.custom_state = EntityCustomState.new()
-		if definition.behavior.kind == EntityBehavior.Kind.BONUS_FLY:
+		if definition.behavior.kind == EntityBehavior.Kind.PICKUP:
+			EntityBonusFly.initialize(definition, entity)
+		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true
+		elif definition.behavior.kind == EntityBehavior.Kind.BEAVER:
+			entity.custom_state.mode = EntityBeaver.Mode.WAITING_FIRST
 		elif definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 			entity.custom_state.timer = 0
 			entity.custom_state.model_hidden = true
 		elif definition.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
-			entity.ambient = Vector3i(160, 160, 160)
+			var checkpoint: int = definition.form_id & 32767
+			if environment != null and environment.collected & (1 << checkpoint):
+				entity.entity_flags |= EntityDefinition.NO_COLLISION | EntityDefinition.NO_DISPLAY | EntityDefinition.HIDDEN
+				entity.animation = null
+				entity.model_present = false
+				entity.live_flags = 0
+				entity.custom_state.model_hidden = true
+			else:
+				entity.entity_flags &= ~(EntityDefinition.NO_COLLISION | EntityDefinition.NO_DISPLAY | EntityDefinition.HIDDEN)
+				entity.ambient = Vector3i(160, 160, 160)
+		elif definition.behavior.kind == EntityBehavior.Kind.GOLD_FROG and gold_collected:
+			entity.animation = null
+			entity.model_present = false
+			entity.live_flags = 0
+			entity.custom_state.model_hidden = true
 
 func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
 	entity.live = false
+	entity.model_present = false
 	entity.destroy_pending = false
 	entity.script_state = null
 	entity.animation = null
 	entity.custom_state = null
 	entity.live_flags = 0
+	entity.pop_allocated = false
+	entity.pop_remaining = 0
 	entity.requests.clear()
 	entity.colour_scale = Vector3i.ZERO
 	entity.ambient = Vector3i.ZERO
@@ -458,3 +606,16 @@ func begin_update(slot: int, attached: int) -> bool:
 	if entity.path != null:
 		entity.matrix12 = EntityTransform.moving(entity.path, _definitions[slot].flags)
 	return true
+
+## Synchronizes source moving-object and voice ownership before entity updates.
+func set_sound_state(entity_index: int, has_object: bool, has_voice: bool) -> void:
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0:
+		return
+	var entity: EntitySnapshot = _state.entities[slot]
+	if entity.custom_state != null:
+		entity.custom_state.moving_voice_active = has_voice
+		if not has_object:
+			entity.custom_state.moving_sound.clear()
+	if entity.script_state != null and not has_object:
+		entity.script_state.moving_sound.clear()

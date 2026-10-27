@@ -40,6 +40,8 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 ## Feature checks
 
+- [Whole-map keyboard playthrough](terrain-inspection.md#whole-map-keyboard-playthrough):
+  repeatable completion, pink delivery and tongue collection through viewer input.
 - [Terrain inspection](terrain-inspection.md): scenarios, headless/rendered traces
   and schedule comparisons.
 - [Terrain component oracle](terrain-trace-oracle.md): controller/mover,
@@ -94,9 +96,9 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
-`GameplayHost`. It applies the existing ORG1 visibility admission before the
-recorded starting cell and FAST_RESET initialization. Other retail levels with
-entities or zones report the missing admission. No corridor restriction is removed.
+`GameplayHost`. ORG1 uses whole-map dependency setup with its recorded starting cell and
+FAST_RESET initialization. Other retail levels with entities or zones report
+their missing implementation dependencies.
 
 ```text
 python tools/run_demo.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
@@ -109,8 +111,8 @@ The launcher uses an isolated project/profile, explicit logs, hidden awaited
 processes on Windows and `--disable-crash-handler`; import, strict compilation
 and architecture checks precede playback. Exit 0 means the demo duration elapsed,
 3 means an explicitly incomplete run and 1 means launcher/verification failure.
-A tick limit, unsupported action, death/reset/checkpoint flow or failed admission
-cannot become a complete result. Duration completion alone establishes no retail
+A tick limit, unsupported action or failed dependency validation cannot become
+a complete result. Internal resets preserve elapsed demo duration and input position. Duration completion alone establishes no retail
 gameplay or reference match. Playback provenance records that distinction.
 
 `frog.csv` uses `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`.
@@ -118,7 +120,9 @@ Its companion `frog.csv.entities.csv` uses
 `call,map,index,unique_id,form_book_id,entity_type,x,y,z`, with original form/type
 identities and live-list walk order. Local calls start at zero and count committed
 logic ticks; `input=-1` means no byte was consumed. Positions use integer matrix
-translations. Existing terrain trace formats are unchanged.
+translations. `committed.jsonl` also records complete detached gameplay states,
+ordered events and RNG consumers. Schedule checks compare all three traces and
+playback provenance byte for byte.
 
 The comparator validates LF-terminated integer CSVs, ordered calls and per-call
 identities. `--segment <index>` selects a contiguous reference visit to the map;
@@ -136,7 +140,7 @@ Missing or malformed status, an empty reference, or an empty completed run
 fails as invalid input (exit 2). Complete status must match its declared
 duration.
 
-The schedule verifier compares both CSVs and playback provenance byte for byte
+The schedule verifier compares both CSVs, committed JSONL and playback provenance byte for byte
 across headless and rendered 30/60/144 Hz and irregular frames. To exercise a
 complete synthetic run independently of current retail admission, supply paired
 `--scenario-file <terrain-json>` and `--demo-file <synthetic-demo>` instead of
@@ -147,9 +151,9 @@ runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect i
 
 Use the [verified external native build](../sources.md#exporting-reference-material-from-the-engine)
 and export traces to a folder outside the repositories. The ORG1 reference is
-map 24, segment 0. The current playback stops before any committed tick at its
-admission boundary. Its structured incomplete comparison exercises the harness;
-complete playback and reference end-state acceptance remain P8c.
+map 24, segment 0. Whole-map ORG1 playback completes and matches the verified
+native terminal state, route and consumed input. Preserve that acceptance when
+changing gameplay; bounded incomplete fixtures still exercise rejection paths.
 
 ## Focused iteration and guardrails
 

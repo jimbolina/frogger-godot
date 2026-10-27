@@ -32,8 +32,8 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 	if (flags & GridSquareFlags.USABLE) == 0:
 		return result
 	if flags & GridSquareFlags.CHECKPOINT:
-		result.status = FormReactionResult.UNSUPPORTED
-		result.reason = "FORM checkpoint reaction is unsupported"
+		result.status = FormReactionResult.CHECKPOINT
+		result.hit = true
 	elif flags & GridSquareFlags.SAFE:
 		result.status = FormReactionResult.SAFE if platforms_enabled else FormReactionResult.UNSUPPORTED
 		result.reason = "" if platforms_enabled else "FORM safe attachment is unsupported"

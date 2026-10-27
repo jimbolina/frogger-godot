@@ -64,6 +64,11 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 				state.model_hidden = true
 				state.mode = Mode.NOTHING
 				entity.requests.append(TickEvent.make(TickEvent.Kind.DEATH_PGEN))
+			if frog.frog.mode == FrogMode.HIT_CHECKPOINT and not state.home:
+				entity.requests.append(TickEvent.reward(9))
+				state.mode = Mode.NOTHING
+				state.home = true
+				return ""
 			if frog.frog.mode == FrogMode.JUMPING and state.carried_jump_ticks == 0:
 				entity.animation.select(0)
 				state.carried_jump_ticks = 6

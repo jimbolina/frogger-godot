@@ -12,7 +12,7 @@ func _script(words: PackedInt32Array) -> EntityScriptDefinition:
 	program.root_id = 1
 	program.programs[1] = words
 	program.names[1] = "SCRIPT_TURTLE"
-	program.callbacks = {1: "SCRIPT_CB_LOG_SPLASH", 2: "SCRIPT_CB_DIVE_COLOUR_CHANGE"}
+	program.callbacks = {1: EntityScriptDefinition.CallbackKind.LOG_SPLASH, 2: EntityScriptDefinition.CallbackKind.DIVE_COLOUR_CHANGE}
 	return program
 
 func test_script_callback_uses_previous_contact_and_late_guard_rolls_back() -> void:
@@ -990,3 +990,51 @@ func test_form_correction_guard_rolls_back_candidate_rng_outcomes_and_retry() ->
 		assert_eq(retry.final_snapshot.diagnostics.rng_draw_count, 2)
 		assert_true(TickEvent.trace_lines(retry.events).has("camera_stun_shake"))
 		assert_true(TickEvent.trace_lines(retry.events).has("platform_attachment"))
+
+func test_script_pop_clock_is_simulation_owned_and_reset_recreates_effect() -> void:
+	var level: LevelDefinition = _level()
+	level.entity_collision.entities[0].script_definition = _script([46, 38])
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	var first: TickResult = _tick(run)
+	assert_eq(first.error, "")
+	assert_true(first.final_snapshot.entities.entities[0].pop_allocated)
+	assert_eq(first.final_snapshot.entities.entities[0].pop_remaining, 31)
+	for tick: int in 33:
+		var result: TickResult = _tick(run)
+		assert_eq(result.error, "")
+		assert_false(TickEvent.trace_lines(result.events).has("entity:4:entity_pop_explosion_request"))
+	assert_eq(run.snapshot().entities.entities[0].pop_remaining, 0)
+	assert_true(run.snapshot().entities.entities[0].pop_allocated)
+	assert_eq(run.reset(), "")
+	assert_false(run.snapshot().entities.entities[0].pop_allocated)
+	assert_eq(_tick(run).final_snapshot.entities.entities[0].pop_remaining, 31)
+
+func test_script_ejection_uses_authored_duration_and_zero_duration_freefall() -> void:
+	for duration: int in [0, 12]:
+		var level: LevelDefinition = _level()
+		level.entity_collision.entities[0].script_definition = _script([11, 21, 0, 1, duration, 12, 5])
+		var run: GameplayRun = GameplayRun.create(level)
+		assert_eq(run.error, "")
+		assert_eq(_tick(run).error, "")
+		var result: TickResult = _tick(run)
+		assert_eq(result.error, "")
+		assert_eq(result.control_snapshot.frog.remaining_ticks, 65535 if duration == 0 else 12)
+		assert_eq(result.control_snapshot.frog.mode, FrogMode.JUMPING)
+
+func test_tongue_direction_on_no_entity_angle_rejects_without_committing() -> void:
+	var level: LevelDefinition = _level(1)
+	level.entity_collision.contacts[0].form_book_flags = FormContactDefinition.NO_ENTITY_ANGLE
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	for unused: int in 3:
+		assert_eq(_tick(run).error, "")
+	var before: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
+	var failed: TickResult = _tick(run, TickCommand.EAST | TickCommand.TONGUE)
+	assert_string_contains(failed.error, "outside the source direction table")
+	assert_true(failed.events.is_empty())
+	assert_null(failed.final_snapshot)
+	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), before)
+	assert_eq(_tick(run, TickCommand.EAST).error, "")

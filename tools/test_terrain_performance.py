@@ -1,8 +1,9 @@
 """Asset-free tests for profiler framing and machine-specific acceptance policy."""
+from pathlib import Path
 import struct
 import unittest
 from godot_profile import decode, encode, visual_frames
-from run_terrain_performance import meets_target
+from run_terrain_performance import meets_target, workload_arguments
 
 
 class PerformanceTests(unittest.TestCase):
@@ -45,7 +46,7 @@ class PerformanceTests(unittest.TestCase):
                       cadence_ok=True, fps=201, frames={'p99_ms': 5}, ticks=730, tick_limit=730,
                       engine=dict(major=4, minor=5, patch=1), cpu='Intel i7-10700K', gpu='NVIDIA RTX 4070 Ti SUPER')
         self.assertTrue(meets_target(report))
-        for field, value in [('accepted', False), ('window_size', [640, 480]),
+        for field, value in [('accepted', False), ('workload', 'whole-map-idle'), ('workload', 'whole-map-hops'), ('window_size', [640, 480]),
                              ('renderer', 'dummy'), ('vsync', 1), ('max_fps', 144),
                              ('draw_calls_max', 0), ('render_target_size', [960, 720]),
                              ('bars', [0, 0]), ('mode', 'paused'), ('smoothing', False),
@@ -55,6 +56,21 @@ class PerformanceTests(unittest.TestCase):
                              ('frames', {'p99_ms': 5.001}), ('ticks', 729), ('cpu', 'other'),
                              ('gpu', 'other'), ('engine', dict(major=4, minor=5, patch=2))]:
             self.assertFalse(meets_target(report | {field: value}), field)
+
+
+    def test_whole_map_workload_does_not_attach_corridor_or_fixture(self):
+        self.assertEqual(workload_arguments(Path('/project'), 'whole-map-idle'),
+                         ['--performance-workload=whole-map-idle', '--tick-limit=600'])
+        self.assertEqual(workload_arguments(Path('/project'), 'whole-map-hops'),
+                         ['--performance-workload=whole-map-hops', '--tick-limit=600'])
+        for route, fixture in [('round-trip', 'org1_turtle_log_bank.json'),
+                               ('diver', 'org1_attached_diver.json')]:
+            self.assertEqual(workload_arguments(Path('/project'), route),
+                             ['--performance-workload=bounded-route',
+                              '--exploration=org1-turtle-log-bank',
+                              '--scenario-file=/project/tests/golden/fixtures/' + fixture])
+        with self.assertRaisesRegex(ValueError, 'Unknown performance workload'):
+            workload_arguments(Path('/project'), 'unknown')
 
 
 if __name__ == '__main__':

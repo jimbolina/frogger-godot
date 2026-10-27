@@ -2,6 +2,12 @@ class_name LevelDefinition
 extends RefCounted
 ## Setup-supplied terrain and scalar source identity for a single-player run.
 
+var sounds: Array[LogicalSoundDefinition] = []
+var music_pitch_offset: int = 0
+var flow_enabled: bool = false
+var demo_playback: bool = false
+var level_time: int = 2250
+var rewards: Array[RewardDefinition] = []
 var grid: GridDefinition = null
 var entity_collision: EntityCollisionDefinition = null
 ## Optional inspection restriction; null leaves ordinary terrain behavior unchanged.

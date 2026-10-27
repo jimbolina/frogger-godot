@@ -34,6 +34,11 @@ def cases():
     result[9]['inputs'][4]['allocation'] = False
     result[-1]['inputs'][1]['path_flags'] = 1 << 20
     result[-1]['inputs'][2]['path_flags'] = 1 << 17
+    result.extend([
+        case('start_changes_restart_root', [25, 2, 4, 13, 0, 0, 2, 5], child=[4, 15, 38]),
+        case('source_awards_noop', [26, 999, 27, -1, 28, 2147483647, 6]),
+        case('change_animation_narrows', [43, 65537, 38]),
+    ])
     for mode in range(10):
         item = case(f'branch_condition_{mode}', [13, 0, mode, 2, 2, 4, 14, 6], 3, child=[4, 15, 6])
         item['inputs'][0] = dict(hit=True, carry=True, path_flags=1 << 18)

@@ -86,3 +86,30 @@ only once after host handoff. Pause offers no commands and advances no counters.
 Duration completion means the authored tick count elapsed, not that missing
 level flow or reference agreement has been established. Reference global driver
 call numbers are separate from local logic tick numbers.
+
+## Logical sound clock
+
+Whole-map ORG1 resolves [supplied sound tables](../data/executable-tables.md#sound-metadata)
+and [Windows bank durations](../data/archives.md#windows-sound-bank-metadata)
+into detached definitions. The logical clock advances before entity updates,
+with moving objects visited newest first and voices allocated from the first
+free slot in their source group. A successful allocation consumes pitch RNG
+only when no explicit pitch offset was supplied. Single samples release their
+voice after the source initialization guard, repeat samples re-key without a
+new allocation draw, and looped samples wrap. Source moving pointers use the
+same current transform for both position arguments, including the resulting
+zero-doppler bend behavior.
+
+Script sound, death and ejection operations execute on private candidates at
+their source positions among RNG consumers. The runtime bridge is a private
+transaction service passed separately to owned updates; detached value contexts
+never contain it. Frog, reward, tongue and HUD sounds
+likewise allocate at the call site. Entity retirement releases its moving owner;
+selective recreation gets a new owner generation while the shared RNG and frame
+clock continue. Full restart clears voice state. Later failure rolls back voices,
+sample cursors, object generations, random draws and emitted requests together.
+Actual audio playback remains deferred.
+
+Killed logical voices retain their occupied slots until the source voice-update
+pass, including first-update protection. Retirement clears moving ownership and
+repeat behavior immediately; allocation and pitch RNG cannot reuse the slot early.

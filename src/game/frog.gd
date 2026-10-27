@@ -5,6 +5,8 @@ extends RefCounted
 
 const GRAVITY_16: int = 0x100000
 const NO_INPUT: int = 128
+var flow_enabled: bool = false
+var rewards: Array[RewardDefinition] = GameplayRewards.component_definitions()
 var contacts: FrogContacts = FrogContacts.new()
 var grid: GridDefinition = null
 var controller_directions: PackedInt32Array = PackedInt32Array([0, 1, 2, 3])
@@ -19,6 +21,7 @@ var tick_guard: TickGuard = null
 var callback_error: String = ""
 var consumed_demo_byte: int = -1
 var camera: GameplayCamera = null
+var music_pitch_offset: int = 0
 var random: SourceRandom = null
 var animation_system: FrogAnimationController = null
 
@@ -98,6 +101,8 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 			var held_direction: int = first_direction(command.held_mask)
 			if held_direction != NO_INPUT:
 				input = held_direction
+		if command.pressed_mask & TickCommand.TONGUE:
+			input |= 16
 		if command.recorded_input_byte >= 0 or command.recorded_input_exhausted:
 			if command.recorded_input_exhausted:
 				return "Demo input buffer exhausted before duration elapsed"
@@ -117,16 +122,22 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 			state.frog.mode = FrogMode.WAIT_FOR_CAMERA
 			events.append(TickEvent.make(TickEvent.Kind.CAMERA_CLOCKWISE) if clockwise else TickEvent.make(TickEvent.Kind.CAMERA_ANTICLOCKWISE))
 			return ""
-	if command.recorded_input_byte >= 0 and input & 16:
-		return "Demo tongue action is unsupported"
-	if command.recorded_input_byte >= 0 and not input & (NO_INPUT | 8) and input > 3:
+		if input & 16:
+			var tongue_issue: String = TongueController.start(self, state, events)
+			if not tongue_issue.is_empty():
+				return tongue_issue
+	if command.recorded_input_byte >= 0 and not input & (NO_INPUT | 8) and (input & ~16) > 3:
 		return "Demo directional action contains unsupported reserved bits"
 	var is_super: bool = input & 8 != 0
 	if is_super:
 		input = (state.frog.direction - (state.attachment.entity_angle if state.frog.flags & FrogFlags.ON_ENTITY else controller_directions[0])) & 3
 	if not input & NO_INPUT:
+		if input & 16 and state.frog.flags & FrogFlags.ON_ENTITY:
+			var platform: FormContactDefinition = contacts.platform_definition(self, state)
+			if platform != null and platform.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
+				return "Simultaneous tongue and directional input on NO_ENTITY_ANGLE indexes outside the source direction table"
 		state.frog.no_input_timer = 0
-		var failure: String = jump(state, input, events, is_super)
+		var failure: String = jump(state, input & 3, events, is_super)
 		if not failure.is_empty():
 			return failure
 	state.frog.current_input = input
@@ -136,7 +147,7 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 ## Prepares a terrain or platform jump.
 func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_super: bool = false, forced: bool = false, distance: int = 1, duration: int = 0) -> String:
 	if state.frog.flags & FrogFlags.ON_ENTITY:
-		return contacts.jump_platform(self, state, direction, events, is_super, distance)
+		return contacts.jump_platform(self, state, direction, events, is_super, distance, duration, forced)
 	direction = controller_directions[direction]
 	var offsets: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
 	var target_cell: Vector2i = state.frog.cell + offsets[direction] * distance
@@ -164,8 +175,8 @@ func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_sup
 		state.frog.mode = FrogMode.BOUNCY_COBWEB
 		return callback_error
 	var current_height: int = state.frog.world_position.y
-	var allowed_up: int = 448 if is_super else 200
-	if not is_super and state.frog.square_index >= 0 and grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT:
+	var allowed_up: int = 448 if is_super else 32767 if forced else 200
+	if not is_super and not forced and state.frog.square_index >= 0 and grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT:
 		allowed_up = 255
 	var index: int = -1
 	var height: int = current_height
@@ -221,6 +232,9 @@ func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_sup
 	state.frog.velocity_16.z = delta.z / state.frog.remaining_ticks
 	@warning_ignore("integer_division")
 	state.frog.velocity_16.y = ((state.frog.target_y - current_height) * 65536) / (state.frog.remaining_ticks + 1) - ((GRAVITY_16 * (state.frog.remaining_ticks + 1)) >> 1)
+	var sound_issue: String = play_sound(state, 7 if is_super else 6, 0 if is_super else (state.tick_index & 3) << 7)
+	if not sound_issue.is_empty():
+		return sound_issue
 	state.requests.animation_requests += 1
 	request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll_request else FrogAnimationCatalog.HOP, state)
 	state.requests.sound_requests += 1
@@ -229,6 +243,9 @@ func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_sup
 	events.append(TickEvent.make(TickEvent.Kind.SUPER_HOP) if is_super else TickEvent.make(TickEvent.Kind.QUICK_HOP) if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.AUTO_HOP) if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else TickEvent.make(TickEvent.Kind.ROLL) if roll_request else TickEvent.make(TickEvent.Kind.HOP))
 	events.append(TickEvent.make(TickEvent.Kind.HOP_SOUND))
 	if is_super or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP or not state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
+		var reward_issue: String = GameplayRewards.apply(rewards[1 if is_super else 3 if roll_request or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else 0], state, events, random)
+		if not reward_issue.is_empty():
+			return reward_issue
 		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll_request or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
 	return ""
 
@@ -272,6 +289,14 @@ func move(state: GameplayState, events: Array[TickEvent]) -> void:
 			request_animation(FrogAnimationCatalog.PANT, state)
 			events.append(TickEvent.make(TickEvent.Kind.PANT))
 		update_matrix(state)
+		return
+	if state.frog.mode == FrogMode.HIT_CHECKPOINT:
+		if state.frog.remaining_ticks != 0:
+			move_jumping(state, events, false)
+		else:
+			update_matrix(state)
+		state.frog.mode = FrogMode.HIT_CHECKPOINT
+		update_world(state)
 		return
 	if state.frog.mode == FrogMode.DYING:
 		var continuing_jump: bool = state.frog.remaining_ticks != 0
@@ -366,12 +391,29 @@ func update_world(state: GameplayState) -> void:
 func update_matrix(state: GameplayState) -> void:
 	if state.frog.flags & FrogFlags.ON_ENTITY and state.attachment.current_entity_index >= 0:
 		TerrainPlatform.update_matrix(state, contacts.platform_pose(self, state))
-		return
-	if state.attachment.current_entity_index >= 0 and state.frog.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_LAND) == FrogFlags.JUMP_FROM_ENTITY:
+	elif state.attachment.current_entity_index >= 0 and state.frog.flags & (FrogFlags.JUMP_FROM_ENTITY | FrogFlags.JUMP_TO_LAND) == FrogFlags.JUMP_FROM_ENTITY:
 		var facing: Vector3i = PlatformMath.apply(contacts.platform_pose(self, state).matrix12, TerrainPlatform.DIRECTIONS[state.frog.direction])
 		state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, null, facing)
-		return
-	state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, grid.squares[state.frog.square_index] if state.frog.square_index >= 0 else null)
+	else:
+		state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, grid.squares[state.frog.square_index] if state.frog.square_index >= 0 else null)
+	if state.frog.flags & FrogFlags.SCALING_UP:
+		state.frog.scale += PlatformMath.divide(5120 - state.frog.scale, 4 - state.frog.scale_timer)
+		state.frog.scale_timer += 1
+		if state.frog.scale_timer == 4:
+			state.frog.flags &= ~FrogFlags.SCALING_UP
+			state.frog.flags |= FrogFlags.SCALING_DOWN
+			state.frog.scale_timer = 4
+		_scale_matrix(state.frog)
+	elif state.frog.flags & FrogFlags.SCALING_DOWN:
+		state.frog.scale += PlatformMath.divide(4096 - state.frog.scale, state.frog.scale_timer)
+		state.frog.scale_timer -= 1
+		if state.frog.scale_timer == 0:
+			state.frog.flags &= ~FrogFlags.SCALING_DOWN
+		_scale_matrix(state.frog)
+
+func _scale_matrix(state: FrogState) -> void:
+	for index: int in 9:
+		state.matrix12[index] = PlatformMath.s16(PlatformMath.s32(state.matrix12[index] * state.scale) >> 12)
 
 
 ## Applies terrain landing and fall reactions.
@@ -403,6 +445,8 @@ func react_fall(state: GameplayState, distance: int, flags: int, events: Array[T
 	elif distance <= 1024:
 		state.frog.mode = FrogMode.STUNNED
 		state.frog.remaining_ticks = 45
+		if not play_sound(state, 30).is_empty():
+			return
 		state.requests.sound_requests += 1
 		state.requests.animation_requests += 1
 		request_animation(FrogAnimationCatalog.CRASH, state)
@@ -414,12 +458,16 @@ func react_fall(state: GameplayState, distance: int, flags: int, events: Array[T
 	else:
 		if flags & GridSquareFlags.DEADLY:
 			if theme == 3:
+				if not play_sound(state, 14).is_empty():
+					return
 				state.requests.sound_requests += 1
 			kill(state, 12 if theme == 3 else 8, theme != 3, events)
 		elif flags & GridSquareFlags.POPDEATH:
 			kill(state, 23, false, events)
 		elif flags & GridSquareFlags.WATER:
 			kill(state, 8, true, events)
+			if not play_sound(state, 2).is_empty():
+				return
 			state.requests.sound_requests += 1
 		else:
 			kill(state, 2, false, events)
@@ -441,12 +489,18 @@ func react(state: GameplayState, flags: int, events: Array[TickEvent]) -> void:
 		return
 	if flags & GridSquareFlags.DEADLY:
 		kill(state, 12 if theme == 3 else 8, theme != 3, events)
+		if not play_sound(state, 12).is_empty():
+			return
 		state.requests.sound_requests += 1
 	elif flags & GridSquareFlags.POPDEATH:
 		kill(state, 23, false, events)
+		if not play_sound(state, 17).is_empty():
+			return
 		state.requests.sound_requests += 1
 	elif flags & GridSquareFlags.WATER:
 		kill(state, 8, true, events)
+		if not play_sound(state, 2).is_empty():
+			return
 		state.requests.sound_requests += 1
 	elif flags & (GridSquareFlags.SLIPPY | GridSquareFlags.SIMPLE_SLIPPY):
 		var mode: int = FrogMode.SLIPPING_LAND_GRID if flags & GridSquareFlags.SLIPPY else FrogMode.SIMPLE_SLIPPING_LAND_GRID
@@ -463,12 +517,14 @@ func react(state: GameplayState, flags: int, events: Array[TickEvent]) -> void:
 
 ## Requests death animation and updates the candidate death state.
 func kill(state: GameplayState, animation: int, down_velocity: bool, events: Array[TickEvent]) -> void:
-	if state.frog.mode == FrogMode.DYING or state.frog.flags & FrogFlags.MUST_DIE:
+	if state.frog.mode in [FrogMode.DYING, FrogMode.HIT_CHECKPOINT] or state.frog.flags & FrogFlags.MUST_DIE:
 		return
 	state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
 	if state.frog.lives > 0:
 		state.requests.life_decrement_requested = true
-	if state.frog.lives <= 1:
+		if flow_enabled:
+			state.frog.lives -= 1
+	if state.frog.lives <= (0 if flow_enabled else 1):
 		state.frog.flags &= ~FrogFlags.ACTIVE
 	state.frog.flags |= FrogFlags.MUST_DIE
 	state.requests.animation_requests += 1
@@ -509,9 +565,19 @@ func collide(state: GameplayState, events: Array[TickEvent]) -> bool:
 		state.frog.world_position.y = death_height
 		state.frog.velocity_16 = Vector3i.ZERO
 		kill(state, 8, true, events)
+		if not play_sound(state, 12 if theme in [1, 8] else 1).is_empty():
+			return false
 		state.requests.sound_requests += 1
 		return false
 	return true
+
+
+## Allocates source sound immediately and retains any failure for the gameplay transaction.
+func play_sound(state: GameplayState, sound_id: int, pitch_offset: int = 0) -> String:
+	var issue: String = GameplaySound.play(state, random, sound_id, pitch_offset)
+	if not issue.is_empty():
+		callback_error = issue
+	return issue
 
 
 ## Records and forwards a logical animation request.
@@ -658,3 +724,23 @@ func prepare_start(initial: RunStart, default_cell: Vector2i, default_direction:
 	prepared.state = state
 	prepared.directions = directions
 	return prepared
+
+## Applies the source script ejection operands as grid distance and jump duration.
+func eject(state: GameplayState, grid_delta: int, duration: int, events: Array[TickEvent]) -> String:
+	if duration == 0:
+		if state.frog.mode == FrogMode.DYING:
+			return ""
+		contacts.detach_platform(self, state, events)
+		if not callback_error.is_empty():
+			return callback_error
+		state.frog.mode = FrogMode.JUMPING
+		state.frog.remaining_ticks = 65535
+		state.frog.velocity_16 = Vector3i.ZERO
+		state.frog.flags &= ~FrogFlags.LANDED_ON_LAND_CLEAR_MASK
+		state.requests.animation_requests += 1
+		request_animation(FrogAnimationCatalog.FREEFALL, state)
+		return ""
+	if duration < 0 or grid_delta < 0:
+		return "Unsafe negative ejection jump operands"
+	var direction: int = (state.frog.direction - (state.attachment.entity_angle if state.frog.flags & FrogFlags.ON_ENTITY else controller_directions[0])) & 3
+	return jump(state, direction, events, false, true, grid_delta, duration)

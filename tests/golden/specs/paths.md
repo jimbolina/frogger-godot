@@ -2,12 +2,18 @@
 
 `paths_retail.tsv` holds one row for each final `FROG` map in the supported
 v3.0e archive. Columns are resource ID, archive name, path count, spline/arc/line
-segment counts, metadata digest and segment digest. Metadata flattens each
+segment counts, metadata digest, segment digest and entity-list digest. Metadata flattens each
 source-ordered path as `(path_index, path_offset, entity_list_pointer,
 segment_count)`. Segment data flattens each source-ordered segment as
 `(path_index, segment_index, segment_offset, end_offset, type, length)` followed
 by spline matrix (12), smoothing knots (4), smoothing coefficients (12); arc
 start/centre/normal triples, radius and pitch; or line start/end triples.
+Entity lists flatten `(path_index, member_count, authored_entity_indices...)`
+in their stored order, decoded as signed16 values through the `-1` terminator.
+This ordering supplies the beaver's neighbor walk. Zero pointers mean empty
+lists; negative indices other than the terminator and missing terminators are
+rejected. A deliberate-break check alters one entity-list digest, requires the
+retail path test to fail, then restores the generated fact.
 All values are signed decimal except source offsets and pointers, which are
 unsigned decimal. Nonempty lists use the [list digest convention](../README.md#digest-convention);
 empty lists use `-`. The TSV stores count facts and digests of map metadata and

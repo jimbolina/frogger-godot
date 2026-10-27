@@ -18,7 +18,7 @@ func configure(scenario: TerrainScenario) -> void:
 	_entity_reactions = scenario.options.entity_reactions
 	_entity_lifecycle = scenario.options.entity_lifecycle
 	_guarded_exploration = scenario.level.tick_guard != null
-	_scripted_exploration = scenario.options.scripted_entities
+	_scripted_exploration = scenario.options.scripted_entities or scenario.level.flow_enabled
 	_primitive_exploration = scenario.level.entity_collision != null and scenario.level.entity_collision.frog_collision != null
 	var metadata: Dictionary = {"schema": "entity-exploration-v1" if _guarded_exploration else "entity-lifecycle-v1" if scenario.options.entity_lifecycle else "entity-platform-v1" if scenario.options.platforms_enabled else "entity-pop-v1" if scenario.options.entity_reactions else "terrain-run-v1", "scenario": scenario.identifier,
 		"source_id": scenario.level.source_id, "resource_id": scenario.level.resource_id, "map_index": scenario.level.map_index,
@@ -56,6 +56,9 @@ func configure(scenario: TerrainScenario) -> void:
 		var active_omissions: Array = metadata["omitted"]
 		active_omissions.erase("zones")
 		active_omissions.erase("active_camera_zones")
+	if scenario.level.flow_enabled:
+		metadata["schema"] = "org1-gameplay-v1"
+		metadata["omitted"] = ["audio_playback", "rendered_particles", "animated_part_lighting", "multiplayer"]
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.
@@ -63,7 +66,7 @@ func append_result(scenario: int, command: TickCommand, result: TickResult) -> v
 	_append(scenario, command, "control", result.control_snapshot)
 	_append(scenario, command, "move", result.move_snapshot)
 	var phases: Array[String] = ["control", "move", "collision", "camera", "final"]
-	if _guarded_exploration:
+	if _guarded_exploration or _scripted_exploration:
 		phases.insert(4, "scripts")
 	for phase: String in phases:
 		var snapshot: GameplayState = result.get(phase + "_snapshot")

@@ -23,7 +23,7 @@ func validate() -> String:
 		return "Vehicle collision requires a cuboid without a primitive matrix"
 	if flags & ~(STATIC | LAST_IN_LIST | DISABLED) != 0 or flags & LAST_IN_LIST == 0:
 		return "Vehicle cuboid flags are unsupported or lack the list terminator"
-	if reaction not in [0, 1]:
+	if reaction not in [0, 1, 3]:
 		return "Vehicle cuboid reaction is unsupported"
 	for axis: int in 3:
 		if offset[axis] < -32768 or offset[axis] > 32767:

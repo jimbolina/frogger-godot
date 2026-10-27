@@ -44,14 +44,15 @@ default does not reproduce.
 
 ## Visibility lifecycle
 
-`EntityCollisionDefinition.lifecycle` opts an integrated run into bounded
-single-player live-entity creation. Null preserves all-attached inspection.
-Ordinary retail terrain setup supports zero-zone maps and script-free generic STATIC/MOVING entities.
+`EntityCollisionDefinition.lifecycle` enables single-player live-entity creation
+for integrated runs. Null preserves all-attached inspection.
+Generic retail terrain inspection supports zero-zone maps and script-free
+generic STATIC/MOVING entities.
 Ordinary inspection retains unsupported script-bearing records as dormant
 source identities. The separate [scripted custom behavior](#custom-entity-behaviors) supplies validated programs and the required
-custom/immortal behaviors. Selective checkpoint/death resets remain deferred. Existing FORM/model and
-collision-callback exclusions still govern collision; bonus callbacks remain
-unexecuted diagnostics.
+custom/immortal behaviors. Whole-map ORG1 adds selective checkpoint/death resets
+and verified typed collision/bonus callbacks. General inspection retains its
+explicit dependency exclusions.
 
 `GameplayRun` advances persistent paths, culls/updates live entities, runs frog
 and camera/animation phases, then selects and expands visible groups before
@@ -74,6 +75,14 @@ conservative limit ensures `CreateMapGroups` visits the whole list without
 reproducing renderer allocation history; equality is unsupported. Selection or
 budget failure rejects the entire tick rather than approximating the live set.
 `mapdisp.c:413–435,454–478,962–977` owns this boundary.
+
+The high-detail retail ORG1 map has 84 visible groups containing 395 counted
+polygons in total. Any camera selection is a subset of these groups, so its
+polygon count remains below 2500 and the map cannot exhaust the 128-slot pool.
+This whole-map bound covers arbitrary camera motion, including authored zones,
+without a route or corridor assumption. [Independent map facts](../../../tests/golden/specs/maps.md)
+pin every group's count. Repointed entities do not alter this bound; map edits
+that increase geometry still receive the checked selector diagnostics.
 
 Every surviving mortal instance is marked DESTROY during entity update.
 Visible nonhidden membership clears that mark at the tail. A mark surviving
@@ -122,9 +131,9 @@ state between them; it performs no frog movement or contact. Camera, selection
 and entity state commit atomically, including at that sequence boundary.
 Presentation creates/releases log instances from committed generations.
 
-This does not lift ordinary retail terrain's zero-zone guard or change
-the existing JUN1 and ORG1 all-attached presets. Script/custom/immortal behavior and
-selective resets remain unsupported. Reproduction and evidence
+These bounded fixtures retain their selected dependencies and all-attached
+presets. Whole-map ORG1 uses separate dependency setup with scripts, custom
+behaviors, immortals and selective resets. Reproduction and evidence
 fields belong to the [golden specification](../../../tests/golden/specs/entities.md#combined-camera-zones-and-lifecycle);
 launch commands belong to [inspection](../testing/terrain-inspection.md#combined-zone-and-lifecycle-inspection).
 
@@ -177,11 +186,13 @@ The [testing guide](../testing/README.md) describes both inspection modes.
 map-group bounds. An optional `LevelDefinition.entity_collision` enables the
 integrated run. General inspection excludes nonzero scripts from reaction
 execution because frozen `ENTITY.C` runs scripts before frog collision.
-The guarded ORG1 adapter supplies its verified script closure instead.
+The guarded ORG1 adapter supplies its verified script closure; whole-map ORG1
+resolves the complete authored dependency set.
 Geometry remains inspectable.
-Collision callback addresses remain excluded until verified mappings and
-implementations exist. Bonus callbacks belong to tongue collection; they remain
-unexecuted diagnostics without independently blocking a FORM reaction.
+Unknown collision callback mappings remain excluded with diagnostics. Verified
+callbacks resolve to typed behavior during application setup. Bonus callbacks
+execute during tongue collection in whole-map play; the bounded POP probe does
+not execute them.
 
 The all-attached model assumes every accepted base entity is live. Following
 `mapload.C` and `ENTITY.C/LinkEntities`, statics retain their authored group;
@@ -272,9 +283,9 @@ caches the forbidden identity; terrain landing clears it. The
 [camera contract](gameplay-camera.md) owns projection and correction behavior.
 
 The [JUN1 golden specification](../../../tests/golden/specs/entities.md#jun1-safe-platform)
-owns the retail probe and source comparisons. Entity-specific sliding/bouncing,
-FORM callback dispatch and multiplayer stacking remain unsupported. Bonus
-callbacks remain diagnostic-only without independently blocking collision.
+owns the retail probe and source comparisons. Entity-specific sliding/bouncing
+and multiplayer stacking remain unsupported. Verified v3.0e FORM callbacks
+resolve through the application catalog described below.
 
 ## Custom entity behaviors
 
@@ -289,8 +300,10 @@ are omitted from supported execution. Gameplay dispatches only on typed kinds.
 checkpoint with shared RNG and appears for 121 updates; position, visibility,
 collision and checkpoint bits belong to the transaction. Static noises own
 logical moving-sound allocations. Retirement releases sound ownership and
-recreation can allocate it again without inventing RNG draws. Checkpoint croak
-and collection are not implemented.
+recreation can allocate it again without inventing RNG draws. Checkpoint proximity animation uses the pre-control 3D frog distance, a strict
+512-unit radius, ground cel zero and the shared RNG. Jump/inflate/deflate modes
+are checkpoint-owned and survive live-instance recreation. Collection updates
+the shared checkpoint mask and transactional level flow.
 
 Moving-group membership includes turtles, flies and the baby frog; it is
 independent of path ownership. Immortal noise, boundary, baby and fly instances
@@ -307,8 +320,10 @@ programs survive instance recreation.
 `ExplorationGuard`. These restrictions validate available behavior; they are
 not walls or map rules. The generic tick guard rejects and rolls back a
 candidate at the relevant phase without changing collision or clamping position.
-Ordinary terrain inspection still requires zero-zone retail maps. The presets
-remain until complete ORG1 play replaces them, as tracked in [PORTING](../../PORTING.md).
+Generic terrain inspection requires zero-zone retail maps. Whole-map ORG1 setup
+loads authored zones and validates dependencies without an exploration guard.
+The bounded presets remain regression fixtures, as tracked in
+[PORTING](../../PORTING.md).
 [Golden specifications](../../../tests/golden/specs/entities.md) own route
 coordinates, exclusion geometry, schedules and source comparisons;
 [inspection instructions](../testing/terrain-inspection.md) own launch commands.
@@ -336,8 +351,11 @@ multiple cuboids and bounce reactions reject explicitly.
 
 The frog is created with `MR_OBJ_STATIC`. Frozen `MR_ANIM.C:1998–2014` retains
 stored world transforms when both action and actual cel match, even if the root
-moved. `FrogCollisionPose` preserves that cache in each run snapshot. Collision
-reads the previous stored pose; refresh happens after final animation stepping
+moved. `FrogCollisionPose` preserves that cache in each run snapshot. It
+also retains the cache while a newly selected action has pending cel -1:
+source stored-transform updates skip negative cels (`MR_ANIM.C:1989–1994`).
+Selective resets can publish this state before the next animation step.
+Collision reads the previous stored pose; refresh happens after final animation stepping
 (`gamesys.C:1326–1333`). Inspection reset explicitly primes action 0/cel 0 at
 the selected start; it does not claim uninitialized full-engine startup parity.
 
@@ -348,7 +366,7 @@ The next entity update observes HIT and requests the named traffic splat sound.
 FORM fallback SQUISHED does not apply primitive-only flattening. All hits,
 cached points, death, camera, animation, scripts and RNG commit together or
 roll back together. Primitive contacts identify the entity, part and hilite.
-Jump-from-primitive state is unsupported and rejects atomically.
+Jump-from-primitive state skips entity scanning until its source flag clears.
 Squish particle creation and removal, tyre sprites, local ordering tables and
 audio playback remain presentation/effect boundaries; no race-mode or full
 effect simulation is claimed.
@@ -370,23 +388,25 @@ next visit, records the dead flag and emits one logical `death_pgen` request.
 The inactive state remains hidden. All continuation fields and requests share
 the run transaction; pickup and parent changes collapse presentation history.
 
-Delivery rewards, tongue pickup, selective resets and full checkpoint flow remain
-unimplemented. [Independent evidence](../../../tests/golden/specs/entities.md#scripted-visibility)
+Checkpoint delivery emits its reward once at the next source entity visit.
+Tongue, reward and selective-reset behavior is described below. [Independent evidence](../../../tests/golden/specs/entities.md#scripted-visibility)
 and [inspection commands](../testing/terrain-inspection.md#scripted-org1-visibility)
 cover the supported pickup, riding and death behavior.
 
 ## Supported script components
 
 `EntityScriptSetup` resolves supplied programs and the `CallbackNames` bank,
-copies only the supported branch closure and validates both the authored
+copies the reachable named branch closure and validates both the authored
 turtle script and its named non-diving replacement. Turtle register payloads
 retain their three words after PATH_INFO; static noise retains two words after
-the matrix. Neither callback numbers nor executable addresses dispatch code.
+the matrix. Application setup resolves callback names into typed callback kinds;
+gameplay never dispatches on those names or executable addresses.
 `SUB_TURTLE` keeps its identity while sharing the generic path transform.
 
 `EntityScriptDefinition` validates instruction widths, operand modes, register
-indices, action indices, callback names, branch targets and balanced single
-loops. Supported programs include turtle/log behavior, five traffic program/SFX pairs,
+indices, action indices, callback kinds, branch targets and balanced single
+loops. Program names provide source identity, not an execution allowlist. Validated
+programs include turtle/log behavior, five traffic program/SFX pairs,
 two noise programs and the original-theme snake/crocodile scripts. Unsupported instructions and malformed
 or non-yielding programs fail explicitly. Definitions retain no source data.
 
@@ -401,8 +421,7 @@ Control flow also supports animation/path-end waits, direct/random sounds,
 timer loop exits, path pause/resume, END and conditional NEW_SCRIPT/GOSUB/return.
 END applies that tick's deviation, callbacks and timer before returning to the
 single saved GOSUB frame or becoming inactive; inactive scripts do not advance.
-Nested GOSUB overwrites the one source return slot. RESTART still uses the
-original root. NO_CONDITION is a no-op for branches; ALWAYS branches. Path-end
+Nested GOSUB overwrites the one source return slot. RESTART uses the root retained across branches; START_SCRIPT can change it. NO_CONDITION is a no-op for branches; ALWAYS branches. Path-end
 waits use bounce/repeat flags, excluding one-shot hit flags. Pause affects the
 next path update and is committed with the entity candidate. STOP_DEVIATE
 retains offsets/deltas; CLEAR_DEVIATE clears them. Suppressed random sounds
@@ -410,14 +429,51 @@ consume no RNG; sound IDs and divisors narrow to signed16.
 
 `RETURN_GOSUB_IF RANDOM` remains rejected: frozen C reads `script[3]` despite
 this instruction having one declared operand. No adjacent-word read is invented.
-Its END_OF_PATH condition falls through in C, unlike SCRIPT_IF. Rotation-based
-conditions currently observe the initial zero counts because rotation commands
-remain unsupported. The new control-flow and death-policy facts are independent
+Its END_OF_PATH condition falls through in C, unlike SCRIPT_IF. Path scripts support three-axis rotation, rotation waits/stops and immediate or
+register-based deviation in all six signed directions. Conditions inspect all
+three counts. Angular duration updates mask to 12 bits; destination updates
+compare signed16 values before masking the reached destination. Rotation composes
+X, Y, Z onto the current path pose before world-space deviation. Matrix-mode scripts premultiply the authored rotation by source X/Y/Z rotation
+and translate from the authored position. Static entities using path-mode scripts
+retain their live matrix between visits, including after END. Matrix mode requires
+an authored matrix payload; path payloads are not reinterpreted as matrices. `RETURN_DEVIATE REGISTERS NEG_COORD_X` is rejected:
+frozen C uses `coord > NEG_COORD_X` on that branch, indexing outside its three
+axis fields for equality. The literal branch uses `coord > COORD_Z` and is safe. The new control-flow and death-policy facts are independent
 Python implementations of frozen C; they have not been run through a native C
 component adapter. Existing Python/C corpora remain unchanged.
 
+All 25 names in the supplied callback bank have component implementations;
+script dependencies still gate execution. Helium-balloon callbacks resolve their
+rising program by name and clear loop cursors without replacing the restart root.
+Dive callbacks consume CARRY in slot order; frog deaths and notifications retain
+their source order within the aggregate transaction. Static dive colour uses the
+authored Y position. Path fish/hippo colours use the path height. Callback support
+does not admit an otherwise unsupported program or other-theme entity.
+
+START_SCRIPT changes the RESTART root but continues the current instruction
+stream, matching the source's overwritten script-pointer assignment. The three
+AWARD_FROG instructions are source no-ops. CHANGE_ENTITY_ANIM narrows its action
+to signed16 and respects animated/display state. MUTATE_MESH_COLOR uses the live
+height before deviation. KILL_SAFE_FROG retains death/sound ordering.
+HOME_IN_ON_FROG preserves the source register-or-literal distance test, YX basis,
+strict range and near-target snap; dying/checkpoint frogs are excluded.
+
+Appearance and collision instructions change live entity flags transactionally.
+Live flags can clear authored NO_COLLISION; standalone probes still combine their
+supplied flags with authored defaults. APPEAR writes the saved script position
+before motion, so matrix-mode translation subsequently replaces it. Checkpoint
+selection consumes one chance draw and, on success, one start-index draw. It
+searches uncollected checkpoints and preserves the source's assignment of
+NO_COLLISION rather than treating it as an occupancy test. Collected, fly-covered
+and collision-disabled masks are distinct; collection uses the shared collected mask.
+
+EJECT_FROG performs ordered forced jumps or zero-duration freefall. Moving-sound
+pitch bend emits a logical request; POP retains its 32-tick source lifetime.
+Register payload admission and sprite operands retain their explicit bounds; a supported opcode
+name does not mean every operand combination or model is admitted.
+
 `EntityRun` owns `EntityScriptState` and `EntityAnimationState`, including
-cursors, six registers, callback slots, signed16 deviations, unsigned16 timer,
+cursors, six registers, callback slots, three-axis signed16 motion, unsigned16 timer,
 colour/ambient state and logical moving-sound ownership. SET_ACTION resets cel
 to -1 even for the current action; pose advancement uses supplied lengths.
 `EntityScriptRunner` returns private state/RNG copies, ordered request parameters
@@ -431,10 +487,105 @@ previous-tick hit/carry flags. Drowning reaches that tick's control phase.
 Ordered observations retain each visit before transient flags clear; entity
 animation advances after frog animation scripts. Failed later phases discard
 requests, clocks, colours, RNG and checkpoint covered bits together. Transform-only baby updates require a live parent; scripted visibility uses the
-full parent loss/search behavior. Unsupported checkpoint interaction rejects.
+full parent loss/search behavior. Bounded fixtures reject checkpoint interactions
+outside their admitted dependencies.
 Presentation reads committed entity actions/cels and hidden state.
-ORG1 draws the diving callback's blue tint through the bounded
+ORG1 draws the diving callback's blue tint through the
 [model lighting](../rendering/README.md#model-lighting) path.
 Dying attached frogs retain source platform carry before death velocity and
 reassert CARRY for the next entity update. A deep turtle clears that flag on
 each visit; repeated death requests do not repeat the accepted death or effect.
+
+## Whole-map ORG1 coverage
+
+The existing independent `exe_forms.tsv` inventory has 23 GENERAL and 25
+ORIGINAL forms for `pc-retail-v3.0e`. GENERAL selects STATIC, CHECKPOINT,
+BONUS_FLY, MULTIPOINT, GEN_TOP_LEFT, GEN_BOTTOM_RIGHT and GEN_GOLD_FROG.
+ORIGINAL selects STATIC, MOVING, SUB_TURTLE, STATIC_NOISE, ORG_FLY,
+ORG_BABY_FROG, ORG_BEAVER, ORG_CROC_HEAD and ORG_LOG_SNAKE. MULTIPOINT is
+excluded with an explicit multiplayer-only diagnostic. Generic pickups, gold
+frogs, beavers, crocodile heads and log snakes have typed runtime components.
+Generic pickup bobbing and rewards use the source frame clock. Pitch RNG requires
+an allocated logical voice; whole-map setup loads supplied sound tables and bank
+durations to resolve that gate. Voice allocation, completion, radius changes and
+entity retirement commit with gameplay. Rendering and audio-device completion
+never control the gate; see [logical sound](simulation.md#logical-sound-clock).
+
+Executable disassembly verifies these four v3.0e identities against frozen C.
+The application resolves addresses to names and then typed callback kinds;
+gameplay never dispatches executable addresses. FrogLord may repoint a form
+to any of these verified callbacks. Unknown mappings remain excluded with
+source-located diagnostics. Text-only code digests and function lengths are in
+[the callback facts](../../../tests/golden/pc-retail-v3.0e/form_callbacks.json).
+
+| Form | Kind | v3.0e address | Frozen C name |
+|---|---|---|---|
+| GEN_STAT_COL_BLOCK | Collision | 0x428390 | GenBlockCollPrimCallback |
+| GEN_STAT_WATER_FALL_BLOCK | Collision | 0x4287A0 | GenBlockWaterFallCollPrimCallback |
+| GEN_STAT_FALL_BLOCK | Collision | 0x4287C0 | GenBlockFallCollPrimCallback |
+| ORG_FLY | Bonus | 0x4231D0 | OrgFlyCallBack |
+
+All other GENERAL/ORIGINAL callback fields are zero in that inventory.
+Compatibility verification currently targets v3.0e, including FrogLord-saved
+edits based on that build. v1.0 and Vogons verification is outside scope and
+does not block ORG1 implementation or P8c acceptance. Do not infer FORM callback
+identity from the script CallbackNames bank.
+
+
+## Tongue and rewards
+
+Tongue selection follows the source 3×3 group walk, signed-short distance and
+strict nearest comparison. Normal and super radii are 640 and 1152 units.
+Landscape obstruction uses GRID.C's tile walk and the first three vertices of
+each square. A one-step ray checks only its starting cell, as in frozen C.
+Out-of-storage lookups reject the transaction.
+
+The effect extends for eight ticks, grabs for four (eight without a target),
+then retracts for eight. Retraction evaluates the source fixed-point Bezier
+against the target's current pose each tick. Collection hides the target and
+applies its typed bonus callback or supplied pickup reward once. Effects run
+after animation updates and before visibility; rendering cannot advance them.
+Tongue state, rewards and target mutations are private until the tick commits.
+
+SCORE_BOOK values and flags come from the supplied v3.0e table at 0x472B80,
+verified from AddFrogScore's table access. Source flag precedence is retained.
+AddFrogPoints compares the signed score against an unsigned life threshold;
+therefore a negative score can award a threshold life before REDUCE clamps it
+to zero. A call awards at most one threshold life and wraps scores above
+99,999,999 by subtracting that value once. Lives cap at ten.
+
+
+Selective level resets follow `ResetPathRunners` and `ResetEntities`: FORM bit 3
+selects reset on checkpoint and bit 4 selects reset on death. FrogLord calls
+these flags “don't reset”; frozen C tests the bits positively and resets when
+set. Gameplay follows C. Paths reset before instance retirement and retain the
+current authored-entity NO_MOVEMENT flag. Unselected instances retain scripts,
+animation and generation. Retired immortals are recreated in authored order;
+other instances wait for visibility. The global committed tick clock survives.
+Frog reset preserves velocity, jump target, input, buffered direction storage,
+scale, death fields and no-input/animation counters while clearing active
+modifier and buffer counts. Its facing basis resets to a cardinal direction.
+
+Whole-map ORG1 setup resolves every authored dependency, including custom contact
+execution, before creating a run. Explicit bounded fixtures retain their disabled
+neighbors even when those neighbors now have supported primitive definitions.
+Collected checkpoint recreation uses the shared collected mask: the source omits
+the animation and sets hidden, no-display and no-collision flags. Uncollected
+checkpoint recreation clears those flags. Golden-frog recreation also preserves
+collection across selective resets.
+
+Live entities track source model presence separately from animation. Recreated
+collected checkpoint and gold-frog instances have no model: primitive checks
+miss, while FORM fallback remains eligible (`collide.c:445`).
+
+Normal ORG1 play uses the single-start bounce. The logical start HUD waits for the
+first bounce, consumes one random phrase selection, then runs the five staggered
+checkpoint gather/scatter clocks and the timer count-up. The count-up includes
+its source overshoot before clamping to the authored time. Rendering completion
+never releases play. Attract playback retains its separate fast-reset start.
+During checkpoint HUD transitions, the super-hop pressed edge supplies the source
+BLUE/FR_GO input. Gather, bonus and return consume it in that order; bonus skip
+awards only remaining whole seconds, plays the croak request and commits once.
+A later transaction failure restores both the award and transition clock.
+Simultaneous tongue/directional input on a `NO_ENTITY_ANGLE` platform is rejected:
+the frozen source indexes its four direction vectors with the unmasked input.

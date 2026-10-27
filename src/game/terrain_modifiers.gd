@@ -1,6 +1,6 @@
 class_name TerrainModifiers
 extends RefCounted
-## Source UpdateFrogPowerUps local timers; global map timer-speed state is P10.
+## Source UpdateFrogPowerUps timers and global timer-speed ramp.
 
 ## Called after frog movement and before collision; zero clears on the next call.
 static func update(state: GameplayState) -> void:
@@ -19,3 +19,19 @@ static func update(state: GameplayState) -> void:
 			state.frog.quick_jump_timer -= 1
 		else:
 			state.frog.powerup_flags &= ~PowerupFlags.QUICK_JUMP
+
+	if state.frog.powerup_flags & PowerupFlags.TIMER_SPEED:
+		if state.flow.timer_count_up:
+			if state.flow.timer_fraction <= 65536:
+				state.flow.timer_fraction += 3276
+			else:
+				state.flow.timer_count_up = false
+				state.flow.timer_fraction = 0
+		elif state.flow.timer_fraction >= -65536:
+			state.flow.timer_fraction -= 3276
+		else:
+			state.flow.timer_count_up = true
+		state.flow.timer_speed = PlatformMath.s32(state.flow.timer_speed + state.flow.timer_fraction)
+		if state.flow.timer_speed < 65536:
+			state.flow.timer_speed = 65536
+			state.frog.powerup_flags &= ~PowerupFlags.TIMER_SPEED

@@ -1,0 +1,1867 @@
+{
+  "schema": "logical-sound-v1",
+  "cases": [
+    {
+      "flags": 2,
+      "length": 1,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 3,
+          "tag": 131072,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": true,
+          "pos": 67272,
+          "step": 16818,
+          "base": 16818,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 7,
+          "tag": 196608,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": true,
+          "pos": 65564,
+          "step": 16391,
+          "base": 16391,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        }
+      ]
+    },
+    {
+      "flags": 2,
+      "length": 183,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 3,
+          "tag": 131072,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": true,
+          "pos": 12008052,
+          "step": 16818,
+          "base": 16818,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 7,
+          "tag": 196608,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": true,
+          "pos": 11998212,
+          "step": 16391,
+          "base": 16391,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        }
+      ]
+    },
+    {
+      "flags": 2,
+      "length": 184,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 3,
+          "tag": 131072,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": true,
+          "pos": 12075324,
+          "step": 16818,
+          "base": 16818,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 2524885223,
+          "draws": 2,
+          "allocated": false
+        },
+        {
+          "tick": 7,
+          "tag": 196608,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": true,
+          "pos": 12047385,
+          "step": 16391,
+          "base": 16391,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 662824084,
+          "draws": 3,
+          "allocated": false
+        }
+      ]
+    },
+    {
+      "flags": 2,
+      "length": 1470,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 24106530,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 36159795,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 48213060,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 60982950,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 73752840,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 86522730,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": false
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "length": 1,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 69496,
+          "step": 17374,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 65596,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "length": 183,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12005434,
+          "step": 17374,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12004068,
+          "step": 16399,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "length": 184,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12074930,
+          "step": 17374,
+          "base": 16399,
+          "playing": false,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "length": 1470,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 24106530,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 36159795,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 48213060,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 60982950,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 73752840,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 86522730,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 0,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": true,
+          "pitch": 64
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 24106530,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 36159795,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 48213060,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "length": 1,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 60177,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 54818,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 49459,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 44100,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 34470,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 24840,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 15210,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 5580,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 61486,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 51856,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 42226,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 32596,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "length": 183,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 60177,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 120354,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 180531,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 240708,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 1017510,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 1794312,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 2571114,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 3347916,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 4124718,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 4901520,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 5678322,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 6455124,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "length": 184,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12047906,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12042547,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12037188,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 689830,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 1401096,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 2112362,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 2823628,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 3534894,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 4246160,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 4957426,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 5668692,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "length": 1470,
+      "rows": [
+        {
+          "tick": 0,
+          "tag": 65536,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 12053265,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 1,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 24106530,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 2,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 36159795,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 3,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 48213060,
+          "step": 16399,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 64
+        },
+        {
+          "tick": 4,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 60982950,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 5,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 73752840,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 6,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 86522730,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 7,
+          "tag": -1,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 2954700,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 8,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 15724590,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 9,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 28494480,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 10,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 41264370,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        },
+        {
+          "tick": 11,
+          "tag": -2,
+          "rng": 1103527590,
+          "draws": 1,
+          "allocated": true,
+          "pos": 54034260,
+          "step": 17374,
+          "base": 16399,
+          "playing": true,
+          "initialising": false,
+          "pitch": 96
+        }
+      ]
+    }
+  ],
+  "killed_cases": [
+    {
+      "flags": 2,
+      "fresh": false,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    },
+    {
+      "flags": 2,
+      "fresh": true,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "fresh": false,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    },
+    {
+      "flags": 4,
+      "fresh": true,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "fresh": false,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    },
+    {
+      "flags": 8,
+      "fresh": true,
+      "rows": [
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": true,
+          "allocation": -1
+        },
+        {
+          "occupied": false,
+          "allocation": 131072
+        }
+      ]
+    }
+  ]
+}

@@ -55,7 +55,11 @@ class Script:
             if self.program not in self.programs:raise ValueError('unknown script target')
             words=self.programs[self.program];op,args,following=instruction(words,self.cursor)
             stop=False
-            if op=='WAIT_UNTIL_ACTION_FINISHED':
+            if op=='START_SCRIPT':self.root=args[0]
+            elif op in ('AWARD_FROG_POINTS','AWARD_FROG_LIVES','AWARD_FROG_TIME'):pass
+            elif op=='CHANGE_ENTITY_ANIM':
+                if self.actions and not no_display:self.action=short(args[0]);self.cel=-1
+            elif op=='WAIT_UNTIL_ACTION_FINISHED':
                 if self.cel<self.actions[self.action]-1:following=self.cursor;stop=True
             elif op=='WAIT_UNTIL_PATH_END':
                 if not condition(8):following=self.cursor;stop=True

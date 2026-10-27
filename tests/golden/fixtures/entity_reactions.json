@@ -14654,7 +14654,7 @@
                 4161
               ],
               "death_type": 5,
-              "reaction_unsupported_reason": ""
+              "reaction_unsupported_reason": "Checkpoint requires a shared environment outside this bounded fixture"
             }
           ]
         }

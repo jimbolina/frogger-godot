@@ -1,0 +1,62 @@
+[
+  {
+    "score": 0,
+    "threshold": 10000,
+    "lives": 3,
+    "amount": -500,
+    "clamp": true,
+    "expected_score": 0,
+    "expected_threshold": 20000,
+    "expected_lives": 4
+  },
+  {
+    "score": 9999,
+    "threshold": 10000,
+    "lives": 3,
+    "amount": 5,
+    "clamp": false,
+    "expected_score": 10004,
+    "expected_threshold": 20000,
+    "expected_lives": 4
+  },
+  {
+    "score": 0,
+    "threshold": 10000,
+    "lives": 3,
+    "amount": 30000,
+    "clamp": false,
+    "expected_score": 30000,
+    "expected_threshold": 20000,
+    "expected_lives": 4
+  },
+  {
+    "score": 99999990,
+    "threshold": 10000,
+    "lives": 10,
+    "amount": 25,
+    "clamp": false,
+    "expected_score": 16,
+    "expected_threshold": 10000,
+    "expected_lives": 10
+  },
+  {
+    "score": 2147483640,
+    "threshold": 10000,
+    "lives": 3,
+    "amount": 50,
+    "clamp": false,
+    "expected_score": -2147483606,
+    "expected_threshold": 20000,
+    "expected_lives": 4
+  },
+  {
+    "score": 20000,
+    "threshold": 20000,
+    "lives": 10,
+    "amount": 0,
+    "clamp": false,
+    "expected_score": 20000,
+    "expected_threshold": 30000,
+    "expected_lives": 10
+  }
+]

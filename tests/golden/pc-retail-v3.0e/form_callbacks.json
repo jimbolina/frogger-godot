@@ -1,0 +1,34 @@
+[
+  {
+    "name": "GenBlockCollPrimCallback",
+    "address": 4359056,
+    "file_offset": 161680,
+    "length": 328,
+    "kind": "collision",
+    "sha256": "b88ef9edea4c51008201c63c8b494d57a16ecbb93f572a9ea1ef0a7c4f470774"
+  },
+  {
+    "name": "GenBlockWaterFallCollPrimCallback",
+    "address": 4360096,
+    "file_offset": 162720,
+    "length": 24,
+    "kind": "collision",
+    "sha256": "dfa53af18ca1dd67b8ffe99edc931129f90e779acf92b0cbfc66b6018f551bbd"
+  },
+  {
+    "name": "GenBlockFallCollPrimCallback",
+    "address": 4360128,
+    "file_offset": 162752,
+    "length": 386,
+    "kind": "collision",
+    "sha256": "50714ec431a8a772f0a0e3e9b68f8dadc45df2434a0f6dbd14a976140105c17c"
+  },
+  {
+    "name": "OrgFlyCallBack",
+    "address": 4338128,
+    "file_offset": 140752,
+    "length": 16,
+    "kind": "bonus",
+    "sha256": "af44c49d066dcba2435cf1d8ada5119a78b7dce9d0f4b6df59224509030b5252"
+  }
+]

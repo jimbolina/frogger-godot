@@ -49,11 +49,10 @@ func _run() -> void:
 					if level_code.to_upper() == "ORG1":
 						scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
 						scenario.options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
-						scenario.options.exploration_preset = Org1ExplorationSetup.VISIBILITY_PRESET
 					issue = scenario.attach_data(data, level_code)
 					if issue.is_empty():
 						trace.configure(data, scenario.map_scene)
-						if not scenario.map_scene.map.zones.is_empty():
+						if level_code.to_upper() != "ORG1" and not scenario.map_scene.map.zones.is_empty():
 							issue = "Demo requires unsupported retail camera-zone admission"
 						elif level_code.to_upper() != "ORG1" and not scenario.map_scene.map.entities.is_empty():
 							issue = "Demo requires complete entity/checkpoint admission for " + level_code
@@ -64,8 +63,9 @@ func _run() -> void:
 	if demo != null and demo.error.is_empty():
 		provenance.merge({"duration": demo.duration, "start_grid": [demo.start_grid_x, demo.start_grid_z],
 			"input_bytes": demo.input_bytes.size(), "initialization": "demo start cell, FAST_RESET, 30-tick start timer"})
-		session.configure(demo.duration, demo.input_bytes, 30)
+		session.configure(demo.duration, demo.input_bytes, -1 if scenario != null and scenario.level.flow_enabled else 30)
 	if issue.is_empty():
+		scenario.level.demo_playback = true
 		scenario.initial = DemoSetup.start_for(demo)
 		var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 		if ViewerArguments.has_flag(args, "--viewer") and run.error.is_empty():
@@ -76,6 +76,10 @@ func _run() -> void:
 			issue = viewer.open_scenario(scenario)
 			if issue.is_empty() and visual_data != null:
 				issue = viewer.open_data(visual_data)
+			if issue.is_empty():
+				scenario.level.demo_playback = true
+				scenario.initial = DemoSetup.start_for(demo)
+				issue = viewer.reset_scenario()
 			run = viewer.run
 		if issue.is_empty():
 			issue = run.error
@@ -102,10 +106,10 @@ func _run() -> void:
 			var result: TickResult = host.step(command, false) if viewer == null else viewer.step_command(command, false)
 			issue = session.accept(result)
 			if issue.is_empty():
-				trace.append(result.final_snapshot, result.consumed_demo_byte, map_index)
-				if result.final_snapshot.frog.death_count > 0 or result.final_snapshot.completed:
+				trace.append(result.final_snapshot, result.consumed_demo_byte, map_index, result)
+				if not scenario.level.flow_enabled and (result.final_snapshot.frog.death_count > 0 or result.final_snapshot.completed):
 					issue = "Demo requires unsupported death/reset level flow"
-				elif result.final_snapshot.frog.mode in [FrogMode.HIT_CHECKPOINT, FrogMode.CHECKPOINT_COLLECTED]:
+				elif not scenario.level.flow_enabled and result.final_snapshot.frog.mode in [FrogMode.HIT_CHECKPOINT, FrogMode.CHECKPOINT_COLLECTED]:
 					issue = "Demo requires unsupported checkpoint level flow"
 		host.close()
 		if viewer != null:

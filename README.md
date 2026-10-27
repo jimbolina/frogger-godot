@@ -15,7 +15,8 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-There is no playable level yet.
+Whole-map ORG1 supports keyboard play through all five checkpoints, tongue
+collection, pink-frog delivery and the complete level loop.
 
 Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port's 30 Hz target; see the
@@ -27,16 +28,22 @@ Space plays/pauses, Period steps, R resets and I changes interpolation.
 A direct retail-map launch selects live arrow-key input:
 `godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1`.
 Press Space to start hopping. The overlay shows LIVE/REPLAY and running/paused;
-Tab switches input mode, Shift requests a super hop and Q/E turn the gameplay
-camera. Reset pauses and retains the selected input mode. Explicit scenario
+Tab switches input mode, Shift requests a super hop (or skips the current
+checkpoint bonus phase), Ctrl uses the tongue, and
+Q/E turn the gameplay camera. The overlay shows score, time, lives, checkpoint
+progress and completion/game-over state. FPS, average frame time and the last
+simulation tick time refresh twice per second. Reset pauses and retains the selected input mode. Explicit scenario
 fixtures and automated captures still replay their bounded command sequence.
 Pause and reset also reset drawing interpolation.
+[Repeatable keyboard checks](docs/reference/testing/terrain-inspection.md#whole-map-keyboard-playthrough)
+verify completion and collection routes without manual screen-by-screen control.
 Interactive terrain playback enables smoothing by default. Use `--smoothing=false`
 after `--` for exact committed poses, or `--smoothing=true` for smooth captures.
 The `run_terrain.py` reference launcher explicitly defaults to exact mode.
 Rendering frequency does not change the 30 Hz game clock.
-Optional POP and SAFE-platform interactions are available below;
-level progression remains deferred. Animated lighting remains a
+ORG1 loads its authored zones and entity dependencies across the whole map.
+Death and checkpoint transitions use selective source resets; R starts a fresh run.
+Other levels retain their explicit inspection fixtures. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
 For real frame-time measurements and the machine-specific 1440p target, use the
 [ORG1 performance launcher](docs/reference/testing/terrain-inspection.md).
@@ -59,112 +66,29 @@ python tools/run_demo.py --godot <executable> --data-dir <game-folder> --level O
 Add `--viewer` for rendered playback and a capture, `--render-rate
 30|60|144|irregular` for a frame schedule, or `--tick-limit <ticks>` for a bounded
 run. The default level is ORG1. Evidence includes reference-layout frog and
-live-entity CSVs plus `playback.json` with the initialization, consumed inputs,
+live-entity CSVs, complete committed state/events in `committed.jsonl`, and
+`playback.json` with the initialization, consumed inputs,
 committed ticks and termination reason. Exit 3 means incomplete playback;
-missing resources, unsupported actions and existing admission limits remain
-visible. Full retail level playback is unfinished. See the
+missing resources and unsupported dependencies remain explicit. The complete
+ORG1 attract demo matches the frozen native terminal state, route and inputs. See the
 [demo verification commands](docs/reference/testing/README.md#demo-playback-and-comparison)
 for reference comparisons and schedule checks.
 
-For the bounded entity demonstration, run `python tools/run_terrain.py --godot
-<executable> --data-dir <game-folder> --level DES2 --entity-reactions pop
---viewer --output-directory <external-folder>`. This starts at an explicit safe
-inspection cell and hops into a cactus. All eligible nearby obstacles are checked;
-the overlay shows FORM contact and death requests. Entity paths and the frog
-advance atomically.
+Bounded regression inspections remain available through `--exploration`:
 
-For landing, centring and riding a moving log, use the same command with
-`--level JUN1 --entity-reactions platforms`. This explicitly starts on water
-cell `(18,5)` and hops NORTH; it is an inspection start, not a verified route
-from safe terrain. Platform mode also supports local hops, departure and camera
-attachment. This inspection omits scripts, active zones and form callback dispatch; see the
-[entity contract](docs/reference/gameplay/entities.md).
+| Level | Preset | Coverage |
+|---|---|---|
+| JUN1 | `jun1-log-bank` | Safe bank, moving log and return |
+| ORG1 | `org1-turtle-log-bank` | Turtle/log round trip and diving neighbor |
+| ORG1 | `org1-road-river` | Vehicle collision and river entry |
+| ORG1 | `org1-turtle-log-bank-visibility` | Scripted visibility and pink frog pickup |
 
-For guarded exploration from a safe bank, launch:
-
-```text
-godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=JUN1 --exploration=jun1-log-bank
-```
-
-This opens LIVE and paused at bank cell `(22,10)`, facing west. It has no
-automatic commands or live tick limit. From reset, the verified route presses
-Left at tick 0 and Right at tick 12, after centring on log 24; the frog reaches
-bank `(22,9)` at tick 17. Period steps one tick, including while an arrow is
-held. R resets the whole inspection and drawing clocks, then pauses while
-retaining the selected LIVE/REPLAY mode.
-The overlay shows the world boundary and the all-attached lifetime assumption.
-Leaving the boundary or entering an unsupported camera zone rejects the entire
-tick and pauses with a reason. It does not create a wall or clamp the frog.
-This preset admits only the audited high-detail `pc-retail-v3.0e` map, behavior,
-script and model inputs; it rejects changed proof dependencies and visibility
-mode. Ordinary inspection remains available for edited data. See the
-[bounded route contract](tests/golden/specs/entities.md#guarded-jun1-route-and-zones).
-
-The guarded ORG1 inspection connects safe bank, turtle, small log, turtle and
-bank, including the diving turtle's behavior:
-
-```text
-godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1 --exploration=org1-turtle-log-bank
-```
-
-It opens LIVE and paused. Press Space to run or Period to step; Up hops toward
-the turtles/logs and Down returns toward the bank. Time hops after centring.
-The exact replay uses `tests/golden/fixtures/org1_turtle_log_bank.json`.
-Ordinary playback omits diagnostic phase copies; trace capture enables them
-and is more expensive. The [frame-pacing probe](docs/reference/testing/terrain-inspection.md)
-measures actual host FPS separately from deterministic replay schedules.
-R restores the whole inspection while retaining LIVE/REPLAY mode. Boundary or
-unsupported-pose rejection pauses and rolls back the tick. The preset requires
-audited high-detail v3.0e inputs and all-attached lifetime; visibility mode is
-rejected. Scripts, diving animation/colour and logical neighbor effects run;
-sound and splash sprites remain ordered requests. See the
-[ORG1 contract](tests/golden/specs/entities.md#org1-route-proof) and
-[verification instructions](docs/reference/testing/terrain-inspection.md#guarded-org1-turtlelog-exploration).
-
-For the guarded road crossing into that corridor, use
-`--exploration=org1-road-river` instead. It starts south of traffic and adds
-vehicle cuboid collision and squish deaths. Wait for gaps before hopping north;
-R resets after a death. The exact successful replay is
-`tests/golden/fixtures/org1_road_river.json`; the deliberate lorry collision is
-`tests/golden/fixtures/org1_road_vehicle_death.json`. The same supplied-data and
-boundary restrictions apply. See the
-[road contract](docs/reference/gameplay/entities.md#vehicle-primitive-contacts).
-
-To explore the bank/turtle/log corridor with scripted visibility, use:
-
-```sh
-godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1 --exploration=org1-turtle-log-bank-visibility
-```
-
-This separate v3.0e preset creates and retires entities with camera visibility.
-It opens LIVE and paused with the same movement controls. Touch the pink frog
-to pick her up; she rides on Frogger and disappears if he dies. R restores the
-complete inspection. Checkpoint delivery and tongue pickup are not implemented;
-the corridor bounds still apply. See the [scripted visibility contract](docs/reference/gameplay/entities.md#pink-frog-behavior).
-
-For the synthetic visibility lifecycle demonstration, use
-`python tools/run_terrain.py --godot <executable> --scenario-file
-tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility
---viewer --output-directory <external-folder>`. The frog walks out and back;
-the camera controls entity creation, retirement and recreation. Existing modes
-default to all-attached lifetime. Use `lifecycle_zones.json` in the same fixture
-folder to include active camera zones. Visibility supports script-free generic
-entities within its polygon-budget limit; ordinary retail terrain setup still
-requires zero-zone maps. These demonstrations do not
-make a level playable. See [inspection](docs/reference/testing/terrain-inspection.md#visibility-lifecycle-inspection).
-
-Active camera zones have a separate JUN1 inspection. It moves a visible probe
-through prescribed cells and shows zone selection, offset transitions and a
-forced half-turn; it does not establish a playable route. Run
-`python tools/run_terrain.py --godot <executable> --data-dir <game-folder>
---camera-inspection jun1-camera-zones --viewer --output-directory <external-folder>`
-for deterministic playback and captures. Open `scenes/tools/camera_zone_viewer.tscn`
-with `--data-dir=<game-folder>` for paused interactive inspection: Space plays or
-pauses, Period advances one tick, and R resets both sequences. See
-[zone inspection](docs/reference/testing/terrain-inspection.md#active-camera-zone-inspection).
-Add `--entity-lifecycle visibility` to the JUN1 camera command to show its
-eleven audited logs appearing, retiring and returning as the zone camera changes.
-Other entities are omitted and the probe does not execute frog contact.
+These fixtures retain their audited bounds and input dependencies. Normal ORG1
+play and demos use whole-map dependency validation. The
+[inspection guide](docs/reference/testing/terrain-inspection.md) owns fixture
+commands, synthetic lifecycle examples, JUN1 camera-zone probes and capture
+instructions. [Entity behavior](docs/reference/gameplay/entities.md) describes
+supported callbacks and explicit exclusions.
 
 ## macOS setup
 
@@ -181,10 +105,10 @@ keys) to run the start screen.
 It uses `FROGGER_DATA_DIR` when set, otherwise the existing retail folder at
 `../froggy/resources/pc-version/extracted/FROGGER` when present.
 The same launcher works from Terminal. After the initial editor import,
-launch guarded exploration directly with:
+launch whole-map ORG1 directly with:
 
 ```sh
-tools/launch_macos.command res://scenes/tools/terrain_viewer.tscn -- --level=ORG1 --exploration=org1-road-river
+tools/launch_macos.command res://scenes/tools/terrain_viewer.tscn -- --level=ORG1
 ```
 
 For other commands in this README, use the executable inside the app:
@@ -215,9 +139,9 @@ of the retail PC game. The project reads everything it needs at run time from
 your files; nothing from them is ever copied into this repository, and tests
 that need them only store facts about them (file sizes, counts, checksums).
 
-Supported data: the PC retail builds FrogLord knows as `pc-retail-v3.0e`
-(the common worldwide release, the reference for this project),
-`pc-retail-v1.0` and `pc-retail-v3.0e-vogons`. PlayStation data is not supported.
+The compatibility target is `pc-retail-v3.0e`, the common worldwide PC release,
+including FrogLord-saved edits based on that build. Other PC builds are outside
+the current compatibility scope. PlayStation data is not supported.
 
 ## Pointing the game at your files
 
@@ -290,8 +214,12 @@ Maps include stored terrain colours, cave illumination, animated textures,
 water and sky-land. The entity overlay shows bounded STATIC/MOVING transforms
 and can inspect one entity's FORM contact against a fixed point. The separate
 terrain inspector supports bounded SAFE-platform interactions and all FORM death policies,
-plus the admitted ORG1 scripts and vehicle cuboids; HUD and
-complete level play remain deferred.
+plus whole-map ORG1 keyboard play with scripts, vehicle cuboids, tongue collection
+and level transitions. The original-style HUD and dedicated
+game scene remain deferred. Named entity scripts are checked by their
+instructions and dependencies, including path/matrix motion, homing and live
+visibility/collision changes;
+unsupported behavior still reports a boundary. See [script support](docs/reference/gameplay/entities.md#supported-script-components).
 The explicit hidden-geometry inspection
 switch includes invisible and unreferenced polygons; ordinary viewing omits them.
 

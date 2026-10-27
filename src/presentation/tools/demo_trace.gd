@@ -4,6 +4,7 @@ extends RefCounted
 
 var frog_rows := PackedStringArray(["call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input"])
 var entity_rows := PackedStringArray(["call,map,index,unique_id,form_book_id,entity_type,x,y,z"])
+var committed_rows := PackedStringArray()
 var entity_types: Dictionary[int, int] = {}
 var form_ids: Dictionary[int, int] = {}
 
@@ -16,7 +17,8 @@ func configure(data: GameData, scene: MapSceneData) -> void:
 		entity_types[index] = form.entity_type if form != null else -1
 
 ## Appends a committed logic tick; local call numbering starts at zero.
-func append(state: GameplayState, consumed_byte: int, map_index: int) -> void:
+func append(state: GameplayState, consumed_byte: int, map_index: int, result: TickResult = null) -> void:
+	committed_rows.append(JSON.stringify({"state": TerrainTrace.facts(state, true), "events": TerrainTrace._value(result.events) if result != null else [], "rng_consumers": Array(result.rng_consumers) if result != null else []}))
 	var call_index: int = frog_rows.size() - 1
 	var frog: FrogState = state.frog
 	frog_rows.append(_row([call_index, 7, map_index, 0, frog.cell.x, frog.cell.y,
@@ -41,11 +43,11 @@ func save(folder: String, status: Dictionary) -> String:
 	var issue: String = ViewerCapture.prepare_folder(folder)
 	if not issue.is_empty():
 		return issue
-	for name: String in ["frog.csv", "frog.csv.entities.csv", "playback.json"]:
+	for name: String in ["frog.csv", "frog.csv.entities.csv", "committed.jsonl", "playback.json"]:
 		var file := FileAccess.open(folder.path_join(name), FileAccess.WRITE)
 		if file == null:
 			return "Cannot write demo evidence: " + folder.path_join(name)
-		file.store_string(JSON.stringify(status, "  ") + "\n" if name == "playback.json" else "\n".join(frog_rows if name == "frog.csv" else entity_rows) + "\n")
+		file.store_string(JSON.stringify(status, "  ") + "\n" if name == "playback.json" else "\n".join(frog_rows if name == "frog.csv" else committed_rows if name == "committed.jsonl" else entity_rows) + "\n")
 		file.flush()
 		var failure: Error = file.get_error()
 		file.close()

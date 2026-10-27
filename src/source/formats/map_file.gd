@@ -591,6 +591,20 @@ func _read_paths() -> void:
 		path.path_index = i
 		path.source_offset = at
 		path.entity_list_pointer = _bytes.decode_u32(at)
+		if path.entity_list_pointer != 0:
+			var list_at: int = path.entity_list_pointer
+			while true:
+				if list_at < 0 or list_at + 2 > _bytes.size():
+					path.entity_list_error = "PATH entity list is outside map storage or lacks its terminator"
+					break
+				var entity_index: int = _bytes.decode_s16(list_at)
+				list_at += 2
+				if entity_index == -1:
+					break
+				if entity_index < 0:
+					path.entity_list_error = "PATH entity list has a negative authored index"
+					break
+				path.entity_indices.append(entity_index)
 		var count: int = _bytes.decode_u32(at + 4)
 		if not _range(at + 8, count * 4, "PATH segment pointer table", limit):
 			return

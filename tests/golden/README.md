@@ -14,6 +14,9 @@ implementation. Never regenerate expected results from Godot output.
 Every new family requires a deliberate-break check: corrupt one fact,
 observe the intended failure, then restore it.
 
+The [keyboard replay inputs](../../docs/reference/testing/terrain-inspection.md#whole-map-keyboard-playthrough)
+under `fixtures/` are stimuli rather than expected-state goldens.
+
 ## Specifications and reproduction
 
 Read only the specification for the format being changed. Each lists the
@@ -25,6 +28,7 @@ commands run from the repository root; generated facts live in
 |---|---|
 | MWI, MWD, WAD, PowerPacker | [Archives](specs/archives.md) |
 | Executable tables | [Executable tables](specs/executable-tables.md) |
+| PC sound metadata and logical voice timing | [Sound](specs/sound.md) |
 | Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
@@ -33,6 +37,7 @@ commands run from the repository root; generated facts live in
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Scripted visibility, immortal initialization, pink frog pickup/riding/death and guarded ORG1 gameplay | [Scripted visibility](specs/entities.md#scripted-visibility) |
+| Tongue, rewards, start clocks, custom entities and verified FORM callbacks | [Gameplay flow](specs/entities.md#tongue-rewards-and-level-flow) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
@@ -51,3 +56,6 @@ bytes.
 
 Format-specific geometry/pixel ordering, padding and hash algorithms are
 specified in the linked documents. Do not assume every digest hashes raw bytes.
+
+[Logical sound and generic pickup facts](specs/sound.md) cover supplied sound
+tables, Windows bank lengths, voice lifetime/RNG and generic pickup behavior.

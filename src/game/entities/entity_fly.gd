@@ -13,10 +13,11 @@ static func update(definition: EntityDefinition, result: EntityCustomResult) -> 
 	custom.timer -= 1
 	if expired:
 		if custom.mode == Mode.WAITING:
-			if result.environment.covered != 0:
-				result.error = "Fly requires uncollected checkpoint state"
-				return result.error
 			custom.checkpoint_index = result.random.next_value("entity:%d:checkpoint" % definition.entity_index) % 5
+			if (environment.covered | environment.collected) & (1 << custom.checkpoint_index):
+				custom.checkpoint_index = -1
+				custom.timer = 60
+				return ""
 			var point: Vector3i = environment.checkpoint_positions[custom.checkpoint_index]
 			entity.matrix12[9] = point.x
 			entity.matrix12[10] = _short(point.y - 256)
@@ -27,11 +28,21 @@ static func update(definition: EntityDefinition, result: EntityCustomResult) -> 
 			custom.mode = Mode.APPEARED
 			custom.timer = 120
 		else:
+			entity.live_flags &= ~EntityLiveFlags.TARGETTED
 			result.environment.covered &= ~(1 << custom.checkpoint_index)
 			custom.checkpoint_index = -1
 			custom.mode = Mode.WAITING
 			custom.timer = 60
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
+	elif custom.mode == Mode.APPEARED and entity.entity_flags & EntityDefinition.HIDDEN:
+		entity.requests.append(TickEvent.sound(5))
+		entity.live_flags &= ~EntityLiveFlags.TARGETTED
+		entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
+		if custom.checkpoint_index >= 0:
+			environment.covered &= ~(1 << custom.checkpoint_index)
+		custom.checkpoint_index = -1
+		custom.mode = Mode.WAITING
+		custom.timer = 60
 	return ""
 
 static func _short(value: int) -> int:

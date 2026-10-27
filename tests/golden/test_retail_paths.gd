@@ -29,8 +29,13 @@ func test_every_path_and_segment_matches_independent_facts() -> void:
 			continue
 		var metadata := PackedInt64Array()
 		var segments := PackedInt64Array()
+		var entity_lists := PackedInt64Array()
 		var type_counts := PackedInt32Array([0, 0, 0])
 		for path: MapPath in file.paths:
+			assert_eq(path.entity_list_error, "", "%s path %d" % [row[1], path.path_index])
+			entity_lists.append_array(PackedInt64Array([path.path_index, path.entity_indices.size()]))
+			for entity_index: int in path.entity_indices:
+				entity_lists.append(entity_index)
 			metadata.append_array(PackedInt64Array([path.path_index, path.source_offset,
 				path.entity_list_pointer, path.segments.size()]))
 			for segment_index: int in path.segments.size():
@@ -59,6 +64,6 @@ func test_every_path_and_segment_matches_independent_facts() -> void:
 						_append_vec(segments, segment.end)
 		var actual: PackedStringArray = PackedStringArray([row[0], row[1], str(file.paths.size()),
 			str(type_counts[0]), str(type_counts[1]), str(type_counts[2]),
-			_digest(metadata), _digest(segments)])
+			_digest(metadata), _digest(segments), _digest(entity_lists)])
 		assert_eq(actual, row, row[1])
 	assert_eq(problems.size(), 0, "\n".join(problems))

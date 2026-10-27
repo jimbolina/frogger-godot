@@ -73,7 +73,9 @@ func test_reaction_precedence_and_detached_results() -> void:
 		var reaction: FormReactionResult = FormReaction.evaluate(definition, geometric)
 		if flags in [4097, 4101]:
 			assert_eq(reaction.status, FormReactionResult.POP)
-		elif flags in [3, 65, 5, 33, 4099, 4161]:
+		elif flags in [65, 4161]:
+			assert_eq(reaction.status, FormReactionResult.CHECKPOINT)
+		elif flags in [3, 5, 33, 4099]:
 			assert_eq(reaction.status, FormReactionResult.SQUISH if flags == 5 else FormReactionResult.UNSUPPORTED)
 		elif flags in [17, 1]:
 			assert_eq(reaction.status, FormReactionResult.HIT)

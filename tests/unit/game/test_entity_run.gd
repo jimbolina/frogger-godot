@@ -219,3 +219,113 @@ func test_script_path_pause_is_transactional_and_resume_uses_next_path_tick() ->
 	assert_true(bool(run.snapshot().entities[0].path.flags & PathStart.ACTIVE))
 	assert_eq(run.step(3), "")
 	assert_eq(run.snapshot().entities[0].path.position.x, 20)
+
+func test_selective_reset_preserves_unselected_paths_and_global_clock() -> void:
+	var checkpoint: EntityDefinition = _moving(0, _path())
+	checkpoint.form_flags = 8
+	var death: EntityDefinition = _moving(1, _path())
+	death.form_flags = 16
+	var retained: EntityDefinition = _moving(2, _path())
+	var run: EntityRun = EntityRun.create([checkpoint, death, retained])
+	assert_eq(run.step(0), "")
+	assert_eq(run.reset_in_level(true), "")
+	var state: EntityRunSnapshot = run.snapshot()
+	assert_eq(state.tick_index, 1)
+	assert_eq(state.entities[0].path.segment_distance, 0)
+	assert_eq(state.entities[1].path.segment_distance, 10)
+	assert_eq(state.entities[2].path.segment_distance, 10)
+	assert_eq(state.entities[0].generation, 1)
+	assert_eq(state.entities[1].generation, 0)
+	assert_eq(run.step(1), "")
+	assert_eq(run.reset_in_level(false), "")
+	state = run.snapshot()
+	assert_eq(state.tick_index, 2)
+	assert_eq(state.entities[0].path.segment_distance, 10)
+	assert_eq(state.entities[1].path.segment_distance, 0)
+	assert_eq(state.entities[2].path.segment_distance, 20)
+	assert_eq(state.entities[1].generation, 1)
+
+func test_selective_reset_retains_runtime_pause_and_candidate_isolation() -> void:
+	var definition: EntityDefinition = _moving(0, _path())
+	definition.form_flags = 16
+	var run: EntityRun = EntityRun.create([definition])
+	assert_eq(run.step(0), "")
+	var candidate: EntityRun = run.copy()
+	var target: EntitySnapshot = candidate.entity_snapshot(0)
+	target.entity_flags |= EntityDefinition.NO_MOVEMENT
+	candidate.apply_tongue_target(target)
+	assert_eq(candidate.reset_in_level(false), "")
+	assert_eq(candidate.snapshot().entities[0].path.flags & PathStart.ACTIVE, 0)
+	assert_eq(candidate.snapshot().entities[0].path.segment_distance, 0)
+	assert_eq(run.snapshot().entities[0].path.segment_distance, 10)
+	assert_ne(run.snapshot().entities[0].path.flags & PathStart.ACTIVE, 0)
+
+func test_selective_reset_recreates_static_script_and_pose_only_when_selected() -> void:
+	var selected: EntityDefinition = _static(0)
+	selected.form_flags = 8
+	var retained: EntityDefinition = _static(1)
+	var script := EntityScriptDefinition.new()
+	script.root_id = 1
+	script.programs[1] = PackedInt32Array([5])
+	script.names[1] = "test"
+	selected.script_definition = script
+	retained.script_definition = script
+	var run: EntityRun = EntityRun.create([selected, retained])
+	for slot: int in 2:
+		var target: EntitySnapshot = run.entity_snapshot(slot)
+		target.matrix12[9] = 900
+		target.script_state.timer = 44
+		run.apply_tongue_target(target)
+	assert_eq(run.reset_in_level(true), "")
+	assert_eq(run.snapshot().entities[0].matrix12[9], 73)
+	assert_eq(run.snapshot().entities[0].script_state.timer, 0)
+	assert_eq(run.snapshot().entities[1].matrix12[9], 900)
+	assert_eq(run.snapshot().entities[1].script_state.timer, 44)
+
+func test_collected_checkpoint_recreation_omits_animation_and_collision() -> void:
+	var checkpoint: EntityDefinition = _static(0)
+	checkpoint.form_id = 0
+	checkpoint.form_flags = 8 | 16
+	checkpoint.behavior.kind = EntityBehavior.Kind.CHECKPOINT
+	checkpoint.behavior.execution = EntityBehavior.Execution.CONTACT
+	checkpoint.action_lengths = PackedInt32Array([4, 4, 4])
+	var run: EntityRun = EntityRun.create([checkpoint])
+	assert_eq(run.error, "")
+	assert_not_null(run.snapshot().entities[0].animation)
+	var environment := EntityEnvironmentState.new()
+	environment.collected = 1
+	var candidate: EntityRun = run.copy()
+	assert_eq(candidate.reset_in_level(true, environment), "")
+	var recreated: EntitySnapshot = candidate.snapshot().entities[0]
+	assert_null(recreated.animation)
+	assert_eq(recreated.live_flags, 0)
+	assert_true(recreated.custom_state.model_hidden)
+	assert_eq(recreated.entity_flags & (EntityDefinition.NO_COLLISION | EntityDefinition.NO_DISPLAY | EntityDefinition.HIDDEN), EntityDefinition.NO_COLLISION | EntityDefinition.NO_DISPLAY | EntityDefinition.HIDDEN)
+	assert_not_null(run.snapshot().entities[0].animation)
+	assert_eq(run.snapshot().entities[0].entity_flags & EntityDefinition.NO_COLLISION, 0)
+	environment.collected = 0
+	assert_eq(candidate.reset_in_level(false, environment), "")
+	assert_not_null(candidate.snapshot().entities[0].animation)
+	assert_eq(candidate.snapshot().entities[0].entity_flags & (EntityDefinition.NO_COLLISION | EntityDefinition.NO_DISPLAY | EntityDefinition.HIDDEN), 0)
+
+func test_selective_croc_retirement_releases_checkpoint_coverage() -> void:
+	var checkpoint: EntityDefinition = _static(0)
+	checkpoint.form_id = 3
+	checkpoint.behavior.kind = EntityBehavior.Kind.CHECKPOINT
+	checkpoint.behavior.execution = EntityBehavior.Execution.CONTACT
+	var croc: EntityDefinition = _static(1)
+	croc.form_flags = 16
+	croc.behavior.kind = EntityBehavior.Kind.CROC_HEAD
+	croc.behavior.execution = EntityBehavior.Execution.CONTACT
+	var run: EntityRun = EntityRun.create([checkpoint, croc])
+	var environment := EntityEnvironmentState.new()
+	environment.covered = 8
+	environment.collision_disabled = 8
+	run.apply_checkpoint_collision(8)
+	var target: EntitySnapshot = run.entity_snapshot(1)
+	target.custom_state.checkpoint_index = 3
+	run.apply_tongue_target(target)
+	assert_eq(run.reset_in_level(false, environment), "")
+	assert_eq(environment.covered, 0)
+	assert_eq(environment.collision_disabled, 0)
+	assert_eq(run.snapshot().entities[0].entity_flags & EntityDefinition.NO_COLLISION, 0)

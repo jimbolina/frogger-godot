@@ -136,6 +136,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 				_add_polygon(polygon, cel, surfaces, order, missing, target_index,
 					part.texture_targets[target_index].list_index if target_index >= 0 else -1)
 		var mesh: ArrayMesh = null
+		var morph_cels: Array[Array] = []
 		order.sort_custom(func(a: String, b: String) -> bool:
 			return surfaces[a].blend < surfaces[b].blend if surfaces[a].blend != surfaces[b].blend else a < b)
 		for key: String in order:
@@ -161,6 +162,9 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 					blend_arrays[Mesh.ARRAY_VERTEX] = _cel_vertices(part.partcels[cel_index], surface.vertex_indices)
 					blend_arrays[Mesh.ARRAY_NORMAL] = _cel_normals(part.partcels[cel_index], surface.normal_indices)
 					blends.append(blend_arrays)
+			var cels: Array = [arrays]
+			cels.append_array(blends)
+			morph_cels.append(cels)
 			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, blends)
 			var texture: Texture2D = _library.texture_for(surface.image) if surface.image != null else null
 			var material: ShaderMaterial = ModelShaders.material(texture, surface.blend, linear_filter, two_sided)
@@ -199,6 +203,9 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 				else:
 					result.bounds = result.bounds.expand(vertex)
 		result.part_meshes.append(mesh)
+		result.morph_meshes.append(ModelMorphMesh.create(mesh, morph_cels) if animated else null)
+		if animated and mesh != null and mesh.get_blend_shape_count() > 0 and result.morph_meshes[-1] == null:
+			result.diagnostics.append("part %d cel atlas exceeds 4096 pixels per side; using native blend shapes" % part.index)
 		result.texture_tracks.append(tracks)
 		var local := AABB()
 		var local_first: bool = true
@@ -212,6 +219,8 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 			result.bounds = result.bounds.merge(local)
 			if mesh != null:
 				mesh.custom_aabb = local
+				if result.morph_meshes[-1] != null:
+					result.morph_meshes[-1].mesh.custom_aabb = local
 	result.missing_image_ids = PackedInt32Array(missing.keys())
 	result.missing_image_ids.sort()
 	return result

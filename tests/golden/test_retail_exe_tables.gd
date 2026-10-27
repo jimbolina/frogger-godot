@@ -39,6 +39,29 @@ func _check(label: String, got: Array[PackedStringArray]) -> void:
 
 func test_data_opens_cleanly() -> void:
 	assert_eq(_data.error, "")
+	var score_table: ScoreTable = _tables.scores()
+	assert_eq(score_table.error, "")
+	var score_facts: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/rewards.json"))
+	assert_eq(score_table.values.size(), score_facts.size())
+	for index: int in score_facts.size():
+		var row: Dictionary = score_facts[index]
+		var value: int = row.value
+		var flags: int = row.flags
+		var texture: int = row.texture
+		assert_eq(score_table.values[index], value)
+		assert_eq(score_table.flags[index], flags)
+		assert_eq(score_table.texture_pointers[index], texture)
+	var callbacks: Array = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/form_callbacks.json"))
+	for callback: Dictionary in callbacks:
+		var address: int = callback.address
+		var length: int = callback.length
+		var offset: int = callback.file_offset
+		assert_true(_data.exe.contains(offset, length))
+		var hash_context := HashingContext.new()
+		hash_context.start(HashingContext.HASH_SHA256)
+		hash_context.update(_data.exe.bytes.slice(offset, offset + length))
+		assert_eq(hash_context.finish().hex_encode(), str(callback.sha256), str(callback.name))
+		assert_eq(FormCallbackCatalog.NAMES[address], str(callback.name))
 	var problems: PackedStringArray = _tables.errors()
 	assert_eq(problems.size(), 0, ", ".join(problems))
 	assert_eq(_tables.theme_book().warnings.size(), 0, ", ".join(_tables.theme_book().warnings))
@@ -113,12 +136,24 @@ func test_theme_book() -> void:
 
 func test_forms() -> void:
 	var got: Array[PackedStringArray] = []
+	var covered_forms: int = 0
+	var multiplayer_forms: int = 0
 	for f: FormBookEntry in _tables.theme_book().all_forms:
 		got.append(PackedStringArray([FroggerIds.theme_name(f.theme), str(f.local_id), str(f.global_id), f.form_name,
 			str(f.entity_type), f.entity_name, str(f.model_id), str(f.script_id), str(f.flags),
 			GoldenFiles.hex(f.collision_callback), str(f.radius_squared), str(f.death_type), f.death_type_name(),
 			GoldenFiles.hex(f.bonus_callback)]))
+		if FroggerIds.theme_name(f.theme) in ["GENERAL", "ORIGINAL"]:
+			covered_forms += 1
+			if f.entity_name == "MULTIPOINT":
+				multiplayer_forms += 1
+			else:
+				assert_ne(EntityBehaviorCatalog.resolve(f.entity_name).kind, EntityBehavior.Kind.UNKNOWN, f.form_name)
+				assert_ne(FormCallbackCatalog.resolve("pc-retail-v3.0e", f.collision_callback), FormCallback.Kind.UNKNOWN, f.form_name + " collision")
+				assert_ne(FormCallbackCatalog.resolve("pc-retail-v3.0e", f.bonus_callback, true), FormCallback.Kind.UNKNOWN, f.form_name + " bonus")
 	_check("forms", got)
+	assert_eq(covered_forms, 48, "all GENERAL and ORIGINAL forms checked")
+	assert_eq(multiplayer_forms, 5, "only multiplayer checkpoint forms excluded")
 
 
 func test_remaps() -> void:

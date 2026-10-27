@@ -2,6 +2,9 @@ class_name GameplayState
 extends RefCounted
 ## Detached gameplay state composed from independently owned values.
 
+var sound: LogicalSoundState = null
+var flow: LevelFlowState = LevelFlowState.new()
+var tongue: TongueState = TongueState.new()
 var frog: FrogState = FrogState.new()
 var attachment: AttachmentState = AttachmentState.new()
 var requests: TickRequests = TickRequests.new()
@@ -17,6 +20,9 @@ var rng_state: int = 1
 ## Copies the complete candidate; entity state may be replaced by its own aggregate.
 func copy(include_entities: bool = true) -> GameplayState:
 	var result := GameplayState.new()
+	result.sound = sound.copy() if sound != null else null
+	result.flow = flow.copy()
+	result.tongue = tongue.copy()
 	result.frog = frog.copy()
 	result.attachment = attachment.copy()
 	result.requests = requests.copy()

@@ -2,6 +2,7 @@ class_name TickCommand
 extends RefCounted
 ## One ordered tick's logical directional edges and held state, supplied by presentation.
 
+const TONGUE: int = 128
 const NORTH: int = 1
 const EAST: int = 2
 const SOUTH: int = 4

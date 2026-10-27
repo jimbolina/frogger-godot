@@ -83,7 +83,7 @@ static func airborne(state: GameplayState, pose: EntitySnapshot) -> void:
 	state.frog.position_16.y += state.frog.velocity_16.y
 
 ## Selects local or terrain targets; the coordinator applies ordered hop requests.
-static func prepare_jump(state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, grid: GridDefinition, directions: PackedInt32Array, input: int, is_super: bool, distance: int) -> PlatformJumpResult:
+static func prepare_jump(state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, grid: GridDefinition, directions: PackedInt32Array, input: int, is_super: bool, distance: int, forced: bool = false) -> PlatformJumpResult:
 	var result := PlatformJumpResult.new()
 	var original: Vector2i = state.attachment.entity_cell
 	var world_direction: int = directions[input]
@@ -121,7 +121,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	if stack == null:
 		result.error = "Source platform departure stack lookup lies outside authored storage"
 		return result
-	var allowed: int = 448 if is_super else 255 if state.frog.square_index >= 0 and grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT else 200
+	var allowed: int = 448 if is_super else 32767 if forced else 255 if state.frog.square_index >= 0 and grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT else 200
 	for index: int in range(stack.first_square_index, stack.first_square_index + stack.square_count):
 		var square: GridSquareDefinition = grid.squares[index]
 		if not square.flags & GridSquareFlags.USABLE:

@@ -53,7 +53,22 @@ uniform vec3 source_direction2 = vec3(0.0);
 uniform vec3 source_colour0 = vec3(0.0);
 uniform vec3 source_colour1 = vec3(0.0);
 uniform vec3 source_colour2 = vec3(0.0);
+uniform bool cel_enabled = false;
+uniform sampler2D cel_texture : filter_nearest, repeat_disable;
+uniform int cel_vertex_count = 0;
+uniform ivec2 cel_pair = ivec2(0);
+uniform float cel_weight = 1.0;
+vec3 cel_value(int cel, int vertex_id, int component) {
+	int index = (cel * cel_vertex_count + vertex_id) * 2 + component;
+	int width = textureSize(cel_texture, 0).x;
+	return texelFetch(cel_texture, ivec2(index % width, index / width), 0).xyz;
+}
 void vertex() {
+	if (cel_enabled) {
+		VERTEX = mix(cel_value(cel_pair.x, VERTEX_ID, 0), cel_value(cel_pair.y, VERTEX_ID, 0), cel_weight);
+		vec3 normal = mix(cel_value(cel_pair.x, VERTEX_ID, 1), cel_value(cel_pair.y, VERTEX_ID, 1), cel_weight);
+		NORMAL = length(normal) > 0.000001 ? normalize(normal) : vec3(0.0);
+	}
 	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
 	POSITION.xy *= projection_scale;
 	if (source_lighting) {

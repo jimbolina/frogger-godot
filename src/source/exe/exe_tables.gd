@@ -20,6 +20,7 @@ var _theme_book: ThemeBook
 var _bmp_pointers: BmpPointers
 var _remaps: TextureRemapList
 var _scripts: ScriptTable
+var _scores: ScoreTable
 var _music: MusicTable
 var _level_select: LevelSelectTable
 var _demo_table: DemoTable
@@ -68,6 +69,13 @@ func scripts() -> ScriptTable:
 	if _scripts == null:
 		_scripts = ScriptTable.read(exe, names.scripts)
 	return _scripts
+
+
+## The verified gameplay reward values.
+func scores() -> ScoreTable:
+	if _scores == null:
+		_scores = ScoreTable.read(exe)
+	return _scores
 
 
 ## The per-level music list.

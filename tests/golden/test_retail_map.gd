@@ -40,12 +40,33 @@ func test_all_map_headers_geometry_groups_lights_and_sections() -> void:
 	var rows: Array[PackedStringArray] = GoldenFiles.rows("map_facts.tsv")
 	var columns: PackedStringArray = rows.pop_front()
 	assert_eq(rows.size(), 78)
+	var visibility_rows: Array[PackedStringArray] = GoldenFiles.rows("map_visibility_budget.tsv")
+	visibility_rows.pop_front()
+	assert_eq(visibility_rows.size(), rows.size())
+	var visibility: Dictionary[int, PackedStringArray] = {}
+	for row: PackedStringArray in visibility_rows:
+		visibility[row[0].to_int()] = row
 	var problems := PackedStringArray()
 	for row: PackedStringArray in rows:
 		var file: MapFile = _data.read_map(int(row[0]), problems)
 		assert_not_null(file, row[1])
 		if file == null:
 			continue
+		var budget: PackedStringArray = visibility[int(row[0])]
+		var setup: EntityLifecycleSetup = EntityLifecycleSetup.from_map(file)
+		assert_eq(setup.error, "", row[1])
+		if setup.definition == null:
+			continue
+		var counts: PackedInt32Array = setup.definition.polygon_counts
+		var polygon_total: int = 0
+		for count: int in counts:
+			polygon_total += count
+		assert_eq(counts.size(), budget[2].to_int(), row[1])
+		assert_eq(polygon_total, budget[3].to_int(), row[1])
+		assert_eq(_digest(counts), budget[4], row[1])
+		if int(row[0]) == 658:
+			assert_lt(counts.size(), MapGroupVisibility.GROUP_CAP, "ORG1 entire map fits the source pool")
+			assert_lt(polygon_total, MapGroupVisibility.POLYGON_BUDGET, "ORG1 every possible selected subset fits")
 		var vertices := PackedInt32Array()
 		for vertex: Vector3i in file.vertices:
 			_vec(vertices, vertex)

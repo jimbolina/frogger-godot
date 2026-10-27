@@ -23,7 +23,9 @@ var form_name: String = ""
 var entity_name: String = ""
 var script_id: int = 0
 var collision_callback: int = 0
+var bonus_kind: FormCallback.Kind = FormCallback.Kind.NONE
 var bonus_callback: int = 0
+var form_flags: int = 0
 var flags: int = 0
 var matrix12: PackedInt32Array = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
 var path_definition: PathDefinition = null
@@ -32,6 +34,11 @@ var path_start: PathStart = null
 var script_definition: EntityScriptDefinition = null
 var action_lengths: PackedInt32Array = PackedInt32Array()
 var behavior: EntityBehavior = EntityBehavior.new()
+var radius_squared: int = 0
+var movement_speed: int = 0
+var authored_delay: int = 0
+var pickup_reward: RewardDefinition = null
+var pickup_type: int = 0
 var parent_unique_id: int = -1
 
 ## Returns a copy with independently owned matrix and path records.
@@ -49,7 +56,9 @@ func copy() -> EntityDefinition:
 	result.entity_name = entity_name
 	result.script_id = script_id
 	result.collision_callback = collision_callback
+	result.bonus_kind = bonus_kind
 	result.bonus_callback = bonus_callback
+	result.form_flags = form_flags
 	result.flags = flags
 	result.matrix12 = matrix12.duplicate()
 	result.path_definition = path_definition.copy() if path_definition != null else null
@@ -57,6 +66,11 @@ func copy() -> EntityDefinition:
 	result.script_definition = script_definition.copy() if script_definition != null else null
 	result.action_lengths = action_lengths.duplicate()
 	result.behavior = behavior.copy() if behavior != null else null
+	result.radius_squared = radius_squared
+	result.movement_speed = movement_speed
+	result.authored_delay = authored_delay
+	result.pickup_reward = pickup_reward.copy() if pickup_reward != null else null
+	result.pickup_type = pickup_type
 	result.parent_unique_id = parent_unique_id
 	return result
 

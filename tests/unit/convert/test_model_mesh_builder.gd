@@ -97,7 +97,7 @@ func test_a_texture_nobody_has_gives_an_untextured_polygon() -> void:
 	assert_eq(built.missing_image_ids, PackedInt32Array([99]))
 	assert_eq(built.triangle_count, 2)
 	var material := built.part_meshes[0].surface_get_material(0) as ShaderMaterial
-	assert_false(material.shader.code.contains("sampler2D"))
+	assert_false(material.shader.code.contains("sampler2D image"))
 
 
 func test_parts_stay_apart_and_empty_ones_have_no_mesh() -> void:

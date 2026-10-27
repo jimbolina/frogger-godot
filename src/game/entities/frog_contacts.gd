@@ -6,8 +6,6 @@ const CAVES3_MAP_INDEX: int = 2
 
 ## Scans source-ordered contacts and applies supported reactions.
 func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> String:
-	if frog.entity_collision.frog_collision != null and state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM:
-		return "Jumping from a collision primitive is unsupported"
 	if state.entities == null or state.entities.entities.size() != frog.entity_collision.entities.size():
 		return "Entity collision snapshot does not match validated definitions"
 	for index: int in frog.entity_collision.entities.size():
@@ -35,12 +33,28 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 			return "Entity contact order produced a dormant identity"
 		var definition: FormContactDefinition = frog.entity_collision.contacts[index]
 		var pose: EntitySnapshot = state.entities.entities[index]
+
+		if definition.sphere_callback:
+			if pose.live and not pose.effective_flags(definition.entity_flags) & EntityDefinition.NO_COLLISION:
+				var delta := Vector3i(PlatformMath.s16(state.frog.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.frog.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.frog.world_position.z - pose.matrix12[11]))
+				if PlatformMath.s32(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z) < definition.radius_squared:
+					return FormCallback.apply(definition.callback_kind, frog, state, pose.entity_index, result.events)
+			continue
+		if state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM:
+			continue
 		if not definition.primitives.is_empty():
 			var primitive: EntityPrimitiveContact = contact_primitive(frog, state, definition, pose)
 			result.primitive_contacts.append(primitive)
 			if primitive.status in [EntityPrimitiveQuery.INVALID, EntityPrimitiveQuery.UNSUPPORTED]:
 				return primitive.reason
 			if primitive.status == EntityPrimitiveQuery.CONTACT:
+				if primitive.reaction == 3:
+					var callback_issue: String = FormCallback.apply(definition.callback_kind, frog, state, pose.entity_index, result.events)
+					if not callback_issue.is_empty():
+						return callback_issue
+					if not state.attachment.entity_hit_indices.has(pose.entity_index):
+						state.attachment.entity_hit_indices.append(pose.entity_index)
+					continue
 				var reaction: FormReactionResult = FormReaction.deadly(definition.death_type)
 				var issue: String = apply_form_reaction(frog, state, definition, pose, reaction, result, true)
 				if not issue.is_empty():
@@ -99,9 +113,13 @@ func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContac
 	var result := EntityPrimitiveContact.new()
 	result.entity_index = pose.entity_index
 	result.unique_id = pose.unique_id
-	if not pose.live or (definition.entity_flags | pose.entity_flags) & EntityDefinition.NO_COLLISION:
+	if not definition.disabled_reason.is_empty() or not pose.live or pose.effective_flags(definition.entity_flags) & EntityDefinition.NO_COLLISION:
 		result.status = EntityPrimitiveQuery.DISABLED
 		result.reason = "Entity has no collision-live instance"
+		return result
+	if not pose.model_present:
+		result.status = EntityPrimitiveQuery.MISS
+		result.reason = "Source model absent; FORM fallback remains eligible"
 		return result
 	if not PlatformMath.valid(pose.matrix12) or state.frog.frog_collision_pose == null:
 		result.status = EntityPrimitiveQuery.INVALID
@@ -132,6 +150,13 @@ func apply_form_reaction(frog: Frog, state: GameplayState, definition: FormConta
 		var issue: String = mount_platform(frog, state, definition, pose, reaction, result.events)
 		if not issue.is_empty():
 			return issue
+	if reaction.status == FormReactionResult.CHECKPOINT:
+		for entity: EntityDefinition in frog.entity_collision.entities:
+			if entity.entity_index == pose.entity_index:
+				var issue: String = CheckpointCollection.collect(frog, state, entity, result.events)
+				if not issue.is_empty():
+					return issue
+				break
 	if reaction.hit and not state.attachment.entity_hit_indices.has(pose.entity_index):
 		state.attachment.entity_hit_indices.append(pose.entity_index)
 	if reaction.kill_animation >= 0 and state.attachment.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:
@@ -210,14 +235,14 @@ func detach_platform(frog: Frog, state: GameplayState, events: Array[TickEvent])
 
 
 ## Prepares a jump from the current platform.
-func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[TickEvent], is_super: bool, distance: int) -> String:
+func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[TickEvent], is_super: bool, distance: int, duration: int = 0, forced: bool = false) -> String:
 	var definition: FormContactDefinition = platform_definition(frog, state)
 	var pose: EntitySnapshot = platform_pose(frog, state)
 	if definition == null or pose == null:
 		return "Platform departure requires a current definition and pose"
 	var old_direction: int = state.frog.direction
 	var old_y: int = state.frog.target_y
-	var selection: PlatformJumpResult = TerrainPlatform.prepare_jump(state, definition, pose, frog.grid, frog.controller_directions, input, is_super, distance)
+	var selection: PlatformJumpResult = TerrainPlatform.prepare_jump(state, definition, pose, frog.grid, frog.controller_directions, input, is_super, distance, forced)
 	if not selection.error.is_empty():
 		return selection.error
 	if selection.blocked:
@@ -233,6 +258,8 @@ func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[T
 			return frog.callback_error
 	state.frog.mode = FrogMode.JUMPING
 	state.frog.remaining_ticks = 15 if is_super else 3 if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else 6
+	if duration != 0:
+		state.frog.remaining_ticks = duration
 	state.frog.old_y = old_y
 	if is_super:
 		state.frog.flags |= FrogFlags.SUPERJUMP
@@ -243,6 +270,9 @@ func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[T
 	var roll: bool = old_direction == state.frog.direction and state.frog.buffered_input_count > 3 and not is_super and not state.frog.powerup_flags & (PowerupFlags.QUICK_JUMP | PowerupFlags.AUTO_HOP)
 	if roll:
 		state.frog.buffered_input_count = 0
+	var sound_issue: String = frog.play_sound(state, 7 if is_super else 6, 0 if is_super else (state.tick_index & 3) << 7)
+	if not sound_issue.is_empty():
+		return sound_issue
 	state.requests.animation_requests += 1
 	frog.request_animation(FrogAnimationCatalog.SUPERJUMP if is_super else FrogAnimationCatalog.SUPERHOP if state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else FrogAnimationCatalog.AUTOHOP if state.frog.powerup_flags & PowerupFlags.AUTO_HOP else FrogAnimationCatalog.ROLL if roll else FrogAnimationCatalog.HOP, state)
 	state.requests.sound_requests += 1
@@ -250,6 +280,9 @@ func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[T
 	events.append(TickEvent.make(TickEvent.Kind.HOP_SOUND))
 	if is_super or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP or not state.frog.powerup_flags & PowerupFlags.AUTO_HOP:
 		state.requests.score_requests += 1
+		var reward_issue: String = GameplayRewards.apply(frog.rewards[1 if is_super else 3 if roll or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else 0], state, events, frog.random)
+		if not reward_issue.is_empty():
+			return reward_issue
 		events.append(TickEvent.make(TickEvent.Kind.SCORE_10_REQUEST) if is_super else TickEvent.make(TickEvent.Kind.SCORE_50_REQUEST) if roll or state.frog.powerup_flags & PowerupFlags.QUICK_JUMP else TickEvent.make(TickEvent.Kind.SCORE_5_REQUEST))
 	return ""
 
@@ -322,5 +355,4 @@ func platform_freefall(frog: Frog, state: GameplayState, pose: EntitySnapshot, e
 		TerrainPlatform.airborne(state, pose)
 	else:
 		state.frog.position_16 += state.frog.velocity_16
-
 

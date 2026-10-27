@@ -2,11 +2,12 @@
 
 The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-The original is roughly 80,000 lines of C game code. About 24,000 lines of GDScript under `src/` cover the data formats, rendering, terrain movement and a bounded part of the entity system. The C still to port (entities, script interpreter, HUD, game flow, front end, saves, sound, effects) is about 53,000 lines, so the finished port is estimated at 45,000 to 60,000 lines. The first milestone that matters is one complete playable level, at the end of P8c.
+ORG1 is the first whole-map playable level. Remaining work expands level coverage,
+adds the dedicated game presentation and completes the systems listed below.
 
 ## Status
 
-P8 is split into exit-sized pieces, and P10 (level loop and HUD) runs before P9 because a level is not playable without checkpoints, a timer, lives and level-complete flow. Cross-cutting work has its own rows (X1–X3).
+P8 is split into exit-sized pieces. P8c includes the minimum playable level loop; P10 adds the dedicated game scene, original-style HUD and broader level coverage before P9. Cross-cutting work has its own rows (X1–X3).
 
 | # | Phase | Size | Checked against | Status |
 |---|---|---|---|---|
@@ -20,18 +21,18 @@ P8 is split into exit-sized pieces, and P10 (level loop and HUD) runs before P9 
 | P7 | Grid, frog movement, camera, collision, deaths | XL | Independent grid facts and per-tick traces; calibrated visual comparisons | Done; frozen C port at 30 Hz |
 | P8a | Behaviour catalog and typed tick outbox | M | Every existing golden unchanged; architecture scanner rejects entity-name string dispatch in `src/game` | Done |
 | P8b | Demo playback harness | S–M | Recorded input decoding, atomic playback and reference-layout comparison reporting, including incomplete runs against native reference traces | Done; complete ORG1 acceptance belongs to P8c |
-| P8c | ORG1 complete: every original-theme and general form, all script opcodes and callbacks, per-build FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Bounded corridors only: 9 of 121 entity types, 27 of 49 opcodes, 17 of 125 scripts, 4 of 24 script callbacks, 8 of 8 FORM death policies, no FORM callbacks |
+| P8c | ORG1 complete: single-player original-theme and general forms, all script opcodes and callbacks, v3.0e FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Done; native attract, keyboard completion/collections, schedule parity and both test modes pass |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
-| P10 | Level loop and HUD: game scene, HUD/score/timer/lives/font, checkpoint flow, level complete, game over, selective reset, generic camera zones | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
+| P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | |
 | P11 | Effects and particles | L | By eye against reference pictures | |
-| P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | |
+| P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted asset-free CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs and named skips | Mac source setup and isolated verification available; packaged exports and CI pending |
-| X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Launcher and profiling exist; 200+ FPS at 1440p on the owner's machine is the target |
+| X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Original-hardware target remains unverified; further tuning deferred at the owner’s request |
 | X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md) | M | Independent colour samples after each part's animation transform | Any time after P8a |
 | X3 | Owner decisions | | | See below |
 
@@ -45,28 +46,18 @@ Network play is deferred. Multiplayer levels belong to P15.
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
-## Next: P8c ORG1
+## Next: P10 presentation and broader levels
 
-The DDD refactor is complete: candidate ownership and discovered copy contracts,
-named constants, typed events, resolved behaviors, source/application/inspection
-boundaries, composed GameplayState, Frog/contact components and GameplayRun,
-a reusable GameplayHost, independent map inspection sessions and capture workflow.
-Existing trace schemas and independent golden expectations are preserved.
-P8d is complete ahead of feature expansion; P10 can consume the shared host.
+Build the dedicated game scene and original-style HUD around the existing
+transactional gameplay host. Extend dependency setup to ORG2–ORG5 and SUB1,
+retaining complete native attract-demo comparisons as the exit check for levels
+with recorded demos. See [demo verification](reference/testing/README.md#demo-playback-and-comparison).
 
-P8b resolves detail-specific demo resources through the supplied executable,
-decodes recorded actions and advances the input cursor only on committed
-consumption. Its isolated launcher exports reference-layout frog/entity CSVs
-and playback provenance. The comparator reports incomplete runs, terminal
-state differences and route/input diagnostics. An incomplete ORG1 run against
-the verified native export reports its admission reason without claiming a
-reference match. Completion and end state are the gameplay acceptance criteria
-for P8c, P10 and every theme in P9; path differences remain diagnostics.
-Whole-map admission and unsupported actions remain explicit playback boundaries.
-The reusable external build and export commands are in [sources](reference/sources.md#exporting-reference-material-from-the-engine).
+Normal ORG1 play and demos use whole-map dependency validation. The guarded
+JUN1 and ORG1 corridor fixtures remain regression coverage; their launch
+restrictions do not apply to normal ORG1 play.
 
-P8c completes ORG1 as listed in the table. The guarded JUN1 and ORG1 corridor
-presets and their admission manifests are scaffolding: they proved the
-transaction, ordering and visibility rules on bounded routes, and they retire
-when ORG1 plays whole. Route facts stay in the
-[golden specifications](../tests/golden/specs/entities.md).
+Audio playback, particles/splashes, animated per-part lighting, multiplayer,
+packaged exports and hosted CI retain their separate phases above. Performance
+work remains open: the original-hardware target is unverified, and further
+tuning is deferred at the owner’s request.

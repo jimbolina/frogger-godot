@@ -2,6 +2,8 @@ class_name FrogState
 extends RefCounted
 ## Frog kinematics, control, timers and source collision pose.
 
+var scale: int = 4096
+var scale_timer: int = 0
 var camera_zone_index: int = -1
 var camera_zone_region_index: int = -1
 var position_16: Vector3i = Vector3i.ZERO
@@ -44,6 +46,8 @@ var start_target_16: int = 0
 ## Returns an independently mutable copy of every value.
 func copy() -> FrogState:
 	var result := FrogState.new()
+	result.scale = scale
+	result.scale_timer = scale_timer
 	result.camera_zone_index = camera_zone_index
 	result.camera_zone_region_index = camera_zone_region_index
 	result.position_16 = position_16

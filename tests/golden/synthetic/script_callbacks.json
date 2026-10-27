@@ -1,0 +1,2614 @@
+[
+  {
+    "name": "SCRIPT_CB_FROG_TRAFFIC_SPLAT",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_FROG_TRAFFIC_SPLAT",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_FROG_TRAFFIC_SPLAT",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      13
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_FROG_TRAFFIC_SPLAT",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      13
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_LOG_SPLASH",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_LOG_SPLASH",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_LOG_SPLASH",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      19
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_LOG_SPLASH",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      19
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_HIT_TURTLE",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_HIT_TURTLE",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_HIT_TURTLE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      14,
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_HIT_TURTLE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      14,
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_OIL_DRUM",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_OIL_DRUM",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_OIL_DRUM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_OIL_DRUM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PALLET",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PALLET",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PALLET",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PALLET",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_SUNKCAR",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_SUNKCAR",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_SUNKCAR",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      14
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_SUNKCAR",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      14
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE_BIG_STR",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE_BIG_STR",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE_BIG_STR",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_STAT_PIPE_BIG_STR",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      108
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD1_CALL",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD1_CALL",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD1_CALL",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      128
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD1_CALL",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      128
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD2_CALL",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD2_CALL",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD2_CALL",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      132
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD2_CALL",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      132
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD3_CALL",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD3_CALL",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD3_CALL",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      134
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD3_CALL",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      134
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD4_CALL",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD4_CALL",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD4_CALL",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      147
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BIRD4_CALL",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      147
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_FROG_HELICOPTER",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_FROG_HELICOPTER",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_FROG_HELICOPTER",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      141
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_FROG_HELICOPTER",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      141
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SUB_LILLY_PAD",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SUB_LILLY_PAD",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SUB_LILLY_PAD",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SUB_LILLY_PAD",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      15
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_HIT",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_HIT",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_HIT",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_HIT",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_RACCOON",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_RACCOON",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_RACCOON",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      109,
+      19
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_RACCOON",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      109,
+      19
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PELICAN_CALL",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PELICAN_CALL",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PELICAN_CALL",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      120
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_PELICAN_CALL",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      120
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HOMING_BIRD",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HOMING_BIRD",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HOMING_BIRD",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      139
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HOMING_BIRD",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      139
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BALLOON",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BALLOON",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BALLOON",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [
+      149
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SKY_BALLOON",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [
+      149
+    ],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": true,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": true,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": false,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": false,
+    "no_display": false,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": true,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": true,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": false,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      128,
+      128,
+      128
+    ],
+    "ambient": [
+      64,
+      64,
+      64
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      64,
+      96,
+      160
+    ],
+    "ambient": [
+      64,
+      64,
+      208
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_JUN_PIRANAHA",
+    "hit": true,
+    "no_display": false,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      128,
+      128,
+      128
+    ],
+    "ambient": [
+      64,
+      64,
+      64
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": true,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": true,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": false,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": false,
+    "no_display": false,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": true,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": true,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": false,
+    "path_y": -1,
+    "sounds": [],
+    "colours": [
+      128,
+      128,
+      128
+    ],
+    "ambient": [
+      64,
+      208,
+      64
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      64,
+      160,
+      96
+    ],
+    "ambient": [
+      64,
+      64,
+      64
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_SWP_MUTANT_FISH",
+    "hit": true,
+    "no_display": false,
+    "path_y": 1,
+    "sounds": [],
+    "colours": [
+      128,
+      128,
+      128
+    ],
+    "ambient": [
+      64,
+      208,
+      64
+    ]
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      128,
+      128,
+      160
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      255,
+      255,
+      191
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      65,
+      65,
+      97
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      193,
+      193,
+      190
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": -1,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [
+      2
+    ],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      64,
+      64,
+      96
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      192,
+      192,
+      191
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 0,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [
+      2
+    ],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      33,
+      33,
+      65
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      65,
+      65,
+      255
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 127,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      32,
+      32,
+      64
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      64,
+      64,
+      255
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [
+      8
+    ],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 128,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": true,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_DIVE_COLOUR_CHANGE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": false,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      32
+    ],
+    "ambient": [
+      32,
+      240,
+      160
+    ],
+    "deaths": [],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_JUN_HIPPO_DIVE",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      192,
+      191,
+      254
+    ],
+    "ambient": [
+      64,
+      64,
+      192
+    ],
+    "deaths": [
+      8
+    ],
+    "no_fade": true
+  },
+  {
+    "name": "SCRIPT_CB_VOL_MECHANISM",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "has_path": true,
+    "deviation": 256,
+    "carry": true,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "deaths": [],
+    "no_fade": false
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HELIUM_BALLOON",
+    "hit": false,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "program": 1
+  },
+  {
+    "name": "SCRIPT_CB_SKY_HELIUM_BALLOON",
+    "hit": true,
+    "no_display": false,
+    "path_y": 0,
+    "sounds": [],
+    "colours": [
+      0,
+      0,
+      0
+    ],
+    "ambient": [
+      0,
+      0,
+      0
+    ],
+    "program": 2
+  }
+]

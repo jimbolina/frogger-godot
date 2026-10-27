@@ -19,11 +19,14 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. By default entities, forms, platforms, zones and
-authored entity boundary markers are omitted. `--entity-reactions=pop` or
-`--entity-reactions=platforms` opts into the bounded modes below. None is a
-complete playable level. `--entity-lifecycle visibility` additionally enables
-the bounded lifetime below; `all-attached` remains the command-line default.
+existing `GameData` APIs. ORG1 without an exploration preset uses whole-map
+dependency validation, authored zones, entity contacts, visibility lifecycle and
+level flow. Other levels omit entities, forms, platforms, zones and authored
+entity boundary markers by default. For those inspections,
+`--entity-reactions=pop` or `--entity-reactions=platforms` selects the bounded
+component modes below, and `--entity-lifecycle visibility` enables the bounded
+lifetime probe instead of the default `all-attached` mode. The explicit exploration
+presets retain their regression bounds.
 
 Direct interactive launches with `--level` select live keyboard input unless
 `--scenario`, `--scenario-file` or `--run-scenario` explicitly selects a replay.
@@ -69,6 +72,23 @@ to avoid Windows work-area clamping. It derives the native extent from the
 logical viewport and stretch transform: Godot 4.5.1's viewport texture size
 accessor applies that stretch twice.
 Loading and reset costs are separate. Reports and logs stay outside the repository.
+
+For the playable P8c workload, add `--route whole-map-idle --repetitions 1`.
+This diagnostic uses whole-map ORG1 dependency setup with authored startup and
+600 input-free ticks, including normal PLAY time after startup. It rejects
+simulation errors and requires an idle living frog at the spawn with unchanged
+score/checkpoints and time remaining. Reports identify the workload, final flow
+phase and remaining time. It does not run either bounded route and cannot satisfy
+`--require-target`; a measurement on different hardware remains a diagnostic.
+Add `--route whole-map-hops` instead to measure 16 alternating lateral hops
+following startup. The probe validates the two spawn-row terrain cells, runs full
+contacts, checks each landing and reports the final cell, score and landing count.
+A departure from the prescribed safe route fails the diagnostic. These two
+workloads cover startup and the spawn row; they do not establish frame pacing
+through arbitrary keyboard routes, river contacts or checkpoint resets. Compare
+interactive runs only with the same window size, synchronization and tracing
+settings. The viewer FPS display averages host frames over half-second windows;
+the report also retains individual frame times and tail percentiles.
 Run acceptance on an otherwise idle system: another game or profiler makes the
 results unsuitable for comparison. Engine-reported VSync/cap values cannot prove
 a driver override is absent. A forced driver VSync override is a known local
@@ -88,6 +108,34 @@ both routes three times, smooth uncapped 1440p, average above 200 FPS, p99 at mo
 the owner's i7-10700K/RTX 4070 Ti SUPER; it is not a portable test-suite threshold.
 Passing schedule parity alone never establishes interactive performance. Full phase
 tracing remains deliberately more expensive than ordinary LIVE/REPLAY.
+
+## Whole-map keyboard playthrough
+
+Run `python tools/run_org1_playthrough.py --godot <executable> --data-dir
+<game-folder> --output-directory <external-folder>` to exercise all five ORG1
+checkpoints through the viewer's keyboard event handling. The launcher imports
+and strictly compiles in an isolated profile, then runs an awaited rendered probe.
+
+`tests/golden/fixtures/org1_keyboard_playthrough.json` is sparse input stimulus,
+not a golden of expected runtime state. Each `[tick, mask]` supplies the held keys at that sample; omitted ticks release
+all keys. Consecutive samples of one key produce one press edge, matching the host. The route starts through the normal single-start
+sequence and uses no teleports or state overrides. The probe dispatches key events
+and Period steps while paused, comparing every committed state with a separate
+fresh `GameplayRun` receiving the same logical commands. It requires all five
+checkpoint bits, COMPLETE and no deaths, permitting earned extra lives. Captures
+are limited to checkpoint transitions and completion; the external report records
+milestones and final state. `--route <file>` selects another stimulus with the same
+acceptance requirements by default. A supplemental route may set `goal` to
+`pink_delivery` or `tongue_collection`: the probe requires the pink delivery
+reward and home state, or a targeted tongue gulp and hidden collected entity,
+respectively. Collection captures and flags are included in the report. The
+default route alone does not establish these collections. Exact stepping is
+not a frame-pacing measurement.
+
+The supplemental fixtures are `org1_keyboard_pink_delivery.json` and
+`org1_keyboard_tongue_collection.json` in the same fixture directory. Run each
+through the launcher with `--route tests/golden/fixtures/<filename>` to verify
+its collection goal with the same real keyboard events and per-tick parity.
 
 ## POP entity inspection
 

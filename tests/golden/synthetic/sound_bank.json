@@ -1,0 +1,84 @@
+{
+  "schema": "windows-sound-bank-v1",
+  "body_size": 77175,
+  "rows": [
+    [
+      1,
+      0,
+      22050,
+      1,
+      1,
+      11025,
+      16
+    ],
+    [
+      1,
+      22050,
+      44100,
+      1,
+      1,
+      22050,
+      16
+    ],
+    [
+      0,
+      999999,
+      0,
+      1,
+      1,
+      11025,
+      16
+    ],
+    [
+      1,
+      66150,
+      11025,
+      1,
+      1,
+      11025,
+      8
+    ]
+  ],
+  "facts": [
+    {
+      "sound_id": 0,
+      "source_offset": 4,
+      "present": true,
+      "offset": 0,
+      "size": 22050,
+      "rate": 11025,
+      "bits": 16,
+      "frames": 11025
+    },
+    {
+      "sound_id": 1,
+      "source_offset": 32,
+      "present": true,
+      "offset": 22050,
+      "size": 44100,
+      "rate": 22050,
+      "bits": 16,
+      "frames": 22050
+    },
+    {
+      "sound_id": 2,
+      "source_offset": 60,
+      "present": false,
+      "offset": 999999,
+      "size": 0,
+      "rate": 11025,
+      "bits": 16,
+      "frames": 0
+    },
+    {
+      "sound_id": 3,
+      "source_offset": 88,
+      "present": true,
+      "offset": 66150,
+      "size": 11025,
+      "rate": 11025,
+      "bits": 8,
+      "frames": 11025
+    }
+  ]
+}

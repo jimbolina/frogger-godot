@@ -1,0 +1,1706 @@
+{
+  "schema": "bonus-fly-v1",
+  "reward_ids": [
+    1,
+    2,
+    3,
+    5,
+    7,
+    9,
+    10,
+    11,
+    12,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "cases": [
+    {
+      "uid": -32768,
+      "active": false,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32864,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32888,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": -32768,
+      "active": false,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": -32768,
+      "active": true,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32824,
+          "pitch": 74,
+          "rng": 2524885223,
+          "draws": 2
+        },
+        {
+          "frame": 1,
+          "y": 32830,
+          "pitch": 81,
+          "rng": 3295386429,
+          "draws": 4
+        },
+        {
+          "frame": 7,
+          "y": 32864,
+          "pitch": 71,
+          "rng": 2516284547,
+          "draws": 6
+        },
+        {
+          "frame": 16,
+          "y": 32888,
+          "pitch": 86,
+          "rng": 2633739833,
+          "draws": 8
+        },
+        {
+          "frame": 31,
+          "y": 32830,
+          "pitch": 83,
+          "rng": 267834847,
+          "draws": 10
+        },
+        {
+          "frame": 63,
+          "y": 32817,
+          "pitch": 82,
+          "rng": 836760821,
+          "draws": 12
+        },
+        {
+          "frame": 64,
+          "y": 32824,
+          "pitch": 52,
+          "rng": 2937909499,
+          "draws": 14
+        },
+        {
+          "frame": 65535,
+          "y": 32817,
+          "pitch": 94,
+          "rng": 3297241969,
+          "draws": 16
+        },
+        {
+          "frame": 65536,
+          "y": 32824,
+          "pitch": 87,
+          "rng": 3535774167,
+          "draws": 18
+        },
+        {
+          "frame": 65537,
+          "y": 32830,
+          "pitch": 73,
+          "rng": 3823029677,
+          "draws": 20
+        },
+        {
+          "frame": 4294967295,
+          "y": 32817,
+          "pitch": 81,
+          "rng": 2473755763,
+          "draws": 22
+        }
+      ]
+    },
+    {
+      "uid": -32768,
+      "active": true,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": -1,
+      "active": false,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": -1,
+      "active": false,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": -1,
+      "active": true,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": 74,
+          "rng": 2524885223,
+          "draws": 2
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": 81,
+          "rng": 3295386429,
+          "draws": 4
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": 71,
+          "rng": 2516284547,
+          "draws": 6
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": 86,
+          "rng": 2633739833,
+          "draws": 8
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": 83,
+          "rng": 267834847,
+          "draws": 10
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": 82,
+          "rng": 836760821,
+          "draws": 12
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": 52,
+          "rng": 2937909499,
+          "draws": 14
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": 94,
+          "rng": 3297241969,
+          "draws": 16
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": 87,
+          "rng": 3535774167,
+          "draws": 18
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": 73,
+          "rng": 3823029677,
+          "draws": 20
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": 81,
+          "rng": 2473755763,
+          "draws": 22
+        }
+      ]
+    },
+    {
+      "uid": -1,
+      "active": true,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 0,
+      "active": false,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32864,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32888,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32824,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32830,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32817,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 0,
+      "active": false,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 0,
+      "active": true,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32824,
+          "pitch": 74,
+          "rng": 2524885223,
+          "draws": 2
+        },
+        {
+          "frame": 1,
+          "y": 32830,
+          "pitch": 81,
+          "rng": 3295386429,
+          "draws": 4
+        },
+        {
+          "frame": 7,
+          "y": 32864,
+          "pitch": 71,
+          "rng": 2516284547,
+          "draws": 6
+        },
+        {
+          "frame": 16,
+          "y": 32888,
+          "pitch": 86,
+          "rng": 2633739833,
+          "draws": 8
+        },
+        {
+          "frame": 31,
+          "y": 32830,
+          "pitch": 83,
+          "rng": 267834847,
+          "draws": 10
+        },
+        {
+          "frame": 63,
+          "y": 32817,
+          "pitch": 82,
+          "rng": 836760821,
+          "draws": 12
+        },
+        {
+          "frame": 64,
+          "y": 32824,
+          "pitch": 52,
+          "rng": 2937909499,
+          "draws": 14
+        },
+        {
+          "frame": 65535,
+          "y": 32817,
+          "pitch": 94,
+          "rng": 3297241969,
+          "draws": 16
+        },
+        {
+          "frame": 65536,
+          "y": 32824,
+          "pitch": 87,
+          "rng": 3535774167,
+          "draws": 18
+        },
+        {
+          "frame": 65537,
+          "y": 32830,
+          "pitch": 73,
+          "rng": 3823029677,
+          "draws": 20
+        },
+        {
+          "frame": 4294967295,
+          "y": 32817,
+          "pitch": 81,
+          "rng": 2473755763,
+          "draws": 22
+        }
+      ]
+    },
+    {
+      "uid": 0,
+      "active": true,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 7,
+      "active": false,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 7,
+      "active": false,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 7,
+      "active": true,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": 74,
+          "rng": 2524885223,
+          "draws": 2
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": 81,
+          "rng": 3295386429,
+          "draws": 4
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": 71,
+          "rng": 2516284547,
+          "draws": 6
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": 86,
+          "rng": 2633739833,
+          "draws": 8
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": 83,
+          "rng": 267834847,
+          "draws": 10
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": 82,
+          "rng": 836760821,
+          "draws": 12
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": 52,
+          "rng": 2937909499,
+          "draws": 14
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": 94,
+          "rng": 3297241969,
+          "draws": 16
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": 87,
+          "rng": 3535774167,
+          "draws": 18
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": 73,
+          "rng": 3823029677,
+          "draws": 20
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": 81,
+          "rng": 2473755763,
+          "draws": 22
+        }
+      ]
+    },
+    {
+      "uid": 7,
+      "active": true,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 32767,
+      "active": false,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 32767,
+      "active": false,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    },
+    {
+      "uid": 32767,
+      "active": true,
+      "stopped": false,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32886,
+          "pitch": 74,
+          "rng": 2524885223,
+          "draws": 2
+        },
+        {
+          "frame": 1,
+          "y": 32887,
+          "pitch": 81,
+          "rng": 3295386429,
+          "draws": 4
+        },
+        {
+          "frame": 7,
+          "y": 32880,
+          "pitch": 71,
+          "rng": 2516284547,
+          "draws": 6
+        },
+        {
+          "frame": 16,
+          "y": 32836,
+          "pitch": 86,
+          "rng": 2633739833,
+          "draws": 8
+        },
+        {
+          "frame": 31,
+          "y": 32762,
+          "pitch": 83,
+          "rng": 267834847,
+          "draws": 10
+        },
+        {
+          "frame": 63,
+          "y": 32885,
+          "pitch": 82,
+          "rng": 836760821,
+          "draws": 12
+        },
+        {
+          "frame": 64,
+          "y": 32886,
+          "pitch": 52,
+          "rng": 2937909499,
+          "draws": 14
+        },
+        {
+          "frame": 65535,
+          "y": 32885,
+          "pitch": 94,
+          "rng": 3297241969,
+          "draws": 16
+        },
+        {
+          "frame": 65536,
+          "y": 32886,
+          "pitch": 87,
+          "rng": 3535774167,
+          "draws": 18
+        },
+        {
+          "frame": 65537,
+          "y": 32887,
+          "pitch": 73,
+          "rng": 3823029677,
+          "draws": 20
+        },
+        {
+          "frame": 4294967295,
+          "y": 32885,
+          "pitch": 81,
+          "rng": 2473755763,
+          "draws": 22
+        }
+      ]
+    },
+    {
+      "uid": 32767,
+      "active": true,
+      "stopped": true,
+      "rows": [
+        {
+          "frame": 0,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 1,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 7,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 16,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 31,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 63,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 64,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65535,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65536,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 65537,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        },
+        {
+          "frame": 4294967295,
+          "y": 32760,
+          "pitch": -1,
+          "rng": 1,
+          "draws": 0
+        }
+      ]
+    }
+  ]
+}

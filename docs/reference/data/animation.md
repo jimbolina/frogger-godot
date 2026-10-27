@@ -72,14 +72,21 @@ cannot be determined, even when a replacement image exists. Animated targets hav
 surfaces and instance-local overrides, with materials prepared during
 model construction.
 
-Smooth Motion defaults off. It interpolates transforms and normalized
-flipbook blend-shape weights between ticks; images remain discrete.
+Smooth Motion defaults off. It interpolates transforms and flipbook positions
+between ticks; interpolated normals are normalized and images remain discrete.
+`ModelMorphMesh` prepares immutable floating-point cel atlases and blend-free
+meshes. Instance-local shader uniforms select the two cels and interpolation
+fraction, keeping materials, textures and source lighting intact. This avoids
+Compatibility's transform-feedback blend-shape work during scene culling.
+Original meshes remain available for inspection. Atlases larger than 4096 pixels
+on either side report a diagnostic and retain native blend-shape rendering;
+all paths retain bounds covering every cel.
 Pause, step, seek, restart, action/model changes, loops and toggle changes
 reset interpolation history. Exact endpoints preserve the sampled
 matrices, including their stored scale. Manual interpolation disables
 Godot's automatic interpolation on the render subtree. See Godot's
 [manual interpolation](https://docs.godotengine.org/en/4.5/tutorials/physics/interpolation/advanced_physics_interpolation.html)
-and [ArrayMesh blend-shape](https://docs.godotengine.org/en/4.5/classes/class_arraymesh.html)
+and [spatial shader](https://docs.godotengine.org/en/4.5/tutorials/shaders/shader_reference/spatial_shader.html)
 documentation. Decoded resources and playback counters remain unchanged
 by drawing at different fractions.
 Singular transforms (zero scale) use component interpolation between
