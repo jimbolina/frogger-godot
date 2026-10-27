@@ -495,3 +495,31 @@ func test_revision_marks_discontinuities_but_not_normal_updates() -> void:
 	assert_eq(player.revision, before + 2)
 	assert_true(player.seek_tick(8))
 	assert_eq(player.revision, before + 3)
+
+func test_paused_texture_cells_remain_visible_and_independent_per_instance() -> void:
+	var file: MofFile = _flipbook()
+	_textures(file, PackedInt32Array([1, 1]), 2)
+	var first := ModelAnimationPlayer.new(file)
+	var second := ModelAnimationPlayer.new(file)
+	first.texture_animation_paused = true
+	first.set_texture_cel(1)
+	for _tick: int in 5:
+		first.advance_tick()
+	assert_eq(_entry(first), 1)
+	assert_eq(_entry(first, 1), 1)
+	second.set_texture_cel(0)
+	assert_eq(_entry(second), 0)
+	assert_eq(_entry(first), 1)
+	first.texture_animation_paused = false
+	first.advance_tick()
+	assert_eq(_entry(first), 0)
+
+func test_pausing_texture_animation_retains_the_current_cell_without_forcing_zero() -> void:
+	var file: MofFile = _flipbook()
+	_textures(file, PackedInt32Array([1, 1]))
+	var player := ModelAnimationPlayer.new(file)
+	assert_eq(_entry(player), 1)
+	player.texture_animation_paused = true
+	for _tick: int in 4:
+		player.advance_tick()
+	assert_eq(_entry(player), 1)

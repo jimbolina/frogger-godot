@@ -7,6 +7,7 @@ var entities: Array[EntitySnapshot] = []
 var lifecycle_enabled: bool = false
 var live_order: PackedInt32Array = PackedInt32Array()
 var selected_groups: PackedInt32Array = PackedInt32Array()
+var map_group_timers: PackedInt32Array = PackedInt32Array()
 var lifecycle_events: Array[TickEvent] = []
 var updates: Array[EntityUpdateObservation] = []
 
@@ -17,6 +18,7 @@ func copy() -> EntityRunSnapshot:
 	result.lifecycle_enabled = lifecycle_enabled
 	result.live_order = live_order.duplicate()
 	result.selected_groups = selected_groups.duplicate()
+	result.map_group_timers = map_group_timers.duplicate()
 	result.lifecycle_events = TickEvent.copy_all(lifecycle_events)
 	for update: EntityUpdateObservation in updates:
 		result.updates.append(update.copy())

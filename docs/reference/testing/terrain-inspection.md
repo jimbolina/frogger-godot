@@ -19,7 +19,7 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. ORG1–ORG5 and SUB1 without an exploration preset use
+existing `GameData` APIs. ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3 without an exploration preset use
 whole-map dependency validation, authored zones, entity contacts, visibility
 lifecycle and level flow. Other levels omit entities, forms, platforms, zones and authored
 entity boundary markers by default. For those inspections,

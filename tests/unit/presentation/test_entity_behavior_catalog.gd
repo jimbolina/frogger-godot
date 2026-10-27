@@ -42,3 +42,17 @@ func test_suburbia_reuses_moving_and_matrix_capabilities() -> void:
 	dog.execution = EntityBehavior.Execution.CONTACT
 	assert_true(dog.has_custom_update())
 	assert_true(dog.has_form_contact())
+
+func test_volcano_names_have_source_lifetimes_and_typed_callback_mapping() -> void:
+	for name: String in ["MOVING_PLATFORM", "VOL_COLOUR_SWITCH", "VOL_FALLING_PLATFORM"]:
+		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(name)
+		assert_true(behavior.immortal, name)
+		assert_true(behavior.group_moving, name)
+		assert_eq(behavior.layout, EntityBehavior.Layout.PATH if name == "MOVING_PLATFORM" else EntityBehavior.Layout.MATRIX)
+		assert_false(behavior.has_custom_update())
+		behavior.execution = EntityBehavior.Execution.CONTACT
+		assert_true(behavior.has_custom_update())
+		assert_true(behavior.has_form_contact())
+	assert_eq(EntityBehaviorCatalog.resolve("TRIGGER").kind, EntityBehavior.Kind.UNKNOWN)
+	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e", 0x41d7e0), FormCallback.Kind.VOL_COLOUR_SWITCH)
+	assert_eq(FormCallbackCatalog.resolve("unknown", 0x41d7e0), FormCallback.Kind.UNKNOWN)

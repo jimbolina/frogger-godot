@@ -5,6 +5,7 @@ var _screen: GameplayScreen
 var _data: GameData
 var _folder: String
 var _forest_captures: Dictionary[String, bool] = {}
+var _volcano_captures: Dictionary[String, bool] = {}
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -114,6 +115,10 @@ func _run() -> void:
 		if not issue.is_empty():
 			_finish(issue)
 			return
+		issue = await _capture_volcano_states(actual)
+		if not issue.is_empty():
+			_finish(issue)
+			return
 		timeout_seen = timeout_seen or actual.frog.death_equate == FrogAnimationCatalog.TIMEOUT
 		respawn_seen = respawn_seen or (actual.frog.lives < 3 and actual.flow.phase == LevelFlowState.Phase.PLAY)
 		for event: TickEvent in actual_result.events:
@@ -162,7 +167,7 @@ func _run() -> void:
 	if report == null:
 		_finish("Cannot write capture report")
 		return
-	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "forest_captures": _forest_captures.keys(), "final": TerrainTrace.facts(final, true)}, "\t"))
+	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "forest_captures": _forest_captures.keys(), "volcano_captures": _volcano_captures.keys(), "final": TerrainTrace.facts(final, true)}, "\t"))
 	report.close()
 	_finish("")
 
@@ -231,6 +236,36 @@ func _capture_forest_states(state: GameplayState) -> String:
 		if _forest_captures.has(label):
 			continue
 		_forest_captures[label] = true
+		var issue: String = await _capture(label + "-tick-%04d" % state.tick_index)
+		if not issue.is_empty():
+			return issue
+	return ""
+
+func _capture_volcano_states(state: GameplayState) -> String:
+	if state.entities == null or _screen._definition.entity_collision == null:
+		return ""
+	for slot: int in state.entities.entities.size():
+		var entity: EntitySnapshot = state.entities.entities[slot]
+		if not entity.live or entity.entity_flags & EntityDefinition.NO_DISPLAY:
+			continue
+		if not _screen._camera.is_position_in_frustum(GameSpace.transform(entity.matrix12).origin):
+			continue
+		var definition: EntityDefinition = _screen._definition.entity_collision.entities[slot]
+		var label: String = ""
+		var kind: EntityBehavior.Kind = definition.behavior.kind if entity.custom_state != null else EntityBehavior.Kind.UNKNOWN
+		match kind:
+			EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+				label = "volcano-switch-colour-%d-state-%d-action-%d" % [definition.volcano.colour, entity.custom_state.mode, entity.animation.action]
+			EntityBehavior.Kind.MOVING_PLATFORM:
+				if state.attachment.current_entity_index == entity.entity_index:
+					label = "volcano-platform-carrying"
+			EntityBehavior.Kind.VOL_FALLING_PLATFORM:
+				label = "volcano-falling-state-%d-collision-%d" % [entity.custom_state.mode, int(not bool(entity.entity_flags & EntityDefinition.NO_COLLISION))]
+		if definition.form_name in ["VOL_MECHANISM", "VOL_FURNACE_PLATFORM", "VOL_LAVA_SPRAY", "VOL_SPINNER"]:
+			label = "volcano-" + definition.form_name.to_lower()
+		if label.is_empty() or _volcano_captures.has(label):
+			continue
+		_volcano_captures[label] = true
 		var issue: String = await _capture(label + "-tick-%04d" % state.tick_index)
 		if not issue.is_empty():
 			return issue

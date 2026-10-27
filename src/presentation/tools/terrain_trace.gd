@@ -173,7 +173,7 @@ static func _lifecycle_key(record: RefCounted, key: String) -> bool:
 	if record is EntityCollisionDefinition:
 		return key == "lifecycle"
 	if record is EntityRunSnapshot:
-		return key in ["lifecycle_enabled", "live_order", "selected_groups", "lifecycle_events"]
+		return key in ["lifecycle_enabled", "live_order", "selected_groups", "map_group_timers", "lifecycle_events"]
 	if record is EntitySnapshot:
 		return key in ["lifecycle_supported", "live", "destroy_pending", "generation"]
 	return false

@@ -2,7 +2,7 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3"]
 
 var error: String = ""
 var definition: LevelDefinition = null
@@ -22,7 +22,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1 or FOR1–FOR2"
+		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2 or VOL1–VOL3"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)
@@ -42,6 +42,8 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	for issue: String in [grid.error, zones.error, lifecycle.error, frog.error, rewards.error, sounds.error]:
 		if not issue.is_empty():
 			return issue
+	if code in ["VOL1", "VOL2", "VOL3"]:
+		lifecycle.definition.source_allocation = true
 	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true)
 	diagnostics.append_array(entities.diagnostics)
 	if not entities.error.is_empty():
@@ -52,6 +54,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 			messages.append(diagnostic.to_text())
 		return "Whole-map " + code + " requires every entity dependency: " + "; ".join(messages)
 	var models: Dictionary[int, MofFile] = {}
+	var entity_models: Dictionary[int, MofFile] = {}
 	var problems := PackedStringArray()
 	var identities: Dictionary[int, EntityDefinition] = {}
 	var needs_swarm: bool = false
@@ -66,14 +69,22 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 		if entity.bonus_kind == FormCallback.Kind.UNKNOWN:
 			return code + " entity %d at 0x%X has unknown bonus callback 0x%X" % [entity.entity_index, entity.source_offset, entity.bonus_callback]
 		if form.model_id >= 0 and not models.has(entity.form_id):
-			var model_id: int = data.model_resource_at(data.model_wad_for(form, number, false), form.wad_index())
-			if model_id >= 0:
-				models[entity.form_id] = data.read_model(model_id, problems)
-		var model: MofFile = models.get(entity.form_id)
-		if model != null and model.kind != MofFile.Kind.DUMMY and not form.has_flag(FormBookEntry.FLAG_NO_MODEL):
+			var form_model_id: int = data.model_resource_at(data.model_wad_for(form, number, false), form.wad_index())
+			if form_model_id >= 0:
+				models[entity.form_id] = data.read_model(form_model_id, problems)
+		var model_id: int = EntityModelSelection.resource_for(data, number, form, entity)
+		var model: MofFile = null
+		if model_id >= 0:
+			model = data.read_model(model_id, problems)
+			entity_models[entity.entity_index] = model
+		if entity.behavior.kind == EntityBehavior.Kind.VOL_COLOUR_SWITCH and (model == null or model.kind != MofFile.Kind.STATIC or model.static_models.is_empty() or model.static_models[0].parts.is_empty() or model.static_models[0].parts[0].flipbook_actions.size() < 2):
+			return code + " entity %d requires a colour-selected switch flipbook" % entity.entity_index
+		if model != null and model.kind != MofFile.Kind.DUMMY and (not form.has_flag(FormBookEntry.FLAG_NO_MODEL) or entity.behavior.kind == EntityBehavior.Kind.VOL_COLOUR_SWITCH):
 			if model.static_models.is_empty() or model.static_models[0].parts.is_empty():
 				return code + " entity %d lacks source model parts" % entity.entity_index
 			entity.action_lengths = model_action_lengths(model)
+		if entity.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM and (entity.action_lengths.is_empty() or entity.action_lengths[0] <= 0):
+			return code + " entity %d requires a falling-platform animation" % entity.entity_index
 		if entity.behavior.kind == EntityBehavior.Kind.PICKUP:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
 		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
@@ -100,7 +111,16 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	for entity: EntityDefinition in entities.definitions:
 		if entity.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and not identities.has(entity.parent_unique_id):
 			return code + " entity %d has an unresolved parent %d" % [entity.entity_index, entity.parent_unique_id]
-	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version.internal_name, true, true)
+		if entity.behavior.kind == EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+			for target_id: int in entity.volcano.target_ids:
+				if target_id == -1:
+					continue
+				if not identities.has(target_id):
+					return code + " colour switch entity %d at 0x%X has unresolved target %d" % [entity.entity_index, entity.source_offset, target_id]
+				var target: EntityDefinition = identities[target_id]
+				if target.behavior.kind != EntityBehavior.Kind.MOVING_PLATFORM:
+					return code + " colour switch entity %d target %d requires moving-platform behavior and payload" % [entity.entity_index, target_id]
+	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version.internal_name, true, true, entity_models)
 	diagnostics.append_array(contacts.diagnostics)
 	if not contacts.error.is_empty():
 		return contacts.error

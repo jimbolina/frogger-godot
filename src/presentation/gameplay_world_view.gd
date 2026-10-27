@@ -92,6 +92,10 @@ func draw_state(fraction: float) -> void:
 				if update_entities and _entity_lighting != null:
 					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
 				if update_entities:
+					if entity.custom_state != null:
+						model.player.texture_animation_paused = entity.custom_state.texture_animation_paused
+						if entity.custom_state.texture_animation_paused and entity.custom_state.texture_animation_cel >= 0:
+							model.player.set_texture_cel(entity.custom_state.texture_animation_cel)
 					if entity.animation != null and entity.animation.action >= 0:
 						if model.player.action_index != entity.animation.action:
 							model.player.set_action(entity.animation.action)
@@ -164,9 +168,9 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 	for slot: int in definitions.entities.size():
 		var entity: EntityDefinition = definitions.entities[slot]
 		var form: FormBookEntry = selected_data.tables.theme_book().get_form(scene_data.map.general.theme, entity.form_id)
-		if form == null:
+		if form == null or (form.has_flag(FormBookEntry.FLAG_NO_MODEL) and entity.behavior.kind != EntityBehavior.Kind.VOL_COLOUR_SWITCH):
 			continue
-		var resource: int = selected_data.model_resource_for(form, scene_data.level)
+		var resource: int = EntityModelSelection.resource_for(selected_data, scene_data.level, form, entity)
 		if resource < 0:
 			continue
 		if not meshes.has(resource):

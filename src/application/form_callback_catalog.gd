@@ -3,6 +3,7 @@ extends RefCounted
 ## Verified v3.0e code identities resolved once into typed gameplay callbacks.
 
 const NAMES: Dictionary[int, String] = {
+	0x41d7e0: "VolColourTriggerEntityCallback",
 	0x428390: "GenBlockCollPrimCallback",
 	0x4287a0: "GenBlockWaterFallCollPrimCallback",
 	0x4287c0: "GenBlockFallCollPrimCallback",
@@ -10,6 +11,7 @@ const NAMES: Dictionary[int, String] = {
 	0x4284e0: "GenButterFlyCallBack",
 }
 const KINDS: Dictionary[String, FormCallback.Kind] = {
+	"VolColourTriggerEntityCallback": FormCallback.Kind.VOL_COLOUR_SWITCH,
 	"GenBlockCollPrimCallback": FormCallback.Kind.BLOCK,
 	"GenBlockWaterFallCollPrimCallback": FormCallback.Kind.WATERFALL_BLOCK,
 	"GenBlockFallCollPrimCallback": FormCallback.Kind.FALL_BLOCK,

@@ -6,6 +6,7 @@ var group_base: Vector3i = Vector3i.ZERO
 var group_dimensions: Vector2i = Vector2i.ZERO
 var group_size: Vector2i = Vector2i.ZERO
 var polygon_counts: PackedInt32Array = PackedInt32Array()
+var source_allocation: bool = false
 
 ## Returns independent map-group facts.
 func copy() -> EntityLifecycleDefinition:
@@ -14,6 +15,7 @@ func copy() -> EntityLifecycleDefinition:
 	result.group_dimensions = group_dimensions
 	result.group_size = group_size
 	result.polygon_counts = polygon_counts.duplicate()
+	result.source_allocation = source_allocation
 	return result
 
 ## Rejects geometry that cannot describe the frozen map-view grid.

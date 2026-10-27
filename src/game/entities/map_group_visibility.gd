@@ -82,7 +82,7 @@ static func query(lifecycle: EntityLifecycleDefinition, camera: GameplayCameraSn
 				break
 		if result.groups.size() >= GROUP_CAP:
 			break
-	if result.polygon_total >= POLYGON_BUDGET:
+	if not lifecycle.source_allocation and result.polygon_total >= POLYGON_BUDGET:
 		result.error = "Lifecycle requires selected map group polygons <2500"
 		result.groups = PackedInt32Array()
 	return result

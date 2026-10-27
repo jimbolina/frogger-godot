@@ -241,3 +241,80 @@ func test_bonus_fly_payload_types_and_source_located_rejection() -> void:
 	assert_eq(setup.diagnostics[0].resource_id, 24)
 	assert_eq(setup.diagnostics[0].source_offset, 1050)
 	assert_eq(setup.diagnostics[1].source_offset, 1100)
+
+func test_froglord_switch_payload_uses_56_bytes_and_repointed_behavior() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "VOL_COLOUR_SWITCH"
+	book.entries[1].forms[0].collision_callback = 0x41d7e0
+	var map: MapFile = _map()
+	var payload: PackedByteArray = _matrix()
+	payload.resize(56)
+	payload.encode_u16(32, 2)
+	payload.encode_u16(34, 8)
+	for index: int in 10:
+		payload.encode_s16(36 + index * 2, -1 if index > 2 else -2 if index == 2 else 40 + index)
+	_add_entity(map, 0, 0, payload)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "mod.map", 1, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 1)
+	if setup.definitions.is_empty():
+		return
+	assert_eq(setup.definitions[0].volcano.trigger_type, 2)
+	assert_eq(setup.definitions[0].volcano.colour, 8)
+	assert_eq(setup.definitions[0].volcano.target_ids, PackedInt32Array([40, 41, 65534, -1, -1, -1, -1, -1, -1, -1]))
+	map.entities[0].payload.resize(55)
+	setup = EntitySetup.from_map(map, book, "mod.map", 1, "pc-retail-v3.0e", true)
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "invalid_payload")
+	assert_eq(setup.diagnostics[0].source_id, "mod.map")
+	map.entities[0].payload = payload
+	book.entries[1].forms[0].entity_name = "STATIC"
+	setup = EntitySetup.from_map(map, book, "mod.map", 1, "pc-retail-v3.0e", true)
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "incompatible_callback")
+
+func test_volcano_platform_payloads_retain_unsigned_source_operands() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[1].entity_name = "MOVING_PLATFORM"
+	book.entries[1].forms[0].entity_name = "VOL_FALLING_PLATFORM"
+	var map: MapFile = _map()
+	_add_path(map)
+	var path_payload: PackedByteArray = _path_info(0)
+	path_payload.resize(16)
+	path_payload.encode_u32(12, 1)
+	_add_entity(map, 1, 0, path_payload, 8)
+	var matrix_payload: PackedByteArray = _matrix()
+	matrix_payload.resize(36)
+	matrix_payload.encode_u16(32, 65535)
+	matrix_payload.encode_u16(34, 2)
+	_add_entity(map, 0, 0, matrix_payload, 9)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "vol.map", 1, "pc-retail-v3.0e", true)
+	assert_eq(setup.definitions.size(), 2)
+	if setup.definitions.size() != 2:
+		return
+	assert_eq(setup.definitions[0].volcano.initial_movement, 1)
+	assert_eq(setup.definitions[1].authored_delay, 65535)
+	assert_eq(setup.definitions[1].volcano.hops_before, 2)
+
+func test_colour_switch_callback_roles_require_compatible_behavior() -> void:
+	for bonus: bool in [false, true]:
+		var book: ThemeBook = _book()
+		var form: FormBookEntry = book.entries[1].forms[0]
+		if bonus:
+			form.bonus_callback = 0x41d7e0
+		else:
+			form.collision_callback = 0x41d7e0
+		var map: MapFile = _map()
+		var payload: PackedByteArray = _matrix()
+		payload.resize(56)
+		for index: int in 10:
+			payload.encode_s16(36 + index * 2, -1)
+		_add_entity(map, 0, 0, payload)
+		var setup: EntitySetup = EntitySetup.from_map(map, book, "callback-mod.map", 1, "pc-retail-v3.0e", true)
+		assert_true(setup.definitions.is_empty())
+		assert_eq(setup.diagnostics[0].code, "incompatible_callback")
+		assert_eq(setup.diagnostics[0].source_id, "callback-mod.map")
+		form.entity_name = "VOL_COLOUR_SWITCH"
+		setup = EntitySetup.from_map(map, book, "callback-mod.map", 1, "pc-retail-v3.0e", true)
+		assert_eq(setup.definitions.size(), 1)
+		assert_eq(setup.error, "")

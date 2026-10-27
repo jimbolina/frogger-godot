@@ -16,6 +16,12 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 	result.random = random.copy()
 	var issue: String = ""
 	match definition.behavior.kind:
+		EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+			issue = EntityVolcanoSwitch.update(definition, result)
+		EntityBehavior.Kind.VOL_FALLING_PLATFORM:
+			issue = EntityVolcanoFallingPlatform.update(definition, result, frog, hit)
+		EntityBehavior.Kind.MOVING_PLATFORM:
+			issue = EntityVolcanoMovingPlatform.update(definition, result)
 		EntityBehavior.Kind.HIVE:
 			issue = EntityHive.update(definition, result, frog, neighbors, definitions, contacts, grid, collision, frame_number)
 		EntityBehavior.Kind.BREAKING_BRANCH:

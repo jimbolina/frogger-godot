@@ -144,8 +144,12 @@ func test_verified_form_callbacks_repoint_independently_of_form_name_and_role() 
 		form.bonus_callback = address
 		var entities: EntitySetup = EntitySetup.from_map(map, book, "edited-map", 77, "pc-retail-v3.0e", true)
 		assert_eq(entities.error, "")
-		assert_eq(entities.definitions.size(), 1)
 		var expected: FormCallback.Kind = FormCallbackCatalog.resolve("pc-retail-v3.0e", address)
+		if expected == FormCallback.Kind.VOL_COLOUR_SWITCH:
+			assert_true(entities.definitions.is_empty())
+			assert_eq(entities.diagnostics[0].code, "incompatible_callback")
+			continue
+		assert_eq(entities.definitions.size(), 1)
 		assert_ne(expected, FormCallback.Kind.UNKNOWN)
 		assert_eq(entities.definitions[0].bonus_kind, expected)
 		var contacts: FormContactSetup = FormContactSetup.from_map(map, book, entities.definitions, models, "edited-map", 77, "pc-retail-v3.0e", true)

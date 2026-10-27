@@ -64,6 +64,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		definition.collision_callback = form.collision_callback
 		definition.bonus_callback = form.bonus_callback
 		definition.bonus_kind = FormCallbackCatalog.resolve(build_id, form.bonus_callback, true)
+		if (FormCallbackCatalog.resolve(build_id, form.collision_callback) == FormCallback.Kind.VOL_COLOUR_SWITCH or definition.bonus_kind == FormCallback.Kind.VOL_COLOUR_SWITCH) and definition.behavior.kind != EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+			result._issue("incompatible_callback", "Colour-switch callback requires colour-switch behavior and payload", span, form, index, source_id, resource_id, build_id)
+			continue
 		definition.form_flags = form.flags
 		definition.flags = span.flags
 		if definition.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(build_id, definition.collision_callback, false) == FormCallback.Kind.BUTTERFLY_SCORE:
@@ -87,7 +90,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -131,6 +134,13 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 			if not payload_issue.is_empty():
 				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
 				continue
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE
+		if definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM]:
+			var payload_issue: String = _volcano_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
+			definition.volcano.play_chain_sound = map.general.theme == FroggerIds.THEMES.find("VOLCANO")
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		result.definitions.append(definition)
 		if form.script_id != 0 or form.collision_callback != 0 or form.bonus_callback != 0:
@@ -176,4 +186,30 @@ static func _forest_payload(definition: EntityDefinition, payload: PackedByteArr
 			forest.run_speed = payload.decode_u16(16)
 			forest.roll_speed = payload.decode_u16(18)
 	definition.forest = forest
+	return ""
+
+## Copies FrogLord Volcano subtype operands into detached behavior definitions.
+static func _volcano_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	var volcano := EntityVolcanoDefinition.new()
+	match definition.behavior.kind:
+		EntityBehavior.Kind.MOVING_PLATFORM:
+			if payload.size() < 16:
+				return "Moving platform requires its initial movement field"
+			volcano.initial_movement = payload.decode_u32(12)
+		EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+			if payload.size() < 56:
+				return "Colour switch requires its type, colour and ten target IDs"
+			volcano.trigger_type = payload.decode_u16(32)
+			volcano.colour = payload.decode_u16(34)
+			if volcano.trigger_type > 2 or volcano.colour > 8:
+				return "Colour switch type or colour is outside the supported source range"
+			for index: int in 10:
+				var identity: int = payload.decode_s16(36 + index * 2)
+				volcano.target_ids.append(-1 if identity == -1 else identity & 65535)
+		EntityBehavior.Kind.VOL_FALLING_PLATFORM:
+			if payload.size() < 36:
+				return "Falling platform requires its delay and hop count"
+			definition.authored_delay = payload.decode_u16(32)
+			volcano.hops_before = payload.decode_u16(34)
+	definition.volcano = volcano
 	return ""

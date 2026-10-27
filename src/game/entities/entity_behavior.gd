@@ -2,7 +2,7 @@ class_name EntityBehavior
 extends RefCounted
 ## Resolved entity implementation and capabilities, independent of source names.
 
-enum Kind { UNKNOWN, STATIC, PATH_FOLLOWER, TURTLE, BABY_FROG, BONUS_FLY, CHECKPOINT, STATIC_NOISE, BOUNDS_TOP_LEFT, BOUNDS_BOTTOM_RIGHT, CROC_HEAD, GOLD_FROG, LOG_SNAKE, BEAVER, PICKUP, DOG, HIVE, BREAKING_BRANCH, SQUIRREL, HEDGEHOG }
+enum Kind { UNKNOWN, STATIC, PATH_FOLLOWER, TURTLE, BABY_FROG, BONUS_FLY, CHECKPOINT, STATIC_NOISE, BOUNDS_TOP_LEFT, BOUNDS_BOTTOM_RIGHT, CROC_HEAD, GOLD_FROG, LOG_SNAKE, BEAVER, PICKUP, DOG, HIVE, BREAKING_BRANCH, SQUIRREL, HEDGEHOG, MOVING_PLATFORM, VOL_COLOUR_SWITCH, VOL_FALLING_PLATFORM }
 enum Layout { NONE, MATRIX, PATH }
 enum Execution { TRANSFORM, UPDATE, CONTACT }
 
@@ -18,11 +18,11 @@ var payload_register_count: int = 0
 
 ## Whether this definition executes a custom update in the current run.
 func has_custom_update() -> bool:
-	return execution >= Execution.UPDATE and kind in [Kind.BABY_FROG, Kind.BONUS_FLY, Kind.CHECKPOINT, Kind.STATIC_NOISE, Kind.BOUNDS_TOP_LEFT, Kind.BOUNDS_BOTTOM_RIGHT, Kind.CROC_HEAD, Kind.GOLD_FROG, Kind.LOG_SNAKE, Kind.BEAVER, Kind.PICKUP, Kind.DOG, Kind.HIVE, Kind.BREAKING_BRANCH, Kind.SQUIRREL, Kind.HEDGEHOG]
+	return execution >= Execution.UPDATE and kind in [Kind.BABY_FROG, Kind.BONUS_FLY, Kind.CHECKPOINT, Kind.STATIC_NOISE, Kind.BOUNDS_TOP_LEFT, Kind.BOUNDS_BOTTOM_RIGHT, Kind.CROC_HEAD, Kind.GOLD_FROG, Kind.LOG_SNAKE, Kind.BEAVER, Kind.PICKUP, Kind.DOG, Kind.HIVE, Kind.BREAKING_BRANCH, Kind.SQUIRREL, Kind.HEDGEHOG, Kind.MOVING_PLATFORM, Kind.VOL_COLOUR_SWITCH, Kind.VOL_FALLING_PLATFORM]
 
 ## Whether the implemented contact rule may run for this entity.
 func has_form_contact() -> bool:
-	return kind in [Kind.STATIC, Kind.PATH_FOLLOWER, Kind.TURTLE, Kind.CHECKPOINT, Kind.GOLD_FROG, Kind.CROC_HEAD, Kind.LOG_SNAKE, Kind.BEAVER, Kind.BONUS_FLY, Kind.PICKUP, Kind.STATIC_NOISE, Kind.BOUNDS_TOP_LEFT, Kind.BOUNDS_BOTTOM_RIGHT, Kind.DOG, Kind.HIVE, Kind.BREAKING_BRANCH, Kind.SQUIRREL, Kind.HEDGEHOG] or (kind == Kind.BABY_FROG and execution == Execution.CONTACT)
+	return kind in [Kind.STATIC, Kind.PATH_FOLLOWER, Kind.TURTLE, Kind.CHECKPOINT, Kind.GOLD_FROG, Kind.CROC_HEAD, Kind.LOG_SNAKE, Kind.BEAVER, Kind.BONUS_FLY, Kind.PICKUP, Kind.STATIC_NOISE, Kind.BOUNDS_TOP_LEFT, Kind.BOUNDS_BOTTOM_RIGHT, Kind.DOG, Kind.HIVE, Kind.BREAKING_BRANCH, Kind.SQUIRREL, Kind.HEDGEHOG, Kind.MOVING_PLATFORM, Kind.VOL_COLOUR_SWITCH, Kind.VOL_FALLING_PLATFORM] or (kind == Kind.BABY_FROG and execution == Execution.CONTACT)
 
 ## Detaches setup capabilities before the run retains them.
 func copy() -> EntityBehavior:

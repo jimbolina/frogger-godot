@@ -96,7 +96,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
-`GameplayHost`. ORG1–ORG5, SUB1 and FOR1–FOR2 share whole-map dependency setup; recorded
+`GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3 share whole-map dependency setup; recorded
 playback uses the supplied demo starting cell and FAST_RESET initialization.
 A level without an enabled demo reports that missing resource. Other themes
 retain explicit unsupported-dependency diagnostics.
@@ -151,12 +151,15 @@ bytes. These supplied fixtures are inputs, never expected-data goldens. Rendered
 runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect it.
 
 Use the [verified external native build](../sources.md#exporting-reference-material-from-the-engine)
-and export traces to a folder outside the repositories. The reference maps are ORG1 (24), SUB1 (48) and FOR1 (12), each segment 0.
+and export traces to a folder outside the repositories. The reference maps are ORG1 (24), SUB1 (48), FOR1 (12) and VOL1 (54), each segment 0.
 These whole-map demos complete and match the verified native terminal state,
 route and consumed input.
 Select SUB1 with `--level SUB1` for playback and schedule verification, and
 `--map 48` for comparison. Preserve that acceptance when
 changing gameplay. Select FOR1 with `--level FOR1` and compare with `--map 12`.
+Select VOL1 with `--level VOL1` and compare with `--map 54`.
+VOL2/VOL3 completion is established through normal-start keyboard replay and
+independent behavior facts; only VOL1 has a verified native Volcano attract baseline.
 FOR2 has supplied demo data but no verified native attract baseline; its dedicated
 scene keyboard completion supplies level acceptance alongside the Forest component
 facts. Bounded incomplete fixtures still exercise rejection paths.
@@ -165,7 +168,7 @@ facts. Bounded incomplete fixtures still exercise rejection paths.
 
 Use `python tools/run_gameplay_capture.py --godot <executable> --data-dir
 <game-folder> --level ORG1 --output-directory <external-folder>` to capture
-startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1 or FOR1–FOR2;
+startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2 or VOL1–VOL3;
 `--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
 replay the existing sparse keyboard stimulus format through actual key events.
 The ORG1 completion, pink-delivery and tongue-collection fixtures listed in the
@@ -174,7 +177,8 @@ with this launcher too. ORG2–ORG5 completion stimuli are
 `tests/golden/fixtures/org2_keyboard_playthrough.json` through
 `org5_keyboard_playthrough.json`, plus `sub1_keyboard_playthrough.json`; select
 the matching `--level`. Forest uses `for1_keyboard_playthrough.json` and
-`for2_keyboard_playthrough.json`. These are
+`for2_keyboard_playthrough.json`. Volcano uses `vol1_keyboard_playthrough.json`
+through `vol3_keyboard_playthrough.json`. These are
 normal-start inputs, not expected-state goldens. An inspection run does not
 establish level completion.
 
@@ -184,7 +188,8 @@ crash handler disabled. Each committed scene state must match a fresh pure run
 receiving the same sampled inputs. Captures cover startup, early HUD animation,
 checkpoint/bonus-stage transitions and the final state; `gameplay.json` records
 the goal, result and milestones. Forest captures also record the first visible
-occurrence of each custom behavior mode.
+occurrence of each custom behavior mode. Volcano captures include visible switch
+colours/actions, platform carrying/collapse and scripted hazards.
 All evidence stays outside repositories.
 
 Use `--flow-check --ticks 10000` without a route to verify idle timeout,

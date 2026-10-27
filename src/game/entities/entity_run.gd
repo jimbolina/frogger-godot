@@ -110,6 +110,16 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.behavior.kind in [EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] and definition.action_lengths.size() < 2:
 			result.error = "Forest animal requires both source animation actions"
 			return result
+		if definition.behavior.has_custom_update() and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM]:
+			if definition.volcano == null:
+				result.error = "Volcano behavior requires decoded subtype operands"
+				return result
+			if definition.behavior.kind == EntityBehavior.Kind.VOL_COLOUR_SWITCH and definition.action_lengths.size() < 2:
+				result.error = "Colour switch requires both source animation actions"
+				return result
+			if definition.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM and definition.action_lengths.is_empty():
+				result.error = "Falling platform requires a source animation action"
+				return result
 		for length: int in definition.action_lengths:
 			if length <= 0:
 				result.error = "Entity animation lengths must be positive"
@@ -206,12 +216,13 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		next_state.live_order = _state.live_order.duplicate()
 		next_state.selected_groups = _state.selected_groups.duplicate()
+		next_state.map_group_timers = _state.map_group_timers.duplicate()
 		for index: int in next_state.entities.size():
 			var current: EntitySnapshot = _state.entities[index]
 			var entity: EntitySnapshot = next_state.entities[index]
@@ -400,6 +411,48 @@ func advance_animations() -> void:
 		if entity.live and entity.animation != null:
 			entity.animation.advance()
 
+## Validates every cross-target mutation before changing any candidate cursor.
+func apply_target_effects(effects: Array[EntityTargetEffect]) -> String:
+	var targets: Dictionary[int, EntitySnapshot] = {}
+	for effect: EntityTargetEffect in effects:
+		var slot: int = -1
+		for candidate: int in _state.entities.size():
+			if _state.entities[candidate].live and _state.entities[candidate].unique_id == effect.unique_id:
+				slot = candidate
+				break
+		if slot < 0:
+			if effect.kind == EntityTargetEffect.Kind.INITIALIZE:
+				continue
+			return "Colour switch target %d is not live" % effect.unique_id
+		if not targets.has(slot):
+			targets[slot] = _state.entities[slot].copy()
+		var issue: String = EntityVolcanoTarget.apply(effect, targets[slot], _definitions[slot])
+		if not issue.is_empty():
+			return issue
+	for slot: int in targets:
+		var target: EntitySnapshot = targets[slot]
+		if target.path != null:
+			_runners[slot].set_active(bool(target.path.flags & PathStart.ACTIVE))
+			_runners[slot].set_backwards(bool(target.path.flags & PathStart.BACKWARDS))
+			target.path = _runners[slot].snapshot()
+		_state.entities[slot] = target
+	return ""
+
+## Executes a switch contact against the private run and returns its frog correction.
+func contact_colour_switch(entity_index: int, frog: GameplayState) -> EntityCustomResult:
+	var result := EntityCustomResult.new()
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0 or _definitions[slot].behavior.kind != EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+		result.error = "Colour-switch callback requires a supported switch entity"
+		return result
+	result.entity = _state.entities[slot].copy()
+	result.error = EntityVolcanoSwitch.contact(_definitions[slot], result, frog)
+	if result.error.is_empty():
+		result.error = apply_target_effects(result.target_effects)
+	if result.error.is_empty():
+		_state.entities[slot] = result.entity.copy()
+	return result
+
 ## Updates one supported custom neighbor on detached candidate state.
 func update_custom(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null, grid: GridDefinition = null, collision: EntityCollisionDefinition = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
@@ -439,6 +492,9 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 		if result.path_speed_request >= 0:
 			_runners[slot].set_speed(result.path_speed_request)
 			result.entity.path = _runners[slot].snapshot()
+		result.error = apply_target_effects(result.target_effects)
+		if not result.error.is_empty():
+			return result
 		_state.entities[slot] = result.entity.copy()
 	return result
 
@@ -449,8 +505,13 @@ func apply_visibility(camera: GameplayCameraSnapshot, environment: EntityEnviron
 	var selection: MapGroupVisibilityResult = MapGroupVisibility.query(_lifecycle, camera)
 	if not selection.error.is_empty():
 		return selection.error
+	if _lifecycle.source_allocation:
+		selection = MapGroupAllocation.expand(_lifecycle, selection.groups, _state.map_group_timers)
+		if not selection.error.is_empty():
+			return selection.error
 	var next_state: EntityRunSnapshot = _state.copy()
 	next_state.selected_groups = selection.groups.duplicate()
+	next_state.map_group_timers = selection.group_timers.duplicate()
 	var grouped_slots: Dictionary[int, PackedInt32Array] = _visibility_slots(next_state, selection.groups)
 	for group_index: int in selection.groups:
 		for slot: int in grouped_slots[group_index]:
@@ -550,7 +611,19 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 	entity.requests.clear()
 	if definition.behavior.has_custom_update():
 		entity.custom_state = EntityCustomState.new()
-		if definition.behavior.kind == EntityBehavior.Kind.HIVE:
+		if definition.behavior.kind == EntityBehavior.Kind.VOL_COLOUR_SWITCH:
+			entity.custom_state.mode = EntityVolcanoSwitch.Mode.OFF_UP
+			entity.custom_state.timer = 0
+			entity.custom_state.texture_animation_paused = true
+			entity.custom_state.texture_animation_cel = 0
+			entity.animation.select(1)
+			entity.animation.one_shot = true
+		elif definition.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM:
+			entity.custom_state.timer = 0
+			entity.animation.cel = 0
+			entity.animation.stepping = false
+			entity.entity_flags &= ~EntityDefinition.NO_COLLISION
+		elif definition.behavior.kind == EntityBehavior.Kind.HIVE:
 			entity.custom_state.swarm = EntitySwarmState.new()
 			entity.custom_state.moving_sound = PackedInt32Array([64, 512, 1024])
 			if environment != null:

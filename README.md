@@ -15,7 +15,7 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-The dedicated game scene supports ORG1–ORG5, SUB1 and FOR1–FOR2, with the original-style
+The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3, with the original-style
 single-player HUD, tongue collection and the complete level loop.
 
 Terrain movement, collision/deaths, gameplay camera and animation control
@@ -87,7 +87,7 @@ live-entity CSVs, complete committed state/events in `committed.jsonl`, and
 `playback.json` with the initialization, consumed inputs,
 committed ticks and termination reason. Exit 3 means incomplete playback;
 missing resources and unsupported dependencies remain explicit. The complete
-ORG1, SUB1 and FOR1 attract demos match the frozen native terminal states, routes and inputs. See the
+ORG1, SUB1, FOR1 and VOL1 attract demos match the frozen native terminal states, routes and inputs. See the
 [demo verification commands](docs/reference/testing/README.md#demo-playback-and-comparison)
 for reference comparisons and schedule checks.
 

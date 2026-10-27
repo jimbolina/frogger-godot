@@ -43,6 +43,8 @@ var end_mode: EndMode = EndMode.LOOP:
 ## Whether animated textures display and advance. Disabling preserves clocks
 ## and draws the polygons' original textures until animation is enabled again.
 var texture_animation_enabled: bool = true
+## Stops texture clocks while retaining the selected animated texture cells.
+var texture_animation_paused: bool = false
 ## Whether a non-looping action has reached its end.
 var completed: bool = false
 ## Whether this instance should be drawn.
@@ -148,8 +150,22 @@ func advance_tick() -> void:
 						frame = action_frame_count(action_index) - 1
 						completed = true
 						visible = end_mode != EndMode.HIDE
-	if texture_animation_enabled:
+	if texture_animation_enabled and not texture_animation_paused:
 		_advance_textures()
+
+
+## Sets every valid animated polygon to an explicit source list cell.
+func set_texture_cel(cel: int) -> void:
+	if _model == null:
+		return
+	for part_index: int in _model.parts.size():
+		var part: MofPart = _model.parts[part_index]
+		for target_index: int in part.texture_targets.size():
+			if _texture_entries[part_index][target_index] < 0:
+				continue
+			var animation: MofPart.TextureAnimation = part.texture_lists[part.texture_targets[target_index].list_index]
+			_texture_entries[part_index][target_index] = clampi(cel, 0, animation.image_ids.size() - 1)
+			_texture_durations[part_index][target_index] = 0
 
 
 ## Resets all instance clocks and performs the first update, producing tick zero.

@@ -141,3 +141,21 @@ func test_repointed_script_reads_only_supported_bounded_register_payload() -> vo
 	assert_eq(setup.definition.payload_registers, PackedInt32Array([17, 23]))
 	payload.resize(39)
 	assert_ne(EntityScriptSetup.from_tables(table, names, 2, EntityBehaviorCatalog.resolve("DYNAMIC"), payload).error, "")
+
+func test_matrix_mechanism_reads_six_signed_registers_and_rejects_truncation() -> void:
+	var names: NameBank = _names()
+	var table: ScriptTable = _table(names)
+	var prepare := EntityScript.Command.new()
+	prepare.opcode = 31
+	prepare.arguments = PackedInt32Array([32, 6])
+	table.scripts[0].commands.insert(0, prepare)
+	var payload := PackedByteArray()
+	payload.resize(56)
+	for index: int in 6:
+		payload.encode_s32(32 + index * 4, -300 + index)
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("DYNAMIC"), payload)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definition.payload_registers, PackedInt32Array([-300, -299, -298, -297, -296, -295]))
+	assert_eq(setup.definition.validate(PackedInt32Array(), 0, false), "")
+	payload.resize(55)
+	assert_ne(EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("DYNAMIC"), payload).error, "")

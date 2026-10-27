@@ -91,7 +91,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	state.frog.flags &= ~FrogFlags.ON_ENTITY
 	if definition.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
 		var step_vector: Vector3i = DIRECTIONS[world_direction] * distance / 16
-		state.frog.target_16 = (state.frog.world_position + step_vector) * 65536
+		state.frog.target_16 = (Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]) + step_vector) * 65536
 		state.frog.direction = world_direction
 		target_cell = GridQueries.world_to_cell(grid, state.frog.target_16.x >> 16, state.frog.target_16.z >> 16)
 	else:
@@ -128,7 +128,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 			_block(state, original, result)
 			return result
 		var height: int = GridQueries.square_height(square)
-		var delta: int = state.frog.world_position.y - height
+		var delta: int = state.frog.matrix12[10] - height
 		if not square.flags & GridSquareFlags.WATER and ((delta >= 0 and delta <= allowed) or (delta <= 0 and -delta <= 256)):
 			state.frog.flags |= FrogFlags.JUMP_TO_LAND
 			state.frog.cell = target_cell
@@ -142,7 +142,7 @@ static func prepare_jump(state: GameplayState, definition: FormContactDefinition
 	state.frog.cell = target_cell
 	state.frog.square_index = -1
 	state.frog.flags = (state.frog.flags | FrogFlags.JUMP_FROM_ENTITY) & ~(FrogFlags.JUMP_TO_LAND | FrogFlags.JUMP_TO_ENTITY)
-	state.frog.target_y = state.frog.world_position.y
+	state.frog.target_y = state.frog.matrix12[10]
 	if definition.form_book_flags & FormContactDefinition.NO_ENTITY_ANGLE:
 		result.detach = true
 		state.frog.flags &= ~FrogFlags.JUMP_FROM_ENTITY

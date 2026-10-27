@@ -111,6 +111,18 @@ func test_thick_precedes_unit_and_explicit_radius_is_kept() -> void:
 	assert_eq(setup.definitions[0].max_y, 0x7fff)
 	assert_eq(setup.definitions[0].radius_squared, 12345)
 
+func test_static_primitive_expands_default_sphere_beyond_model_bounds() -> void:
+	var model: MofFile = _model(20, true)
+	var primitive: MofPart.Collprim = model.static_models[0].parts[0].collprims[0]
+	primitive.offset = Vector3i(0, -115, 4)
+	primitive.size = Vector3i(128, 128, 128)
+	primitive.flags = EntityPrimitiveDefinition.LAST_IN_LIST
+	primitive.user = 3
+	var form := FormBookEntry.new()
+	assert_eq(FormContactSetup._radius_squared(form, model), [62493])
+	form.radius_squared = 19024
+	assert_eq(FormContactSetup._radius_squared(form, model), [19024])
+
 func test_no_model_form_still_writes_shared_maximum_when_mof_is_loaded() -> void:
 	var map: MapFile = _map()
 	var first: EntityDefinition = _authored(map, 0, 8)
@@ -179,7 +191,7 @@ func test_primitive_opt_in_keeps_form_fallback_and_rejects_unsupported_shape() -
 	var contact: FormContactDefinition = setup.definitions[0]
 	assert_eq(contact.unsupported_reason, "")
 	assert_eq(contact.primitives.size(), 1)
-	assert_eq(contact.radius_squared, 500)
+	assert_eq(contact.radius_squared, 80 * 80 + 50 * 50 + 100 * 100 + 100)
 	assert_eq(contact.max_y, 20)
 	assert_true(contact.has_form_data)
 	assert_eq(contact.height, -90)
@@ -221,7 +233,7 @@ func test_primitive_only_model_admits_absent_form_data_but_not_malformed_records
 	assert_eq(contact.unsupported_reason, "")
 	assert_false(contact.has_form_data)
 	assert_eq(contact.primitives.size(), 1)
-	assert_eq(contact.radius_squared, 500)
+	assert_eq(contact.radius_squared, 80 * 80 + 50 * 50 + 100 * 100 + 100)
 	assert_true(contact.grid_flags.is_empty())
 	assert_false(contact.copy().has_form_data)
 	map.forms[0].data_count = 1
@@ -271,3 +283,16 @@ func test_decorative_model_with_no_form_data_has_no_contact() -> void:
 	map.forms[0].data_count = 1
 	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", false, true)
 	assert_string_contains(setup.definitions[0].unsupported_reason, "no usable data")
+
+func test_per_entity_model_overrides_preserve_authored_form_bounds() -> void:
+	var map: MapFile = _map()
+	var first: EntityDefinition = _authored(map, 0, 7)
+	var second: EntityDefinition = _authored(map, 0, 8)
+	var models: Dictionary[int, MofFile] = {0: _model(20)}
+	var per_entity: Dictionary[int, MofFile] = {0: _model(30), 1: _model(40)}
+	var setup: FormContactSetup = FormContactSetup.from_map(map, _book(), [first, second], models, "", -1, "", false, false, per_entity)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions[0].max_y, 20)
+	assert_eq(setup.definitions[1].max_y, 20)
+	assert_eq(setup.definitions[0].radius_squared, 500)
+	assert_eq(setup.definitions[1].radius_squared, 500)

@@ -112,6 +112,10 @@ func advanced_copy(tick_index: int) -> PathRunner:
 func set_active(active: bool) -> void:
 	_state.flags = (_state.flags | PathStart.ACTIVE) if active else (_state.flags & ~PathStart.ACTIVE)
 
+## Changes direction without resampling the source cursor.
+func set_backwards(backwards: bool) -> void:
+	_state.flags = (_state.flags | PathStart.BACKWARDS) if backwards else (_state.flags & ~PathStart.BACKWARDS)
+
 ## Changes the source path speed without resampling its current position.
 func set_speed(speed: int) -> void:
 	_state.speed = speed

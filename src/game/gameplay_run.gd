@@ -218,10 +218,10 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if _state == null or command == null:
 		result.error = "Terrain run and tick command must be initialized"
 		return result
+	result.tick_index = command.tick_index
 	if _state.completed:
 		result.error = "Terrain run completed; reset before supplying another tick"
 		return result
-	result.tick_index = command.tick_index
 	if command.tick_index != _state.tick_index:
 		result.error = "Tick index must equal next tick %d" % _state.tick_index
 		return result
@@ -248,6 +248,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	_candidate_random.begin_tick()
 	_candidate_animation = _animation.copy(_animation.context.copy(_candidate_random)) if _animation != null else null
 	_candidate_entities = _entities.begin_candidate(command.tick_index, _state.attachment.current_entity_index, _has_entity_updates) if _entities != null else null
+	_frog.candidate_entities = _candidate_entities
 	_frog.begin_tick(_candidate_camera, _candidate_random, _candidate_animation, _frog.controller_directions)
 	var next: GameplayState = _state.copy(false)
 	if _candidate_entities != null:
@@ -438,6 +439,10 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 		if background.environment.collision_disabled != state.entity_environment.collision_disabled:
 			_candidate_entities.apply_checkpoint_collision(background.environment.collision_disabled)
 			state.entities = _candidate_entities.snapshot()
+		if not background.target_effects.is_empty():
+			state.entities = _candidate_entities.snapshot()
+		if background.stop_moving_sound and state.sound != null:
+			state.sound.retire_moving(definition.entity_index)
 		state.entity_environment = background.environment
 		if not background.frog_matrix12.is_empty():
 			state.frog.matrix12 = background.frog_matrix12.duplicate()

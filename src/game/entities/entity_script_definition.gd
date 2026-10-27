@@ -139,7 +139,7 @@ func validate(action_lengths: PackedInt32Array, form_id: int, has_path: bool) ->
 					if a[0] not in [0, 1] or a[1] < 0 or a[1] > 9 or not programs.has(a[2]) or (a[1] == 6 and a[3] <= 0) or (a[1] == 8 and not has_path):
 						return "Unsupported script branch"
 				31:
-					if a[0] != payload_offset or a[1] != payload_registers.size() or not ((a[0] == 12 and a[1] == 3) or (a[0] == 32 and a[1] == 2)):
+					if a[0] != payload_offset or a[1] != payload_registers.size() or not ((a[0] == 12 and a[1] == 3) or (a[0] == 32 and a[1] in [2, 6])):
 						return "Unsupported register payload"
 				34:
 					if a[0] < 0 or a[0] > 1 or not callbacks.has(a[1]) or not CallbackKind.values().has(callbacks[a[1]]) or a[2] not in [0, 7] or a[3] not in [0, 1]:

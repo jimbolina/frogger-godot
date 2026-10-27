@@ -77,6 +77,17 @@ reproducing renderer allocation history; equality is unsupported. Selection or
 budget failure rejects the entire tick rather than approximating the live set.
 `mapdisp.c:413–435,454–478,962–977` owns this boundary.
 
+Volcano whole-map setup enables source allocation history because its camera
+selections can exceed the conservative polygon bound. The detached allocator
+visits each group's entities before checking polygon resources, charges existing
+groups against the 2500-polygon budget and stops only when that budget is
+exhausted. Oversized new groups and a full 128-slot pool do not suppress that
+group's entity visit. Existing groups with timer one are charged but not
+refreshed; other selected allocations refresh to three. The source RenderMap
+timer decrement runs once per committed logic tick, including headless runs,
+so display frame rate cannot change entity lifetime. Allocation history copies
+and rolls back with the run; bounded inspection retains its checked limit.
+
 The high-detail retail ORG1 map has 84 visible groups containing 395 counted
 polygons in total. Any camera selection is a subset of these groups, so its
 polygon count remains below 2500 and the map cannot exhaust the 128-slot pool.
@@ -155,7 +166,10 @@ its authored MOF is loaded, so setup checks that model before excluding contact.
 
 The form-book radius is used when nonzero. Otherwise, for a static model,
 setup takes the largest signed 32-bit squared distance among all partcel box
-corners and adds 100, matching frozen `mapload.C`. Default contact supports a static
+corners, expands it for each collision primitive's squared offset plus squared
+extent, then adds 100, matching frozen `mapload.C`. Primitive expansion uses
+source unsigned arithmetic; an explicit form-book radius bypasses derivation.
+Default contact supports a static
 MOF, including flipbooks, with no collision primitives. The road preset below
 supports vehicle cuboids before any optional FORM fallback. Ordinary
 FORM contact uses the first FORM_DATA in GRID height mode
@@ -570,7 +584,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1 and FOR1–FOR2 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -672,3 +686,39 @@ Presentation draws committed swarm positions with the source camera-plane
 orientation and never advances gameplay or consumes gameplay RNG. The existing
 renderer uses depth buffering rather than the source ordering-table bias.
 Broader particles, pop visuals and audio playback remain separate work.
+
+## Volcano whole-map behavior
+
+VOL1–VOL3 admit named moving platforms, colour switches and falling platforms,
+alongside existing scripted mechanisms, furnaces, lava sprays, spinners and
+noise emitters. VOL4/VOL5 have no playable retail map; VOLM remains multiplayer.
+The unused generic `TRIGGER` behavior retains unsupported diagnostics.
+
+Moving platforms are immortal path followers. Switches resolve their ordered
+signed target IDs against authored identities, initialize target movement on
+their first update and toggle or reverse live paths through the same candidate
+transaction as contact. Duplicate authored IDs and missing or incompatible
+target payloads reject whole-map setup. Frozen C's FREEZE and START operations
+both toggle; debounce and the four switch states preserve repeated-contact
+behavior. Logical moving-sound ownership follows movement without audio playback.
+Switches and falling platforms have no C static flag: contact traversal links
+them with moving entities in reverse authored order. The switch callback nudges
+the frog matrix from its stored target height without rewriting fixed-point
+position; later contacts and jumps read that matrix height. This ordering lets
+a switch callback affect a platform contact within the same tick.
+
+Switch models use the frozen colour-to-WAD-slot dispatch through the player's
+map book and archive. Per-instance models supply animation and primitive data;
+shared FORM height/radius still come from the form-book model. Presentation
+consumes committed flipbook actions and paused texture cells. FrogLord disables
+colour editing for PC, while frozen C implements all nine colour selections;
+this port follows frozen C behavior. The saved payload follows FrogLord's
+56-byte layout, excluding the extra trailing field in the C structure.
+
+Falling platforms count prior HIT flags with source-width wrapping, wait using
+the authored post-decrement delay, then start a one-shot animation and disable
+collision. An attached frog falls in the same transaction. The authored matrix
+does not descend. Paused polygon texture animation retains its current cell;
+switches explicitly select their on/off cell. Reset and recreation restore
+source initial state. Independent transition facts and deliberate-break checks
+are documented in the [entity golden specification](../../../tests/golden/specs/entities.md#volcano-entities).

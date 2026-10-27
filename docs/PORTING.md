@@ -2,7 +2,7 @@
 
 The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-The dedicated game scene opens ORG1–ORG5, SUB1 and FOR1–FOR2 with the original-style HUD.
+The dedicated game scene opens ORG1–ORG5, SUB1, FOR1–FOR2 and VOL1–VOL3 with the original-style HUD.
 Remaining work expands theme coverage and completes the systems listed below.
 
 ## Status
@@ -24,7 +24,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8c | ORG1 complete: single-player original-theme and general forms, all script opcodes and callbacks, v3.0e FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Done; native attract, keyboard completion/collections, schedule parity and both test modes pass |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
-| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest complete |
+| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest and P9b Volcano complete |
 | P11 | Effects and particles | L | By eye against reference pictures | |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
@@ -54,9 +54,13 @@ independent behavior goldens cover the Forest custom entities. Visible bee
 swarms are included because they are gameplay hazards. FOR3–FOR5 are dummy
 entries; FORM remains in multiplayer scope.
 
-Next is P9b Volcano, using its attract demo, then CAV, DES, JUN, SWP and SKY.
-Retain all eight keyboard completion checks and the ORG1, SUB1 and FOR1 native
-attract comparisons; see
+P9b Volcano is complete: VOL1–VOL3 have normal-start keyboard completion
+checks, VOL1 matches its native attract trace across rendering schedules, and
+independent facts cover switches, controlled/falling platforms and source
+visibility allocation. VOL4/VOL5 have no playable maps; VOLM remains multiplayer.
+
+Next are CAV, DES, JUN, SWP and SKY. Retain all eleven keyboard completion checks
+and the ORG1, SUB1, FOR1 and VOL1 native attract comparisons; see
 [demo verification](reference/testing/README.md#demo-playback-and-comparison).
 
 Normal play and demos use whole-map dependency validation. The guarded JUN1

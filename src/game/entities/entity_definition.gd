@@ -34,6 +34,7 @@ var path_start: PathStart = null
 var script_definition: EntityScriptDefinition = null
 var action_lengths: PackedInt32Array = PackedInt32Array()
 var behavior: EntityBehavior = EntityBehavior.new()
+var volcano: EntityVolcanoDefinition = null
 var forest: EntityForestDefinition = null
 var radius_squared: int = 0
 var movement_speed: int = 0
@@ -69,6 +70,7 @@ func copy() -> EntityDefinition:
 	result.script_definition = script_definition.copy() if script_definition != null else null
 	result.action_lengths = action_lengths.duplicate()
 	result.behavior = behavior.copy() if behavior != null else null
+	result.volcano = volcano.copy() if volcano != null else null
 	result.forest = forest.copy() if forest != null else null
 	result.radius_squared = radius_squared
 	result.movement_speed = movement_speed

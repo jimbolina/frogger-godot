@@ -2,10 +2,20 @@ class_name FormCallback
 extends RefCounted
 ## Typed source FORM reactions, independent of executable addresses.
 
-enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE }
+enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH }
 
 ## Applies a verified primitive callback to the private gameplay candidate.
 static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: int, events: Array[TickEvent]) -> String:
+	if kind == Kind.VOL_COLOUR_SWITCH:
+		if frog.candidate_entities == null:
+			return "Colour-switch callback requires candidate entities"
+		var result: EntityCustomResult = frog.candidate_entities.contact_colour_switch(entity_index, state)
+		if not result.error.is_empty():
+			return result.error
+		state.entities = frog.candidate_entities.snapshot()
+		if not result.frog_matrix12.is_empty():
+			state.frog.matrix12 = result.frog_matrix12.duplicate()
+		return ""
 	if kind == Kind.ORG_FLY_SCORE:
 		return GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
 	if kind == Kind.BUTTERFLY_SCORE:

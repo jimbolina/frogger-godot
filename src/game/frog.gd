@@ -14,6 +14,7 @@ var collision_bounds: Rect2i = Rect2i()
 var death_height: int = 30000
 var theme: int = 0
 var map_index: int = -1
+var candidate_entities: EntityRun = null
 var entity_collision: EntityCollisionDefinition = null
 var source_id: String = ""
 var resource_id: int = -1
@@ -174,7 +175,7 @@ func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_sup
 		apply_requests(state, TerrainWallBounce.setup(state, grid), events)
 		state.frog.mode = FrogMode.BOUNCY_COBWEB
 		return callback_error
-	var current_height: int = state.frog.world_position.y
+	var current_height: int = state.frog.matrix12[10]
 	var allowed_up: int = 448 if is_super else 32767 if forced else 200
 	if not is_super and not forced and state.frog.square_index >= 0 and grid.squares[state.frog.square_index].flags & GridSquareFlags.EXTEND_HOP_HEIGHT:
 		allowed_up = 255

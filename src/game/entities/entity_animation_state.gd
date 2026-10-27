@@ -5,6 +5,7 @@ extends RefCounted
 var lengths: PackedInt32Array = PackedInt32Array()
 var action: int = -1
 var cel: int = -1
+var stepping: bool = true
 var one_shot: bool = false
 
 ## Initializes the source factory's first action before its first cel advance.
@@ -18,6 +19,7 @@ static func create(action_lengths: PackedInt32Array, single_play: bool = false) 
 ## Copies clocks and lengths independently of presentation.
 func copy() -> EntityAnimationState:
 	var result: EntityAnimationState = EntityAnimationState.create(lengths, one_shot)
+	result.stepping = stepping
 	result.action = action
 	result.cel = cel
 	return result
@@ -29,5 +31,5 @@ func select(next_action: int) -> void:
 
 ## Advances once after frog animation scripts, at the source pose phase.
 func advance() -> void:
-	if action >= 0:
+	if stepping and action >= 0:
 		cel = mini(cel + 1, lengths[action] - 1) if one_shot else (cel + 1) % lengths[action]

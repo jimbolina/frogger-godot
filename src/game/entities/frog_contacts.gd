@@ -13,7 +13,7 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 		var actual: EntitySnapshot = state.entities.entities[index]
 		if actual == null or actual.entity_index != expected.entity_index or actual.unique_id != expected.unique_id:
 			return "Entity collision snapshot identity does not match validated definitions"
-	var ordered: PackedInt32Array = EntityContactOrder._indices_validated(frog.entity_collision, state.entities, state.frog.world_position)
+	var ordered: PackedInt32Array = EntityContactOrder._indices_validated(frog.entity_collision, state.entities, Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]))
 	var forbidden: int = state.attachment.forbidden_entity_index
 	for entity_id: int in ordered:
 		if frog.tick_guard != null:
@@ -36,7 +36,7 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 
 		if definition.sphere_callback:
 			if pose.live and not pose.effective_flags(definition.entity_flags) & EntityDefinition.NO_COLLISION:
-				var delta := Vector3i(PlatformMath.s16(state.frog.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.frog.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.frog.world_position.z - pose.matrix12[11]))
+				var delta := Vector3i(PlatformMath.s16(state.frog.matrix12[9] - pose.matrix12[9]), PlatformMath.s16(state.frog.matrix12[10] - pose.matrix12[10]), PlatformMath.s16(state.frog.matrix12[11] - pose.matrix12[11]))
 				if PlatformMath.s32(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z) < definition.radius_squared:
 					return FormCallback.apply(definition.callback_kind, frog, state, pose.entity_index, result.events)
 			continue
@@ -63,7 +63,7 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 					for component: int in range(3, 6):
 						state.frog.matrix12[component] = 0
 				continue
-		var contact: FormContactResult = FormContactQuery.query(definition, pose, state.frog.world_position)
+		var contact: FormContactResult = FormContactQuery.query(definition, pose, Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]))
 		var reaction: FormReactionResult = FormReaction.evaluate(definition, contact, frog.entity_collision.platforms_enabled)
 		if reaction.status == FormReactionResult.INVALID:
 			return reaction.reason
@@ -78,7 +78,7 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 				return guard_error
 		var pose: EntitySnapshot = platform_pose(frog, state)
 		var definition: FormContactDefinition = platform_definition(frog, state)
-		var delta: Vector3i = state.frog.world_position - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
+		var delta: Vector3i = Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]) - Vector3i(pose.matrix12[9], pose.matrix12[10], pose.matrix12[11])
 		delta = Vector3i(PlatformMath.s16(delta.x), PlatformMath.s16(delta.y), PlatformMath.s16(delta.z))
 		var local: Vector3i = PlatformMath.apply(PlatformMath.transpose(pose.matrix12), delta)
 		var cell := Vector2i((local.x - definition.offsets.x) >> 8, (local.z - definition.offsets.y) >> 8)
@@ -125,7 +125,7 @@ func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContac
 		result.status = EntityPrimitiveQuery.INVALID
 		result.reason = "Primitive contact requires an entity matrix and stored frog pose"
 		return result
-	var delta := Vector3i(PlatformMath.s16(state.frog.world_position.x - pose.matrix12[9]), PlatformMath.s16(state.frog.world_position.y - pose.matrix12[10]), PlatformMath.s16(state.frog.world_position.z - pose.matrix12[11]))
+	var delta := Vector3i(PlatformMath.s16(state.frog.matrix12[9] - pose.matrix12[9]), PlatformMath.s16(state.frog.matrix12[10] - pose.matrix12[10]), PlatformMath.s16(state.frog.matrix12[11] - pose.matrix12[11]))
 	var distance: int = PlatformMath.s32(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z)
 	if distance >= definition.radius_squared:
 		result.status = EntityPrimitiveQuery.MISS
@@ -213,7 +213,7 @@ func mount_platform(frog: Frog, state: GameplayState, definition: FormContactDef
 		var previous: PackedInt32Array = PackedInt32Array()
 		if state.attachment.current_entity_index >= 0:
 			previous = platform_pose(frog, state).matrix12
-		frog.react_fall(state, state.frog.world_position.y - state.frog.old_y, reaction.contact.cell_flags, events)
+		frog.react_fall(state, state.frog.matrix12[10] - state.frog.old_y, reaction.contact.cell_flags, events)
 		var outcome: TerrainCallbackResult = TerrainPlatform.land(state, definition, reaction.contact, pose, frog.camera, previous)
 		frog.apply_requests(state, outcome, events)
 		if not outcome.error.is_empty():
@@ -266,7 +266,7 @@ func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[T
 	var origin: Vector3i = state.attachment.entity_offset_16 if state.attachment.current_entity_index >= 0 and not state.frog.flags & FrogFlags.JUMP_TO_LAND else state.frog.position_16
 	state.frog.velocity_16.x = PlatformMath.divide(state.frog.target_16.x - origin.x, state.frog.remaining_ticks)
 	state.frog.velocity_16.z = PlatformMath.divide(state.frog.target_16.z - origin.z, state.frog.remaining_ticks)
-	state.frog.velocity_16.y = PlatformMath.divide((state.frog.target_y - state.frog.world_position.y) << 16, state.frog.remaining_ticks + 1) - ((Frog.GRAVITY_16 * (state.frog.remaining_ticks + 1)) >> 1)
+	state.frog.velocity_16.y = PlatformMath.divide((state.frog.target_y - state.frog.matrix12[10]) << 16, state.frog.remaining_ticks + 1) - ((Frog.GRAVITY_16 * (state.frog.remaining_ticks + 1)) >> 1)
 	var roll: bool = old_direction == state.frog.direction and state.frog.buffered_input_count > 3 and not is_super and not state.frog.powerup_flags & (PowerupFlags.QUICK_JUMP | PowerupFlags.AUTO_HOP)
 	if roll:
 		state.frog.buffered_input_count = 0

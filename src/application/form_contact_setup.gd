@@ -7,7 +7,7 @@ var diagnostics: Array[EntitySetupDiagnostic] = []
 var error: String = ""
 
 ## Resolves authored writers; whole-map callers opt into skeletal and decorative model contacts.
-static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", primitive_contacts: bool = false, complete_model_contacts: bool = false) -> FormContactSetup:
+static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[EntityDefinition], models_by_form: Dictionary[int, MofFile], source_id: String = "", resource_id: int = -1, build_id: String = "", primitive_contacts: bool = false, complete_model_contacts: bool = false, models_by_entity: Dictionary[int, MofFile] = {}) -> FormContactSetup:
 	var result := FormContactSetup.new()
 	if map == null or theme_book == null:
 		result.error = "Form contact setup requires a map and theme book"
@@ -78,7 +78,8 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			definition.dimensions = grid.dimensions
 			definition.offsets = grid.offsets
 		var form: FormBookEntry = theme_book.get_form(map.general.theme, span.form_id)
-		var selected_model: MofFile = models_by_form.get(span.form_id)
+		var selected_model: MofFile = models_by_entity.get(entity.entity_index, models_by_form.get(span.form_id))
+		var bounds_model: MofFile = models_by_form.get(span.form_id)
 		if form != null:
 			definition.death_type = form.death_type
 			definition.callback_kind = FormCallbackCatalog.resolve(entity.build_id, form.collision_callback)
@@ -101,9 +102,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		elif form.has_flag(FormBookEntry.FLAG_NO_MODEL):
 			reason = "Form has no model"
 		elif primitive_contacts and grid.data_count == 0 and grid.data.is_empty() and _primitive_model(selected_model):
-			var model: MofFile = models_by_form[span.form_id]
+			var model: MofFile = selected_model
 			var primitives: EntityPrimitiveSetup = EntityPrimitiveSetup.from_model(model)
-			var radius: Array[int] = _radius_squared(form, model)
+			var radius: Array[int] = _radius_squared(form, bounds_model)
 			if not primitives.error.is_empty():
 				reason = primitives.error
 			elif radius.is_empty():
@@ -116,7 +117,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			definition.has_form_data = false
 			definition.radius_squared = form.radius_squared
 		elif complete_model_contacts and grid.data_count == 0 and grid.data.is_empty() and selected_model != null and selected_model.error.is_empty() and selected_model.kind in [MofFile.Kind.STATIC, MofFile.Kind.ANIMATED] and selected_model.static_models.size() == 1 and not _has_collprims(selected_model):
-			var radius: Array[int] = _radius_squared(form, selected_model)
+			var radius: Array[int] = _radius_squared(form, bounds_model)
 			if radius.is_empty():
 				reason = "Model has no usable bounding radius"
 			else:
@@ -135,13 +136,13 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 		elif not max_y_by_grid.has(span.form_grid_id):
 			reason = "FORM grid has no resolved runtime maximum Y"
 		else:
-			var model: MofFile = models_by_form.get(span.form_id)
+			var model: MofFile = models_by_entity.get(entity.entity_index, models_by_form.get(span.form_id))
 			if model == null or not model.error.is_empty() or (model.kind != MofFile.Kind.STATIC and not (complete_model_contacts and model.kind == MofFile.Kind.ANIMATED)) or model.static_models.size() != 1:
 				reason = "Contact requires one static, flipbook or skeletal model"
 			elif _has_collprims(model) and not primitive_contacts:
 				reason = "Model collision primitives take precedence over FORM"
 			else:
-				var radius: Array[int] = _radius_squared(form, model)
+				var radius: Array[int] = _radius_squared(form, bounds_model)
 				if radius.is_empty():
 					reason = "Model has no usable bounding radius"
 				else:
@@ -227,6 +228,8 @@ static func _has_collprims(model: MofFile) -> bool:
 
 static func _radius_squared(form: FormBookEntry, model: MofFile) -> Array[int]:
 	var result: Array[int] = []
+	if model == null:
+		return result
 	if form.radius_squared != 0:
 		result.append(form.radius_squared)
 		return result
@@ -252,6 +255,22 @@ static func _radius_squared(form: FormBookEntry, model: MofFile) -> Array[int]:
 			if distance >= 0x80000000:
 				distance -= 0x100000000
 			radius = maxi(radius, distance)
+	if model.kind != MofFile.Kind.ANIMATED:
+		for static_model: MofStatic in model.static_models:
+			for part: MofPart in static_model.parts:
+				for primitive: MofPart.Collprim in part.collprims:
+					found = true
+					var extent: int = 0
+					match primitive.type:
+						0:
+							extent = primitive.size.x * primitive.size.x + primitive.size.y * primitive.size.y + primitive.size.z * primitive.size.z
+						1, 2, 3:
+							var length: int = primitive.size[primitive.type - 1]
+							extent = length * length + primitive.radius_squared
+						4:
+							extent = primitive.radius_squared
+					var distance: int = primitive.offset.x * primitive.offset.x + primitive.offset.y * primitive.offset.y + primitive.offset.z * primitive.offset.z
+					radius = maxi(radius & 0xffffffff, (distance + extent) & 0xffffffff)
 	if not found:
 		return result
 	radius = (radius + 100) & 0xffffffff
