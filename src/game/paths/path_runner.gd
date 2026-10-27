@@ -112,6 +112,10 @@ func advanced_copy(tick_index: int) -> PathRunner:
 func set_active(active: bool) -> void:
 	_state.flags = (_state.flags | PathStart.ACTIVE) if active else (_state.flags & ~PathStart.ACTIVE)
 
+## Changes the source path speed without resampling its current position.
+func set_speed(speed: int) -> void:
+	_state.speed = speed
+
 ## Returns a detached snapshot of the current runner state.
 func snapshot() -> PathSnapshot:
 	return _state.copy() if _state != null else null

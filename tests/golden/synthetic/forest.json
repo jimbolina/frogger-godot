@@ -1,0 +1,3909 @@
+{
+  "squirrels": [
+    {
+      "input": {
+        "mode": 0,
+        "bounce": false,
+        "cel": 2,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "bounce": false,
+        "cel": 3,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "bounce": false,
+        "cel": 4,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "bounce": true,
+        "cel": 2,
+        "length": 4
+      },
+      "expected": {
+        "mode": 1,
+        "action": 1,
+        "active": 0
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "bounce": true,
+        "cel": 3,
+        "length": 4
+      },
+      "expected": {
+        "mode": 1,
+        "action": 1,
+        "active": 0
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "bounce": true,
+        "cel": 4,
+        "length": 4
+      },
+      "expected": {
+        "mode": 1,
+        "action": 1,
+        "active": 0
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": false,
+        "cel": 2,
+        "length": 4
+      },
+      "expected": {
+        "mode": 1,
+        "action": 1,
+        "active": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": false,
+        "cel": 3,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": 1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": false,
+        "cel": 4,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": 1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": true,
+        "cel": 2,
+        "length": 4
+      },
+      "expected": {
+        "mode": 1,
+        "action": 1,
+        "active": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": true,
+        "cel": 3,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": 1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "bounce": true,
+        "cel": 4,
+        "length": 4
+      },
+      "expected": {
+        "mode": 0,
+        "action": 0,
+        "active": 1
+      }
+    }
+  ],
+  "hedgehogs": [
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 65534,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 65534,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 65534,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 65534,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 65535,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 65535,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65534,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65534,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 0,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 1,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 1,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "action": 0,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 0
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 3,
+        "action": 1,
+        "speed": 768
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 0,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 0,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 0,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 0,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 0,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 0,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 1,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 1,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 1,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 1,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 1,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 1,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 65535,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 65535,
+        "repeat": false,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 2,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 3,
+        "timer": 65535,
+        "action": 1,
+        "speed": -1
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "timer": 65535,
+        "repeat": true,
+        "cel": 3,
+        "length": 4,
+        "action": 1
+      },
+      "expected": {
+        "mode": 0,
+        "timer": 2,
+        "action": 0,
+        "speed": 256
+      }
+    }
+  ],
+  "branches": [
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": -1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": 0,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 0,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": 1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 1,
+        "y": -1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 1,
+        "y": 0,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 1,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 1,
+        "y": 1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65535,
+        "y": -1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65535,
+        "y": 0,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "timer": 65535,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65535,
+        "y": 1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": -1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": true,
+        "detach": true,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": 0,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": true,
+        "detach": true,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 0,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": 1,
+        "speed": 0,
+        "sounds": 1,
+        "disabled": true,
+        "detach": true,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": -1,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": 0,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 1,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 0,
+        "y": 1,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65534,
+        "y": -1,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65534,
+        "y": 0,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "timer": 65535,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": false,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 1,
+        "timer": 65534,
+        "y": 1,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": false,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 0,
+        "y": 3,
+        "speed": 262144,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 0,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 0,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 0,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 1,
+        "y": 3,
+        "speed": 262144,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 1,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 1,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 1,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "y": -1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": 3,
+        "speed": 262144,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "y": 0,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "timer": 65535,
+        "y": 1,
+        "floor": 0,
+        "speed": 0,
+        "disabled": true,
+        "hit": true,
+        "attached": true,
+        "effect": false
+      },
+      "expected": {
+        "mode": 2,
+        "timer": 65535,
+        "y": -20,
+        "speed": 0,
+        "sounds": 0,
+        "disabled": true,
+        "detach": false,
+        "pop": true
+      }
+    }
+  ],
+  "hives": [
+    {
+      "input": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 999,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1001,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 999,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": false,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 128,
+        "delay": 0,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 128,
+        "delay": 0,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 128,
+        "delay": 0,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 384,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 384,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 384,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 257,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 257,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 257,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 257,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 257,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 257,
+        "delay": 0,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 100,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 128,
+        "delay": 0,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": true,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 101,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 128,
+        "delay": 0,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": true,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": true,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": true
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 0,
+        "delay": 61,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 0,
+        "delay": 61,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 0,
+        "delay": 61,
+        "x": 0,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 511,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 256,
+        "delay": 61,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 1,
+        "speed": 256,
+        "delay": 61,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 60,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 2,
+        "speed": 256,
+        "delay": 61,
+        "x": 1,
+        "visible": true,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 61,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 62,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 1
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 2,
+        "speed": 512,
+        "delay": 4294967295,
+        "x": 0,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 2
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 0,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 127,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": -1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 256,
+        "delay": 0,
+        "x": 126,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 127,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 256,
+        "delay": 0,
+        "x": 126,
+        "visible": false,
+        "active": -1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 127,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 0,
+        "speed": 256,
+        "delay": 0,
+        "x": 126,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 128,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": -1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 127,
+        "visible": false,
+        "active": -1,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 128,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 0,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 127,
+        "visible": false,
+        "active": 0,
+        "death": false,
+        "early": false
+      }
+    },
+    {
+      "input": {
+        "mode": 3,
+        "speed": 0,
+        "delay": 0,
+        "x": 128,
+        "frog_x": 1000,
+        "release": 1000,
+        "maximum": 257,
+        "visible": false,
+        "active": 1,
+        "eligible": true,
+        "stopped": false,
+        "first_hit": 0
+      },
+      "expected": {
+        "mode": 3,
+        "speed": 256,
+        "delay": 0,
+        "x": 127,
+        "visible": false,
+        "active": 1,
+        "death": false,
+        "early": false
+      }
+    }
+  ],
+  "visibility": [
+    {
+      "input": {
+        "start": 0,
+        "direction": 15,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 16
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 17
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": -240
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": -241
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 256,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 257,
+        "offset": 0
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": true,
+        "frog_x": 116,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 1
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": true,
+        "frog_x": 117,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": false,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": true,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 8,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 35,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": false,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 0,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 65536,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": -32,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": -32
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "start": -1040,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": -2048
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "start": 2032,
+        "direction": 16,
+        "frog_active": false,
+        "frog_x": 1000,
+        "entity_x": 0,
+        "live": true,
+        "disabled": false,
+        "form": 9,
+        "has_form": true,
+        "radius2": 1000000,
+        "offset": 0
+      },
+      "expected": 0
+    }
+  ],
+  "projection": [
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        32,
+        0,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        0,
+        2458,
+        0,
+        4096,
+        0,
+        -2458,
+        0,
+        3277,
+        32,
+        0,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        32,
+        0,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        192,
+        0,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        0,
+        2458,
+        0,
+        4096,
+        0,
+        -2458,
+        0,
+        3277,
+        192,
+        0,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        192,
+        0,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        0,
+        2458,
+        0,
+        4096,
+        0,
+        -2458,
+        0,
+        3277,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        3855,
+        -964,
+        0,
+        964,
+        3855,
+        32,
+        -48,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3454,
+        -114,
+        1966,
+        0,
+        3657,
+        212,
+        -2202,
+        -179,
+        3084,
+        32,
+        -48,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2078,
+        -914,
+        1638,
+        0,
+        1900,
+        1060,
+        -3530,
+        537,
+        -964,
+        32,
+        -48,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        3855,
+        -964,
+        0,
+        964,
+        3855,
+        192,
+        72,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3454,
+        -114,
+        1966,
+        0,
+        3657,
+        212,
+        -2202,
+        -179,
+        3084,
+        192,
+        72,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2078,
+        -914,
+        1638,
+        0,
+        1900,
+        1060,
+        -3530,
+        537,
+        -964,
+        192,
+        72,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        3855,
+        -964,
+        0,
+        964,
+        3855,
+        128,
+        16,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3454,
+        -114,
+        1966,
+        0,
+        3657,
+        212,
+        -2202,
+        -179,
+        3084,
+        128,
+        16,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2078,
+        -914,
+        1638,
+        0,
+        1900,
+        1060,
+        -3530,
+        537,
+        -964,
+        128,
+        16,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        2047,
+        -2048,
+        0,
+        2048,
+        2047,
+        32,
+        -160,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        246,
+        1228,
+        0,
+        2046,
+        -410,
+        -2458,
+        328,
+        1637,
+        32,
+        -160,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2897,
+        -2896,
+        2047,
+        0,
+        2895,
+        4095,
+        -2896,
+        2896,
+        -2048,
+        32,
+        -160,
+        192
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        2047,
+        -2048,
+        0,
+        2048,
+        2047,
+        192,
+        160,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        246,
+        1228,
+        0,
+        2046,
+        -410,
+        -2458,
+        328,
+        1637,
+        192,
+        160,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          192,
+          777,
+          32
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2897,
+        -2896,
+        2047,
+        0,
+        2895,
+        4095,
+        -2896,
+        2896,
+        -2048,
+        192,
+        160,
+        32
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          0,
+          4096
+        ],
+        "world_align": false
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        2047,
+        -2048,
+        0,
+        2048,
+        2047,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": false
+      },
+      "expected": [
+        3277,
+        246,
+        1228,
+        0,
+        2046,
+        -410,
+        -2458,
+        328,
+        1637,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -256,
+          0,
+          0,
+          256
+        ],
+        "position": [
+          128,
+          777,
+          128
+        ],
+        "tangent": [
+          0,
+          4096,
+          0
+        ],
+        "world_align": false
+      },
+      "expected": [
+        -2897,
+        -2896,
+        2047,
+        0,
+        2895,
+        4095,
+        -2896,
+        2896,
+        -2048,
+        128,
+        0,
+        128
+      ]
+    },
+    {
+      "input": {
+        "heights": [
+          -80,
+          48,
+          -16,
+          112
+        ],
+        "position": [
+          32,
+          777,
+          192
+        ],
+        "tangent": [
+          2458,
+          0,
+          3277
+        ],
+        "world_align": true
+      },
+      "expected": [
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        0,
+        0,
+        0,
+        4096,
+        32,
+        777,
+        192
+      ]
+    }
+  ]
+}

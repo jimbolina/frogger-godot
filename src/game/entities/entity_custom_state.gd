@@ -2,6 +2,7 @@ class_name EntityCustomState
 extends RefCounted
 ## Owned custom continuation for the supported fly and pink frog.
 
+var swarm: EntitySwarmState = null
 var mode: int = 0
 var timer: int = 60
 var home: bool = false
@@ -26,6 +27,7 @@ var dead: bool = false
 ## Copies every custom continuation value.
 func copy() -> EntityCustomState:
 	var result := EntityCustomState.new()
+	result.swarm = swarm.copy() if swarm != null else null
 	result.mode = mode
 	result.timer = timer
 	result.home = home

@@ -3,7 +3,7 @@ extends RefCounted
 ## Dispatches resolved custom behavior on private candidate state.
 
 ## Updates one entity without publishing partial effects on failure.
-static func update(definition: EntityDefinition, previous: EntitySnapshot, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, parent_live: bool, parent: EntitySnapshot = null, parent_form: FormContactDefinition = null, frog: GameplayState = null, neighbors: Array[EntitySnapshot] = [], definitions: Array[EntityDefinition] = [], frame_number: int = 0) -> EntityCustomResult:
+static func update(definition: EntityDefinition, previous: EntitySnapshot, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, parent_live: bool, parent: EntitySnapshot = null, parent_form: FormContactDefinition = null, frog: GameplayState = null, neighbors: Array[EntitySnapshot] = [], definitions: Array[EntityDefinition] = [], frame_number: int = 0, grid: GridDefinition = null, collision: EntityCollisionDefinition = null, contacts: Array[FormContactDefinition] = []) -> EntityCustomResult:
 	var result := EntityCustomResult.new()
 	if not definition.behavior.has_custom_update() or environment == null or not environment.validate().is_empty():
 		result.error = "Custom update requires a valid entity environment"
@@ -16,6 +16,14 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 	result.random = random.copy()
 	var issue: String = ""
 	match definition.behavior.kind:
+		EntityBehavior.Kind.HIVE:
+			issue = EntityHive.update(definition, result, frog, neighbors, definitions, contacts, grid, collision, frame_number)
+		EntityBehavior.Kind.BREAKING_BRANCH:
+			issue = EntityBreakingBranch.update(definition, result, frog, hit, grid)
+		EntityBehavior.Kind.SQUIRREL:
+			issue = EntitySquirrel.update(definition, result)
+		EntityBehavior.Kind.HEDGEHOG:
+			issue = EntityHedgehog.update(definition, result, grid)
 		EntityBehavior.Kind.DOG:
 			issue = EntityDog.update(definition, result, frog, hit)
 		EntityBehavior.Kind.BEAVER:

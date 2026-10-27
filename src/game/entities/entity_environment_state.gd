@@ -3,6 +3,7 @@ extends RefCounted
 ## Shared logical checkpoint positions and collected bits.
 
 var checkpoint_positions: Array[Vector3i] = []
+var active_swarms: int = 0
 var covered: int = 0
 var collected: int = 0
 var collision_disabled: int = 0
@@ -12,6 +13,7 @@ var croak_modes: PackedInt32Array = PackedInt32Array([0, 0, 0, 0, 0])
 func copy() -> EntityEnvironmentState:
 	var result := EntityEnvironmentState.new()
 	result.checkpoint_positions.assign(checkpoint_positions)
+	result.active_swarms = active_swarms
 	result.covered = covered
 	result.collected = collected
 	result.collision_disabled = collision_disabled

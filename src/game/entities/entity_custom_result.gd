@@ -2,6 +2,8 @@ class_name EntityCustomResult
 extends RefCounted
 ## Private custom-update outputs for the aggregate entity visit.
 
+var path_speed_request: int = -1
+var frog_fall_requested: bool = false
 var path_active_request: int = -1
 var path_reset_requested: bool = false
 var frog_matrix12: PackedInt32Array = PackedInt32Array()

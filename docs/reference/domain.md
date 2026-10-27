@@ -21,9 +21,8 @@ facts. **Live play** describes one running game's state and rules.
 Application adapters translate between these meanings. Inspection owns scenarios,
 presets and verification restrictions; presentation owns host input and drawing.
 `GameplayRun` coordinates `Frog`, contacts and system candidates, publishing
-detached `GameplayState` values after an atomic commit. Supported reactions
-include POP/SAFE/SQUISHED and vehicle cuboids. A one-entity fixed-point probe remains available; complete level play
-is not implemented. See [architecture](architecture.md)
+detached `GameplayState` values after an atomic commit. Whole-map single-player play includes entity reactions, checkpoints, rewards
+and level flow. A one-entity fixed-point probe remains available. See [architecture](architecture.md)
 for dependencies and ownership.
 
 The first gameplay definitions are detached static terrain grids, copied by
@@ -60,7 +59,7 @@ diagnostic-and-omission fallback.
 The [FORM contact contract](gameplay/entities.md#form-contact-inspection) copies
 the selected grid and checks one detached entity pose against a world point.
 Bounded POP and SAFE-platform reactions use source map-group order and a shared
-run transaction. Other entity reactions remain deferred. Form callback
+run transaction. Whole-map play additionally resolves supported custom reactions. Form callback
 addresses need verified per-build name mappings before callback execution; the script
 list's `CallbackNames` is a separate opcode callback namespace. Unknown entries
 must retain their source identity and diagnostics and use a documented fallback;

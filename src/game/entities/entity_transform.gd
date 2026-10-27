@@ -26,6 +26,24 @@ static func moving(path: PathSnapshot, flags: int) -> PackedInt32Array:
 	result[8] = _signed16(axis_z.z)
 	return result
 
+## Projects the source path tangent onto the first terrain layer during a live update.
+static func moving_on_land(path: PathSnapshot, flags: int, grid: GridDefinition) -> PackedInt32Array:
+	if flags & EntityDefinition.ALIGN_TO_WORLD or not flags & EntityDefinition.PROJECT_ON_LAND:
+		return moving(path, flags)
+	if grid == null:
+		return PackedInt32Array()
+	var surface: GridSurfaceInfo = GridQueries.info_at(grid, path.position.x, path.position.z)
+	if surface == null:
+		return PackedInt32Array()
+	var tangent: Vector3i = path.tangent
+	var dx: int = _signed32(surface.x_slope.x * tangent.x + surface.x_slope.y * tangent.y + surface.x_slope.z * tangent.z) >> 12
+	var dz: int = _signed32(surface.z_slope.x * tangent.x + surface.z_slope.y * tangent.y + surface.z_slope.z * tangent.z) >> 12
+	var projected: PathSnapshot = path.copy()
+	projected.position.y = surface.height
+	for axis: int in 3:
+		projected.tangent[axis] = _signed32(surface.x_slope[axis] * dx + surface.z_slope[axis] * dz) >> 12
+	return moving(projected, flags)
+
 static func _cross12(a: Vector3i, b: Vector3i) -> Vector3i:
 	return Vector3i(_signed32(a.y * b.z - a.z * b.y) >> 12, _signed32(a.z * b.x - a.x * b.z) >> 12, _signed32(a.x * b.y - a.y * b.x) >> 12)
 

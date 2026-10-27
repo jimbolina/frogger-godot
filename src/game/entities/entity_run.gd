@@ -86,7 +86,7 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & ~EntityDefinition.ALL_FLAGS:
 			result.error = "Entity %d has unsupported flags" % definition.entity_index
 			return result
-		if definition.flags & (EntityDefinition.LOCAL_ALIGN | EntityDefinition.PROJECT_ON_LAND):
+		if definition.flags & EntityDefinition.LOCAL_ALIGN or (definition.flags & EntityDefinition.PROJECT_ON_LAND and definition.behavior.kind != EntityBehavior.Kind.HEDGEHOG):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
 		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or definition.behavior.has_custom_update()):
@@ -103,6 +103,12 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 				return result
 		else:
 			result.error = "Entity %d has unsupported name %s" % [definition.entity_index, definition.entity_name]
+			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.HIVE, EntityBehavior.Kind.HEDGEHOG] and definition.forest == null:
+			result.error = "Forest behavior requires decoded subtype operands"
+			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] and definition.action_lengths.size() < 2:
+			result.error = "Forest animal requires both source animation actions"
 			return result
 		for length: int in definition.action_lengths:
 			if length <= 0:
@@ -200,7 +206,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].live_flags = previous.live_flags
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].ambient = previous.ambient
-		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG] or (deferred_updates and _lifecycle != null and previous.live):
+		if _definitions[index].behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
@@ -272,6 +278,7 @@ func reset_in_level(checkpoint: bool, environment: EntityEnvironmentState = null
 			candidate._state.lifecycle_events.append(TickEvent.lifecycle(TickEvent.Kind.CREATE, entity.entity_index, entity.generation))
 	commit_candidate(candidate)
 	if environment != null:
+		environment.active_swarms = next_environment.active_swarms
 		environment.covered = next_environment.covered
 		environment.collision_disabled = next_environment.collision_disabled
 	return ""
@@ -394,7 +401,7 @@ func advance_animations() -> void:
 			entity.animation.advance()
 
 ## Updates one supported custom neighbor on detached candidate state.
-func update_custom(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null) -> EntityCustomResult:
+func update_custom(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null, grid: GridDefinition = null, collision: EntityCollisionDefinition = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
 	if slot < 0:
 		var failed := EntityCustomResult.new()
@@ -413,7 +420,7 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 				if parent_slot < contacts.size():
 					parent_form = contacts[parent_slot]
 				break
-	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null or definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE else null, parent_form, frog, _state.entities, _definitions, _state.tick_index - 1)
+	var result: EntityCustomResult = EntityCustomUpdate.update(definition, _state.entities[slot], environment, random, frog_position, hit, parent_live, parent if _lifecycle != null or definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE else null, parent_form, frog, _state.entities, _definitions, _state.tick_index - 1, grid, collision, contacts)
 	if result.error.is_empty():
 		if result.path_reset_requested:
 			var start: PathStart = definition.path_start.copy()
@@ -428,6 +435,9 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 			result.entity.matrix12 = EntityTransform.moving(result.entity.path, result.entity.entity_flags)
 		if result.path_active_request >= 0:
 			_runners[slot].set_active(result.path_active_request == 1)
+			result.entity.path = _runners[slot].snapshot()
+		if result.path_speed_request >= 0:
+			_runners[slot].set_speed(result.path_speed_request)
 			result.entity.path = _runners[slot].snapshot()
 		_state.entities[slot] = result.entity.copy()
 	return result
@@ -540,7 +550,24 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 	entity.requests.clear()
 	if definition.behavior.has_custom_update():
 		entity.custom_state = EntityCustomState.new()
-		if definition.behavior.kind == EntityBehavior.Kind.PICKUP:
+		if definition.behavior.kind == EntityBehavior.Kind.HIVE:
+			entity.custom_state.swarm = EntitySwarmState.new()
+			entity.custom_state.moving_sound = PackedInt32Array([64, 512, 1024])
+			if environment != null:
+				environment.active_swarms = 0
+		elif definition.behavior.kind == EntityBehavior.Kind.BREAKING_BRANCH:
+			entity.custom_state.timer = definition.authored_delay
+			entity.entity_flags &= ~EntityDefinition.NO_COLLISION
+		elif definition.behavior.kind == EntityBehavior.Kind.SQUIRREL:
+			entity.animation.select(0)
+			if not entity.animation.lengths.is_empty():
+				entity.custom_state.delay = maxi(0, PlatformMath.divide(definition.authored_delay, entity.animation.lengths[0]) - 1) & 65535
+		elif definition.behavior.kind == EntityBehavior.Kind.HEDGEHOG:
+			var speed: int = EntityHedgehog.start(definition, entity, false)
+			if runner != null:
+				runner.set_speed(speed)
+				entity.path = runner.snapshot()
+		elif definition.behavior.kind == EntityBehavior.Kind.PICKUP:
 			EntityBonusFly.initialize(definition, entity)
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION

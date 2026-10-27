@@ -2,7 +2,7 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2"]
 
 var error: String = ""
 var definition: LevelDefinition = null
@@ -22,7 +22,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5 or SUB1"
+		return "Gameplay setup requires ORG1–ORG5, SUB1 or FOR1–FOR2"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)
@@ -54,10 +54,12 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	var models: Dictionary[int, MofFile] = {}
 	var problems := PackedStringArray()
 	var identities: Dictionary[int, EntityDefinition] = {}
+	var needs_swarm: bool = false
 	for entity: EntityDefinition in entities.definitions:
 		if identities.has(entity.unique_id):
 			return code + " entity unique ID %d is duplicated" % entity.unique_id
 		identities[entity.unique_id] = entity
+		needs_swarm = needs_swarm or entity.behavior.kind == EntityBehavior.Kind.HIVE
 		var form: FormBookEntry = data.tables.theme_book().get_form(map.general.theme, entity.form_id)
 		if form == null:
 			return code + " entity %d has no form" % entity.entity_index
@@ -91,6 +93,10 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 				return code + " entity %d: %s" % [entity.entity_index, issue]
 	if not problems.is_empty():
 		return "; ".join(problems)
+	if needs_swarm:
+		var swarm_issue: String = _swarm_texture_issue(data, theme)
+		if not swarm_issue.is_empty():
+			return code + ": " + swarm_issue
 	for entity: EntityDefinition in entities.definitions:
 		if entity.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and not identities.has(entity.parent_unique_id):
 			return code + " entity %d has an unresolved parent %d" % [entity.entity_index, entity.parent_unique_id]
@@ -184,3 +190,21 @@ static func model_action_lengths(model: MofFile) -> PackedInt32Array:
 		for action: MofPart.FlipbookAction in model.static_models[0].parts[0].flipbook_actions:
 			lengths.append(action.frame_count)
 	return lengths
+
+static func _swarm_texture_issue(data: GameData, theme: ThemeBookEntry) -> String:
+	if data.tables.names.images == null:
+		return "Hive swarm requires named player textures"
+	var texture_id: int = data.tables.names.images.index_of("for_swarm")
+	if texture_id < 0:
+		return "Hive swarm image for_swarm is not named in the supplied configuration"
+	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
+	var found: bool = false
+	var problems := PackedStringArray()
+	for bank_theme: ThemeBookEntry in [general, theme]:
+		if bank_theme == null:
+			return "Hive swarm requires general and theme texture banks"
+		var bank: VloFile = data.read_texture_bank(bank_theme.vlo_id(false, false), problems)
+		if bank == null:
+			return "Hive swarm texture bank is unavailable: " + "; ".join(problems)
+		found = found or bank.find_texture(texture_id) != null
+	return "" if found else "Hive swarm image for_swarm is missing from the supplied banks"

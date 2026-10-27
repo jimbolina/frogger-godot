@@ -15,7 +15,7 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-The dedicated game scene supports ORG1–ORG5 and SUB1, with the original-style
+The dedicated game scene supports ORG1–ORG5, SUB1 and FOR1–FOR2, with the original-style
 single-player HUD, tongue collection and the complete level loop.
 
 Terrain movement, collision/deaths, gameplay camera and animation control
@@ -37,7 +37,7 @@ godot --path . res://scenes/game/gameplay.tscn -- --data-dir=<game-folder> --lev
 
 The default is high-detail ORG1. The HUD uses the player's English retail UI
 assets. Full menus, progression between levels, saves, audio playback and
-particles remain future work.
+decorative particles remain future work. Forest bee swarms are visible gameplay hazards.
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
@@ -58,9 +58,9 @@ Interactive terrain playback enables smoothing by default. Use `--smoothing=fals
 after `--` for exact committed poses, or `--smoothing=true` for smooth captures.
 The `run_terrain.py` reference launcher explicitly defaults to exact mode.
 Rendering frequency does not change the 30 Hz game clock.
-ORG1 loads its authored zones and entity dependencies across the whole map.
+Supported playable levels load their authored zones and entity dependencies across the whole map.
 Death and checkpoint transitions use selective source resets; R starts a fresh run.
-Other themes retain their explicit inspection fixtures. Animated lighting remains a
+Unsupported levels retain their explicit inspection fixtures. Animated lighting remains a
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
 For real frame-time measurements and the machine-specific 1440p target, use the
 [ORG1 performance launcher](docs/reference/testing/terrain-inspection.md).
@@ -87,7 +87,7 @@ live-entity CSVs, complete committed state/events in `committed.jsonl`, and
 `playback.json` with the initialization, consumed inputs,
 committed ticks and termination reason. Exit 3 means incomplete playback;
 missing resources and unsupported dependencies remain explicit. The complete
-ORG1 and SUB1 attract demos match the frozen native terminal states, routes and inputs. See the
+ORG1, SUB1 and FOR1 attract demos match the frozen native terminal states, routes and inputs. See the
 [demo verification commands](docs/reference/testing/README.md#demo-playback-and-comparison)
 for reference comparisons and schedule checks.
 

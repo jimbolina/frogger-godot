@@ -11,8 +11,9 @@ entity reads the 12-byte PATH_INFO prefix and attaches a supported
 decoded map record for later behavior work.
 
 Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start,
-unknown entity flag bits, `LOCAL_ALIGN` and `PROJECT_ON_LAND` omit only that
-entity. Diagnostics include source/build/resource, authored index, form and
+unknown entity flag bits and `LOCAL_ALIGN` omit only that entity.
+`PROJECT_ON_LAND` is supported for whole-map hedgehog updates; other unimplemented
+projected transforms remain omitted. Diagnostics include source/build/resource, authored index, form and
 offset with the reason and fallback. `HIDDEN`, `NO_DISPLAY` and `NO_COLLISION`
 are retained as flags; the default component attaches every supported
 record. The opt-in visibility lifetime below narrows that set. Script and callback
@@ -569,7 +570,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5 and SUB1 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1 and FOR1–FOR2 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -629,3 +630,45 @@ during setup; collection commits the reward and hidden state together.
 The pinned JUN1 bank/log fixture continues to omit moving tongue collectables
 from its collision aggregate, with a diagnostic. General transform inspection
 can recognize those entities without expanding that fixture's proven behavior.
+
+### Forest
+
+FOR1 and FOR2 use whole-map setup. FOR3–FOR5 are dummy retail entries and FORM
+is multiplayer. Hives, breaking branches, squirrels and hedgehogs resolve from
+FrogLord names into typed custom behaviors; existing scripts handle owls, river
+noise and squirrel sounds. Unsupported dependencies still reject whole-map play.
+
+Hive swarms activate near a controllable frog, chase over terrain, mill behind
+live tree-stump FORMs and return home. The source visibility query samples a
+ray in sixteen-unit steps, checking the active frog before live stumps; stump
+XZ bounds are inclusive and do not use normal frog-contact height gates. The
+source Forest stump-form list is retained. Swarm speeds use `WORLD_SHIFT=8`;
+the chase cap compares the authored speed directly, while return compares it
+shifted by eight. Shared active-swarm count, positions, angles, sound ownership
+and pitch RNG commit with the entity/frog transaction. Hive creation and return
+preserve the source's count reset and postdecrement behavior.
+
+Breaking branches use the previous hit, an unsigned postdecrement delay and
+source gravity/rotation. Breaking disables collision and releases an attached
+frog into freefall before control; impact requests the existing logical pop.
+Squirrels pause paths at bounced endpoints until their turning action ends;
+the authored delay does not alter animation cadence because the corresponding
+source assignment is disabled. Hedgehogs switch speed/action at authored timer
+and animation boundaries; rolling path repeats restart running. FOR2 hedgehogs
+project onto the first terrain layer during updates, retaining source height and slope math without
+renormalizing the projected forward axis. Creation keeps the path pose;
+`ALIGN_TO_WORLD` suppresses projection.
+
+`FOR_SWAYING_BRANCH` follows the active frozen entity-book mapping: static
+creation with a dynamic model and no sway update. Disabled historical sway code
+is not executed. Falling-leaf behavior is not admitted by this phase's retail
+maps. Compatible edits can select implemented behaviors; unknown mappings retain
+diagnostics.
+
+The bee swarm is a visible lethal hazard, so its three original textured sprites
+are included here rather than deferred with decorative particles. Whole-map
+setup requires the named `for_swarm` image from the player's general/theme banks.
+Presentation draws committed swarm positions with the source camera-plane
+orientation and never advances gameplay or consumes gameplay RNG. The existing
+renderer uses depth buffering rather than the source ordering-table bias.
+Broader particles, pop visuals and audio playback remain separate work.

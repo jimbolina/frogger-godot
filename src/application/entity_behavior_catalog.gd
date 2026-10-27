@@ -3,6 +3,11 @@ extends RefCounted
 ## Resolves supplied FrogLord entity names to existing implementations once at setup.
 
 const KINDS: Dictionary[String, EntityBehavior.Kind] = {
+	"FOR_HIVE": EntityBehavior.Kind.HIVE,
+	"FOR_BREAKING_BRANCH": EntityBehavior.Kind.BREAKING_BRANCH,
+	"FOR_SQUIRREL": EntityBehavior.Kind.SQUIRREL,
+	"FOR_HEDGEHOG": EntityBehavior.Kind.HEDGEHOG,
+	"FOR_SWAYING_BRANCH": EntityBehavior.Kind.STATIC,
 	"ORG_CROC_HEAD": EntityBehavior.Kind.CROC_HEAD,
 	"GEN_GOLD_FROG": EntityBehavior.Kind.GOLD_FROG,
 	"ORG_LOG_SNAKE": EntityBehavior.Kind.LOG_SNAKE,
@@ -28,9 +33,9 @@ static func resolve(name: String) -> EntityBehavior:
 	result.kind = KINDS.get(name, EntityBehavior.Kind.UNKNOWN)
 	if result.kind == EntityBehavior.Kind.UNKNOWN:
 		return result
-	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG] else EntityBehavior.Layout.MATRIX
-	result.immortal = name == "DYNAMIC" or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
-	result.group_moving = name == "DYNAMIC" or result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER]
+	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG] else EntityBehavior.Layout.MATRIX
+	result.immortal = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL]
+	result.group_moving = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL]
 	result.tongueable = name == "MOVING_TONGUEABLE" or result.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.PICKUP]
 	result.one_shot = result.kind == EntityBehavior.Kind.BABY_FROG
 	if result.kind == EntityBehavior.Kind.TURTLE:

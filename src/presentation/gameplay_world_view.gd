@@ -16,6 +16,7 @@ var _current: GameplayState
 var _ground: Node3D
 var _frog: MeshInstance3D
 var _tongue_view: TongueView
+var _swarm_view: ForestSwarmView
 var _camera: Camera3D
 var _map_instance: MapMesh.Instance
 var _frog_pose_tick: int = -1
@@ -51,6 +52,8 @@ func draw_state(fraction: float) -> void:
 	var frog_transform: Transform3D = _motion.frog(weight)
 	if _tongue_view != null:
 		_tongue_view.draw_state(_current)
+	if _swarm_view != null:
+		_swarm_view.draw_state(_current)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
 	if _frog_model != null:
 		_frog_model.transform = frog_transform
@@ -111,6 +114,8 @@ func build_world() -> void:
 	add_child(_frog)
 	_tongue_view = TongueView.new()
 	add_child(_tongue_view)
+	_swarm_view = ForestSwarmView.new()
+	add_child(_swarm_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -120,6 +125,8 @@ func build_world() -> void:
 	_camera.current = true
 
 func _clear_entity_visuals() -> void:
+	if _swarm_view != null:
+		_swarm_view.clear()
 	for model: AnimatedModelInstance in _entity_models:
 		if model != null:
 			remove_child(model)
@@ -143,6 +150,12 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 		_entity_generations.append(-1)
 	if selected_data == null or not selected_data.is_valid() or scene_data == null:
 		return
+	for entity: EntityDefinition in definitions.entities:
+		if entity.behavior.kind == EntityBehavior.Kind.HIVE:
+			var issue: String = _swarm_view.configure(scene_data, selected_data)
+			if not issue.is_empty():
+				scene_data.diagnostics.append(issue)
+			break
 	if use_lighting:
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scene_data.map.lights)
@@ -218,6 +231,8 @@ func _update_projection() -> void:
 	_camera.fov = GameplayProjection.vertical_fov_degrees(size)
 	_entity_pose_tick = -1
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
+	if _swarm_view != null:
+		_swarm_view.set_projection_scale(scale)
 	if _map_instance != null:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:

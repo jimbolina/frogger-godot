@@ -4,6 +4,7 @@ extends SceneTree
 var _screen: GameplayScreen
 var _data: GameData
 var _folder: String
+var _forest_captures: Dictionary[String, bool] = {}
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -109,6 +110,10 @@ func _run() -> void:
 			_finish("Keyboard/headless state mismatch at tick %d" % tick)
 			return
 		_screen.draw_state(1.0)
+		issue = await _capture_forest_states(actual)
+		if not issue.is_empty():
+			_finish(issue)
+			return
 		timeout_seen = timeout_seen or actual.frog.death_equate == FrogAnimationCatalog.TIMEOUT
 		respawn_seen = respawn_seen or (actual.frog.lives < 3 and actual.flow.phase == LevelFlowState.Phase.PLAY)
 		for event: TickEvent in actual_result.events:
@@ -157,7 +162,7 @@ func _run() -> void:
 	if report == null:
 		_finish("Cannot write capture report")
 		return
-	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "final": TerrainTrace.facts(final, true)}, "\t"))
+	report.store_string(JSON.stringify({"accepted": accepted, "goal": goal, "level": code, "window_size": [root.size.x, root.size.y], "viewport_size": [root.get_visible_rect().size.x, root.get_visible_rect().size.y], "timeout_seen": timeout_seen, "respawn_seen": respawn_seen, "restart_verified": restart_verified, "ticks": final.tick_index, "milestones": milestones, "forest_captures": _forest_captures.keys(), "final": TerrainTrace.facts(final, true)}, "\t"))
 	report.close()
 	_finish("")
 
@@ -210,3 +215,23 @@ func _finish(issue: String) -> void:
 	if _data != null:
 		_data.close()
 	quit(0 if issue.is_empty() else 1)
+
+func _capture_forest_states(state: GameplayState) -> String:
+	if state.entities == null or _screen._definition.entity_collision == null:
+		return ""
+	for slot: int in state.entities.entities.size():
+		var entity: EntitySnapshot = state.entities.entities[slot]
+		if not entity.live or entity.custom_state == null:
+			continue
+		var kind: EntityBehavior.Kind = _screen._definition.entity_collision.entities[slot].behavior.kind
+		if kind not in [EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]:
+			continue
+		var kind_name: String = EntityBehavior.Kind.keys()[kind]
+		var label: String = "forest-%s-mode-%d" % [kind_name.to_lower(), entity.custom_state.mode]
+		if _forest_captures.has(label):
+			continue
+		_forest_captures[label] = true
+		var issue: String = await _capture(label + "-tick-%04d" % state.tick_index)
+		if not issue.is_empty():
+			return issue
+	return ""

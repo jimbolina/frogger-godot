@@ -432,7 +432,7 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 	var definition: EntityDefinition = _entity_collision.entities[slot]
 	if definition.behavior.has_custom_update():
 		var frog_position := Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
-		var background: EntityCustomResult = _candidate_entities.update_custom(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state)
+		var background: EntityCustomResult = _candidate_entities.update_custom(definition.entity_index, state.entity_environment, _candidate_random, frog_position, _state.attachment.entity_hit_indices.has(definition.entity_index), _entity_collision.contacts, state, _grid, _entity_collision)
 		if not background.error.is_empty():
 			return background.error
 		if background.environment.collision_disabled != state.entity_environment.collision_disabled:
@@ -445,6 +445,15 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 		_candidate_random.draw_count = background.random.draw_count
 		_candidate_random.consumers.assign(background.random.consumers)
 		state.entities.entities[slot] = _candidate_entities.entity_snapshot(slot)
+		if background.frog_fall_requested:
+			var fall_issue: String = _frog.eject(state, 0, 0, events)
+			if not fall_issue.is_empty():
+				return fall_issue
+			state.frog.cell = GridQueries.world_to_cell(_grid, state.frog.matrix12[9], state.frog.matrix12[11])
+			var stack: GridStackDefinition = _grid.stack_at(state.frog.cell)
+			if stack != null and stack.square_count > 0:
+				state.frog.square_index = stack.first_square_index
+				state.frog.flags |= FrogFlags.FREEFALL
 		if background.death_animation >= 0:
 			_frog.kill(state, background.death_animation, false, events)
 		for request: TickEvent in background.entity.requests:
@@ -663,7 +672,13 @@ func _apply_entity_sound(state: GameplayState, entity: EntitySnapshot, request: 
 	runtime.state = state
 	runtime.entity_index = entity.entity_index
 	runtime.generation = entity.generation
-	return runtime.sound(request, _candidate_random, Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11]))
+	return runtime.sound(request, _candidate_random, _entity_sound_position(entity))
+
+func _entity_sound_position(entity: EntitySnapshot) -> Vector3i:
+	if entity.custom_state != null and entity.custom_state.swarm != null and entity.custom_state.mode != EntityHive.Mode.WAITING:
+		var matrix: PackedInt32Array = entity.custom_state.swarm.matrix12
+		return Vector3i(matrix[9], matrix[10], matrix[11])
+	return Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
 
 func _synchronize_sound_entities(state: GameplayState) -> String:
 	if state.sound == null:
@@ -681,7 +696,7 @@ func _synchronize_sound_entities(state: GameplayState) -> String:
 		if entity == null or not entity.live or entity.generation != moving.generation:
 			state.sound.retire_moving(moving.owner)
 		else:
-			moving.position = Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+			moving.position = _entity_sound_position(entity)
 			moving.old_position = moving.position
 	var ordered: Array[EntitySnapshot] = []
 	for event: TickEvent in state.entities.lifecycle_events:

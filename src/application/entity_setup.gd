@@ -44,7 +44,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		if span.flags & ~127:
 			result._issue("unknown_flags", "Entity has unknown flags 0x%X" % span.flags, span, form, index, source_id, resource_id, build_id)
 			continue
-		if span.flags & (32 | 64):
+		if span.flags & 64 or (span.flags & 32 and not (custom_behaviors_enabled and form.entity_name == "FOR_HEDGEHOG")):
 			result._issue("unsupported_transform", "PROJECT_ON_LAND or LOCAL_ALIGN transform is unsupported", span, form, index, source_id, resource_id, build_id)
 			continue
 		var definition := EntityDefinition.new()
@@ -87,7 +87,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG]):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -126,6 +126,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		else:
 			result._issue("unknown_behavior", "No base-transform decoder for entity name %s" % form.entity_name, span, form, index, source_id, resource_id, build_id)
 			continue
+		if definition.behavior.kind in [EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG]:
+			var payload_issue: String = _forest_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		result.definitions.append(definition)
 		if form.script_id != 0 or form.collision_callback != 0 or form.bonus_callback != 0:
 			result._issue("unexecuted_hooks", "Script or callback addresses are retained but unexecuted in base-transform inspection", span, form, index, source_id, resource_id, build_id, false)
@@ -144,3 +150,30 @@ func _issue(code: String, message: String, span: MapEntitySpan, form: FormBookEn
 	diagnostic.message = message
 	diagnostic.fallback = "Entity omitted; valid neighbors remain" if omitted else "Base transform remains available for inspection"
 	diagnostics.append(diagnostic)
+
+## Decodes Forest subtype operands after their validated matrix or path prefix.
+static func _forest_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	var forest := EntityForestDefinition.new()
+	match definition.behavior.kind:
+		EntityBehavior.Kind.HIVE:
+			if payload.size() < 40:
+				return "Hive requires release distance and swarm speed"
+			forest.release_distance = payload.decode_s32(32)
+			forest.swarm_speed = payload.decode_s32(36)
+		EntityBehavior.Kind.BREAKING_BRANCH:
+			if payload.size() < 36:
+				return "Breaking branch requires its delay and fall-speed record"
+			definition.authored_delay = payload.decode_u16(32)
+		EntityBehavior.Kind.SQUIRREL:
+			if payload.size() < 16:
+				return "Squirrel requires its authored turn duration"
+			definition.authored_delay = payload.decode_s32(12)
+		EntityBehavior.Kind.HEDGEHOG:
+			if payload.size() < 20:
+				return "Hedgehog requires run/roll timing and speeds"
+			forest.run_time = payload.decode_u16(12)
+			forest.roll_time = payload.decode_u16(14)
+			forest.run_speed = payload.decode_u16(16)
+			forest.roll_speed = payload.decode_u16(18)
+	definition.forest = forest
+	return ""
