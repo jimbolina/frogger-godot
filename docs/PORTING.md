@@ -59,14 +59,16 @@ checks, VOL1 matches its native attract trace across rendering schedules, and
 independent facts cover switches, controlled/falling platforms and source
 visibility allocation. VOL4/VOL5 have no playable maps; VOLM remains multiplayer.
 
-P9c Cave is complete apart from one recording: CAV1 and CAV4 have normal-start
-keyboard completion checks, CAV3's replay awaits an owner-recorded playthrough,
+P9c Cave is complete: CAV1 and CAV4 have normal-start keyboard completion
+checks, CAV3 is accepted by the owner's play check,
 the CAV1 and CAV4 demos complete with schedule parity, and independent facts cover
 the frogger light, entity fade, the firefly callback and the fat fire fly. Cave has no native attract baseline because the fresh-boot native export
 never unlocks it. Pickups and fireflies draw as source sprites. CAV2/CAVM are
 dummy rows and CAV5 has no map; the player croak light swell is deferred.
 
-Next are DES, JUN, SWP and SKY. Retain all thirteen keyboard completion checks
+Next are DES, JUN, SWP and SKY. Each level is accepted when the owner plays
+it in the game scene and confirms it looks and plays well; recorded replays are
+not required. Retain the thirteen existing keyboard completion checks
 and the ORG1, SUB1, FOR1 and VOL1 native attract comparisons; see
 [demo verification](reference/testing/README.md#demo-playback-and-comparison).
 

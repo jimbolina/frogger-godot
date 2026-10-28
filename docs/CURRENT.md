@@ -12,9 +12,9 @@ path followers. Light radii live in the shared entity environment and commit
 with each tick; presentation drives the terrain ramp from committed radii and
 draws pickups and fireflies as source sprites.
 
-Thirteen of the fourteen playable levels have normal-start keyboard completion
-replays with per-tick parity against fresh detached runs; CAV3's replay awaits an
-owner-recorded playthrough. ORG1, SUB1, FOR1 and VOL1 attract
+Level acceptance is the owner's play check in the game scene. Thirteen levels
+keep normal-start keyboard completion replays with per-tick parity as regression
+coverage; CAV3 has none and needs none. ORG1, SUB1, FOR1 and VOL1 attract
 demos match native terminal states; CAV1 and CAV4 demos complete with schedule
 parity but have no native baseline, because the fresh-boot native export never
 unlocks Cave. Independent Cave facts have deliberate-break checks. Both complete

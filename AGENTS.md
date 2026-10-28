@@ -34,19 +34,20 @@ FrogLord names, warn/fall back/report unknown entries.
 
 ## Verification and delivery
 
-Delegate independent implementation, investigation and review to sub-agents
-without asking again. Use Sol or Opus appropriate to the orchestrator. Assign clear scopes and file ownership, avoid overlapping
-edits, and have the orchestrator integrate and verify the complete result.
+Delegate independent implementation, investigation and review to Opus
+sub-agents without asking again, with clear scopes and file ownership and no
+overlapping edits; the orchestrator integrates and verifies the whole result.
 
 Before every commit, run both retail and asset-free modes using
 `tools/run_tests.ps1` or `tools/run_tests.sh`. Read [testing](docs/reference/testing/README.md)
-for commands and process safety: isolated writable user data, explicit logs,
-hidden awaited processes, disabled crash handler, stop on failure.
+for commands and process safety.
 Retail requires all tests passing without skips; asset-free allows only named
 retail skips (exit 3). Strict script compilation is required.
 
 New golden families need deliberate-break checks and restoration. Inspect
-visual changes; save captures externally. Complete each phase with one
+visual changes; save captures externally. Level acceptance is the owner's play
+check: give the launch command and what to look for; never search routes,
+machine-read gameplay or request input recordings. Complete each phase with one
 descriptive commit and update affected user documentation, roadmap and technical
 contracts. Report tests in delivery messages and commit bodies; keep raw logs
 external.

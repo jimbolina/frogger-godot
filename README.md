@@ -35,12 +35,15 @@ To launch a level directly:
 godot --path . res://scenes/game/gameplay.tscn -- --data-dir=<game-folder> --level=SUB1
 ```
 
+A direct launch reads the project's class-name cache in `.godot/`; after new
+scripts arrive, refresh it once with `godot --headless --path . --import`
+(the test wrappers use their own isolated cache and do not refresh this one).
 The default is high-detail ORG1. Add `--record-inputs` to record your play: when
 the level completes, the held keys of every tick are written as a replay fixture
 to `user://playthroughs/<level>_keyboard_playthrough.json` (the completion message
 shows the absolute path; `--record-inputs=<file>` chooses another). The capture
-launcher replays such files through real key events with per-tick parity checks,
-which is how level completion evidence is produced. The HUD uses the player's English retail UI
+launcher replays such files through real key events with per-tick parity checks;
+recording is optional regression material, not a requirement. The HUD uses the player's English retail UI
 assets. Full menus, progression between levels, saves, audio playback and
 decorative particles remain future work. Forest bee swarms are visible gameplay hazards.
 
