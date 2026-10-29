@@ -1,6 +1,7 @@
 # Current checkpoint
 
-P9d Desert is complete. The dedicated game scene opens independent ORG1–ORG5,
+P9d Desert is complete; DES1–DES5 passed the owner's play check. The dedicated
+game scene opens independent ORG1–ORG5,
 SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 sessions with the
 original-style English HUD from player assets. See [controls](../README.md),
 [roadmap](PORTING.md) and the [entity contract](reference/gameplay/entities.md).

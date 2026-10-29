@@ -67,7 +67,8 @@ the frogger light, entity fade, the firefly callback and the fat fire fly. Cave 
 never unlocks it. Pickups and fireflies draw as source sprites. CAV2/CAVM are
 dummy rows and CAV5 has no map; the player croak light swell is deferred.
 
-P9d Desert is complete: DES1–DES5 admit through whole-map setup with typed
+P9d Desert is complete and DES1–DES5 are accepted by the owner's play check.
+They admit through whole-map setup with typed
 falling rocks, rolling rocks, tumbleweeds, snakes, vultures, croc heads and
 cracks, the per-level explosion flipbook overlay, and the generic movers,
 cacti and butterflies. Independent facts cover every behavior and the retail
