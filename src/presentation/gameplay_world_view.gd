@@ -13,6 +13,8 @@ var smoothing: bool = false:
 		if smoothing == value:
 			return
 		smoothing = value
+		if _overlay_view != null:
+			_overlay_view.smoothing = value
 		reset_interpolation()
 var frog_assets: TerrainFrogAssets
 var _frog_model: AnimatedModelInstance
@@ -23,6 +25,7 @@ var _frog: MeshInstance3D
 var _tongue_view: TongueView
 var _swarm_view: ForestSwarmView
 var _cave_sprite_view: CaveSpriteView
+var _overlay_view: EntityOverlayModelView
 var _placeholder_view: EntityPlaceholderView = null
 var _sprite_definitions: Array[EntityDefinition] = []
 var _camera: Camera3D
@@ -46,6 +49,8 @@ func reset_interpolation() -> void:
 	if _frog_model != null:
 		_frog_model.smoothing_enabled = smoothing
 		_frog_model.apply_exact()
+	if _overlay_view != null:
+		_overlay_view.reset_interpolation()
 	for model: AnimatedModelInstance in _entity_models:
 		if model != null:
 			model.smoothing_enabled = smoothing
@@ -64,6 +69,8 @@ func draw_state(fraction: float) -> void:
 		_swarm_view.draw_state(_current)
 	if _cave_sprite_view != null:
 		_cave_sprite_view.draw_state(_current, _sprite_definitions)
+	if _overlay_view != null:
+		_overlay_view.draw_state(_current, weight, not playing)
 	if _placeholder_view != null:
 		_placeholder_view.draw_state(_current, _motion, weight)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
@@ -136,6 +143,9 @@ func build_world() -> void:
 	add_child(_swarm_view)
 	_cave_sprite_view = CaveSpriteView.new()
 	add_child(_cave_sprite_view)
+	_overlay_view = EntityOverlayModelView.new()
+	_overlay_view.smoothing = smoothing
+	add_child(_overlay_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -149,6 +159,8 @@ func _clear_entity_visuals() -> void:
 		_swarm_view.clear()
 	if _cave_sprite_view != null:
 		_cave_sprite_view.clear()
+	if _overlay_view != null:
+		_overlay_view.clear()
 	if _placeholder_view != null:
 		_placeholder_view.clear()
 	_sprite_definitions = []
@@ -191,6 +203,12 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 	if use_lighting:
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scene_data.map.lights)
+	for entity: EntityDefinition in definitions.entities:
+		if EntityOverlayModelView.uses_overlay(entity.behavior.kind):
+			var overlay_issue: String = _configure_overlay(selected_data, scene_data, scene_data.level, _entity_lighting, scene_data.diagnostics)
+			if not overlay_issue.is_empty():
+				scene_data.diagnostics.append(overlay_issue)
+			break
 	var meshes: Dictionary[int, ModelMesh] = {}
 	var files: Dictionary[int, MofFile] = {}
 	for slot: int in definitions.entities.size():
@@ -228,6 +246,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	var sprite_slots: Dictionary[int, bool] = {}
 	var swarm_ready: bool = false
 	var sprites_ready: bool = false
+	var overlay_tried: bool = false
 	for slot: int in definitions.entities.size():
 		var entity: EntityDefinition = definitions.entities[slot]
 		_entity_models.append(null)
@@ -252,6 +271,11 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 					diagnostics.append(sprite_issue)
 			if sprites_ready:
 				sprite_slots[slot] = true
+		if EntityOverlayModelView.uses_overlay(entity.behavior.kind) and not overlay_tried:
+			overlay_tried = true
+			var overlay_issue: String = scene.error if not scene.error.is_empty() else _configure_overlay(origins.data, scene, origins.levels[slot], null, diagnostics)
+			if not overlay_issue.is_empty():
+				diagnostics.append(overlay_issue)
 	var wanted: Array[bool] = []
 	for slot: int in definitions.entities.size():
 		wanted.append(_entity_meshes[slot] == null and not sprite_slots.has(slot))
@@ -310,6 +334,21 @@ func _sync_entity_models() -> PackedInt32Array:
 		created.append(slot)
 	return created
 
+func _configure_overlay(data: GameData, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
+	if _overlay_view == null:
+		return ""
+	var resource: int = EntityModelSelection.explosion_resource_for(data, level)
+	if resource < 0:
+		return "Desert rock explosion model is not in level %d's model WAD" % level
+	var file: MofFile = data.read_model(resource, diagnostics)
+	var model_mesh: ModelMesh = null
+	if file != null and file.error.is_empty() and not file.static_models.is_empty():
+		model_mesh = ModelMeshBuilder.new(scene.library, scene.preferred).build_animated(file)
+	var issue: String = _overlay_view.configure(file, model_mesh, lighting)
+	if issue.is_empty():
+		_overlay_view.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	return issue
+
 func _material(colour: Color) -> ShaderMaterial:
 	var material := ShaderMaterial.new()
 	material.shader = preload("res://src/presentation/tools/terrain_debug.gdshader")
@@ -329,6 +368,8 @@ func _update_projection() -> void:
 		_swarm_view.set_projection_scale(scale)
 	if _cave_sprite_view != null:
 		_cave_sprite_view.set_projection_scale(scale)
+	if _overlay_view != null:
+		_overlay_view.set_projection_scale(scale)
 	if _placeholder_view != null:
 		_placeholder_view.set_projection_scale(scale)
 	if _tongue_view != null:

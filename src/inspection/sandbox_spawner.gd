@@ -305,9 +305,14 @@ func _place(placement: Placement) -> String:
 		placement.speed = 0
 		entity.path_definition = null
 		entity.path_start = null
+		var shift := Vector3i(centre.x - entity.matrix12[9], 0, centre.z - entity.matrix12[11])
 		entity.matrix12[9] = centre.x
 		entity.matrix12[10] = centre.y
 		entity.matrix12[11] = centre.z
+		if entity.behavior.kind == EntityBehavior.Kind.DES_FALLING_ROCK and entity.desert != null:
+			var issue: String = _anchor_rock_targets(entity.desert, shift)
+			if not issue.is_empty():
+				return issue
 	var contact: FormContactDefinition = placement.contact
 	contact.source_id = entity.source_id
 	contact.build_id = entity.build_id
@@ -317,6 +322,18 @@ func _place(placement: Placement) -> String:
 	contact.form_id = entity.form_id
 	contact.form_name = entity.form_name
 	contact.entity_flags = entity.flags
+	return ""
+
+## Moves a borrowed rock's landing targets with the rock and snaps them to the arena floor.
+func _anchor_rock_targets(desert: EntityDesertDefinition, shift: Vector3i) -> String:
+	var authored: Array[Vector3i] = []
+	for target: Vector3i in desert.rock_targets:
+		authored.append(target + shift)
+	var resolved: EntityDesertRockTargets = EntityDesertRockTargets.resolve(authored, sandbox.level.grid, desert.rock_bounces)
+	if not resolved.error.is_empty():
+		return "Falling rock targets leave the arena: " + resolved.error
+	desert.rock_targets = resolved.targets
+	desert.rock_targets_resolved = true
 	return ""
 
 func _path(cell: Vector2i, centre: Vector3i, preset: Preset) -> PathDefinition:

@@ -1,6 +1,6 @@
 class_name EntityCustomState
 extends RefCounted
-## Owned custom continuation for the supported fly and pink frog.
+## Owned custom continuation for the supported custom entity behaviors.
 
 var initialized: bool = false
 var no_frog_contact: bool = false
@@ -27,6 +27,13 @@ var moving_sound: PackedInt32Array = PackedInt32Array()
 var carrier_index: int = -1
 var carried_jump_ticks: int = 0
 var dead: bool = false
+var shadow_visible: bool = false
+## Secondary flipbook, such as a rock explosion, drawn at overlay_position instead of the entity model.
+var overlay_animation: EntityAnimationState = null
+var overlay_position: Vector3i = Vector3i.ZERO
+## Action awaiting the current action's last cel; -1 when none is requested.
+var requested_action: int = -1
+var deadly: bool = false
 
 ## Copies every custom continuation value.
 func copy() -> EntityCustomState:
@@ -55,4 +62,9 @@ func copy() -> EntityCustomState:
 	result.carrier_index = carrier_index
 	result.carried_jump_ticks = carried_jump_ticks
 	result.dead = dead
+	result.shadow_visible = shadow_visible
+	result.overlay_animation = overlay_animation.copy() if overlay_animation != null else null
+	result.overlay_position = overlay_position
+	result.requested_action = requested_action
+	result.deadly = deadly
 	return result

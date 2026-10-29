@@ -2,15 +2,28 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5"]
 ## Named sprite images the frozen firefly animation list draws.
 const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
 ## Resident general sprite bank holding the standard-resolution pickup and firefly images.
 const RESIDENT_SPRITE_BANK: String = "GEN_VRAM.VLO"
+## Levels whose visible map groups can exceed the 2500-polygon budget, so live-entity creation
+## follows source allocation. DES1 and DES4 exceed it; all Desert levels share the rule.
+const SOURCE_ALLOCATION_CODES: PackedStringArray = ["VOL1", "VOL2", "VOL3", "DES1", "DES2", "DES3", "DES4", "DES5"]
+## Minimum flipbook or skeletal actions each Desert behavior selects.
+const DESERT_ACTION_COUNTS: Dictionary[EntityBehavior.Kind, int] = {
+	EntityBehavior.Kind.DES_SNAKE: 4,
+	EntityBehavior.Kind.DES_VULTURE: 2,
+	EntityBehavior.Kind.DES_CROC_HEAD: 1,
+	EntityBehavior.Kind.DES_CRACK: 1,
+}
+## Desert rocks that replace their model with the level's explosion flipbook.
+const EXPLODING_ROCKS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK]
 
 var error: String = ""
 var definition: LevelDefinition = null
 var diagnostics: Array[EntitySetupDiagnostic] = []
+var _explosion_lengths: PackedInt32Array = PackedInt32Array()
 
 ## Whether the selected level has complete single-player dependency support.
 static func supports_level(level_number: int) -> bool:
@@ -26,7 +39,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 or CAV1/CAV3/CAV4"
+		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 or DES1–DES5"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)
@@ -46,7 +59,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	for issue: String in [grid.error, zones.error, lifecycle.error, frog.error, rewards.error, sounds.error]:
 		if not issue.is_empty():
 			return issue
-	if code in ["VOL1", "VOL2", "VOL3"]:
+	if code in SOURCE_ALLOCATION_CODES:
 		lifecycle.definition.source_allocation = true
 	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true, data.tables.names)
 	diagnostics.append_array(entities.diagnostics)
@@ -96,6 +109,9 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 			entity.action_lengths = model_action_lengths(model)
 		if entity.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM and (entity.action_lengths.is_empty() or entity.action_lengths[0] <= 0):
 			return code + " entity %d requires a falling-platform animation" % entity.entity_index
+		var desert_issue: String = _desert_issue(data, number, entity, grid.definition, problems)
+		if not desert_issue.is_empty():
+			return code + " entity %d at 0x%X %s" % [entity.entity_index, entity.source_offset, desert_issue]
 		if entity.behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.FAT_FIRE_FLY]:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
 		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
@@ -215,6 +231,35 @@ static func bounds_for(top: EntityDefinition, bottom: EntityDefinition) -> Rect2
 	if bottom != null:
 		bottom_right = Vector2i(bottom.matrix12[9], bottom.matrix12[11])
 	return Rect2i(top_left.x, bottom_right.y, bottom_right.x - top_left.x, top_left.y - bottom_right.y)
+
+## Applies Desert action, explosion-model and rock-target gates to one decoded definition.
+func _desert_issue(data: GameData, number: int, entity: EntityDefinition, grid: GridDefinition, problems: PackedStringArray) -> String:
+	var kind: EntityBehavior.Kind = entity.behavior.kind
+	if DESERT_ACTION_COUNTS.has(kind) and entity.action_lengths.size() < DESERT_ACTION_COUNTS[kind]:
+		return "requires %d model actions, found %d" % [DESERT_ACTION_COUNTS[kind], entity.action_lengths.size()]
+	if kind == EntityBehavior.Kind.DES_FALLING_ROCK:
+		if entity.desert == null:
+			return "requires decoded falling-rock targets"
+		if not entity.desert.rock_targets_resolved:
+			var targets: EntityDesertRockTargets = EntityDesertRockTargets.resolve(entity.desert.rock_targets, grid, entity.desert.rock_bounces)
+			if not targets.error.is_empty():
+				return targets.error
+			entity.desert.rock_targets = targets.targets
+			entity.desert.rock_targets_resolved = true
+	if kind in EXPLODING_ROCKS:
+		if _explosion_lengths.is_empty():
+			var explosion_id: int = EntityModelSelection.explosion_resource_for(data, number)
+			var explosion: MofFile = data.read_model(explosion_id, problems) if explosion_id >= 0 else null
+			if explosion == null or explosion.kind != MofFile.Kind.STATIC:
+				return "requires the map WAD slot-1 static explosion model"
+			var lengths: PackedInt32Array = model_action_lengths(explosion)
+			if lengths.is_empty() or lengths[0] <= 0:
+				return "requires an explosion flipbook with a nonempty first action"
+			_explosion_lengths = lengths
+		if entity.desert == null:
+			entity.desert = EntityDesertDefinition.new()
+		entity.desert.explosion_action_lengths = _explosion_lengths.duplicate()
+	return ""
 
 ## Reads source virtual-action lengths for skeletal and flipbook entities.
 static func model_action_lengths(model: MofFile) -> PackedInt32Array:

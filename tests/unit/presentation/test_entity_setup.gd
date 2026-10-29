@@ -467,3 +467,114 @@ func test_froglord_entity_override_is_reported_without_omission() -> void:
 	assert_eq(setup.diagnostics[0].entity_index, 0)
 	assert_eq(setup.diagnostics[0].message, "FrogLord names this form MOVING; the executable entity type is STATIC")
 	assert_eq(setup.diagnostics[0].fallback, "Base transform remains available for inspection")
+
+func _rock(bounces: int, times: PackedInt32Array, flags: int = 0) -> PackedByteArray:
+	var payload: PackedByteArray = _matrix()
+	payload.resize(188)
+	for index: int in 12:
+		var offset: int = 32 + index * 12
+		payload.encode_s16(offset, -300 + index)
+		payload.encode_s16(offset + 2, -1000 - index)
+		payload.encode_s16(offset + 4, 700 + index)
+		payload.encode_u16(offset + 6, 0x7777)
+		payload.encode_u16(offset + 8, times[index] if index < times.size() else 0)
+	payload.encode_u16(176, 65535)
+	payload.encode_u8(178, bounces)
+	payload.encode_s32(180, flags)
+	payload.encode_s32(184, -1)
+	return payload
+
+func test_falling_rock_reads_froglord_targets_and_rejects_invalid_counts() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "DES_FALLING_ROCK"
+	var map: MapFile = _map()
+	_add_entity(map, 0, 0, _rock(2, PackedInt32Array([30, 65535])), 1)
+	_add_entity(map, 0, 0, _rock(12, PackedInt32Array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]), 1), 2)
+	_add_entity(map, 0, 0, _rock(0, PackedInt32Array([30])), 3)
+	_add_entity(map, 0, 0, _rock(13, PackedInt32Array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])), 4)
+	_add_entity(map, 0, 0, _rock(2, PackedInt32Array([30, 0])), 5)
+	var truncated: PackedByteArray = _rock(1, PackedInt32Array([30]))
+	truncated.resize(187)
+	_add_entity(map, 0, 0, truncated, 6)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 2)
+	if setup.definitions.size() != 2:
+		return
+	var rock: EntityDesertDefinition = setup.definitions[0].desert
+	assert_eq(setup.definitions[0].behavior.kind, EntityBehavior.Kind.DES_FALLING_ROCK)
+	assert_eq(setup.definitions[0].behavior.execution, EntityBehavior.Execution.UPDATE)
+	assert_eq(setup.definitions[0].matrix12[9], 100)
+	assert_eq(rock.rock_targets.size(), 12)
+	assert_eq(rock.rock_targets[0], Vector3i(-300, -1000, 700))
+	assert_eq(rock.rock_targets[11], Vector3i(-289, -1011, 711))
+	assert_eq(rock.rock_times.slice(0, 3), PackedInt32Array([30, 65535, 0]))
+	assert_eq(rock.rock_delay, 65535)
+	assert_eq(rock.rock_bounces, 2)
+	assert_eq(rock.rock_flags, 0)
+	assert_false(rock.rock_targets_resolved)
+	assert_eq(setup.definitions[1].desert.rock_bounces, 12)
+	assert_true(setup.definitions[1].desert.rock_targets_resolved)
+	assert_eq(setup.diagnostics.size(), 4)
+	for diagnostic: EntitySetupDiagnostic in setup.diagnostics:
+		assert_eq(diagnostic.code, "invalid_payload")
+	assert_eq([setup.diagnostics[0].entity_index, setup.diagnostics[1].entity_index, setup.diagnostics[2].entity_index, setup.diagnostics[3].entity_index], [2, 3, 4, 5])
+	assert_string_contains(setup.diagnostics[2].message, "target 1")
+
+func test_desert_croc_head_and_crack_read_unsigned_operands() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "DES_CROC_HEAD"
+	book.entries[1].forms[2].entity_name = "DES_CRACK"
+	var map: MapFile = _map()
+	var croc: PackedByteArray = _matrix()
+	croc.resize(44)
+	for index: int in 6:
+		croc.encode_u16(32 + index * 2, 65535 - index)
+	_add_entity(map, 0, 0, croc, 1)
+	var crack: PackedByteArray = _matrix()
+	crack.resize(36)
+	crack.encode_u16(32, 40000)
+	crack.encode_u16(34, 3)
+	_add_entity(map, 2, 0, crack, 2)
+	var short_croc: PackedByteArray = croc.duplicate()
+	short_croc.resize(43)
+	_add_entity(map, 0, 0, short_croc, 3)
+	var short_crack: PackedByteArray = crack.duplicate()
+	short_crack.resize(35)
+	_add_entity(map, 2, 0, short_crack, 4)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e", true)
+	assert_eq(setup.definitions.size(), 2)
+	if setup.definitions.size() != 2:
+		return
+	var head: EntityDesertDefinition = setup.definitions[0].desert
+	assert_eq([head.rise_height, head.rise_speed, head.snap_delay, head.pause_delay, head.snap_flag, head.submerged_delay], [65535, 65534, 65533, 65532, 65531, 65530])
+	assert_eq(setup.definitions[1].desert.fall_delay, 40000)
+	assert_eq(setup.definitions[1].desert.hops_before, 3)
+	for definition: EntityDefinition in setup.definitions:
+		assert_eq(definition.behavior.execution, EntityBehavior.Execution.UPDATE)
+	assert_eq(setup.diagnostics.size(), 2)
+	assert_eq(setup.diagnostics[0].entity_index, 2)
+	assert_eq(setup.diagnostics[1].entity_index, 3)
+	setup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e")
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "unknown_behavior")
+
+func test_desert_path_runners_update_from_path_info_alone() -> void:
+	for name: String in ["DES_ROLLING_ROCK", "DES_TUMBLE_WEED", "DES_SNAKE", "DES_VULTURE"]:
+		var book: ThemeBook = _book()
+		book.entries[1].forms[1].entity_name = name
+		var map: MapFile = _map()
+		_add_path(map)
+		_add_entity(map, 1, 0, _path_info(0))
+		var setup: EntitySetup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e", true)
+		assert_eq(setup.definitions.size(), 1, name)
+		if setup.definitions.is_empty():
+			continue
+		assert_eq(setup.definitions[0].behavior.execution, EntityBehavior.Execution.UPDATE, name)
+		assert_not_null(setup.definitions[0].path_start, name)
+		assert_null(setup.definitions[0].desert, name)
+		setup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e")
+		assert_true(setup.definitions.is_empty(), name)
+		_add_entity(map, 1, 32, _path_info(0), 2)
+		setup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e", true)
+		assert_eq(setup.diagnostics[0].code, "unsupported_transform", name)

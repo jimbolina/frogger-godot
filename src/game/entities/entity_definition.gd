@@ -37,6 +37,7 @@ var behavior: EntityBehavior = EntityBehavior.new()
 var volcano: EntityVolcanoDefinition = null
 var forest: EntityForestDefinition = null
 var cave: EntityCaveDefinition = null
+var desert: EntityDesertDefinition = null
 var radius_squared: int = 0
 var movement_speed: int = 0
 var authored_delay: int = 0
@@ -74,6 +75,7 @@ func copy() -> EntityDefinition:
 	result.volcano = volcano.copy() if volcano != null else null
 	result.forest = forest.copy() if forest != null else null
 	result.cave = cave.copy() if cave != null else null
+	result.desert = desert.copy() if desert != null else null
 	result.radius_squared = radius_squared
 	result.movement_speed = movement_speed
 	result.authored_delay = authored_delay

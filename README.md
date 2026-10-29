@@ -15,8 +15,8 @@ executable (levels, themes, forms, texture remaps and pointers, entity
 scripts, music, level select, demos, bugs), decode every texture, and read
 and animate models, flipbooks and polygon textures. The map inspection viewer
 renders terrain, water, sky and map animations, including FrogLord-saved edits.
-The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4, with the original-style
-single-player HUD, tongue collection, pickup and firefly sprites, the cave light and the complete level loop.
+The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5, with the original-style
+single-player HUD, tongue collection, pickup and firefly sprites, the cave light, Desert rock explosions and the complete level loop.
 
 Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port's 30 Hz target; see the

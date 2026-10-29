@@ -5,6 +5,14 @@ extends RefCounted
 ## Path movers that frozen ENTSTRUpdateMovingMOF projects onto the landscape.
 const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
 
+## Desert path runners decoded from PATH_INFO alone.
+const DESERT_PATH_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE]
+## Desert matrix entities with FrogLord subtype payloads after the matrix.
+const DESERT_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK]
+## FrogLord DESERT_FALLING_ROCK size and DESERT_FALLING_ROCK_TARGETS stride.
+const FALLING_ROCK_SIZE: int = 188
+const ROCK_TARGET_STRIDE: int = 12
+
 var definitions: Array[EntityDefinition] = []
 var diagnostics: Array[EntitySetupDiagnostic] = []
 ## Structural setup error; individual unsupported records use diagnostics.
@@ -97,7 +105,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY]):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -133,6 +141,8 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 					continue
 				definition.authored_delay = span.payload.decode_s16(12)
 				definition.behavior.execution = EntityBehavior.Execution.UPDATE
+			if definition.behavior.kind in DESERT_PATH_KINDS:
+				definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		else:
 			result._issue("unknown_behavior", "No base-transform decoder for entity name %s" % form.entity_name, span, form, index, source_id, resource_id, build_id)
 			continue
@@ -151,6 +161,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE
 		if definition.behavior.kind in [EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY]:
 			var payload_issue: String = _cave_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
+			definition.behavior.execution = EntityBehavior.Execution.UPDATE
+		if definition.behavior.kind in DESERT_MATRIX_KINDS:
+			var payload_issue: String = _desert_payload(definition, span.payload)
 			if not payload_issue.is_empty():
 				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
 				continue
@@ -250,6 +266,43 @@ static func _cave_payload(definition: EntityDefinition, payload: PackedByteArray
 			if payload.size() < 34 or payload.decode_u16(32) >= EntityBonusFly.REWARD_IDS.size():
 				return "Fat fire fly requires a fly type from 0 through 18"
 			definition.pickup_type = payload.decode_u16(32)
+	return ""
+
+## Copies FrogLord Desert falling-rock, croc-head and crack operands; rock targets stay authored until grid resolution.
+static func _desert_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	var desert := EntityDesertDefinition.new()
+	match definition.behavior.kind:
+		EntityBehavior.Kind.DES_FALLING_ROCK:
+			if payload.size() < FALLING_ROCK_SIZE:
+				return "Falling rock requires twelve targets, delay, bounce count, flags and sound"
+			for index: int in EntityDesertDefinition.MAX_ROCK_TARGETS:
+				var offset: int = 32 + index * ROCK_TARGET_STRIDE
+				desert.rock_targets.append(Vector3i(payload.decode_s16(offset), payload.decode_s16(offset + 2), payload.decode_s16(offset + 4)))
+				desert.rock_times.append(payload.decode_u16(offset + 8))
+			desert.rock_delay = payload.decode_u16(176)
+			desert.rock_bounces = payload.decode_u8(178)
+			desert.rock_flags = payload.decode_s32(180)
+			desert.rock_targets_resolved = desert.rock_flags == EntityDesertDefinition.TARGETS_RESOLVED
+			if desert.rock_bounces < 1 or desert.rock_bounces > EntityDesertDefinition.MAX_ROCK_TARGETS:
+				return "Falling rock requires 1 to 12 bounces, got %d" % desert.rock_bounces
+			for index: int in desert.rock_bounces:
+				if desert.rock_times[index] <= 0:
+					return "Falling rock target %d requires a positive time" % index
+		EntityBehavior.Kind.DES_CROC_HEAD:
+			if payload.size() < 44:
+				return "Desert croc head requires rise, snap, pause and submerged timing"
+			desert.rise_height = payload.decode_u16(32)
+			desert.rise_speed = payload.decode_u16(34)
+			desert.snap_delay = payload.decode_u16(36)
+			desert.pause_delay = payload.decode_u16(38)
+			desert.snap_flag = payload.decode_u16(40)
+			desert.submerged_delay = payload.decode_u16(42)
+		EntityBehavior.Kind.DES_CRACK:
+			if payload.size() < 36:
+				return "Desert crack requires its fall delay and hop count"
+			desert.fall_delay = payload.decode_u16(32)
+			desert.hops_before = payload.decode_u16(34)
+	definition.desert = desert
 	return ""
 
 static func _unsigned_square(value: int) -> int:

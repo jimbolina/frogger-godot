@@ -591,7 +591,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -783,3 +783,72 @@ follows the FrogLord name and reports a non-omitting `entity_override`
 diagnostic. The player croak light swell and the web wall bounce remain
 unimplemented; the source croak never runs in demos. Independent facts and
 deliberate-break checks are in the [entity golden specification](../../../tests/golden/specs/entities.md#cave-entities).
+
+## Desert whole-map behavior
+
+DES1–DES5 use whole-map setup; DESM has no map. Lizards, beetles, bison and
+birds are generic path followers with existing scripts, the butterfly is a
+generic tongueable with the mapped butterfly callback, and cacti are generic
+statics. Seven Desert forms have typed behaviors below. Thermals, the
+earthquake, salamanders, holes, noise emitters and the second bird are not
+placed in retail maps and remain unsupported with diagnostics. No Desert form
+has a collision callback and no theme-specific terrain, camera, lighting or
+effect code exists in frozen C. Desert camera selections can exceed the
+conservative polygon bound, so DES levels enable the same source allocation
+history as Volcano.
+
+Falling rocks (`DES_FALLING_ROCK`) are immortal matrix entities whose payload
+holds twelve targets, each an `MR_SVEC` with its pad word followed by an
+unsigned time and pad, then the delay, bounce count, flags and sound. Setup
+snaps each used target's X and Z to its cell centre and takes Y from the
+terrain height selected by the authored Y, unless the authored flags already
+say `TARGETS_RESOLVED`; the source `while(i--)` loop lifts target 0 by 0x80,
+not the last target. The rock checks for one tick, waits `delay+1` ticks on
+its first cycle only, then flies `time+1` integration steps per target under
+`UpdateEntityWithVelocity` (gravity 0x2d800, then velocity added, position
+truncated) with axes from its velocity and an X roll of −0x60 per tick, drawn
+0x80 above the integrated position. Each landing requests the bounce sound;
+the last requests the break sound, hides the rock mesh and starts the
+explosion overlay: the per-level model WAD slot 1 flipbook (`DES_FALLING_ROCK`
+model, sixteen cels), drawn at identity rotation at the landing position. The
+rock resets to the delay state with timer 0 after the last cel, so it is hidden
+for one tick, then launches again. Collision never toggles and the roll angle
+never resets. Rolling rocks (`DES_ROLLING_ROCK`) are immortal path followers
+rolling −0x40 per tick; when their path repeats they place the same explosion
+at the previous tick's position, pause the path, disable collision and hide the
+mesh until the overlay's last cel. Both rocks keep the source shadow-visible
+state; shadow drawing stays deferred with the other effects.
+
+Tumbleweeds (`DES_TUMBLE_WEED`) follow their path in X and Z and own their Y:
+when the hop count reaches zero they draw `rand()%4+6`, set
+`vy = −((0x100000·(n+1))>>1)` and restart from the path height, otherwise
+gravity 0x100000 accumulates and `vy>>16` adds to the height. They roll −0x60
+per tick, request a looping moving sound from creation and hide their shadow
+on the outermost grid cells. Snakes (`DES_SNAKE`) measure `DistanceToFrogger`
+from a point 512 units ahead: under 256 units, facing the frog within ±64 of
+its lane, they bite; 256–512 units they rattle with its sound. A path bounce
+selects the turning action, sets `NO_MOVEMENT` and pauses the runner with a
+hold count of 19, which skips runner updates on the next 20 ticks; the resume
+update also selects normal, overwriting any request held through the turn.
+Vultures (`DES_VULTURE`) switch on the requested action: a path tangent Y above
+−128 requests the swoop and its moving sound, below −128 requests normal, and
+exactly −128 changes nothing.
+
+Croc heads (`DES_CROC_HEAD`) are immortal platforms with rise height and speed,
+snap, pause and submerged delays and a snap flag. They start submerged and
+deadly, rise safely, pause, then either snap (deadly for ten ticks with one snap
+sound) when the flag is 1 or pause again, then fall without clamping, so they
+overshoot the start height before pausing submerged again. Every wait compares
+with equality, so a zero delay never fires and DES5's 65535 snap delay holds
+that croc at its pause. While deadly and carrying the frog they request the
+munch sound and a BITTEN death each tick. Cracks (`DES_CRACK`) count landings:
+each hit writes texture cel `3−(hops_before−hits)` before incrementing the
+unsigned byte count and requests the crack sound, which has no visible effect
+on the PC model because it has no texture-animation targets. At `hops_before`
+the fixed two-then-decrement wait starts the one-shot flipbook on the next tick
+with the hole sound; when it finishes, collision turns off and an attached frog
+free-falls; the crack then sinks 0x140000 per tick until Y reaches 1024,
+scaling its colour by `max(0, ((y0−y)>>3)+0x80)` only on sinking ticks. The
+authored fall delay and the rock's entity sound are never read in C.
+Independent facts and deliberate-break checks are in the
+[entity golden specification](../../../tests/golden/specs/entities.md#desert-entities).

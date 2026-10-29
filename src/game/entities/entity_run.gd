@@ -3,7 +3,7 @@ extends RefCounted
 ## Owns attached entity transforms and independent path cursors for one run.
 
 const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
-const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY]
+const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK]
 var error: String = ""
 var _definitions: Array[EntityDefinition] = []
 var _scripts: Array[PreparedEntityScript] = []
@@ -126,6 +126,12 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 			if definition.behavior.kind == EntityBehavior.Kind.VOL_FALLING_PLATFORM and definition.action_lengths.is_empty():
 				result.error = "Falling platform requires a source animation action"
 				return result
+		if definition.behavior.kind in [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK] and definition.desert == null:
+			result.error = "Desert behavior requires decoded subtype operands"
+			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK] and not EntityDesertExplosion.valid(definition.desert.explosion_action_lengths):
+			result.error = "Desert rock requires the level explosion flipbook"
+			return result
 		for length: int in definition.action_lengths:
 			if length <= 0:
 				result.error = "Entity animation lengths must be positive"
@@ -424,6 +430,8 @@ func advance_animations() -> void:
 	for entity: EntitySnapshot in _state.entities:
 		if entity.live and entity.animation != null:
 			entity.animation.advance()
+		if entity.live and entity.custom_state != null and entity.custom_state.overlay_animation != null:
+			entity.custom_state.overlay_animation.advance()
 
 ## Validates every cross-target mutation before changing any candidate cursor.
 func apply_target_effects(effects: Array[EntityTargetEffect]) -> String:
@@ -669,6 +677,21 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 			EntityCaveLight.initialize(definition, entity, environment)
 		elif definition.behavior.kind == EntityBehavior.Kind.FAT_FIRE_FLY:
 			EntityFatFireFly.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_FALLING_ROCK:
+			EntityDesertFallingRock.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_ROLLING_ROCK:
+			EntityDesertRollingRock.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_TUMBLE_WEED:
+			EntityDesertTumbleWeed.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_SNAKE:
+			EntityDesertSnake.initialize(definition, entity)
+			if runner != null:
+				runner.set_active(true)
+				entity.path = runner.snapshot()
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_CROC_HEAD:
+			EntityDesertCrocHead.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.DES_CRACK:
+			EntityDesertCrack.initialize(definition, entity)
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true

@@ -19,7 +19,7 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4 without an exploration preset use
+existing `GameData` APIs. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 without an exploration preset use
 whole-map dependency validation, authored zones, entity contacts, visibility
 lifecycle and level flow. Other levels omit entities, forms, platforms, zones and authored
 entity boundary markers by default. For those inspections,
@@ -148,6 +148,7 @@ all-attached lifetime assumptions are defined in the
 [entity contract](../gameplay/entities.md#bounded-pop-reactions).
 
 With `--data-dir <game-folder> --level DES2 --entity-reactions pop`, the scenario
+keeps the bounded all-attached POP probe rather than whole-map play and
 uses an explicit safe inspection start and one east hop into the first cactus.
 This is not the map's normal player spawn. The airborne hit precedes the
 destination terrain's own lethal reaction. Golden inputs and source facts are

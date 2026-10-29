@@ -66,6 +66,19 @@ static func yaw(angle: int) -> PackedInt32Array:
 	var sine: int = roundi(sin(float(angle & 4095) * TAU / 4096.0) * 4096.0)
 	return PackedInt32Array([cosine, 0, sine, 0, 4096, 0, -sine, 0, cosine, 0, 0, 0])
 
+## Builds the rounded fixed-12 MRRot_matrix_X, rows (1, 0, 0), (0, cos, -sin), (0, sin, cos).
+static func x_rotation(angle: int) -> PackedInt32Array:
+	var cosine: int = roundi(cos(float(angle & 4095) * TAU / 4096.0) * 4096.0)
+	var sine: int = roundi(sin(float(angle & 4095) * TAU / 4096.0) * 4096.0)
+	return PackedInt32Array([4096, 0, 0, 0, cosine, -sine, 0, sine, cosine, 0, 0, 0])
+
+## Source MRMulMatrixABA(matrix, MRRot_matrix_X): rotation becomes matrix x Rot, translation is retained.
+static func rotate_x(matrix: PackedInt32Array, angle: int) -> PackedInt32Array:
+	var result: PackedInt32Array = multiply(matrix, x_rotation(angle))
+	for axis: int in 3:
+		result[9 + axis] = matrix[9 + axis]
+	return result
+
 ## Mathematical reconstruction verified against every frozen MR_ACOS table entry.
 static func acos12(value: int) -> int:
 	var bounded: int = clampi(value, -4096, 4096)

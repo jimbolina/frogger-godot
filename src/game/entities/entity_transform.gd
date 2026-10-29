@@ -26,6 +26,19 @@ static func moving(path: PathSnapshot, flags: int) -> PackedInt32Array:
 	result[8] = _signed16(axis_z.z)
 	return result
 
+## Source forward-axis matrix: Z = normalise(forward), X = normalise(world Y x Z), Y = Z x X, with zero translation.
+## A zero forward, or one parallel to world Y, yields zero axes as the vector helpers do.
+static func from_forward(forward: Vector3i) -> PackedInt32Array:
+	var result: PackedInt32Array = IDENTITY.duplicate()
+	var axis_z: Vector3i = _normalise(forward)
+	var axis_x: Vector3i = _normalise(_cross12(Vector3i(0, 4096, 0), axis_z))
+	var axis_y: Vector3i = _cross12(axis_z, axis_x)
+	for row: int in 3:
+		result[row * 3] = _signed16(axis_x[row])
+		result[row * 3 + 1] = _signed16(axis_y[row])
+		result[row * 3 + 2] = _signed16(axis_z[row])
+	return result
+
 ## Projects the source path tangent onto the first terrain layer during a live update.
 static func moving_on_land(path: PathSnapshot, flags: int, grid: GridDefinition) -> PackedInt32Array:
 	if flags & EntityDefinition.ALIGN_TO_WORLD or not flags & EntityDefinition.PROJECT_ON_LAND:

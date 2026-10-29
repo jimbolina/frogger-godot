@@ -57,7 +57,7 @@ func open_data(data: GameData, code: String, take_ownership: bool = false) -> St
 	level_code = code
 	var level_number: int = FroggerIds.level_from_code(code)
 	if not GameplaySetup.supports_level(level_number):
-		return _show_error("Playable levels are ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3 and CAV1/CAV3/CAV4")
+		return _show_error("Playable levels are ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5")
 	if data == null or not data.is_valid():
 		return _show_error("A valid player data folder is required")
 	var scene_data: MapSceneData = MapSceneData.load_level(data, level_number)

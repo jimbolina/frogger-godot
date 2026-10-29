@@ -15,7 +15,7 @@ static func update(_definition: EntityDefinition, result: EntityCustomResult) ->
 			entity.animation.select(1)
 			entity.custom_state.mode = Mode.TURNING
 			result.path_active_request = 0
-	elif entity.animation.cel >= entity.animation.lengths[entity.animation.action] - 1:
+	elif entity.animation.finished():
 		entity.animation.select(0)
 		entity.custom_state.mode = Mode.RUNNING
 		result.path_active_request = 1

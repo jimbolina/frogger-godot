@@ -33,3 +33,9 @@ func select(next_action: int) -> void:
 func advance() -> void:
 	if stepping and action >= 0:
 		cel = mini(cel + 1, lengths[action] - 1) if one_shot else (cel + 1) % lengths[action]
+
+## Whether the current action shows its last cel; false without lengths or a valid action.
+func finished() -> bool:
+	if action < 0 or action >= lengths.size():
+		return false
+	return cel >= lengths[action] - 1

@@ -33,6 +33,6 @@ static func update(definition: EntityDefinition, result: EntityCustomResult, gri
 			if rolling and entity.path.flags & (PathStart.JUST_REPEATED_START | PathStart.JUST_REPEATED_END):
 				result.path_speed_request = start(definition, entity, false)
 		Mode.PREPARE_TO_ROLL, Mode.PREPARE_TO_RUN:
-			if entity.animation.cel >= entity.animation.lengths[entity.animation.action] - 1:
+			if entity.animation.finished():
 				result.path_speed_request = start(definition, entity, custom.mode == Mode.PREPARE_TO_ROLL)
 	return ""

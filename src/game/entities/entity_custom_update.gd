@@ -52,6 +52,20 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 			issue = EntityCaveLight.update(definition, result)
 		EntityBehavior.Kind.FAT_FIRE_FLY:
 			issue = EntityFatFireFly.update(definition, result, frog, frame_number)
+		EntityBehavior.Kind.DES_FALLING_ROCK:
+			issue = EntityDesertFallingRock.update(definition, result, frog)
+		EntityBehavior.Kind.DES_ROLLING_ROCK:
+			issue = EntityDesertRollingRock.update(definition, result, grid)
+		EntityBehavior.Kind.DES_TUMBLE_WEED:
+			issue = EntityDesertTumbleWeed.update(definition, result, grid)
+		EntityBehavior.Kind.DES_SNAKE:
+			issue = EntityDesertSnake.update(definition, result, frog)
+		EntityBehavior.Kind.DES_VULTURE:
+			issue = EntityDesertVulture.update(definition, result)
+		EntityBehavior.Kind.DES_CROC_HEAD:
+			issue = EntityDesertCrocHead.update(definition, result)
+		EntityBehavior.Kind.DES_CRACK:
+			issue = EntityDesertCrack.update(definition, result, frog, hit)
 		EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT:
 			pass
 		_:

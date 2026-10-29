@@ -78,3 +78,32 @@ func test_cave_names_follow_source_entity_book_capabilities() -> void:
 	assert_false(fat.group_moving)
 	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e", 0x43d060, true), FormCallback.Kind.CAV_FIREFLY_SCORE)
 	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e", 0x43cf20), FormCallback.Kind.UNKNOWN)
+
+func test_desert_names_follow_source_entity_book_capabilities() -> void:
+	var expected: Dictionary[String, Array] = {
+		"DES_FALLING_ROCK": [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Layout.MATRIX, true],
+		"DES_ROLLING_ROCK": [EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Layout.PATH, true],
+		"DES_TUMBLE_WEED": [EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Layout.PATH, false],
+		"DES_SNAKE": [EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Layout.PATH, false],
+		"DES_VULTURE": [EntityBehavior.Kind.DES_VULTURE, EntityBehavior.Layout.PATH, false],
+		"DES_CROC_HEAD": [EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Layout.MATRIX, true],
+		"DES_CRACK": [EntityBehavior.Kind.DES_CRACK, EntityBehavior.Layout.MATRIX, true],
+	}
+	for name: String in expected:
+		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(name)
+		var facts: Array = expected[name]
+		var kind: EntityBehavior.Kind = facts[0]
+		var layout: EntityBehavior.Layout = facts[1]
+		var immortal: bool = facts[2]
+		assert_eq(behavior.kind, kind, name)
+		assert_eq(behavior.layout, layout, name)
+		assert_eq(behavior.immortal, immortal, name)
+		assert_true(behavior.group_moving, name)
+		assert_false(behavior.tongueable, name)
+		assert_false(behavior.one_shot, name)
+		assert_true(behavior.has_form_contact(), name)
+		assert_false(behavior.has_custom_update(), name)
+		behavior.execution = EntityBehavior.Execution.UPDATE
+		assert_true(behavior.has_custom_update(), name)
+	assert_eq(EntityBehaviorCatalog.resolve("DES_THERMAL").kind, EntityBehavior.Kind.UNKNOWN)
+	assert_ne(EntityBehaviorCatalog.resolve("DES_CROC_HEAD").kind, EntityBehaviorCatalog.resolve("ORG_CROC_HEAD").kind)

@@ -95,6 +95,14 @@ static func all() -> Array[Layout]:
 		.add("ORG_FLY", Vector2i(24, 16))
 		.add("MOVING_TONGUEABLE", Vector2i(24, 18))
 		.add("FIREFLY", Vector2i(4, 23), SandboxSpawner.Preset.LOOP))
+	result.append(Layout.new("desert hazards", "Falling and rolling rocks, snakes, vultures, tumbleweeds, cracks and croc heads on open floor", Vector2i(16, 19))
+		.add("DES_FALLING_ROCK", Vector2i(13, 21))
+		.add("DES_ROLLING_ROCK", Vector2i(13, 23), SandboxSpawner.Preset.LINE)
+		.add("DES_SNAKE", Vector2i(13, 25), SandboxSpawner.Preset.LINE)
+		.add("DES_VULTURE", Vector2i(21, 25), SandboxSpawner.Preset.LOOP)
+		.add("DES_TUMBLE_WEED", Vector2i(13, 27), SandboxSpawner.Preset.LINE)
+		.add("DES_CRACK", Vector2i(16, 21))
+		.add("DES_CROC_HEAD", Vector2i(19, 21)))
 	return result
 
 ## Lists the built-in layout names in menu order.
