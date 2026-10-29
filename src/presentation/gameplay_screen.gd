@@ -18,6 +18,9 @@ var _hud: GameplayHud
 var _status: Label
 var _actions: HBoxContainer
 var _replay: Button
+var _model_origins: EntityModelOrigins = null
+## Problems from the latest map-less entity model resolution, shown to callers instead of failing.
+var entity_model_diagnostics := PackedStringArray()
 
 func _ready() -> void:
 	build_world()
@@ -98,6 +101,8 @@ func _detach_game() -> void:
 	_host.run = null
 	run = null
 	_definition = null
+	_model_origins = null
+	entity_model_diagnostics = PackedStringArray()
 	_current = null
 	_previous = null
 	playing = false
@@ -127,10 +132,11 @@ func restart() -> String:
 	start.start_mode = RunStart.Mode.SINGLE_START
 	start.camera_startup = true
 	start.start_timer = 120
-	return open_run(_definition, start)
+	return open_run(_definition, start, _model_origins)
 
 ## Installs a run for normal play or asset-free scene verification.
-func open_run(definition: LevelDefinition, start: RunStart) -> String:
+## Supplied `origins` rebuild entity visuals without a map, borrowing their data; null keeps the current visuals.
+func open_run(definition: LevelDefinition, start: RunStart, origins: EntityModelOrigins = null) -> String:
 	_host.close()
 	var replacement: GameplayRun = GameplayRun.create(definition, start)
 	if not replacement.error.is_empty():
@@ -154,6 +160,9 @@ func open_run(definition: LevelDefinition, start: RunStart) -> String:
 	playing = true
 	last_error = ""
 	accept_state(run.snapshot())
+	_model_origins = origins
+	if origins != null:
+		entity_model_diagnostics = build_mapless_entities(definition.entity_collision, origins)
 	reset_interpolation()
 	_update_interface()
 	return ""

@@ -87,5 +87,8 @@
   "res://tests/golden/test_retail_sandbox_spawner.gd::test_every_spawnable_kind_runs_alone_on_the_arena": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_sandbox_spawner.gd::test_scripted_and_action_driven_kinds_keep_their_executable_data": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_sandbox_spawner.gd::test_checkpoints_fill_five_distinct_slots_then_refuse": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_sandbox_spawner.gd::test_only_one_frogger_light_can_be_placed": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_only_one_frogger_light_can_be_placed": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_mapless_entities.gd::test_spawned_retail_entities_get_model_nodes": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_mapless_entities.gd::test_data_free_platform_beside_retail_entity_keeps_a_placeholder": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_mapless_entities.gd::test_hive_and_cave_sprites_configure_without_a_map": "SKIP: FROGGER_DATA_DIR is not set"
 }

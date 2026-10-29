@@ -180,6 +180,13 @@ func entity_collision() -> EntityCollisionDefinition:
 			collision.environment.checkpoint_positions[entity.form_id & 32767] = Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
 	return collision
 
+## Returns each placement's source theme and level in entity-table order, borrowing `data` for model lookup.
+func model_origins(data: GameData) -> EntityModelOrigins:
+	var origins := EntityModelOrigins.new(data)
+	for placement: Placement in placements:
+		origins.add(placement.theme, FroggerIds.level_from_code(placement.level_code) if not placement.level_code.is_empty() else -1)
+	return origins
+
 ## Returns a fresh copy of the arena level carrying the rebuilt entities and any data-backed frog and rewards.
 func level_definition() -> LevelDefinition:
 	var level := LevelDefinition.new()

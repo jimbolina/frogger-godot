@@ -23,6 +23,7 @@ var _frog: MeshInstance3D
 var _tongue_view: TongueView
 var _swarm_view: ForestSwarmView
 var _cave_sprite_view: CaveSpriteView
+var _placeholder_view: EntityPlaceholderView = null
 var _sprite_definitions: Array[EntityDefinition] = []
 var _camera: Camera3D
 var _map_instance: MapMesh.Instance
@@ -63,6 +64,8 @@ func draw_state(fraction: float) -> void:
 		_swarm_view.draw_state(_current)
 	if _cave_sprite_view != null:
 		_cave_sprite_view.draw_state(_current, _sprite_definitions)
+	if _placeholder_view != null:
+		_placeholder_view.draw_state(_current, _motion, weight)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
 	if _frog_model != null:
 		_frog_model.transform = frog_transform
@@ -146,6 +149,8 @@ func _clear_entity_visuals() -> void:
 		_swarm_view.clear()
 	if _cave_sprite_view != null:
 		_cave_sprite_view.clear()
+	if _placeholder_view != null:
+		_placeholder_view.clear()
 	_sprite_definitions = []
 	for model: AnimatedModelInstance in _entity_models:
 		if model != null:
@@ -211,6 +216,68 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 		_projection_size = Vector2i.ZERO
 		draw_state(1.0)
 
+## Resolves entity models from per-slot origins without a map, marking unresolved slots; returns diagnostics.
+func build_mapless_entities(definitions: EntityCollisionDefinition, origins: EntityModelOrigins) -> PackedStringArray:
+	_clear_entity_visuals()
+	_entity_pose_tick = -1
+	_entity_lighting = null
+	if definitions == null:
+		return PackedStringArray()
+	var resources: MaplessEntityResources = MaplessEntityResources.resolve(definitions.entities, origins)
+	var diagnostics: PackedStringArray = resources.diagnostics
+	var sprite_slots: Dictionary[int, bool] = {}
+	var swarm_ready: bool = false
+	var sprites_ready: bool = false
+	for slot: int in definitions.entities.size():
+		var entity: EntityDefinition = definitions.entities[slot]
+		_entity_models.append(null)
+		_entity_meshes.append(resources.meshes[slot])
+		_entity_files.append(resources.files[slot])
+		_entity_generations.append(-1)
+		if origins == null or not origins.resolvable(slot) or origins.data == null or not origins.data.is_valid():
+			continue
+		var scene: MapSceneData = resources.scene_for(origins.data, origins.themes[slot])
+		if entity.behavior.kind == EntityBehavior.Kind.HIVE and _swarm_view != null and not swarm_ready and scene.error.is_empty():
+			var issue: String = _swarm_view.configure(scene, origins.data)
+			swarm_ready = issue.is_empty()
+			if not swarm_ready:
+				diagnostics.append(issue)
+		if entity.behavior.kind in [EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.PICKUP] and _cave_sprite_view != null and scene.error.is_empty():
+			if not sprites_ready:
+				var sprite_issue: String = _cave_sprite_view.configure(scene, origins.data, definitions.entities)
+				sprites_ready = sprite_issue.is_empty()
+				if sprites_ready:
+					_sprite_definitions = definitions.entities
+				else:
+					diagnostics.append(sprite_issue)
+			if sprites_ready:
+				sprite_slots[slot] = true
+	var wanted: Array[bool] = []
+	for slot: int in definitions.entities.size():
+		wanted.append(_entity_meshes[slot] == null and not sprite_slots.has(slot))
+	if wanted.has(true):
+		if _placeholder_view == null:
+			_placeholder_view = EntityPlaceholderView.new()
+			add_child(_placeholder_view)
+		_placeholder_view.configure(wanted, definitions.contacts, GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	_sync_entity_models()
+	if _current != null:
+		_projection_size = Vector2i.ZERO
+		draw_state(1.0)
+	return diagnostics
+
+## Number of entity slots drawn as placeholders because no model resolved.
+func placeholder_count() -> int:
+	return _placeholder_view.marker_count() if _placeholder_view != null else 0
+
+## Number of entity slots currently drawn with a resolved model instance.
+func entity_model_count() -> int:
+	var count: int = 0
+	for model: AnimatedModelInstance in _entity_models:
+		if model != null:
+			count += 1
+	return count
+
 ## Reconciles visual lifetimes with the committed run, resetting animation on recreation.
 func _sync_entity_models() -> PackedInt32Array:
 	var created := PackedInt32Array()
@@ -262,6 +329,8 @@ func _update_projection() -> void:
 		_swarm_view.set_projection_scale(scale)
 	if _cave_sprite_view != null:
 		_cave_sprite_view.set_projection_scale(scale)
+	if _placeholder_view != null:
+		_placeholder_view.set_projection_scale(scale)
 	if _tongue_view != null:
 		_tongue_view.set_projection_scale(scale)
 	if _map_instance != null:
