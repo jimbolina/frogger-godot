@@ -1,6 +1,6 @@
 # Current checkpoint
 
-P9e Jungle is implemented and awaits the owner's JUN1 play check. The dedicated
+P9e Jungle is complete; JUN1 passed the owner's play check. The dedicated
 game scene opens independent ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3,
 CAV1/CAV3/CAV4, DES1–DES5 and JUN1 sessions with the original-style English
 HUD from player assets. See [controls](../README.md), [roadmap](PORTING.md)
@@ -25,7 +25,7 @@ CAV1, CAV4 and DES1–DES5 demos complete with schedule parity but have no nativ
 baseline; Jungle has no enabled demo. Both test modes, strict compilation and
 architecture checks pass.
 
-Next is the JUN1 acceptance, then Swamp and Sky; a new mechanic can get a
+Next is Swamp, followed by Sky; a new mechanic can get a
 sandbox preset. Entity shadows, the statue glow, the hippo splash, the player
 croak light swell and the web wall bounce are deferred. Audio playback, other
 effects, animated per-part lighting, the full front end, multiplayer, exports

@@ -76,7 +76,8 @@ payloads; all five demos complete with schedule parity and no native baseline.
 DESM has no map. Rock and tumbleweed shadows are tracked but not drawn until
 the effects phase.
 
-P9e Jungle is complete: JUN1 admits through whole-map setup with typed plants,
+P9e Jungle is complete and JUN1 is accepted by the owner's play check. It
+admits through whole-map setup with typed plants,
 rope bridges, hippos, scorpions, the bouncy mushroom and the outro set loaded
 as statics, animated-model collision primitives, the FORM bounce reaction and
 the crusher door callback. Independent facts cover every behavior and the
