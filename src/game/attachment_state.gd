@@ -11,6 +11,8 @@ var entity_offset_16: Vector3i = Vector3i.ZERO
 var entity_angle: int = 0
 var entity_transform12: PackedInt32Array = PackedInt32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 var entity_carry_indices: PackedInt32Array = PackedInt32Array()
+## Source primitive collision-rotation cache; it persists across contacts and ticks.
+var primitive_transpose: CollisionTransposeCache = CollisionTransposeCache.new()
 
 ## Returns an independently mutable copy of every value.
 func copy() -> AttachmentState:
@@ -24,4 +26,5 @@ func copy() -> AttachmentState:
 	result.entity_transform12 = entity_transform12.duplicate()
 	result.entity_carry_indices = entity_carry_indices.duplicate()
 	result.death_entity_index = death_entity_index
+	result.primitive_transpose = primitive_transpose.copy()
 	return result

@@ -49,8 +49,8 @@ static func evaluate(definition: FormContactDefinition, contact: FormContactResu
 		result.status = FormReactionResult.HIT
 		result.hit = true
 	elif flags & GridSquareFlags.BOUNCY:
-		result.status = FormReactionResult.UNSUPPORTED
-		result.reason = "FORM bounce reaction is unsupported"
+		result.status = FormReactionResult.BOUNCE
+		result.hit = true
 	else:
 		result.status = FormReactionResult.HIT
 		result.hit = true

@@ -30,10 +30,16 @@ const CALLBACK_KINDS: Dictionary[String, EntityScriptDefinition.CallbackKind] = 
 	"SCRIPT_CB_SKY_HELIUM_BALLOON": EntityScriptDefinition.CallbackKind.SKY_HELIUM_BALLOON,
 }
 
+## Scripts that frozen turtle-payload creation starts instead of the form script for SUB_TURTLE_NOTDIVING.
+const NO_DIVE_SCRIPTS: Dictionary[EntityBehavior.Kind, String] = {
+	EntityBehavior.Kind.TURTLE: "SCRIPT_TURTLE_NO_DIVE",
+	EntityBehavior.Kind.JUN_HIPPO: "SCRIPT_JUN_HIPPO_NO_DIVE",
+}
+
 var error: String = ""
 var definition: EntityScriptDefinition = null
 
-## Copies the reachable closure, turtle creation replacement and frozen MOVING turtle zero-fill.
+## Copies the reachable closure, turtle and hippo creation replacement and frozen MOVING turtle zero-fill.
 static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behavior: EntityBehavior, payload: PackedByteArray) -> EntityScriptSetup:
 	var result := EntityScriptSetup.new()
 	if table == null or names == null or not table.error.is_empty():
@@ -44,17 +50,20 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 	var roots: Array[int] = [root_id]
 	if behavior.payload_register_count > 0:
 		if payload.size() < behavior.payload_offset + behavior.payload_register_count * 4:
-			result.error = "Turtle payload requires PATH_INFO and three register words" if behavior.kind == EntityBehavior.Kind.TURTLE else "Static noise payload requires matrix and two register words"
+			result.error = "Turtle payload requires PATH_INFO and three register words" if NO_DIVE_SCRIPTS.has(behavior.kind) else "Static noise payload requires matrix and two register words"
 			return result
 		decoded.payload_offset = behavior.payload_offset
 		for index: int in behavior.payload_register_count:
 			decoded.payload_registers.append(payload.decode_s32(behavior.payload_offset + index * 4))
-	if behavior.kind == EntityBehavior.Kind.TURTLE:
+	if NO_DIVE_SCRIPTS.has(behavior.kind):
+		if decoded.payload_registers.size() != 3:
+			result.error = "Turtle payload requires PATH_INFO and three register words"
+			return result
 		if decoded.payload_registers[2] not in [0, 1]:
 			result.error = "Unsupported turtle payload type"
 			return result
 		if decoded.payload_registers[2] == 1:
-			decoded.root_id = names.index_of("SCRIPT_TURTLE_NO_DIVE")
+			decoded.root_id = names.index_of(NO_DIVE_SCRIPTS[behavior.kind])
 			roots.append(decoded.root_id)
 	var register_payload: PackedByteArray = payload
 	if behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER and not behavior.tongueable and names.get_name(root_id) == "SCRIPT_TURTLE" and payload.size() >= 12:

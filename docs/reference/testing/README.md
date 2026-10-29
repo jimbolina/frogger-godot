@@ -98,7 +98,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
-`GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 share whole-map dependency setup; recorded
+`GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 and JUN1 share whole-map dependency setup; recorded
 playback uses the supplied demo starting cell and FAST_RESET initialization.
 A level without an enabled demo reports that missing resource. Other themes
 retain explicit unsupported-dependency diagnostics.
@@ -169,7 +169,8 @@ native export plays only the fresh-boot attract route and Cave stays locked ther
 and `../froggy` is read-only. Their demos are checked for duration completion and
 schedule parity; CAV3 has no enabled demo. DES1–DES5 all have enabled demos
 and no native baseline for the same reason, so they receive the same duration
-and schedule-parity check. Level acceptance is the owner's play
+and schedule-parity check. The executable enables no Jungle demo, so JUN1 has
+no demo check. Level acceptance is the owner's play
 check in the dedicated game scene: the agent hands over the launch command and
 what to look for, and the owner confirms the level looks and plays well. Replays,
 demos and independent facts are regression coverage beneath that check. Bounded incomplete fixtures still exercise rejection paths.
@@ -178,7 +179,7 @@ demos and independent facts are regression coverage beneath that check. Bounded 
 
 Use `python tools/run_gameplay_capture.py --godot <executable> --data-dir
 <game-folder> --level ORG1 --output-directory <external-folder>` to capture
-startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4 or DES1–DES5;
+startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4, DES1–DES5 or JUN1;
 `--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
 replay the existing sparse keyboard stimulus format through actual key events.
 The ORG1 completion, pink-delivery and tongue-collection fixtures listed in the
@@ -189,7 +190,7 @@ with this launcher too. ORG2–ORG5 completion stimuli are
 the matching `--level`. Forest uses `for1_keyboard_playthrough.json` and
 `for2_keyboard_playthrough.json`. Volcano uses `vol1_keyboard_playthrough.json`
 through `vol3_keyboard_playthrough.json`. Cave uses `cav1_keyboard_playthrough.json`
-and `cav4_keyboard_playthrough.json`; CAV3 has no replay. Desert has no replays.
+and `cav4_keyboard_playthrough.json`; CAV3 has no replay. Desert and Jungle have no replays.
 These are normal-start inputs, not expected-state goldens. An inspection run does
 not establish level completion. New replays are optional and come only from
 human play through `--record-inputs` (see the [README](../../../README.md)); they
@@ -206,7 +207,8 @@ colours/actions, platform carrying/collapse and scripted hazards. Cave captures 
 the first light decay, firefly and pickup light gains, visible fireflies and fat fire
 fly, and partial and dark entity fade. Desert captures show rock arcs and
 explosions, crack opening and sinking, croc-head timing, snake turns and
-vulture swoops.
+vulture swoops. Jungle captures show plant snaps, the rope bridge drop, hippo
+dives, scorpions and the door bounce-back.
 All evidence stays outside repositories.
 
 Use `--flow-check --ticks 10000` without a route to verify idle timeout,

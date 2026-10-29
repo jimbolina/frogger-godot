@@ -227,7 +227,7 @@ DEADLY with all eight form-book death values. DIE_ON_BACK and unknown values
 use the source default SQUISHED animation. DROWN supplies downward velocity;
 FLOP hides the shadow and preserves velocity for FORM contacts in CAV3.
 Higher-priority unsupported branches never fall through to a death reaction.
-Checkpoint and bounce reactions remain diagnosed and omitted; SAFE requires the platform capability below. Unusable squares do
+Checkpoints collect through the shared mask; BOUNCY forbids the entity, snaps the frog to the entity origin and starts the forced bounce jump described under [Jungle](#jungle-whole-map-behavior); SAFE requires the platform capability below. Unusable squares do
 nothing; supported usable no-op
 squares still set the per-tick hit observation. Scanning continues after a
 death request, so later supported usable contacts also record hits. The first
@@ -302,8 +302,8 @@ caches the forbidden identity; terrain landing clears it. The
 [camera contract](gameplay-camera.md) owns projection and correction behavior.
 
 The [JUN1 golden specification](../../../tests/golden/specs/entities.md#jun1-safe-platform)
-owns the retail probe and source comparisons. Entity-specific sliding/bouncing
-and multiplayer stacking remain unsupported. Verified v3.0e FORM callbacks
+owns the retail probe and source comparisons. Entity-specific sliding
+and multiplayer stacking remain unsupported; FORM bounce is described under [Jungle](#jungle-whole-map-behavior). Verified v3.0e FORM callbacks
 resolve through the application catalog described below.
 
 ## Custom entity behaviors
@@ -365,8 +365,21 @@ Fixed12 products use source signed32 accumulation and signed16 matrix/point
 stores. LAST/STATIC/DISABLED flags are supported; disabled or missed primitives
 continue to the ordinary FORM fallback when data exists. Retail traffic has no
 FORM_DATA records: `has_form_data=false` preserves that absence as a miss,
-without inventing a grid. General shapes, primitive matrices,
-multiple cuboids and bounce reactions reject explicitly.
+without inventing a grid. General shapes, multiple primitives or primitive parts and borrowed parts reject explicitly.
+
+Animated single-model primitives follow `COLL_B_FLAGS_ANIM`: the first part with
+primitives is framed by that part's stored world transform, refreshed after the
+entity animation step and kept while the action and actual cel are unchanged, so
+the frame keeps the root from the last cel change. A primitive matrix rotates the
+point test through `transpose(LW × matrix)` while the offset rotates by the frame
+alone, and the matrix translation is ignored. The source collision globals are
+never reset, so the transposed rotation is reused while the same frame and matrix
+identities recur; the port keeps that cache in the attachment state across
+in-level resets. An unrefreshed animated frame reports `UNPRIMED` and misses,
+where the source reads uninitialized memory. Retail places such primitives only on
+the Jungle plant (part 4, with a matrix) and scorpion (part 0). Facts and
+deliberate-break checks are in the
+[animated primitive specification](../../../tests/golden/specs/entities.md#animated-primitive-contacts).
 
 The frog is created with `MR_OBJ_STATIC`. Frozen `MR_ANIM.C:1998–2014` retains
 stored world transforms when both action and actual cel match, even if the root
@@ -545,6 +558,7 @@ source-located diagnostics. Text-only code digests and function lengths are in
 | ORG_FLY | Bonus | 0x4231D0 | OrgFlyCallBack |
 | SUB_BUTTERFLY | Bonus | 0x4284E0 | GenButterFlyCallBack |
 | CAV_FIREFLY | Bonus | 0x43D060 | CavFireFlyCallBack |
+| JUN_OUTRO_DOOR, JUN_OUTRO_GOLD_DOOR, SWP_CRUSHER, SWP_CRUSHER2 | Collision | 0x4241C0 | SwpCrusherCallback |
 
 All other GENERAL/ORIGINAL callback fields are zero in that inventory; the Cave web wall collision callback (0x43CF20) is unmapped because no retail map places it.
 Compatibility verification currently targets v3.0e, including FrogLord-saved
@@ -591,7 +605,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 and JUN1 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -624,8 +638,9 @@ frozen `mapload.C` defaults of ±32767; either authored marker overrides its cor
 SUB1 has no markers. Primitive-free single-model skeletal resources may use FORM
 contacts, their source model-set maximum Y and global animated bounding-box
 radius. A valid model with no FORM data or collision primitives contributes no
-contact. These broader model cases are opt-in for whole-map setup. Animated collision primitives
-remain an explicit unsupported dependency.
+contact. These broader model cases are opt-in for whole-map setup. Animated collision
+primitives on one part are supported as described under
+[vehicle primitive contacts](#vehicle-primitive-contacts).
 
 Suburbia dogs follow `ent_sub.c`: unsigned postdecrement wait, endpoint pause,
 one walking RNG draw even at bounced ends, fall-before-hit arbitration, and a
@@ -852,3 +867,59 @@ scaling its colour by `max(0, ((y0−y)>>3)+0x80)` only on sinking ticks. The
 authored fall delay and the rock's entity sound are never read in C.
 Independent facts and deliberate-break checks are in the
 [entity golden specification](../../../tests/golden/specs/entities.md#desert-entities).
+
+## Jungle whole-map behavior
+
+JUN1 uses whole-map setup. JUN2 is the ending stage: frozen `gamesys.C` starts
+it directly in the end-of-game mode and it has no checkpoints, so it stays
+outside gameplay setup with the end sequence, videos and credits. JUN3–JUN5 have
+no maps and JUNM is multiplayer. The executable enables no Jungle attract demo.
+Frozen C also sends a completed JUN1 into the end-of-game mode (camera to the
+door, door opening, a level restart waiting for the statue); the port keeps the
+level-complete flow until that phase and records the disagreement here.
+
+Logs, turtles, monkeys, rhinos, crocodiles, piranhas, porcupines and the other
+movers are generic path followers with existing scripts, the butterfly is a
+generic tongueable, water noise is a modelless static with its script, and the
+trees and flowers are generic statics. The outro set loads so the map admits:
+the modelless `JUN_OUTRO` controller keeps its eleven camera targets and times,
+both doors are statics whose collision primitive runs the crusher callback,
+plinths select the level WAD model by `op_id` (0 selects slot 58, 1–7 slots
+0–6), gold frogs use the general gold-frog flipbook and are hidden unless
+`op_id` is 8, which shows the EXCITED action, and stone frogs are statics. The
+statue glow, the hippo splash sprite and entity shadows stay with the effects
+phase. `JUN_OUTRO_STATUE`, floating trees and `JUN_CRACK` are never placed and
+remain unsupported with diagnostics. JUN1's map counts 2665 polygons, so camera
+selections can exceed the conservative bound and JUN1 enables the same source
+allocation history as Volcano and Desert.
+
+Plants (`JUN_PLANT`) are immortal matrix entities with a snap time and delay.
+Waiting holds cel 0 with stepping off; a frog within 356 units of the point
+measured by `DistanceToFrogger` arms the snap timer, `!(timer--)` starts the
+animation, requests the snap sound through the 30-unit distance gate and sets a
+15-tick sound repeat; when the animation finishes the delay runs with the same
+repeat, then cel 0 and waiting return. The animation is not one-shot, so it
+cycles until the delay expires. The plant kills only through its animated
+collision primitive with the SQUISHED death. Rope bridges (`JUN_ROPE_BRIDGE`)
+are immortal platforms created with stepping off, one-shot animation and
+collision on; each tick carrying a hit increments the unsigned byte count, and
+reaching `hops_before` loads the unsigned wait, which fires after
+`fall_delay + 1` ticks, then starts the animation, disables collision and drops
+any rider into a fall. Hippos (`JUN_HIPPO`) carry the Suburbia turtle payload;
+type 1 swaps the root to `SCRIPT_JUN_HIPPO_NO_DIVE`, so JUN1 hippos dive and
+JUN2 hippos do not. Scorpions are generic movers whose part-0 primitive gives
+the FLOP death. The bouncy mushroom is a static with a one-shot animation; its
+retail FORM is a plain safe square, so the FORM bounce (forbid the entity, snap
+to its origin, forced two-cell fifteen-tick jump) is reachable only through
+FrogLord edits and synthetic facts.
+
+The door callback runs the non-Swamp `SwpCrusherCallback` handler: it looks at
+the first square of the stack one cell opposite the frog's direction and, when
+that square is usable, either sends a normal-mode frog back with
+`JUMP_TO_LAND | JUMP_FROM_COLLPRIM`, the reversed direction, six jump ticks,
+the source vertical velocity and a translation push, or re-targets a user-mode
+frog over `FROG_JUMP_TIME` ticks. The source loop never advances the square
+pointer, the user-mode branch writes a crusher count through the door's absent
+runtime data (the port omits that write), and the Swamp branch is unsupported
+until that theme. Independent facts and deliberate-break checks are in the
+[entity golden specification](../../../tests/golden/specs/entities.md#jungle-entities).

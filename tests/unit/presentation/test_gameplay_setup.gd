@@ -2,9 +2,9 @@ extends GutTest
 ## Whole-map selection and source boundary defaults remain independent of retail files.
 
 func test_supported_levels_are_limited_to_verified_single_player_scope() -> void:
-	for code: String in ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5"]:
+	for code: String in ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1"]:
 		assert_true(GameplaySetup.supports_level(FroggerIds.level_from_code(code)), code)
-	for code: String in ["ORGM", "SUBM", "SUB2", "FOR3", "FOR4", "FOR5", "FORM", "VOL4", "VOL5", "VOLM", "CAV2", "CAV5", "CAVM", "DESM", "JUN1", "ISLAND", "unknown"]:
+	for code: String in ["ORGM", "SUBM", "SUB2", "FOR3", "FOR4", "FOR5", "FORM", "VOL4", "VOL5", "VOLM", "CAV2", "CAV5", "CAVM", "DESM", "JUN2", "ISLAND", "unknown"]:
 		assert_false(GameplaySetup.supports_level(FroggerIds.level_from_code(code)), code)
 	assert_false(GameplaySetup.supports_level(-1))
 	assert_false(GameplaySetup.supports_level(100))

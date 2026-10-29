@@ -12,6 +12,15 @@ const DESERT_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES
 ## FrogLord DESERT_FALLING_ROCK size and DESERT_FALLING_ROCK_TARGETS stride.
 const FALLING_ROCK_SIZE: int = 188
 const ROCK_TARGET_STRIDE: int = 12
+## Jungle matrix entities with FrogLord subtype payloads after the matrix.
+const JUNGLE_PAYLOAD_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.JUN_PLANT, EntityBehavior.Kind.JUN_ROPE_BRIDGE, EntityBehavior.Kind.JUN_OUTRO, EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Kind.JUN_STONE_FROG]
+## FrogLord JUN_OUTRO_ENTITY size and JUN_OUTRO_TARGETS stride.
+const OUTRO_SIZE: int = 164
+const OUTRO_TARGET_STRIDE: int = 12
+## Entries in the source jun_plinth_table.
+const PLINTH_TABLE_SIZE: int = 9
+## SUBURBIA_TURTLE size: PATH_INFO then dive delay, rise delay and type words.
+const SUBURBIA_TURTLE_SIZE: int = 24
 
 var definitions: Array[EntityDefinition] = []
 var diagnostics: Array[EntitySetupDiagnostic] = []
@@ -105,7 +114,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS + EntityBehavior.JUNGLE_PATH_KINDS):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -143,6 +152,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.behavior.execution = EntityBehavior.Execution.UPDATE
 			if definition.behavior.kind in DESERT_PATH_KINDS:
 				definition.behavior.execution = EntityBehavior.Execution.UPDATE
+			if definition.behavior.kind == EntityBehavior.Kind.JUN_HIPPO and span.payload.size() < SUBURBIA_TURTLE_SIZE:
+				result._issue("invalid_payload", "Jungle hippo requires PATH_INFO, dive and rise delays and its turtle type", span, form, index, source_id, resource_id, build_id)
+				continue
 		else:
 			result._issue("unknown_behavior", "No base-transform decoder for entity name %s" % form.entity_name, span, form, index, source_id, resource_id, build_id)
 			continue
@@ -171,6 +183,11 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
 				continue
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE
+		if definition.behavior.kind in JUNGLE_PAYLOAD_KINDS:
+			var payload_issue: String = _jungle_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
 		result.definitions.append(definition)
 		var stored_type: String = _stored_entity_name(names, form)
 		if stored_type != form.entity_name:
@@ -303,6 +320,36 @@ static func _desert_payload(definition: EntityDefinition, payload: PackedByteArr
 			desert.fall_delay = payload.decode_u16(32)
 			desert.hops_before = payload.decode_u16(34)
 	definition.desert = desert
+	return ""
+
+## Copies FrogLord Jungle plant, rope-bridge, outro-target and plinth-id operands after the matrix.
+static func _jungle_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	var jungle := EntityJungleDefinition.new()
+	match definition.behavior.kind:
+		EntityBehavior.Kind.JUN_PLANT:
+			if payload.size() < 36:
+				return "Jungle plant requires its snap time and delay"
+			jungle.snap_time = payload.decode_s16(32)
+			jungle.snap_delay = payload.decode_s16(34)
+		EntityBehavior.Kind.JUN_ROPE_BRIDGE:
+			if payload.size() < 36:
+				return "Jungle rope bridge requires its fall delay and hop count"
+			jungle.fall_delay = payload.decode_u16(32)
+			jungle.hops_before = payload.decode_u16(34)
+		EntityBehavior.Kind.JUN_OUTRO:
+			if payload.size() < OUTRO_SIZE:
+				return "Jungle outro requires %d targets and times" % EntityJungleDefinition.OUTRO_TARGET_COUNT
+			for index: int in EntityJungleDefinition.OUTRO_TARGET_COUNT:
+				var offset: int = 32 + index * OUTRO_TARGET_STRIDE
+				jungle.outro_targets.append(Vector3i(payload.decode_s16(offset), payload.decode_s16(offset + 2), payload.decode_s16(offset + 4)))
+				jungle.outro_times.append(payload.decode_u32(offset + 8))
+		EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Kind.JUN_STONE_FROG:
+			if payload.size() < 36:
+				return "Jungle outro plinth entity requires its id"
+			jungle.op_id = payload.decode_s32(32)
+			if definition.behavior.kind == EntityBehavior.Kind.JUN_PLINTH and (jungle.op_id < 0 or jungle.op_id >= PLINTH_TABLE_SIZE):
+				return "Jungle plinth id %d is outside the source plinth table" % jungle.op_id
+	definition.jungle = jungle
 	return ""
 
 static func _unsigned_square(value: int) -> int:

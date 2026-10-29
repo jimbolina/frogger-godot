@@ -520,8 +520,23 @@ func react(state: GameplayState, flags: int, events: Array[TickEvent]) -> void:
 		apply_requests(state, TerrainFreeformSlip.setup(state), events)
 		state.frog.mode = FrogMode.SLIPPING_LAND_NONGRID
 	elif flags & GridSquareFlags.BOUNCY:
-		callback_error = jump(state, (state.frog.direction - controller_directions[0]) & 3, events, false, true, 2, 15)
-		state.frog.mode = FrogMode.BOUNCE
+		callback_error = bounce(state, events)
+
+
+## Enters the source bounce user mode: a forced two-cell, fifteen-tick jump in the facing direction.
+func bounce(state: GameplayState, events: Array[TickEvent]) -> String:
+	var issue: String = jump(state, (state.frog.direction - controller_directions[0]) & 3, events, false, true, 2, 15)
+	state.frog.mode = FrogMode.BOUNCE
+	return issue
+
+
+## Applies a FORM BOUNCY cell: forbids the entity, snaps XZ to its translation, then bounces.
+func bounce_from_entity(state: GameplayState, entity_index: int, entity_matrix12: PackedInt32Array, events: Array[TickEvent]) -> String:
+	state.attachment.forbidden_entity_index = entity_index
+	state.frog.position_16.x = PlatformMath.s32(entity_matrix12[9] << 16)
+	state.frog.position_16.z = PlatformMath.s32(entity_matrix12[11] << 16)
+	update_world(state)
+	return bounce(state, events)
 
 
 ## Requests death animation and updates the candidate death state.

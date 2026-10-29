@@ -107,3 +107,39 @@ func test_desert_names_follow_source_entity_book_capabilities() -> void:
 		assert_true(behavior.has_custom_update(), name)
 	assert_eq(EntityBehaviorCatalog.resolve("DES_THERMAL").kind, EntityBehavior.Kind.UNKNOWN)
 	assert_ne(EntityBehaviorCatalog.resolve("DES_CROC_HEAD").kind, EntityBehaviorCatalog.resolve("ORG_CROC_HEAD").kind)
+
+func test_jungle_names_follow_source_entity_book_capabilities() -> void:
+	var expected: Dictionary[String, Array] = {
+		"JUN_PLANT": [EntityBehavior.Kind.JUN_PLANT, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_ROPE_BRIDGE": [EntityBehavior.Kind.JUN_ROPE_BRIDGE, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_HIPPO": [EntityBehavior.Kind.JUN_HIPPO, EntityBehavior.Layout.PATH, false, true, false],
+		"JUN_SCORPION": [EntityBehavior.Kind.JUN_SCORPION, EntityBehavior.Layout.PATH, false, true, false],
+		"JUN_BOUNCY_MUSHROOM": [EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM, EntityBehavior.Layout.MATRIX, false, false, true],
+		"JUN_OUTRO_DOOR": [EntityBehavior.Kind.JUN_OUTRO_DOOR, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_OUTRO": [EntityBehavior.Kind.JUN_OUTRO, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_PLINTH": [EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_GOLD_FROG": [EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Layout.MATRIX, true, true, false],
+		"JUN_STONE_FROG": [EntityBehavior.Kind.JUN_STONE_FROG, EntityBehavior.Layout.MATRIX, true, true, false],
+	}
+	for name: String in expected:
+		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(name)
+		var facts: Array = expected[name]
+		var kind: EntityBehavior.Kind = facts[0]
+		var layout: EntityBehavior.Layout = facts[1]
+		assert_eq(behavior.kind, kind, name)
+		assert_eq(behavior.layout, layout, name)
+		var immortal: bool = facts[2]
+		var group_moving: bool = facts[3]
+		var one_shot: bool = facts[4]
+		assert_eq(behavior.immortal, immortal, name)
+		assert_eq(behavior.group_moving, group_moving, name)
+		assert_eq(behavior.one_shot, one_shot, name)
+		assert_false(behavior.tongueable, name)
+		assert_true(behavior.has_form_contact(), name)
+		behavior.execution = EntityBehavior.Execution.UPDATE
+		assert_eq(behavior.has_custom_update(), layout == EntityBehavior.Layout.MATRIX, name)
+	var hippo: EntityBehavior = EntityBehaviorCatalog.resolve("JUN_HIPPO")
+	assert_eq([hippo.payload_offset, hippo.payload_register_count], [12, 3])
+	assert_eq(EntityBehaviorCatalog.resolve("JUN_SCORPION").payload_register_count, 0)
+	for name: String in ["JUN_STATUE", "JUN_OUTRO_STATUE", "JUN_FLOATINGTREES", "JUN_CRACK"]:
+		assert_eq(EntityBehaviorCatalog.resolve(name).kind, EntityBehavior.Kind.UNKNOWN, name)

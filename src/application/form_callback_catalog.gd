@@ -10,6 +10,7 @@ const NAMES: Dictionary[int, String] = {
 	0x4231d0: "OrgFlyCallBack",
 	0x4284e0: "GenButterFlyCallBack",
 	0x43d060: "CavFireFlyCallBack",
+	0x4241c0: "SwpCrusherCallback",
 }
 const KINDS: Dictionary[String, FormCallback.Kind] = {
 	"VolColourTriggerEntityCallback": FormCallback.Kind.VOL_COLOUR_SWITCH,
@@ -19,6 +20,7 @@ const KINDS: Dictionary[String, FormCallback.Kind] = {
 	"OrgFlyCallBack": FormCallback.Kind.ORG_FLY_SCORE,
 	"GenButterFlyCallBack": FormCallback.Kind.BUTTERFLY_SCORE,
 	"CavFireFlyCallBack": FormCallback.Kind.CAV_FIREFLY_SCORE,
+	"SwpCrusherCallback": FormCallback.Kind.CRUSHER_BOUNCE_BACK,
 }
 
 ## Resolves supported repointing without deriving identity from the owning form.

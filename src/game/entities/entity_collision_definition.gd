@@ -77,6 +77,17 @@ func validate() -> String:
 					return primitive_issue
 				if primitive.reaction not in [0, 1, 3]:
 					return "Entity primitive reaction is unsupported"
+			if contact.primitive_part != null:
+				var part_issue: String = contact.primitive_part.validate()
+				if not part_issue.is_empty():
+					return part_issue
+				if contact.primitive_part.part_index != contact.primitives[0].part_index:
+					return "Animated primitive part does not own its primitive"
+				if contact.primitive_part.actions.size() != entity.action_lengths.size():
+					return "Animated primitive actions do not match the entity's action lengths"
+				for action: int in entity.action_lengths.size():
+					if contact.primitive_part.actions[action].frames.size() != entity.action_lengths[action]:
+						return "Animated primitive action %d frame count does not match its action length" % action
 		if contact.callback_kind == FormCallback.Kind.UNKNOWN:
 			return "Entity has an unverified FORM collision callback"
 		if entity.behavior == null:

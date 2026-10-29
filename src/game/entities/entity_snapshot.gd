@@ -25,6 +25,8 @@ var colour_scale: Vector3i = Vector3i.ZERO
 ## Whether source colour scaling was applied; an applied zero scale draws black.
 var colour_scaled: bool = false
 var ambient: Vector3i = Vector3i.ZERO
+## Stored LW transform of an animated model's primitive part; null for other entities.
+var primitive_pose: EntityPrimitivePose = null
 
 ## Returns an independent transform and nested path snapshot.
 func copy() -> EntitySnapshot:
@@ -50,6 +52,7 @@ func copy() -> EntitySnapshot:
 	result.colour_scale = colour_scale
 	result.colour_scaled = colour_scaled
 	result.ambient = ambient
+	result.primitive_pose = primitive_pose.copy() if primitive_pose != null else null
 	return result
 
 ## Uses live flags when initialized, retaining authored flags for standalone probes.

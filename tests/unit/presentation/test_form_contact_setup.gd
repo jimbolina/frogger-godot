@@ -263,9 +263,11 @@ func test_skeletal_form_uses_authored_model_bound_and_preserves_primitive_reject
 	assert_eq(setup.definitions[0].radius_squared, 5000, "Global animated bbox, not embedded partcel bbox")
 	var bounded: FormContactSetup = FormContactSetup.from_map(map, _book(), [entity], models)
 	assert_ne(bounded.definitions[0].unsupported_reason, "", "Bounded inspection retains its original model scope")
-	model.static_models[0].parts[0].collprims.append(MofPart.Collprim.new())
+	var primitive := MofPart.Collprim.new()
+	primitive.flags = MofPart.COLLPRIM_LAST
+	model.static_models[0].parts[0].collprims.append(primitive)
 	setup = FormContactSetup.from_map(map, _book(), [entity], models, "", -1, "", true, true)
-	assert_string_contains(setup.definitions[0].unsupported_reason, "static model")
+	assert_string_contains(setup.definitions[0].unsupported_reason, "discrete byte-quaternion")
 
 func test_decorative_model_with_no_form_data_has_no_contact() -> void:
 	var map: MapFile = _map()

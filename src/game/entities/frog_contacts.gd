@@ -109,7 +109,9 @@ func contact_entities(frog: Frog, state: GameplayState, result: TickResult) -> S
 
 
 ## Queries the stored collision pose against an entity primitive.
-func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot) -> EntityPrimitiveContact:
+## A static model is framed by the entity matrix and an animated model by its
+## primitive part's stored LW transform; the source rotation cache spans checks.
+func contact_primitive(frog: Frog, state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot) -> EntityPrimitiveContact:
 	var result := EntityPrimitiveContact.new()
 	result.entity_index = pose.entity_index
 	result.unique_id = pose.unique_id
@@ -131,7 +133,28 @@ func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContac
 		result.status = EntityPrimitiveQuery.MISS
 		result.reason = "Outside strict form-book bounding sphere"
 		return result
-	var hit: EntityPrimitiveQuery.Result = EntityPrimitiveQuery.query(definition.primitives, pose.matrix12, state.frog.frog_collision_pose.probes)
+	var part: EntityPrimitivePartDefinition = definition.primitive_part
+	var frame: PackedInt32Array = pose.matrix12
+	if part != null:
+		if pose.primitive_pose == null or pose.primitive_pose.lw12.is_empty():
+			result.status = EntityPrimitiveQuery.UNPRIMED
+			result.reason = "Animated primitive part has no stored LW transform yet"
+			return result
+		frame = pose.primitive_pose.lw12
+	var probes: FrogCollisionQuery.Sample = state.frog.frog_collision_pose.probes
+	var rotation := PackedInt32Array()
+	if definition.primitives.size() == 1 and definition.primitives[0] != null and probes != null and not probes.points.is_empty() and FrogCollisionQuery.validate_matrix(frame).is_empty():
+		var primitive: EntityPrimitiveDefinition = definition.primitives[0]
+		if primitive.validate().is_empty() and not primitive.flags & EntityPrimitiveDefinition.DISABLED:
+			var entity: EntityDefinition = null
+			if frog != null and frog.entity_collision != null:
+				for candidate: EntityDefinition in frog.entity_collision.entities:
+					if candidate != null and candidate.entity_index == pose.entity_index:
+						entity = candidate
+						break
+			var frame_key: String = CollisionTransposeCache.frame_key_for(CollisionTransposeCache.is_stationary(entity), part != null, pose.entity_index, pose.generation, primitive.part_index)
+			rotation = state.attachment.primitive_transpose.resolve(frame_key, CollisionTransposeCache.matrix_key_for(primitive), frame, primitive)
+	var hit: EntityPrimitiveQuery.Result = EntityPrimitiveQuery.query(definition.primitives, frame, probes, rotation)
 	result.status = hit.status
 	result.reason = hit.reason
 	result.frog_part_index = hit.part_index
@@ -144,7 +167,7 @@ func contact_primitive(_frog: Frog, state: GameplayState, definition: FormContac
 	return result
 
 
-## Applies a FORM death or attachment reaction.
+## Applies a FORM death, bounce or attachment reaction.
 func apply_form_reaction(frog: Frog, state: GameplayState, definition: FormContactDefinition, pose: EntitySnapshot, reaction: FormReactionResult, result: TickResult, primitive: bool = false) -> String:
 	if reaction.status == FormReactionResult.SAFE:
 		var issue: String = mount_platform(frog, state, definition, pose, reaction, result.events)
@@ -157,6 +180,10 @@ func apply_form_reaction(frog: Frog, state: GameplayState, definition: FormConta
 				if not issue.is_empty():
 					return issue
 				break
+	if reaction.status == FormReactionResult.BOUNCE:
+		var issue: String = frog.bounce_from_entity(state, pose.entity_index, pose.matrix12, result.events)
+		if not issue.is_empty():
+			return issue
 	if reaction.hit and not state.attachment.entity_hit_indices.has(pose.entity_index):
 		state.attachment.entity_hit_indices.append(pose.entity_index)
 	if reaction.kill_animation >= 0 and state.attachment.death_entity_index < 0 and state.frog.mode != FrogMode.DYING and not state.frog.flags & FrogFlags.MUST_DIE:

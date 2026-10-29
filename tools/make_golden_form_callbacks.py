@@ -14,6 +14,7 @@ FUNCTIONS = (
     ('OrgFlyCallBack', 0x4231d0, 0x4231e0, 'bonus'),
     ('GenButterFlyCallBack', 0x4284e0, 0x4284fc, 'bonus'),
     ('CavFireFlyCallBack', 0x43d060, 0x43d07e, 'bonus'),
+    ('SwpCrusherCallback', 0x4241c0, 0x424614, 'collision'),
 )
 
 

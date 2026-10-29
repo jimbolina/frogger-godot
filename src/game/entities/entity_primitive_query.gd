@@ -1,12 +1,14 @@
 class_name EntityPrimitiveQuery
 extends RefCounted
-## Frozen static cuboid narrow phase; sphere gating remains the caller's job.
+## Frozen MRCheckCollPrimWithWorldPoint cuboid narrow phase; sphere gating remains the caller's job.
 
 const CONTACT: String = "contact"
 const MISS: String = "miss"
 const DISABLED: String = "disabled"
 const UNSUPPORTED: String = "unsupported"
 const INVALID: String = "invalid"
+## An animated model whose stored LW transform has not been refreshed since creation.
+const UNPRIMED: String = "unprimed"
 
 ## First source-ordered frog hilite accepted by the supported primitive.
 class Result:
@@ -22,8 +24,19 @@ class Result:
 	var world_point: Vector3i = Vector3i.ZERO
 	var local_position: Vector3i = Vector3i.ZERO
 
+## Rotation framing the primitive axes: the frame rotation times the primitive
+## matrix, with signed32 sums shifted by 12 and stored as signed16 as
+## MRMulMatrixABC does, or the frame rotation alone without a primitive matrix.
+static func collision_rotation(frame12: PackedInt32Array, primitive: EntityPrimitiveDefinition) -> PackedInt32Array:
+	if primitive.matrix_index < 0:
+		return frame12.slice(0, 9)
+	return PlatformMath.multiply(frame12, primitive.rotation).slice(0, 9)
+
 ## Checks all frog parts/hilites in source order, using strict cuboid boundaries.
-static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: PackedInt32Array, probes: FrogCollisionQuery.Sample) -> Result:
+## [param rotation9] is the possibly stale cached collision rotation whose
+## transpose maps world offsets to primitive axes; empty uses the current one.
+## The offset and translation always come from the current [param matrix12].
+static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: PackedInt32Array, probes: FrogCollisionQuery.Sample, rotation9: PackedInt32Array = PackedInt32Array()) -> Result:
 	var result := Result.new()
 	result.reason = FrogCollisionQuery.validate_matrix(matrix12)
 	if not result.reason.is_empty():
@@ -35,7 +48,7 @@ static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: Packed
 		result.reason = "Frog collision sample identities do not match its points"
 		return result
 	if primitives.size() != 1 or primitives[0] == null:
-		result.reason = "Vehicle collision requires exactly one cuboid"
+		result.reason = "Entity collision requires exactly one cuboid"
 		return result
 	var primitive: EntityPrimitiveDefinition = primitives[0]
 	result.flags = primitive.flags
@@ -46,6 +59,10 @@ static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: Packed
 	if primitive.flags & EntityPrimitiveDefinition.DISABLED:
 		result.status = "disabled"
 		result.reason = "MR_COLL_DISABLED"
+		return result
+	var axes: PackedInt32Array = rotation9 if not rotation9.is_empty() else collision_rotation(matrix12, primitive)
+	if axes.size() != 9:
+		result.reason = "Collision rotation requires nine source values"
 		return result
 	var centre := Vector3i.ZERO
 	for axis: int in 3:
@@ -61,7 +78,7 @@ static func query(primitives: Array[EntityPrimitiveDefinition], matrix12: Packed
 			delta[axis] = FrogCollisionQuery.signed16(point[axis] - matrix12[9 + axis] - centre[axis])
 		var local := Vector3i.ZERO
 		for axis: int in 3:
-			local[axis] = FrogCollisionQuery.signed32(matrix12[axis] * delta.x + matrix12[3 + axis] * delta.y + matrix12[6 + axis] * delta.z) >> 12
+			local[axis] = FrogCollisionQuery.signed32(axes[axis] * delta.x + axes[3 + axis] * delta.y + axes[6 + axis] * delta.z) >> 12
 		if absi(local.x) < primitive.half_size.x and absi(local.y) < primitive.half_size.y and absi(local.z) < primitive.half_size.z:
 			result.status = "contact"
 			result.part_index = probes.part_indices[point_index]

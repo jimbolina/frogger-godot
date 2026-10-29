@@ -96,5 +96,9 @@
   "res://tests/golden/test_retail_sandbox_presets.gd::test_every_preset_applies_fully_and_runs_30_ticks": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_sandbox_presets.gd::test_sandbox_screen_loads_and_adds_presets_with_models": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_desert.gd::test_desert_payloads_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_desert.gd::test_desert_levels_admit_with_resolved_targets_explosions_and_actions": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_desert.gd::test_desert_levels_admit_with_resolved_targets_explosions_and_actions": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_collprims.gd::test_every_primitive_and_matrix_matches": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_collprims.gd::test_animated_primitive_parts_detach_source_poses": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_jungle.gd::test_jungle_payloads_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_jungle.gd::test_jun1_admits_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set"
 }

@@ -2,7 +2,7 @@
 
 The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-The dedicated game scene opens ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 and DES1–DES5 with the original-style HUD.
+The dedicated game scene opens ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 and JUN1 with the original-style HUD.
 Remaining work expands theme coverage and completes the systems listed below.
 
 ## Status
@@ -24,13 +24,13 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8c | ORG1 complete: single-player original-theme and general forms, all script opcodes and callbacks, v3.0e FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Done; native attract, keyboard completion/collections, schedule parity and both test modes pass |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
-| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest, P9b Volcano, P9c Cave and P9d Desert complete |
+| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest, P9b Volcano, P9c Cave, P9d Desert and P9e Jungle complete |
 | P11 | Effects and particles | L | By eye against reference pictures | |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
 | P15 | Split-screen for two to four players | L | By eye | |
-| P16 | Videos, credits, ending | M–L | By eye | Blocked on the FMV codec decision below |
+| P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted asset-free CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs and named skips | Mac source setup and isolated verification available; packaged exports and CI pending |
 | X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Original-hardware target remains unverified; further tuning deferred at the owner’s request |
 | X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md) | M | Independent colour samples after each part's animation transform | Any time after P8a |
@@ -76,7 +76,16 @@ payloads; all five demos complete with schedule parity and no native baseline.
 DESM has no map. Rock and tumbleweed shadows are tracked but not drawn until
 the effects phase.
 
-Next are JUN, SWP and SKY. Each level is accepted when the owner plays
+P9e Jungle is complete: JUN1 admits through whole-map setup with typed plants,
+rope bridges, hippos, scorpions, the bouncy mushroom and the outro set loaded
+as statics, animated-model collision primitives, the FORM bounce reaction and
+the crusher door callback. Independent facts cover every behavior and the
+retail payloads; the executable enables no Jungle demo. JUN2 is the ending
+stage with no checkpoints and stays with P16 together with the end-of-game
+sequence frozen C runs after JUN1; the port shows the level-complete flow
+there. JUN3–JUN5 have no maps and JUNM is multiplayer.
+
+Next are SWP and SKY. Each level is accepted when the owner plays
 it in the game scene and confirms it looks and plays well; recorded replays are
 not required. Retain the thirteen existing keyboard completion checks
 and the ORG1, SUB1, FOR1 and VOL1 native attract comparisons; see

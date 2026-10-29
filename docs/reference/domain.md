@@ -50,7 +50,8 @@ owns a separate runner, including when paths share geometry. See
 form-book id select `ThemeBook.get_form()`; the GENERAL bit changes the owning
 theme. `GameNameLists` supplies the form name and `entity_name_for()` applies
 FrogLord's named entity overrides. `GameData` resolves the selected model/WAD
-for existing tools. Parser examples live in the executable-table unit tests;
+for existing tools; `EntityModelSelection` substitutes behavior-selected level
+WAD slots (Volcano switch colours, Jungle plinth `op_id`). Parser examples live in the executable-table unit tests;
 retail facts live in the corresponding golden tests.
 
 Entity setup resolves FrogLord names through `EntityBehaviorCatalog` into

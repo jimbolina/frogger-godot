@@ -9,6 +9,7 @@ const POP: String = "pop"
 const SQUISH: String = "squish"
 const DEATH: String = "death"
 const SAFE: String = "safe"
+const BOUNCE: String = "bounce"
 const UNSUPPORTED: String = "unsupported"
 const INVALID: String = "invalid"
 

@@ -95,7 +95,7 @@ func test_group_and_form_facts_are_detached_with_source_diagnostics() -> void:
 			unsupported += 1
 			assert_eq(diagnostic.source_offset, 100)
 			assert_eq(diagnostic.resource_id, 77)
-	assert_eq(unsupported, 2, "Safe and bounce cells need explicit diagnostics")
+	assert_eq(unsupported, 1, "Safe cells without platforms need an explicit diagnostic; bounce cells are supported")
 	map.forms[0].data[0].grid_flags[0] = 0
 	assert_eq(setup.definition.contacts[0].grid_flags[0], 4097)
 

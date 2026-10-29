@@ -35,6 +35,8 @@ var reaction_unsupported_reason: String = ""
 var disabled_reason: String = ""
 ## Optional supported primitives checked before this FORM's fallback grid.
 var primitives: Array[EntityPrimitiveDefinition] = []
+## Discrete transforms of an animated model's primitive part; null for static models.
+var primitive_part: EntityPrimitivePartDefinition = null
 
 ## Returns an independently owned definition, including grid square flags.
 func copy() -> FormContactDefinition:
@@ -65,4 +67,5 @@ func copy() -> FormContactDefinition:
 	result.disabled_reason = disabled_reason
 	for primitive: EntityPrimitiveDefinition in primitives:
 		result.primitives.append(primitive.copy() if primitive != null else null)
+	result.primitive_part = primitive_part.copy() if primitive_part != null else null
 	return result

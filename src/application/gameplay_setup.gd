@@ -2,20 +2,27 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1"]
 ## Named sprite images the frozen firefly animation list draws.
 const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
 ## Resident general sprite bank holding the standard-resolution pickup and firefly images.
 const RESIDENT_SPRITE_BANK: String = "GEN_VRAM.VLO"
 ## Levels whose visible map groups can exceed the 2500-polygon budget, so live-entity creation
 ## follows source allocation. DES1 and DES4 exceed it; all Desert levels share the rule.
-const SOURCE_ALLOCATION_CODES: PackedStringArray = ["VOL1", "VOL2", "VOL3", "DES1", "DES2", "DES3", "DES4", "DES5"]
+const SOURCE_ALLOCATION_CODES: PackedStringArray = ["VOL1", "VOL2", "VOL3", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1"]
 ## Minimum flipbook or skeletal actions each Desert behavior selects.
 const DESERT_ACTION_COUNTS: Dictionary[EntityBehavior.Kind, int] = {
 	EntityBehavior.Kind.DES_SNAKE: 4,
 	EntityBehavior.Kind.DES_VULTURE: 2,
 	EntityBehavior.Kind.DES_CROC_HEAD: 1,
 	EntityBehavior.Kind.DES_CRACK: 1,
+}
+## Minimum flipbook or skeletal actions each Jungle behavior selects.
+const JUNGLE_ACTION_COUNTS: Dictionary[EntityBehavior.Kind, int] = {
+	EntityBehavior.Kind.JUN_PLANT: 1,
+	EntityBehavior.Kind.JUN_ROPE_BRIDGE: 1,
+	EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM: 1,
+	EntityBehavior.Kind.JUN_GOLD_FROG: EntityJungleGoldFrog.REQUIRED_ACTIONS,
 }
 ## Desert rocks that replace their model with the level's explosion flipbook.
 const EXPLODING_ROCKS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK]
@@ -39,7 +46,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4 or DES1–DES5"
+		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 or JUN1"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)
@@ -112,6 +119,9 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 		var desert_issue: String = _desert_issue(data, number, entity, grid.definition, problems)
 		if not desert_issue.is_empty():
 			return code + " entity %d at 0x%X %s" % [entity.entity_index, entity.source_offset, desert_issue]
+		var jungle_issue: String = _jungle_issue(entity, model_id)
+		if not jungle_issue.is_empty():
+			return code + " entity %d at 0x%X %s" % [entity.entity_index, entity.source_offset, jungle_issue]
 		if entity.behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.FAT_FIRE_FLY]:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
 		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
@@ -259,6 +269,15 @@ func _desert_issue(data: GameData, number: int, entity: EntityDefinition, grid: 
 		if entity.desert == null:
 			entity.desert = EntityDesertDefinition.new()
 		entity.desert.explosion_action_lengths = _explosion_lengths.duplicate()
+	return ""
+
+## Applies Jungle action and plinth-model gates to one decoded definition.
+static func _jungle_issue(entity: EntityDefinition, model_id: int) -> String:
+	var kind: EntityBehavior.Kind = entity.behavior.kind
+	if JUNGLE_ACTION_COUNTS.has(kind) and entity.action_lengths.size() < JUNGLE_ACTION_COUNTS[kind]:
+		return "requires %d model actions, found %d" % [JUNGLE_ACTION_COUNTS[kind], entity.action_lengths.size()]
+	if kind == EntityBehavior.Kind.JUN_PLINTH and model_id < 0:
+		return "requires the plinth-table model in the map WAD"
 	return ""
 
 ## Reads source virtual-action lengths for skeletal and flipbook entities.

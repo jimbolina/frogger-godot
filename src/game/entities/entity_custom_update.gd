@@ -66,7 +66,11 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 			issue = EntityDesertCrocHead.update(definition, result)
 		EntityBehavior.Kind.DES_CRACK:
 			issue = EntityDesertCrack.update(definition, result, frog, hit)
-		EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT:
+		EntityBehavior.Kind.JUN_PLANT:
+			issue = EntityJunglePlant.update(definition, result, frog)
+		EntityBehavior.Kind.JUN_ROPE_BRIDGE:
+			issue = EntityJungleRopeBridge.update(definition, result, frog, hit)
+		EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM, EntityBehavior.Kind.JUN_OUTRO_DOOR, EntityBehavior.Kind.JUN_OUTRO, EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Kind.JUN_STONE_FROG:
 			pass
 		_:
 			issue = "Unsupported custom behavior kind"

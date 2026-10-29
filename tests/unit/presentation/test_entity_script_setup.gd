@@ -159,3 +159,38 @@ func test_matrix_mechanism_reads_six_signed_registers_and_rejects_truncation() -
 	assert_eq(setup.definition.validate(PackedInt32Array(), 0, false), "")
 	payload.resize(55)
 	assert_ne(EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("DYNAMIC"), payload).error, "")
+
+func test_hippo_payload_replaces_its_own_no_dive_script_by_name() -> void:
+	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE_NO_DIVE\nSCRIPT_JUN_HIPPO\nSCRIPT_JUN_HIPPO_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n"), false, "Script")
+	var table := ScriptTable.new()
+	for id: int in 4:
+		var script_entry := EntityScript.new()
+		script_entry.id = id
+		script_entry.name = names.get_name(id)
+		var stop := EntityScript.Command.new()
+		stop.opcode = 38
+		script_entry.commands = [stop]
+		table.scripts.append(script_entry)
+	var payload := PackedByteArray()
+	payload.resize(24)
+	payload.encode_s32(12, 60)
+	payload.encode_s32(16, 60)
+	payload.encode_s32(20, 1)
+	var hippo: EntityBehavior = EntityBehaviorCatalog.resolve("JUN_HIPPO")
+	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 2, hippo, payload)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definition.root_id, 3)
+	assert_eq(setup.definition.payload_offset, 12)
+	assert_eq(setup.definition.payload_registers, PackedInt32Array([60, 60, 1]))
+	assert_true(setup.definition.programs.has(2) and setup.definition.programs.has(3))
+	assert_eq(setup.definition.programs.size(), 2)
+	payload.encode_s32(20, 0)
+	setup = EntityScriptSetup.from_tables(table, names, 2, hippo, payload)
+	assert_eq(setup.definition.root_id, 2)
+	payload.encode_s32(20, 2)
+	assert_eq(EntityScriptSetup.from_tables(table, names, 2, hippo, payload).error, "Unsupported turtle payload type")
+	payload.resize(23)
+	assert_eq(EntityScriptSetup.from_tables(table, names, 2, hippo, payload).error, "Turtle payload requires PATH_INFO and three register words")
+	var unregistered := EntityBehavior.new()
+	unregistered.kind = EntityBehavior.Kind.JUN_HIPPO
+	assert_eq(EntityScriptSetup.from_tables(table, names, 2, unregistered, payload).error, "Turtle payload requires PATH_INFO and three register words")

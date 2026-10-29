@@ -38,6 +38,16 @@ const KINDS: Dictionary[String, EntityBehavior.Kind] = {
 	"DES_VULTURE": EntityBehavior.Kind.DES_VULTURE,
 	"DES_CROC_HEAD": EntityBehavior.Kind.DES_CROC_HEAD,
 	"DES_CRACK": EntityBehavior.Kind.DES_CRACK,
+	"JUN_PLANT": EntityBehavior.Kind.JUN_PLANT,
+	"JUN_ROPE_BRIDGE": EntityBehavior.Kind.JUN_ROPE_BRIDGE,
+	"JUN_HIPPO": EntityBehavior.Kind.JUN_HIPPO,
+	"JUN_SCORPION": EntityBehavior.Kind.JUN_SCORPION,
+	"JUN_BOUNCY_MUSHROOM": EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM,
+	"JUN_OUTRO_DOOR": EntityBehavior.Kind.JUN_OUTRO_DOOR,
+	"JUN_OUTRO": EntityBehavior.Kind.JUN_OUTRO,
+	"JUN_PLINTH": EntityBehavior.Kind.JUN_PLINTH,
+	"JUN_GOLD_FROG": EntityBehavior.Kind.JUN_GOLD_FROG,
+	"JUN_STONE_FROG": EntityBehavior.Kind.JUN_STONE_FROG,
 }
 
 ## Unknown names resolve to UNKNOWN; the caller reports and omits unsupported records.
@@ -46,12 +56,12 @@ static func resolve(name: String) -> EntityBehavior:
 	result.kind = KINDS.get(name, EntityBehavior.Kind.UNKNOWN)
 	if result.kind == EntityBehavior.Kind.UNKNOWN:
 		return result
-	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE] else EntityBehavior.Layout.MATRIX
-	result.immortal = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK]
-	result.group_moving = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.CAVE_LIGHT] or result.kind in EntityBehavior.DESERT_KINDS
+	result.layout = EntityBehavior.Layout.PATH if result.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE] + EntityBehavior.JUNGLE_PATH_KINDS else EntityBehavior.Layout.MATRIX
+	result.immortal = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK] or (result.kind in EntityBehavior.JUNGLE_KINDS and result.kind not in EntityBehavior.JUNGLE_PATH_KINDS + [EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM])
+	result.group_moving = name in ["DYNAMIC", "FOR_SWAYING_BRANCH"] or result.layout == EntityBehavior.Layout.PATH or result.kind in [EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.CAVE_LIGHT] or result.kind in EntityBehavior.DESERT_KINDS or (result.kind in EntityBehavior.JUNGLE_KINDS and result.kind != EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM)
 	result.tongueable = name == "MOVING_TONGUEABLE" or result.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.FAT_FIRE_FLY]
-	result.one_shot = result.kind == EntityBehavior.Kind.BABY_FROG
-	if result.kind == EntityBehavior.Kind.TURTLE:
+	result.one_shot = result.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM]
+	if result.kind in [EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.JUN_HIPPO]:
 		result.payload_offset = 12
 		result.payload_register_count = 3
 	elif result.kind == EntityBehavior.Kind.STATIC_NOISE:

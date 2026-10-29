@@ -101,7 +101,7 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	level.collision_enabled = true
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
-	if GameplaySetup.supports_level(number) and options.exploration_preset.is_empty() and (options.reactions != ScenarioOptions.Reaction.POP or options.entity_lifecycle):
+	if GameplaySetup.supports_level(number) and options.exploration_preset.is_empty() and not _bounded_probe():
 		var gameplay: GameplaySetup = GameplaySetup.from_data(data, number, map_scene.map, frog_assets.model, frog_assets.action_lengths)
 		if not gameplay.error.is_empty():
 			return gameplay.error
@@ -139,6 +139,12 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	else:
 		diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
 	return ""
+
+## Whether POP reactions, or JUN1 platform reactions, without visibility lifecycle keep the bounded inspection path.
+func _bounded_probe() -> bool:
+	if not options.entity_reactions or options.entity_lifecycle:
+		return false
+	return options.reactions == ScenarioOptions.Reaction.POP or level_code.to_upper() == "JUN1"
 
 ## Selects the bounded DES2 hop only for the uncustomized built-in run.
 func apply_des2_inspection_defaults() -> void:

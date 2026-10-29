@@ -2,7 +2,10 @@ class_name FormCallback
 extends RefCounted
 ## Typed source FORM reactions, independent of executable addresses.
 
-enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE }
+enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE, CRUSHER_BOUNCE_BACK }
+
+const CRUSHER_JUMP_TICKS: int = 6
+const SWAMP_THEME: int = 7
 
 ## Applies a verified primitive callback to the private gameplay candidate.
 static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: int, events: Array[TickEvent]) -> String:
@@ -34,6 +37,10 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 					events.append(TickEvent.reward(EntityBonusFly.REWARD_IDS[definition.butterfly_type]).for_entity(entity_index))
 					return GameplayRewards.apply(definition.butterfly_reward, state, events, frog.random)
 		return "Butterfly callback requires its decoded pickup reward"
+	if kind == Kind.CRUSHER_BOUNCE_BACK:
+		if frog.theme == SWAMP_THEME:
+			return "Swamp crusher callback is unsupported"
+		return crusher_bounce_back(frog.grid, state, entity_index)
 	if kind == Kind.BLOCK and state.frog.mode != FrogMode.STATIONARY:
 		frog.kill(state, FrogAnimationCatalog.SQUISHED, false, events)
 		state.frog.remaining_ticks = 0
@@ -97,4 +104,57 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 						break
 		_:
 			return "Unsupported typed FORM collision callback"
+	return ""
+
+
+## Returns the source crusher step away from a facing: cell delta in XY and the new facing in Z.
+static func crusher_step(direction: int) -> Vector3i:
+	match direction:
+		0:
+			return Vector3i(0, -1, 2)
+		1:
+			return Vector3i(-1, 0, 3)
+		2:
+			return Vector3i(0, 1, 0)
+		3:
+			return Vector3i(1, 0, 1)
+	return Vector3i(0, 0, direction)
+
+
+## Applies the non-Swamp SwpCrusherCallback handler, which tests only the target stack's first square.
+static func crusher_bounce_back(grid: GridDefinition, state: GameplayState, entity_index: int) -> String:
+	var step: Vector3i = crusher_step(state.frog.direction)
+	var cell: Vector2i = state.frog.cell + Vector2i(step.x, step.y)
+	var stack: GridStackDefinition = grid.stack_at(cell) if grid != null else null
+	if stack == null:
+		return "Crusher callback grid lookup lies outside authored storage"
+	if stack.square_count == 0 or not grid.squares[stack.first_square_index].flags & GridSquareFlags.USABLE:
+		return ""
+	var index: int = stack.first_square_index
+	var target_x: int = PlatformMath.s16((cell.x << 8) + grid.base.x + 128)
+	var target_z: int = PlatformMath.s16((cell.y << 8) + grid.base.y + 128)
+	state.frog.cell = cell
+	state.frog.square_index = index
+	if state.frog.mode >= FrogMode.THROW_1:
+		state.frog.remaining_ticks = CRUSHER_JUMP_TICKS
+		state.frog.target_16 = Vector3i(target_x, PlatformMath.s16(GridQueries.square_height(grid.squares[index])), target_z) * 65536
+		var velocity := Vector3i.ZERO
+		for axis: int in 3:
+			velocity[axis] = PlatformMath.divide(PlatformMath.s32(state.frog.target_16[axis] - state.frog.position_16[axis]), CRUSHER_JUMP_TICKS)
+		state.frog.velocity_16 = velocity
+		return ""
+	state.frog.flags |= FrogFlags.JUMP_TO_LAND | FrogFlags.JUMP_FROM_COLLPRIM
+	state.frog.direction = step.z
+	state.frog.target_16.x = target_x << 16
+	state.frog.target_16.z = target_z << 16
+	state.frog.mode = FrogMode.JUMPING
+	state.attachment.forbidden_entity_index = entity_index
+	state.frog.remaining_ticks = CRUSHER_JUMP_TICKS
+	state.frog.old_y = state.frog.target_y
+	var rise: int = PlatformMath.s32((state.frog.target_y - state.frog.matrix12[10]) << 16)
+	state.frog.velocity_16.x = PlatformMath.divide(PlatformMath.s32(state.frog.target_16.x - state.frog.position_16.x), CRUSHER_JUMP_TICKS)
+	state.frog.velocity_16.y = PlatformMath.divide(rise, CRUSHER_JUMP_TICKS + 1) - ((Frog.GRAVITY_16 * (CRUSHER_JUMP_TICKS + 1)) >> 1)
+	state.frog.velocity_16.z = PlatformMath.divide(PlatformMath.s32(state.frog.target_16.z - state.frog.position_16.z), CRUSHER_JUMP_TICKS)
+	state.frog.matrix12[9] += state.frog.velocity_16.x >> 15
+	state.frog.matrix12[11] += state.frog.velocity_16.z >> 15
 	return ""

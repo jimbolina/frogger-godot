@@ -132,6 +132,10 @@ var hilites: Array[Hilite] = []
 var collprims: Array[Collprim] = []
 ## Number of matrices stored for the collision shapes.
 var matrix_count: int = 0
+## Each stored 32-byte MR_MAT as 12 values: nine signed16 row-major rotation
+## entries, then three signed32 translations; the pad short is dropped.
+## Borrowed when [member borrows] is set.
+var matrices: Array[PackedInt32Array] = []
 ## Number of flipbook animations.
 var flipbook_action_count: int = 0
 ## Number of polygons with an animated texture.
@@ -228,6 +232,7 @@ func borrow_from(other: MofPart) -> void:
 	partcels = other.partcels
 	hilites = other.hilites
 	collprims = other.collprims
+	matrices = other.matrices
 	flipbook_actions = other.flipbook_actions
 	texture_lists = other.texture_lists
 	texture_targets = []
@@ -363,6 +368,17 @@ func _read_matrices(reader: ByteReader) -> void:
 		reader.fail("part %d: cannot tell where the matrices at %d end" % [index, _matrices_at])
 		return
 	matrix_count = (end - _matrices_at) / 32
+	reader.seek(_matrices_at)
+	for matrix_index: int in matrix_count:
+		var values := PackedInt32Array()
+		for component: int in 9:
+			values.append(reader.read_s16())
+		reader.skip(2)
+		for axis: int in 3:
+			values.append(reader.read_s32())
+		if reader.has_error():
+			return
+		matrices.append(values)
 
 
 func _read_texture_animations(reader: ByteReader) -> void:

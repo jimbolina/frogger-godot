@@ -112,6 +112,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 			else:
 				definition.radius_squared = radius[0]
 				definition.primitives = primitives.primitives
+				definition.primitive_part = primitives.part
 				definition.has_form_data = false
 		elif grid.data_count == 0 and grid.data.is_empty() and selected_model != null and selected_model.kind == MofFile.Kind.DUMMY:
 			definition.has_form_data = false
@@ -156,6 +157,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 							reason = primitives.error
 						else:
 							definition.primitives = primitives.primitives
+							definition.primitive_part = primitives.part
 		definition.unsupported_reason = reason
 		result.definitions.append(definition)
 		if not reason.is_empty():
@@ -165,7 +167,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, entities: Array[Entity
 	return result
 
 static func _primitive_model(model: MofFile) -> bool:
-	return model != null and model.error.is_empty() and model.kind == MofFile.Kind.STATIC and model.static_models.size() == 1 and _has_collprims(model)
+	return model != null and model.error.is_empty() and model.kind in [MofFile.Kind.STATIC, MofFile.Kind.ANIMATED] and model.static_models.size() == 1 and _has_collprims(model)
 
 ## Reads the selected map and all authored form models, including omitted entities.
 static func from_data(data: GameData, level: int, low_poly: bool, entities: Array[EntityDefinition]) -> FormContactSetup:

@@ -37,12 +37,14 @@ commands run from the repository root; generated facts live in
 | Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
+| Animated-part cuboids, decoded primitive matrices and the collision rotation cache | [Animated primitive contacts](specs/entities.md#animated-primitive-contacts) |
 | Scripted visibility, immortal initialization, pink frog pickup/riding/death and guarded ORG1 gameplay | [Scripted visibility](specs/entities.md#scripted-visibility) |
 | Tongue, rewards, start clocks, custom entities and verified FORM callbacks | [Gameplay flow](specs/entities.md#tongue-rewards-and-level-flow) |
 | Forest hive, branch, animal, visibility and terrain-projection behavior | [Forest entities](specs/entities.md#forest-entities) |
 | Volcano switch, controlled-platform and falling-platform behavior | [Volcano entities](specs/entities.md#volcano-entities) |
 | Cave light radii, fade, firefly pickups, fat fire fly bob and retail light payloads | [Cave entities](specs/entities.md#cave-entities) |
 | Desert rocks, tumbleweed, snake, vulture, croc head, crack and retail payloads/action lengths | [Desert entities](specs/entities.md#desert-entities) |
+| Jungle plant, rope bridge, mushroom bounce, outro door bounce-back, hippo script and retail payloads/plinths/action lengths | [Jungle entities](specs/entities.md#jungle-entities) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

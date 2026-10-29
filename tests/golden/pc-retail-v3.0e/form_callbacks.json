@@ -46,5 +46,13 @@
     "length": 30,
     "kind": "bonus",
     "sha256": "638740759ffac25404aa63764119b91377545f50f21559cc190fae605979edb6"
+  },
+  {
+    "name": "SwpCrusherCallback",
+    "address": 4342208,
+    "file_offset": 144832,
+    "length": 1108,
+    "kind": "collision",
+    "sha256": "12f3304ead99a2a2675f243646c4b05cb02c0cdc803add4edf223e95cee8e2a1"
   }
 ]

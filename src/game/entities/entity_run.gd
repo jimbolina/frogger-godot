@@ -132,6 +132,15 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.behavior.kind in [EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK] and not EntityDesertExplosion.valid(definition.desert.explosion_action_lengths):
 			result.error = "Desert rock requires the level explosion flipbook"
 			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.JUN_PLANT, EntityBehavior.Kind.JUN_ROPE_BRIDGE, EntityBehavior.Kind.JUN_OUTRO, EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Kind.JUN_STONE_FROG] and definition.jungle == null:
+			result.error = "Jungle behavior requires decoded subtype operands"
+			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.JUN_PLANT, EntityBehavior.Kind.JUN_ROPE_BRIDGE] and definition.action_lengths.is_empty():
+			result.error = "Jungle plant and rope bridge require a source animation action"
+			return result
+		if definition.behavior.kind == EntityBehavior.Kind.JUN_GOLD_FROG and definition.action_lengths.size() < EntityJungleGoldFrog.REQUIRED_ACTIONS:
+			result.error = "Jungle gold frog requires the general gold frog actions through BACKFLIP"
+			return result
 		for length: int in definition.action_lengths:
 			if length <= 0:
 				result.error = "Entity animation lengths must be positive"
@@ -230,6 +239,7 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 		next_state.entities[index].colour_scale = previous.colour_scale
 		next_state.entities[index].colour_scaled = previous.colour_scaled
 		next_state.entities[index].ambient = previous.ambient
+		next_state.entities[index].primitive_pose = previous.primitive_pose.copy() if previous.primitive_pose != null else null
 		if _definitions[index].behavior.kind in RETAINED_MATRIX_KINDS or (deferred_updates and _lifecycle != null and previous.live):
 			next_state.entities[index].matrix12 = previous.matrix12.duplicate()
 		elif previous.live and candidates[index] != null and _projects(index, _definitions[index].flags, grid):
@@ -432,6 +442,24 @@ func advance_animations() -> void:
 			entity.animation.advance()
 		if entity.live and entity.custom_state != null and entity.custom_state.overlay_animation != null:
 			entity.custom_state.overlay_animation.advance()
+
+## Refreshes live animated primitive parts' stored LW transforms after the
+## entity clocks advance, whether or not they stepped; [param contacts] pair
+## with the authored entities by index.
+func refresh_primitive_poses(contacts: Array[FormContactDefinition]) -> String:
+	if contacts.size() != _state.entities.size():
+		return "Primitive pose refresh requires one contact per entity"
+	for slot: int in _state.entities.size():
+		var entity: EntitySnapshot = _state.entities[slot]
+		var contact: FormContactDefinition = contacts[slot]
+		if contact == null or contact.primitive_part == null or not entity.live or not entity.model_present:
+			continue
+		if entity.primitive_pose == null:
+			entity.primitive_pose = EntityPrimitivePose.new()
+		var issue: String = entity.primitive_pose.refresh(contact.primitive_part, entity.animation, entity.matrix12)
+		if not issue.is_empty():
+			return "Entity %d: %s" % [entity.entity_index, issue]
+	return ""
 
 ## Validates every cross-target mutation before changing any candidate cursor.
 func apply_target_effects(effects: Array[EntityTargetEffect]) -> String:
@@ -639,6 +667,7 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 	entity.ambient = Vector3i.ZERO
 	entity.pop_allocated = false
 	entity.pop_remaining = 0
+	entity.primitive_pose = null
 	entity.requests.clear()
 	if definition.behavior.has_custom_update():
 		entity.custom_state = EntityCustomState.new()
@@ -692,6 +721,12 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 			EntityDesertCrocHead.initialize(definition, entity)
 		elif definition.behavior.kind == EntityBehavior.Kind.DES_CRACK:
 			EntityDesertCrack.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.JUN_PLANT:
+			EntityJunglePlant.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.JUN_ROPE_BRIDGE:
+			EntityJungleRopeBridge.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.JUN_GOLD_FROG:
+			EntityJungleGoldFrog.initialize(definition, entity)
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true

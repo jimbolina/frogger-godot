@@ -75,7 +75,9 @@ func test_reaction_precedence_and_detached_results() -> void:
 			assert_eq(reaction.status, FormReactionResult.POP)
 		elif flags in [65, 4161]:
 			assert_eq(reaction.status, FormReactionResult.CHECKPOINT)
-		elif flags in [3, 5, 33, 4099]:
+		elif flags == 33:
+			assert_eq(reaction.status, FormReactionResult.BOUNCE)
+		elif flags in [3, 5, 4099]:
 			assert_eq(reaction.status, FormReactionResult.SQUISH if flags == 5 else FormReactionResult.UNSUPPORTED)
 		elif flags in [17, 1]:
 			assert_eq(reaction.status, FormReactionResult.HIT)

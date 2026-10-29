@@ -578,3 +578,126 @@ func test_desert_path_runners_update_from_path_info_alone() -> void:
 		_add_entity(map, 1, 32, _path_info(0), 2)
 		setup = EntitySetup.from_map(map, book, "des.map", 4, "pc-retail-v3.0e", true)
 		assert_eq(setup.diagnostics[0].code, "unsupported_transform", name)
+
+func test_jungle_plant_and_rope_bridge_read_froglord_operands() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "JUN_PLANT"
+	book.entries[1].forms[2].entity_name = "JUN_ROPE_BRIDGE"
+	var map: MapFile = _map()
+	var plant: PackedByteArray = _matrix()
+	plant.resize(36)
+	plant.encode_s16(32, -6)
+	plant.encode_s16(34, 30)
+	_add_entity(map, 0, 0, plant, 1)
+	var bridge: PackedByteArray = _matrix()
+	bridge.resize(36)
+	bridge.encode_u16(32, 65535)
+	bridge.encode_u16(34, 40000)
+	_add_entity(map, 2, 0, bridge, 2)
+	var short_plant: PackedByteArray = plant.duplicate()
+	short_plant.resize(35)
+	_add_entity(map, 0, 0, short_plant, 3)
+	var short_bridge: PackedByteArray = bridge.duplicate()
+	short_bridge.resize(35)
+	_add_entity(map, 2, 0, short_bridge, 4)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "jun.map", 656, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 2)
+	if setup.definitions.size() != 2:
+		return
+	assert_eq([setup.definitions[0].jungle.snap_time, setup.definitions[0].jungle.snap_delay], [-6, 30])
+	assert_eq([setup.definitions[1].jungle.fall_delay, setup.definitions[1].jungle.hops_before], [65535, 40000])
+	for definition: EntityDefinition in setup.definitions:
+		assert_eq(definition.behavior.execution, EntityBehavior.Execution.UPDATE)
+		assert_eq(definition.matrix12[9], 100)
+		assert_null(definition.desert)
+	assert_eq(setup.diagnostics.size(), 2)
+	for diagnostic: EntitySetupDiagnostic in setup.diagnostics:
+		assert_eq(diagnostic.code, "invalid_payload")
+	assert_eq([setup.diagnostics[0].entity_index, setup.diagnostics[1].entity_index], [2, 3])
+	setup = EntitySetup.from_map(map, book, "jun.map", 656, "pc-retail-v3.0e")
+	assert_true(setup.definitions.is_empty())
+	assert_eq(setup.diagnostics[0].code, "unknown_behavior")
+
+func test_jungle_outro_targets_and_plinth_ids() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "JUN_OUTRO"
+	book.entries[1].forms[1].entity_name = "JUN_PLINTH"
+	book.entries[1].forms[2].entity_name = "JUN_GOLD_FROG"
+	var map: MapFile = _map()
+	var outro: PackedByteArray = _matrix()
+	outro.resize(164)
+	for index: int in 11:
+		var offset: int = 32 + index * 12
+		outro.encode_s16(offset, -100 - index)
+		outro.encode_s16(offset + 2, 200 + index)
+		outro.encode_s16(offset + 4, -32768 + index)
+		outro.encode_s16(offset + 6, 77)
+		outro.encode_u32(offset + 8, 4294967295 - index)
+	_add_entity(map, 0, 2, outro, 1)
+	for op_id: int in [0, 8, 9, -1]:
+		var plinth: PackedByteArray = _matrix()
+		plinth.resize(36)
+		plinth.encode_s32(32, op_id)
+		_add_entity(map, 1, 0, plinth, 10 + op_id)
+	var frog: PackedByteArray = _matrix()
+	frog.resize(36)
+	frog.encode_s32(32, -7)
+	_add_entity(map, 2, 0, frog, 30)
+	var short_outro: PackedByteArray = outro.duplicate()
+	short_outro.resize(163)
+	_add_entity(map, 0, 0, short_outro, 31)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "jun.map", 656, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 4)
+	if setup.definitions.size() != 4:
+		return
+	var targets: EntityJungleDefinition = setup.definitions[0].jungle
+	assert_eq(targets.outro_targets.size(), 11)
+	assert_eq(targets.outro_targets[0], Vector3i(-100, 200, -32768))
+	assert_eq(targets.outro_targets[10], Vector3i(-110, 210, -32758))
+	assert_eq(targets.outro_times[0], 4294967295)
+	assert_eq(targets.outro_times[10], 4294967285)
+	assert_eq([setup.definitions[1].jungle.op_id, setup.definitions[2].jungle.op_id, setup.definitions[3].jungle.op_id], [0, 8, -7])
+	assert_eq(setup.definitions[3].behavior.kind, EntityBehavior.Kind.JUN_GOLD_FROG)
+	assert_eq(setup.diagnostics.size(), 3)
+	assert_eq([setup.diagnostics[0].entity_index, setup.diagnostics[1].entity_index, setup.diagnostics[2].entity_index], [3, 4, 6])
+	assert_string_contains(setup.diagnostics[0].message, "plinth id 9")
+
+func test_jungle_statics_decode_matrix_only() -> void:
+	for name: String in ["JUN_BOUNCY_MUSHROOM", "JUN_OUTRO_DOOR"]:
+		var book: ThemeBook = _book()
+		book.entries[1].forms[0].entity_name = name
+		var map: MapFile = _map()
+		_add_entity(map, 0, 0, _matrix())
+		var setup: EntitySetup = EntitySetup.from_map(map, book, "jun.map", 656, "pc-retail-v3.0e", true)
+		assert_eq(setup.definitions.size(), 1, name)
+		if setup.definitions.is_empty():
+			continue
+		assert_null(setup.definitions[0].jungle, name)
+		assert_eq(setup.definitions[0].behavior.execution, EntityBehavior.Execution.UPDATE, name)
+
+func test_jungle_path_followers_read_path_info_and_hippo_requires_its_type() -> void:
+	for name: String in ["JUN_HIPPO", "JUN_SCORPION"]:
+		var book: ThemeBook = _book()
+		book.entries[1].forms[1].entity_name = name
+		var map: MapFile = _map()
+		_add_path(map)
+		var payload: PackedByteArray = _path_info(0)
+		payload.resize(24)
+		payload.encode_s32(20, 1)
+		_add_entity(map, 1, 0, payload)
+		_add_entity(map, 1, 0, _path_info(0), 2)
+		var setup: EntitySetup = EntitySetup.from_map(map, book, "jun.map", 657, "pc-retail-v3.0e", true)
+		assert_eq(setup.definitions.size(), 1 if name == "JUN_HIPPO" else 2, name)
+		if setup.definitions.is_empty():
+			continue
+		assert_not_null(setup.definitions[0].path_start, name)
+		assert_eq(setup.definitions[0].behavior.execution, EntityBehavior.Execution.TRANSFORM, name)
+		assert_false(setup.definitions[0].behavior.has_custom_update(), name)
+		assert_null(setup.definitions[0].jungle, name)
+		if name == "JUN_HIPPO":
+			assert_eq(setup.diagnostics[0].code, "invalid_payload")
+			assert_eq(setup.diagnostics[0].entity_index, 1)
+		setup = EntitySetup.from_map(map, book, "jun.map", 657, "pc-retail-v3.0e")
+		assert_true(setup.definitions.is_empty(), name)

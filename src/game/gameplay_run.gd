@@ -364,6 +364,9 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			return _failed_tick(result, pose_issue)
 	if _candidate_entities != null:
 		_candidate_entities.advance_animations()
+		var primitive_issue: String = _candidate_entities.refresh_primitive_poses(_entity_collision.contacts)
+		if not primitive_issue.is_empty():
+			return _failed_tick(result, primitive_issue)
 		next.entities = _candidate_entities.snapshot()
 	var tongue_issue: String = TongueController.advance(_frog, next, _candidate_entities, result.events)
 	if not tongue_issue.is_empty():
@@ -606,7 +609,9 @@ func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickE
 	state.frog.death_equate = old.death_equate
 	state.frog.start_timer = 30
 	state.frog.matrix12 = TerrainMatrix.update(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, state.frog.world_position.x, state.frog.world_position.y, state.frog.world_position.z]), state.frog.flags, state.frog.direction, null)
+	var primitive_transpose: CollisionTransposeCache = state.attachment.primitive_transpose
 	state.attachment = AttachmentState.new()
+	state.attachment.primitive_transpose = primitive_transpose
 	_frog.sync_facts(state)
 	state.tongue.reset()
 	state.completed = false

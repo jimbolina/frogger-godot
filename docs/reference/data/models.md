@@ -17,7 +17,7 @@ Retail counts below refer to `pc-retail-v3.0e`. See [source locations](../source
 - Three general forms (`GEN_BONUS_FROG`, `GEN_BONUS_FLY_GRE`, `GEN_LADYFROG`) have model id 0 and so no model, though only the second is flagged as having none.
 - **There are 22 incomplete models, not only the checkpoints.** Checkpoints 2 to 5, multipoints 2 to 5 and the multiplayer frogs 2 to 4, each in a high-poly and a low-poly version. Each takes its shape from the nearest earlier complete model in the index, and differs only in the colours and textures of its polygons.
 - **Every static model inside an animated file states its own length, and it equals the distance to the next one.** FrogLord's rule and the reference engine's give the same result on retail data.
-- Only two models store matrices for their collision shapes: `JUN_PLANT.XAR` and its low-poly version.
+- Only two models store matrices for their collision shapes: `JUN_PLANT.XAR` and its low-poly version. Each stored `MR_MAT` is 32 bytes: nine signed 16-bit rotation entries row by row, a pad short and three signed 32-bit translations. They are decoded; collision uses only the rotation.
 - Only polygon types 0 to 7 occur. There is no environment-mapped polygon and no line.
 - **A quad is stored going round its edge.** Its triangles are corners (0, 1, 3) and (1, 2, 3). Texture coordinate k and normal k belong to corner k. FrogLord swaps the last two entries of each list when loading; this project keeps the stored order.
 - **A polygon has one colour whatever its type**, and its normals are only for lighting.
