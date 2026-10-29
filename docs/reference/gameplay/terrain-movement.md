@@ -38,7 +38,7 @@ the source HUD script. Completion commands outside bounce/rest are rejected.
 | Terrain UpdateFrogMatrix | terrain_matrix | test_terrain_matrix | Terrain; entity/scaling excluded |
 | Grid and simple grid slip setup/movement; signed slope threshold | terrain_special, terrain_slope | test_terrain_specials | Terrain |
 | Bounce setup/movement; cliff roll/null fall | terrain_roll | test_terrain_specials | Terrain |
-| Freeform setup/movement and held steering | terrain_freeform, terrain_steering | test_terrain_specials | Terrain; tongue/entity interaction excluded |
+| Freeform setup/movement, held steering and silent tongue | terrain_freeform, terrain_steering; explicit tongue tests | test_terrain_specials | Terrain; entity interaction excluded |
 | Local modifier expiry | terrain_modifiers | test_terrain_specials | Terrain; global timer-speed excluded |
 | BOUNCY_COBWEB entered by authored N/E wall flags or cliff boundary | terrain_wall | test_terrain_specials | Terrain |
 | Single-start bounce/rest and fast-start wait | terrain_startup; explicit completion test | test_terrain_specials, test_terrain_run | Terrain callbacks; HUD completion supplied by caller |
@@ -67,8 +67,10 @@ list. Camera stun draws and animation idle selection share this stream. Omitted
 effect factories never cause compensating draws.
 Terrain dispatch modes are stationary0, jumping1, dying2, camera-wait3, stun6,
 grid-slip258, bouncy-wall261, freeform-slip262, start-bounce265, start-rest266,
-simple-slip267, bounce268 and cliff-roll269. Grid/simple use stationary control;
-freeform uses held steering. Bounce/wall/cliff/start have no ordinary hop
+simple-slip267, bounce268 and cliff-roll269. Grid/simple use stationary control.
+Freeform follows `FroguserSlippingLandNonGridControl`: a held direction steers;
+with none held, a pressed tongue starts an idle tongue without the slurp sound.
+Freeform never hops or super-hops. Bounce/wall/cliff/start have no ordinary hop
 controller. The rows above cover failed setup's mode overwrite, slip-to-safe,
 freeform-to-fall/death, wall-to-land, cliff-to-fall/death, bounce-to-reaction and
 explicit start completion to camera-wait.

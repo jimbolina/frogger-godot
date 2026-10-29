@@ -25,6 +25,11 @@ const GLOW_BASE: int = 0x3800
 const GLOW_STEP: int = 0x100
 ## Source units the glow sits behind its image so depth testing keeps the image on top.
 const GLOW_DEPTH: float = 4.0
+## Game units pickup glow and image depth moves toward the camera: PICKUP_OT_OFFSET
+## (-16 ordering slots, PARTICLE.H) after the otz shift of 1 in Pickup_disp.
+const PICKUP_DEPTH_BIAS: float = 32.0
+## Firefly 3D sprites sort at their average corner depth with sc_ot_offset 0 (MR_SPRT.C).
+const FIREFLY_DEPTH_BIAS: float = 0.0
 ## PGEN horizontal divisor: 256 (Pickup_disp shift) times focal 512 over otz shift 1.
 const PICKUP_DIVISOR_X: float = 65536.0
 ## PGEN vertical divisor: 256 times the Windows vertical focal 480 over otz shift 1.
@@ -193,7 +198,7 @@ func _configure_firefly(scene: MapSceneData, data: GameData, problems: PackedStr
 			problems.append("Cave firefly image %s is missing from the supplied banks" % image_name)
 			continue
 		var blend: ModelShaders.Blend = ModelShaders.blend_for_mode(image.blend_mode()) if image.has_flag(VloImage.FLAG_TRANSLUCENT) else ModelShaders.Blend.OPAQUE
-		frames.append(_sprite(scene, image, blend))
+		frames.append(_sprite(scene, image, blend, FIREFLY_DEPTH_BIAS))
 	if frames.size() == FIREFLY_IMAGES.size():
 		_firefly = frames
 
@@ -215,14 +220,14 @@ func _configure_pickups(scene: MapSceneData, data: GameData, types: Array, probl
 				problems.append("Pickup %s frame texture 0x%X is missing from the supplied banks" % [row.fly_type_name(), pointer])
 				look.frames.clear()
 				break
-			look.frames.append(_sprite(scene, image, ModelShaders.Blend.OPAQUE))
+			look.frames.append(_sprite(scene, image, ModelShaders.Blend.OPAQUE, PICKUP_DEPTH_BIAS))
 		if not look.frames.is_empty():
 			_pickups[type] = look
 	var glow: VloImage = _image_for_id(scene, GLOW_TEXTURE_ID)
 	if glow == null:
 		problems.append("Pickup glow texture %d is missing from the supplied banks" % GLOW_TEXTURE_ID)
 	else:
-		_glow = _sprite(scene, glow, ModelShaders.blend_for_mode(glow.blend_mode()))
+		_glow = _sprite(scene, glow, ModelShaders.blend_for_mode(glow.blend_mode()), PICKUP_DEPTH_BIAS)
 
 func _load_resident(data: GameData, problems: PackedStringArray) -> void:
 	_resident = TextureLibrary.new()
@@ -243,7 +248,7 @@ func _image_for_id(scene: MapSceneData, identity: int) -> VloImage:
 		image = _resident.image_for_id(identity)
 	return image
 
-func _sprite(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend) -> Sprite:
+func _sprite(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend, depth_bias: float) -> Sprite:
 	var material: ShaderMaterial = ModelShaders.material(scene.library.texture_for(image), blend, false, true)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
@@ -251,6 +256,7 @@ func _sprite(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend) ->
 	material.set_shader_parameter("uv_scale", uv.size)
 	material.set_shader_parameter("uv_offset", uv.position)
 	material.set_shader_parameter("projection_scale", _projection_scale)
+	material.set_shader_parameter("depth_bias", depth_bias)
 	_materials.append(material)
 	return Sprite.new(material, image.width, image.height)
 

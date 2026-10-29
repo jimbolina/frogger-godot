@@ -61,6 +61,10 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 	if state.frog.start_timer != 0 or not state.frog.flags & FrogFlags.CONTROL_ACTIVE:
 		return ""
 	if state.frog.mode == FrogMode.SLIPPING_LAND_NONGRID:
+		if command.recorded_input_byte < 0 and not command.recorded_input_exhausted and first_direction(command.held_mask) == NO_INPUT and command.pressed_mask & TickCommand.TONGUE:
+			var slip_tongue_issue: String = TongueController.start(self, state, events, false)
+			if not slip_tongue_issue.is_empty():
+				return slip_tongue_issue
 		var callback: TerrainCallbackResult = TerrainFreeformSlip.control(state, command, controller_directions, theme)
 		if callback.forward_steering:
 			if state.frog.square_index < 0:
@@ -73,6 +77,10 @@ func control(state: GameplayState, command: TickCommand, events: Array[TickEvent
 	if state.frog.mode == FrogMode.JUMPING:
 		if command.recorded_input_byte >= 0 or command.recorded_input_exhausted:
 			return ""
+		if command.pressed_mask & TickCommand.TONGUE:
+			var jump_tongue_issue: String = TongueController.start(self, state, events)
+			if not jump_tongue_issue.is_empty():
+				return jump_tongue_issue
 		var pressed: int = first_direction(command.pressed_mask)
 		if pressed == NO_INPUT and command.pressed_mask & TickCommand.SUPER_HOP:
 			pressed = 8

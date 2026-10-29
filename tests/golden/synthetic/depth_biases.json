@@ -1,0 +1,18 @@
+{
+  "schema": "depth-biases-v1",
+  "viewport": {
+    "ot_slots": 4096,
+    "view_distance": 8192,
+    "otz_shift": 1
+  },
+  "terrain_back": 128,
+  "frog_forward": 48,
+  "pickup_forward": 32,
+  "firefly_forward": 0,
+  "terrain_hides": {
+    "frog": 176,
+    "pickup": 160,
+    "firefly": 128,
+    "model": 128
+  }
+}

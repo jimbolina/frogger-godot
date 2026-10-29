@@ -99,7 +99,9 @@ filtering is an inspection option, not the reference comparison mode.
 
 Map polygon flags govern semi-transparency, environment UVs and far ordering.
 Environment UVs depend on camera position. MAX_OT riverbed geometry sits
-behind environment water and ordinary geometry. Use C `mapdisp.c` and
+behind environment water and ordinary geometry. Ordinary terrain keeps the C
+ordering-table offset as a depth-only push ([depth ordering](../rendering/README.md#depth-ordering)).
+Use C `mapdisp.c` and
 `mapload.C/MapCreateWibbleWater`, plus `WATER.C` for water vertex state.
 The water sorting block is commented out in C: preserve unique vertex
 encounter order (FT4 then GT4), rather than sorting their coordinates.

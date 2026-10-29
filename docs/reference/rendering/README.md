@@ -55,6 +55,29 @@ when their inputs change; camera/cave setters visit only affected materials.
 Inspector markers share selection materials, and unchanged FORM outlines/cells
 retain their meshes. These caches never advance simulation or hide entities.
 
+## Depth ordering
+
+C drew gameplay with a painter's ordering table: 4096 slots over view distance
+8192, so slot = view depth (SZ) >> 1. Fixed offsets keep objects in front of the
+ground they stand on, which exact per-pixel depth testing loses. The port keeps
+those offsets as depth-only vertex adjustments in game units of view depth;
+screen positions are unchanged:
+
+| Drawing | C ordering | Port depth bias |
+|---|---|---|
+| Ordinary terrain | average corner SZ, then `+ MAP_POLY_OT_OFFSET` (64 slots) | 128 further (`MapShaders.TERRAIN_DEPTH_BIAS`) |
+| Frog | local table at origin SZ `+ FROG_GLOBAL_OT_OFFSET` (−0x30) before the shift | 48 nearer (`depth_bias` on frog materials) |
+| Pickup glow and image | origin slot `+ PICKUP_OT_OFFSET` (−16 slots) | 32 nearer |
+| Firefly sprites, entity models | average corner or per-polygon SZ, no offset | 0 |
+
+Terrain therefore hides the frog only when more than 176 units nearer,
+pickups 160, and fireflies or models 128. Far layers (MAX_OT, environment
+water, sky) and the map-slice reference projection keep their own depth.
+Per-vertex depth approximates C's whole-object and per-polygon sorting; it does
+not reproduce painter's-order artefacts. Forest swarm quads (`FOR_SWARM_OT_OFFSET`)
+keep bias 0 for now. Facts and citations:
+[maps spec](../../../tests/golden/specs/maps.md#depth-ordering-biases).
+
 ## Semi-transparency
 
 For models, a textured polygon is drawn semi-transparent when its texture has the translucent flag (bit 0), using the texture's blend mode. Model untextured polygons are opaque. Maps instead use polygon flag bit 0; ENVMAP and MAX_OT control camera-relative UVs and background ordering. Retail textures use modes 0 (average) and 1 (add); synthetic tests cover all four.

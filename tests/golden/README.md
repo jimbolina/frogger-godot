@@ -34,6 +34,7 @@ commands run from the repository root; generated facts live in
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
+| Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Scripted visibility, immortal initialization, pink frog pickup/riding/death and guarded ORG1 gameplay | [Scripted visibility](specs/entities.md#scripted-visibility) |

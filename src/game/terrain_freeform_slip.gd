@@ -1,6 +1,6 @@
 class_name TerrainFreeformSlip
 extends RefCounted
-## Frozen non-grid terrain slipping. Tongue/entity interaction is P8/P10.
+## Frozen non-grid terrain slipping; the frog starts the silent freeform tongue before held steering.
 
 static func setup(state: GameplayState) -> TerrainCallbackResult:
 	var result := TerrainCallbackResult.new()

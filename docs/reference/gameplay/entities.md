@@ -555,6 +555,10 @@ identity from the script CallbackNames bank.
 
 ## Tongue and rewards
 
+Stationary, centring, grid-slip and simple-slip control start the tongue with
+sound 20, as does live jumping control. Freeform slip starts it silently when no
+direction is held. A tongue already in effect is never restarted.
+
 Tongue selection follows the source 3×3 group walk, signed-short distance and
 strict nearest comparison. Normal and super radii are 640 and 1152 units.
 Landscape obstruction uses GRID.C's tile walk and the first three vertices of
@@ -686,8 +690,8 @@ The bee swarm is a visible lethal hazard, so its three original textured sprites
 are included here rather than deferred with decorative particles. Whole-map
 setup requires the named `for_swarm` image from the player's general/theme banks.
 Presentation draws committed swarm positions with the source camera-plane
-orientation and never advances gameplay or consumes gameplay RNG. The existing
-renderer uses depth buffering rather than the source ordering-table bias.
+orientation and never advances gameplay or consumes gameplay RNG. Swarm quads
+carry no ordering-table bias yet; see [depth ordering](../rendering/README.md#depth-ordering).
 Broader particles, pop visuals and audio playback remain separate work.
 
 ## Volcano whole-map behavior

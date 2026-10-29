@@ -1,7 +1,14 @@
 class_name MapShaders
 extends RefCounted
-## Affine map colours/UVs, byte wrapping, cave grey and ordering layers.
+## Affine map colours/UVs, byte wrapping, cave grey, ordering layers and terrain depth bias.
 ## Reuses the model renderer's stored-colour correction and blend kernels.
+
+## Game units ordinary terrain depth moves away from the camera, leaving screen
+## positions unchanged. mapdisp.c sorts terrain MAP_POLY_OT_OFFSET (64) ordering
+## slots behind its average corner depth after the gameplay viewport's otz shift
+## of 1, which is 128 units of view depth.
+const TERRAIN_DEPTH_BIAS: float = 128.0
+const _PROJECT_LINE: String = "\tPOSITION = PROJECTION_MATRIX * eye;\n"
 
 static var _shaders: Dictionary[String, Shader] = {}
 
@@ -73,7 +80,8 @@ void vertex() {
 		}
 		colour = vec3(clamp(grey, 0.0, 128.0) / 255.0);
 	}
-	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	vec4 eye = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	POSITION = PROJECTION_MATRIX * eye;
 	POSITION.xy *= projection_scale;
 	reference_visible = 1.0;
 	if (reference_projection) {
@@ -110,13 +118,23 @@ void vertex() {
 """
 
 
+## Vertex lines that push ordinary terrain depth back by [constant TERRAIN_DEPTH_BIAS]
+## without moving it on screen; far layers and the reference projection keep their own depth.
+static func terrain_depth_code() -> String:
+	return ("\tif (!reference_projection) {\n"
+		+ "\t\tvec4 behind = PROJECTION_MATRIX * vec4(eye.xy, eye.z - %.1f / 256.0, 1.0);\n" % TERRAIN_DEPTH_BIAS
+		+ "\t\tPOSITION.z = behind.z / behind.w * POSITION.w;\n"
+		+ "\t}\n")
+
+
 ## Shader variant with the same colour correction and blend arithmetic as models.
 static func shader(textured: bool, blend: ModelShaders.Blend, linear_filter: bool, far_layer: bool) -> Shader:
 	var key: String = "%s/%d/%s/%s" % [textured, blend, linear_filter, far_layer]
 	if not _shaders.has(key):
 		var code: String = ModelShaders.shader_code(textured, blend, linear_filter, false)
 		code = code.replace(ModelShaders.VERTEX_CODE, "")
-		code = code.replace("void fragment() {", _VERTEX + "\nvoid fragment() {")
+		var vertex: String = _VERTEX if far_layer else _VERTEX.replace(_PROJECT_LINE, _PROJECT_LINE + terrain_depth_code())
+		code = code.replace("void fragment() {", vertex + "\nvoid fragment() {")
 		code = code.replace("void fragment() {", "void fragment() {\n\tif (reference_visible < 0.5) { discard; }")
 		code = code.replace("UV * uv_scale + uv_offset", "affine_uv / affine_weight")
 		if linear_filter:

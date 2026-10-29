@@ -70,8 +70,13 @@ not establish whole-map gameplay support.
 masks (`-1` means absent). Mixing live masks and recorded input is rejected.
 The stationary C override boundary consumes the byte after input selection and
 before camera, tongue and jump handling; jumping and camera waits do not consume
-or buffer demo input. Raw camera bits are `0x40` clockwise and `0x20`
-anticlockwise, while existing live logical masks retain their public values.
+or buffer demo input. Live jumping control starts an idle tongue with the slurp
+sound, then buffers one pressed direction or super-hop from the same tick.
+Known limitation: `FrogModeControlJumping` rotates a direction buffered while
+riding an entity by `fr_entity_angle`; the port buffers it camera-relative.
+Freeform slip control starts the tongue silently only when no direction is
+held. Raw camera bits are `0x40` clockwise and `0x20` anticlockwise, while
+existing live logical masks retain their public values.
 Camera handling precedes tongue and super-hop. Unsupported tongue and unsafe
 reserved directional actions fail atomically. The recorded byte is preserved
 in `TickResult.consumed_demo_byte`, or `-1` when the tick reads no input.

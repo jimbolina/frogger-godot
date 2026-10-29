@@ -26,6 +26,10 @@ extends RefCounted
 ## Lighting is supplied as vertex colours by the optional map-light model
 ## converter. Standalone model viewers use the polygon's own colour.
 ##
+## [code]depth_bias[/code] moves a material's depth toward the camera by that
+## many game units without moving it on screen, standing in for a fixed
+## ordering-table offset; it is 0 unless a view sets it.
+##
 ## Shaders are written out from one template, one per combination of
 ## choices, and kept.
 
@@ -45,6 +49,7 @@ enum Blend {
 
 ## Model-only vertex stage, replaced wholesale by the map shader.
 const VERTEX_CODE: String = """uniform vec2 projection_scale = vec2(1.0);
+uniform float depth_bias = 0.0;
 uniform bool source_lighting = false;
 uniform vec3 source_ambient = vec3(4096.0);
 uniform vec3 source_direction0 = vec3(0.0);
@@ -70,6 +75,13 @@ void vertex() {
 		NORMAL = length(normal) > 0.000001 ? normalize(normal) : vec3(0.0);
 	}
 	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+	if (depth_bias != 0.0) {
+		vec4 eye = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
+		vec4 nearer = PROJECTION_MATRIX * vec4(eye.xy, eye.z + depth_bias / 256.0, 1.0);
+		if (nearer.w > 0.0) {
+			POSITION.z = nearer.z / nearer.w * POSITION.w;
+		}
+	}
 	POSITION.xy *= projection_scale;
 	if (source_lighting) {
 		vec3 normal = mat3(MODEL_MATRIX) * NORMAL;

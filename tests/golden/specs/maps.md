@@ -169,3 +169,34 @@ the entire map fits both the group pool and polygon budget. This proves the
 conservative lifecycle selector accepts every selected subset, without sampling
 camera routes. Deliberately change ORG1's total to exercise the assertion, then
 restore the generated row before acceptance.
+
+## Depth ordering biases
+
+`synthetic/depth_biases.json` is written by
+`python3 tools/make_golden_depth_biases.py --write`; without `--write` the
+generator verifies the file. It transcribes the frozen C constants and shares
+no GDScript. `test_depth_biases.gd` runs in both modes and compares
+`MapShaders.TERRAIN_DEPTH_BIAS`, `GameplayWorldView.FROG_DEPTH_BIAS` (applied
+to frog part, texture-track and instance materials) and the `depth_bias` that
+`CaveSpriteView.configure` gives pickup frame, glow and firefly materials.
+`tests/unit/convert/test_depth_shaders.gd` checks that only ordinary terrain
+shader sources contain the push.
+
+| Field | Source | Arithmetic |
+|---|---|---|
+| `viewport` | `gamesys.H:63-64` (`MR_VP_VIEWDIST_8192`, `MR_VP_SIZE_4096`), `gamesys.C:953,956`, `API.SRC/MR_VIEW.H:43,57`, `API.SRC/MR_VIEW.C:445,2239` | slots `1<<12`, view distance `1<<(15-2)`, `otz_shift = 15-2-12 = 1` |
+| `terrain_back` | `mapdisp.c:1569-1585` (`MapRenderQuads`), `1772-1786` (`MapRenderTris`), `mapdisp.H:40` | `gte_avsz4`/`gte_avsz3` average SZ, `>> otz_shift`, `+ MAP_POLY_OT_OFFSET` (64): `64<<1` |
+| `frog_forward` | `FROG.C:334-335`, `FROG.H:139`, `API.SRC/MR_ANIM.C:660,677` | origin SZ `+ FROG_GLOBAL_OT_OFFSET` (−0x30) before the shift: 48 |
+| `pickup_forward` | `PARTICLE.C:513-600` (`Pickup_disp`), `PARTICLE.H:26` | origin SZ `>> otz_shift`, `+ PICKUP_OT_OFFSET` (−0x10) for glow and image: `16<<1` |
+| `firefly_forward` | `API.SRC/MR_SPRT.C:137,876-892`, `ENTITY.C:3164-3175` | average of four corner SZ, `>> otz_shift`, `+ sc_ot_offset` (0) |
+| `terrain_hides` | derived | nearer-than distance at which terrain covers each drawing: frog 176, pickup 160, firefly and per-polygon models 128 |
+
+Integers are game units of view depth; positive biases move toward the camera.
+`gte_avsz4` divides the four-depth sum by four and `gte_avsz3` uses
+`(1365*sum)>>12` (ZSF4/ZSF3 are set once in `MRInitialise`; `MR_MISC.C` is
+absent from the vendored tree, and froggy's GTE stub records the values). Far-layer terrain (`MAP_POLY_MAX_OT`, environment map) is
+placed at fixed slots before this block and keeps its own layer depth. The
+port's per-vertex depth approximates whole-object (frog) and per-quad sorting.
+For the deliberate-break check, change `pickup_forward` to 33 and confirm the
+generator refuses the file and both pickup assertions fail, then restore with
+`--write`.

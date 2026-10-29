@@ -89,3 +89,61 @@ func test_butterfly_callback_uses_supplied_reward_and_authored_identity() -> voi
 	definition.butterfly_reward = null
 	assert_string_contains(FormCallback.apply(FormCallback.Kind.BUTTERFLY_SCORE, frog, state, 42, events), "decoded pickup reward")
 	assert_eq(state.flow.score, 375)
+
+func _jumping() -> Array:
+	var frog := Frog.new()
+	frog.grid = _grid()
+	var state := GameplayState.new()
+	state.frog.mode = FrogMode.JUMPING
+	state.frog.remaining_ticks = 4
+	state.frog.no_input_timer = 9
+	return [frog, state]
+
+func test_mid_jump_tongue_slurps_and_still_buffers_same_tick_direction() -> void:
+	var pair: Array = _jumping()
+	var frog: Frog = pair[0]
+	var state: GameplayState = pair[1]
+	var events: Array[TickEvent] = []
+	var command := TickCommand.new()
+	command.pressed_mask = TickCommand.TONGUE | TickCommand.WEST
+	assert_eq(frog.control(state, command, events), "")
+	assert_eq(state.tongue.mode, TongueState.Mode.OUT)
+	assert_eq(state.tongue.target_index, -1)
+	assert_eq(state.frog.no_input_timer, 0)
+	assert_eq(events.size(), 1)
+	assert_eq(events[0].kind, TickEvent.Kind.SOUND)
+	assert_eq(events[0].sound_id, 20)
+	assert_eq(state.requests.sound_requests, 1)
+	assert_eq(state.frog.mode, FrogMode.JUMPING)
+	assert_eq(state.frog.buffered_keys, 1)
+	assert_eq(state.frog.buffered_direction, 3)
+	command.pressed_mask = TickCommand.TONGUE
+	assert_eq(frog.control(state, command, events), "")
+	assert_eq(events.size(), 1, "An active effect is not restarted mid-jump")
+	assert_eq(state.requests.sound_requests, 1)
+
+func test_mid_jump_tongue_and_super_hop_buffer_together() -> void:
+	var pair: Array = _jumping()
+	var frog: Frog = pair[0]
+	var state: GameplayState = pair[1]
+	var events: Array[TickEvent] = []
+	var command := TickCommand.new()
+	command.pressed_mask = TickCommand.TONGUE | TickCommand.SUPER_HOP
+	assert_eq(frog.control(state, command, events), "")
+	assert_eq(state.tongue.mode, TongueState.Mode.OUT)
+	assert_eq(state.frog.buffered_keys, 1)
+	assert_eq(state.frog.buffered_direction, 8)
+
+func test_recorded_demo_byte_mid_jump_starts_nothing() -> void:
+	var pair: Array = _jumping()
+	var frog: Frog = pair[0]
+	var state: GameplayState = pair[1]
+	var events: Array[TickEvent] = []
+	var command := TickCommand.new()
+	command.recorded_input_byte = 16
+	command.pressed_mask = TickCommand.TONGUE | TickCommand.NORTH
+	assert_eq(frog.control(state, command, events), "")
+	assert_eq(state.tongue.mode, TongueState.Mode.IDLE)
+	assert_eq(state.frog.no_input_timer, 9)
+	assert_true(events.is_empty())
+	assert_eq(state.frog.buffered_keys, 0)

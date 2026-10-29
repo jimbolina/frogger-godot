@@ -210,6 +210,91 @@ func test_freeform_held_steering_source_control_and_move() -> void:
 			run._frog.move(state, events)
 			_assert_facts(file, scenario, tick * 2 + 1, state)
 
+func _freeform_run() -> GameplayRun:
+	var level: LevelDefinition = _level()
+	level.grid.squares[5].flags = 129
+	var run: GameplayRun = GameplayRun.create(level)
+	return run
+
+func _freeform_state(run: GameplayRun) -> GameplayState:
+	var state: GameplayState = run.snapshot()
+	state.frog.old_position_16.z -= 8 << 16
+	var events: Array[TickEvent] = []
+	run._frog.react(state, 129, events)
+	state.frog.no_input_timer = 9
+	return state
+
+func _slurps(events: Array[TickEvent]) -> int:
+	var count: int = 0
+	for event: TickEvent in events:
+		if event.kind == TickEvent.Kind.SOUND and event.sound_id == 20:
+			count += 1
+	return count
+
+func test_freeform_tongue_starts_silently_without_held_direction() -> void:
+	var run: GameplayRun = _freeform_run()
+	var state: GameplayState = _freeform_state(run)
+	assert_eq(state.frog.mode, FrogMode.SLIPPING_LAND_NONGRID)
+	var still: GameplayState = state.copy()
+	var events: Array[TickEvent] = []
+	var command := TickCommand.new()
+	command.pressed_mask = TickCommand.TONGUE
+	assert_eq(run._frog.control(state, command, events), "")
+	assert_eq(run._frog.control(still, TickCommand.new(), events), "")
+	assert_eq(state.tongue.mode, TongueState.Mode.OUT)
+	assert_eq(state.tongue.target_index, -1)
+	assert_eq(state.frog.no_input_timer, 0)
+	assert_eq(_slurps(events), 0, "froguser.C freeform control plays no slurp")
+	assert_eq(state.requests.sound_requests, still.requests.sound_requests)
+	assert_eq(_facts(state), _facts(still), "The tongue does not change slip motion")
+
+func test_freeform_held_direction_steers_and_suppresses_tongue() -> void:
+	for direction: int in 4:
+		var run: GameplayRun = _freeform_run()
+		var state: GameplayState = _freeform_state(run)
+		var steered: GameplayState = state.copy()
+		var events: Array[TickEvent] = []
+		var command := TickCommand.new()
+		command.held_mask = 1 << direction
+		command.pressed_mask = TickCommand.TONGUE
+		var steering := TickCommand.new()
+		steering.held_mask = 1 << direction
+		assert_eq(run._frog.control(state, command, events), "")
+		assert_eq(run._frog.control(steered, steering, events), "")
+		assert_eq(state.tongue.mode, TongueState.Mode.IDLE)
+		assert_eq(state.frog.no_input_timer, 9)
+		assert_eq(_facts(state), _facts(steered), "direction %d" % direction)
+
+func test_freeform_active_tongue_is_not_restarted() -> void:
+	var run: GameplayRun = _freeform_run()
+	var state: GameplayState = _freeform_state(run)
+	state.tongue.start(-1)
+	for unused: int in 3:
+		state.tongue.advance()
+	var events: Array[TickEvent] = []
+	var command := TickCommand.new()
+	command.pressed_mask = TickCommand.TONGUE
+	assert_eq(run._frog.control(state, command, events), "")
+	assert_eq(state.tongue.mode, TongueState.Mode.OUT)
+	assert_eq(state.tongue.section, 3)
+	assert_eq(state.frog.no_input_timer, 9, "An active effect skips the source timer reset")
+
+func test_freeform_ignores_super_hop_and_pressed_directions() -> void:
+	for pressed: int in [TickCommand.SUPER_HOP, TickCommand.NORTH, TickCommand.EAST, TickCommand.SOUTH, TickCommand.WEST]:
+		var run: GameplayRun = _freeform_run()
+		var state: GameplayState = _freeform_state(run)
+		var still: GameplayState = state.copy()
+		var events: Array[TickEvent] = []
+		var command := TickCommand.new()
+		command.pressed_mask = pressed
+		assert_eq(run._frog.control(state, command, events), "")
+		assert_eq(run._frog.control(still, TickCommand.new(), events), "")
+		assert_eq(state.frog.mode, FrogMode.SLIPPING_LAND_NONGRID)
+		assert_eq(state.frog.buffered_keys, 0)
+		assert_eq(state.tongue.mode, TongueState.Mode.IDLE)
+		assert_true(events.is_empty())
+		assert_eq(_facts(state), _facts(still), "pressed %d" % pressed)
+
 func test_combined_flag_source_precedence() -> void:
 	var file: FileAccess = FileAccess.open("res://tests/golden/synthetic/terrain_priority.csv", FileAccess.READ)
 	file.get_csv_line()

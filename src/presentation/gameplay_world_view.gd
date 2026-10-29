@@ -2,6 +2,11 @@ class_name GameplayWorldView
 extends Node3D
 ## Shared world drawing from committed gameplay snapshots, independent of inspection.
 
+## Game units the frog's depth moves toward the camera: its local ordering table
+## enters the global one at origin depth plus FROG_GLOBAL_OT_OFFSET (-0x30, FROG.H)
+## before the otz shift (FROG.C, MR_ANIM.C).
+const FROG_DEPTH_BIAS: float = 48.0
+
 var playing: bool = false
 var smoothing: bool = false:
 	set(value):
@@ -257,12 +262,15 @@ func _update_projection() -> void:
 		_swarm_view.set_projection_scale(scale)
 	if _cave_sprite_view != null:
 		_cave_sprite_view.set_projection_scale(scale)
+	if _tongue_view != null:
+		_tongue_view.set_projection_scale(scale)
 	if _map_instance != null:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:
 		_set_model_projection(frog_assets.mesh, scale)
 		if _frog_model != null:
 			_frog_model.refresh_materials()
+		_apply_frog_depth_bias()
 	for instance: AnimatedModelInstance in _entity_models:
 		if instance != null and instance.model_mesh != null:
 			_set_model_projection(instance.model_mesh, scale)
@@ -278,23 +286,39 @@ func _update_projection() -> void:
 		marker.set_shader_parameter("projection_scale", scale)
 
 func _set_model_projection(model_mesh: ModelMesh, scale: Vector2) -> void:
+	_set_model_parameter(model_mesh, "projection_scale", scale)
+
+func _set_model_parameter(model_mesh: ModelMesh, parameter: StringName, value: Variant) -> void:
 	for mesh: ArrayMesh in model_mesh.part_meshes:
 		if mesh == null:
 			continue
 		for surface: int in mesh.get_surface_count():
 			var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
 			if material != null:
-				material.set_shader_parameter("projection_scale", scale)
+				material.set_shader_parameter(parameter, value)
 	for tracks: Array in model_mesh.texture_tracks:
 		for track: ModelMesh.TextureTrack in tracks:
 			if track.original != null:
-				track.original.set_shader_parameter("projection_scale", scale)
+				track.original.set_shader_parameter(parameter, value)
 			for material: ShaderMaterial in track.frames:
-				material.set_shader_parameter("projection_scale", scale)
+				material.set_shader_parameter(parameter, value)
+
+func _apply_frog_depth_bias() -> void:
+	if frog_assets == null or frog_assets.mesh == null:
+		return
+	_set_model_parameter(frog_assets.mesh, "depth_bias", FROG_DEPTH_BIAS)
+	if _frog_model == null:
+		return
+	for node: MeshInstance3D in _frog_model.part_nodes:
+		for surface: int in node.get_surface_override_material_count():
+			var material: ShaderMaterial = node.get_surface_override_material(surface) as ShaderMaterial
+			if material != null:
+				material.set_shader_parameter("depth_bias", FROG_DEPTH_BIAS)
 
 ## Attaches the shared high-detail frog rendering assets.
 func build_frog(assets: TerrainFrogAssets) -> void:
 	frog_assets = assets
+	_apply_frog_depth_bias()
 	_frog_model = AnimatedModelInstance.new()
 	add_child(_frog_model)
 	_frog_model.setup(frog_assets.mesh, frog_assets.player)
@@ -305,6 +329,7 @@ func build_frog(assets: TerrainFrogAssets) -> void:
 				var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
 				if material != null:
 					material.set_shader_parameter("projection_scale", GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	_apply_frog_depth_bias()
 	for index: int in _frog_model.part_nodes.size():
 		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
 	_frog.visible = false

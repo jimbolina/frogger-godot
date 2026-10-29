@@ -6,6 +6,13 @@ var _ribbon := ImmediateMesh.new()
 var _material: ShaderMaterial
 var _tick: int = -1
 var _state: TongueState
+var _projection_scale := Vector2.ONE
+
+## Applies the same source projection correction as terrain and models, now and on later material creation.
+func set_projection_scale(scale: Vector2) -> void:
+	_projection_scale = scale
+	if _material != null:
+		_material.set_shader_parameter("projection_scale", scale)
 
 ## Rebuilds the small ribbon only when the committed effect sample changes.
 func draw_state(state: GameplayState) -> void:
@@ -19,6 +26,7 @@ func draw_state(state: GameplayState) -> void:
 		return
 	if _material == null:
 		_material = ModelShaders.material(null, ModelShaders.Blend.ADD, false, true)
+		_material.set_shader_parameter("projection_scale", _projection_scale)
 	mesh = _ribbon
 	var points: Array[Vector3] = []
 	for section: int in 9:

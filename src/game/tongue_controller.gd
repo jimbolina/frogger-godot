@@ -3,7 +3,8 @@ extends RefCounted
 ## Transactional tongue input and effect completion, independent of presentation.
 
 ## Acquires a target at the source control boundary before frog movement.
-static func start(frog: Frog, state: GameplayState, events: Array[TickEvent]) -> String:
+## Stationary and jumping control pass slurp to play sound 20; freeform slip control starts silently.
+static func start(frog: Frog, state: GameplayState, events: Array[TickEvent], slurp: bool = true) -> String:
 	if state.tongue.mode != TongueState.Mode.IDLE:
 		return ""
 	var target: TongueTarget = TongueTarget.find(frog.grid, frog.entity_collision, state)
@@ -11,6 +12,8 @@ static func start(frog: Frog, state: GameplayState, events: Array[TickEvent]) ->
 		return target.error
 	state.frog.no_input_timer = 0
 	state.tongue.start(target.entity_index)
+	if not slurp:
+		return ""
 	events.append(TickEvent.sound(20))
 	state.requests.sound_requests += 1
 	return GameplaySound.play(state, frog.random, 20)
