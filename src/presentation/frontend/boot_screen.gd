@@ -7,7 +7,8 @@ extends Control
 ## environment variable, or the folder remembered from a previous run. A
 ## folder found on the command line or in the environment is remembered.
 ##
-## A menu at the top opens the texture, model and map inspection tools.
+## A menu at the top opens the texture, model and map inspection tools and the
+## sandbox; [code]--sandbox[/code] or [code]--level=SANDBOX[/code] opens the sandbox directly.
 
 ## The texture viewer's scene.
 const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
@@ -15,6 +16,11 @@ const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
 const MODEL_VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
 ## The map inspection tool.
 const MAP_VIEWER_SCENE: String = "res://scenes/tools/map_viewer.tscn"
+## The sandbox play-check scene.
+const SANDBOX_SCENE: String = "res://scenes/game/sandbox.tscn"
+
+## Whether the command-line sandbox request was already honoured, so returning to this menu stays here.
+static var sandbox_requested: bool = false
 
 var _label: Label
 var _level_picker: OptionButton
@@ -42,6 +48,10 @@ func _ready() -> void:
 	play_button.text = "Play"
 	play_button.pressed.connect(open_game)
 	menu.add_child(play_button)
+	var sandbox_button := Button.new()
+	sandbox_button.text = "Sandbox"
+	sandbox_button.pressed.connect(open_sandbox)
+	menu.add_child(sandbox_button)
 	var viewer_button := Button.new()
 	viewer_button.text = "Texture viewer"
 	viewer_button.pressed.connect(open_texture_viewer)
@@ -62,12 +72,25 @@ func _ready() -> void:
 	_label.text = report
 	print(report)
 	viewer_button.grab_focus()
+	if wants_sandbox(OS.get_cmdline_user_args()) and not sandbox_requested:
+		sandbox_requested = true
+		open_sandbox.call_deferred()
 
 
 ## Opens a fresh game in the selected supported level.
 func open_game() -> void:
 	GameplayScreen.selected_level = _level_picker.get_item_text(_level_picker.selected)
 	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
+
+
+## Opens the sandbox arena; it locates player data the same way as the game.
+func open_sandbox() -> void:
+	get_tree().change_scene_to_file(SANDBOX_SCENE)
+
+
+## Whether the command line asks for the sandbox with [code]--sandbox[/code] or [code]--level=SANDBOX[/code].
+static func wants_sandbox(arguments: PackedStringArray) -> bool:
+	return ViewerArguments.has_flag(arguments, "--sandbox") or ViewerArguments.value(arguments, "--level=").to_upper() == SandboxScreen.LEVEL_CODE
 
 
 ## Switches to the texture viewer.

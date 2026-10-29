@@ -263,11 +263,8 @@ func draw_state(fraction: float) -> void:
 	if overlay_key == _overlay_key:
 		return
 	_overlay_key = overlay_key
-	var camera_facts: String = "none" if _current.camera == null else "%d source %s" % [_current.camera.mode, _current.camera.source_world]
 	var presentation: String = "synthetic marker" if _frog_model == null else "high-detail frog"
-	_label.text = "TERRAIN INSPECTION %s | %s\ntick %d | mode %d | cell %s | square %d\n" % [presentation, scenario.identifier, _current.tick_index, _current.frog.mode, _current.frog.cell, _current.frog.square_index]
-	_label.text += "position16 %s | velocity16 %s\ncount %d | flags 0x%x | buffered %d / %d\n" % [_current.frog.position_16, _current.frog.velocity_16, _current.frog.remaining_ticks, _current.frog.flags, _current.frog.buffered_keys, _current.frog.buffered_input_count]
-	_label.text += "destination %s | layer flags 0x%x | source %s\ncamera %s | death %d/%d | completed %s\noutcomes %s\n" % [_current.frog.destination_cell, _current.frog.square_flags, _current.diagnostics.source_id, camera_facts, _current.frog.death_equate, _current.frog.death_count, str(_current.completed), "; ".join(_outcomes)]
+	_label.text = "TERRAIN INSPECTION %s | %s\n" % [presentation, scenario.identifier] + GameplayStateFacts.frog_lines(_current, _outcomes)
 	if scenario.options.entity_reactions:
 		if scenario.options.entity_lifecycle and _current.entities != null:
 			var selected: PackedInt32Array = _current.entities.selected_groups

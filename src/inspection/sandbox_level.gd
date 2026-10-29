@@ -10,7 +10,9 @@ const SPAWN_CELL: Vector2i = Vector2i(16, 2)
 const SPAWN_DIRECTION: int = 0
 const LEVEL_TIME: int = 2250
 const CAMERA_ZONE_INDEX: int = 0
-const CAMERA_SOURCE_OFFSET: Vector3i = Vector3i(0, -900, -600)
+## Default follow-camera offset, shared by the SUB1, FOR1 and CAV1 maps, so the frog sees several rows ahead.
+const DEFAULT_CAMERA_OFFSET: Vector3i = Vector3i(0, -1400, -400)
+const CAMERA_SOURCE_OFFSET: Vector3i = Vector3i(0, -2200, -800)
 const STEP_HEIGHT: int = 128
 const PLAIN: int = GridSquareFlags.USABLE | GridSquareFlags.SAFE
 
@@ -44,6 +46,7 @@ static func build() -> SandboxLevel:
 	definition.collision_enabled = true
 	definition.rewards = GameplayRewards.component_definitions()
 	definition.camera = GameplayCameraDefinition.new()
+	definition.camera.source_offset = DEFAULT_CAMERA_OFFSET
 	definition.camera_zones.append(camera_zone(sandbox.zone_named(&"camera").cells))
 	for action: int in FrogAnimationCatalog.ACTION_NAMES.size():
 		definition.frog_action_lengths.append(3 + action % 3)
