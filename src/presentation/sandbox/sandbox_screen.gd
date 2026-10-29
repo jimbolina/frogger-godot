@@ -29,6 +29,8 @@ var data_status: String = ""
 ## Result of the latest palette or hotkey action.
 var notice: String = ""
 var debug_visible: bool = false
+## Outcome of the latest preset load or add, or null before one.
+var last_preset: SandboxPresets.Outcome = null
 var _overlay: Label = null
 var _outcomes := PackedStringArray()
 
@@ -97,6 +99,23 @@ func place(entity_name: String, cell: Vector2i, preset: SandboxSpawner.Preset = 
 		return issue
 	var form: String = result.placement.form_name
 	return _report("", "Placed %s%s at %s" % [entity_name, "" if form.is_empty() else " (%s)" % form, cell])
+
+## Applies the named preset; replacing clears the layout and moves the frog to the preset start, adding keeps both. Returns the error or "".
+func load_preset(preset_name: String, replace: bool = true) -> String:
+	if spawner == null:
+		return _report("Open the sandbox first")
+	var layout: SandboxPresets.Layout = SandboxPresets.named(preset_name)
+	if layout == null:
+		return _report("No preset named %s" % preset_name)
+	_finish_pending()
+	last_preset = SandboxPresets.apply(spawner, layout, replace)
+	var issue: String = _respawn(SandboxSpawner.run_start(layout.start_cell, SandboxLevel.SPAWN_DIRECTION)) if replace else _respawn_in_place()
+	if not issue.is_empty():
+		return issue
+	notice = ("Loaded " if replace else "Added ") + last_preset.summary()
+	if palette != null:
+		palette.set_status(notice, not last_preset.skipped.is_empty())
+	return ""
 
 ## Removes the most recent placement; returns the error or "".
 func remove_last() -> String:
@@ -232,6 +251,9 @@ func _sandbox_key(code: Key) -> bool:
 		KEY_2: palette.select_preset(SandboxSpawner.Preset.LINE)
 		KEY_3: palette.select_preset(SandboxSpawner.Preset.LOOP)
 		KEY_4: palette.select_preset(SandboxSpawner.Preset.SPEED)
+		KEY_O: palette.cycle_layout(1)
+		KEY_L: load_preset(palette.selected_layout(), true)
+		KEY_K: load_preset(palette.selected_layout(), false)
 		KEY_Z: teleport_to_zone(palette.selected_zone())
 		KEY_T: teleport_to_cell(palette.selected_cell())
 		KEY_H: reset_frog()

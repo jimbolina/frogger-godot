@@ -206,6 +206,51 @@ func test_sandbox_hotkeys_avoid_gameplay_keys_and_drive_the_same_actions() -> vo
 	_send_key(KEY_R)
 	assert_eq(_screen.run.snapshot().flow.phase, LevelFlowState.Phase.PLAY)
 
+func test_presets_load_replace_add_append_and_report_skips() -> void:
+	var palette: SandboxPalette = _screen.palette
+	assert_eq(palette.layouts.item_count, SandboxPresets.names().size())
+	assert_eq(palette.selected_layout(), SandboxPresets.names()[0])
+	assert_false(palette.layout_description.text.is_empty())
+	assert_eq(_screen.place("STATIC", Vector2i(28, 28)), "")
+	assert_eq(_screen.load_preset("river"), "")
+	assert_eq(_screen.spawner.placements.size(), _screen.last_preset.placed.size())
+	assert_eq(_screen.run.snapshot().frog.cell, SandboxPresets.named("river").start_cell)
+	assert_false(_screen.last_preset.skipped.is_empty())
+	assert_string_contains(_screen.notice, "Loaded river")
+	assert_string_contains(_screen.notice, "skipped")
+	assert_string_contains(palette.status.text, "SUB_TURTLE")
+	assert_eq(_screen.placeholder_count(), _screen.spawner.placements.size())
+	var river: int = _screen.spawner.placements.size()
+	assert_eq(_screen.teleport_to_cell(Vector2i(20, 28)), "")
+	assert_eq(_screen.load_preset("ice slide", false), "")
+	assert_eq(_screen.spawner.placements.size(), river + _screen.last_preset.placed.size())
+	assert_eq(_screen.run.snapshot().frog.cell, Vector2i(20, 28))
+	assert_string_contains(_screen.notice, "Added ice slide")
+	assert_ne(_screen.load_preset("missing"), "")
+	assert_eq(_screen.spawner.placements.size(), river + _screen.last_preset.placed.size())
+	for layout_name: String in SandboxPresets.names():
+		assert_eq(_screen.load_preset(layout_name), "", layout_name)
+		for tick: int in 5:
+			assert_eq(_step().error, "", "%s %d" % [layout_name, tick])
+	assert_true(palette.select_layout("enemy lane"))
+	assert_eq(palette.layout_description.text, SandboxPresets.named("enemy lane").description)
+	assert_false(palette.select_layout("missing"))
+
+func test_preset_hotkeys_cycle_load_and_add() -> void:
+	_send_key(KEY_O)
+	assert_eq(_screen.palette.selected_layout(), SandboxPresets.names()[1])
+	_send_key(KEY_L)
+	assert_string_contains(_screen.notice, "Loaded %s" % SandboxPresets.names()[1])
+	var loaded: int = _screen.spawner.placements.size()
+	assert_gt(loaded, 0)
+	_send_key(KEY_K)
+	assert_eq(_screen.spawner.placements.size(), loaded * 2)
+	_send_key(KEY_L)
+	assert_eq(_screen.spawner.placements.size(), loaded)
+	for step: int in SandboxPresets.names().size() - 1:
+		_send_key(KEY_O)
+	assert_eq(_screen.palette.selected_layout(), SandboxPresets.names()[0])
+
 func _send_key(code: Key) -> void:
 	var event := InputEventKey.new()
 	event.physical_keycode = code

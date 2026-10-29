@@ -1,17 +1,19 @@
 class_name SandboxPalette
 extends PanelContainer
-## Sandbox side panel: entity, form, path and speed choices, placement, teleport, reset and the zone legend.
+## Sandbox side panel: entity, form, path and speed choices, named presets, placement, teleport, reset and the zone legend.
 
 const WIDTH: float = 200.0
 const FONT_SIZE: int = 11
 const PRESET_NAMES: PackedStringArray = ["Static", "Line", "Loop", "Speed"]
 const DEFAULT_FORM: String = "Default form"
-const KEY_HELP: String = "Arrows hop  Shift super hop  Ctrl tongue\nQ/E camera  Space pause  Esc menu\nTab palette  P place here  F place ahead\nBackspace delete last  X/Del delete here\nC clear all  [ ] entity  1-4 path\nZ go to zone  T go to cell  H reset frog\nR restart sandbox  F3 debug overlay"
+const KEY_HELP: String = "Arrows hop  Shift super hop  Ctrl tongue\nQ/E camera  Space pause  Esc menu\nTab palette  P place here  F place ahead\nBackspace delete last  X/Del delete here\nC clear all  [ ] entity  1-4 path\nO next preset  L load  K add\nZ go to zone  T go to cell  H reset frog\nR restart sandbox  F3 debug overlay"
 
 var screen: SandboxScreen = null
 var kinds: OptionButton = null
 var forms: OptionButton = null
 var presets: OptionButton = null
+var layouts: OptionButton = null
+var layout_description: Label = null
 var speed: SpinBox = null
 var zones: OptionButton = null
 var cell_x: SpinBox = null
@@ -37,6 +39,7 @@ func build(host_screen: SandboxScreen) -> void:
 	tabs.add_theme_font_size_override("font_size", 9)
 	layout.add_child(tabs)
 	tabs.add_child(_spawn_tab())
+	tabs.add_child(_presets_tab())
 	tabs.add_child(_move_tab())
 	tabs.add_child(_zones_tab())
 	var keys := Label.new()
@@ -140,6 +143,28 @@ func selected_preset() -> SandboxSpawner.Preset:
 func select_preset(preset: SandboxSpawner.Preset) -> void:
 	presets.select(preset)
 
+## Selected named preset, or "" when the list is empty.
+func selected_layout() -> String:
+	if layouts == null or layouts.selected < 0:
+		return ""
+	return layouts.get_item_text(layouts.selected)
+
+## Selects the named preset `layout_name`; returns false when there is none.
+func select_layout(layout_name: String) -> bool:
+	for index: int in layouts.item_count:
+		if layouts.get_item_text(index) == layout_name:
+			layouts.select(index)
+			_show_layout_description()
+			return true
+	return false
+
+## Moves the preset selection `step` places, wrapping around.
+func cycle_layout(step: int) -> void:
+	if layouts.item_count == 0:
+		return
+	layouts.select(posmod(maxi(layouts.selected, 0) + step, layouts.item_count))
+	_show_layout_description()
+
 ## Selected path speed; -1 keeps the authored or default speed.
 func selected_speed() -> int:
 	return int(speed.value)
@@ -200,6 +225,30 @@ func _spawn_tab() -> VBoxContainer:
 	_button(delete_row, "Delete here", "X or Delete", func() -> void: screen.remove_at_frog())
 	_button(tab, "Clear all", "C", func() -> void: screen.clear_entities())
 	return tab
+
+func _presets_tab() -> VBoxContainer:
+	var tab := VBoxContainer.new()
+	tab.name = "Presets"
+	layouts = _option(tab, "Named layout; entries without player data are skipped and reported")
+	for layout_name: String in SandboxPresets.names():
+		layouts.add_item(layout_name)
+	layouts.item_selected.connect(func(_index: int) -> void: _show_layout_description())
+	layout_description = Label.new()
+	layout_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	layout_description.custom_minimum_size = Vector2(WIDTH - 12, 0)
+	tab.add_child(layout_description)
+	var row := HBoxContainer.new()
+	tab.add_child(row)
+	_button(row, "Load", "L: replace the layout and move the frog to its start", func() -> void: screen.load_preset(selected_layout(), true))
+	_button(row, "Add", "K: append to the current layout", func() -> void: screen.load_preset(selected_layout(), false))
+	if layouts.item_count > 0:
+		layouts.select(0)
+	_show_layout_description()
+	return tab
+
+func _show_layout_description() -> void:
+	var layout: SandboxPresets.Layout = SandboxPresets.named(selected_layout())
+	layout_description.text = layout.description if layout != null else ""
 
 func _move_tab() -> VBoxContainer:
 	var tab := VBoxContainer.new()

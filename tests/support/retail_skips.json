@@ -92,5 +92,7 @@
   "res://tests/golden/test_retail_mapless_entities.gd::test_data_free_platform_beside_retail_entity_keeps_a_placeholder": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_mapless_entities.gd::test_hive_and_cave_sprites_configure_without_a_map": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_sandbox_screen.gd::test_palette_offers_data_backed_kinds_and_form_variants": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_sandbox_screen.gd::test_placed_entities_draw_models_and_borrowed_data_stays_open": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_sandbox_screen.gd::test_placed_entities_draw_models_and_borrowed_data_stays_open": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_presets.gd::test_every_preset_applies_fully_and_runs_30_ticks": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_presets.gd::test_sandbox_screen_loads_and_adds_presets_with_models": "SKIP: FROGGER_DATA_DIR is not set"
 }
