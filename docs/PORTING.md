@@ -7,7 +7,7 @@ Remaining work expands theme coverage and completes the systems listed below.
 
 ## Status
 
-P8 is split into exit-sized pieces. P8c includes the minimum playable level loop; P10 adds the dedicated game scene, original-style HUD and broader level coverage before P9. Cross-cutting work has its own rows (X1–X3).
+P8 is split into exit-sized pieces. P8c includes the minimum playable level loop; P10 adds the dedicated game scene, original-style HUD and broader level coverage before P9. Cross-cutting work has its own rows (X1–X4).
 
 | # | Phase | Size | Checked against | Status |
 |---|---|---|---|---|
@@ -35,6 +35,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Original-hardware target remains unverified; further tuning deferred at the owner’s request |
 | X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md) | M | Independent colour samples after each part's animation transform | Any time after P8a |
 | X3 | Owner decisions | | | See below |
+| X4 | [Sandbox](reference/architecture.md#sandbox): flat zone arena with entity spawning, presets, teleport and real models without a map | M | Asset-free and retail unit tests; owner play check | Done; a play-check tool, not level acceptance |
 
 Network play is deferred. Multiplayer levels belong to P15.
 

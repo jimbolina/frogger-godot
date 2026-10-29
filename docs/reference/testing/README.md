@@ -209,6 +209,20 @@ respawn, game over and a fresh session through the R key. Use
 window and logical viewport sizes. These captures supplement the complete test
 wrappers and native reference comparisons.
 
+## Sandbox play checks
+
+The [sandbox](../../../README.md#sandbox) is an owner play-check tool for trying
+terrain and entity mechanics in isolation. It is not acceptance evidence: level
+acceptance remains the owner's play check of real levels in the dedicated game
+scene. Asset-free tests (`tests/unit/inspection/test_sandbox_*.gd`,
+`tests/unit/presentation/test_sandbox_screen.gd` and
+`test_gameplay_mapless_entities.gd`) cover the synthetic arena, data-free
+spawning, path presets, preset application with reported skips, placeholders,
+restart and hotkeys. Retail tests (`tests/golden/test_retail_sandbox_*.gd` and
+`test_retail_mapless_entities.gd`) cover data-backed templates and forms, real
+model nodes and every preset applying fully with player data. Neither drives a
+route or establishes level behaviour.
+
 ## Focused iteration and guardrails
 
 Append `-gselect=test_model_viewer` to either wrapper to select one script.
@@ -228,10 +242,17 @@ scanner and its limits. Its `ARCHITECTURE FAILED` diagnostics identify the
 file, line and dependency rule. New gameplay directories are checked when added;
 no empty gameplay scaffolding is needed now.
 
+Asset-free mode runs everything that needs no player files: unit tests under
+`tests/unit/` and the other `tests/golden/` scripts, which check committed
+synthetic facts.
+Retail mode also runs `tests/golden/test_retail*.gd`, which read the player's
+files. New retail tests live in `tests/golden/test_retail*.gd`.
+
 `tests/support/retail_skips.json` is the reviewed manifest of exact test
-identities and their sole allowed reason: `FROGGER_DATA_DIR` is unset. Add a
-retail test deliberately to this manifest and its inventory assertion; neither
-inheritance nor residence under `tests/golden/` grants skip permission.
+identities and their sole allowed reason: `FROGGER_DATA_DIR` is unset. Add every
+new retail test deliberately to this manifest and to its inventory assertion in
+`tests/unit/tools/test_result_policy.gd`; neither inheritance nor residence under
+`tests/golden/` grants skip permission.
 Pending tests and unexpected script skips fail, as do fixture/runner errors.
 
 The GUT hook saves `user://test_results.json` in the isolated profile and prints

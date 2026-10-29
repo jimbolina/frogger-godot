@@ -186,6 +186,44 @@ checksum of the executable, which FrogLord's version files list.
 Running the project opens the level picker and inspection tools, with a report
 of the files/build found or instructions for setting the data folder.
 
+### Sandbox
+
+The start screen's **Sandbox** button (or `godot --path . -- --sandbox`, optionally
+with `--data-dir=<game-folder>`; `--level=SANDBOX` also works) opens a flat 32×32
+arena of coloured terrain zones: plain floor, water, ice, freeform ice, bouncy,
+deadly, soft, checkpoint, cliff steps, a sloped cliff and a camera zone. It finds
+player data like the game. With data, the frog, HUD and entities use the real
+models, and the palette offers every entity kind a supported level places, with
+that level's forms, scripts and payloads. Without data, the frog is a marker,
+entities are orange footprint placeholders, and only `STATIC`, `DYNAMIC`,
+`FOR_SWAYING_BRANCH`, `MOVING` and `MOVING_TONGUEABLE` spawn, as one-cell
+platforms. The sandbox never ends: when a run completes or the last life is
+lost, it restarts with full lives.
+
+The side panel chooses the entity, form, path (static, line, loop, speed) and
+speed, loads named presets, teleports to a zone or cell, and shows the zone
+colours and keys. Gameplay keys are unchanged (arrows, Shift, Ctrl, Q/E, Space,
+Escape). Sandbox keys:
+
+| Key | Action |
+|---|---|
+| Tab | Show or hide the panel |
+| P / F | Place the selected entity on the frog's cell / the cell ahead |
+| Backspace | Delete the last placed entity |
+| X or Delete | Delete every entity on the frog's cell |
+| C | Clear every entity |
+| [ / ] | Previous / next entity kind |
+| 1–4 | Path: static, line, loop, speed |
+| O | Next preset |
+| L / K | Load the preset (replace the layout) / add it to the layout |
+| Z / T | Go to the selected zone / cell |
+| H | Reset the frog to the spawn |
+| R | Restart the sandbox, keeping the placed entities |
+| F3 | Debug overlay |
+
+The sandbox is a play-check tool, not acceptance evidence; its
+[limitations](docs/reference/architecture.md#sandbox) are listed with its design.
+
 ### Texture viewer
 
 The start screen's **Texture viewer** button (or
@@ -323,7 +361,7 @@ $env:GODOT="C:\path\to\Godot.exe"; tools\run_tests.ps1   # PowerShell
 ```
 
 Set `FROGGER_DATA_DIR` to also run the tests that need the retail files
-(`tests/golden/`); without it those are listed as `SKIPPED` by name. The
+(`tests/golden/test_retail*`); without it those are listed as `SKIPPED` by name. The
 report includes a summary such as `SUMMARY: PASS=70 FAIL=0 SKIP=3 EXIT=3`,
 followed by the wrapper's result-validation status.
 
@@ -353,7 +391,7 @@ The complete retail and asset-free runs remain required before each commit.
 | `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
 | `src/application/` | Source-to-game adapters and resolved behavior catalog. |
 | `src/inspection/` | Developer scenarios, validated options, guards and manifests. |
-| `src/presentation/` | Screens (`frontend/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
+| `src/presentation/` | Screens (`frontend/`), the sandbox scene (`sandbox/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |

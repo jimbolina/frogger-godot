@@ -273,6 +273,49 @@ Implementing another original behavior is a code change. A mod only repoints
 data to already supported behavior. Keep raw identifiers for diagnostics;
 never dispatch executable addresses directly.
 
+## Sandbox
+
+The [sandbox](../../README.md#sandbox) is an owner play-check scene layered on
+the normal run; it adds no gameplay rules.
+
+- `src/inspection/`: `SandboxLevel` builds the data-free arena `LevelDefinition`
+  (zones, camera zone, spawn, timer, rewards). `SandboxSpawner` places catalog
+  entities with static/line/loop/speed paths and rebuilds a validated
+  `EntityCollisionDefinition` and component `RunStart`. `SandboxEntityTemplates`
+  borrows resolved entities from `GameplaySetup` whole-map setups of the
+  supported levels, so scripts, forms, payloads and rewards come from the
+  supplied executable. `SandboxPresets` holds the named layouts.
+- `src/convert/`: `EntityModelOrigins` records each slot's source theme and
+  level; `MaplessEntityResources` builds entity meshes from those origins
+  without a decoded map.
+- `src/presentation/`: `sandbox/SandboxScreen` extends `GameplayScreen` and
+  reopens runs through `open_run`; `sandbox/SandboxPalette` is its panel.
+  `GameplayWorldView.build_mapless_entities` draws the models, and
+  `EntityPlaceholderView` draws footprints for slots without one.
+  `tools/GameplayStateFacts` supplies overlay lines shared with `TerrainViewer`.
+
+Gameplay and application never depend on these classes; inspection may use
+application setup, and presentation only translates input into spawner and
+preset calls. To cover a new mechanic, append a `Layout` with
+`Layout.add(entity, cell, path, speed, form)` entries in `SandboxPresets.all()`,
+using FrogLord names. Entries the current data cannot supply are skipped and
+reported; the retail preset test requires every entry to apply with player data.
+
+Limitations:
+
+- Every add, remove and clear reopens the run, so all entities restart from
+  their initial path and script state.
+- Zones are identified by colour and the panel legend; there are no in-world labels.
+- Map-less models are unlit: no map supplies lights.
+- With player data, five kinds stay unspawnable: `ORG_BABY_FROG` (needs a parent
+  log and visibility lifecycle), `ORG_LOG_SNAKE` (needs a parent log),
+  `GEN_TOP_LEFT` and `GEN_BOTTOM_RIGHT` (level fade bounds markers) and
+  `FOR_SWAYING_BRANCH` (no supported level places it).
+- The level timer keeps the source 2250 ticks; when a run ends, the screen
+  restarts the sandbox instead of extending time.
+- Speed and cell spin boxes change only through their arrow buttons; typing is
+  disabled so keys keep reaching the game.
+
 ## Automated checks
 
 Both test wrappers compile scripts, check architecture, then run tests and
