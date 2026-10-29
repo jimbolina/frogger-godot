@@ -26,7 +26,9 @@ Retail mode must have none. A supplied but invalid `FROGGER_DATA_DIR` fails;
 unset the variable explicitly for asset-free mode.
 
 On macOS, the Bash wrapper also finds `/Applications/Godot.app/Contents/MacOS/Godot`
-when `godot` is not on PATH. Python 3 is required (`PYTHON` can select its executable).
+when `godot` is not on PATH. After strict compilation it imports the checkout
+itself once, so its `.godot/` class-name cache stays current for direct
+launches; the stage warns but does not fail the run when that import fails. Python 3 is required (`PYTHON` can select its executable).
 The Bash wrapper and Python inspection launchers use `tools/godot_project.py`:
 each run gets an external project file and import cache, with links to the current
 checkout's sources. A generated override selects a unique user-data directory in

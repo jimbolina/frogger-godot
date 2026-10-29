@@ -35,9 +35,13 @@ To launch a level directly:
 godot --path . res://scenes/game/gameplay.tscn -- --data-dir=<game-folder> --level=SUB1
 ```
 
-A direct launch reads the project's class-name cache in `.godot/`; after new
-scripts arrive, refresh it once with `godot --headless --path . --import`
-(the test wrappers use their own isolated cache and do not refresh this one).
+A direct launch reads the project's class-name cache in `.godot/`, which goes
+stale when new scripts arrive and then fails with a script parse error. Prefer
+`tools/play.sh --level=SUB1` (or `tools/play.ps1`), which refreshes the cache
+before launching and takes `--data-dir=` from `FROGGER_DATA_DIR` when omitted;
+`--scene=` selects another scene. `tools/run_tests.sh` also refreshes the
+checkout cache after strict compilation, and on Windows the wrapper's import
+stage already targets the checkout.
 The default is high-detail ORG1. Add `--record-inputs` to record your play: when
 the level completes, the held keys of every tick are written as a replay fixture
 to `user://playthroughs/<level>_keyboard_playthrough.json` (the completion message

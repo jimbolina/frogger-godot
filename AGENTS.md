@@ -46,7 +46,7 @@ retail skips (exit 3). Strict script compilation is required.
 
 New golden families need deliberate-break checks and restoration. Inspect
 visual changes; save captures externally. Level acceptance is the owner's play
-check: give the launch command and what to look for; never search routes,
+check: give the `tools/play.sh` command and what to look for; never search routes,
 machine-read gameplay or request input recordings. Complete each phase with one
 descriptive commit and update affected user documentation, roadmap and technical
 contracts. Report tests in delivery messages and commit bodies; keep raw logs

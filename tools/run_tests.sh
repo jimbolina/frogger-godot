@@ -57,6 +57,13 @@ if [ "$check_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/check.log"
     exit 1
 fi
 
+"$GODOT" --headless --disable-crash-handler --path "$PWD" --log-file "$run_directory/refresh.log" --import >"$run_directory/refresh.console.log" 2>&1
+if [ $? -ne 0 ] || [ ! -s .godot/global_script_class_cache.cfg ]; then
+    echo "run_tests: checkout class-name cache refresh failed; direct launches may hit parse errors; see $run_directory/refresh.log" >&2
+else
+    echo "run_tests: checkout class-name cache refreshed for direct launches"
+fi
+
 run_stage architecture -s res://tools/check_architecture.gd
 architecture_rc=$?
 grep -E 'ARCHITECTURE|architecture_check:' "$run_directory/architecture.log" 2>/dev/null
