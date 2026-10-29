@@ -82,5 +82,10 @@
   "res://tests/golden/test_retail_gameplay_setup.gd::test_all_playable_levels_resolve_and_start_with_supplied_identity": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_cave.gd::test_light_payloads_and_pickup_counts_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_cave.gd::test_cave_levels_admit_with_their_frogger_light": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_cave.gd::test_firefly_form_bonus_callback_resolves_to_its_typed_reaction": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_cave.gd::test_firefly_form_bonus_callback_resolves_to_its_typed_reaction": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_templates_index_supported_levels_with_data_frog_and_rewards": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_every_spawnable_kind_runs_alone_on_the_arena": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_scripted_and_action_driven_kinds_keep_their_executable_data": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_checkpoints_fill_five_distinct_slots_then_refuse": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sandbox_spawner.gd::test_only_one_frogger_light_can_be_placed": "SKIP: FROGGER_DATA_DIR is not set"
 }
