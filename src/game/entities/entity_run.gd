@@ -484,12 +484,12 @@ func apply_target_effects(effects: Array[EntityTargetEffect]) -> String:
 				slot = candidate
 				break
 		if slot < 0:
-			if effect.kind == EntityTargetEffect.Kind.INITIALIZE:
+			if effect.kind in [EntityTargetEffect.Kind.INITIALIZE, EntityTargetEffect.Kind.PAUSE]:
 				continue
-			return "Colour switch target %d is not live" % effect.unique_id
+			return "Target %d of a switch or trigger is not live" % effect.unique_id
 		if not targets.has(slot):
 			targets[slot] = _state.entities[slot].copy()
-		var issue: String = EntityVolcanoTarget.apply(effect, targets[slot], _definitions[slot])
+		var issue: String = EntityMovementTarget.apply(effect, targets[slot], _definitions[slot])
 		if not issue.is_empty():
 			return issue
 	for slot: int in targets:
@@ -515,6 +515,20 @@ func contact_colour_switch(entity_index: int, frog: GameplayState) -> EntityCust
 	if result.error.is_empty():
 		_state.entities[slot] = result.entity.copy()
 	return result
+
+## Executes a trigger callback against a private trigger copy and its targets, committing only on success.
+func contact_trigger(entity_index: int) -> String:
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0 or _definitions[slot].behavior.kind != EntityBehavior.Kind.TRIGGER or not _state.entities[slot].live or _state.entities[slot].custom_state == null:
+		return "Trigger callback requires a live trigger entity"
+	var result := EntityCustomResult.new()
+	result.entity = _state.entities[slot].copy()
+	var issue: String = EntityTrigger.contact(_definitions[slot], result)
+	if issue.is_empty():
+		issue = apply_target_effects(result.target_effects)
+	if issue.is_empty():
+		_state.entities[slot] = result.entity
+	return issue
 
 ## Executes the Swamp crusher callback against a private crusher copy and commits it on success.
 func contact_swamp_crusher(entity_index: int, frog: Frog, state: GameplayState, events: Array[TickEvent]) -> String:

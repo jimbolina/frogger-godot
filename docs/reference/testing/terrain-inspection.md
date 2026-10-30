@@ -19,7 +19,7 @@ seed, controller mapping, modifiers, lives and explicit startup mode/timer.
 
 Player data optionally supplies the high-detail frog and real action lengths.
 `--level` resolves the selected map's GRID, spawn, camera and theme through
-existing `GameData` APIs. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 without an exploration preset use
+existing `GameData` APIs. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 without an exploration preset use
 whole-map dependency validation, authored zones, entity contacts, visibility
 lifecycle and level flow. The explicit JUN1 platform-reaction probe without a
 visibility lifecycle keeps its bounded inspection path, as the DES2 POP probe does. Other levels omit entities, forms, platforms, zones and authored

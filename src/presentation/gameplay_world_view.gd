@@ -96,6 +96,10 @@ func draw_state(fraction: float) -> void:
 				_map_instance.step()
 			else:
 				_map_instance.set_tick(_current.tick_index - 1)
+		if _current.sky_drift != null:
+			var drift_now := Vector3(_current.sky_drift.translation())
+			var drift_before: Vector3 = Vector3(_previous.sky_drift.translation()) if _previous.sky_drift != null else drift_now
+			_map_instance.set_sky_drift(drift_before.lerp(drift_now, weight))
 		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
 		_map_instance.set_cave_frog(_current.frog.world_position)
 		if _map_instance.source.scene.cave_enabled and _current.entity_environment != null:

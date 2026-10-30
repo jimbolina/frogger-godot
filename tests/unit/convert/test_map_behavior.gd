@@ -192,3 +192,16 @@ func test_sky_timer_rng_and_seek_are_instance_local() -> void:
 	other.reset()
 	assert_eq(other.position, Vector3i.ZERO)
 	assert_eq(other.random_state, 0)
+
+
+func test_sky_injected_random_source_replaces_the_local_stream() -> void:
+	var sky := MapSkyState.new()
+	var calls: Array[int] = []
+	sky.random_source = func() -> int:
+		calls.append(calls.size())
+		return 0x400 | 3
+	sky.reset()
+	sky.seek(127)
+	assert_eq(calls.size(), 2, "timer 128 draws X then Z")
+	assert_eq(sky.acceleration, EntityTransform._normalise(Vector3i(3, 0, 3)) * 8)
+	assert_eq(sky.random_state, 0, "the local stream is untouched")

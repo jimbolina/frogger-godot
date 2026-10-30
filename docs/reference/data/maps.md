@@ -106,7 +106,8 @@ Use C `mapdisp.c` and
 The water sorting block is commented out in C: preserve unique vertex
 encounter order (FT4 then GT4), rather than sorting their coordinates.
 Sky-land has a separate tile/remap format, C camera-relative placement,
-rotations, base colours and drift. It isn't an ordinary FROG map.
+rotations, base colours and drift. It isn't an ordinary FROG map. In
+gameplay the drift is state owned by the [simulation](../gameplay/simulation.md#sky-drift-and-the-global-frame-timer).
 Sky tile endpoints use processed texture dimensions: subtract HIT_X/HIT_Y
 from width/height as `MR_VRAM.C` does. A raw 256 endpoint would wrap to zero
 and collapse a full-page tile; ordinary map normalized UVs have their own

@@ -378,7 +378,7 @@ func move_jumping(state: GameplayState, events: Array[TickEvent], react_on_land:
 						if grid.squares[index].flags & GridSquareFlags.USABLE and GridQueries.square_height(grid.squares[index]) >= (state.frog.position_16.y >> 16):
 							state.frog.square_index = index
 							break
-			state.frog.flags &= ~(FrogFlags.SUPERJUMP | FrogFlags.JUMP_TO_LAND)
+			state.frog.flags &= ~FrogFlags.LANDED_ON_ENTITY_CLEAR_MASK
 			state.frog.flags |= FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION
 			state.frog.remaining_ticks = 0x7FFFFFF
 			state.frog.velocity_16.x = 0

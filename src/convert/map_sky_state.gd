@@ -1,52 +1,55 @@
 class_name MapSkyState
 extends RefCounted
-## UpdateSkyLand integer drift, independent of future gameplay RNG.
+## Render-timeline UpdateSkyLand drift for the map viewer, sharing SkyDriftState's integer math.
 ## MR_SYS.H maps rand to MRrand; this local stream defaults to seed zero.
-## Inject random_source to share a future gameplay stream with other consumers.
+## Inject random_source to draw from another stream instead of the local one.
 
 var tick: int = -1
 var seed: int = 0
 var random_source: Callable
-var position: Vector3i = Vector3i.ZERO
-var velocity: Vector3i = Vector3i.ZERO
-var acceleration: Vector3i = Vector3i.ZERO
-var random_state: int = 0
+var position: Vector3i:
+	get:
+		return _drift.position
+var velocity: Vector3i:
+	get:
+		return _drift.velocity
+var acceleration: Vector3i:
+	get:
+		return _drift.acceleration
+var random_state: int:
+	get:
+		return _random.state
+var _drift := SkyDriftState.new()
+var _random: SourceRandom = SourceRandom.create(0)
+var _injected := InjectedRandom.new()
+
+
+## Labelled draws served by the injected random_source instead of the local LCG.
+class InjectedRandom extends SourceRandom:
+	var source: Callable
+
+	## Records the consumer and returns the injected source's next value.
+	func next_value(consumer: String = "unlabelled") -> int:
+		draw_count += 1
+		consumers.append(consumer)
+		var result: int = source.call()
+		return result
 
 
 ## Restores load-time drift and this instance's configured RNG seed.
 func reset() -> void:
 	tick = -1
-	position = Vector3i.ZERO
-	velocity = Vector3i.ZERO
-	acceleration = Vector3i.ZERO
-	random_state = seed & 0xffffffff
+	_drift.clear()
+	_random = SourceRandom.create(seed)
 
 
 ## Timer increments before UpdateSkyLand: first visible update is timer one.
 func step() -> void:
 	tick += 1
-	var timer: int = tick + 1
-	if not (timer & 127):
-		var direction := Vector3i.ZERO
-		if absi(position.x >> 16) > 0xb00 or absi(position.z >> 16) > 0xb00:
-			direction = Vector3i(-position.x >> 16, -position.y >> 16, -position.z >> 16)
-		else:
-			direction = Vector3i(_random() & 1023, 0, _random() & 1023)
-		var length: float = Vector3(direction).length()
-		if length > 0.0:
-			acceleration = Vector3i(roundi(float(direction.x) * 4096.0 / length),
-				roundi(float(direction.y) * 4096.0 / length),
-				roundi(float(direction.z) * 4096.0 / length)) * 8
-		else:
-			acceleration = Vector3i.ZERO
-	elif (timer & 255) < 0x60:
-		velocity += acceleration
-	else:
-		velocity = Vector3i((velocity.x >> 5) * 31, (velocity.y >> 5) * 31,
-			(velocity.z >> 5) * 31)
-	position += velocity
-	position.x = clampi(position.x, -0x10000000, 0x10000000)
-	position.z = clampi(position.z, -0x10000000, 0x10000000)
+	_injected.source = random_source
+	_drift.step(tick + 1, _injected if random_source.is_valid() else _random)
+	_random.begin_tick()
+	_injected.begin_tick()
 
 
 ## Restarts and replays this deterministic seed; injected RNG must rewind itself.
@@ -58,12 +61,5 @@ func seek(to_tick: int) -> void:
 
 ## Integer game-space translation used by the sky backdrop's camera matrix.
 func translation() -> Vector3i:
-	return Vector3i(position.x >> 16, position.y >> 16, position.z >> 16)
+	return _drift.translation()
 
-
-func _random() -> int:
-	if random_source.is_valid():
-		var result: int = random_source.call()
-		return result
-	random_state = (random_state * 0x41c64e6d + 0x3039) & 0xffffffff
-	return (random_state >> 16) & 32767

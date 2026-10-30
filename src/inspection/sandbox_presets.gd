@@ -118,6 +118,14 @@ static func all() -> Array[Layout]:
 		.add("SWP_SLUG", Vector2i(13, 27), SandboxSpawner.Preset.LINE)
 		.add("NUCLEAR_BARREL", Vector2i(21, 26), SandboxSpawner.Preset.LOOP)
 		.add("DYNAMIC", Vector2i(18, 27), SandboxSpawner.Preset.STATIC, -1, "SWP_STAT_WASTE_BARREL"))
+	result.append(Layout.new("sky hazards", "Rubber and helium balloons, a helicopter, a homing hawk, a bird and a jet over open floor with a cloud patch", Vector2i(16, 19))
+		.add("DYNAMIC", Vector2i(14, 21), SandboxSpawner.Preset.STATIC, -1, "SKY_RUBBER_BALLOON1")
+		.add("DYNAMIC", Vector2i(18, 21), SandboxSpawner.Preset.STATIC, -1, "SKY_HELIUM_BALLOON3")
+		.add("DYNAMIC", Vector2i(16, 24), SandboxSpawner.Preset.STATIC, -1, "SKY_HELICOPTER")
+		.add("DYNAMIC", Vector2i(12, 24), SandboxSpawner.Preset.STATIC, -1, "SKY_HAWK")
+		.add("MOVING", Vector2i(13, 27), SandboxSpawner.Preset.LINE, -1, "SKY_BIRD1")
+		.add("MOVING", Vector2i(21, 26), SandboxSpawner.Preset.LOOP, -1, "SKY_JET3")
+		.add("STATIC", Vector2i(19, 29), SandboxSpawner.Preset.STATIC, -1, "SKY_CLD_PATCH"))
 	return result
 
 ## Lists the built-in layout names in menu order.

@@ -67,6 +67,8 @@ class Instance extends Node3D:
 	var _camera_materials: Dictionary[ShaderMaterial, bool] = {}
 	var _cave_materials: Dictionary[ShaderMaterial, bool] = {}
 	var _camera_presentation: Vector3 = Vector3.ZERO
+	var _sky_external: bool = false
+	var _sky_override: Vector3 = Vector3.ZERO
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -108,14 +110,16 @@ class Instance extends Node3D:
 		tick += 1
 		animation.step()
 		water.step()
-		sky.step()
+		if not _sky_external:
+			sky.step()
 		_update_materials()
 
 	## Seek by restarting clocks; shared geometry/material templates stay unchanged.
 	func set_tick(to_tick: int) -> void:
 		animation.seek(to_tick)
 		water.seek(to_tick)
-		sky.seek(to_tick)
+		if not _sky_external:
+			sky.seek(to_tick)
 		tick = maxi(-1, to_tick)
 		_update_materials()
 
@@ -145,8 +149,15 @@ class Instance extends Node3D:
 		for material: ShaderMaterial in _camera_materials:
 			material.set_shader_parameter("camera_game", value)
 		if _sky_node != null:
-			var drift: Vector3i = sky.translation()
-			_set_sky_position(drift)
+			_set_sky_position(_sky_translation())
+
+	## Gameplay-committed drift in game units; the internal sky clock stops from now on.
+	func set_sky_drift(translation: Vector3) -> void:
+		if _sky_external and _sky_override == translation:
+			return
+		_sky_external = true
+		_sky_override = translation
+		_refresh_sky_drift()
 
 	## Reference-only C viewport aspect matrix; ordinary cameras keep Vector2.ONE.
 	func set_projection_scale(value: Vector2) -> void:
@@ -265,8 +276,6 @@ class Instance extends Node3D:
 				if _nodes[index].get_surface_override_material(surface_index) != material:
 					_nodes[index].set_surface_override_material(surface_index, material)
 		if _sky_node != null:
-			var drift: Vector3i = sky.translation()
-			_set_sky_position(drift)
 			for index: int in source.sky_mesh.get_surface_count():
 				var original: ShaderMaterial = source.sky_mesh.surface_get_material(index)
 				var material: ShaderMaterial = _material_copies[original]
@@ -276,10 +285,22 @@ class Instance extends Node3D:
 					material.set_shader_parameter("reference_projection", reference_projection)
 					material.set_shader_parameter("sky_backdrop", true)
 					_configured[material] = true
-				material.set_shader_parameter("sky_drift", Vector3(drift))
+			_refresh_sky_drift()
 
-	func _set_sky_position(drift: Vector3i) -> void:
-		var position_game: Vector3 = _camera_presentation + Vector3(drift)
+	func _refresh_sky_drift() -> void:
+		if _sky_node == null:
+			return
+		var drift: Vector3 = _sky_translation()
+		_set_sky_position(drift)
+		for index: int in source.sky_mesh.get_surface_count():
+			var original: ShaderMaterial = source.sky_mesh.surface_get_material(index)
+			_material_copies[original].set_shader_parameter("sky_drift", drift)
+
+	func _sky_translation() -> Vector3:
+		return _sky_override if _sky_external else Vector3(sky.translation())
+
+	func _set_sky_position(drift: Vector3) -> void:
+		var position_game: Vector3 = _camera_presentation + drift
 		_sky_node.position = Vector3(position_game.x, -position_game.y, -position_game.z) / GameSpace.UNITS_PER_SQUARE
 
 	func _update_visibility() -> void:

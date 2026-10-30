@@ -40,6 +40,7 @@ var cave: EntityCaveDefinition = null
 var desert: EntityDesertDefinition = null
 var jungle: EntityJungleDefinition = null
 var swamp: EntitySwampDefinition = null
+var trigger: EntityTriggerDefinition = null
 var radius_squared: int = 0
 var movement_speed: int = 0
 var authored_delay: int = 0
@@ -80,6 +81,7 @@ func copy() -> EntityDefinition:
 	result.desert = desert.copy() if desert != null else null
 	result.jungle = jungle.copy() if jungle != null else null
 	result.swamp = swamp.copy() if swamp != null else null
+	result.trigger = trigger.copy() if trigger != null else null
 	result.radius_squared = radius_squared
 	result.movement_speed = movement_speed
 	result.authored_delay = authored_delay

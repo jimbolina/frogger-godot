@@ -21,3 +21,5 @@ var camera_startup: bool = false
 var start_timer: int = 0
 ## 0 isolates stationary components; 1 matches fast/play reset wait; 2 single-start bounce.
 var start_mode: int = Mode.COMPONENT
+## Frozen Game_timer at level start; a demo harness may align it with a native trace.
+var game_timer: int = 0

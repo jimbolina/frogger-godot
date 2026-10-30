@@ -53,7 +53,7 @@ func test_volcano_names_have_source_lifetimes_and_typed_callback_mapping() -> vo
 		behavior.execution = EntityBehavior.Execution.CONTACT
 		assert_true(behavior.has_custom_update())
 		assert_true(behavior.has_form_contact())
-	assert_eq(EntityBehaviorCatalog.resolve("TRIGGER").kind, EntityBehavior.Kind.UNKNOWN)
+	assert_eq(EntityBehaviorCatalog.resolve("TRIGGER").kind, EntityBehavior.Kind.TRIGGER)
 	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e", 0x41d7e0), FormCallback.Kind.VOL_COLOUR_SWITCH)
 	assert_eq(FormCallbackCatalog.resolve("unknown", 0x41d7e0), FormCallback.Kind.UNKNOWN)
 

@@ -1,8 +1,8 @@
 class_name EntityTargetEffect
 extends RefCounted
-## Ordered switch request against a live authored unique identity.
+## Ordered switch or trigger request against a live authored unique identity.
 
-enum Kind { INITIALIZE, TOGGLE, REVERSE }
+enum Kind { INITIALIZE, TOGGLE, REVERSE, PAUSE, RESUME, FORWARD }
 
 var unique_id: int = -1
 var kind: Kind = Kind.INITIALIZE

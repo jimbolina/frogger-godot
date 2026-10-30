@@ -374,6 +374,34 @@ func test_sky_rotations_camera_translation_and_fixed_height() -> void:
 	instance.free()
 
 
+func test_committed_sky_drift_replaces_the_internal_clock() -> void:
+	var scene: MapSceneData = _scene()
+	scene.sky_land = SkyLandFile.new()
+	scene.sky_land.dimensions = Vector2i(1, 1)
+	scene.sky_land.texture_ids = PackedInt32Array([0])
+	scene.sky_land.rotations = PackedInt32Array([0])
+	scene.sky_remap = scene.remap
+	scene.level = 43
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	var instance: MapMesh.Instance = built.create_instance()
+	var sky_node: MeshInstance3D = instance.get_child(instance.get_child_count() - 1)
+	instance.set_camera_presentation(Vector3(256, 512, 768))
+	instance.set_sky_drift(Vector3(12.5, 0, -3))
+	assert_eq(sky_node.position, Vector3(268.5, -512, -765) / 256.0)
+	var material: ShaderMaterial = sky_node.get_surface_override_material(0)
+	var uniform: Vector3 = material.get_shader_parameter("sky_drift")
+	assert_eq(uniform, Vector3(12.5, 0, -3))
+	instance.set_tick(300)
+	for tick: int in 4:
+		instance.step()
+	assert_eq(instance.sky.tick, -1, "the internal drift clock stays stopped")
+	assert_eq(instance.tick, 304)
+	assert_eq(sky_node.position, Vector3(268.5, -512, -765) / 256.0)
+	instance.set_camera_presentation(Vector3(0, 0, 0))
+	assert_eq(sky_node.position, Vector3(12.5, 0, 3) / 256.0)
+	instance.free()
+
+
 func test_optional_model_map_lighting_uses_probe_world_normal() -> void:
 	var scene: MapSceneData = _scene()
 	var light := MapLight.new()

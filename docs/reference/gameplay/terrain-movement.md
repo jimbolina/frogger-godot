@@ -82,7 +82,10 @@ command/domain boundaries rather than omitted terrain dispatch modes.
 The map identity used by `Game_map` is distinct from archive resource identity.
 `LevelDefinition.map_index` supplies that scalar. SKY1 through SKY multiplayer
 (indices 42 through 47) request FREEFALL instead of FALLING when delayed freefall animation
-starts. CAVES3(index2) damps stationary dying velocity after positional addition:
+starts. A land jump that ends over no usable square enters freefall by clearing
+the whole `FROG_LANDED_ON_ENTITY_CLEAR_MASK`, including `JUMP_FROM_COLLPRIM`,
+so a frog that bounced off a collision primitive can still land on a FORM below
+(the SKY3 squadron after the trigger balloon). CAVES3(index2) damps stationary dying velocity after positional addition:
 each signed32 product by14 wraps before the arithmetic shift by4. VOL drowned
 or flopped deaths request DROWN again and request fire particles and colour24,0,0;
 the original death equate remains unchanged. Effect construction/rendering and

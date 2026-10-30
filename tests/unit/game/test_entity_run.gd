@@ -32,6 +32,14 @@ func _static(index: int) -> EntityDefinition:
 	result.matrix12[9] = 73
 	return result
 
+func test_trigger_runs_a_custom_update_and_form_contact() -> void:
+	var behavior: EntityBehavior = EntityBehaviorCatalog.resolve("TRIGGER")
+	assert_eq(behavior.kind, EntityBehavior.Kind.TRIGGER)
+	assert_true(behavior.has_form_contact())
+	assert_false(behavior.has_custom_update())
+	behavior.execution = EntityBehavior.Execution.UPDATE
+	assert_true(behavior.has_custom_update())
+
 func test_advanced_fork_and_failed_tick_leave_source_and_public_snapshots_detached() -> void:
 	var run: EntityRun = EntityRun.create([_moving(0, _path())])
 	var saved: EntityRunSnapshot = run.snapshot()

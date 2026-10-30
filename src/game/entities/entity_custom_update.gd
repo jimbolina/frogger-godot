@@ -78,6 +78,8 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 			issue = EntitySwampPress.update(definition, result, frog)
 		EntityBehavior.Kind.SWP_RAT:
 			issue = EntitySwampRat.update(definition, result)
+		EntityBehavior.Kind.TRIGGER:
+			issue = EntityTrigger.update(definition, result)
 		EntityBehavior.Kind.STATIC_NOISE, EntityBehavior.Kind.BOUNDS_TOP_LEFT, EntityBehavior.Kind.BOUNDS_BOTTOM_RIGHT, EntityBehavior.Kind.JUN_BOUNCY_MUSHROOM, EntityBehavior.Kind.JUN_OUTRO_DOOR, EntityBehavior.Kind.JUN_OUTRO, EntityBehavior.Kind.JUN_PLINTH, EntityBehavior.Kind.JUN_GOLD_FROG, EntityBehavior.Kind.JUN_STONE_FROG, EntityBehavior.Kind.SWP_STAT_WEIR:
 			pass
 		_:

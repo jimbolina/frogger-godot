@@ -611,7 +611,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -720,7 +720,7 @@ Broader particles, pop visuals and audio playback remain separate work.
 VOL1–VOL3 admit named moving platforms, colour switches and falling platforms,
 alongside existing scripted mechanisms, furnaces, lava sprays, spinners and
 noise emitters. VOL4/VOL5 have no playable retail map; VOLM remains multiplayer.
-The unused generic `TRIGGER` behavior retains unsupported diagnostics.
+The generic `TRIGGER` behavior, which the unplaced `VOL_SWITCH` form shares, is described under [Sky whole-map behavior](#sky-whole-map-behavior).
 
 Moving platforms are immortal path followers. Switches resolve their ordered
 signed target IDs against authored identities, initialize target movement on
@@ -1019,3 +1019,62 @@ whose script rotates it about X forever. The green Swamp drowning tint from
 frozen `FROG.C` is presentation work deferred with the other effects.
 Independent facts and deliberate-break checks are in the
 [entity golden specification](../../../tests/golden/specs/entities.md#swamp-entities).
+
+## Sky whole-map behavior
+
+SKY1–SKY4 use whole-map setup. SKY5 and SKYM are dummy rows with no map. The
+executable enables all four Sky attract demos, each gated on SKY1 being
+unlocked, so the fresh-boot native export never reaches them; see the
+[testing guide](../testing/README.md#demo-playback-and-comparison) for the
+baselines obtained from a scratch store. Every Sky map fits the 2500-polygon
+budget, so source allocation stays off.
+
+Sky forms are driven by their frozen scripts through existing machinery. Jets,
+biplanes, birds, the little bird, the popping bird, flocking birds, the small
+bird, the tornado object and the cloud platform are `MOVING` path followers
+whose scripts play moving sounds and random frenzied calls; helicopters, rubber
+balloons, the helium balloon, the hawk and the birdhawk are `DYNAMIC` matrix
+entities whose scripts read two or three registers after the matrix (the
+helicopter's deviation distance and speed, the hawk's homing speed and range,
+the balloons' unused operands), deviate on Y, pop and eject the frog into
+freefall; clouds, the cloud patch, the banner and the modelless cloud platform
+are statics. The hawk's script switches its entity type to PATH, so its homing
+translation accumulates instead of resetting to the authored matrix each tick.
+The map sets `ALIGN_TO_WORLD` on the SKY3 cloud platforms, which path movers
+honour. The low-poly WAD slot for `SKY_CLD_PATCH` is a dummy, and the low-poly
+maps place none.
+
+The SKY3 squadron (`SKY_SQUADRON`) is a `MOVING_PLATFORM` with a plain
+12-byte `PATH_INFO` payload; frozen `ENTSTR_MOVING` has no initial-movement
+field, which belongs to the 16-byte Volcano platform record consulted only by
+the colour switch, so the decoder accepts both widths and the chain sound
+stays Volcano-only. The squadron is authored with `NO_MOVEMENT` and starts
+paused.
+
+The magical popping balloon (`SKY_FROGGERS_MAGICAL_POPPING_BALLOON`) is the
+only retail `TRIGGER` entity: a 56-byte record holding the matrix, a u32
+trigger type (0 FREEZE, 1 REVERSE, 2 START, 3 BEGIN) and ten s16 target
+unique ids (−1 unused); the authored frame count that follows in frozen
+`ENTSTR_TRIGGER` is never read and FrogLord does not save it. It is immortal
+and resets on death and checkpoint. On its first update after creation every
+listed live target gets `NO_MOVEMENT` and its path runner is deactivated;
+targets not yet created are skipped. Its collision primitive is a FORM
+primitive running `TriggerEntityCallback`: FREEZE and START toggle the targets'
+movement, BEGIN clears `NO_MOVEMENT` and reactivates the runner only where it
+was set, and REVERSE clears the runner's BACKWARDS flag in both branches of the
+frozen source, so it never reverses (recorded as a source disagreement with the
+intent FrogLord names; retail uses only BEGIN, with the SKY3 balloon releasing
+the squadron). A missing target is a frozen assertion and a transaction error
+here. The callback then forbids the balloon for frog collision and sets
+`JUMP_FROM_COLLPRIM`. The balloon's own script pops it and plays the helium pop
+when the frog hits it; the poly-piece pop effect is presentation work deferred
+with the other effects. Target flags live on the map entity, so a squadron
+released before a death stays released until the recreated trigger's first
+update pauses it again.
+
+Frozen `UpdateSkyLand` drifts the sky backdrop from the shared `MRrand` stream
+every 128 frames of the global `Game_timer`; the port owns that drift in
+gameplay state, as described under
+[simulation](simulation.md#sky-drift-and-the-global-frame-timer). Independent
+facts and deliberate-break checks are in the
+[entity golden specification](../../../tests/golden/specs/entities.md#sky-entities).

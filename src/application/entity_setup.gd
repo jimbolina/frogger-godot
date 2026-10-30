@@ -97,6 +97,9 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 		if (FormCallbackCatalog.resolve(build_id, form.collision_callback) == FormCallback.Kind.VOL_COLOUR_SWITCH or definition.bonus_kind == FormCallback.Kind.VOL_COLOUR_SWITCH) and definition.behavior.kind != EntityBehavior.Kind.VOL_COLOUR_SWITCH:
 			result._issue("incompatible_callback", "Colour-switch callback requires colour-switch behavior and payload", span, form, index, source_id, resource_id, build_id)
 			continue
+		if (FormCallbackCatalog.resolve(build_id, form.collision_callback) == FormCallback.Kind.TRIGGER or definition.bonus_kind == FormCallback.Kind.TRIGGER) and definition.behavior.kind != EntityBehavior.Kind.TRIGGER:
+			result._issue("incompatible_callback", "Trigger callback requires trigger behavior and payload", span, form, index, source_id, resource_id, build_id)
+			continue
 		if definition.behavior.kind == EntityBehavior.Kind.FIREFLY and definition.bonus_kind == FormCallback.Kind.NONE:
 			result._issue("incompatible_callback", "Firefly requires a verified bonus callback", span, form, index, source_id, resource_id, build_id)
 			continue
@@ -117,6 +120,11 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 					result._issue("invalid_payload", "BONUS_FLY requires a pickup type from 0 through 18", span, form, index, source_id, resource_id, build_id)
 					continue
 				definition.pickup_type = span.payload.decode_u16(32)
+			if definition.behavior.kind == EntityBehavior.Kind.TRIGGER:
+				var trigger_issue: String = _trigger_payload(definition, span.payload)
+				if not trigger_issue.is_empty():
+					result._issue("invalid_payload", trigger_issue, span, form, index, source_id, resource_id, build_id)
+					continue
 			definition.matrix12 = matrix.matrix12.duplicate()
 			definition.behavior.execution = EntityBehavior.Execution.UPDATE if custom_behaviors_enabled else EntityBehavior.Execution.TRANSFORM
 			if definition.behavior.kind in [EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.LOG_SNAKE] and span.payload.size() >= 36:
@@ -264,9 +272,9 @@ static func _volcano_payload(definition: EntityDefinition, payload: PackedByteAr
 	var volcano := EntityVolcanoDefinition.new()
 	match definition.behavior.kind:
 		EntityBehavior.Kind.MOVING_PLATFORM:
-			if payload.size() < 16:
-				return "Moving platform requires its initial movement field"
-			volcano.initial_movement = payload.decode_u32(12)
+			if payload.size() < 12:
+				return "Moving platform requires PATH_INFO"
+			volcano.initial_movement = payload.decode_u32(12) if payload.size() >= 16 else 0
 		EntityBehavior.Kind.VOL_COLOUR_SWITCH:
 			if payload.size() < 56:
 				return "Colour switch requires its type, colour and ten target IDs"
@@ -283,6 +291,20 @@ static func _volcano_payload(definition: EntityDefinition, payload: PackedByteAr
 			definition.authored_delay = payload.decode_u16(32)
 			volcano.hops_before = payload.decode_u16(34)
 	definition.volcano = volcano
+	return ""
+
+## Copies the ENTSTR_TRIGGER type and ten target IDs; the trailing frame count is never read.
+static func _trigger_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	if payload.size() < 56:
+		return "Trigger requires its type and ten target IDs"
+	var trigger := EntityTriggerDefinition.new()
+	trigger.trigger_type = payload.decode_u32(32)
+	if trigger.trigger_type > EntityTrigger.Type.BEGIN:
+		return "Trigger type is outside the supported source range"
+	for index: int in 10:
+		var identity: int = payload.decode_s16(36 + index * 2)
+		trigger.target_ids.append(-1 if identity == -1 else identity & 65535)
+	definition.trigger = trigger
 	return ""
 
 ## Copies FrogLord Cave operands and the frozen unsigned frogger-light precomputation.

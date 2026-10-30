@@ -99,7 +99,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
-`GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 share whole-map dependency setup; recorded
+`GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 share whole-map dependency setup; recorded
 playback uses the supplied demo starting cell and FAST_RESET initialization.
 A level without an enabled demo reports that missing resource. Other themes
 retain explicit unsupported-dependency diagnostics.
@@ -176,8 +176,14 @@ selectable (see [sources](../sources.md#exporting-reference-material-from-the-en
 both complete and match the native rows per tick, the only difference being
 the level-start camera, which leaves the start one tick later than frozen C
 before any input is read. The native SWP1 demo dies five times and plays to its
-full length, which is why demo playback starts with ten lives. The executable
-enables no Jungle demo, so JUN1 has no demo check. Level acceptance is the owner's play
+full length, which is why demo playback starts with ten lives. All four Sky
+demos are gated on SKY1, so a scratch store that opens only that row reaches
+SKY3, SKY2, SKY4 and finally SKY1 (the sixteenth demo) inside the sound-journal
+cap; SKY1–SKY4 complete, keep schedule parity and match the native rows per
+tick (`--map 42` through `45`), with the same level-start camera tick as Swamp.
+The frozen `Game_timer` at demo start is not in a trace, so the drift's RNG
+phase is unverified there; it moves only the backdrop and sound choices. The
+executable enables no Jungle demo, so JUN1 has no demo check. Level acceptance is the owner's play
 check in the dedicated game scene: the agent hands over the launch command and
 what to look for, and the owner confirms the level looks and plays well. Replays,
 demos and independent facts are regression coverage beneath that check. Bounded incomplete fixtures still exercise rejection paths.
@@ -186,7 +192,7 @@ demos and independent facts are regression coverage beneath that check. Bounded 
 
 Use `python tools/run_gameplay_capture.py --godot <executable> --data-dir
 <game-folder> --level ORG1 --output-directory <external-folder>` to capture
-startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4, DES1–DES5, JUN1 or SWP1–SWP5;
+startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4;
 `--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
 replay the existing sparse keyboard stimulus format through actual key events.
 The ORG1 completion, pink-delivery and tongue-collection fixtures listed in the

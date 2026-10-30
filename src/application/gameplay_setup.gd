@@ -2,7 +2,7 @@ class_name GameplaySetup
 extends RefCounted
 ## Whole-map single-player dependency validation using supplied executable tables.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1", "SWP1", "SWP2", "SWP3", "SWP4", "SWP5"]
+const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1", "SWP1", "SWP2", "SWP3", "SWP4", "SWP5", "SKY1", "SKY2", "SKY3", "SKY4"]
 ## Named sprite images the frozen firefly animation list draws.
 const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
 ## Resident general sprite bank holding the standard-resolution pickup and firefly images.
@@ -51,7 +51,7 @@ static func from_data(data: GameData, level_number: int, map: MapFile, frog_mode
 
 func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 or SWP1–SWP5"
+		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
 	var code: String = FroggerIds.level_code(number)

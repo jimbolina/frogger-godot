@@ -13,7 +13,7 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--route', type=Path)
-    parser.add_argument('--level', choices=('ORG1', 'ORG2', 'ORG3', 'ORG4', 'ORG5', 'SUB1', 'FOR1', 'FOR2', 'VOL1', 'VOL2', 'VOL3', 'CAV1', 'CAV3', 'CAV4', 'DES1', 'DES2', 'DES3', 'DES4', 'DES5', 'JUN1', 'SWP1', 'SWP2', 'SWP3', 'SWP4', 'SWP5'), default='ORG1')
+    parser.add_argument('--level', choices=('ORG1', 'ORG2', 'ORG3', 'ORG4', 'ORG5', 'SUB1', 'FOR1', 'FOR2', 'VOL1', 'VOL2', 'VOL3', 'CAV1', 'CAV3', 'CAV4', 'DES1', 'DES2', 'DES3', 'DES4', 'DES5', 'JUN1', 'SWP1', 'SWP2', 'SWP3', 'SWP4', 'SWP5', 'SKY1', 'SKY2', 'SKY3', 'SKY4'), default='ORG1')
     parser.add_argument('--ticks', type=int, default=240)
     parser.add_argument('--flow-check', action='store_true', help='Idle through timeout, respawn, game over and keyboard restart')
     parser.add_argument('--resolution', default='640x480', help='Window size for aspect-ratio verification')

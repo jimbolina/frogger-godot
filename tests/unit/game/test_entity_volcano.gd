@@ -1,5 +1,5 @@
 extends GutTest
-## Volcano candidate ownership, ordered target writes and failed-contact rollback.
+## Volcano candidate ownership, ordered target writes, trigger movement operations and failed-contact rollback.
 
 func _platform() -> EntityDefinition:
 	var definition := EntityDefinition.new()
@@ -99,3 +99,43 @@ func test_paused_falling_animation_and_reset_restore_collision() -> void:
 	assert_eq(run.snapshot().entities[0].entity_flags & EntityDefinition.NO_COLLISION, 0)
 	assert_false(run.snapshot().entities[0].animation.stepping)
 	assert_eq(run.snapshot().entities[0].custom_state.count, 0)
+
+func _target(flags: int, path_flags: int) -> EntitySnapshot:
+	var target := EntitySnapshot.new()
+	target.entity_flags = flags
+	target.path = PathSnapshot.new()
+	target.path.flags = path_flags
+	return target
+
+func test_trigger_operations_pause_resume_only_when_stopped_and_clear_backwards() -> void:
+	var definition: EntityDefinition = _platform()
+	var target: EntitySnapshot = _target(0, PathStart.ACTIVE | PathStart.BACKWARDS)
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.PAUSE), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [EntityDefinition.NO_MOVEMENT, PathStart.BACKWARDS])
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.PAUSE), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [EntityDefinition.NO_MOVEMENT, PathStart.BACKWARDS])
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.RESUME), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [0, PathStart.ACTIVE | PathStart.BACKWARDS])
+	target.path.flags = PathStart.BACKWARDS
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.RESUME), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [0, PathStart.BACKWARDS], "RESUME acts only on a stopped target")
+	for _repeat: int in 2:
+		assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.FORWARD), target, definition), "")
+		assert_eq([target.entity_flags, target.path.flags], [0, 0], "the frozen reverse case only clears BACKWARDS")
+	var matrix := EntitySnapshot.new()
+	assert_string_contains(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.FORWARD), matrix, definition), "path target")
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.PAUSE), matrix, definition), "")
+	assert_eq(matrix.entity_flags, EntityDefinition.NO_MOVEMENT)
+
+func test_switch_operations_keep_their_source_semantics() -> void:
+	var definition: EntityDefinition = _platform()
+	var target: EntitySnapshot = _target(0, PathStart.ACTIVE)
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.INITIALIZE), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [EntityDefinition.NO_MOVEMENT, 0])
+	assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.TOGGLE), target, definition), "")
+	assert_eq([target.entity_flags, target.path.flags], [0, PathStart.ACTIVE])
+	for expected: int in [PathStart.ACTIVE | PathStart.BACKWARDS, PathStart.ACTIVE]:
+		assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.REVERSE), target, definition), "")
+		assert_eq(target.path.flags, expected)
+	definition.volcano = null
+	assert_ne(EntityMovementTarget.apply(EntityTargetEffect.create(21, EntityTargetEffect.Kind.INITIALIZE), target, definition), "")

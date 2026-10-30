@@ -31,6 +31,7 @@ var _camera_zones: Array[ZoneDefinition] = []
 var _frog: Frog = Frog.new()
 var _has_entity_updates: bool = false
 var _cave_light: bool = false
+var _sky: bool = false
 
 ## Validates and copies ordinary terrain, then creates a stationary component start.
 static func create(level: LevelDefinition, initial: RunStart = null) -> GameplayRun:
@@ -68,6 +69,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> Gameplay
 	run._action_lengths = level.frog_action_lengths.duplicate()
 	run._theme_name = level.theme_name
 	run._cave_light = level.cave_light
+	run._sky = level.theme == SkyDriftState.THEME
 	run._frog.source_id = level.source_id
 	run._frog.resource_id = level.resource_id
 	if not level.camera_zones.is_empty():
@@ -183,6 +185,8 @@ func reset(initial: RunStart = null) -> String:
 		if not animated_issue.is_empty():
 			return animated_issue
 	state.rng_state = random.state
+	state.sky_drift = SkyDriftState.new() if _sky else null
+	state.game_timer = initial.game_timer & 0xffffffff if initial != null else 0
 	state.frog.start_timer = initial.start_timer if initial != null else 0
 	if state.frog.start_timer < 0:
 		return "Start timer must be nonnegative"
@@ -379,8 +383,12 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 		var sound_issue: String = _synchronize_sound_entities(next)
 		if not sound_issue.is_empty():
 			return _failed_tick(result, sound_issue)
+	if next.sky_drift != null:
+		next.sky_drift.step(next.game_timer, _candidate_random)
+	var play_frame: bool = true
 	if _frog.flow_enabled:
 		var checkpoint_flow: bool = next.flow.phase == LevelFlowState.Phase.CHECKPOINT
+		play_frame = _state.frog.start_timer_hold == 0 and next.flow.phase in [LevelFlowState.Phase.PLAY, LevelFlowState.Phase.DEATH]
 		var flow: LevelFlow = LevelFlow.advance(_frog, next, _candidate_entities, result.events, _demo_playback, _candidate_random, _level_time, command.recorded_input_byte < 0 and bool(command.pressed_mask & TickCommand.SUPER_HOP))
 		if not flow.error.is_empty():
 			return _failed_tick(result, flow.error)
@@ -390,6 +398,9 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 				return _failed_tick(result, reset_issue)
 		if checkpoint_flow or flow.reset != LevelFlow.Reset.NONE:
 			next.entities = _candidate_entities.snapshot() if _candidate_entities != null else null
+		play_frame = play_frame and flow.reset == LevelFlow.Reset.NONE
+	if play_frame:
+		next.game_timer = (next.game_timer + 1) & 0xffffffff
 	next.rng_state = _candidate_random.state
 	next.diagnostics.rng_draw_count = _candidate_random.draw_count
 	if _tick_guard != null:
@@ -588,6 +599,8 @@ func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickE
 		var sound_issue: String = _synchronize_sound_entities(state)
 		if not sound_issue.is_empty():
 			return sound_issue
+	if state.sky_drift != null:
+		state.sky_drift.clear()
 	var start := RunStart.new()
 	start.spawn_cell = state.frog.initial_cell
 	start.spawn_direction = _default_direction

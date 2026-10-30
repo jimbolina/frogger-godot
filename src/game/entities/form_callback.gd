@@ -2,7 +2,7 @@ class_name FormCallback
 extends RefCounted
 ## Typed source FORM reactions, independent of executable addresses.
 
-enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE, CRUSHER_BOUNCE_BACK }
+enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE, CRUSHER_BOUNCE_BACK, TRIGGER }
 
 const CRUSHER_JUMP_TICKS: int = 6
 ## Source cr_count left by a user-mode Swamp retarget.
@@ -20,6 +20,16 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 		state.entities = frog.candidate_entities.snapshot()
 		if not result.frog_matrix12.is_empty():
 			state.frog.matrix12 = result.frog_matrix12.duplicate()
+		return ""
+	if kind == Kind.TRIGGER:
+		if frog.candidate_entities == null:
+			return "Trigger callback requires candidate entities"
+		var trigger_issue: String = frog.candidate_entities.contact_trigger(entity_index)
+		if not trigger_issue.is_empty():
+			return trigger_issue
+		state.entities = frog.candidate_entities.snapshot()
+		state.attachment.forbidden_entity_index = entity_index
+		state.frog.flags |= FrogFlags.JUMP_FROM_COLLPRIM
 		return ""
 	if kind == Kind.ORG_FLY_SCORE:
 		return GameplayRewards.apply(frog.rewards[8], state, events, frog.random)

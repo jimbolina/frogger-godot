@@ -1,5 +1,5 @@
 extends GutTest
-## SwpCrusherCallback bounce-back over synthetic grids, Swamp candidate dispatch and a whole collision tick.
+## SwpCrusherCallback bounce-back over synthetic grids, Swamp candidate dispatch, the trigger callback and a whole collision tick.
 
 const IDENTITY: PackedInt32Array = [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0]
 
@@ -162,6 +162,69 @@ func test_swamp_apply_requires_candidate_entities_and_a_live_crusher() -> void:
 	var state: GameplayState = _state(FrogMode.JUMPING, 2)
 	assert_string_contains(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, state, 3, events), "candidate")
 	assert_eq(state.frog.cell, Vector2i(1, 1))
+	assert_null(state.entities)
+
+func _trigger_frog() -> Frog:
+	var platform := EntityDefinition.new()
+	platform.entity_index = 2
+	platform.unique_id = 21
+	platform.flags = EntityDefinition.NO_MOVEMENT
+	platform.behavior = EntityBehaviorCatalog.resolve("MOVING_PLATFORM")
+	platform.behavior.execution = EntityBehavior.Execution.UPDATE
+	platform.volcano = EntityVolcanoDefinition.new()
+	platform.path_definition = PathDefinition.new()
+	var segment := PathSegmentDefinition.new()
+	segment.segment_type = PathSegmentDefinition.LINE
+	segment.length = 100
+	segment.end = Vector3i(100, 0, 0)
+	platform.path_definition.segments.append(segment)
+	platform.path_start = PathStart.new()
+	var trigger := EntityDefinition.new()
+	trigger.entity_index = 3
+	trigger.behavior = EntityBehaviorCatalog.resolve("TRIGGER")
+	trigger.behavior.execution = EntityBehavior.Execution.UPDATE
+	trigger.trigger = EntityTriggerDefinition.new()
+	trigger.trigger.trigger_type = EntityTrigger.Type.BEGIN
+	trigger.trigger.target_ids = PackedInt32Array([21, -1, -1, -1, -1, -1, -1, -1, -1, -1])
+	var frog := Frog.new()
+	frog.grid = _grid()
+	frog.candidate_entities = EntityRun.create([platform, trigger])
+	return frog
+
+func test_trigger_address_resolves_by_function_name() -> void:
+	assert_eq(FormCallbackCatalog.NAMES[0x42ba00], "TriggerEntityCallback")
+	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e", 0x42ba00), FormCallback.Kind.TRIGGER)
+	assert_eq(FormCallbackCatalog.resolve("pc-retail-v3.0e-edited", 0x42ba00), FormCallback.Kind.UNKNOWN)
+
+func test_trigger_apply_releases_targets_and_forbids_the_trigger_without_the_active_guard() -> void:
+	var frog: Frog = _trigger_frog()
+	assert_eq(frog.candidate_entities.error, "")
+	var state: GameplayState = _state(FrogMode.JUMPING, 2)
+	state.frog.flags &= ~FrogFlags.ACTIVE
+	var events: Array[TickEvent] = []
+	assert_eq(FormCallback.apply(FormCallback.Kind.TRIGGER, frog, state, 3, events), "")
+	assert_eq(state.attachment.forbidden_entity_index, 3)
+	assert_eq(state.frog.flags, FrogFlags.CONTROL_ACTIVE | FrogFlags.JUMP_FROM_COLLPRIM)
+	assert_eq(state.entities.entities[0].entity_flags & EntityDefinition.NO_MOVEMENT, 0)
+	assert_true(bool(state.entities.entities[0].path.flags & PathStart.ACTIVE))
+	assert_eq(state.frog.cell, Vector2i(1, 1))
+	assert_eq(state.frog.mode, FrogMode.JUMPING)
+	assert_true(events.is_empty())
+	var repeat: GameplayState = _state(FrogMode.JUMPING, 2)
+	assert_eq(FormCallback.apply(FormCallback.Kind.TRIGGER, frog, repeat, 3, events), "")
+	assert_eq(repeat.attachment.forbidden_entity_index, 3, "the source callback has no debounce")
+
+func test_trigger_apply_requires_candidate_entities_and_a_trigger() -> void:
+	var frog: Frog = _trigger_frog()
+	var events: Array[TickEvent] = []
+	var wrong: GameplayState = _state(FrogMode.JUMPING, 2)
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.TRIGGER, frog, wrong, 2, events), "trigger")
+	assert_eq(wrong.attachment.forbidden_entity_index, -1)
+	frog.candidate_entities = null
+	var state: GameplayState = _state(FrogMode.JUMPING, 2)
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.TRIGGER, frog, state, 3, events), "candidate")
+	assert_eq(state.attachment.forbidden_entity_index, -1)
+	assert_eq(state.frog.flags & FrogFlags.JUMP_FROM_COLLPRIM, 0)
 	assert_null(state.entities)
 
 func _level() -> LevelDefinition:

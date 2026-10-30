@@ -556,3 +556,25 @@ func test_terrain_freefall_entry_copies_jump_height_into_old_y() -> void:
 	assert_eq(run._frog.callback_error, "")
 	assert_true(state.frog.flags & FrogFlags.FREEFALL != 0)
 	assert_eq(state.frog.old_y, -40)
+
+func test_terrain_freefall_entry_clears_the_entity_landing_mask() -> void:
+	var level: LevelDefinition = _level()
+	_empty(level, 9)
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var state: GameplayState = run.snapshot()
+	state.frog.mode = FrogMode.JUMPING
+	state.frog.flags = (state.frog.flags & ~FrogFlags.JUMP_TO_LAND) | FrogFlags.JUMP_FROM_COLLPRIM | FrogFlags.SUPERJUMP | FrogFlags.FORCEDJUMP | FrogFlags.ON_ENTITY | FrogFlags.CONTROL_ACTIVE
+	state.frog.remaining_ticks = 1
+	state.frog.square_index = -1
+	state.frog.cell = Vector2i(1, 2)
+	var events: Array[TickEvent] = []
+	run._frog.move_jumping(state, events)
+	assert_eq(run._frog.callback_error, "")
+	assert_eq(state.frog.flags & FrogFlags.LANDED_ON_ENTITY_CLEAR_MASK, FrogFlags.FREEFALL)
+	assert_true(state.frog.flags & FrogFlags.FREEFALL_NO_ANIMATION != 0)
+	assert_true(state.frog.flags & FrogFlags.ON_ENTITY != 0)
+	assert_true(state.frog.flags & FrogFlags.CONTROL_ACTIVE != 0)
+	assert_eq(state.frog.remaining_ticks, 0x7FFFFFF)

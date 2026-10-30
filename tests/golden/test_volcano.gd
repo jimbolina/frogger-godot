@@ -119,7 +119,7 @@ func test_switch_contact_states_and_ordered_requests_match_independent_facts() -
 		target.path = PathSnapshot.new()
 		target.path.flags = (PathStart.ACTIVE if initial.active else 0) | (PathStart.BACKWARDS if initial.backwards else 0)
 		if not result.target_effects.is_empty():
-			assert_eq(EntityVolcanoTarget.apply(result.target_effects[0], target, definition), "")
+			assert_eq(EntityMovementTarget.apply(result.target_effects[0], target, definition), "")
 		_assert_row({"stopped": bool(target.entity_flags & EntityDefinition.NO_MOVEMENT),
 			"active": bool(target.path.flags & PathStart.ACTIVE),
 			"backwards": bool(target.path.flags & PathStart.BACKWARDS)}, expected, str(initial))
@@ -135,7 +135,7 @@ func test_initial_target_movement_matches_independent_facts() -> void:
 		definition.volcano.initial_movement = initial.initial
 		var target := EntitySnapshot.new()
 		target.path = PathSnapshot.new() if initial.path else null
-		assert_eq(EntityVolcanoTarget.apply(EntityTargetEffect.create(27, EntityTargetEffect.Kind.INITIALIZE), target, definition), "")
+		assert_eq(EntityMovementTarget.apply(EntityTargetEffect.create(27, EntityTargetEffect.Kind.INITIALIZE), target, definition), "")
 		_assert_row({"stopped": bool(target.entity_flags & EntityDefinition.NO_MOVEMENT),
 			"active": target.path != null and bool(target.path.flags & PathStart.ACTIVE)}, expected, str(initial))
 

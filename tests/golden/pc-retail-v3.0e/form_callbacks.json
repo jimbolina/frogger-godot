@@ -54,5 +54,13 @@
     "length": 1108,
     "kind": "collision",
     "sha256": "12f3304ead99a2a2675f243646c4b05cb02c0cdc803add4edf223e95cee8e2a1"
+  },
+  {
+    "name": "TriggerEntityCallback",
+    "address": 4372992,
+    "file_offset": 175616,
+    "length": 280,
+    "kind": "collision",
+    "sha256": "9118a4921fef32414c853efffff3fc8dffedd3414c3728256e9a26ab48012164"
   }
 ]

@@ -76,6 +76,33 @@ unchanged for the first three logic ticks after `_reset_in_level`, so control
 returns no earlier than the 33rd tick. The level start has no hold: its
 camera leaves the start one tick later than frozen C, which cancels there.
 
+## Sky drift and the global frame timer
+
+Frozen `UpdateSkyLand` runs at the end of every logic tick when the theme is
+Sky: every 128th frame of `Game_timer` it picks a new drift acceleration, drawing
+twice from the shared `rand()` stream every other game consumer uses (frozen
+`SYSTEM.H` keeps the C library function, which the port models as one
+`SourceRandom` stream) unless the drift is already past 0xb00
+units on X or Z (then it pulls back without drawing), then accelerates while
+`Game_timer & 0xff` is below 0x60 and otherwise decays the velocity by 31/32.
+`SkyDriftState` owns that integer state on `GameplayState.sky_drift` (null off
+Sky); `GameplayRun.step` steps it after entity visibility and before level flow,
+so its two draws sit after every other consumer of the tick, labelled
+`sky:drift_x` and `sky:drift_z`. Death and checkpoint resets clear the drift as
+frozen `LevelStart` does. The gameplay view interpolates the committed
+translation between ticks; the map viewer keeps its own render-timeline clock.
+
+`GameplayState.game_timer` models frozen `Game_timer`, which increments once per
+main-loop frame in the level-play mode callback only and is never reset: it
+advances after a tick whose phase was PLAY or DEATH with no reset, and only on
+the last of the three catch-up ticks that share one frame after a reset; START
+and CHECKPOINT frames hold it. Keyboard play starts every level at zero, so the
+start sequence draws twice per tick while the timer sits at zero, as frozen C
+does on a fresh boot. `RunStart.game_timer` seeds the counter for a harness that
+aligns a native trace; the frozen value at demo start depends on everything the
+process ran before and cannot be read from a trace, and the draws only move the
+backdrop and sound choices, so frog and entity positions compare without it.
+
 `TickCommand.recorded_input_byte` carries the raw byte separately from live
 masks (`-1` means absent). Mixing live masks and recorded input is rejected.
 The stationary C override boundary consumes the byte after input selection and

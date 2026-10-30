@@ -103,5 +103,8 @@
   "res://tests/golden/test_retail_jungle.gd::test_jun1_admits_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_swamp.gd::test_swamp_payloads_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_swamp.gd::test_swamp_models_primitives_and_callbacks_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_swamp.gd::test_swamp_levels_admit_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_swamp.gd::test_swamp_levels_admit_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sky.gd::test_sky_payloads_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sky.gd::test_sky_models_primitives_and_callbacks_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_sky.gd::test_sky_levels_admit_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set"
 }
