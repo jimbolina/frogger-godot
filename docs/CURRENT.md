@@ -1,7 +1,7 @@
 # Current checkpoint
 
-P11 effects and particles is complete on top of the accepted P9 levels and
-awaits the owner's play check. The dedicated game scene opens independent
+P11 effects and particles is complete and accepted by the owner's play check
+on top of the accepted P9 levels. The dedicated game scene opens independent
 ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1,
 SWP1–SWP5 and SKY1–SKY4 sessions with the original-style English HUD from
 player assets. See [controls](../README.md), [roadmap](PORTING.md), the
