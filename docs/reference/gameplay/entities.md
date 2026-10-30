@@ -10,12 +10,18 @@ entity reads the 12-byte PATH_INFO prefix and attaches a supported
 [path](paths.md) by authored path index. Subtype payload bytes remain in the
 decoded map record for later behavior work.
 
-Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start,
-unknown entity flag bits and `LOCAL_ALIGN` omit only that entity.
+Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start
+and unknown entity flag bits omit only that entity.
 `PROJECT_ON_LAND` is supported for whole-map path followers, fireflies, moving
-platforms and hedgehogs, which project onto the first terrain layer during live
+platforms, hedgehogs, Swamp slugs and nuclear barrels, which project onto the first terrain layer during live
 updates while creation and reset keep the plain path pose; other projected
-transforms remain omitted. Diagnostics include source/build/resource, authored index, form and
+transforms remain omitted. `LOCAL_ALIGN` is supported for whole-map generic
+path followers, Swamp slugs and nuclear barrels as frozen
+`ENTSTRUpdateMovingMOF` applies it: creation keeps the plain path pose, and each
+live update takes Z from the tangent, X from the world Z axis when the previous
+X axis leans more than 0x800 along Z and the world X axis otherwise, and
+Y = Z x X without re-orthogonalising. Combined with `PROJECT_ON_LAND`, or on any
+other behavior, it still omits the entity. Diagnostics include source/build/resource, authored index, form and
 offset with the reason and fallback. `HIDDEN`, `NO_DISPLAY` and `NO_COLLISION`
 are retained as flags; the default component attaches every supported
 record. The opt-in visibility lifetime below narrows that set. Script and callback
@@ -605,7 +611,7 @@ Frog reset preserves velocity, jump target, input, buffered direction storage,
 scale, death fields and no-input/animation counters while clearing active
 modifier and buffer counts. Its facing basis resets to a cardinal direction.
 
-Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 and JUN1 resolves every authored dependency, including custom contact
+Whole-map setup for ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 resolves every authored dependency, including custom contact
 execution, before creating a run. Explicit bounded fixtures retain their disabled
 neighbors even when those neighbors now have supported primitive definitions.
 Collected checkpoint recreation uses the shared collected mask: the source omits
@@ -920,6 +926,96 @@ that square is usable, either sends a normal-mode frog back with
 the source vertical velocity and a translation push, or re-targets a user-mode
 frog over `FROG_JUMP_TIME` ticks. The source loop never advances the square
 pointer, the user-mode branch writes a crusher count through the door's absent
-runtime data (the port omits that write), and the Swamp branch is unsupported
-until that theme. Independent facts and deliberate-break checks are in the
+runtime data (the port omits that write); the Swamp branch is described under
+[Swamp whole-map behavior](#swamp-whole-map-behavior). Independent facts and deliberate-break checks are in the
 [entity golden specification](../../../tests/golden/specs/entities.md#jungle-entities).
+
+## Swamp whole-map behavior
+
+SWP1–SWP5 use whole-map setup. SWPM is multiplayer with no map. The
+executable enables all five Swamp attract demos; they complete with schedule
+parity, and SWP1 and SWP5 match native traces per tick (SWP2–SWP4 have no
+native baseline). SWP1, SWP2, SWP4 and SWP5 exceed the 2500-polygon budget, so
+every Swamp level enables the source allocation history as Desert does.
+
+Oil drums, newspapers, pallets, raccoons, mutant fish, pelicans, oil, waste and
+chemical barrels are generic path followers with their existing scripts and
+callbacks; the three noise forms are modelless statics with register payloads;
+boxes, sunk cars, pipes, trees, logs, litter, marsh, the fridge and the tyre
+are generic statics. The bobbing waste barrel is a `DYNAMIC` static whose
+script reads one register (its delay) after the matrix, and the nuclear
+barrel is an immortal generic path mover whose script reads two registers
+(jump distance and time) after `PATH_INFO`, waits for a rider, plays the
+geiger loop, ejects the frog with those registers and pops. Frozen
+`ENTSCR_PREPARE_REGISTERS` copies any count up to the six `si_registers` from
+`sizeof(PATH_INFO)` or `sizeof(MR_MAT)`, so register payloads are admitted at
+offset 12 for path entities and 32 for matrix entities with one to six
+registers. SWP4 slugs, SWP5 slugs and the SWP4 mutant fish carry
+`LOCAL_ALIGN`, applied as described under the transform rules above. Half the
+SWP3 presses carry `ALIGN_TO_WORLD`, which matrix entities ignore.
+
+Acid squirts (`SWP_SQUIRT`) are immortal matrix entities with a one-off delay,
+a drop time and a target. The signed delay counts down while positive, then
+preparation computes a 16.16 velocity from the current translation to the
+target with truncating division by the drop time, requests the acid-drip sound
+when `DistanceToFrogger` is below 1536, and falling adds `velocity >> 16` each
+tick until the post-decremented signed timer was at or below zero, when the
+authored matrix is restored and the cycle repeats without the delay. A zero
+drop time divides by zero in the source and is rejected at setup. The squirt
+kills through its FORM with the SQUISHED death.
+
+Crushers (`SWP_CRUSHER` and `SWP_CRUSHER2`) and presses (`SWP_PRESS`) share
+one payload: signed speed, distance, direction and delay. Both wait with an
+unsigned post-decremented timer, so motion starts `delay + 1` ticks after
+creation, then move `speed >> 8` per tick. A crusher rams along the map axis
+its direction names (north and east add, south and west subtract) until the
+translation passes the authored origin plus or minus the distance, then
+returns until it passes the origin; its ambient crush loop plays at 768/1280
+and its debounce count decrements every tick. The press does the same on Y
+(up subtracts first, down adds first) and, on the return flip, plays the
+frog-crush sound when it carries the frog and otherwise the crusher sound
+within 1536; its machine loop plays at 768/1280. Both carry the frog through
+their FORM; the crusher form is THICK with the SQUISHED death and runs the
+Swamp branch of `SwpCrusherCallback` from its collision primitive, while the
+press has a primitive and no callback.
+
+The Swamp crusher callback returns while the crusher's count is nonzero and
+otherwise sets it to five. The frog's cell comes from its world position and
+the bounce direction opposes the dominant axis of its velocity (ties go to Z);
+a frog with no horizontal velocity falls through to the non-Swamp handler,
+which uses the stored cell and reversed facing. The first square of the
+target stack must be usable; a user-mode frog is re-targeted over
+`FROG_JUMP_TIME` ticks and the count becomes four (frozen C writes that count
+through the door's absent runtime data too; the port writes it only here), and
+a normal-mode frog is sent back as the Jungle doors do. Afterwards, in Swamp only, the frog's
+translation is moved into the crusher's local frame and, when it lies inside
+the first FORM data grid between the form height and `fo_max_y`, a DEADLY
+square kills with SQUISHED. The retail crusher FORMs reach their deadly
+squares through the ordinary FORM reaction as well.
+
+Rats (`SWP_RAT`) are immortal matrix entities with a speed and four targets.
+Creation divides the speed by 30, measures each leg with the integer square
+root of the squared distances, derives the two jump times as length / 30 and
+the run time as length / speed, the `<< 4` velocities by truncating division
+and the sine steps as 2048 / time; zero times are rejected at setup, as is a
+squared distance that wraps the source 32-bit sum negative, which frozen
+`SquareRoot0` would read as unsigned. A negative or over-65535 run time never
+matches the unsigned count, so such a rat runs forever, and each jump ends
+short of its target because the last sine sample precedes the increment and
+the step truncates; both follow the source. The rat
+restarts at the start target with scale colours 0x80 and white ambient, holds
+one idle tick selecting the one-shot JUMP action, jumps along a sine arc of
+height 250 subtracted from the integrated Y, selects the one-shot ROLL action
+for 24 ticks, runs with the looping RUN action, jumps again and restarts.
+During the second jump the first tick at or above Y -255 sets the splash flag
+and magenta ambient; the splash sprite itself waits for the effects phase.
+Rats die to the frog with FLOP and their script plays a random distance sound.
+
+Slugs (`SWP_SLUG`) are immortal generic path movers whose payload adds a
+motion type; type 1 selects the curvy flipbook action at creation. The weir
+(`SWP_STAT_WEIR`) is an immortal matrix static whose creation replaces the
+authored rotation with a 1024-unit Z rotation before the model is built, and
+whose script rotates it about X forever. The green Swamp drowning tint from
+frozen `FROG.C` is presentation work deferred with the other effects.
+Independent facts and deliberate-break checks are in the
+[entity golden specification](../../../tests/golden/specs/entities.md#swamp-entities).

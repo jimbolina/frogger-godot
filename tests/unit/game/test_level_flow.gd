@@ -40,11 +40,44 @@ func test_death_reset_preserves_progress_rng_and_tick_then_restarts_local_timer(
 	assert_eq(result.final_snapshot.flow.score, 1234)
 	assert_eq(result.final_snapshot.flow.remaining_time, 900)
 	assert_eq(result.final_snapshot.rng_state, 98765)
+	assert_eq(result.final_snapshot.frog.start_timer_hold, 2)
 	var next := TickCommand.new()
 	next.tick_index = 1
 	assert_eq(run.step(next).error, "")
-	assert_eq(run.snapshot().frog.start_timer, 29)
+	assert_eq(run.snapshot().frog.start_timer, 30)
 	assert_eq(run.snapshot().flow.remaining_time, 899)
+
+func test_reset_catch_up_frame_holds_start_timer_for_three_logic_ticks() -> void:
+	var run: GameplayRun = GameplayRun.create(_level())
+	run._state.frog.mode = FrogMode.DYING
+	run._state.frog.death_count = 1
+	run._state.frog.lives = 2
+	var command := TickCommand.new()
+	assert_eq(run.step(command).error, "")
+	var seen := PackedInt32Array()
+	for tick: int in 34:
+		command = TickCommand.new()
+		command.tick_index = run.snapshot().tick_index
+		var result: TickResult = run.step(command)
+		assert_eq(result.error, "")
+		if not result.error.is_empty():
+			return
+		seen.append(result.final_snapshot.frog.start_timer)
+	assert_eq(seen.slice(0, 4), PackedInt32Array([30, 30, 29, 28]))
+	assert_eq(seen.find(0), 31, "C reads zero on the 33rd logic tick after the reset")
+	assert_eq(run.snapshot().frog.start_timer_hold, 0)
+
+func test_initial_fast_start_does_not_hold_start_timer() -> void:
+	var initial := RunStart.new()
+	initial.start_mode = RunStart.Mode.FAST_RESET
+	initial.start_timer = 30
+	var run: GameplayRun = GameplayRun.create(_level(), initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	assert_eq(run.snapshot().frog.start_timer_hold, 0)
+	assert_eq(run.step(TickCommand.new()).error, "")
+	assert_eq(run.snapshot().frog.start_timer, 29)
 
 func test_late_reset_failure_preserves_prior_death_state_and_can_retry() -> void:
 	var run: GameplayRun = GameplayRun.create(_level())
@@ -193,6 +226,7 @@ func test_five_checkpoint_transitions_preserve_progress_and_complete_after_bonus
 			assert_eq(run.snapshot().flow.phase, LevelFlowState.Phase.PLAY)
 			assert_false(run.snapshot().completed)
 			assert_eq(run.snapshot().flow.remaining_time, 30)
+			assert_eq(run.snapshot().frog.start_timer_hold, 2, "checkpoint LevelEnd/LevelStart has the catch-up frame")
 			assert_null(run.snapshot().entities.entities[checkpoint].animation)
 		else:
 			assert_eq(run.snapshot().flow.phase, LevelFlowState.Phase.COMPLETE)

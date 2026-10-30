@@ -33,6 +33,12 @@ enum CallbackKind {
 
 enum OperandMode { LITERAL, REGISTER }
 
+## Source si_registers capacity.
+const REGISTER_SLOTS: int = 6
+## Source sizeof(PATH_INFO) and sizeof(MR_MAT): the only register payload offsets frozen scripts prepare.
+const PATH_INFO_SIZE: int = 12
+const MATRIX_SIZE: int = 32
+
 var root_id: int = -1
 var programs: Dictionary[int, PackedInt32Array] = {}
 var names: Dictionary[int, String] = {}
@@ -55,6 +61,10 @@ func copy() -> EntityScriptDefinition:
 	for id: int in programs:
 		result.programs[id] = programs[id].duplicate()
 	return result
+
+## Returns the entity-data offset frozen ENTSCR_PREPARE_REGISTERS reads after a PATH_INFO or a matrix.
+static func register_offset(has_path: bool) -> int:
+	return PATH_INFO_SIZE if has_path else MATRIX_SIZE
 
 ## Validates the bounded opcode/operand closure before execution.
 func validate(action_lengths: PackedInt32Array, form_id: int, has_path: bool) -> String:
@@ -139,7 +149,7 @@ func validate(action_lengths: PackedInt32Array, form_id: int, has_path: bool) ->
 					if a[0] not in [0, 1] or a[1] < 0 or a[1] > 9 or not programs.has(a[2]) or (a[1] == 6 and a[3] <= 0) or (a[1] == 8 and not has_path):
 						return "Unsupported script branch"
 				31:
-					if a[0] != payload_offset or a[1] != payload_registers.size() or not ((a[0] == 12 and a[1] == 3) or (a[0] == 32 and a[1] in [2, 6])):
+					if a[0] != payload_offset or a[1] != payload_registers.size() or a[0] != register_offset(has_path) or a[1] < 1 or a[1] > REGISTER_SLOTS:
 						return "Unsupported register payload"
 				34:
 					if a[0] < 0 or a[0] > 1 or not callbacks.has(a[1]) or not CallbackKind.values().has(callbacks[a[1]]) or a[2] not in [0, 7] or a[3] not in [0, 1]:

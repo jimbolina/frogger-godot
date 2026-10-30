@@ -34,6 +34,14 @@ var overlay_position: Vector3i = Vector3i.ZERO
 ## Action awaiting the current action's last cel; -1 when none is requested.
 var requested_action: int = -1
 var deadly: bool = false
+## Swamp rat ra_pos in <<4 fixed point, signed 32-bit per axis.
+var position_4: Vector3i = Vector3i.ZERO
+## Swamp rat ra_prev_y, the <<4 jump height before the sine lift.
+var previous_y: int = 0
+## Swamp rat ra_jump1_sin_pos and ra_jump2_sin_pos.
+var sine_positions: Vector2i = Vector2i.ZERO
+## Swamp rat ra_has_sprite: the second jump has reached the splash height since the last restart.
+var splashed: bool = false
 
 ## Copies every custom continuation value.
 func copy() -> EntityCustomState:
@@ -67,4 +75,8 @@ func copy() -> EntityCustomState:
 	result.overlay_position = overlay_position
 	result.requested_action = requested_action
 	result.deadly = deadly
+	result.position_4 = position_4
+	result.previous_y = previous_y
+	result.sine_positions = sine_positions
+	result.splashed = splashed
 	return result

@@ -2,6 +2,11 @@ class_name DemoSetup
 extends RefCounted
 ## Resolves recorded resources through the supplied executable's detail-specific list.
 
+## Lives for demo playback. Frozen C never reinitialises lives between attract demos
+## (tempopt.c:1437-1440 calls GameStart only), so a lone demo has no faithful count;
+## FROG_MAX_LIVES (10) is the most C can carry and no retail demo loses that many.
+const DEMO_LIVES: int = 10
+
 var error: String = ""
 var demo: SourceDemoFile
 var resource_id: int = -1
@@ -43,4 +48,5 @@ static func start_for(value: SourceDemoFile) -> RunStart:
 	start.start_mode = RunStart.Mode.FAST_RESET
 	start.camera_startup = true
 	start.start_timer = 30
+	start.lives = DEMO_LIVES
 	return start

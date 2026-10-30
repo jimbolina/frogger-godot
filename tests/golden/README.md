@@ -45,6 +45,7 @@ commands run from the repository root; generated facts live in
 | Cave light radii, fade, firefly pickups, fat fire fly bob and retail light payloads | [Cave entities](specs/entities.md#cave-entities) |
 | Desert rocks, tumbleweed, snake, vulture, croc head, crack and retail payloads/action lengths | [Desert entities](specs/entities.md#desert-entities) |
 | Jungle plant, rope bridge, mushroom bounce, outro door bounce-back, hippo script and retail payloads/plinths/action lengths | [Jungle entities](specs/entities.md#jungle-entities) |
+| Swamp squirt, crusher, press, crusher callback, rat, slug, weir, barrel script registers, LOCAL_ALIGN and retail payloads/FORMs/admission | [Swamp entities](specs/entities.md#swamp-entities) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

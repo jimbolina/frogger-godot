@@ -63,8 +63,18 @@ or extend supported gameplay.
 `DemoSetup` resolves the enabled executable demo row and chosen detail through
 `GameData`, then supplies the recorded starting cell and `FAST_RESET` start with the source 30-tick
 fast-start timer. The session supplies its countdown only after accepted ticks.
-Normal map, zone, entity and corridor validation still applies. Demo setup does
-not establish whole-map gameplay support.
+Demo playback starts with `DemoSetup.DEMO_LIVES` (10, frozen `FROG_MAX_LIVES`):
+frozen C never reinitialises lives between attract demos, so a lone demo has no
+faithful count, and the native SWP1 demo dies five times. Keyboard play keeps
+three. Normal map, zone, entity and corridor validation still applies. Demo
+setup does not establish whole-map gameplay support.
+
+After a death or checkpoint reset, frozen `LevelEnd` redraws four times, so the
+next frame runs the three-loop logic cap while `Game_start_timer` decrements
+once after the loops; `FrogState.start_timer_hold` keeps the 30-tick timer
+unchanged for the first three logic ticks after `_reset_in_level`, so control
+returns no earlier than the 33rd tick. The level start has no hold: its
+camera leaves the start one tick later than frozen C, which cancels there.
 
 `TickCommand.recorded_input_byte` carries the raw byte separately from live
 masks (`-1` means absent). Mixing live masks and recorded input is rejected.

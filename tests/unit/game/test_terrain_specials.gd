@@ -502,3 +502,57 @@ func test_source_forced_search_outside_global_storage_is_diagnosed() -> void:
 	assert_string_contains(run._frog.jump(state, 2, events, false, true, 2, 15), "outside authored global storage")
 	assert_eq(state.frog.position_16, run.snapshot().frog.position_16)
 	assert_eq(state.frog.square_index, 8)
+
+func test_landing_keeps_grid_slip_destination_cell_for_next_hop() -> void:
+	var level: LevelDefinition = _level()
+	level.grid.squares[6].flags = 17
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var landed: GameplayState = null
+	for tick: int in 7:
+		var command := TickCommand.new()
+		command.tick_index = tick
+		command.pressed_mask = TickCommand.EAST if tick == 0 else 0
+		var result: TickResult = run.step(command)
+		assert_eq(result.error, "")
+		if not result.error.is_empty():
+			return
+		if result.final_snapshot.frog.mode == FrogMode.SLIPPING_LAND_GRID:
+			landed = result.final_snapshot
+			break
+	assert_not_null(landed, "The hop lands on the slippy square")
+	if landed == null:
+		return
+	assert_eq(landed.frog.world_position.x, 128, "The landing tick has not slid yet")
+	assert_eq(landed.frog.cell, Vector2i(3, 1), "C stores the slide destination, not the landing cell")
+	assert_eq(landed.frog.square_index, 7)
+	var hop := TickCommand.new()
+	hop.tick_index = landed.tick_index
+	hop.pressed_mask = TickCommand.NORTH
+	var next: TickResult = run.step(hop)
+	assert_eq(next.error, "")
+	assert_eq(next.final_snapshot.frog.mode, FrogMode.JUMPING)
+	assert_eq(Vector2i(next.final_snapshot.frog.target_16.x >> 16, next.final_snapshot.frog.target_16.z >> 16), Vector2i(384, 128), "The next hop starts from the stored cell")
+
+func test_terrain_freefall_entry_copies_jump_height_into_old_y() -> void:
+	var level: LevelDefinition = _level()
+	_empty(level, 9)
+	var run: GameplayRun = GameplayRun.create(level)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var state: GameplayState = run.snapshot()
+	state.frog.mode = FrogMode.JUMPING
+	state.frog.flags &= ~FrogFlags.JUMP_TO_LAND
+	state.frog.remaining_ticks = 1
+	state.frog.square_index = -1
+	state.frog.cell = Vector2i(1, 2)
+	state.frog.target_y = -40
+	state.frog.old_y = 77
+	var events: Array[TickEvent] = []
+	run._frog.move_jumping(state, events)
+	assert_eq(run._frog.callback_error, "")
+	assert_true(state.frog.flags & FrogFlags.FREEFALL != 0)
+	assert_eq(state.frog.old_y, -40)

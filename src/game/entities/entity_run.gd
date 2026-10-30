@@ -2,8 +2,10 @@ class_name EntityRun
 extends RefCounted
 ## Owns attached entity transforms and independent path cursors for one run.
 
-const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
-const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK]
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
+## Generic ENTSTRUpdateMovingMOF users whose LOCAL_ALIGN flag the run honours.
+const LOCALLY_ALIGNED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
+const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK, EntityBehavior.Kind.SWP_SQUIRT, EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS, EntityBehavior.Kind.SWP_RAT]
 var error: String = ""
 var _definitions: Array[EntityDefinition] = []
 var _scripts: Array[PreparedEntityScript] = []
@@ -89,7 +91,7 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 		if definition.flags & ~EntityDefinition.ALL_FLAGS:
 			result.error = "Entity %d has unsupported flags" % definition.entity_index
 			return result
-		if definition.flags & EntityDefinition.LOCAL_ALIGN or (definition.flags & EntityDefinition.PROJECT_ON_LAND and definition.behavior.kind not in PROJECTED_KINDS):
+		if (definition.flags & EntityDefinition.LOCAL_ALIGN and (definition.flags & EntityDefinition.PROJECT_ON_LAND or definition.behavior.kind not in LOCALLY_ALIGNED_KINDS)) or (definition.flags & EntityDefinition.PROJECT_ON_LAND and definition.behavior.kind not in PROJECTED_KINDS):
 			result.error = "Entity %d requires unsupported alignment or land projection" % definition.entity_index
 			return result
 		if definition.behavior.layout == EntityBehavior.Layout.MATRIX and (definition.behavior.kind == EntityBehavior.Kind.STATIC or definition.behavior.has_custom_update()):
@@ -140,6 +142,15 @@ static func create(definitions: Array[EntityDefinition], lifecycle: EntityLifecy
 			return result
 		if definition.behavior.kind == EntityBehavior.Kind.JUN_GOLD_FROG and definition.action_lengths.size() < EntityJungleGoldFrog.REQUIRED_ACTIONS:
 			result.error = "Jungle gold frog requires the general gold frog actions through BACKFLIP"
+			return result
+		if definition.behavior.kind in [EntityBehavior.Kind.SWP_SQUIRT, EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS, EntityBehavior.Kind.SWP_RAT] and definition.swamp == null:
+			result.error = "Swamp behavior requires decoded subtype operands"
+			return result
+		if definition.behavior.kind == EntityBehavior.Kind.SWP_RAT and definition.action_lengths.size() < EntitySwampDefinition.RAT_ACTIONS:
+			result.error = "Swamp rat requires its run, jump and roll actions"
+			return result
+		if definition.behavior.kind == EntityBehavior.Kind.SWP_SLUG and definition.swamp != null and definition.swamp.motion_type == EntitySwampDefinition.SLUG_CURVY and definition.action_lengths.size() < 2:
+			result.error = "Curvy Swamp slug requires its bend action"
 			return result
 		for length: int in definition.action_lengths:
 			if length <= 0:
@@ -246,6 +257,8 @@ func step(tick_index: int, attached_entity_index: int = -1, deferred_updates: bo
 			next_state.entities[index].matrix12 = EntityTransform.moving_on_land(next_state.entities[index].path, _definitions[index].flags, grid)
 			if next_state.entities[index].matrix12.is_empty():
 				return _projection_error(index)
+		elif previous.live and candidates[index] != null and _definitions[index].flags & EntityDefinition.LOCAL_ALIGN:
+			next_state.entities[index].matrix12 = EntityTransform.moving_locally_aligned(next_state.entities[index].path, _definitions[index].flags, previous.matrix12)
 	if _lifecycle != null:
 		next_state.lifecycle_enabled = true
 		next_state.live_order = _state.live_order.duplicate()
@@ -503,6 +516,17 @@ func contact_colour_switch(entity_index: int, frog: GameplayState) -> EntityCust
 		_state.entities[slot] = result.entity.copy()
 	return result
 
+## Executes the Swamp crusher callback against a private crusher copy and commits it on success.
+func contact_swamp_crusher(entity_index: int, frog: Frog, state: GameplayState, events: Array[TickEvent]) -> String:
+	var slot: int = _slot_for_id(entity_index)
+	if slot < 0 or _definitions[slot].behavior.kind != EntityBehavior.Kind.SWP_CRUSHER or not _state.entities[slot].live or _state.entities[slot].custom_state == null:
+		return "Swamp crusher callback requires a live crusher entity"
+	var entity: EntitySnapshot = _state.entities[slot].copy()
+	var issue: String = EntitySwampCrusherCallback.apply(_definitions[slot], entity, frog, state, events)
+	if issue.is_empty():
+		_state.entities[slot] = entity
+	return issue
+
 ## Updates one supported custom neighbor on detached candidate state.
 func update_custom(entity_index: int, environment: EntityEnvironmentState, random: SourceRandom, frog_position: Vector3i, hit: bool, contacts: Array[FormContactDefinition] = [], frog: GameplayState = null, grid: GridDefinition = null, collision: EntityCollisionDefinition = null) -> EntityCustomResult:
 	var slot: int = _slot_for_id(entity_index)
@@ -540,7 +564,7 @@ func update_custom(entity_index: int, environment: EntityEnvironmentState, rando
 			if not result.error.is_empty():
 				return result
 			result.entity.path = _runners[slot].snapshot()
-			result.entity.matrix12 = _path_pose(slot, result.entity.path, result.entity.entity_flags, grid)
+			result.entity.matrix12 = _path_pose(slot, result.entity.path, result.entity.entity_flags, grid, result.entity.matrix12)
 			if result.entity.matrix12.is_empty():
 				result.error = _projection_error(slot)
 				return result
@@ -727,6 +751,14 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 			EntityJungleRopeBridge.initialize(definition, entity)
 		elif definition.behavior.kind == EntityBehavior.Kind.JUN_GOLD_FROG:
 			EntityJungleGoldFrog.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.SWP_SQUIRT:
+			EntitySwampSquirt.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.SWP_CRUSHER:
+			EntitySwampCrusher.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.SWP_PRESS:
+			EntitySwampPress.initialize(definition, entity)
+		elif definition.behavior.kind == EntityBehavior.Kind.SWP_RAT:
+			EntitySwampRat.initialize(definition, entity)
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true
@@ -756,6 +788,8 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 			entity.model_present = false
 			entity.live_flags = 0
 			entity.custom_state.model_hidden = true
+	if definition.behavior.kind == EntityBehavior.Kind.SWP_SLUG and definition.swamp != null and definition.swamp.motion_type == EntitySwampDefinition.SLUG_CURVY and entity.animation != null and entity.animation.lengths.size() > EntitySwampDefinition.SLUG_CURVY:
+		entity.animation.select(EntitySwampDefinition.SLUG_CURVY)
 
 func _retire_instance(state: EntityRunSnapshot, entity: EntitySnapshot) -> void:
 	entity.live = false
@@ -796,7 +830,7 @@ func begin_update(slot: int, attached: int, grid: GridDefinition = null) -> bool
 		return false
 	entity.live_flags = (entity.live_flags & ~EntityLiveFlags.DESTROY) | int(entity.destroy_pending)
 	if entity.path != null:
-		entity.matrix12 = _path_pose(slot, entity.path, _definitions[slot].flags, grid)
+		entity.matrix12 = _path_pose(slot, entity.path, _definitions[slot].flags, grid, entity.matrix12)
 		if entity.matrix12.is_empty():
 			error = _projection_error(slot)
 	return true
@@ -813,8 +847,12 @@ func _projects(slot: int, flags: int, grid: GridDefinition) -> bool:
 	var kind: EntityBehavior.Kind = _definitions[slot].behavior.kind
 	return grid != null and flags & EntityDefinition.PROJECT_ON_LAND and kind != EntityBehavior.Kind.HEDGEHOG and kind in PROJECTED_KINDS
 
-func _path_pose(slot: int, path: PathSnapshot, flags: int, grid: GridDefinition) -> PackedInt32Array:
-	return EntityTransform.moving_on_land(path, flags, grid) if _projects(slot, flags, grid) else EntityTransform.moving(path, flags)
+func _path_pose(slot: int, path: PathSnapshot, flags: int, grid: GridDefinition, previous: PackedInt32Array) -> PackedInt32Array:
+	if _projects(slot, flags, grid):
+		return EntityTransform.moving_on_land(path, flags, grid)
+	if flags & EntityDefinition.LOCAL_ALIGN:
+		return EntityTransform.moving_locally_aligned(path, flags, previous)
+	return EntityTransform.moving(path, flags)
 
 func _projection_error(slot: int) -> String:
 	return "Entity %d projected path requires a valid first terrain square" % _definitions[slot].entity_index

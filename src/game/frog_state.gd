@@ -30,6 +30,11 @@ var frog_collision_pose: FrogCollisionPose = null
 var animation_condition_counter: int = 0
 var no_input_timer: int = 0
 var start_timer: int = 0
+## Logic ticks that still share the current start-timer value after an in-level reset.
+## Frozen C's LevelEnd swaps the display four times (gamesys.C GameClearRender), so the
+## next frame runs the three-loop cap of logic (gamesys.C:1526-1556) but decrements
+## Game_start_timer only once after them (gamesys.C:1607-1608).
+var start_timer_hold: int = 0
 var old_position_16: Vector3i = Vector3i.ZERO
 var matrix12: PackedInt32Array = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
 var user_target_cell: Vector2i = Vector2i.ZERO
@@ -74,6 +79,7 @@ func copy() -> FrogState:
 	result.animation_condition_counter = animation_condition_counter
 	result.no_input_timer = no_input_timer
 	result.start_timer = start_timer
+	result.start_timer_hold = start_timer_hold
 	result.old_position_16 = old_position_16
 	result.matrix12 = matrix12.duplicate()
 	result.user_target_cell = user_target_cell

@@ -23,7 +23,7 @@ func _assert_runs(spawner: SandboxSpawner, label: String) -> void:
 func test_layouts_have_unique_names_entries_and_cells_inside_the_arena() -> void:
 	var sandbox: SandboxLevel = SandboxLevel.build()
 	var layouts: Array[SandboxPresets.Layout] = SandboxPresets.all()
-	assert_eq(SandboxPresets.names(), PackedStringArray(["river", "ice slide", "platform gauntlet", "enemy lane", "zone tour", "desert hazards", "jungle hazards"]))
+	assert_eq(SandboxPresets.names(), PackedStringArray(["river", "ice slide", "platform gauntlet", "enemy lane", "zone tour", "desert hazards", "jungle hazards", "swamp hazards"]))
 	for layout: SandboxPresets.Layout in layouts:
 		assert_false(layout.entries.is_empty(), layout.name)
 		assert_false(layout.description.is_empty(), layout.name)

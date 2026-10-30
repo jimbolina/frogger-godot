@@ -110,6 +110,14 @@ static func all() -> Array[Layout]:
 		.add("JUN_BOUNCY_MUSHROOM", Vector2i(16, 25))
 		.add("JUN_HIPPO", Vector2i(21, 25), SandboxSpawner.Preset.LOOP)
 		.add("JUN_OUTRO_DOOR", Vector2i(13, 27), SandboxSpawner.Preset.STATIC, -1, "JUN_OUTRO_DOOR"))
+	result.append(Layout.new("swamp hazards", "An acid squirt, a wall crusher, a press, a rat, slugs, nuclear barrels and a bobbing waste barrel on open floor", Vector2i(16, 19))
+		.add("SWP_SQUIRT", Vector2i(14, 21))
+		.add("SWP_CRUSHER", Vector2i(19, 21), SandboxSpawner.Preset.STATIC, -1, "SWP_CRUSHER")
+		.add("SWP_PRESS", Vector2i(16, 24))
+		.add("SWP_RAT", Vector2i(12, 24))
+		.add("SWP_SLUG", Vector2i(13, 27), SandboxSpawner.Preset.LINE)
+		.add("NUCLEAR_BARREL", Vector2i(21, 26), SandboxSpawner.Preset.LOOP)
+		.add("DYNAMIC", Vector2i(18, 27), SandboxSpawner.Preset.STATIC, -1, "SWP_STAT_WASTE_BARREL"))
 	return result
 
 ## Lists the built-in layout names in menu order.

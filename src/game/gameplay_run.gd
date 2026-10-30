@@ -577,6 +577,8 @@ func _copy_grid(source: GridDefinition) -> String:
 	_grid = grid
 	return ""
 
+## Restarts the frog after a death or checkpoint as frozen C's LevelEnd/LevelStart does,
+## holding the 30-tick start timer for the two extra logic ticks of C's catch-up frame.
 func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickEvent]) -> String:
 	if _candidate_entities != null:
 		var entity_issue: String = _candidate_entities.reset_in_level(checkpoint, state.entity_environment, state.flow.gold_collected)
@@ -608,6 +610,7 @@ func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickE
 	state.frog.death_count = old.death_count
 	state.frog.death_equate = old.death_equate
 	state.frog.start_timer = 30
+	state.frog.start_timer_hold = 2
 	state.frog.matrix12 = TerrainMatrix.update(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, state.frog.world_position.x, state.frog.world_position.y, state.frog.world_position.z]), state.frog.flags, state.frog.direction, null)
 	var primitive_transpose: CollisionTransposeCache = state.attachment.primitive_transpose
 	state.attachment = AttachmentState.new()

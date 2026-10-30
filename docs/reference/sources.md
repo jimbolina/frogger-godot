@@ -60,8 +60,9 @@ do not modify or rebuild the frozen sources. Keep exports outside repositories.
 | A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
 | Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
 | A trace of any run | Start the `frogger` driver with `--trace-csv=<file>` |
+| Attract demos the fresh boot never reaches (Cave, Desert, Swamp) | Run the driver with a scratch store whose "Selectable Levels" value opens every arcade row, then let the attract route cycle to the wanted demo; SWP1 is the fourteenth. Keep the store and traces outside repositories. |
 
-A trace has one row per frog per call: `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`. A second file, `<file>.entities.csv`, has one row per live entity. Positions are whole world units; a grid square is 256 units. One call is one logic tick, except the call after a level ends, which covers up to three. The verified native export covers four attract demos and four map screenshots. SUB1 traces match the retained pre-port Windows baseline byte for byte; older full Windows baselines for the other three demos are unavailable, so their cross-platform parity is unverified.
+A trace has one row per frog per call: `call,page,map,frog,grid_x,grid_z,x,y,z,mode,flags,input`. A second file, `<file>.entities.csv`, has one row per live entity. Positions are whole world units; a grid square is 256 units. One call is one logic tick, except the call after a level ends or starts (the demo start included), which covers up to three: the engine caps catch-up logic at three loops per frame. The verified native export covers four attract demos and four map screenshots. SUB1 traces match the retained pre-port Windows baseline byte for byte; older full Windows baselines for the other three demos are unavailable, so their cross-platform parity is unverified.
 
 ## FrogLord: `../froggy/resources/FrogLord`
 

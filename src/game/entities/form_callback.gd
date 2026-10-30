@@ -5,6 +5,8 @@ extends RefCounted
 enum Kind { NONE, BLOCK, WATERFALL_BLOCK, FALL_BLOCK, ORG_FLY_SCORE, UNKNOWN, BUTTERFLY_SCORE, VOL_COLOUR_SWITCH, CAV_FIREFLY_SCORE, CRUSHER_BOUNCE_BACK }
 
 const CRUSHER_JUMP_TICKS: int = 6
+## Source cr_count left by a user-mode Swamp retarget.
+const CRUSHER_USER_COUNT: int = 4
 const SWAMP_THEME: int = 7
 
 ## Applies a verified primitive callback to the private gameplay candidate.
@@ -39,7 +41,13 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 		return "Butterfly callback requires its decoded pickup reward"
 	if kind == Kind.CRUSHER_BOUNCE_BACK:
 		if frog.theme == SWAMP_THEME:
-			return "Swamp crusher callback is unsupported"
+			if frog.candidate_entities == null:
+				return "Swamp crusher callback requires candidate entities"
+			var crusher_issue: String = frog.candidate_entities.contact_swamp_crusher(entity_index, frog, state, events)
+			if not crusher_issue.is_empty():
+				return crusher_issue
+			state.entities = frog.candidate_entities.snapshot()
+			return ""
 		return crusher_bounce_back(frog.grid, state, entity_index)
 	if kind == Kind.BLOCK and state.frog.mode != FrogMode.STATIONARY:
 		frog.kill(state, FrogAnimationCatalog.SQUISHED, false, events)
@@ -124,7 +132,13 @@ static func crusher_step(direction: int) -> Vector3i:
 ## Applies the non-Swamp SwpCrusherCallback handler, which tests only the target stack's first square.
 static func crusher_bounce_back(grid: GridDefinition, state: GameplayState, entity_index: int) -> String:
 	var step: Vector3i = crusher_step(state.frog.direction)
-	var cell: Vector2i = state.frog.cell + Vector2i(step.x, step.y)
+	return crusher_bounce_to(grid, state, entity_index, state.frog.cell + Vector2i(step.x, step.y), step)
+
+
+## Applies the shared SwpCrusherCallback bounce to a target cell, testing only its stack's first square;
+## step.z is the facing for a normal jump. A user-mode retarget sets the supplied crusher count to 4,
+## which only the Swamp branch passes.
+static func crusher_bounce_to(grid: GridDefinition, state: GameplayState, entity_index: int, cell: Vector2i, step: Vector3i, crusher: EntityCustomState = null) -> String:
 	var stack: GridStackDefinition = grid.stack_at(cell) if grid != null else null
 	if stack == null:
 		return "Crusher callback grid lookup lies outside authored storage"
@@ -142,6 +156,8 @@ static func crusher_bounce_back(grid: GridDefinition, state: GameplayState, enti
 		for axis: int in 3:
 			velocity[axis] = PlatformMath.divide(PlatformMath.s32(state.frog.target_16[axis] - state.frog.position_16[axis]), CRUSHER_JUMP_TICKS)
 		state.frog.velocity_16 = velocity
+		if crusher != null:
+			crusher.count = CRUSHER_USER_COUNT
 		return ""
 	state.frog.flags |= FrogFlags.JUMP_TO_LAND | FrogFlags.JUMP_FROM_COLLPRIM
 	state.frog.direction = step.z

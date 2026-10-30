@@ -430,15 +430,18 @@ func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> voi
 	_add_entity(map, 1, 32, _path_info(0), 1)
 	_add_entity(map, 1, 64, _path_info(0), 2)
 	_add_entity(map, 0, 32, _matrix(), 3)
+	_add_entity(map, 1, 96, _path_info(0), 4)
 	var setup: EntitySetup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", true)
-	assert_eq(setup.definitions.size(), 1)
-	if setup.definitions.is_empty():
+	assert_eq(setup.definitions.size(), 2)
+	if setup.definitions.size() != 2:
 		return
 	assert_eq(setup.definitions[0].unique_id, 1)
 	assert_eq(setup.definitions[0].flags, 32)
+	assert_eq(setup.definitions[1].flags, 64, "LOCAL_ALIGN admits generic movers alone")
 	assert_eq(setup.diagnostics.size(), 2)
 	assert_eq(setup.diagnostics[0].code, "unsupported_transform")
 	assert_eq(setup.diagnostics[1].code, "unsupported_transform")
+	assert_eq(setup.diagnostics[1].entity_index, 3, "Projection combined with local alignment stays unsupported")
 	setup = EntitySetup.from_map(map, book, "cave.map", 3, "pc-retail-v3.0e", false)
 	assert_true(setup.definitions.is_empty())
 	assert_eq(setup.diagnostics[0].code, "unsupported_transform")

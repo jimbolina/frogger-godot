@@ -93,7 +93,7 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 			if command.opcode == 31:
 				var offset: int = command.arguments[0]
 				var count: int = command.arguments[1]
-				if not ((offset == 12 and count == 3) or (offset == 32 and count in [2, 6])) or register_payload.size() < offset + count * 4:
+				if offset != EntityScriptDefinition.register_offset(behavior.layout == EntityBehavior.Layout.PATH) or count < 1 or count > EntityScriptDefinition.REGISTER_SLOTS or register_payload.size() < offset + count * 4:
 					result.error = "Unsupported or truncated register payload in %s at 0x%08x" % [program.name, source_address]
 					return result
 				if not decoded.payload_registers.is_empty() and (decoded.payload_offset != offset or decoded.payload_registers.size() != count):

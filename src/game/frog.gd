@@ -259,7 +259,9 @@ func jump(state: GameplayState, direction: int, events: Array[TickEvent], is_sup
 	return ""
 
 
-## Advances the current movement mode by one tick.
+## Advances the current movement mode by one tick. A landing keeps the grid cell its
+## reaction stored (a slip destination), because frozen C's MoveFrog refreshes
+## fr_grid_x/z before ReactFrogWithGridFlags and not after it (FROG.C:858-865).
 func move(state: GameplayState, events: Array[TickEvent]) -> void:
 	if state.attachment.current_entity_index >= 0 and state.frog.mode in [FrogMode.STATIONARY, FrogMode.WAIT_FOR_CAMERA, FrogMode.CENTRING] and state.frog.flags & FrogFlags.ON_ENTITY:
 		var was_centring: bool = state.frog.mode == FrogMode.CENTRING
@@ -338,12 +340,16 @@ func move(state: GameplayState, events: Array[TickEvent]) -> void:
 		return
 	var landing: bool = state.frog.remaining_ticks == 1 and state.frog.flags & FrogFlags.JUMP_TO_LAND != 0
 	move_jumping(state, events)
+	var reacted_cell: Vector2i = state.frog.cell
 	update_world(state)
-	if not landing:
+	if landing:
+		state.frog.cell = reacted_cell
+	else:
 		update_matrix(state)
 
 
-## Advances a terrain jump and its landing reaction.
+## Advances a terrain jump and its landing reaction. Entering freefall copies the jump's
+## reference height into old_y, as frozen C's UPDATE_OLD_POS does (fr_old_y = fr_y).
 func move_jumping(state: GameplayState, events: Array[TickEvent], react_on_land: bool = true) -> void:
 	if state.attachment.current_entity_index >= 0:
 		contacts.move_platform_jumping(self, state, events, react_on_land)
@@ -377,6 +383,7 @@ func move_jumping(state: GameplayState, events: Array[TickEvent], react_on_land:
 			state.frog.remaining_ticks = 0x7FFFFFF
 			state.frog.velocity_16.x = 0
 			state.frog.velocity_16.z = 0
+			state.frog.old_y = state.frog.target_y
 	else:
 		state.frog.velocity_16.y += GRAVITY_16
 		if state.frog.flags & (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) == (FrogFlags.FREEFALL | FrogFlags.FREEFALL_NO_ANIMATION) and state.frog.world_position.y - state.frog.old_y >= 0:

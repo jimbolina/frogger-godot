@@ -13,6 +13,7 @@ var powerup_flags: int = 0
 var quick_jump_timer: int = 0
 var auto_hop_timer: int = 0
 var super_tongue_timer: int = 0
+## Keyboard play starts with FROG_START_LIVES; demo playback sets DemoSetup.DEMO_LIVES.
 var lives: int = 3
 ## Explicit component RNG seed and level-start camera selection.
 var seed: int = 1

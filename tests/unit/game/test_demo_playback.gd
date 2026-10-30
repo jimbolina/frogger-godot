@@ -200,3 +200,24 @@ func test_recorded_tongue_consumes_byte_and_advances_effect_atomically() -> void
 	assert_eq(run.snapshot().frog.current_input, 0x90)
 	assert_eq(run.snapshot().tongue.section, 1)
 	assert_eq(run.snapshot().tongue.mode, TongueState.Mode.OUT)
+
+func test_demo_start_uses_explicit_maximum_lives_and_keyboard_keeps_three() -> void:
+	var bytes := PackedByteArray()
+	bytes.resize(12)
+	bytes.encode_s32(0, 826)
+	bytes.encode_s32(4, 10)
+	bytes.encode_s32(8, 10)
+	bytes.append(128)
+	var demo: SourceDemoFile = SourceDemoFile.parse(bytes)
+	assert_true(demo.is_valid())
+	var start: RunStart = DemoSetup.start_for(demo)
+	assert_eq(DemoSetup.DEMO_LIVES, 10)
+	assert_eq(start.lives, DemoSetup.DEMO_LIVES)
+	assert_eq(RunStart.new().lives, 3)
+	var level: LevelDefinition = _level()
+	level.flow_enabled = true
+	start.spawn_cell = Vector2i(2, 2)
+	var run: GameplayRun = GameplayRun.create(level, start)
+	assert_eq(run.error, "")
+	if run.error.is_empty():
+		assert_eq(run.snapshot().frog.lives, DemoSetup.DEMO_LIVES)

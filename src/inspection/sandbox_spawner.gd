@@ -305,7 +305,8 @@ func _place(placement: Placement) -> String:
 		placement.speed = 0
 		entity.path_definition = null
 		entity.path_start = null
-		var shift := Vector3i(centre.x - entity.matrix12[9], 0, centre.z - entity.matrix12[11])
+		var authored := Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+		var shift := Vector3i(centre.x - authored.x, 0, centre.z - authored.z)
 		entity.matrix12[9] = centre.x
 		entity.matrix12[10] = centre.y
 		entity.matrix12[11] = centre.z
@@ -313,6 +314,8 @@ func _place(placement: Placement) -> String:
 			var issue: String = _anchor_rock_targets(entity.desert, shift)
 			if not issue.is_empty():
 				return issue
+		if entity.swamp != null:
+			_anchor_swamp_targets(entity, authored, centre)
 	var contact: FormContactDefinition = placement.contact
 	contact.source_id = entity.source_id
 	contact.build_id = entity.build_id
@@ -323,6 +326,18 @@ func _place(placement: Placement) -> String:
 	contact.form_name = entity.form_name
 	contact.entity_flags = entity.flags
 	return ""
+
+## Keeps a borrowed squirt's authored drop height above the arena floor and moves a rat's four
+## targets with its start target, so the relocated behaviors cover the same relative ground.
+func _anchor_swamp_targets(entity: EntityDefinition, authored: Vector3i, centre: Vector3i) -> void:
+	var swamp: EntitySwampDefinition = entity.swamp
+	if entity.behavior.kind == EntityBehavior.Kind.SWP_SQUIRT:
+		entity.matrix12[10] = centre.y - maxi(0, swamp.target.y - authored.y)
+		swamp.target = centre
+	elif entity.behavior.kind == EntityBehavior.Kind.SWP_RAT and swamp.rat_targets.size() == 4:
+		var rat_shift: Vector3i = centre - swamp.rat_targets[0]
+		for index: int in swamp.rat_targets.size():
+			swamp.rat_targets[index] += rat_shift
 
 ## Moves a borrowed rock's landing targets with the rock and snaps them to the arena floor.
 func _anchor_rock_targets(desert: EntityDesertDefinition, shift: Vector3i) -> String:

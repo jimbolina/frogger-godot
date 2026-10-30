@@ -7,13 +7,18 @@ var error: String = ""
 var reset: Reset = Reset.NONE
 
 ## Advances source timer and checkpoint bonus clocks without presentation callbacks.
+## The start timer stays unchanged while FrogState.start_timer_hold is positive, so the
+## first three logic ticks after a death or checkpoint reset all read 30, as frozen C's
+## catch-up frame does; control can therefore return no earlier than the 33rd tick.
 static func advance(frog: Frog, state: GameplayState, entities: EntityRun, events: Array[TickEvent], demo: bool, random: SourceRandom = null, level_time: int = 2250, checkpoint_skip: bool = false) -> LevelFlow:
 	var result := LevelFlow.new()
 	if not demo and state.flow.phase in [LevelFlowState.Phase.PLAY, LevelFlowState.Phase.DEATH]:
 		result.error = _timer_sounds(state, random, events)
 		if not result.error.is_empty():
 			return result
-	if state.frog.start_timer > 0:
+	if state.frog.start_timer_hold > 0:
+		state.frog.start_timer_hold -= 1
+	elif state.frog.start_timer > 0:
 		state.frog.start_timer -= 1
 	if state.flow.phase == LevelFlowState.Phase.START:
 		if random == null:

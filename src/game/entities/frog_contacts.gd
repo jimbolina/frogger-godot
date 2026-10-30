@@ -314,7 +314,9 @@ func jump_platform(frog: Frog, state: GameplayState, input: int, events: Array[T
 	return ""
 
 
-## Advances an attached jump and handles landing or departure.
+## Advances an attached jump and handles landing or departure. A hop-off that finds no
+## land enters freefall with old_y set to the jump's reference height, as frozen
+## FROG_MOVEMENT_CALLBACK_UPDATE_OLD_POS does after block_15.
 func move_platform_jumping(frog: Frog, state: GameplayState, events: Array[TickEvent], react_on_land: bool) -> void:
 	var pose: EntitySnapshot = platform_pose(frog, state)
 	state.frog.remaining_ticks -= 1
@@ -366,6 +368,7 @@ func move_platform_jumping(frog: Frog, state: GameplayState, events: Array[TickE
 	state.frog.remaining_ticks = 0x7FFFFFF
 	state.frog.velocity_16.x = 0
 	state.frog.velocity_16.z = 0
+	state.frog.old_y = state.frog.target_y
 	frog.update_world(state)
 	state.frog.old_position_16 = state.frog.position_16
 

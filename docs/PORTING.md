@@ -2,7 +2,7 @@
 
 The game is rebuilt in phases. Each phase is independently demonstrable and has a stated exit check. Sizes are relative: S, M, L, XL.
 
-The dedicated game scene opens ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5 and JUN1 with the original-style HUD.
+The dedicated game scene opens ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 with the original-style HUD.
 Remaining work expands theme coverage and completes the systems listed below.
 
 ## Status
@@ -24,7 +24,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8c | ORG1 complete: single-player original-theme and general forms, all script opcodes and callbacks, v3.0e FORM callbacks, all death types, checkpoints, pink frog delivery, tongue, whole-map visibility and zones | L | The ORG1 attract demo replays to the reference end state; ORG1 is playable by keyboard through five checkpoints | Done; native attract, keyboard completion/collections, schedule parity and both test modes pass |
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
-| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest, P9b Volcano, P9c Cave, P9d Desert and P9e Jungle complete |
+| P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | In progress; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle and P9f Swamp complete |
 | P11 | Effects and particles | L | By eye against reference pictures | |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
@@ -86,7 +86,19 @@ stage with no checkpoints and stays with P16 together with the end-of-game
 sequence frozen C runs after JUN1; the port shows the level-complete flow
 there. JUN3–JUN5 have no maps and JUNM is multiplayer.
 
-Next are SWP and SKY. Each level is accepted when the owner plays
+P9f Swamp is complete and awaits the owner's play check of SWP1–SWP5. They
+admit through whole-map setup with typed acid squirts, wall crushers, presses,
+rats, slugs, nuclear barrels and the weir, the Swamp branch of the crusher
+callback, register payloads for the nuclear and bobbing waste barrels, and
+frozen `LOCAL_ALIGN` path alignment for the generic movers that carry it.
+Independent facts cover every behavior and the retail payloads; all five demos
+complete with schedule parity, and SWP1 and SWP5 match native traces per tick
+(the native run needs a scratch store with every level selectable). Fixing
+them also corrected the post-reset start timer, the landing cell kept by a
+slip reaction and the freefall reference height for every level. SWPM has no map. The rat
+splash sprite and the green drowning tint wait for the effects phase.
+
+Next is SKY. Each level is accepted when the owner plays
 it in the game scene and confirms it looks and plays well; recorded replays are
 not required. Retain the thirteen existing keyboard completion checks
 and the ORG1, SUB1, FOR1 and VOL1 native attract comparisons; see

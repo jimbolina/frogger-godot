@@ -3,7 +3,7 @@ extends RefCounted
 ## Resolves authored map entities into detached base-transform definitions.
 
 ## Path movers that frozen ENTSTRUpdateMovingMOF projects onto the landscape.
-const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG]
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
 
 ## Desert path runners decoded from PATH_INFO alone.
 const DESERT_PATH_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE]
@@ -17,6 +17,15 @@ const JUNGLE_PAYLOAD_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.JU
 ## FrogLord JUN_OUTRO_ENTITY size and JUN_OUTRO_TARGETS stride.
 const OUTRO_SIZE: int = 164
 const OUTRO_TARGET_STRIDE: int = 12
+## Swamp matrix entities with FrogLord subtype payloads after the matrix.
+const SWAMP_PAYLOAD_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.SWP_SQUIRT, EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS, EntityBehavior.Kind.SWP_RAT]
+## FrogLord SWAMP_SQUIRT, SWAMP_CRUSHER/SWAMP_PRESS, SWAMP_RAT and SWAMP_SLUG sizes.
+const SQUIRT_SIZE: int = 44
+const CRUSHER_SIZE: int = 40
+const RAT_SIZE: int = 68
+const SLUG_SIZE: int = 16
+## Source SWP_WEIR_ROTATION applied about Z by ENTSTRSwpCreateWeir before the model is built.
+const WEIR_ROTATION: int = 1024
 ## Entries in the source jun_plinth_table.
 const PLINTH_TABLE_SIZE: int = 9
 ## SUBURBIA_TURTLE size: PATH_INFO then dive delay, rise delay and type words.
@@ -65,7 +74,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 			result._issue("unknown_flags", "Entity has unknown flags 0x%X" % span.flags, span, form, index, source_id, resource_id, build_id)
 			continue
 		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(form.entity_name)
-		if span.flags & 64 or (span.flags & 32 and not (custom_behaviors_enabled and behavior.kind in PROJECTED_KINDS)):
+		if (span.flags & 64 and (span.flags & 32 or not (custom_behaviors_enabled and behavior.kind in EntityRun.LOCALLY_ALIGNED_KINDS))) or (span.flags & 32 and not (custom_behaviors_enabled and behavior.kind in PROJECTED_KINDS)):
 			result._issue("unsupported_transform", "PROJECT_ON_LAND or LOCAL_ALIGN transform is unsupported", span, form, index, source_id, resource_id, build_id)
 			continue
 		var definition := EntityDefinition.new()
@@ -114,7 +123,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS + EntityBehavior.JUNGLE_PATH_KINDS):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS + EntityBehavior.JUNGLE_PATH_KINDS + EntityBehavior.SWAMP_PATH_KINDS):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -155,6 +164,12 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 			if definition.behavior.kind == EntityBehavior.Kind.JUN_HIPPO and span.payload.size() < SUBURBIA_TURTLE_SIZE:
 				result._issue("invalid_payload", "Jungle hippo requires PATH_INFO, dive and rise delays and its turtle type", span, form, index, source_id, resource_id, build_id)
 				continue
+			if definition.behavior.kind == EntityBehavior.Kind.SWP_SLUG:
+				if span.payload.size() < SLUG_SIZE:
+					result._issue("invalid_payload", "Swamp slug requires PATH_INFO and its motion type", span, form, index, source_id, resource_id, build_id)
+					continue
+				definition.swamp = EntitySwampDefinition.new()
+				definition.swamp.motion_type = span.payload.decode_u32(12)
 		else:
 			result._issue("unknown_behavior", "No base-transform decoder for entity name %s" % form.entity_name, span, form, index, source_id, resource_id, build_id)
 			continue
@@ -188,6 +203,13 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 			if not payload_issue.is_empty():
 				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
 				continue
+		if definition.behavior.kind in SWAMP_PAYLOAD_KINDS:
+			var payload_issue: String = _swamp_payload(definition, span.payload)
+			if not payload_issue.is_empty():
+				result._issue("invalid_payload", payload_issue, span, form, index, source_id, resource_id, build_id)
+				continue
+		if definition.behavior.kind == EntityBehavior.Kind.SWP_STAT_WEIR:
+			definition.matrix12 = weir_matrix(definition.matrix12)
 		result.definitions.append(definition)
 		var stored_type: String = _stored_entity_name(names, form)
 		if stored_type != form.entity_name:
@@ -351,6 +373,49 @@ static func _jungle_payload(definition: EntityDefinition, payload: PackedByteArr
 				return "Jungle plinth id %d is outside the source plinth table" % jungle.op_id
 	definition.jungle = jungle
 	return ""
+
+## Copies FrogLord Swamp squirt, crusher, press and rat operands after the matrix and resolves the
+## rat timing the source computes at creation.
+static func _swamp_payload(definition: EntityDefinition, payload: PackedByteArray) -> String:
+	var swamp := EntitySwampDefinition.new()
+	match definition.behavior.kind:
+		EntityBehavior.Kind.SWP_SQUIRT:
+			if payload.size() < SQUIRT_SIZE:
+				return "Swamp squirt requires its delay, drop time and target"
+			swamp.time_delay = payload.decode_s16(32)
+			swamp.drop_time = payload.decode_s16(34)
+			swamp.target = _svec(payload, 36)
+			if swamp.drop_time == 0:
+				return "Swamp squirt drop time of zero divides by zero in the source"
+		EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS:
+			if payload.size() < CRUSHER_SIZE:
+				return "Swamp crusher and press require their speed, distance, direction and delay"
+			swamp.speed = payload.decode_s16(32)
+			swamp.distance = payload.decode_s16(34)
+			swamp.direction = payload.decode_s16(36)
+			swamp.delay = payload.decode_s16(38)
+		EntityBehavior.Kind.SWP_RAT:
+			if payload.size() < RAT_SIZE:
+				return "Swamp rat requires its speed and four targets"
+			swamp.rat_speed = payload.decode_s16(32)
+			for index: int in 4:
+				swamp.rat_targets.append(_svec(payload, 36 + index * 8))
+			var issue: String = swamp.resolve_rat()
+			if not issue.is_empty():
+				return issue
+	definition.swamp = swamp
+	return ""
+
+## Source ENTSTRSwpCreateWeir: MRRotMatrix of a Z rotation of SWP_WEIR_ROTATION replaces the
+## authored rotation in place; only the translation survives.
+static func weir_matrix(matrix12: PackedInt32Array) -> PackedInt32Array:
+	var result: PackedInt32Array = PlatformMath.z_rotation(WEIR_ROTATION)
+	for axis: int in 3:
+		result[9 + axis] = matrix12[9 + axis]
+	return result
+
+static func _svec(payload: PackedByteArray, offset: int) -> Vector3i:
+	return Vector3i(payload.decode_s16(offset), payload.decode_s16(offset + 2), payload.decode_s16(offset + 4))
 
 static func _unsigned_square(value: int) -> int:
 	return (value * value) & 0xffffffff

@@ -39,6 +39,25 @@ static func from_forward(forward: Vector3i) -> PackedInt32Array:
 		result[row * 3 + 2] = _signed16(axis_z[row])
 	return result
 
+## Source ENTSTRUpdateMovingMOF LOCAL_ALIGN branch: X is the world Z axis when the previous
+## X axis leans more than 0x800 along Z, else the world X axis; Y = Z x X without re-orthogonalising.
+## Creation uses the plain moving matrix, because the identity Y axis seeds the first frame.
+static func moving_locally_aligned(path: PathSnapshot, flags: int, previous: PackedInt32Array) -> PackedInt32Array:
+	if flags & EntityDefinition.ALIGN_TO_WORLD or not flags & EntityDefinition.LOCAL_ALIGN or previous.size() != 12:
+		return moving(path, flags)
+	var result: PackedInt32Array = IDENTITY.duplicate()
+	result[9] = path.position.x
+	result[10] = path.position.y
+	result[11] = path.position.z
+	var axis_z: Vector3i = path.tangent
+	var axis_x: Vector3i = Vector3i(0, 0, 4096) if absi(previous[6]) > 0x800 else Vector3i(4096, 0, 0)
+	var axis_y: Vector3i = _cross12(axis_z, axis_x)
+	for row: int in 3:
+		result[row * 3] = _signed16(axis_x[row])
+		result[row * 3 + 1] = _signed16(axis_y[row])
+		result[row * 3 + 2] = _signed16(axis_z[row])
+	return result
+
 ## Projects the source path tangent onto the first terrain layer during a live update.
 static func moving_on_land(path: PathSnapshot, flags: int, grid: GridDefinition) -> PackedInt32Array:
 	if flags & EntityDefinition.ALIGN_TO_WORLD or not flags & EntityDefinition.PROJECT_ON_LAND:

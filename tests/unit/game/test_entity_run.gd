@@ -127,9 +127,23 @@ func test_inputs_and_nested_snapshots_are_detached() -> void:
 	assert_eq(run.snapshot().entities[0].path.speed, 10)
 	assert_eq(fork.snapshot().entities[0].path.position, Vector3i(20, 0, 0))
 
+func test_local_align_seeds_from_the_previous_x_axis_for_generic_movers() -> void:
+	var aligned: EntityDefinition = _moving(0, _path(), 10, EntityDefinition.LOCAL_ALIGN)
+	var run: EntityRun = EntityRun.create([aligned])
+	assert_eq(run.error, "")
+	assert_eq(run.snapshot().entities[0].matrix12, PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 0, 0, 0]), "Creation seeds X from the identity Y axis")
+	assert_eq(run.step(0), "")
+	assert_eq(run.snapshot().entities[0].matrix12, PackedInt32Array([0, 0, 4096, 0, -4096, 0, 4096, 0, 0, 10, 0, 0]), "A leaning X axis selects world Z and Y = Z x X")
+	assert_eq(run.step(1), "")
+	assert_eq(run.snapshot().entities[0].matrix12.slice(0, 9), PackedInt32Array([0, 0, 4096, 0, -4096, 0, 4096, 0, 0]))
+	var previous := PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
+	var path: PathSnapshot = run.snapshot().entities[0].path
+	assert_eq(EntityTransform.moving_locally_aligned(path, EntityDefinition.LOCAL_ALIGN, previous).slice(0, 9), PackedInt32Array([4096, 0, 4096, 0, 0, 0, 0, 0, 0]), "An upright X axis keeps world X; a parallel tangent degenerates Y as the source does")
+	assert_eq(EntityTransform.moving_locally_aligned(path, EntityDefinition.LOCAL_ALIGN | EntityDefinition.ALIGN_TO_WORLD, previous).slice(0, 9), PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096]))
+
 func test_invalid_definitions_and_failed_create_reset() -> void:
 	var bad: EntityDefinition = _moving(0, _path())
-	bad.flags = EntityDefinition.LOCAL_ALIGN
+	bad.flags = 128
 	var run: EntityRun = EntityRun.create([bad])
 	assert_false(run.error.is_empty())
 	assert_eq(run.snapshot(), null)
@@ -139,8 +153,8 @@ func test_invalid_definitions_and_failed_create_reset() -> void:
 	assert_false(EntityRun.create([grounded]).error.is_empty())
 	bad.flags = EntityDefinition.PROJECT_ON_LAND | EntityDefinition.LOCAL_ALIGN
 	assert_false(EntityRun.create([bad]).error.is_empty())
-	bad.flags = 128
-	assert_false(EntityRun.create([bad]).error.is_empty())
+	grounded.flags = EntityDefinition.LOCAL_ALIGN
+	assert_false(EntityRun.create([grounded]).error.is_empty())
 	bad.flags = 0
 	bad.path_start.distance = 101
 	assert_false(EntityRun.create([bad]).error.is_empty())

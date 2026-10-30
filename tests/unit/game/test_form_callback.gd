@@ -1,5 +1,5 @@
 extends GutTest
-## Non-Swamp SwpCrusherCallback bounce-back over synthetic grids and a whole collision tick.
+## SwpCrusherCallback bounce-back over synthetic grids, Swamp candidate dispatch and a whole collision tick.
 
 const IDENTITY: PackedInt32Array = [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0]
 
@@ -104,7 +104,7 @@ func test_target_outside_the_grid_is_an_explicit_error() -> void:
 	state.frog.cell = Vector2i(1, 0)
 	assert_string_contains(FormCallback.crusher_bounce_back(_grid(), state, 8), "outside authored storage")
 
-func test_apply_dispatches_without_the_active_guard_and_rejects_swamp() -> void:
+func test_apply_dispatches_without_the_active_guard() -> void:
 	var frog := Frog.new()
 	frog.grid = _grid()
 	frog.theme = 4
@@ -115,9 +115,54 @@ func test_apply_dispatches_without_the_active_guard_and_rejects_swamp() -> void:
 	assert_eq(state.frog.cell, Vector2i(1, 2))
 	assert_eq(state.frog.direction, 0)
 	assert_eq(state.attachment.forbidden_entity_index, 3)
-	frog.theme = FormCallback.SWAMP_THEME
-	assert_string_contains(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, _state(FrogMode.JUMPING, 2), 3, events), "Swamp")
 	assert_true(events.is_empty())
+
+func _swamp_frog() -> Frog:
+	var crusher := EntityDefinition.new()
+	crusher.entity_name = "SWP_CRUSHER"
+	crusher.behavior = EntityBehaviorCatalog.resolve(crusher.entity_name)
+	crusher.behavior.execution = EntityBehavior.Execution.UPDATE
+	crusher.entity_index = 3
+	crusher.swamp = EntitySwampDefinition.new()
+	crusher.swamp.delay = 10
+	var frog := Frog.new()
+	frog.grid = _grid()
+	frog.theme = FormCallback.SWAMP_THEME
+	frog.candidate_entities = EntityRun.create([crusher])
+	frog.entity_collision = EntityCollisionDefinition.new()
+	var contact := FormContactDefinition.new()
+	contact.entity_index = 3
+	contact.has_form_data = false
+	frog.entity_collision.contacts.append(contact)
+	return frog
+
+func test_swamp_apply_runs_the_candidate_crusher_callback_and_publishes_its_count() -> void:
+	var frog: Frog = _swamp_frog()
+	assert_eq(frog.candidate_entities.error, "")
+	var state: GameplayState = _state(FrogMode.JUMPING, 2)
+	state.frog.flags &= ~FrogFlags.ACTIVE
+	var events: Array[TickEvent] = []
+	assert_eq(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, state, 3, events), "")
+	assert_eq(state.frog.cell, Vector2i(1, 2))
+	assert_eq(state.frog.direction, 0)
+	assert_eq(state.attachment.forbidden_entity_index, 3)
+	assert_eq(state.entities.entities[0].custom_state.count, 5)
+	assert_eq(frog.candidate_entities.snapshot().entities[0].custom_state.count, 5)
+	var repeat: GameplayState = _state(FrogMode.JUMPING, 2)
+	assert_eq(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, repeat, 3, events), "")
+	assert_eq(repeat.frog.cell, Vector2i(1, 1), "the debounce count ignores the second hit")
+	assert_eq(repeat.attachment.forbidden_entity_index, -1)
+	assert_true(events.is_empty())
+
+func test_swamp_apply_requires_candidate_entities_and_a_live_crusher() -> void:
+	var frog: Frog = _swamp_frog()
+	var events: Array[TickEvent] = []
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, _state(FrogMode.JUMPING, 2), 4, events), "crusher")
+	frog.candidate_entities = null
+	var state: GameplayState = _state(FrogMode.JUMPING, 2)
+	assert_string_contains(FormCallback.apply(FormCallback.Kind.CRUSHER_BOUNCE_BACK, frog, state, 3, events), "candidate")
+	assert_eq(state.frog.cell, Vector2i(1, 1))
+	assert_null(state.entities)
 
 func _level() -> LevelDefinition:
 	var level := LevelDefinition.new()
