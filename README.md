@@ -53,7 +53,16 @@ recording is optional diagnostic material, not a requirement. The HUD uses the p
 assets. The frog's shadow, hop trail, slide, bubble and fire particles, death
 ring, splash, drowning tints and score popups are drawn from the player's
 data; entity particles, pops and glows follow. Full menus, progression between
-levels, saves and audio playback remain future work. Forest bee swarms are visible gameplay hazards.
+levels and saves remain future work. Forest bee swarms are visible gameplay hazards.
+
+### Audio
+
+Sound effects play from the player's sound banks. Music is CD audio read from the
+player's disc image: pass `--disc=<FROGGER.mds>` (or its folder) or set
+`FROGGER_DISC`. Without a disc the game looks for `track_NN.ogg`, `.mp3` or `.wav`
+(NN is the track number) in a `music` folder beside the game folder or in
+`user://music`, and otherwise stays silent with a diagnostic. `--no-audio`
+turns all sound off.
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
@@ -230,14 +239,16 @@ Escape), except that C clears entities here instead of croaking. Sandbox keys:
 | F3 | Debug overlay |
 
 The presets are river, ice slide, platform gauntlet, enemy lane, zone tour,
-desert, jungle, swamp and sky hazards, and effects. The effects preset starts
+desert, jungle, swamp and sky hazards, effects, and sounds. The effects preset starts
 the frog on (16, 4). The ice zone (columns 11–14, rows 6–11) gives slide
 particles and the water zone (columns 3–8, rows 6–9) the splash and bubbles.
 Column 16 leads north between the ice zones to the blue car's exhaust on row 12
 (from column 17) and the bison's dust on row 13 (columns 3–11). Row 4 leads
 east to the rubber balloon (20, 2), the lava spray's fire (22, 4) and the
 nuclear barrel's loop from (27, 0), and west to the bonus fly (13, 3), the gold
-frog (10, 3) and the checkpoint (8, 2).
+frog (10, 3) and the checkpoint (8, 2). The sounds preset starts the frog on
+(16, 19) beside the vulture, swamp press and crusher, beaver, tumbleweed, bonus
+fly, gold frog and checkpoint, for listening to moving sounds, doppler and loops.
 
 The sandbox is a play-check tool, not acceptance evidence; its
 [limitations](docs/reference/architecture.md#sandbox) are listed with its design.

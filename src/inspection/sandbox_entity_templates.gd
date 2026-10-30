@@ -17,6 +17,10 @@ var level_errors: Dictionary[String, String] = {}
 var rewards: Array[RewardDefinition] = []
 var frog_collision: FrogCollisionDefinition = null
 var frog_action_lengths: PackedInt32Array = PackedInt32Array()
+## Logical sound definitions of every sound bank the executable lists, so placed entities from any theme can play.
+var sounds: Array[LogicalSoundDefinition] = []
+## Which listed sound banks failed to load, or "".
+var sound_error: String = ""
 var _data: GameData = null
 var _frog_model: MofFile = null
 var _forms: Dictionary[String, Dictionary] = {}
@@ -81,6 +85,7 @@ func _index(data: GameData, frog_model: MofFile, action_lengths: PackedInt32Arra
 	rewards = rewards_setup.definitions
 	frog_collision = frog.definition
 	frog_action_lengths = action_lengths.duplicate()
+	_load_sounds(data)
 	for code: String in GameplaySetup.LEVEL_CODES:
 		var map: MapFile = _read_map(code)
 		if map == null:
@@ -142,3 +147,19 @@ static func _height_offset(grid: GridDefinition, entity: EntityDefinition) -> in
 		position = sample.position
 	var info: GridSurfaceInfo = GridQueries.info_at(grid, position.x, position.z)
 	return position.y - info.height if info != null else 0
+
+func _load_sounds(data: GameData) -> void:
+	var tables: SoundTables = SoundTables.read(data.exe)
+	if not tables.error.is_empty():
+		sound_error = tables.error
+		return
+	var problems := PackedStringArray()
+	for bank_id: int in tables.banks.size():
+		if tables.banks[bank_id].x < 0 or tables.banks[bank_id].y < 0:
+			continue
+		var setup: LogicalSoundSetup = LogicalSoundSetup.from_data(data, PackedInt32Array([bank_id]))
+		if setup.error.is_empty():
+			sounds.append_array(setup.definitions)
+		else:
+			problems.append("bank %d: %s" % [bank_id, setup.error])
+	sound_error = "; ".join(problems)

@@ -70,6 +70,10 @@ var _splashes: Array[SplashView.Splash] = []
 var _effect_tick: int = -1
 var _effect_drawn_tick: int = -1
 var _tint_tick: int = -1
+## Whether [method build_world] creates the sound-effect and music players.
+var audio_enabled: bool = false
+var _voice_view: SoundVoiceView = null
+var _music_player: MusicPlayer = null
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -200,6 +204,11 @@ func build_world() -> void:
 	add_child(_piece_view)
 	_glow_view = GoldGlowView.new()
 	add_child(_glow_view)
+	if audio_enabled:
+		_voice_view = SoundVoiceView.new()
+		add_child(_voice_view)
+		_music_player = MusicPlayer.new()
+		add_child(_music_player)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -526,9 +535,40 @@ func accept_state(state: GameplayState, events: Array[TickEvent] = []) -> void:
 	_motion.capture(_previous, _current)
 	if fresh:
 		collapse_effects()
+		if _music_player != null:
+			_music_player.restart()
 	if state != null and state.tick_index != _effect_tick:
 		_step_effects(_previous, state, events)
 		_effect_tick = state.tick_index
+	if _voice_view != null:
+		_voice_view.accept_state(_previous, state)
+
+## Supplies the sound-effect streams, building those of [param sound_ids] now; null silences effects.
+func configure_audio(resources: AudioResources, sound_ids: PackedInt32Array = PackedInt32Array()) -> void:
+	if _voice_view == null:
+		return
+	_voice_view.configure(resources)
+	_voice_view.preload_sounds(sound_ids)
+
+## Selects the level music played from each run start: [param track] of [param disc], else a supplied file beside [param files_dir]; -1 plays none.
+func configure_music(disc: DiscAudio, track: int, files_dir: String = "") -> void:
+	if _music_player != null:
+		_music_player.select(disc, track, files_dir)
+
+## Holds or resumes every sound effect and the music where they are.
+func pause_audio(paused: bool) -> void:
+	if _voice_view == null:
+		return
+	_voice_view.pause(paused)
+	_music_player.pause(paused)
+
+## The sound-effect player pool, or null when audio is disabled.
+func voice_view() -> SoundVoiceView:
+	return _voice_view
+
+## The level music player, or null when audio is disabled.
+func music_player() -> MusicPlayer:
+	return _music_player
 
 ## Supplies the level grid that shadows read heights from.
 func set_effect_grid(grid: GridDefinition) -> void:
@@ -536,8 +576,11 @@ func set_effect_grid(grid: GridDefinition) -> void:
 	if _shadow_view != null:
 		_shadow_view.set_grid(grid)
 
-## Forgets every running effect: trail, particles, pop rings, splashes, pops and glows.
+## Forgets every running effect: trail, particles, pop rings, splashes, pops, glows, sounds and music.
 func collapse_effects() -> void:
+	if _voice_view != null:
+		_voice_view.collapse()
+		_music_player.collapse()
 	_trail.collapse()
 	_fields.clear()
 	_frog_field = null

@@ -13,6 +13,8 @@ var last_voice: int = 4
 var note: int = 60
 var pitch_mod: int = 0
 var frame_count: int = 0
+var minimum_volume: int = 0
+var maximum_volume: int = 127
 
 ## Checks facts needed before any allocation or RNG consumption.
 func validate() -> String:
@@ -30,4 +32,6 @@ func copy() -> LogicalSoundDefinition:
 	result.note = note
 	result.pitch_mod = pitch_mod
 	result.frame_count = frame_count
+	result.minimum_volume = minimum_volume
+	result.maximum_volume = maximum_volume
 	return result

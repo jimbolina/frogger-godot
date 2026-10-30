@@ -209,6 +209,9 @@ func level_definition() -> LevelDefinition:
 		level.rewards.clear()
 		for reward: RewardDefinition in templates.rewards:
 			level.rewards.append(reward.copy())
+		level.sounds.clear()
+		for sound: LogicalSoundDefinition in templates.sounds:
+			level.sounds.append(sound.copy())
 	for entity: EntityDefinition in level.entity_collision.entities:
 		level.cave_light = level.cave_light or entity.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT
 	return level

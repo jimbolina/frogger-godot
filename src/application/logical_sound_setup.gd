@@ -47,6 +47,8 @@ static func from_data(data: GameData, bank_ids: PackedInt32Array) -> LogicalSoun
 		definition.note = sample.note
 		definition.pitch_mod = sample.pitch_mod
 		definition.frame_count = entry.frame_count()
+		definition.minimum_volume = sample.minimum_volume
+		definition.maximum_volume = sample.maximum_volume
 		result.error = definition.validate()
 		if not result.error.is_empty():
 			return result

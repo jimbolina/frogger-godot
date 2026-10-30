@@ -2,6 +2,9 @@ class_name GameplayScreen
 extends GameplayWorldView
 ## Dedicated single-player scene sharing the transactional host and world renderer.
 
+## Command-line flag that skips creating sound-effect and music players.
+const NO_AUDIO_FLAG: String = "--no-audio"
+
 static var selected_level: String = ""
 var auto_open: bool = true
 var level_code: String = "ORG1"
@@ -21,8 +24,11 @@ var _replay: Button
 var _model_origins: EntityModelOrigins = null
 ## Problems from the latest map-less entity model resolution, shown to callers instead of failing.
 var entity_model_diagnostics := PackedStringArray()
+## The player's disc image for level music, located from the command line or environment, or null.
+var disc: DiscAudio = null
 
 func _ready() -> void:
+	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
 	build_world()
 	_frog.hide()
 	smoothing = true
@@ -34,6 +40,8 @@ func _ready() -> void:
 		if level_code.is_empty():
 			level_code = "ORG1"
 		selected_level = ""
+		if audio_enabled:
+			disc = DiscAudio.locate(arguments, OS.get_environment(DiscAudio.ENVIRONMENT_VARIABLE))
 		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
 		if found.is_ok():
 			open_data(GameData.open(found.source, found.version), level_code, true)
@@ -84,6 +92,7 @@ func open_data(data: GameData, code: String, take_ownership: bool = false) -> St
 	if not effect_issue.is_empty():
 		scene_data.diagnostics.append(effect_issue)
 	build_frog(assets)
+	_configure_level_audio(data, level_number)
 	var issue: String = restart()
 	if not issue.is_empty():
 		return issue
@@ -98,6 +107,18 @@ func close_data() -> void:
 		_data.close()
 	_data = null
 	_owns_data = false
+	configure_audio(null)
+	configure_music(null, -1)
+
+func _configure_level_audio(data: GameData, level_number: int) -> void:
+	if voice_view() == null:
+		return
+	var ids := PackedInt32Array()
+	for sound: LogicalSoundDefinition in _definition.sounds:
+		ids.append(sound.sound_id)
+	configure_audio(AudioResources.from_data(data, _definition.sounds), ids)
+	var directory: String = data.source.directory if data.source != null else ""
+	configure_music(disc, data.tables.music().track_for_level(level_number), directory)
 
 func _detach_game() -> void:
 	_host.close()
@@ -183,6 +204,7 @@ func step_command(command: TickCommand, capture_phases: bool = true) -> TickResu
 func set_paused(paused: bool) -> void:
 	_finish_pending()
 	playing = not paused and run != null and _current != null and not _current.completed and last_error.is_empty()
+	pause_audio(paused)
 	_held = 0
 	_host.sampled_held = 0
 	_host.elapsed = 0.0

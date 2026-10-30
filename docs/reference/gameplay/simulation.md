@@ -176,7 +176,7 @@ likewise allocate at the call site. Entity retirement releases its moving owner;
 selective recreation gets a new owner generation while the shared RNG and frame
 clock continue. Full restart clears voice state. Later failure rolls back voices,
 sample cursors, object generations, random draws and emitted requests together.
-Actual audio playback remains deferred.
+Audio playback reads the committed voices; see [sound playback](../data/archives.md#sound-playback).
 
 Killed logical voices retain their occupied slots until the source voice-update
 pass, including first-update protection. Retirement clears moving ownership and

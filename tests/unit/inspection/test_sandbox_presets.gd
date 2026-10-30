@@ -23,7 +23,7 @@ func _assert_runs(spawner: SandboxSpawner, label: String) -> void:
 func test_layouts_have_unique_names_entries_and_cells_inside_the_arena() -> void:
 	var sandbox: SandboxLevel = SandboxLevel.build()
 	var layouts: Array[SandboxPresets.Layout] = SandboxPresets.all()
-	assert_eq(SandboxPresets.names(), PackedStringArray(["river", "ice slide", "platform gauntlet", "enemy lane", "zone tour", "desert hazards", "jungle hazards", "swamp hazards", "sky hazards", "effects"]))
+	assert_eq(SandboxPresets.names(), PackedStringArray(["river", "ice slide", "platform gauntlet", "enemy lane", "zone tour", "desert hazards", "jungle hazards", "swamp hazards", "sky hazards", "effects", "sounds"]))
 	for layout: SandboxPresets.Layout in layouts:
 		assert_false(layout.entries.is_empty(), layout.name)
 		assert_false(layout.description.is_empty(), layout.name)
@@ -111,3 +111,16 @@ func test_effects_layout_lists_the_entity_effect_sources_beside_the_ice_and_wate
 		"BONUS_FLY at (13, 3)", "GEN_GOLD_FROG at (10, 3)", "CHECKPOINT (GEN_CHECKPOINT_1) at (8, 2)"]))
 	assert_eq(sandbox.zone_at(Vector2i(13, 6)).name, &"ice", "one hop north of row 5 at column 13")
 	assert_eq(sandbox.zone_at(Vector2i(8, 6)).name, &"water")
+
+func test_sounds_layout_lists_moving_and_fixed_sound_sources_on_open_floor() -> void:
+	var layout: SandboxPresets.Layout = SandboxPresets.named("sounds")
+	var sandbox: SandboxLevel = SandboxLevel.build()
+	assert_eq(layout.start_cell, Vector2i(16, 19))
+	var labels := PackedStringArray()
+	for entry: SandboxPresets.Entry in layout.entries:
+		labels.append(entry.label())
+		assert_eq(sandbox.zone_at(entry.cell).name, &"plain", entry.label())
+	assert_eq(labels, PackedStringArray([
+		"DES_VULTURE at (21, 25)", "SWP_PRESS at (16, 24)", "SWP_CRUSHER (SWP_CRUSHER) at (19, 21)",
+		"ORG_BEAVER at (13, 26)", "DES_TUMBLE_WEED at (13, 28)", "BONUS_FLY at (14, 21)",
+		"GEN_GOLD_FROG at (12, 22)", "CHECKPOINT (GEN_CHECKPOINT_1) at (18, 22)"]))

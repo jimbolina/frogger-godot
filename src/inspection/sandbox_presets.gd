@@ -135,6 +135,15 @@ static func all() -> Array[Layout]:
 		.add("BONUS_FLY", Vector2i(13, 3))
 		.add("GEN_GOLD_FROG", Vector2i(10, 3))
 		.add("CHECKPOINT", Vector2i(8, 2), SandboxSpawner.Preset.STATIC, -1, "GEN_CHECKPOINT_1"))
+	result.append(Layout.new("sounds", "Moving and fixed sound sources on open floor: a circling vulture, a press, a wall crusher, a beaver, a tumbleweed, a bonus fly, a gold frog and a checkpoint", Vector2i(16, 19))
+		.add("DES_VULTURE", Vector2i(21, 25), SandboxSpawner.Preset.LOOP)
+		.add("SWP_PRESS", Vector2i(16, 24))
+		.add("SWP_CRUSHER", Vector2i(19, 21), SandboxSpawner.Preset.STATIC, -1, "SWP_CRUSHER")
+		.add("ORG_BEAVER", Vector2i(13, 26), SandboxSpawner.Preset.LINE)
+		.add("DES_TUMBLE_WEED", Vector2i(13, 28), SandboxSpawner.Preset.LINE)
+		.add("BONUS_FLY", Vector2i(14, 21))
+		.add("GEN_GOLD_FROG", Vector2i(12, 22))
+		.add("CHECKPOINT", Vector2i(18, 22), SandboxSpawner.Preset.STATIC, -1, "GEN_CHECKPOINT_1"))
 	return result
 
 ## Lists the built-in layout names in menu order.

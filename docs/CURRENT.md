@@ -24,9 +24,11 @@ original's. Keyboard replays and native attract comparisons are on-demand
 the [sandbox](../README.md#sandbox) and the owner's play checks are the system
 checks. Both test modes, strict compilation and architecture checks pass.
 
-Next is the roadmap's remaining phases: P12 audio playback is the smallest.
+P12 audio playback is implemented and awaits the owner's by-ear check: sound
+effects play from committed voices and music from the disc image
+(`--disc=` or `FROGGER_DISC`), see the [audio notes](../README.md#audio).
 The ORG gold baby frog is carried rather than popped and the outro stone
-frog belongs to P16. Audio playback, animated per-part lighting, the full
+frog belongs to P16. Animated per-part lighting, the full
 front end (where attract demos may desync), multiplayer, exports and hosted
 CI retain separate scope. Performance tuning remains deferred at the owner's
 request; the original-hardware target is unverified. The roadmap's owner

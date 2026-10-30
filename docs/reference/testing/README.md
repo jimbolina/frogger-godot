@@ -256,7 +256,9 @@ restart and hotkeys. Retail tests (`tests/golden/test_retail_sandbox_*.gd` and
 model nodes and every preset applying fully with player data. Neither drives a
 route or establishes level behaviour. The effects preset (ice, water, a car,
 a bison, a lava spray, a balloon, a barrel, a fly, a gold frog and a
-checkpoint) is the play check for the [effects](../rendering/effects.md).
+checkpoint) is the play check for the [effects](../rendering/effects.md); the sounds preset
+(vulture, press, crusher, beaver, tumbleweed, fly, gold frog and checkpoint) is
+the by-ear check for [audio playback](../data/archives.md#sound-playback).
 
 ## Focused iteration and guardrails
 

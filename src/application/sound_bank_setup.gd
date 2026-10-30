@@ -1,11 +1,12 @@
 class_name SoundBankSetup
 extends RefCounted
-## Resolves supplied archive resources into validated logical sound duration metadata.
+## Resolves supplied archive resources into validated sound metadata and the retained PCM body.
 
 var header: SoundBankHeader = null
+var body: PackedByteArray = PackedByteArray()
 var error: String = ""
 
-## Loads a caller-selected bank pair without retaining PCM or constructing playback objects.
+## Loads a caller-selected bank pair, keeping the body bytes for slicing and constructing no playback objects.
 static func from_resources(data: GameData, header_resource_id: int, body_resource_id: int) -> SoundBankSetup:
 	var result := SoundBankSetup.new()
 	if data == null or not data.is_valid():
@@ -24,4 +25,6 @@ static func from_resources(data: GameData, header_resource_id: int, body_resourc
 		return result
 	result.header = SoundBankHeader.read(header_bytes, body_bytes.size(), header_entry.display_name())
 	result.error = result.header.error
+	if result.error.is_empty():
+		result.body = body_bytes
 	return result

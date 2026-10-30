@@ -32,3 +32,28 @@ a 44100 Hz output rate, and 735 output samples per stepped frame; it does not us
 the header rate to advance voices. This explicit reference choice also applies
 to the six retail generic samples whose headers say 22050 Hz. It is independent
 of device availability, rendering rate and presentation completion.
+
+## Sound playback
+
+Presentation plays the committed logical voices; playback never feeds back into
+gameplay or the random stream. `SoundBankSetup` keeps the PCM body and
+`AudioResources` slices each present sample (8-bit becomes signed 16-bit) into a
+mono 11025 Hz stream, looped for LOOPED and REPEAT samples. `SoundVoiceView`
+diffs consecutive states: a new voice identifier starts a sample at
+`AudioResources.pitch_scale`, a pitch change bends it, and a killed voice or a
+looping voice that is no longer playing stops. One-shot samples finish their tail
+rather than being cut at the logical end. Fixed voices play at the sample's
+maximum volume. Moving voices take left/right levels from the frozen
+`MRSNDUpdateMovingSounds` fade and soft pan using the frog's matrix; doppler is
+the committed voice pitch. Godot players have no pan, so each of the 24 voices
+has a runtime bus with a panner that feeds `Sfx`. The default effect volume is
+79 of 127. Buses are Master, Sfx and Music.
+
+Music is the Redbook track named by the level's `MusicTable` entry. `DiscAudio`
+parses the `.mds` table (as the frozen stub does) and reads one audio track from
+the `.mdf` at a time as raw 16-bit stereo 44100 Hz; the disc is located by
+`--disc=` or `FROGGER_DISC`. `MusicFiles` is the fallback for loose
+`track_NN` files. Frozen C and retail differ in no recorded sound rule here, but
+the panner gain curve and the REPEAT retrigger gap (not reproduced) are
+unmeasured against the original. Golden facts are in the
+[sound specification](../../../tests/golden/specs/sound.md#sound-playback).

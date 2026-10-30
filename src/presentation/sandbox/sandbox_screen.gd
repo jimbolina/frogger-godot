@@ -271,7 +271,14 @@ func _attach_data(data: GameData) -> String:
 	if not loaded.error.is_empty():
 		return "Entity templates are unavailable (%s); entities are placeholders" % loaded.error
 	templates = loaded
-	return "" if hud_error.is_empty() else "HUD is unavailable (%s)" % hud_error
+	if voice_view() != null:
+		configure_audio(AudioResources.from_data(data, loaded.sounds))
+	var problems := PackedStringArray()
+	if not hud_error.is_empty():
+		problems.append("HUD is unavailable (%s)" % hud_error)
+	if not loaded.sound_error.is_empty():
+		problems.append("Sounds are unavailable (%s)" % loaded.sound_error)
+	return "; ".join(problems)
 
 func _place(cell: Vector2i) -> String:
 	if palette == null:
