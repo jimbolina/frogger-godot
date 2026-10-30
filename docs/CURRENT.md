@@ -18,7 +18,7 @@ original's. Keyboard replays and native attract comparisons are on-demand
 the [sandbox](../README.md#sandbox) and the owner's play checks are the system
 checks. Both test modes, strict compilation and architecture checks pass.
 
-P13a is implemented and awaits the owner's play check: the game opens on a
+P13a front-end flow is complete and accepted by the owner's play check: the game opens on a
 main menu and level list ([front end](reference/gameplay/front-end.md)), unlocks
 and score carry between levels, and progress saves to `user://progress.cfg`.
 Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`. The 3D select
