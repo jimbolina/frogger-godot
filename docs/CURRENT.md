@@ -25,8 +25,9 @@ Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`.
 
 P13b is implemented and awaits the owner's play check: Start opens the 3D
 level-select stack ([front end](reference/gameplay/front-end.md#level-select-stack)),
-with independent layout and motion goldens. Options, high scores and the attract
-cycle are P13c–P13e.
+with independent layout and motion goldens, over the P13g water background
+(also awaiting the play check). Options, high scores and the attract cycle are
+P13c–P13e.
 
 P12 audio playback is implemented and awaits the owner's by-ear check: sound
 effects play from committed voices and music from the disc image

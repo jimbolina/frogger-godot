@@ -24,3 +24,10 @@ func test_names_are_the_english_front_end_set() -> void:
 		assert_has(FrontEndAssets.NAMES, image_name)
 	assert_eq(FrontEndAssets.LEVEL_IMAGES.size(), 4)
 	assert_eq(int(FrontEndAssets.LevelImage.STACK_NAME), 4)
+
+
+func test_water_images_come_from_the_options_bank_first_loaded() -> void:
+	assert_eq(FrontEndAssets.WATER_NAMES, PackedStringArray(["opt_env_sky", "opt_bank3"]))
+	assert_eq(FrontEndAssets.WATER_BANK, "OPT_VRAM.VLO")
+	assert_eq(FrontEndAssets.BANKS[0], FrontEndAssets.WATER_BANK, "later banks keep winning for the other images")
+	assert_eq(FrontEndAssets.BANKS[FrontEndAssets.BANKS.size() - 1], "LS_ALL.VLO")

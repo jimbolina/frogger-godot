@@ -6,18 +6,25 @@ extends RefCounted
 ## Only the arcade rows are covered: the race rows' screenshots and names live
 ## in the multiplayer bank [code]LS_ALLM.VLO[/code], which belongs to the
 ## multiplayer pages. The logo [code]froglogo[/code] lives in the start bank.
+## The water images come from the options bank [code]OPT_VRAM.VLO[/code]
+## (HSInitialiseWater's textures), which [code]LS_ALL.VLO[/code] also carries, without
+## their padding because the water maps texture coordinates over the in-game image.
 
 ## World and level images of one level-select row, in the row's record order.
 enum LevelImage { WORLD_UNLOCKED, WORLD_VISITED, WORLD_NOT_TRIED, SCREENSHOT, STACK_NAME, GAME_NAME }
 
 ## Banks loaded, in upload order (later banks win for a shared texture id).
-const BANKS: PackedStringArray = ["STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "LS_ALL.VLO"]
+const BANKS: PackedStringArray = ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "LS_ALL.VLO"]
 ## Named English images every front-end page may draw.
 const NAMES: PackedStringArray = [
 	"opt_start", "opt_options", "opt_exit", "opt_race", "select_level", "zone_complete",
 	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused",
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 ]
+## The bank the water images are read from.
+const WATER_BANK: String = "OPT_VRAM.VLO"
+## The water surface and riverbed images (im_opt_env_sky, im_opt_bank3).
+const WATER_NAMES: PackedStringArray = ["opt_env_sky", "opt_bank3"]
 ## Level images resolved for every arcade row.
 const LEVEL_IMAGES: Array[LevelImage] = [
 	LevelImage.WORLD_UNLOCKED, LevelImage.WORLD_NOT_TRIED, LevelImage.SCREENSHOT, LevelImage.STACK_NAME,
@@ -56,6 +63,13 @@ static func from_data(data: GameData) -> FrontEndAssets:
 			result.error = "Front-end image %s (texture %d) is missing from the supplied banks" % [image_name, identity]
 			return result
 		textures[image_name] = image
+	for image_name: String in WATER_NAMES:
+		var identity: int = data.tables.names.images.index_of(image_name)
+		var record: VloImage = library.image_for_id(identity, library.find_bank(WATER_BANK)) if identity >= 0 else null
+		if record == null:
+			result.error = "Front-end image %s (texture %d) is missing from %s" % [image_name, identity, WATER_BANK]
+			return result
+		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
 	var table: LevelSelectTable = data.tables.level_select()
 	var pointers: BmpPointers = data.tables.bmp_pointers()
 	if not table.error.is_empty() or not pointers.error.is_empty():
@@ -76,7 +90,7 @@ static func from_data(data: GameData) -> FrontEndAssets:
 	return result
 
 
-## The image called [param image_name] (one of [constant NAMES]), or null.
+## The image called [param image_name] (one of [constant NAMES] or [constant WATER_NAMES]), or null.
 func texture(image_name: String) -> Texture2D:
 	return _textures.get(image_name, null)
 

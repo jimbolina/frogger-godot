@@ -32,10 +32,22 @@ the facts and their C lines. Up/Down are held, Enter or Space is Fire, Escape is
 Triangle.
 
 Retail PC runs the glow pulse that the vendored source builds only for PSX, so
-the port does. Not built: the options water background (the checker tiles belong
-to the high-score view), the high-score lines beside the picture (P13d), race
+the port does. Not built: the high-score lines beside the picture (P13d), race
 rows and mouse picking. Gold-frog quads draw slightly in front of the boxes
 rather than on top, and the glow is unverified against retail pictures.
+
+## Water background
+
+Every front-end page sits on the options water: a 14×16 mesh of the sky texture
+over a 14×16 river bed of the bed texture (`opt_env_sky` and `opt_bank3`, read
+from `OPT_VRAM.VLO`). `MenuWater` (`src/game/frontend/`) holds the grids, the wave
+heights from `HSUpdateWater` and the per-tick counter; `MenuWaterMesh` and
+`MenuWaterView` draw it. Retail PC blends the water additively with its colours
+doubled, so the port does, and the bed is opaque behind it. The stack page draws
+it through the stack camera; the main menu uses the options camera at its static
+`MAIN` preset. The [specification](../../../tests/golden/specs/frontend.md#front-end-water)
+records the C facts, including that retail's main-menu camera follows the
+scrolling high-score frog, which the port does not yet (P13d).
 
 ## Progression
 

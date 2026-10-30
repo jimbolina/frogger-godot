@@ -8,7 +8,9 @@ extends Control
 ## ticks the camera, box slides, spinning box and sprites are interpolated from the last two
 ## committed states, which drawing never changes. The camera uses the source's fixed
 ## orientation and perspective 1000 on the 640x480 display, with the projection's unequal
-## vertical focal length applied as a clip-space scale.
+## vertical focal length applied as a clip-space scale. With a [MenuWater] the stack's world
+## also draws the front-end water through the stack camera, behind every box (SelectLevelUpdate
+## calls HSUpdateWater).
 
 ## A selector event of [enum StackSelector.EventKind] [param kind]; [param level] is the level
 ## to play for ENTER_GAME, otherwise -1.
@@ -41,6 +43,8 @@ var spin_box: MeshInstance3D
 var gold_frogs: Array[MeshInstance3D] = []
 ## The 2D sprites.
 var panel: StackPanel
+## The water behind the stack, or null.
+var water: MenuWaterView
 ## Interpolate between the last two ticks; off draws each tick as committed.
 var smoothing_enabled: bool = true
 ## Time since the last tick.
@@ -50,6 +54,7 @@ var _assets: FrontEndAssets
 var _stack: LevelStack
 var _progress: LevelProgress
 var _background: Color = Color.BLACK
+var _water: MenuWater
 var _world: Node3D
 var _box_materials: Array[ShaderMaterial] = []
 var _spin_materials: Array[ShaderMaterial] = []
@@ -75,14 +80,15 @@ class _Frame:
 
 ## A view of [param stack]'s arcade rows under [param progress], focused on [param focus_level]
 ## (ORG1 when negative); [param first_time] is Sel_first_time. [param background] fills the
-## screen behind the stack.
+## screen behind the stack and [param water_animation], when given, draws the water over it.
 static func create(assets: FrontEndAssets, stack: LevelStack, progress: LevelProgress, focus_level: int,
-		first_time: bool, background: Color = Color.BLACK) -> LevelStackView:
+		first_time: bool, background: Color = Color.BLACK, water_animation: MenuWater = null) -> LevelStackView:
 	var view := LevelStackView.new()
 	view._assets = assets
 	view._stack = stack
 	view._progress = progress
 	view._background = background
+	view._water = water_animation
 	view.layout = StackLayout.create(stack)
 	var widths := PackedInt32Array()
 	for row: int in stack.arcade_count():
@@ -220,6 +226,9 @@ func _build() -> void:
 	camera.far = CAMERA_FAR
 	_world.add_child(camera)
 	var scale: Vector2 = GameplayProjection.clip_scale(DISPLAY_SIZE)
+	if _water != null:
+		water = MenuWaterView.create(_water, _assets.texture("opt_env_sky"), _assets.texture("opt_bank3"), scale)
+		_world.add_child(water)
 	for row: int in layout.row_count():
 		var stack_row: LevelStack.Row = _stack.arcade_row(row)
 		var image: Texture2D = _world_image(row)

@@ -1,8 +1,8 @@
 # Front-end progression and page flow
 
-Four families describe the single-player front end. Progression and page flow
+Five families describe the single-player front end. Progression and page flow
 come from `make_golden_frontend.py`; the [level-select stack](#level-select-stack)
-has its own generator. The independent Python generator
+and the [front-end water](#front-end-water) have their own generators. The independent Python generator
 replays the frozen C rules over the committed retail level-select rows and
 transcribes the page requests. Every rule and request is checked against the C
 source. It never reads Godot output.
@@ -255,5 +255,137 @@ and rerun. For the stack files, change `camera_y_offset` in the layout or one
 fade `screen` value in the motion trace and run `make_golden_stack.py
 --check`. For the C cross-checks, copy the C files to a scratch folder,
 change one define and pass the copy as `--c-reference`.
+
+## Front-end water
+
+A third generator transcribes the options water and riverbed that most
+front-end pages draw behind their menus (`HSInitialiseWater`,
+`HSUpdateWater`, `HSView.c:1972-2237`) and the options camera presets:
+
+```sh
+python3 tools/make_golden_water.py           # write synthetic/frontend_water.json
+python3 tools/make_golden_water.py --check   # diff against the committed file, exit 1 on change
+```
+
+It needs Python 3's standard library only and reads no retail data; texture
+sizes stay retail, so UVs are fractions. `rsin`, `MRNormaliseVEC` and
+`MROuterProduct12` are the shared helpers [above](#level-select-stack).
+`--c-reference` works as for the other generators. The cross-checks compare
+every `HSView.h` water, wave and perspective define, the `tempopt.h` and
+`hsinput.h` camera offsets and sweep times, `vp_frame_count`'s `MR_USHORT`
+type, its reset and increment in `MR_VIEW.C`, the prim colours, mesh, UV,
+riverbed corner, wave, OT-slot and camera statements, and that each page row's
+cited line calls `HSUpdateWater` inside the named update function.
+
+### Water file (`synthetic/frontend_water.json`)
+
+Units are PSX world units, Y down. Keys:
+
+- `constants`: `water_num` and `riverbed_num` `[14, 16]` quads, `*_len` 576
+  (0x240), `wave_amp` `[64, 80]`, `wave_freq` `[96, 128]`, `wave_period`
+  `[8192, 8192]`, `perspective` 256 (`HIGH_SCORE_VIEW_PERSPECTIVE` 0x100) and
+  `clear_colour` black.
+- `grid`: 15x17 vertices, row-major with `j` (z) outer. `x` is
+  `-(576·14)/2 + i·576` and `z` is `(576·16)/2 - j·576`, so `j` 0 is the far
+  edge at +4608. Both meshes rest at y 0; the riverbed's y is never changed,
+  so the wave rises above and sinks below it. `corner_steps` gives the
+  `[di, dj]` of GPU corners 0-3: quad `(i, j)` uses vertices `(i, j)`,
+  `(i+1, j)`, `(i, j+1)` and `(i+1, j+1)`.
+- `water`: texture `im_opt_env_sky`, `colour_word` 0x00406060, stored by
+  `MR_COPY32` into `r0`, so RGB `[96, 96, 64]`. It is semi-transparent with
+  ABR 1. One texture spans the whole mesh: corner `(di, dj)` of quad `(i, j)`
+  takes `u = te_u0 + te_w·(i+di)/14` and `v = te_v0 + te_h·(j+dj)/16` with C
+  truncation, so the fractions are `(i+di)/14` and `(j+dj)/16`.
+- `riverbed`: texture `im_opt_bank3`, RGB `[48, 48, 48]`, opaque. Every quad
+  holds the whole texture. `texture_corners` names the texture corner (0
+  top-left, 1 top-right, 2 bottom-left, 3 bottom-right, the `te_u0..te_u3`
+  pairs) per GPU corner. Odd rows (`j & 1`) copy them in order; even rows
+  flip the texture vertically.
+- `draw_order`: the riverbed goes into OT slot `vp_ot_size - 1` and the water
+  into `vp_ot_size - 3` (`ot_slot_from_back` 0 and 2), so both lie behind every
+  depth-sorted primitive and the riverbed draws first. `addPrim` prepends, so
+  within one slot the last quad submitted draws first. The flat opaque bed and
+  additive water make that order invisible.
+- `wave`: `counter` is the options viewport's `vp_frame_count`, 16 bits.
+  `period_frames` 128 is the smallest step after which both phases repeat,
+  and it divides 65536, so the wrap is seamless. `height_min`/`height_max`
+  cover one period. Each `frames` row has `t`, `sin_x` (15 values of
+  `rsin(i·8192/14 + t·96)`), `sin_z` (17 values of
+  `rsin(j·8192/16 + t·128)`), `heights` (17 rows of 15
+  `(sin_x·64 + sin_z·80) >> 12`, arithmetic shift) and `digest`, the
+  [list digest](../README.md#digest-convention) of `heights` in vertex order.
+  Frames 0, 1, 2, 30, 127, 128, 255, 1000 and 65535 are listed; the generator
+  also checks every listed frame against `t + 128`.
+- `cameras.options`: `Cameras[0]` with origin `Null_vector` and roll vector
+  world Y. `presets` hold `source` and `target` offsets and the resulting
+  `MRPointMatrixAtVector` `matrix` (rows of `MR_MAT.m`, column 2 is the view
+  axis) and `translation` (the source): `MAIN`, `OPTIONS` and `HS_STATIC`
+  from `tempopt.h`, `HS_INPUT` from `hsinput.h`. `sweep_*` replay
+  `HSUpdateScrollyCamera` from one preset to the other with
+  `OPTIONS_CAMERA_MOVE_TIME` 20: each tick sets the timer to `MAX(1, timer)`
+  and decrements it; while it is non-zero each offset moves by
+  `(next - current) / timer`, truncated. Tick 19 lands exactly and tick 20
+  holds. `scrolly_z_bias` 1152 is the scrolly high-score tracking term below.
+- `cameras.level_select`: the stack camera of the
+  [layout file](#layout-syntheticfrontend_stack_layoutjson) at perspective 1000.
+- `pages`: each page that draws the water, its update function, camera, cited
+  `HSUpdateWater` line and a note.
+
+### Rules and retail notes
+
+- **Frame counter.** `HSUpdateWater` reads `vp_frame_count` before the
+  options loop renders the viewport, so the first update after creation sees
+  0, and the counter rises by 1 per rendered frame (KEY_FACTS KF-074).
+  `MRCreateViewport` zeroes it. The options viewport is created by
+  `CreateOptionsAfterStream`: at `OptionStart` and again after each FMV
+  (`HasbroLogoUpdate`, `IntroStartup`, `OutroUpdate`, `CreditsStartup`). It is
+  rendered on every options-loop frame, including pages that hide the water.
+  **The wave does not restart when a page opens**; it continues across pages.
+  Within one period, only the phase matters.
+- **Blend.** The water is semi-transparent with ABR 1. `HSInitialiseWater`
+  ORs bit 8 into the PC tpage, which is already set in the retail
+  `im_opt_env_sky` data (KF-064). Retail's driver draws rate 1 as
+  `ONE`/`ONE`, `F + B` saturating, ignoring packet alpha (KF-175 B1); black
+  texels are colour-keyed out (B4). KF-064's "draws opaque" describes the
+  froggy engine's rasterizer of that time, not retail. The riverbed is
+  opaque.
+- **Colour.** Prim colours modulate the texture with 128 as 1.0. Retail's
+  driver doubles three colour bytes and clamps at 255 (KF-177), giving
+  192, 192, 128 and 96 out of 255.
+- **Cameras by page.** `InitialiseOptionsCamera` (`tempopt.c:6353`) points the
+  options viewport at `Option_camera_ptr`, sets perspective 256, makes
+  `Cameras[0]` the options camera and snaps to `MAIN`. Pages then sweep
+  between presets with `OptionsCameraMoveTo*` (timer 20) or main-menu fly-on
+  (timer 10). The level select switches the viewport to `Sel_camera_frame`
+  and perspective 1000 (`SELECT.C:949`, `:1588`). Its shutdown calls
+  `InitialiseOptionsCamera` again, then snaps to `OPTIONS` when the next page
+  is OPTIONS.
+
+### Ambiguities
+
+- **Main-menu camera.** The main menu draws the water only inside its
+  high-score view (`HSUpdateScrollyHighScores`). With no fly-off or fly-on
+  pending, that view sets both offsets' z to
+  `frog_z + 1152 + MAIN_*_OFS_Z` each tick, so the menu camera follows the
+  scrolling high-score frog and is not static. `MAIN` is the snap value and
+  the other axes. The frog's path belongs to the high-score view (P13d).
+- **Settled sweep.** The C leaves `ca_mode` at `CAMERA_MODE_FOLLOW_FROG` when
+  a sweep ends, but `HSUpdateScrollyCamera` sets it back to
+  `CAMERA_MODE_FIXED_SWEEP` before every call, so the camera holds.
+- **`rsin`.** The shared helper rounds `sin·4096`. The PSX table may differ by
+  a unit at some angles, which can move one height by 1.
+- **UV texels.** Water UVs truncate integer texels; the fractions are the
+  faithful equivalent at any texture size. Riverbed corners are the texture's
+  own corner pairs.
+- **Related.** `HSGetWaterSurfaceInfoFromXZ` (`HSView.c:2697`) samples the
+  same wave at arbitrary x, z for floating models; it is not part of this
+  file.
+
+### Deliberate break
+
+Change `period_frames` to 64 and run `make_golden_water.py --check` (exit 1,
+one-line diff), then restore it. For the C cross-checks, copy the C folder,
+change `HIGH_SCORE_VIEW_WAVE_AMP_Z` in `HSView.h` and pass the copy as
+`--c-reference`.
 
 [Golden data index and shared rules](../README.md).

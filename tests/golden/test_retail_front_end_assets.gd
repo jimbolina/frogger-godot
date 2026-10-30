@@ -1,5 +1,6 @@
 extends RetailTest
-## Every front-end text image and arcade level-select image resolves from the retail English banks.
+## Every front-end text image, water image and arcade level-select image resolves from the retail
+## English banks.
 
 
 func test_every_named_and_level_image_resolves() -> void:
@@ -14,6 +15,8 @@ func test_every_named_and_level_image_resolves() -> void:
 		assert_not_null(image, image_name)
 		if image != null:
 			assert_gt(image.get_width(), 0, image_name)
+	assert_eq(assets.texture("opt_env_sky").get_size(), Vector2(254, 254), "im_opt_env_sky without padding")
+	assert_eq(assets.texture("opt_bank3").get_size(), Vector2(30, 30), "im_opt_bank3 without padding")
 	var table: LevelSelectTable = data.tables.level_select()
 	assert_eq(table.arcade.size(), 33)
 	for row: LevelSelectEntry in table.arcade:

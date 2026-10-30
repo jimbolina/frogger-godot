@@ -2,7 +2,9 @@ class_name FrontEndScreen
 extends Control
 ## Single-player main menu and 3D level-select stack driven by [FrontEndFlow], drawn from the player's menu images.
 ##
-## The stack plays the generic hop and croak sounds unless audio is turned off.
+## The stack plays the generic hop and croak sounds unless audio is turned off. Both pages draw
+## the front-end water: the main menu through the options camera's MAIN preset, the level select
+## through the stack camera. One [MenuWater] serves both, so the wave continues across pages.
 
 ## The front-end scene.
 const SCENE: String = "res://scenes/front_end.tscn"
@@ -14,7 +16,7 @@ const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 const MARGIN: int = 24
 ## CD track played on the menu pages (LEVEL_SELECT in the music table).
 const MENU_TRACK: int = 13
-## Colour behind the menus and the level-select stack.
+## Colour behind the messages shown when the player's files cannot be used.
 const BACKGROUND_COLOUR: Color = Color(0.04, 0.12, 0.05)
 ## FrogLord name of the generic hop sound the level-select stack plays.
 const HOP_SOUND: String = "GEN_FROG_HOP"
@@ -23,6 +25,8 @@ const CROAK_SOUND: String = "GEN_FROG_CROAK"
 
 var page: int = FrontEndPage.Page.MAIN_MENU
 var assets: FrontEndAssets
+## The water animation shared by the pages, its frame count starting when the screen opens.
+var water: MenuWater = MenuWater.create()
 
 var _background: ColorRect
 var _content: Control
@@ -86,7 +90,7 @@ func _show_page() -> void:
 		_content.remove_child(child)
 		child.queue_free()
 	_first_focus = null
-	_background.visible = page != FrontEndPage.Page.LEVEL_SELECT
+	_background.visible = false
 	match page:
 		FrontEndPage.Page.LEVEL_SELECT:
 			_build_level_select()
@@ -98,6 +102,7 @@ func _show_page() -> void:
 
 
 func _build_main_menu() -> void:
+	_content.add_child(MenuWaterView.create_with_camera(water, assets.texture("opt_env_sky"), assets.texture("opt_bank3")))
 	var column := _column()
 	var logo := TextureRect.new()
 	logo.texture = assets.texture("froglogo")
@@ -121,7 +126,7 @@ func _build_main_menu() -> void:
 func _build_level_select() -> void:
 	var first_time: bool = not FrontEndSession.level_chosen
 	var view := LevelStackView.create(assets, FrontEndSession.stack, FrontEndSession.progress, FrontEndSession.level,
-		first_time, BACKGROUND_COLOUR)
+		first_time, Color.BLACK, water)
 	view.stack_event.connect(_on_stack_event, CONNECT_DEFERRED)
 	_content.add_child(view)
 

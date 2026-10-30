@@ -51,6 +51,7 @@ commands run from the repository root; generated facts live in
 | Particle generators, shadows, hop trail, poly-piece pop, splash, pop ring, score popups, frog tint/croak, glows and retail hilites/effect textures/generator records | [Effects](specs/effects.md) |
 | Front-end level flags, completion and gold-frog unlocks, JUN1 rewrite and page-flow requests | [Front end](specs/frontend.md) |
 | Level-select stack layout, camera, lights, gold-frog quads and scripted motion, glow, spin and fade traces | [Level-select stack](specs/frontend.md#level-select-stack) |
+| Front-end water and riverbed mesh, wave heights, prim colours, draw order and options camera presets | [Front-end water](specs/frontend.md#front-end-water) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
