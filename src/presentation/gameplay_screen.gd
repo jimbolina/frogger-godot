@@ -344,7 +344,11 @@ func _show_error(message: String) -> String:
 func _return_to_menu() -> void:
 	close_data()
 	if FrontEndSession.active:
-		FrontEndSession.end_game()
+		var finished: bool = _session_finished and _current != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE
+		if finished:
+			FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+		else:
+			FrontEndSession.end_game()
 		get_tree().change_scene_to_file(FrontEndScreen.SCENE)
 		return
 	get_tree().change_scene_to_file("res://scenes/boot.tscn")
@@ -372,6 +376,7 @@ func _finish_front_end_level() -> void:
 			var completion: LevelProgress.Completion = progress.complete_level(number)
 			if completion.found and completion.next_level >= 0:
 				_next_level = completion.next_level
+				progress.open_level_if_closed(_next_level)
 				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.NEXT_LEVEL])
 				_advance.text = "Next level"
 			else:

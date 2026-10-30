@@ -26,4 +26,4 @@ if ! "$GODOT" --headless --disable-crash-handler --path . --import >/dev/null 2>
     echo "play: class-name cache refresh failed; run godot --headless --path . --import to see why" >&2
     exit 1
 fi
-exec "$GODOT" --path . "$scene" -- "${args[@]}"
+exec "$GODOT" --path . "$scene" -- ${args[@]+"${args[@]}"}

@@ -10,12 +10,15 @@ const TOOLS_SCENE: String = "res://scenes/boot.tscn"
 const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 ## Side margin of the page content.
 const MARGIN: int = 24
+## CD track played on the menu pages (LEVEL_SELECT in the music table).
+const MENU_TRACK: int = 13
 
 var page: int = FrontEndPage.Page.MAIN_MENU
 var assets: FrontEndAssets
 
 var _content: Control
 var _first_focus: Control
+var _music: MusicPlayer
 
 
 func _ready() -> void:
@@ -41,6 +44,12 @@ func _ready() -> void:
 	if not issue.is_empty():
 		_show_message(issue)
 		return
+	if not ViewerArguments.has_flag(arguments, GameplayScreen.NO_AUDIO_FLAG):
+		_music = MusicPlayer.new()
+		add_child(_music)
+		var disc: DiscAudio = DiscAudio.locate(arguments, OS.get_environment(DiscAudio.ENVIRONMENT_VARIABLE))
+		_music.select(disc, MENU_TRACK, found.source.directory)
+		_music.restart()
 	page = FrontEndSession.start_page
 	_show_page()
 
