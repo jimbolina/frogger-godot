@@ -129,6 +129,32 @@ Duration completion means the authored tick count elapsed, not that missing
 level flow or reference agreement has been established. Reference global driver
 call numbers are separate from local logic tick numbers.
 
+## Effects and the random stream
+
+Frozen C's particle generators (frog slide, drowning bubbles, Volcano fire,
+car and mower exhaust, bison cloud, lava-spray fire) draw from the same
+`rand()` stream as gameplay and sound, so their draw counts shift every later
+gameplay value in the original. The port does not reproduce those draws:
+effects are presentation work with their own random source, and gameplay RNG
+use is unchanged (owner decision, 2026-10-30). From the first slide, drowning,
+fire death or live particle-hilite entity, the port's stream therefore
+diverges from the original's; hazard timing, dive choices and pitches then
+differ from a native run while remaining valid play. Recorded inputs (keyboard
+replays and the executable's attract demos) replay only while the streams
+agree, so they are diagnostics rather than acceptance evidence, and the front
+end must treat an attract demo that desyncs as expected.
+
+Two frog colour rules are gameplay state because frozen C computes them in
+`UpdateFrogs`: `FrogTint` commits `FrogState.colour_scale`, `custom_ambient`
+and `tint_flags` after terrain collision and contacts each tick (the map-edge
+grey from the GEN marker bounds on non-cave maps, the Swamp green or blue
+drowning tint from the per-tick Y change with C's unclamped byte stores, and
+the Volcano char (24,0,0) at the fire death), and `Frog.kill` records the
+Volcano request. Presentation applies them; nothing reads them back. The
+croak's light swell is in the [entity contract](entities.md#cave-whole-map-behavior).
+Rules and deliberate-break checks are in the
+[effects specification](../../../tests/golden/specs/effects.md).
+
 ## Logical sound clock
 
 Whole-map ORG1 resolves [supplied sound tables](../data/executable-tables.md#sound-metadata)

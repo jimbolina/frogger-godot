@@ -25,6 +25,8 @@ var camera: GameplayCamera = null
 var music_pitch_offset: int = 0
 var random: SourceRandom = null
 var animation_system: FrogAnimationController = null
+## Signed map-header frog colour that ResetFrog applies as the custom ambient.
+var frog_ambient: Vector3i = Vector3i.ZERO
 
 ## Selects the systems belonging to the current transaction.
 func begin_tick(next_camera: GameplayCamera, next_random: SourceRandom, next_animation: FrogAnimationController, directions: PackedInt32Array) -> void:
@@ -47,8 +49,14 @@ func first_direction(mask: int) -> int:
 	return NO_INPUT
 
 
-## Applies command input to the candidate frog.
+## Applies command input to the candidate frog, then advances the croak as ControlFrog does.
 func control(state: GameplayState, command: TickCommand, events: Array[TickEvent]) -> String:
+	var issue: String = _control_mode(state, command, events)
+	if not issue.is_empty():
+		return issue
+	return FrogCroak.update(self, state, command, events)
+
+func _control_mode(state: GameplayState, command: TickCommand, events: Array[TickEvent]) -> String:
 	if state.frog.flags & FrogFlags.MUST_DIE:
 		state.frog.flags &= ~FrogFlags.MUST_DIE
 		if state.frog.mode != FrogMode.JUMPING or not state.frog.flags & FrogFlags.JUMP_TO_LAND:
@@ -482,6 +490,7 @@ func react_fall(state: GameplayState, distance: int, flags: int, events: Array[T
 			kill(state, 23, false, events)
 		elif flags & GridSquareFlags.WATER:
 			kill(state, 8, true, events)
+			events.append(TickEvent.splash(_translation(state)))
 			if not play_sound(state, 2).is_empty():
 				return
 			state.requests.sound_requests += 1
@@ -515,6 +524,7 @@ func react(state: GameplayState, flags: int, events: Array[TickEvent]) -> void:
 		state.requests.sound_requests += 1
 	elif flags & GridSquareFlags.WATER:
 		kill(state, 8, true, events)
+		events.append(TickEvent.splash(_translation(state)))
 		if not play_sound(state, 2).is_empty():
 			return
 		state.requests.sound_requests += 1
@@ -570,6 +580,7 @@ func kill(state: GameplayState, animation: int, down_velocity: bool, events: Arr
 	if theme == 10 and animation in [FrogAnimationCatalog.DROWN, FrogAnimationCatalog.FLOP]:
 		state.requests.death_fire_requested = true
 		state.requests.death_scale_colour = Vector3i(24, 0, 0)
+		FrogTint.set_scale_colours(state.frog, state.requests.death_scale_colour)
 		state.requests.animation_requests += 1
 		request_animation(FrogAnimationCatalog.DROWN, state)
 		events.append(TickEvent.make(TickEvent.Kind.DEATH_FIRE_PARTICLE_REQUEST))
@@ -596,11 +607,16 @@ func collide(state: GameplayState, events: Array[TickEvent]) -> bool:
 		state.frog.world_position.y = death_height
 		state.frog.velocity_16 = Vector3i.ZERO
 		kill(state, 8, true, events)
+		events.append(TickEvent.splash(state.frog.world_position))
 		if not play_sound(state, 12 if theme in [1, 8] else 1).is_empty():
 			return false
 		state.requests.sound_requests += 1
 		return false
 	return true
+
+
+func _translation(state: GameplayState) -> Vector3i:
+	return Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
 
 
 ## Allocates source sound immediately and retains any failure for the gameplay transaction.
@@ -738,6 +754,7 @@ func prepare_start(initial: RunStart, default_cell: Vector2i, default_direction:
 	state.frog.matrix12[11] = state.frog.world_position.z
 	state.frog.matrix12 = TerrainMatrix.update(state.frog.matrix12, state.frog.flags, state.frog.direction, grid.squares[index])
 	state.frog.initial_cell = cell
+	FrogTint.reset(state.frog, frog_ambient)
 	state.frog.start_mode = initial.start_mode if initial != null else 0
 	if state.frog.start_mode < 0 or state.frog.start_mode > 2:
 		prepared.error = "Start mode must select component, fast reset or single-start bounce"

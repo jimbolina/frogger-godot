@@ -49,6 +49,8 @@ var pickup_type: int = 0
 var butterfly_type: int = -1
 var butterfly_reward: RewardDefinition = null
 var parent_unique_id: int = -1
+## Presentation-only particle generators started from the model's hilites.
+var particle_hilites: Array[ParticleHilite] = []
 
 ## Returns a copy with independently owned matrix and path records.
 func copy() -> EntityDefinition:
@@ -90,6 +92,8 @@ func copy() -> EntityDefinition:
 	result.butterfly_type = butterfly_type
 	result.butterfly_reward = butterfly_reward.copy() if butterfly_reward != null else null
 	result.parent_unique_id = parent_unique_id
+	for hilite: ParticleHilite in particle_hilites:
+		result.particle_hilites.append(hilite.copy())
 	return result
 
 ## Resolves the frozen entity-book immortal capability from the resolved behavior.

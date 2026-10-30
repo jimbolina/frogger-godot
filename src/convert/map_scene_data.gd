@@ -25,6 +25,8 @@ var cave_max_r2: int = 1
 var bounds_min: Vector3i = Vector3i.ZERO
 var bounds_max: Vector3i = Vector3i.ZERO
 var midpoint: Vector3i = Vector3i.ZERO
+## Effect images, particle generator parameters and pop colours; null until the level loads.
+var effects: EffectResources
 ## Resource and source diagnostics, displayed by the viewer.
 var diagnostics := PackedStringArray()
 var error: String = ""
@@ -71,6 +73,9 @@ static func load_level(data: GameData, level_number: int, use_low_poly: bool = f
 		scene.sky_remap = data.tables.remaps().find_by_name("txl_sky_land")
 		if scene.sky_land == null or scene.sky_remap == null:
 			scene.error = "Sky-land data or texture remap is unavailable"
+			return scene
+	scene.effects = EffectResources.from_scene(data, scene)
+	scene.diagnostics.append_array(scene.effects.diagnostics)
 	return scene
 
 

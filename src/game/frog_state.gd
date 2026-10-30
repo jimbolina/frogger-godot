@@ -47,6 +47,22 @@ var destination_cell: Vector2i = Vector2i.ZERO
 var initial_cell: Vector2i = Vector2i.ZERO
 var start_mode: int = 0
 var start_target_16: int = 0
+## Mesh colour scale bytes; presentation applies them only while FrogTint.SCALED_COLOURS is set.
+var colour_scale: Vector3i = Vector3i(128, 128, 128)
+## Mesh custom ambient bytes; presentation applies them only while FrogTint.CUSTOM_AMBIENT is set.
+var custom_ambient: Vector3i = Vector3i(128, 128, 128)
+## Source mi_light_flags bits FrogTint.CUSTOM_AMBIENT and FrogTint.SCALED_COLOURS.
+var tint_flags: int = 0
+## Source FROG_CROAK_* mode held in FrogCroak.Mode.
+var croak_mode: int = 0
+var croak_timer: int = 0
+## Throat scale in 4.12 fixed point, committed every tick.
+var croak_scale: int = 0x200
+## Unsigned 32-bit cave light radii saved when the croak starts and restored when it ends.
+var croak_radius_max: int = 0
+var croak_radius_min: int = 0
+## Unsigned 32-bit per-tick radius change while inflating or deflating.
+var croak_rate: int = 0
 
 ## Returns an independently mutable copy of every value.
 func copy() -> FrogState:
@@ -92,4 +108,13 @@ func copy() -> FrogState:
 	result.initial_cell = initial_cell
 	result.start_mode = start_mode
 	result.start_target_16 = start_target_16
+	result.colour_scale = colour_scale
+	result.custom_ambient = custom_ambient
+	result.tint_flags = tint_flags
+	result.croak_mode = croak_mode
+	result.croak_timer = croak_timer
+	result.croak_scale = croak_scale
+	result.croak_radius_max = croak_radius_max
+	result.croak_radius_min = croak_radius_min
+	result.croak_rate = croak_rate
 	return result

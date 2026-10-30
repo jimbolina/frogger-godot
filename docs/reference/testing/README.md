@@ -95,7 +95,17 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   The older general-pose diagnostic remains blocked; the narrower route has
   its own complete proof and pinned inputs.
 
-## Demo playback and comparison
+## Diagnostics: demo playback and native comparison
+
+The recorded-input checks in this section and the
+[keyboard replays](#dedicated-game-scene-captures) are on-demand diagnostics.
+They are not part of the commit gate, not phase deliverables and not acceptance
+evidence (owner decision, 2026-10-30): the sandbox and the owner's level play
+checks are the system checks. Recorded inputs replay only while the port's
+random stream matches the original's at every tick, and effects in the port
+draw none of the original's shared random values (see
+[simulation](../gameplay/simulation.md#effects-and-the-random-stream)), so a
+replay that desyncs is a diagnostic to read, not a failure to fix.
 
 `tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
@@ -158,8 +168,7 @@ and export traces to a folder outside the repositories. The reference maps are O
 These whole-map demos complete and match the verified native terminal state,
 route and consumed input.
 Select SUB1 with `--level SUB1` for playback and schedule verification, and
-`--map 48` for comparison. Preserve that acceptance when
-changing gameplay. Select FOR1 with `--level FOR1` and compare with `--map 12`.
+`--map 48` for comparison. Select FOR1 with `--level FOR1` and compare with `--map 12`.
 Select VOL1 with `--level VOL1` and compare with `--map 54`.
 VOL2/VOL3 completion is established through normal-start keyboard replay and
 independent behavior facts; only VOL1 has a verified native Volcano attract baseline.
@@ -185,8 +194,9 @@ The frozen `Game_timer` at demo start is not in a trace, so the drift's RNG
 phase is unverified there; it moves only the backdrop and sound choices. The
 executable enables no Jungle demo, so JUN1 has no demo check. Level acceptance is the owner's play
 check in the dedicated game scene: the agent hands over the launch command and
-what to look for, and the owner confirms the level looks and plays well. Replays,
-demos and independent facts are regression coverage beneath that check. Bounded incomplete fixtures still exercise rejection paths.
+what to look for, and the owner confirms the level looks and plays well.
+Independent facts in the test gate are the regression coverage beneath that
+check; replays and demo comparisons are diagnostics. Bounded incomplete fixtures still exercise rejection paths.
 
 ## Dedicated game scene captures
 
@@ -230,7 +240,7 @@ Use `--flow-check --ticks 10000` without a route to verify idle timeout,
 respawn, game over and a fresh session through the R key. Use
 `--resolution 960x540` to inspect widescreen letterboxing; the report records
 window and logical viewport sizes. These captures supplement the complete test
-wrappers and native reference comparisons.
+wrappers.
 
 ## Sandbox play checks
 

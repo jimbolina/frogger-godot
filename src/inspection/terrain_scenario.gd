@@ -253,8 +253,8 @@ static func from_object(object: Dictionary) -> TerrainScenario:
 			scenario.error = "start_sequence_complete must be boolean"
 			return scenario
 		command.start_sequence_complete = completion
-		if command.pressed_mask < 0 or command.pressed_mask > 255 or command.held_mask < 0 or command.held_mask > 255:
-			scenario.error = "Command masks must be integers in 0..255"
+		if command.pressed_mask < 0 or command.pressed_mask > 511 or command.held_mask < 0 or command.held_mask > 511:
+			scenario.error = "Command masks must be integers in 0..511"
 			return scenario
 		if command.tick_index < 0 or command.tick_index >= scenario.tick_limit or scenario.commands.has(command.tick_index):
 			scenario.error = "Command ticks must be unique and within the scenario"

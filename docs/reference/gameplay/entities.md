@@ -801,9 +801,16 @@ STATIC entity type, while FrogLord's entity names override it to MOVING and the
 CAV3 records carry PATH_INFO. Frozen `mapload.C` creates path runners only for
 path-runner entity types, so retail reads those bytes as a matrix. The port
 follows the FrogLord name and reports a non-omitting `entity_override`
-diagnostic. The player croak light swell and the web wall bounce remain
-unimplemented; the source croak never runs in demos. Independent facts and
-deliberate-break checks are in the [entity golden specification](../../../tests/golden/specs/entities.md#cave-entities).
+diagnostic. The player croak (`FrogCroak`, frozen `FROG.C:2941-3042`) starts
+on the croak key outside recorded demos: it saves both light radii, adds
+`max/6` to each for six ticks, holds four and subtracts for six while the
+source `Cav_light_switch` suspends the light's decay, then restores the radii
+and either sets the nearest uncollected checkpoint's croak mode or plays the
+gold frog's croak. Gameplay commits the throat scale (0x200 to 0xC00) for
+presentation. The web wall is a FORM callback no retail map places (see
+above), not an effect. Independent facts and
+deliberate-break checks are in the [entity golden specification](../../../tests/golden/specs/entities.md#cave-entities)
+and the [effects specification](../../../tests/golden/specs/effects.md).
 
 ## Desert whole-map behavior
 
@@ -1025,7 +1032,7 @@ Independent facts and deliberate-break checks are in the
 SKY1–SKY4 use whole-map setup. SKY5 and SKYM are dummy rows with no map. The
 executable enables all four Sky attract demos, each gated on SKY1 being
 unlocked, so the fresh-boot native export never reaches them; see the
-[testing guide](../testing/README.md#demo-playback-and-comparison) for the
+[testing guide](../testing/README.md#diagnostics-demo-playback-and-native-comparison) for the
 baselines obtained from a scratch store. Every Sky map fits the 2500-polygon
 budget, so source allocation stays off.
 

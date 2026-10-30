@@ -216,8 +216,8 @@ func test_scenario_tongue_input_is_detached_and_unknown_mask_is_rejected() -> vo
 	assert_eq(scenario.command_at(0).pressed_mask, TickCommand.TONGUE)
 	assert_eq(scenario.command_at(0).held_mask, TickCommand.TONGUE)
 	var rejected: TerrainScenario = TerrainScenario.from_object({"builtin": "normal", "tick_limit": 2,
-		"commands": [{"tick": 0, "pressed": 256, "held": 0}]})
-	assert_string_contains(rejected.error, "0..255")
+		"commands": [{"tick": 0, "pressed": 512, "held": 0}]})
+	assert_string_contains(rejected.error, "0..511")
 
 func test_json_start_completion_roundtrip_uint32_inputs_and_atomic_refusal() -> void:
 	var authored: Dictionary = {"tick_limit": 4, "start": {"seed": 4294967295, "start_mode": 2},

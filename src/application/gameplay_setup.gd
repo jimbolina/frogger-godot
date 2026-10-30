@@ -175,6 +175,17 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	diagnostics.append_array(contacts.diagnostics)
 	if not contacts.error.is_empty():
 		return contacts.error
+	var effect_problems := PackedStringArray()
+	EffectSetup.resolve_hilites(data, number, entities.definitions, effect_problems, null, map.general.theme)
+	for message: String in effect_problems:
+		var diagnostic := EntitySetupDiagnostic.new()
+		diagnostic.code = "effect_hilite"
+		diagnostic.source_id = source
+		diagnostic.build_id = data.version.internal_name
+		diagnostic.resource_id = book.map_id(false)
+		diagnostic.message = message
+		diagnostic.fallback = "the hilite starts no effect"
+		diagnostics.append(diagnostic)
 	var collision := EntityCollisionDefinition.new()
 	collision.platforms_enabled = true
 	collision.lifecycle = lifecycle.definition
@@ -238,6 +249,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 	definition.frog_action_lengths = action_lengths.duplicate()
 	definition.flow_enabled = true
 	definition.level_time = map.general.time_limit * 30
+	definition.frog_ambient = Vector3i(map.general.raw_words[18], map.general.raw_words[19], map.general.raw_words[20])
 	return ""
 
 ## Applies authored fade markers independently to the native map-load defaults.

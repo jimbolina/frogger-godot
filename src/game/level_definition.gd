@@ -32,3 +32,5 @@ var theme: int = 0
 var camera: GameplayCameraDefinition = null
 var frog_action_lengths: PackedInt32Array = PackedInt32Array()
 var theme_name: StringName = &"SUB"
+## Signed map-header gh_frog_red, gh_frog_green and gh_frog_blue; zero leaves the custom ambient off.
+var frog_ambient: Vector3i = Vector3i.ZERO

@@ -33,7 +33,8 @@ static func initialize(definition: EntityDefinition, entity: EntitySnapshot) -> 
 	custom.position_4 = Vector3i(start.x << 4, start.y << 4, start.z << 4)
 
 ## Source ENTSTRSwpUpdateRat: one mode step, then the translation becomes the arithmetic >>4 of
-## the fixed-point position. custom.count is the unsigned 16-bit ra_count.
+## the fixed-point position. custom.count is the unsigned 16-bit ra_count. The second jump's
+## splash requests the water splash sprite at the >>4 position, as Rat_splash_matrix does.
 static func update(definition: EntityDefinition, result: EntityCustomResult) -> String:
 	var swamp: EntitySwampDefinition = definition.swamp
 	if swamp == null or swamp.rat_targets.size() != 4:
@@ -84,6 +85,7 @@ static func update(definition: EntityDefinition, result: EntityCustomResult) -> 
 				custom.splashed = true
 				EntityScaleColours.apply(entity, definition.form_flags, SCALE_COLOUR)
 				_custom_ambient(entity, SPLASH_AMBIENT)
+				entity.requests.append(TickEvent.splash(Vector3i(custom.position_4.x >> 4, custom.position_4.y >> 4, custom.position_4.z >> 4)))
 			custom.sine_positions.y = PlatformMath.s32(custom.sine_positions.y + swamp.jump2_sine_step)
 			custom.count = (custom.count + 1) & 65535
 			if custom.count == swamp.jump2_time:

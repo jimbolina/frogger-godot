@@ -11,6 +11,8 @@ var croak_modes: PackedInt32Array = PackedInt32Array([0, 0, 0, 0, 0])
 ## Unsigned 32-bit cave light squared radii shared by terrain, entities and rewards.
 var light_min_squared: int = 0
 var light_max_squared: int = 0
+## Source Cav_light_switch: false while a croak owns the light radii, suspending their decay.
+var light_switch: bool = true
 
 ## Copies positions and mutable covered bits for the aggregate transaction.
 func copy() -> EntityEnvironmentState:
@@ -23,6 +25,7 @@ func copy() -> EntityEnvironmentState:
 	result.croak_modes = croak_modes.duplicate()
 	result.light_min_squared = light_min_squared
 	result.light_max_squared = light_max_squared
+	result.light_switch = light_switch
 	return result
 
 ## Validates five checkpoint positions and the corresponding collected-bit mask.

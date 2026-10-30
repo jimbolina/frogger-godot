@@ -63,6 +63,7 @@ static func create(level: LevelDefinition, initial: RunStart = null) -> Gameplay
 	run._collision_enabled = level.collision_enabled
 	run._frog.collision_bounds = level.collision_bounds
 	run._frog.death_height = level.theme_death_height
+	run._frog.frog_ambient = level.frog_ambient
 	run._frog.theme = level.theme
 	run._frog.map_index = level.map_index
 	run._camera_definition = level.camera.copy() if level.camera != null else null
@@ -241,8 +242,8 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 	if (command.recorded_input_byte >= 0 or command.recorded_input_exhausted) and (command.pressed_mask != 0 or command.held_mask != 0):
 		result.error = "Recorded demo input cannot be mixed with live controller masks"
 		return result
-	if command.pressed_mask < 0 or command.held_mask < 0 or (command.pressed_mask | command.held_mask) & ~255:
-		result.error = "Terrain commands support directional, super-hop, tongue and camera-turn masks"
+	if command.pressed_mask < 0 or command.held_mask < 0 or (command.pressed_mask | command.held_mask) & ~511:
+		result.error = "Terrain commands support directional, super-hop, tongue, camera-turn and croak masks"
 		return result
 	if _camera == null and (command.pressed_mask | command.held_mask) & 96:
 		result.error = "Camera-turn commands require an integrated camera definition"
@@ -325,6 +326,7 @@ func step(command: TickCommand, capture_phases: bool = true) -> TickResult:
 			return _failed_tick(result, entity_error)
 	if not _frog.callback_error.is_empty():
 		return _failed_tick(result, _frog.callback_error)
+	FrogTint.update(next.frog, _cave_light, _frog.collision_bounds, _frog.theme)
 	_sync_systems(next)
 	if capture_phases:
 		result.collision_snapshot = next.copy()
@@ -622,6 +624,9 @@ func _reset_in_level(state: GameplayState, checkpoint: bool, events: Array[TickE
 	state.frog.scale_timer = old.scale_timer
 	state.frog.death_count = old.death_count
 	state.frog.death_equate = old.death_equate
+	state.frog.croak_radius_max = old.croak_radius_max
+	state.frog.croak_radius_min = old.croak_radius_min
+	state.frog.croak_rate = old.croak_rate
 	state.frog.start_timer = 30
 	state.frog.start_timer_hold = 2
 	state.frog.matrix12 = TerrainMatrix.update(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, state.frog.world_position.x, state.frog.world_position.y, state.frog.world_position.z]), state.frog.flags, state.frog.direction, null)

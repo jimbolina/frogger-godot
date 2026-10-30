@@ -100,7 +100,7 @@ live-entity CSVs, complete committed state/events in `committed.jsonl`, and
 committed ticks and termination reason. Exit 3 means incomplete playback;
 missing resources and unsupported dependencies remain explicit. The complete
 ORG1, SUB1, FOR1 and VOL1 attract demos match the frozen native terminal states, routes and inputs. See the
-[demo verification commands](docs/reference/testing/README.md#demo-playback-and-comparison)
+[demo verification commands](docs/reference/testing/README.md#diagnostics-demo-playback-and-native-comparison)
 for reference comparisons and schedule checks.
 
 Bounded regression inspections remain available through `--exploration`:

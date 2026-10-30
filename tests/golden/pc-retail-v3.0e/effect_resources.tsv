@@ -1,0 +1,161 @@
+# hilite	resource_id	file_name	static_index	part	hilite_index	type	type_name	attach	index	special
+# hilite_borrowed	resource_id	file_name	static_index	part	declared	counterpart
+# hilite_census	type	type_name	count	files
+# hilite_generator	type	type_name	generator
+# pgen	name	address	flags	prim_size	max_particles	generator_life	particle_min_life	particle_max_life	gravity_16	user_data_1	user_data_2	texture_ids	c_differences
+# frog_particle	index	name	flags	single	multi
+# image	symbol	texture_id	resolution	width	height	flags	blend_mode	banks	exe_refs
+# score_library	score_id	name	value	symbol	texture_id	flags
+# pop_colour	player	value	r	g	b
+hilite	138	GEN_FROG2_WIN95.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	138	GEN_FROG2_WIN95.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	139	GEN_FROG3_WIN95.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	139	GEN_FROG3_WIN95.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	140	GEN_FROG4_WIN95.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	140	GEN_FROG4_WIN95.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	179	GEN_FROG2.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	179	GEN_FROG2.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	180	GEN_FROG3.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	180	GEN_FROG3.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	181	GEN_FROG4.XMR	0	0	0	0	COLLISION	1	4	none
+hilite	181	GEN_FROG4.XMR	0	7	0	0	COLLISION	1	26	none
+hilite	192	GEN_FROG_WIN95.XAR	0	0	0	0	COLLISION	1	4	none
+hilite	192	GEN_FROG_WIN95.XAR	0	7	0	0	COLLISION	1	26	none
+hilite	201	GENM_FROG_WIN95.XMR	0	0	0	0	COLLISION	1	13	none
+hilite	201	GENM_FROG_WIN95.XMR	0	0	1	0	COLLISION	1	31	none
+hilite	201	GENM_FROG_WIN95.XMR	0	0	2	0	COLLISION	1	40	none
+hilite	201	GENM_FROG_WIN95.XMR	0	0	3	0	COLLISION	1	5	none
+hilite	214	GEN_FROG.XAR	0	0	0	0	COLLISION	1	4	none
+hilite	214	GEN_FROG.XAR	0	7	0	0	COLLISION	1	26	none
+hilite	223	GENM_FROG.XMR	0	0	0	0	COLLISION	1	13	none
+hilite	223	GENM_FROG.XMR	0	0	1	0	COLLISION	1	31	none
+hilite	223	GENM_FROG.XMR	0	0	2	0	COLLISION	1	40	none
+hilite	223	GENM_FROG.XMR	0	0	3	0	COLLISION	1	5	none
+hilite	245	DES_BISON.XAR	0	2	0	5	PARTICLE_SMOKE	1	6	PGIN_hilite_dust
+hilite	245	DES_BISON.XAR	0	4	0	5	PARTICLE_SMOKE	1	7	PGIN_hilite_dust
+hilite	245	DES_BISON.XAR	0	7	0	5	PARTICLE_SMOKE	1	0	PGIN_hilite_dust
+hilite	245	DES_BISON.XAR	0	8	0	5	PARTICLE_SMOKE	1	1	PGIN_hilite_dust
+hilite	266	DES_BISON_WIN95.XAR	0	2	0	5	PARTICLE_SMOKE	1	6	PGIN_hilite_dust
+hilite	266	DES_BISON_WIN95.XAR	0	4	0	5	PARTICLE_SMOKE	1	7	PGIN_hilite_dust
+hilite	266	DES_BISON_WIN95.XAR	0	7	0	5	PARTICLE_SMOKE	1	0	PGIN_hilite_dust
+hilite	266	DES_BISON_WIN95.XAR	0	8	0	5	PARTICLE_SMOKE	1	1	PGIN_hilite_dust
+hilite	381	ORG_CAR_BLUE.XMR	0	0	0	3	PARTICLE_EXHAUST	1	3	PGIN_hilite_exhaust
+hilite	382	ORG_CAR_PURPLE.XMR	0	0	0	3	PARTICLE_EXHAUST	1	3	PGIN_hilite_exhaust
+hilite	386	ORG_LORRY.XMR	0	0	0	3	PARTICLE_EXHAUST	1	42	PGIN_hilite_exhaust
+hilite	387	ORG_TRUCK_RED.XMR	0	0	0	3	PARTICLE_EXHAUST	1	65	PGIN_hilite_exhaust
+hilite	533	SUB_CAR_ORANGE.XMR	0	0	0	3	PARTICLE_EXHAUST	1	3	PGIN_hilite_exhaust
+hilite	534	SUB_CAR_PURPLE.XMR	0	0	0	3	PARTICLE_EXHAUST	1	3	PGIN_hilite_exhaust
+hilite	535	SUB_CAR_BLUE.XMR	0	0	0	3	PARTICLE_EXHAUST	1	3	PGIN_hilite_exhaust
+hilite	537	SUB_TRUCK.XMR	0	0	0	3	PARTICLE_EXHAUST	1	65	PGIN_hilite_exhaust
+hilite	539	SUB_LAWN_MOWER.XMR	0	0	0	3	PARTICLE_EXHAUST	1	4	PGIN_hilite_exhaust
+hilite	551	SUBM_TRUCK.XMR	0	0	0	3	PARTICLE_EXHAUST	1	18	PGIN_hilite_exhaust
+hilite	553	SUBM_LORRY.XMR	0	0	0	3	PARTICLE_EXHAUST	1	10	PGIN_hilite_exhaust
+hilite	593	VOL_LAVA_SPRAY.XMR	0	0	0	6	PARTICLE_FIRE	1	8	PGIN_hilite_fire
+hilite	609	VOL_LAVA_SPRAY_WIN95.XMR	0	0	0	6	PARTICLE_FIRE	1	8	PGIN_hilite_fire
+hilite_borrowed	202	GENM_FROG2_WIN95.XMR	0	0	4	201
+hilite_borrowed	203	GENM_FROG3_WIN95.XMR	0	0	4	201
+hilite_borrowed	204	GENM_FROG4_WIN95.XMR	0	0	4	201
+hilite_borrowed	224	GENM_FROG2.XMR	0	0	4	223
+hilite_borrowed	225	GENM_FROG3.XMR	0	0	4	223
+hilite_borrowed	226	GENM_FROG4.XMR	0	0	4	223
+hilite_census	0	COLLISION	24	10
+hilite_census	1	3DSPRITE_SPLASH	0	0
+hilite_census	2	3DSPRITE_WAKE	0	0
+hilite_census	3	PARTICLE_EXHAUST	11	11
+hilite_census	4	PARTICLE_CLOUD	0	0
+hilite_census	5	PARTICLE_SMOKE	8	2
+hilite_census	6	PARTICLE_FIRE	2	2
+hilite_census	7	MESH	0	0
+hilite_census	8	ANIM	0	0
+hilite_generator	0	COLLISION	-
+hilite_generator	1	3DSPRITE_SPLASH	-
+hilite_generator	2	3DSPRITE_WAKE	-
+hilite_generator	3	PARTICLE_EXHAUST	PGIN_hilite_exhaust
+hilite_generator	4	PARTICLE_CLOUD	PGIN_hilite_exhaust
+hilite_generator	5	PARTICLE_SMOKE	PGIN_hilite_dust
+hilite_generator	6	PARTICLE_FIRE	PGIN_hilite_fire
+hilite_generator	7	MESH	-
+hilite_generator	8	ANIM	-
+pgen	PGIN_for_swarm	0x475DC0	0x10	48	3	-1	0	0	0	0x0	texture	1458	-
+pgen	PGIN_for_swarm_multiplayer	0x475DF0	0x10	48	1	-1	0	0	0	0x0	texture	1458	-
+pgen	PGIN_pickup	0x475E20	0x0	48	2	-1	0	0	0	0x0	0	-	-
+pgen	PGIN_pickup_explosion	0x475E50	0x10	48	10	30	0	0	0	0x1800	0	-	-
+pgen	-	0x475E80	0x10	48	10	30	0	0	0	0xC00	0	-	absent_from_c
+pgen	PGIN_frog_pop_explosion	0x475EB0	0x10	48	10	30	0	0	0	0x1800	0	-	-
+pgen	PGIN_hilite_exhaust	0x475EE0	0x0	48	25	-1	5	8	-65536	0x9400	texture	1163	user_data_1,texture
+pgen	PGIN_hilite_dust	0x475F30	0x0	48	14	-1	12	12	-65536	0x20000	texture_list	1065,1061,1062,1063,1064,1060	-
+pgen	PGIN_hilite_fire	0x475F60	0x0	48	40	-1	30	40	-65536	0x12C00	texture	1163	particle_min_life,particle_max_life,user_data_1
+pgen	PGIN_frog_slip_effect	0x476048	0x0	48	50	-1	6	12	-65536	0x18000	texture	1163	-
+pgen	PGIN_frog_water_bubble	0x476078	0x0	48	20	90	12	12	-65536	0x8000	texture	102	-
+pgen	PGIN_frog_on_fire	0x4760A8	0x0	48	150	-1	40	50	-65536	0xF000	texture	1163	-
+pgen	PGIN_stone_to_gold_frog	0x476100	0x0	48	100	30	15	20	-65536	0x8000	texture	1163	-
+pgen	PGIN_gold_frog_glow	0x476130	0x0	48	1	-1	0	0	0	0x0	0	-	-
+frog_particle	0	FROG_PARTICLE_SLIDE	0x300	PGIN_frog_slip_effect	PGIN_frog_slip_effect
+frog_particle	1	FROG_PARTICLE_WATER_BUBBLE	0x200	PGIN_frog_water_bubble	-
+frog_particle	2	FROG_PARTICLE_ON_FIRE	0x200	PGIN_frog_on_fire	-
+image	im_frog_smoke1	1163	pointer:1163;exe:PGIN_hilite_fire,PGIN_frog_slip_effect,PGIN_frog_on_fire,PGIN_stone_to_gold_frog;name:frog_smoke1	16	16	32817	1	5	5
+image	im_gen_shadow	63	pointer:63;name:gen_shadow	30	30	32817	1	2	1
+image	im_frog_shadow0	840	pointer:840;exe:Frog_jump_shadow_textures[0];name:frog_shadow0	62	62	32817	1	5	1
+image	im_frog_shadow1	838	pointer:838;exe:Frog_jump_shadow_textures[1];name:frog_shadow1	62	62	32817	1	5	2
+image	im_frog_shadow2	839	pointer:839;exe:Frog_jump_shadow_textures[2];name:frog_shadow2	62	62	32817	1	5	3
+image	im_wake2	102	pointer:102;exe:PGIN_frog_water_bubble;name:wake2	32	32	32817	1	5	1
+image	im_ripple_tim1	1726	pointer:1726;exe:FrogSplashAnimList[0],TurtleSplashAnimList[0]	32	32	32817,32821	1	5	2
+image	im_ripple_tim2	1722	pointer:1722;exe:FrogSplashAnimList[1],TurtleSplashAnimList[1]	32	32	32817	1	5	2
+image	im_ripple_tim3	1723	pointer:1723;exe:FrogSplashAnimList[2],TurtleSplashAnimList[2]	32	32	32817	1	5	3
+image	im_ripple_tim4	1724	pointer:1724;exe:FrogSplashAnimList[3],TurtleSplashAnimList[3]	32	32	32817	1	5	3
+image	im_ripple_tim5	1725	pointer:1725;exe:FrogSplashAnimList[4],TurtleSplashAnimList[4]	32	32	32817	1	5	3
+image	im_ripple_tim6	1721	pointer:1721;exe:FrogSplashAnimList[5],TurtleSplashAnimList[5]	32	32	32817	1	5	12
+image	im_bison1	1065	pointer:1065;exe:Hilite_dust_textures[0];name:bison1	32	32	32817	1	2	1
+image	im_bison2	1061	pointer:1061;exe:Hilite_dust_textures[1];name:bison2	32	32	32817	1	2	1
+image	im_bison3	1062	pointer:1062;exe:Hilite_dust_textures[2];name:bison3	32	32	32817	1	2	1
+image	im_bison4	1063	pointer:1063;exe:Hilite_dust_textures[3];name:bison4	32	32	32817	1	2	1
+image	im_bison5	1064	pointer:1064;exe:Hilite_dust_textures[4];name:bison5	32	32	32817	1	2	1
+image	im_bison6	1060	pointer:1060;exe:Hilite_dust_textures[5];name:bison6	32	32	32817	1	2	1
+image	im_tongue_tip	38	pointer:38;name:tongue_tip	30	30	32816,32820	0	5	1
+image	im_for_swarm	1458	pointer:1458;exe:PGIN_for_swarm,PGIN_for_swarm_multiplayer;name:for_swarm	32	32	32816	0	4	2
+image	im_score_10	74	pointer:74;exe:Score_library[1];name:score_10	13	9	32816	0	5	1
+image	im_score_25	220	pointer:220;exe:Score_library[2];name:score_25	16	9	32817	0	5	1
+image	im_score_50	79	pointer:79;exe:Score_library[3];name:score_50	16	9	32816	0	5	1
+image	im_score_75	81	pointer:81;exe:Score_library[4];name:score_75	16	9	32816	0	5	1
+image	im_score_100	75	pointer:75;exe:Score_library[5];name:score_100	20	9	32816	0	5	1
+image	im_score_150	76	pointer:76;exe:Score_library[6];name:score_150	20	9	32816	0	5	1
+image	im_score_200	77	pointer:77;exe:Score_library[7];name:score_200	23	9	32816	0	5	1
+image	im_score_250	78	pointer:78;exe:Score_library[8];name:score_250	23	9	32816	0	5	1
+image	im_score_500	80	pointer:80;exe:Score_library[9];name:score_500	23	9	32816	0	5	5
+image	im_score_1000	219	pointer:219;exe:Score_library[10];name:score_1000	27	9	32817	0	5	1
+image	im_score_5000	218	pointer:218;exe:Score_library[11];name:score_5000	30	9	32817	0	5	2
+image	im_time_plus2	1113	pointer:1113;exe:Score_library[15];name:time_plus2	16	9	32817	0	5	1
+image	im_time_plus5	1111	pointer:1111;exe:Score_library[16];name:time_plus5	16	9	32817	0	5	1
+image	im_time_plus10	1112	pointer:1112;exe:Score_library[17];name:time_plus10	20	9	32817,32821	0	5	1
+image	im_score_minus500	1114	pointer:1114;exe:Score_library[18];name:score_minus500	30	9	32816	0	5	1
+image	im_1up1	1029	pointer:1029;exe:Score_library[20];name:1up1	32	32	32817	0	5	1
+image	glow_1727	1727	pointer:1727;fixed:pc_glow	30	30	32816	0	5	4
+score_library	0	SCORE_5	5	-	-1	1
+score_library	1	SCORE_10	10	im_score_10	74	1
+score_library	2	SCORE_25	25	im_score_25	220	1
+score_library	3	SCORE_50	50	im_score_50	79	1
+score_library	4	SCORE_75	75	im_score_75	81	1
+score_library	5	SCORE_100	100	im_score_100	75	1
+score_library	6	SCORE_150	150	im_score_150	76	1
+score_library	7	SCORE_200	200	im_score_200	77	1
+score_library	8	SCORE_250	250	im_score_250	78	1
+score_library	9	SCORE_500	500	im_score_500	80	1
+score_library	10	SCORE_1000	1000	im_score_1000	219	1
+score_library	11	SCORE_5000	5000	im_score_5000	218	1
+score_library	12	LIGHT_5	5	-	-1	2
+score_library	13	LIGHT_8	8	-	-1	2
+score_library	14	ADD_SUPER_LIGHT	16	-	-1	32
+score_library	15	TIME_MIN	60	im_time_plus2	1113	4
+score_library	16	TIME_MED	150	im_time_plus5	1111	4
+score_library	17	TIME_MAX	300	im_time_plus10	1112	4
+score_library	18	REDUCE_SCORE_100	-500	im_score_minus500	1114	8
+score_library	19	ADD_TIMER_SPEED	8	-	-1	32
+score_library	20	ADD_EXTRA_LIFE	1	im_1up1	1029	16
+score_library	21	ADD_SUPER_TONGUE	1	-	-1	32
+score_library	22	ADD_QUICK_JUMP	2	-	-1	32
+score_library	23	ADD_AUTO_HOP	4	-	-1	32
+pop_colour	0	0x000400	0	4	0
+pop_colour	1	0x040004	4	0	4
+pop_colour	2	0x000404	4	4	0
+pop_colour	3	0x040400	0	4	4
+pop_colour	4	0x000104	4	1	0

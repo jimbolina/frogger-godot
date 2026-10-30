@@ -25,7 +25,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | Done; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle, P9f Swamp and P9g Sky complete; every playable level accepted by the owner |
-| P11 | Effects and particles | L | By eye against reference pictures | |
+| P11 | Effects and particles | L | By eye against reference pictures | In progress; P11a effect signals and resources done, P11b frog effects and P11c entity effects pending |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -110,10 +110,28 @@ scratch store that unlocks SKY1. Fixing SKY3 also made freefall entry clear the
 whole frozen entity landing mask. SKY5 and SKYM are dummy rows. The balloon
 poly-piece pop effect waits for the effects phase.
 
+## P11 effects and particles
+
+Effects are presentation work: the port draws them from committed state and
+events and never reproduces the frozen generators' shared random draws (see
+[simulation](reference/gameplay/simulation.md#effects-and-the-random-stream)).
+P11a is complete: gameplay commits the frog's edge-fade, drowning and Volcano
+tints and the croak light swell, emits splash and croak signals, and resolves
+particle hilites per entity model, the executable's particle generator
+records, splash animation lists, pop colours and effect images, with the
+synthetic and retail families in the [effects specification](../tests/golden/specs/effects.md).
+P11b draws the frog's shadow, hop trail, slide, bubble and fire particles,
+death ring, splash, tints and score popups; P11c draws entity shadows,
+poly-piece pops, the gold-frog glow, entity splashes, exhaust, cloud, smoke
+and fire sprites and the croak throat scale with its key.
+
 Each level is accepted when the owner plays it in the game scene and confirms it
-looks and plays well; recorded replays are not required. Retain the thirteen
-existing keyboard completion checks and the native attract comparisons; see
-[demo verification](reference/testing/README.md#demo-playback-and-comparison).
+looks and plays well; recorded replays are not required. The thirteen keyboard
+completion replays and the native attract comparisons are on-demand
+[diagnostics](reference/testing/README.md#diagnostics-demo-playback-and-native-comparison),
+not phase deliverables or acceptance evidence (owner decision, 2026-10-30); the
+sandbox and the owner's play checks are the system checks, and the commit gate
+is unchanged.
 
 Normal play and demos use whole-map dependency validation. The guarded JUN1
 and ORG1 corridor fixtures remain separate regression coverage.
