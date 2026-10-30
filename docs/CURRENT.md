@@ -8,14 +8,8 @@ player assets. See [controls](../README.md), [roadmap](PORTING.md), the
 [entity contract](reference/gameplay/entities.md) and the
 [effects reference](reference/rendering/effects.md).
 
-Gameplay commits the frog's edge-fade, drowning and Volcano tints, the croak
-light swell (key C) and splash, croak and reward events. Setup resolves
-particle hilites per entity model, the executable's particle generator
-records, splash animation lists, pop colours and effect images. Presentation
-draws the frog's shadow, hop trail, slide, bubble and fire particles, death
-ring, splash, tints, throat swell and score popups, Desert rock shadows,
-poly-piece pops, the gold-frog glow, entity splashes and exhaust, cloud, smoke
-and fire sprites, with a sandbox effects preset for play checks.
+Effects draw the frog's and entities' shadows, trails, particles, pops, splashes,
+tints and score popups from committed state; the sandbox has an effects preset.
 
 Effects are presentation-only by owner decision: the port never reproduces the
 frozen generators' shared random draws, so its stream diverges from the
@@ -23,6 +17,12 @@ original's. Keyboard replays and native attract comparisons are on-demand
 [diagnostics](reference/testing/README.md#diagnostics-demo-playback-and-native-comparison);
 the [sandbox](../README.md#sandbox) and the owner's play checks are the system
 checks. Both test modes, strict compilation and architecture checks pass.
+
+P13a is implemented and awaits the owner's play check: the game opens on a
+main menu and level list ([front end](reference/gameplay/front-end.md)), unlocks
+and score carry between levels, and progress saves to `user://progress.cfg`.
+Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`. The 3D select
+stack, options, high scores and attract cycle are P13b–P13e.
 
 P12 audio playback is implemented and awaits the owner's by-ear check: sound
 effects play from committed voices and music from the disc image

@@ -15,6 +15,10 @@ var auto_hop_timer: int = 0
 var super_tongue_timer: int = 0
 ## Keyboard play starts with FROG_START_LIVES; demo playback sets DemoSetup.DEMO_LIVES.
 var lives: int = 3
+## Score, previous score and next extra-life threshold carried from earlier levels of one game.
+var score: int = 0
+var old_score: int = 0
+var life_bonus_score: int = 10000
 ## Explicit component RNG seed and level-start camera selection.
 var seed: int = 1
 var camera_startup: bool = false

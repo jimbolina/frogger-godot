@@ -21,6 +21,12 @@ var _hud: GameplayHud
 var _status: Label
 var _actions: HBoxContainer
 var _replay: Button
+var _advance: Button
+var _back: Button
+var _advance_event: int = -1
+var _advance_events: PackedInt32Array = PackedInt32Array()
+var _next_level: int = -1
+var _session_finished: bool = false
 var _model_origins: EntityModelOrigins = null
 ## Problems from the latest map-less entity model resolution, shown to callers instead of failing.
 var entity_model_diagnostics := PackedStringArray()
@@ -153,10 +159,15 @@ func _detach_game() -> void:
 func restart() -> String:
 	if _definition == null:
 		return _show_error("Select a level before restarting")
-	var start := RunStart.new()
-	start.start_mode = RunStart.Mode.SINGLE_START
-	start.camera_startup = true
-	start.start_timer = 120
+	var start: RunStart
+	if FrontEndSession.active:
+		start = FrontEndSession.run_start()
+	else:
+		start = RunStart.new()
+		start.start_mode = RunStart.Mode.SINGLE_START
+		start.camera_startup = true
+		start.start_timer = 120
+	_session_finished = false
 	return open_run(_definition, start, _model_origins)
 
 ## Installs a run for normal play or asset-free scene verification.
@@ -296,10 +307,13 @@ func _build_interface() -> void:
 	_replay.text = "Replay"
 	_replay.pressed.connect(restart)
 	_actions.add_child(_replay)
-	var back := Button.new()
-	back.text = "Return"
-	back.pressed.connect(_return_to_menu)
-	_actions.add_child(back)
+	_advance = Button.new()
+	_advance.pressed.connect(_advance_front_end)
+	_actions.add_child(_advance)
+	_back = Button.new()
+	_back.text = "Return"
+	_back.pressed.connect(_return_to_menu)
+	_actions.add_child(_back)
 	_actions.hide()
 
 func _update_interface(events: Array[TickEvent] = []) -> void:
@@ -309,7 +323,9 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 		_hud.present(_current, _current.tick_index, events)
 	var terminal: bool = _current != null and _current.completed
 	_actions.visible = terminal or not last_error.is_empty()
-	_replay.visible = _definition != null
+	var in_game: bool = FrontEndSession.active
+	_replay.visible = _definition != null and not in_game
+	_advance.visible = in_game and terminal and _advance_event >= 0
 	if not last_error.is_empty():
 		_status.text = last_error
 	elif terminal:
@@ -327,4 +343,67 @@ func _show_error(message: String) -> String:
 
 func _return_to_menu() -> void:
 	close_data()
+	if FrontEndSession.active:
+		FrontEndSession.end_game()
+		get_tree().change_scene_to_file(FrontEndScreen.SCENE)
+		return
 	get_tree().change_scene_to_file("res://scenes/boot.tscn")
+
+## Applies the finished level to the front-end progress and saves it.
+func _finish_front_end_level() -> void:
+	if not FrontEndSession.active or _session_finished or _current == null:
+		return
+	_session_finished = true
+	var flow: LevelFlowState = _current.flow
+	var progress: LevelProgress = FrontEndSession.progress
+	var number: int = FroggerIds.level_from_code(level_code)
+	if flow.gold_collected:
+		FrontEndSession.collect_gold_frog(number)
+	_advance_events = PackedInt32Array()
+	_next_level = -1
+	if flow.phase == LevelFlowState.Phase.COMPLETE:
+		FrontEndSession.carry(_current)
+		if number == LevelProgress.LEVEL_JUNGLE1:
+			progress.reach_jungle_statue()
+			progress.rewrite_jungle_row()
+			_advance_events = PackedInt32Array([FrontEndFlow.Event.GAME_FINISHED, FrontEndFlow.Event.ENDING_DONE])
+			_advance.text = "Finish"
+		else:
+			var completion: LevelProgress.Completion = progress.complete_level(number)
+			if completion.found and completion.next_level >= 0:
+				_next_level = completion.next_level
+				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.NEXT_LEVEL])
+				_advance.text = "Next level"
+			else:
+				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.ZONE_COMPLETE])
+				_advance.text = "Level select"
+	else:
+		_advance_events = PackedInt32Array([FrontEndFlow.Event.ALL_LIVES_LOST, FrontEndFlow.Event.GAME_OVER_DONE, FrontEndFlow.Event.CONTINUE_DONE])
+		_advance.text = "Continue"
+	_advance_event = _advance_events[0]
+	var issue: String = FrontEndSession.save()
+	if not issue.is_empty():
+		last_error = issue
+
+## Follows the flow from the finished level to its next page.
+func _advance_front_end() -> void:
+	var page: int = FrontEndPage.Page.GAME
+	var problems := PackedStringArray()
+	for event: int in _advance_events:
+		page = FrontEndFlow.next_page(page, event, problems)
+	for problem: String in problems:
+		push_warning(problem)
+	if page == FrontEndPage.Page.GAME and _next_level >= 0:
+		FrontEndSession.progress.open_level(_next_level)
+		FrontEndSession.save()
+		FrontEndSession.level = _next_level
+		selected_level = FroggerIds.level_code(_next_level)
+		close_data()
+		get_tree().reload_current_scene()
+		return
+	close_data()
+	if page == FrontEndPage.Page.LEVEL_SELECT:
+		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+	else:
+		FrontEndSession.end_game()
+	get_tree().change_scene_to_file(FrontEndScreen.SCENE)

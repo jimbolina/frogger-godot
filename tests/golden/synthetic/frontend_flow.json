@@ -1,0 +1,267 @@
+{
+ "start_page": "ANTI_PIRACY",
+ "p13a_start_page": "MAIN_OPTIONS",
+ "pages": [
+  "ANTI_PIRACY",
+  "HASBRO_LOGO",
+  "LANGUAGE_SELECTION",
+  "MAIN_OPTIONS",
+  "LEVEL_SELECT",
+  "MULTIPLAYER_MODE_OPTIONS",
+  "OPTIONS",
+  "GAME",
+  "LEVEL_COMPLETE",
+  "GAME_OVER",
+  "OUTRO",
+  "CREDITS",
+  "CONTINUE",
+  "HIGH_SCORE_INPUT",
+  "HIGH_SCORE_VIEW"
+ ],
+ "transitions": [
+  {
+   "page": "ANTI_PIRACY",
+   "event": "timer_elapsed",
+   "next": "HASBRO_LOGO",
+   "phase": "P16",
+   "source": "tempopt.c:862"
+  },
+  {
+   "page": "HASBRO_LOGO",
+   "event": "video_finished",
+   "next": "LANGUAGE_SELECTION",
+   "phase": "P16",
+   "source": "tempopt.c:966",
+   "source_next": "INTRO",
+   "retail": "KF-288: retail HasbroLogoUpdate requests the language page, never INTRO"
+  },
+  {
+   "page": "LANGUAGE_SELECTION",
+   "event": "language_detected",
+   "next": "MAIN_OPTIONS",
+   "phase": "P16",
+   "source": "tempopt.c:5278",
+   "source_next": "CHECK",
+   "retail": "KF-351: retail row 5 detects the language silently and requests MAIN_OPTIONS"
+  },
+  {
+   "page": "MAIN_OPTIONS",
+   "event": "start",
+   "next": "LEVEL_SELECT",
+   "phase": "P13a",
+   "source": "tempopt.c:1829"
+  },
+  {
+   "page": "MAIN_OPTIONS",
+   "event": "race",
+   "next": "MULTIPLAYER_MODE_OPTIONS",
+   "phase": "P15",
+   "source": "tempopt.c:1886"
+  },
+  {
+   "page": "MAIN_OPTIONS",
+   "event": "options",
+   "next": "OPTIONS",
+   "phase": "P13c",
+   "source": "tempopt.c:1950"
+  },
+  {
+   "page": "LEVEL_SELECT",
+   "event": "play",
+   "next": "GAME",
+   "phase": "P13a",
+   "source": "SELECT.C:1424"
+  },
+  {
+   "page": "LEVEL_SELECT",
+   "event": "back_before_first_play",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13a",
+   "source": "SELECT.C:2046"
+  },
+  {
+   "page": "GAME",
+   "event": "level_complete",
+   "next": "LEVEL_COMPLETE",
+   "phase": "P13a",
+   "source": "gamesys.C:2729"
+  },
+  {
+   "page": "GAME",
+   "event": "lives_lost",
+   "next": "GAME_OVER",
+   "phase": "P13a",
+   "source": "gamesys.C:2586"
+  },
+  {
+   "page": "GAME",
+   "event": "pause_quit",
+   "next": "GAME_OVER",
+   "phase": "P13a",
+   "source": "pause.c:502"
+  },
+  {
+   "page": "GAME",
+   "event": "jungle_complete_all_gold_frogs",
+   "next": "OUTRO",
+   "phase": "P16",
+   "source": "gamesys.C:3956"
+  },
+  {
+   "page": "GAME",
+   "event": "jungle_complete",
+   "next": "CREDITS",
+   "phase": "P16",
+   "source": "gamesys.C:3958"
+  },
+  {
+   "page": "LEVEL_COMPLETE",
+   "event": "back",
+   "next": "LEVEL_SELECT",
+   "phase": "P13a",
+   "source": "tempopt.c:6033"
+  },
+  {
+   "page": "LEVEL_COMPLETE",
+   "event": "timeout_zone_complete",
+   "next": "LEVEL_SELECT",
+   "phase": "P13a",
+   "source": "tempopt.c:6054"
+  },
+  {
+   "page": "LEVEL_COMPLETE",
+   "event": "timeout_next_level",
+   "next": "GAME",
+   "phase": "P13a",
+   "source": "tempopt.c:6059"
+  },
+  {
+   "page": "GAME_OVER",
+   "event": "timeout",
+   "next": "CONTINUE",
+   "phase": "P13a",
+   "source": "tempopt.c:4124"
+  },
+  {
+   "page": "GAME_OVER",
+   "event": "confirm",
+   "next": "CONTINUE",
+   "phase": "P13a",
+   "source": "tempopt.c:4131"
+  },
+  {
+   "page": "CONTINUE",
+   "event": "arcade",
+   "next": "HIGH_SCORE_INPUT",
+   "phase": "P13a",
+   "source": "tempopt.c:3993"
+  },
+  {
+   "page": "CONTINUE",
+   "event": "race_play_again",
+   "next": "GAME",
+   "phase": "P15",
+   "source": "tempopt.c:3977"
+  },
+  {
+   "page": "CONTINUE",
+   "event": "race_choose_course",
+   "next": "LEVEL_SELECT",
+   "phase": "P15",
+   "source": "tempopt.c:3981"
+  },
+  {
+   "page": "CONTINUE",
+   "event": "race_exit",
+   "next": "MAIN_OPTIONS",
+   "phase": "P15",
+   "source": "tempopt.c:3986"
+  },
+  {
+   "page": "HIGH_SCORE_INPUT",
+   "event": "game_quit",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13a",
+   "source": "hsinput.c:191"
+  },
+  {
+   "page": "HIGH_SCORE_INPUT",
+   "event": "no_high_score",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13a",
+   "source": "hsinput.c:224"
+  },
+  {
+   "page": "HIGH_SCORE_INPUT",
+   "event": "entered",
+   "next": "HIGH_SCORE_VIEW",
+   "phase": "P13d",
+   "source": "hsinput.c:538"
+  },
+  {
+   "page": "HIGH_SCORE_VIEW",
+   "event": "back",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13d",
+   "source": "HSView.c:868"
+  },
+  {
+   "page": "HIGH_SCORE_VIEW",
+   "event": "timeout",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13d",
+   "source": "HSView.c:928"
+  },
+  {
+   "page": "OUTRO",
+   "event": "finished",
+   "next": "CREDITS",
+   "phase": "P16",
+   "source": "tempopt.c:4252"
+  },
+  {
+   "page": "CREDITS",
+   "event": "finished",
+   "next": "HIGH_SCORE_INPUT",
+   "phase": "P16",
+   "source": "credits.c:882"
+  }
+ ],
+ "differences": [
+  {
+   "topic": "start page",
+   "source": "VERSION (OPTIONS.H enum, PSX ANTI_PIRACY only)",
+   "retail": "ANTI_PIRACY is the seeded first page",
+   "followed": "retail",
+   "reference": "KF-294, KF-343"
+  },
+  {
+   "topic": "boot order",
+   "source": "HASBRO_LOGO -> INTRO -> CHECK -> MAIN_OPTIONS",
+   "retail": "ANTI_PIRACY -> HASBRO_LOGO -> LANGUAGE_SELECTION -> MAIN_OPTIONS",
+   "followed": "retail",
+   "reference": "KF-288, KF-343, KF-351"
+  },
+  {
+   "topic": "page numbers",
+   "source": "vendored OPTIONS.H enum",
+   "retail": "+1 through the boot range, +2 from LEVEL_SELECT",
+   "followed": "names only, no numbers",
+   "reference": "KF-147, KF-254, KF-288"
+  },
+  {
+   "topic": "escape key",
+   "source": "ESC requests OPTIONS_PAGE_EXIT (OPTIONS.C:189, SELECT.C:2098/2408)",
+   "retail": "ESC is a pressed-edge back key ORed into the TRIANGLE back-outs; quit is Alt+F4",
+   "followed": "retail",
+   "reference": "KF-250, KF-368"
+  },
+  {
+   "topic": "level select back-out",
+   "source": "Sel_first_time = TRUE in MainOptionsShutdown (tempopt.c:2006)",
+   "retail": "KF-250 says Sel_first_time is never written TRUE, making the back-out dead",
+   "followed": "frozen C: back-out live until the first play after the main menu",
+   "reference": "KF-250"
+  }
+ ]
+}

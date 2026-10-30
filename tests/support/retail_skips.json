@@ -110,5 +110,10 @@
   "res://tests/golden/test_retail_sky.gd::test_sky_levels_admit_through_whole_map_setup": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_effects.gd::test_hilites_and_census_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_effects.gd::test_generator_records_tables_and_pop_colours_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_effects.gd::test_effect_images_and_score_library_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_effects.gd::test_effect_images_and_score_library_match_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_front_end_assets.gd::test_every_named_and_level_image_resolves": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_frontend_progress.gd::test_constants_and_initial_flags_match_select_level_init": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_frontend_progress.gd::test_completing_every_level_in_stack_order": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_frontend_progress.gd::test_replaying_a_level_through_both_unlock_arms": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_frontend_progress.gd::test_gold_frogs_open_closed_worlds_in_stack_order": "SKIP: FROGGER_DATA_DIR is not set"
 }

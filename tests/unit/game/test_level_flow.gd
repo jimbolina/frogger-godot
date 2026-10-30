@@ -339,3 +339,18 @@ func test_checkpoint_skip_reward_and_reset_roll_back_then_commit_once() -> void:
 	assert_eq(result.error, "")
 	assert_eq(run.snapshot().flow.score, 300)
 	assert_eq(run.snapshot().flow.phase, LevelFlowState.Phase.PLAY)
+
+func test_run_start_carries_score_lives_and_life_bonus_into_a_new_level() -> void:
+	var initial := RunStart.new()
+	initial.start_mode = RunStart.Mode.SINGLE_START
+	initial.start_timer = 120
+	initial.lives = 5
+	initial.score = 4200
+	initial.old_score = 4000
+	initial.life_bonus_score = 20000
+	var run: GameplayRun = GameplayRun.create(_level(), initial)
+	assert_eq(run.error, "")
+	assert_eq(run.snapshot().frog.lives, 5)
+	assert_eq(run.snapshot().flow.score, 4200)
+	assert_eq(run.snapshot().flow.old_score, 4000)
+	assert_eq(run.snapshot().flow.life_bonus_score, 20000)

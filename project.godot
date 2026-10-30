@@ -4,7 +4,7 @@ config_version=5
 
 config/name="Frogger"
 config/description="A Godot rewrite of Frogger (1997, PC). Needs the player's own retail game files."
-run/main_scene="res://scenes/boot.tscn"
+run/main_scene="res://scenes/front_end.tscn"
 config/features=PackedStringArray("4.5")
 
 [debug]

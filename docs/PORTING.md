@@ -27,7 +27,12 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | Done; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle, P9f Swamp and P9g Sky complete; every playable level accepted by the owner |
 | P11 | Effects and particles | L | By eye against reference pictures | Done; P11a effect signals and resources, P11b frog effects and P11c entity effects complete and accepted by the owner's play check |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Done; sound effects and disc music play from committed voices (owner's by-ear check pending) |
-| P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
+| P13a | Front-end flow, unlock progression, saves, plain main menu and level list, score and lives carried between levels | M | Independent unlock and flow goldens; owner play check | Done; awaits the owner's play check |
+| P13b | 3D level-select stack | L | Reference pictures; owner play check | |
+| P13c | Options page, volumes, controller page, languages | L | Reference pictures of the options pages | |
+| P13d | High scores: table view and name entry | L | Flow checklist | |
+| P13e | Attract cycle from the main menu | S | Owner play check | |
+| P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |

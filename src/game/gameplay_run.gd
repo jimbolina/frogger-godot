@@ -188,6 +188,10 @@ func reset(initial: RunStart = null) -> String:
 	state.rng_state = random.state
 	state.sky_drift = SkyDriftState.new() if _sky else null
 	state.game_timer = initial.game_timer & 0xffffffff if initial != null else 0
+	if initial != null:
+		state.flow.score = initial.score
+		state.flow.old_score = initial.old_score
+		state.flow.life_bonus_score = initial.life_bonus_score
 	state.frog.start_timer = initial.start_timer if initial != null else 0
 	if state.frog.start_timer < 0:
 		return "Start timer must be nonnegative"

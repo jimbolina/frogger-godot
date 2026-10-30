@@ -88,6 +88,8 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 - [Combined zones and lifecycle](terrain-inspection.md#combined-zone-and-lifecycle-inspection):
   synthetic gameplay and prescribed JUN1 logs, independent coupled reference
   facts, transaction failures and complete schedule parity.
+- [Front-end flow and unlock goldens](../../../tests/golden/specs/frontend.md):
+  `python3 tools/make_golden_frontend.py --check` diffs the committed facts.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-admission-counterexample):
