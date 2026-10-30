@@ -1,6 +1,6 @@
 # Current checkpoint
 
-P9g Sky is implemented; SKY1–SKY4 await the owner's play check. The dedicated
+P9g Sky is complete; SKY1–SKY4 passed the owner's play check. The dedicated
 game scene opens independent ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3,
 CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 sessions with the
 original-style English HUD from player assets. See [controls](../README.md),
@@ -24,8 +24,7 @@ DES1–DES5 and SWP2–SWP4 demos complete with schedule parity without one; Jun
 has no enabled demo. Both test modes, strict compilation and architecture checks
 pass.
 
-Next: the owner plays SKY1–SKY4 (`tools/play.sh --level=SKY1`), then the
-roadmap's remaining phases. Entity shadows, the statue
+P9 is complete; next is the roadmap's remaining phases. Entity shadows, the statue
 glow, the hippo and rat splashes, the balloon poly-piece pop, the green Swamp
 drowning tint, the player croak light swell and the web wall bounce are
 deferred. Audio playback, other effects, animated per-part lighting, the full
