@@ -516,8 +516,8 @@ colour/ambient state and logical moving-sound ownership. SET_ACTION resets cel
 to -1 even for the current action; pose advancement uses supplied lengths.
 `EntityScriptRunner` returns private state/RNG copies, ordered request parameters
 and a drowning effect. A failure returns none of those candidate changes.
-Existing script-free APIs remain available. Audio and splash rendering stay
-deferred. [Component goldens](../../../tests/golden/specs/entities.md#entity-script-components)
+Existing script-free APIs remain available. Audio playback stays deferred;
+splashes draw as [effects](../rendering/effects.md). [Component goldens](../../../tests/golden/specs/entities.md#entity-script-components)
 cover interpreter edge cases independently of the retail route.
 
 The aggregate runs custom/script updates before frog control, using
@@ -708,12 +708,12 @@ maps. Compatible edits can select implemented behaviors; unknown mappings retain
 diagnostics.
 
 The bee swarm is a visible lethal hazard, so its three original textured sprites
-are included here rather than deferred with decorative particles. Whole-map
+are included here with the gameplay rules. Whole-map
 setup requires the named `for_swarm` image from the player's general/theme banks.
 Presentation draws committed swarm positions with the source camera-plane
 orientation and never advances gameplay or consumes gameplay RNG. Swarm quads
 carry no ordering-table bias yet; see [depth ordering](../rendering/README.md#depth-ordering).
-Broader particles, pop visuals and audio playback remain separate work.
+Other particles and pop visuals are [effects](../rendering/effects.md); audio playback remains separate work.
 
 ## Volcano whole-map behavior
 
@@ -785,8 +785,8 @@ don't-fade flag or `NO_COLOUR_FADE` is set. An applied scale sets
 `colour_scaled`, so an applied black is distinct from an unscaled entity.
 Creation performs no fade, matching the source skip on Cave maps; the non-cave
 edge fade remains unimplemented. The fat fire fly's form fades in C against a
-particle generator object; the port records the colour and presentation ignores
-it for pickup particles.
+particle generator object; the port records the colour and the pickup glow
+ignores it.
 
 Fireflies (`FIREFLY`) are tongueable path followers drawn as source sprites;
 gameplay owns their path translation. The fat fire fly (`CAV_FAT_FIRE_FLY`) is a
@@ -845,7 +845,7 @@ never resets. Rolling rocks (`DES_ROLLING_ROCK`) are immortal path followers
 rolling −0x40 per tick; when their path repeats they place the same explosion
 at the previous tick's position, pause the path, disable collision and hide the
 mesh until the overlay's last cel. Both rocks keep the source shadow-visible
-state; shadow drawing stays deferred with the other effects.
+state, which the shadow view draws ([effects](../rendering/effects.md)).
 
 Tumbleweeds (`DES_TUMBLE_WEED`) follow their path in X and Z and own their Y:
 when the hop count reaches zero they draw `rand()%4+6`, set
@@ -900,8 +900,7 @@ both doors are statics whose collision primitive runs the crusher callback,
 plinths select the level WAD model by `op_id` (0 selects slot 58, 1–7 slots
 0–6), gold frogs use the general gold-frog flipbook and are hidden unless
 `op_id` is 8, which shows the EXCITED action, and stone frogs are statics. The
-statue glow, the hippo splash sprite and entity shadows stay with the effects
-phase. `JUN_OUTRO_STATUE`, floating trees and `JUN_CRACK` are never placed and
+statue glow and the hippo splash are [effects](../rendering/effects.md). `JUN_OUTRO_STATUE`, floating trees and `JUN_CRACK` are never placed and
 remain unsupported with diagnostics. JUN1's map counts 2665 polygons, so camera
 selections can exceed the conservative bound and JUN1 enables the same source
 allocation history as Volcano and Desert.
@@ -1015,7 +1014,7 @@ one idle tick selecting the one-shot JUMP action, jumps along a sine arc of
 height 250 subtracted from the integrated Y, selects the one-shot ROLL action
 for 24 ticks, runs with the looping RUN action, jumps again and restarts.
 During the second jump the first tick at or above Y -255 sets the splash flag
-and magenta ambient; the splash sprite itself waits for the effects phase.
+and magenta ambient, and the splash sprite draws from the splash event.
 Rats die to the frog with FLOP and their script plays a random distance sound.
 
 Slugs (`SWP_SLUG`) are immortal generic path movers whose payload adds a
@@ -1023,7 +1022,7 @@ motion type; type 1 selects the curvy flipbook action at creation. The weir
 (`SWP_STAT_WEIR`) is an immortal matrix static whose creation replaces the
 authored rotation with a 1024-unit Z rotation before the model is built, and
 whose script rotates it about X forever. The green Swamp drowning tint from
-frozen `FROG.C` is presentation work deferred with the other effects.
+frozen `FROG.C` is committed by `FrogTint` and drawn as [effects](../rendering/effects.md).
 Independent facts and deliberate-break checks are in the
 [entity golden specification](../../../tests/golden/specs/entities.md#swamp-entities).
 
@@ -1074,8 +1073,8 @@ intent FrogLord names; retail uses only BEGIN, with the SKY3 balloon releasing
 the squadron). A missing target is a frozen assertion and a transaction error
 here. The callback then forbids the balloon for frog collision and sets
 `JUMP_FROM_COLLPRIM`. The balloon's own script pops it and plays the helium pop
-when the frog hits it; the poly-piece pop effect is presentation work deferred
-with the other effects. Target flags live on the map entity, so a squadron
+when the frog hits it, and the poly-piece pop draws from `pop_allocated`
+([effects](../rendering/effects.md)). Target flags live on the map entity, so a squadron
 released before a death stays released until the recreated trigger's first
 update pauses it again.
 

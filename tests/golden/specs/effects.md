@@ -271,9 +271,7 @@ table; the C constants are only the fallback when a build's records cannot
 be located, and the retail test pins the `c_differences` column.
 
 `test_effects` covers every synthetic family except `poly_piece_pop`, which
-`test_effects_pieces` checks through `PolyPiecePopState`, and `splash_offsets`,
-`gold_glow` and `pickup_glow`, whose tests land with the entity effect views
-(P11c).
+`test_effects_pieces` checks through `PolyPiecePopState`.
 
 `test_retail_effects` compares the port's decoded hilites, generator
 records, effect texture ids, score library and pop colours with these rows.

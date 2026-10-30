@@ -238,6 +238,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		KEY_LEFT: action = TickCommand.WEST
 		KEY_SHIFT: action = TickCommand.SUPER_HOP
 		KEY_CTRL: action = TickCommand.TONGUE
+		KEY_C: action = TickCommand.CROAK
 		KEY_E: action = TickCommand.CAMERA_CLOCKWISE
 		KEY_Q: action = TickCommand.CAMERA_ANTICLOCKWISE
 	if action != 0:

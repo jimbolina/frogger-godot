@@ -81,3 +81,22 @@ func test_failed_launch_has_no_stale_run_or_replay_action() -> void:
 	assert_null(_screen._hud._state)
 	assert_true(_screen._actions.visible)
 	assert_false(_screen._replay.visible)
+
+func _key(code: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.pressed = pressed
+	_screen._unhandled_key_input(event)
+
+func test_c_croaks_on_its_pressed_edge_like_the_tongue() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	assert_true(_screen.playing)
+	_key(KEY_C, true)
+	assert_eq(_screen._held, TickCommand.CROAK)
+	var first: TickCommand = _screen._host.sample(1, _screen._held)
+	assert_eq(first.pressed_mask & TickCommand.CROAK, TickCommand.CROAK)
+	var held: TickCommand = _screen._host.sample(2, _screen._held)
+	assert_eq(held.pressed_mask & TickCommand.CROAK, 0, "a held croak key presses once")
+	_key(KEY_C, false)
+	assert_eq(_screen._held, 0)

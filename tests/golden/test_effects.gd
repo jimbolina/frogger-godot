@@ -1,10 +1,10 @@
 extends GutTest
-## Frog tint, croak timeline, C particle generator constants and the frog effect rules against tests/golden/synthetic/effects.json.
+## Frog tint, croak timeline, C particle generator constants and the effect rules against tests/golden/synthetic/effects.json.
 ##
-## The shadow, trail, splash, pop ring and score popup families run through
-## the presentation rule classes; shadow heights depend on a level grid, so
-## the cases check the height rules, not values. The poly-piece, splash
-## offset and glow families belong to other scripts.
+## The shadow, trail, splash, splash offset, pop ring, score popup and glow
+## families run through the presentation rule classes; shadow heights depend
+## on a level grid, so the cases check the height rules, not values. The
+## poly-piece family belongs to test_effects_pieces.
 
 var _facts: Dictionary = {}
 
@@ -436,3 +436,61 @@ func test_score_popup_matches_independent_facts() -> void:
 				continue
 			assert_eq([popup.y_16, [popup.screen().x, popup.screen().y], [popup.grey, popup.grey, popup.grey]], [_int(row["y_16"]), _ints(row["screen"]), _ints(row["rgb"])], at)
 		assert_eq(killed_at, _int(expected["kill_update"]), label + " kill update")
+
+func test_splash_offsets_match_independent_facts() -> void:
+	var cases: Array = _facts["splash_offsets"]
+	assert_gt(cases.size(), 0)
+	for case: Dictionary in cases:
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var theme: int = _int(input["theme"])
+		var form_id: int = _int(input["formid"])
+		var label: String = "theme %d form %d" % [theme, form_id]
+		var defined: bool = expected["source_defined"]
+		assert_eq(SplashOffsets.source_defined(theme, form_id), defined, label + " defined")
+		if not defined:
+			continue
+		var sprites: Array = []
+		for offset: Vector3i in SplashOffsets.offsets(theme, form_id):
+			sprites.append([offset.x, offset.y, offset.z])
+		var in_plane: bool = expected["in_xz_plane"]
+		assert_eq([sprites, SplashOffsets.IN_XZ_PLANE, SplashOffsets.OT_OFFSET], [_ints(expected["sprites"]), in_plane, _int(expected["ot_offset"])], label)
+		assert_eq(SplashView.DEPTH_BIAS, EffectSpriteMaterial.slots_bias(SplashOffsets.OT_OFFSET), label + " depth bias")
+
+func _check_glow(family: String, depth_bias: float) -> void:
+	var cases: Array = _facts[family]
+	assert_gt(cases.size(), 1)
+	var first: Dictionary = cases[0]
+	var expected: Dictionary = first["expected"]
+	var constants: Dictionary = expected["constants"]
+	var texture: String = constants["pc_texture"]
+	assert_eq([GlowPulse.STEP, GlowPulse.ANGLE_MASK, GlowPulse.BASE, GlowPulse.MAGNITUDE_SHIFT, EffectResources.GLOW_SYMBOL],
+		[_int(constants["pulse_step"]), _int(constants["angle_mask"]), _int(constants["base"]), _int(constants["magnitude_shift"]), texture], family + " constants")
+	assert_eq(depth_bias, EffectSpriteMaterial.slots_bias(_int(constants["ot_offset"])), family + " ordering offset")
+	var angle: int = 0
+	var rows: Array = expected["rows"]
+	for row: Dictionary in rows:
+		var tick: int = _int(row["tick"])
+		angle = GlowPulse.step(angle)
+		assert_eq([angle, GlowPulse.angle_after(tick), GlowPulse.magnitude(angle)], [_int(row["angle"]), _int(row["angle"]), _int(row["magnitude"])], "%s tick %d" % [family, tick])
+	for index: int in range(1, cases.size()):
+		var case: Dictionary = cases[index]
+		var input: Dictionary = case["input"]
+		var result: Dictionary = case["expected"]
+		var size: Vector2i = GlowPulse.half_size(_int(input["w"]), _int(input["h"]), _int(input["otz"]), _int(input["angle"]), _int(input["viewports"]))
+		assert_eq([GlowPulse.magnitude(_int(input["angle"])), size.x, size.y], [_int(result["magnitude"]), _int(result["xofs"]), _int(result["yofs"])], "%s case %d" % [family, index])
+
+func test_gold_glow_matches_independent_facts() -> void:
+	_check_glow("gold_glow", GoldGlowView.DEPTH_BIAS)
+	var cases: Array = _facts["gold_glow"]
+	var first: Dictionary = cases[0]
+	var expected: Dictionary = first["expected"]
+	var constants: Dictionary = expected["constants"]
+	assert_eq([GoldGlowView.COLOUR.x, GoldGlowView.COLOUR.y, GoldGlowView.COLOUR.z], _ints(constants["pc_rgb"]), "gold glow PC colour")
+	assert_eq(GoldGlowView.OT_OFFSET, _int(constants["ot_offset"]))
+
+func test_pickup_glow_matches_independent_facts() -> void:
+	_check_glow("pickup_glow", CaveSpriteView.PICKUP_DEPTH_BIAS)
+	assert_eq(CaveSpriteView.GLOW_TEXTURE_ID, EffectResources.GLOW_TEXTURE_ID)
+	for age: int in 20:
+		assert_eq(CaveSpriteView.glow_magnitude(age), GlowPulse.magnitude(GlowPulse.angle_after(age)), "pickup pulse age %d" % age)

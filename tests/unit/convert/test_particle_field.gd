@@ -106,3 +106,105 @@ func test_killed_or_missing_generators_draw_nothing() -> void:
 	assert_true(missing.finished)
 	missing.step(_at, true)
 	assert_eq(missing.ticks, 0)
+
+func _hilite(kind: ParticleField.Kind, generator_name: String, seed: int = 7) -> ParticleField:
+	return ParticleField.new(kind, _record(generator_name), 0, seed)
+
+func test_exhaust_gates_adds_rises_and_clamps_to_the_owner_colour_scale() -> void:
+	var field: ParticleField = _hilite(ParticleField.Kind.HILITE_EXHAUST, "PGIN_hilite_exhaust")
+	assert_eq(field.max_particles, 25)
+	assert_eq(field.ot_offset(), 0x10, "HILITE_EXHAUST_OT_OFFSET sorts further")
+	assert_false(field.clamps_near())
+	var adds: int = 0
+	for _tick: int in 64:
+		var before: int = field.next_particle
+		field.step(_at, false)
+		adds += 1 if field.next_particle != before else 0
+		assert_lte(field.live_indices().size(), 8, "eight-tick lives, at most one add per tick")
+	assert_between(adds, 1, 63, "the add is gated by the seeded random draw")
+	var added: bool = false
+	while not added:
+		var previous: int = field.next_particle
+		field.step(_at, false, Vector3i(40, 255, 0))
+		added = field.next_particle != previous
+	var index: int = (field.next_particle + field.max_particles - 1) % field.max_particles
+	var particle: ParticleField.Particle = field.particles[index]
+	assert_eq(particle.lifetime, 7)
+	assert_eq(particle.user, 0)
+	assert_eq(particle.previous_16, Vector3i(256 << 16, -(64 << 16), 512 << 16), "exhaust starts at the owner translation")
+	assert_eq(particle.velocity_16.z, -(0x10 << 16))
+	assert_between(particle.velocity_16.x >> 16, -8, 7)
+	assert_eq(field.colour(index), Vector3i(40, 112, 0), "min(life << 4, 255) clamped per channel")
+	assert_eq(field.extent(index, 16), 16 * (64 << 9))
+	var velocity: int = particle.velocity_16.y
+	field.step(_at, false)
+	assert_eq(particle.velocity_16.y, velocity - 65536, "gravity after moving")
+	assert_eq(field.colour_scale, ParticleField.DEFAULT_COLOUR_SCALE)
+	assert_eq(field.colour(index), Vector3i(96, 96, 96))
+
+func test_exhaust_velocity_follows_the_owner_rotation() -> void:
+	var turned := PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 0, 0, 0])
+	var field: ParticleField = _hilite(ParticleField.Kind.HILITE_EXHAUST, "PGIN_hilite_exhaust", 3)
+	while field.live_indices().is_empty():
+		field.step(turned, false)
+	var particle: ParticleField.Particle = field.particles[field.live_indices()[0]]
+	assert_eq(particle.velocity_16.x, -(0x10 << 16), "the -0x10 Z push turns with the owner")
+
+func test_dust_steps_through_its_texture_list_and_dies_at_the_end() -> void:
+	var field: ParticleField = _hilite(ParticleField.Kind.HILITE_DUST, "PGIN_hilite_dust")
+	assert_eq(field.max_particles, 14)
+	assert_eq(field.image_count, 6)
+	assert_eq(field.ot_offset(), ParticleField.OT_OFFSET, "Hilite_dust_disp uses FROG_EFFECT_SLIP_OT_OFFSET")
+	while field.next_particle == 0:
+		field.step(_at, false)
+	var particle: ParticleField.Particle = field.particles[0]
+	assert_eq(particle.lifetime, 11)
+	assert_eq(field.image_index(0), 0)
+	assert_eq(field.colour(0), Vector3i(176, 176, 176))
+	assert_eq(field.extent(0, 16), 16 * (64 << 11))
+	for image: int in range(1, 6):
+		field.step(_at, false)
+		assert_eq(field.image_index(0), image)
+		assert_eq(particle.lifetime, 11 - image)
+	field.step(_at, false)
+	assert_eq(particle.lifetime, 0, "the list's NULL terminator ends the particle")
+	assert_false(field.live_indices().has(0))
+
+func test_hilite_fire_adds_every_tick_without_gravity_and_colours_by_user() -> void:
+	var turned := PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 256, -64, 512])
+	var field: ParticleField = _hilite(ParticleField.Kind.HILITE_FIRE, "PGIN_hilite_fire")
+	assert_eq(field.max_particles, 40)
+	assert_eq(field.ot_offset(), ParticleField.OT_OFFSET)
+	assert_true(field.clamps_near())
+	for tick: int in 5:
+		field.step(turned, false)
+		assert_eq(field.live_indices().size(), tick + 1, "one particle every move")
+	var particle: ParticleField.Particle = field.particles[4]
+	assert_eq(particle.lifetime, 19)
+	assert_between(particle.user, 20 - 1, 20 + 0x1f - 1, "max life plus rand & 0x1f, less one move")
+	assert_eq(particle.previous_16, Vector3i(156 << 16, -(64 << 16), 512 << 16), "the owner translation plus the turned (0, 0, -100)")
+	for axis: int in 3:
+		assert_between(particle.velocity_16[axis] >> 16, -8, 7)
+	assert_eq(field.colour(4), Vector3i(255, mini(255, particle.user << 1), 0))
+	assert_eq(field.extent(4, 16), (16 * (70 << 10) * particle.user) >> 4)
+	var user: int = particle.user
+	var velocity: Vector3i = particle.velocity_16
+	field.step(turned, false)
+	assert_eq(particle.user, user - 1)
+	assert_eq(particle.velocity_16, velocity, "no gravity")
+	for _tick: int in 18:
+		field.step(turned, false)
+	assert_eq(particle.lifetime, 0, "twenty-tick life")
+
+func test_hilite_kinds_repeat_for_one_seed() -> void:
+	for kind: ParticleField.Kind in [ParticleField.Kind.HILITE_EXHAUST, ParticleField.Kind.HILITE_DUST, ParticleField.Kind.HILITE_FIRE]:
+		var generator_name: String = ["PGIN_hilite_exhaust", "PGIN_hilite_dust", "PGIN_hilite_fire"][kind - ParticleField.Kind.HILITE_EXHAUST]
+		var first: ParticleField = _hilite(kind, generator_name, 21)
+		var second: ParticleField = _hilite(kind, generator_name, 21)
+		var other: ParticleField = _hilite(kind, generator_name, 22)
+		for _tick: int in 20:
+			first.step(_at, true)
+			second.step(_at, true)
+			other.step(_at, true)
+		assert_eq(_positions(first), _positions(second), generator_name)
+		assert_ne(_positions(first), _positions(other), generator_name)

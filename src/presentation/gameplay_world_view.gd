@@ -8,6 +8,14 @@ extends Node3D
 const FROG_DEPTH_BIAS: float = 48.0
 ## Frog generator kinds by Frog_particle_effects slot.
 const FROG_PARTICLE_KINDS: Array[ParticleField.Kind] = [ParticleField.Kind.FROG_SLIDE, ParticleField.Kind.FROG_BUBBLE, ParticleField.Kind.FROG_FIRE]
+## The frog's croak sack part, THROAT of GEN_FROG_PARTS (gen_frog.h:35).
+const THROAT_PART: int = 15
+## Des_rock_shadow_offsets (ent_des.c:33-39), the falling rock and tumbleweed shadow corners.
+const DESERT_SHADOW_OFFSETS: Array[Vector3i] = [Vector3i(-0x70, 0, 0x70), Vector3i(0x70, 0, 0x70), Vector3i(-0x70, 0, -0x70), Vector3i(0x70, 0, -0x70)]
+## Seed of the entity particle stream.
+const ENTITY_FIELD_SEED: int = 0x50a11c
+## Colour scale of an entity mesh no fade has scaled.
+const UNSCALED_COLOUR := Vector3i(128, 128, 128)
 
 var playing: bool = false
 var smoothing: bool = false:
@@ -30,6 +38,7 @@ var _cave_sprite_view: CaveSpriteView
 var _overlay_view: EntityOverlayModelView
 var _placeholder_view: EntityPlaceholderView = null
 var _sprite_definitions: Array[EntityDefinition] = []
+var _definitions: Array[EntityDefinition] = []
 var _camera: Camera3D
 var _map_instance: MapMesh.Instance
 var _frog_pose_tick: int = -1
@@ -48,6 +57,10 @@ var _trail_view: HopTrailView
 var _particle_view: ParticleSpriteView
 var _pop_view: PopRingView
 var _splash_view: SplashView
+var _piece_view: PolyPiecePopView
+var _glow_view: GoldGlowView
+var _entity_fields: EntityParticleFields = null
+var _field_generations: Dictionary[int, int] = {}
 var _effects: EffectResources = null
 var _trail := HopTrailState.new()
 var _fields: Array[ParticleField] = []
@@ -107,6 +120,7 @@ func draw_state(fraction: float) -> void:
 			_frog_pose_tick = _current.tick_index
 		if _tint_tick != _current.tick_index:
 			_frog_model.set_tint(_current.frog.colour_scale, _current.frog.custom_ambient, _current.frog.tint_flags)
+			_apply_throat(_current.frog)
 			_tint_tick = _current.tick_index
 		_frog_model.render(weight)
 	_draw_effects(frog_transform, weight)
@@ -182,6 +196,10 @@ func build_world() -> void:
 	add_child(_splash_view)
 	_pop_view = PopRingView.new()
 	add_child(_pop_view)
+	_piece_view = PolyPiecePopView.new()
+	add_child(_piece_view)
+	_glow_view = GoldGlowView.new()
+	add_child(_glow_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -200,6 +218,11 @@ func _clear_entity_visuals() -> void:
 	if _placeholder_view != null:
 		_placeholder_view.clear()
 	_sprite_definitions = []
+	_definitions = []
+	if _piece_view != null:
+		_piece_view.clear()
+		_glow_view.collapse()
+	_release_entity_fields()
 	for model: AnimatedModelInstance in _entity_models:
 		if model != null:
 			remove_child(model)
@@ -216,6 +239,7 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 	_entity_lighting = null
 	if definitions == null:
 		return
+	_definitions = definitions.entities
 	for _entity: EntityDefinition in definitions.entities:
 		_entity_models.append(null)
 		_entity_meshes.append(null)
@@ -265,6 +289,9 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 			continue
 		_entity_meshes[slot] = meshes[resource]
 		_entity_files[slot] = files[resource]
+		if _piece_view != null:
+			_piece_view.set_model(slot, files[resource], scene_data.library, scene_data.preferred)
+	_configure_hilite_particles(scene_data)
 	_sync_entity_models()
 	if _current != null:
 		_projection_size = Vector2i.ZERO
@@ -277,6 +304,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	_entity_lighting = null
 	if definitions == null:
 		return PackedStringArray()
+	_definitions = definitions.entities
 	var resources: MaplessEntityResources = MaplessEntityResources.resolve(definitions.entities, origins)
 	var diagnostics: PackedStringArray = resources.diagnostics
 	var sprite_slots: Dictionary[int, bool] = {}
@@ -292,6 +320,8 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 		if origins == null or not origins.resolvable(slot) or origins.data == null or not origins.data.is_valid():
 			continue
 		var scene: MapSceneData = resources.scene_for(origins.data, origins.themes[slot])
+		if resources.files[slot] != null and _piece_view != null:
+			_piece_view.set_model(slot, resources.files[slot], scene.library, scene.preferred)
 		if entity.behavior.kind == EntityBehavior.Kind.HIVE and _swarm_view != null and not swarm_ready and scene.error.is_empty():
 			var issue: String = _swarm_view.configure(scene, origins.data)
 			swarm_ready = issue.is_empty()
@@ -506,7 +536,7 @@ func set_effect_grid(grid: GridDefinition) -> void:
 	if _shadow_view != null:
 		_shadow_view.set_grid(grid)
 
-## Forgets every running effect: trail, particles, pop rings and splashes.
+## Forgets every running effect: trail, particles, pop rings, splashes, pops and glows.
 func collapse_effects() -> void:
 	_trail.collapse()
 	_fields.clear()
@@ -516,12 +546,18 @@ func collapse_effects() -> void:
 	_effect_tick = -1
 	_effect_drawn_tick = -1
 	_tint_tick = -1
+	_field_generations.clear()
+	if _entity_fields != null:
+		_entity_fields.collapse()
 	if _shadow_view != null:
 		_shadow_view.draw_shadows([])
 		_trail_view.clear()
 		_particle_view.draw_fields([], null, 1.0)
 		_pop_view.clear()
 		_splash_view.draw_splashes([])
+		_piece_view.collapse()
+		_glow_view.collapse()
+		_glow_view.draw_glows(null, 1.0)
 
 ## Live particle fields, the frog's first.
 func effect_fields() -> Array[ParticleField]:
@@ -561,18 +597,43 @@ func _configure_effects(scene_data: MapSceneData) -> void:
 	var issues := PackedStringArray()
 	var shadow_symbols := PackedStringArray(["im_frog_shadow0", "im_frog_shadow1", "im_frog_shadow2", FrogShadowGeometry.NO_ROTATION_TEXTURE])
 	issues.append(_shadow_view.configure(scene_data, effect_grid, shadow_symbols))
-	var names := PackedStringArray()
-	if _effects != null and _effects.generators != null:
-		for generator_name: String in _effects.generators.frog_particle_single:
-			if not generator_name.is_empty():
-				names.append(generator_name)
-	issues.append(_particle_view.configure(scene_data, names))
+	issues.append(_particle_view.configure(scene_data, _frog_generators()))
 	issues.append(_splash_view.configure(scene_data))
+	issues.append(_glow_view.configure(scene_data))
+	_entity_fields = null
+	if _effects != null:
+		_entity_fields = EntityParticleFields.new()
+		_entity_fields.configure(_effects, ENTITY_FIELD_SEED)
 	_set_effect_projection(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
 	if scene_data != null:
 		for issue: String in issues:
 			if not issue.is_empty():
 				scene_data.diagnostics.append(issue)
+
+func _frog_generators() -> PackedStringArray:
+	var names := PackedStringArray()
+	if _effects != null and _effects.generators != null:
+		for generator_name: String in _effects.generators.frog_particle_single:
+			if not generator_name.is_empty():
+				names.append(generator_name)
+	return names
+
+func _configure_hilite_particles(scene_data: MapSceneData) -> void:
+	var used: Dictionary[int, bool] = {}
+	for definition: EntityDefinition in _definitions:
+		for hilite: ParticleHilite in definition.particle_hilites:
+			used[hilite.kind] = true
+	if used.is_empty() or _particle_view == null or scene_data == null or scene_data.effects == null:
+		return
+	var names: PackedStringArray = _frog_generators()
+	for kind: int in EntityParticleFields.GENERATOR_NAMES.size():
+		if used.has(kind):
+			var generator_name: String = EntityParticleFields.GENERATOR_NAMES[kind]
+			names.append(generator_name)
+			if ParticleSpriteView.generator_images(scene_data.effects, generator_name).is_empty():
+				scene_data.diagnostics.append("Particle image for %s is unavailable" % generator_name)
+	_particle_view.configure(scene_data, names)
+	_particle_view.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
 
 func _set_effect_projection(scale: Vector2) -> void:
 	_shadow_view.set_projection_scale(scale)
@@ -580,6 +641,8 @@ func _set_effect_projection(scale: Vector2) -> void:
 	_particle_view.set_projection_scale(scale)
 	_pop_view.set_projection_scale(scale)
 	_splash_view.set_projection_scale(scale)
+	_piece_view.set_projection_scale(scale)
+	_glow_view.set_projection_scale(scale)
 
 func _step_effects(before: GameplayState, after: GameplayState, events: Array[TickEvent]) -> void:
 	var collected_before: int = before.entity_environment.collected if before.entity_environment != null else 0
@@ -603,6 +666,10 @@ func _step_effects(before: GameplayState, after: GameplayState, events: Array[Ti
 			TickEvent.Kind.DEATH_ANIMATION:
 				_kill_frog_field(ParticleField.KILL_WHEN_FROG_DEAD)
 				_rings.append(PopRingGeometry.new(_pop_colour()))
+			TickEvent.Kind.SPRITE:
+				var splash: SplashView.Splash = entity_splash(after, event)
+				if splash != null:
+					_splashes.append(splash)
 			TickEvent.Kind.SPLASH:
 				_splashes.append(SplashView.Splash.new(event.position))
 				if event.entity_index < 0 and after.frog.death_equate == FrogAnimationCatalog.DROWN:
@@ -631,8 +698,10 @@ func _step_effects(before: GameplayState, after: GameplayState, events: Array[Ti
 	for splash: SplashView.Splash in _splashes:
 		splash.timeline.update()
 		if not splash.timeline.killed:
+			_follow_owner(splash, after)
 			splashes.append(splash)
 	_splashes = splashes
+	_step_entity_effects(before, after)
 
 func _start_frog_field(slot: int, tick: int) -> void:
 	if (_frog_field != null and not _frog_field.finished) or _effects == null or _effects.generators == null:
@@ -674,14 +743,143 @@ func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
 		request.offsets = FrogShadowGeometry.phase_offsets(jump_phase)
 		request.symbol = FrogShadowGeometry.PHASE_TEXTURES[jump_phase]
 		requests.append(request)
+	if effect_grid != null and _current.entities != null:
+		for slot: int in mini(_definitions.size(), _current.entities.entities.size()):
+			var shadow: FrogShadowView.Request = entity_shadow(_definitions[slot], _current.entities.entities[slot], GameSpace.to_game(_motion.entity(slot, weight).origin))
+			if shadow != null:
+				requests.append(shadow)
 	_shadow_view.draw_shadows(requests)
-	_particle_view.draw_fields(_fields, _current.camera, weight)
+	var fields: Array[ParticleField] = _fields.duplicate()
+	if _entity_fields != null:
+		fields.append_array(_entity_fields.fields())
+	_particle_view.draw_fields(fields, _current.camera, weight)
+	_glow_view.draw_glows(_current.camera, weight)
 	var origin: Vector3 = Vector3(frog_transform.origin.x, -frog_transform.origin.y, -frog_transform.origin.z) * GameSpace.UNITS_PER_SQUARE
 	_pop_view.draw_rings(_rings, origin, _current.camera, _current.game_timer)
 	if _effect_drawn_tick != _current.tick_index:
 		_trail_view.draw_trail(_trail)
 		_splash_view.draw_splashes(_splashes)
 		_effect_drawn_tick = _current.tick_index
+
+## The shadow request of a Desert falling rock or tumbleweed whose committed
+## shadow is on, drawn at game [param translation]; null for any other entity.
+## The rock keeps EFFECT_NO_ROTATION; the shown tumbleweed clears it and turns
+## by its matrix's quadrant (ent_des.c:255-256, 1714-1729).
+static func entity_shadow(definition: EntityDefinition, entity: EntitySnapshot, translation: Vector3i) -> FrogShadowView.Request:
+	if definition == null or definition.behavior == null or not entity.live or entity.custom_state == null or not entity.custom_state.shadow_visible:
+		return null
+	var kind: EntityBehavior.Kind = definition.behavior.kind
+	if kind != EntityBehavior.Kind.DES_FALLING_ROCK and kind != EntityBehavior.Kind.DES_TUMBLE_WEED:
+		return null
+	var request := FrogShadowView.Request.new()
+	request.matrix12 = entity.matrix12.duplicate()
+	request.translation = translation
+	request.offsets = DESERT_SHADOW_OFFSETS.duplicate()
+	request.symbol = FrogShadowGeometry.NO_ROTATION_TEXTURE
+	request.no_rotation = kind == EntityBehavior.Kind.DES_FALLING_ROCK
+	return request
+
+## The splash of an entity's SPRITE [param event] in [param state]: its
+## offset is in the entity's frame, which carries the splash; null when the
+## entity is not in the snapshot.
+static func entity_splash(state: GameplayState, event: TickEvent) -> SplashView.Splash:
+	var slot: int = _slot_of(state, event.entity_index)
+	if slot < 0:
+		return null
+	var splash := SplashView.Splash.new()
+	splash.owner = slot
+	splash.offset = event.position
+	_follow_owner(splash, state)
+	return splash
+
+## Game-space 12-bit matrix of a hilite vertex: the entity rotation times the
+## part's animation rotation, translated to the turned partcel-0 vertex
+## (UpdateLiveEntitySpecials, ENTITY.C:1904-1953). The source drops the
+## part's own translation; an empty [param part_matrix] is a static part.
+static func hilite_matrix(entity_matrix: PackedInt32Array, part_matrix: PackedInt32Array, vertex: Vector3i) -> PackedInt32Array:
+	var rotation: PackedInt32Array = PlatformMath.multiply(entity_matrix, part_matrix) if part_matrix.size() == 12 else PlatformMath.multiply(entity_matrix, EntityTransform.IDENTITY)
+	var turned: Vector3i = PlatformMath.apply(rotation, vertex)
+	rotation[9] = PlatformMath.s32(entity_matrix[9] + turned.x)
+	rotation[10] = PlatformMath.s32(entity_matrix[10] + turned.y)
+	rotation[11] = PlatformMath.s32(entity_matrix[11] + turned.z)
+	return rotation
+
+static func _slot_of(state: GameplayState, entity_index: int) -> int:
+	if state == null or state.entities == null or entity_index < 0:
+		return -1
+	for slot: int in state.entities.entities.size():
+		if state.entities.entities[slot].entity_index == entity_index:
+			return slot
+	return -1
+
+static func _follow_owner(splash: SplashView.Splash, state: GameplayState) -> void:
+	if splash.owner < 0 or state.entities == null or splash.owner >= state.entities.entities.size():
+		return
+	var entity: EntitySnapshot = state.entities.entities[splash.owner]
+	if not entity.live:
+		return
+	splash.origin = PlatformMath.apply(entity.matrix12, splash.offset) + Vector3i(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
+
+func _apply_throat(frog: FrogState) -> void:
+	if THROAT_PART >= _frog_model.part_nodes.size():
+		return
+	_frog_model.set_part_scale(THROAT_PART, frog.croak_scale / 4096.0)
+	_frog_model.part_nodes[THROAT_PART].visible = frog.croak_mode != FrogCroak.Mode.NONE
+
+func _step_entity_effects(before: GameplayState, after: GameplayState) -> void:
+	if after.entities == null:
+		return
+	if _piece_view != null:
+		_piece_view.accept(after.entities.entities)
+		_glow_view.accept(_definitions, after.entities.entities)
+	_step_entity_fields(before, after)
+
+func _step_entity_fields(before: GameplayState, after: GameplayState) -> void:
+	if _entity_fields == null:
+		return
+	var entities: Array[EntitySnapshot] = after.entities.entities
+	for slot: int in mini(_definitions.size(), entities.size()):
+		var hilites: Array[ParticleHilite] = _definitions[slot].particle_hilites
+		if hilites.is_empty():
+			continue
+		var entity: EntitySnapshot = entities[slot]
+		if after.entities.lifecycle_enabled and not entity.live:
+			if _field_generations.has(slot):
+				_entity_fields.release(slot)
+				_field_generations.erase(slot)
+			continue
+		if _field_generations.get(slot, -1) != entity.generation:
+			_entity_fields.ensure(slot, entity.generation, hilites)
+			_field_generations[slot] = entity.generation
+		var previous: EntitySnapshot = before.entities.entities[slot] if before != null and before.entities != null and slot < before.entities.entities.size() else null
+		var moving: bool = previous != null and previous.generation == entity.generation and previous.live and (previous.matrix12[9] != entity.matrix12[9] or previous.matrix12[10] != entity.matrix12[10] or previous.matrix12[11] != entity.matrix12[11])
+		var colour: Vector3i = entity.colour_scale if entity.colour_scaled else UNSCALED_COLOUR
+		for index: int in hilites.size():
+			var hilite: ParticleHilite = hilites[index]
+			_entity_fields.step(slot, index, hilite_matrix(entity.matrix12, _part_matrix(slot, entity, hilite.part), _hilite_vertex(slot, hilite)), moving, colour)
+
+func _part_matrix(slot: int, entity: EntitySnapshot, part: int) -> PackedInt32Array:
+	var file: MofFile = _entity_files[slot] if slot < _entity_files.size() else null
+	if file == null or file.animated == null or entity.animation == null or entity.animation.action < 0:
+		return PackedInt32Array()
+	return file.animated.sample_matrix(0, entity.animation.action, maxi(entity.animation.cel, 0), part)
+
+func _hilite_vertex(slot: int, hilite: ParticleHilite) -> Vector3i:
+	var file: MofFile = _entity_files[slot] if slot < _entity_files.size() else null
+	if file == null or file.static_models.is_empty() or hilite.part >= file.static_models[0].parts.size():
+		return Vector3i.ZERO
+	var part: MofPart = file.static_models[0].parts[hilite.part]
+	if part.partcels.is_empty():
+		return Vector3i.ZERO
+	var vertices: PackedInt32Array = part.partcels[0].vertices
+	var at: int = hilite.vertex * 3
+	return Vector3i(vertices[at], vertices[at + 1], vertices[at + 2]) if at + 2 < vertices.size() else Vector3i.ZERO
+
+func _release_entity_fields() -> void:
+	if _entity_fields != null:
+		for slot: int in _field_generations:
+			_entity_fields.release(slot)
+	_field_generations.clear()
 
 ## Instantiates a decoded map without advancing simulation.
 func build_map(scene_data: MapSceneData) -> void:

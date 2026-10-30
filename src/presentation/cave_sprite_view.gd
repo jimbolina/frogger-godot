@@ -19,10 +19,6 @@ const SPRITE_3D_SCALE: int = 4 << 16
 const FAT_FIRE_FLY_PICKUP: int = 9
 ## Retail PC PGIN_pickup glow image (bmp_pointers[1727]); the PSX source names im_tongue_tip.
 const GLOW_TEXTURE_ID: int = 1727
-## Source glow magnitude bias added to the rsin pulse before the << 3.
-const GLOW_BASE: int = 0x3800
-## Glow pulse step added by Pickup_move each update.
-const GLOW_STEP: int = 0x100
 ## Source units the glow sits behind its image so depth testing keeps the image on top.
 const GLOW_DEPTH: float = 4.0
 ## Game units pickup glow and image depth moves toward the camera: PICKUP_OT_OFFSET
@@ -160,10 +156,9 @@ static func frame_index(age: int) -> int:
 static func pickup_frame(age: int, count: int) -> int:
 	return (maxi(0, age) >> 1) % count if count > 0 else 0
 
-## 16.16 glow magnitude after a pickup's age in updates (Pickup_move/Pickup_disp).
+## 16.16 glow magnitude after a pickup's age in updates ([GlowPulse]).
 static func glow_magnitude(age: int) -> int:
-	var angle: int = (maxi(0, age) * GLOW_STEP) & 4095
-	return (roundi(sin(float(angle) * TAU / 4096.0) * 4096.0) + GLOW_BASE) << 3
+	return GlowPulse.magnitude(GlowPulse.angle_after(age))
 
 ## Source half extents of a default-scale 3D sprite image (MR_SPRT.C:706-707).
 static func sprite_half_extents(width: int, height: int) -> Vector2i:

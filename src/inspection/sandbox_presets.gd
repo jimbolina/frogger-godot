@@ -126,6 +126,15 @@ static func all() -> Array[Layout]:
 		.add("MOVING", Vector2i(13, 27), SandboxSpawner.Preset.LINE, -1, "SKY_BIRD1")
 		.add("MOVING", Vector2i(21, 26), SandboxSpawner.Preset.LOOP, -1, "SKY_JET3")
 		.add("STATIC", Vector2i(19, 29), SandboxSpawner.Preset.STATIC, -1, "SKY_CLD_PATCH"))
+	result.append(Layout.new("effects", "Effect sources beside the ice and water zones: car exhaust, bison dust, lava spray fire, a balloon, a nuclear barrel, a gold frog, a checkpoint and a bonus fly", Vector2i(16, 4))
+		.add("MOVING", Vector2i(17, 12), SandboxSpawner.Preset.LINE, -1, "ORG_CAR_BLUE")
+		.add("MOVING", Vector2i(3, 13), SandboxSpawner.Preset.LINE, -1, "DES_BISON")
+		.add("MOVING", Vector2i(22, 4), SandboxSpawner.Preset.STATIC, -1, "VOL_LAVA_SPRAY")
+		.add("DYNAMIC", Vector2i(20, 2), SandboxSpawner.Preset.STATIC, -1, "SKY_RUBBER_BALLOON1")
+		.add("NUCLEAR_BARREL", Vector2i(27, 0), SandboxSpawner.Preset.LOOP, -1, "SWP_NUCLEAR_BARREL")
+		.add("BONUS_FLY", Vector2i(13, 3))
+		.add("GEN_GOLD_FROG", Vector2i(10, 3))
+		.add("CHECKPOINT", Vector2i(8, 2), SandboxSpawner.Preset.STATIC, -1, "GEN_CHECKPOINT_1"))
 	return result
 
 ## Lists the built-in layout names in menu order.

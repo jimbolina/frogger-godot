@@ -46,6 +46,18 @@ func test_every_preset_applies_fully_and_runs_30_ticks() -> void:
 				assert_eq(placement.form_name, entry.form_name, layout.name)
 		_run(spawner, layout.start_cell, layout.name)
 
+func test_effects_preset_entities_carry_their_particle_hilites() -> void:
+	var spawner := SandboxSpawner.new(SandboxLevel.build(), _templates)
+	var outcome: SandboxPresets.Outcome = SandboxPresets.apply(spawner, SandboxPresets.named("effects"), true)
+	assert_eq(outcome.skipped, PackedStringArray(), outcome.summary())
+	var kinds := PackedStringArray()
+	for placement: SandboxSpawner.Placement in outcome.placed:
+		var placed := PackedStringArray()
+		for hilite: ParticleHilite in placement.entity.particle_hilites:
+			placed.append(str(ParticleHilite.Kind.keys()[hilite.kind]))
+		kinds.append(" ".join(placed))
+	assert_eq(kinds, PackedStringArray(["EXHAUST", "DUST DUST DUST DUST", "FIRE", "", "", "", "", ""]), "car exhaust, bison dust and lava spray fire")
+
 func test_sandbox_screen_loads_and_adds_presets_with_models() -> void:
 	var screen := SandboxScreen.new()
 	screen.auto_open = false

@@ -12,10 +12,16 @@ extends MeshInstance3D
 ## Game units splashes move toward the camera: sc_ot_offset -0x10.
 const DEPTH_BIAS: float = 32.0
 
-## One active splash: its timeline and fixed origin.
+## One active splash: its timeline and origin. An entity's splash names its
+## owner slot and its offset in the owner's frame, so the origin follows the
+## owner's matrix as the source sprite's frame pointer does.
 class Splash extends RefCounted:
 	var timeline: SplashTimeline
 	var origin := Vector3i.ZERO
+	## Entity slot whose matrix carries the splash; -1 for a fixed origin.
+	var owner: int = -1
+	## Offset in the owner's frame.
+	var offset := Vector3i.ZERO
 
 	func _init(at: Vector3i = Vector3i.ZERO, list: Array[SplashTimeline.Command] = []) -> void:
 		origin = at

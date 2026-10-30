@@ -34,8 +34,8 @@ view-depth units per slot, beside the table in [rendering](README.md#depth-order
 | Effect | C ordering | Port depth bias |
 |---|---|---|
 | Frog and entity shadows | `otz − 4` (`SHADOW_OT_OFFSET`) | 8 nearer |
-| Slide, bubble, fire particles; splash ripple | `otz − 0x10` | 32 nearer |
-| Exhaust, cloud and smoke | `otz + 0x10` | 32 further |
+| Slide, bubble, fire and smoke particles; splash ripple | `otz − 0x10` | 32 nearer |
+| Exhaust and cloud | `otz + 0x10` | 32 further |
 | Gold-frog glow | `otz − 0x30` | 96 nearer |
 | Death pop ring, poly-piece pops | fixed OT 2 (the front) | drawn in front |
 
@@ -82,6 +82,40 @@ gold-frog glows use the grey mask 1727, and the gold glow is (255, 255, 16).
   slide and fire fields die with the frog's death, reset (`LEVEL_TRANSITION`
   to play) and checkpoint collection, bubbles finish on their own. The field
   random stream is seeded from the tick and slot, so captures repeat.
+
+## Entity effects (P11c)
+
+- **Entity shadows** (`ent_des.c:33-39, 255-533, 1674-1799`): live Desert
+  falling rocks and tumbleweeds with the committed `shadow_visible` draw the
+  ±0x70 `im_gen_shadow` square through the frog's shadow view; rocks keep
+  `NO_ROTATION`, a tumbleweed inside the grid border rotates with its
+  matrix. Rolling rocks cast none, as in C.
+- **Gold-frog glow** (`PARTICLE.C:2607-2724`): a camera-plane quad of the
+  grey mask 1727 in (255, 255, 16) at the entity origin of the GEN gold frog,
+  the ORG gold baby frog and the Jungle statue (`op_id` 8), pulsing with
+  `GlowPulse` (shared with the pickup glow), blended at the image's page
+  rate, 96 nearer, shown while the model is shown and killed with the pop.
+- **Entity splashes** (`scripter.c:1411-1453`, `ent_swp.c:1178-1218`):
+  every `SPRITE` event (turtles, hippos, one per ORG offset) and `SPLASH`
+  event (rats) opens a splash at the owning entity's live matrix plus the
+  event offset; the quad stays in the world XZ plane rather than rotating
+  with the entity.
+- **Exhaust, cloud, smoke and fire** (`ENTITY.C:1766-1953`, `PARTICLE.C`):
+  one particle field per resolved hilite, created with the live generation
+  and dropped with it at once (C's `DESTROY_BY_DISPLAY` stops the dust and
+  fire display immediately), stepped with
+  the entity rotation composed with the part's animation rotation at the
+  partcel-0 vertex, `moving` from the translation change. Exhaust and cloud
+  share the exhaust record (grey `life<<4` clamped by the committed colour
+  scale, 32 further), smoke uses the dust record with its `bison1..6`
+  frames stepped once per tick at additive rate (32 nearer), fire uses the
+  hilite fire record (user from the record's maximum life plus `r & 0x1f`,
+  colour (255, user<<1, 0), 32 nearer, never culled in front).
+- **Croak throat**: part 15 (`THROAT` in `gen_frog.h`) shows while the
+  committed croak mode is active, scaled by `croak_scale / 4096`.
+- **Pops not reached**: the ORG gold baby frog is carried like a pink frog
+  rather than collected and popped, and the Jungle outro stone frog belongs
+  to the ending sequence (P16).
 
 ## Poly-piece pops
 

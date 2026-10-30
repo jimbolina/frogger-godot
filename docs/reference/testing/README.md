@@ -254,7 +254,9 @@ spawning, path presets, preset application with reported skips, placeholders,
 restart and hotkeys. Retail tests (`tests/golden/test_retail_sandbox_*.gd` and
 `test_retail_mapless_entities.gd`) cover data-backed templates and forms, real
 model nodes and every preset applying fully with player data. Neither drives a
-route or establishes level behaviour.
+route or establishes level behaviour. The effects preset (ice, water, a car,
+a bison, a lava spray, a balloon, a barrel, a fly, a gold frog and a
+checkpoint) is the play check for the [effects](../rendering/effects.md).
 
 ## Focused iteration and guardrails
 

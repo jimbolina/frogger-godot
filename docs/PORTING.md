@@ -25,7 +25,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | Done; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle, P9f Swamp and P9g Sky complete; every playable level accepted by the owner |
-| P11 | Effects and particles | L | By eye against reference pictures | In progress; P11a effect signals and resources and P11b frog effects done, P11c entity effects pending |
+| P11 | Effects and particles | L | By eye against reference pictures | Done; P11a effect signals and resources, P11b frog effects and P11c entity effects complete; awaiting the owner's play check |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -73,8 +73,7 @@ falling rocks, rolling rocks, tumbleweeds, snakes, vultures, croc heads and
 cracks, the per-level explosion flipbook overlay, and the generic movers,
 cacti and butterflies. Independent facts cover every behavior and the retail
 payloads; all five demos complete with schedule parity and no native baseline.
-DESM has no map. Rock and tumbleweed shadows are tracked but not drawn until
-the effects phase.
+DESM has no map.
 
 P9e Jungle is complete and JUN1 is accepted by the owner's play check. It
 admits through whole-map setup with typed plants,
@@ -95,8 +94,7 @@ Independent facts cover every behavior and the retail payloads; all five demos
 complete with schedule parity, and SWP1 and SWP5 match native traces per tick
 (the native run needs a scratch store with every level selectable). Fixing
 them also corrected the post-reset start timer, the landing cell kept by a
-slip reaction and the freefall reference height for every level. SWPM has no map. The rat
-splash sprite and the green drowning tint wait for the effects phase.
+slip reaction and the freefall reference height for every level. SWPM has no map.
 
 P9g Sky is complete and SKY1–SKY4 are accepted by the owner's play check. They admit
 through whole-map setup with the generic `TRIGGER` entity (the SKY3 magical
@@ -107,8 +105,7 @@ helicopters, hawk, birds, jets and clouds run on existing machinery. Independent
 facts cover every Sky-specific rule and the retail payloads; all four demos
 complete with schedule parity and match native traces per tick, obtained from a
 scratch store that unlocks SKY1. Fixing SKY3 also made freefall entry clear the
-whole frozen entity landing mask. SKY5 and SKYM are dummy rows. The balloon
-poly-piece pop effect waits for the effects phase.
+whole frozen entity landing mask. SKY5 and SKYM are dummy rows.
 
 ## P11 effects and particles
 
@@ -124,10 +121,13 @@ P11b is complete: the frog's shadow, hop trail, slide, bubble and fire
 particles, death ring, splash ripple, tints and score popups draw from
 committed state and events through the rule classes in `src/convert/effects/`
 and the views in `src/presentation/effects/`, matched to the synthetic
-families; the poly-piece conversion and pop rule are in place for P11c, which
-draws entity shadows, poly-piece pops, the gold-frog glow, entity splashes,
-exhaust, cloud, smoke and fire sprites and the croak throat scale with its
-key. See the [effects reference](reference/rendering/effects.md).
+families. P11c is complete: Desert rock and tumbleweed shadows, poly-piece
+pops for checkpoints, gold frogs, balloons, the nuclear barrel and the
+breaking branch, the gold-frog glow, turtle, hippo and rat splashes,
+exhaust, cloud, smoke and fire sprites from the resolved hilites, the croak
+key (C) with the throat scale, and a sandbox effects preset. The ORG gold
+baby frog is carried rather than popped and the outro stone frog belongs to
+P16. See the [effects reference](reference/rendering/effects.md).
 
 Each level is accepted when the owner plays it in the game scene and confirms it
 looks and plays well; recorded replays are not required. The thirteen keyboard

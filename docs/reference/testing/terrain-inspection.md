@@ -262,7 +262,7 @@ add `--motion-capture --tick-limit 90` to save a short external PNG sequence.
 `--frame-schedule=irregular` supplies a repeating mix of 240/60/200/30/144 Hz
 intervals. These schedules measure correctness, not achievable throughput. Inspect each
 transfer, bank return and visible attached dive/death at 640×480. Audio playback
-and splash rendering remain deferred. Entity action/cel, colour and ambient
+remains deferred; the terrain viewer draws no effects. Entity action/cel, colour and ambient
 state come from committed snapshots; materials are instance-local.
 
 `tools/probe_org1_keyboard.gd` dispatches `InputEventKey` through Godot's input
