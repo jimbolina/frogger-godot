@@ -1,6 +1,9 @@
 class_name FrontEndSession
 extends RefCounted
 ## One game across the front-end pages: unlock progress, saved options and the values carried between levels.
+##
+## The options (volumes, key bindings and language setting) are read from the store with the
+## progress and written back by [method save].
 
 ## Whether a game started from the front end is under way; direct level launches leave it false.
 static var active: bool = false
@@ -21,6 +24,14 @@ static var lives: int = 3
 static var score: int = 0
 static var old_score: int = 0
 static var life_bonus_score: int = 10000
+## Music volume step, 0..8.
+static var music_volume: int = ProgressStore.DEFAULT_MUSIC_VOLUME
+## Sound-effect volume step, 0..8.
+static var sound_volume: int = ProgressStore.DEFAULT_SOUND_VOLUME
+## The four controller records.
+static var bindings: KeyBindings = KeyBindings.create_default()
+## Saved [enum GameLanguage.Id] setting, or [constant GameLanguage.AUTO] to follow the locale.
+static var language: int = GameLanguage.AUTO
 ## Problems found while loading, shown in the menu.
 static var diagnostics: PackedStringArray = PackedStringArray()
 
@@ -35,6 +46,9 @@ static func load_progress(data: GameData) -> String:
 	diagnostics = PackedStringArray()
 	if not store.error.is_empty():
 		diagnostics.append(store.error)
+	read_options(store)
+	if not bindings.error.is_empty():
+		diagnostics.append(bindings.error)
 	if store.level_flags.is_empty():
 		progress = LevelProgress.create(stack)
 	else:
@@ -46,6 +60,20 @@ static func load_progress(data: GameData) -> String:
 			LevelProgressSetup.GOLD_FROGS_KEY: store.gold_frogs,
 		}, diagnostics)
 	return ""
+
+
+## Copies the volumes, bindings and language setting from [param from_store].
+static func read_options(from_store: ProgressStore) -> void:
+	music_volume = from_store.music_volume
+	sound_volume = from_store.sound_volume
+	bindings = KeyBindings.from_array(from_store.key_bindings)
+	language = from_store.language
+
+
+## The saved options: the loaded store, or the save file read without keeping it when the
+## front end has not loaded one (a direct level launch).
+static func settings() -> ProgressStore:
+	return store if store != null else ProgressStore.load_from(store_path)
 
 
 ## Starts a game: forgets the current game's gold frogs and resets lives and score (GameInitialise).
@@ -66,7 +94,7 @@ static func end_game() -> void:
 	start_page = FrontEndPage.Page.MAIN_MENU
 
 
-## Writes the progress; returns the problem or "".
+## Writes the progress and options; returns the problem or "".
 static func save() -> String:
 	if progress == null or store == null:
 		return ""
@@ -77,6 +105,10 @@ static func save() -> String:
 		flags.append(value)
 	store.level_flags = flags
 	store.gold_frogs = saved.gold_frogs
+	store.music_volume = music_volume
+	store.sound_volume = sound_volume
+	store.key_bindings = bindings.to_array()
+	store.language = language
 	return store.save(store_path)
 
 

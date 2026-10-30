@@ -37,7 +37,10 @@ func _sample() -> ProgressStore:
 	store.gold_frogs = 0b10110
 	store.music_volume = 0
 	store.sound_volume = 8
-	store.key_bindings = PackedInt32Array([KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE])
+	var bindings := KeyBindings.create_default()
+	bindings.set_key(0, KeyBindings.Action.TONGUE, KeyScancodes.from_godot(KEY_A))
+	bindings.set_device(3, KeyBindings.DEVICE_NONE)
+	store.key_bindings = bindings.to_array()
 	return store
 
 
@@ -112,12 +115,24 @@ func test_wrong_field_types_and_ranges_are_rejected_whole() -> void:
 		"[options]\nmusic_volume=9\n",
 		"[options]\nsound_volume=-1\n",
 		"[options]\nkey_bindings=\"up\"\n",
+		"[options]\nkey_bindings=PackedInt32Array(1, 1, 203)\n",
 	]
 	for body: String in cases:
 		_write_text("[meta]\nformat_version=1\n[progress]\ngold_frogs=3\n" + body)
 		var store: ProgressStore = ProgressStore.load_from(_path)
 		assert_ne(store.error, "", body)
 		_assert_defaults(store)
+
+
+func test_key_bindings_must_be_empty_or_four_records() -> void:
+	var store := ProgressStore.new()
+	store.key_bindings = PackedInt32Array([1, 1, 203])
+	assert_string_contains(store.save(_path), "3 key_bindings values, expected 0 or 44")
+	assert_false(FileAccess.file_exists(_path))
+	store.key_bindings = KeyBindings.create_default().to_array()
+	assert_eq(store.save(_path), "")
+	assert_eq(ProgressStore.load_from(_path).key_bindings.size(), KeyBindings.SERIALISED_LENGTH)
+	assert_eq(ProgressStore.KEY_BINDINGS_LENGTH, KeyBindings.SERIALISED_LENGTH)
 
 
 func test_overwrite_replaces_the_file_and_leaves_no_temporary() -> void:
@@ -149,3 +164,38 @@ func test_invalid_values_are_not_saved_and_keep_the_previous_file() -> void:
 	bad.sound_volume = 12
 	assert_string_contains(bad.save(_path), "sound_volume 12")
 	assert_eq(ProgressStore.load_from(_path).gold_frogs, 0b10110)
+
+
+func test_language_defaults_to_the_locale() -> void:
+	assert_eq(ProgressStore.new().language, GameLanguage.AUTO)
+	assert_eq(ProgressStore.load_from(ROOT.path_join("absent.cfg")).language, GameLanguage.AUTO)
+
+
+func test_language_round_trips_every_setting() -> void:
+	for setting: int in [GameLanguage.AUTO, GameLanguage.Id.ENGLISH, GameLanguage.Id.GERMAN, GameLanguage.Id.SPANISH]:
+		var saved := ProgressStore.new()
+		saved.language = setting
+		assert_eq(saved.save(_path), "")
+		var loaded: ProgressStore = ProgressStore.load_from(_path)
+		assert_eq(loaded.error, "")
+		assert_eq(loaded.language, setting)
+
+
+func test_file_without_language_follows_the_locale() -> void:
+	_write_text("[meta]\nformat_version=1\n[progress]\ngold_frogs=3\n[options]\nmusic_volume=2\n")
+	var store: ProgressStore = ProgressStore.load_from(_path)
+	assert_eq(store.error, "")
+	assert_eq(store.gold_frogs, 3)
+	assert_eq(store.language, GameLanguage.AUTO)
+
+
+func test_invalid_language_is_rejected_whole() -> void:
+	for body: String in ["language=5\n", "language=-2\n", "language=\"de\"\n"]:
+		_write_text("[meta]\nformat_version=1\n[progress]\ngold_frogs=3\n[options]\n" + body)
+		var store: ProgressStore = ProgressStore.load_from(_path)
+		assert_string_contains(store.error, "language", body)
+		assert_eq(store.gold_frogs, 0, body)
+		assert_eq(store.language, GameLanguage.AUTO, body)
+	var bad := ProgressStore.new()
+	bad.language = GameLanguage.COUNT
+	assert_string_contains(bad.save(_path), "language 5 outside -1..4")

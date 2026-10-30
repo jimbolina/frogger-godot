@@ -1,7 +1,12 @@
 class_name FrontEndAssets
 extends RefCounted
-## English main-menu, level-select and pause text images, resolved by FrogLord names
-## and level-select texture records from the player's archive.
+## Main-menu, options, level-select and pause text images in one [GameLanguage], resolved by
+## FrogLord names and level-select texture records from the player's archive.
+##
+## English loads [constant BANKS]. Another language also loads its fixed-UI and options
+## text banks after the English ones and draws each name's localized image
+## ([method GameLanguage.image_name]). A missing language bank or localized image
+## falls back to English and is recorded in [member diagnostics].
 ##
 ## Only the arcade rows are covered: the race rows' screenshots and names live
 ## in the multiplayer bank [code]LS_ALLM.VLO[/code], which belongs to the
@@ -15,11 +20,13 @@ enum LevelImage { WORLD_UNLOCKED, WORLD_VISITED, WORLD_NOT_TRIED, SCREENSHOT, ST
 
 ## Banks loaded, in upload order (later banks win for a shared texture id).
 const BANKS: PackedStringArray = ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "LS_ALL.VLO"]
-## Named English images every front-end page may draw.
+## English names of the images every front-end page may draw.
 const NAMES: PackedStringArray = [
 	"opt_start", "opt_options", "opt_exit", "opt_race", "select_level", "zone_complete",
 	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused",
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
+	"opt_view_hs", "opt_ctrl_config", "opt_insert_pad", "select7", "opt_keyboard",
+	"opt_arrow_small_left", "opt_arrow_small_right",
 ]
 ## The bank the water images are read from.
 const WATER_BANK: String = "OPT_VRAM.VLO"
@@ -32,21 +39,45 @@ const LEVEL_IMAGES: Array[LevelImage] = [
 
 ## Why loading failed, or "" (a failed load holds no textures).
 var error: String = ""
+## The [enum GameLanguage.Id] drawn (English when the request is not a language).
+var language: int = GameLanguage.Id.ENGLISH
+## English fallbacks taken for a missing language bank or localized image.
+var diagnostics: PackedStringArray = PackedStringArray()
 
 var _textures: Dictionary[String, Texture2D] = {}
+var _source_names: Dictionary[String, String] = {}
 var _level_textures: Dictionary[Vector2i, Texture2D] = {}
 
 
-## Loads the front-end banks without retaining the archive or copying retail pixels to disk.
-static func from_data(data: GameData) -> FrontEndAssets:
+## The banks loaded for [param for_language], in upload order.
+static func banks_for(for_language: int) -> PackedStringArray:
+	var banks := PackedStringArray(BANKS)
+	if not GameLanguage.is_language(for_language) or for_language == GameLanguage.Id.ENGLISH:
+		return banks
+	var after_english: int = banks.find(GameLanguage.option_bank(GameLanguage.Id.ENGLISH)) + 1
+	banks.insert(after_english, GameLanguage.option_bank(for_language))
+	banks.insert(after_english, GameLanguage.fixed_bank(for_language))
+	return banks
+
+
+## Loads the front-end banks for [param for_language] without retaining the archive or
+## copying retail pixels to disk.
+static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLISH) -> FrontEndAssets:
 	var result := FrontEndAssets.new()
+	result.language = for_language if GameLanguage.is_language(for_language) else GameLanguage.Id.ENGLISH
+	if not GameLanguage.is_language(for_language):
+		result.diagnostics.append("Language %d is unknown; using English" % for_language)
 	if data == null or not data.is_valid() or data.tables.names.images == null:
 		result.error = "Front end requires valid player data and named images"
 		return result
 	var library := TextureLibrary.new()
 	var problems := PackedStringArray()
-	for bank_name: String in BANKS:
+	for bank_name: String in banks_for(result.language):
 		var entry: MwiEntry = data.find_resource(bank_name)
+		if entry == null and not BANKS.has(bank_name):
+			result.diagnostics.append("%s bank %s is missing; using English" % [
+				GameLanguage.NAMES[result.language], bank_name])
+			continue
 		if entry == null:
 			result.error = "Front-end bank is missing: " + bank_name
 			return result
@@ -56,13 +87,25 @@ static func from_data(data: GameData) -> FrontEndAssets:
 			return result
 		library.add_bank(bank, bank_name)
 	var textures: Dictionary[String, Texture2D] = {}
+	var source_names: Dictionary[String, String] = {}
 	for image_name: String in NAMES:
+		var drawn_name: String = GameLanguage.image_name(image_name, result.language, data.tables.names.images)
+		if drawn_name != image_name:
+			var localized: int = data.tables.names.images.index_of(drawn_name)
+			var localized_image: Texture2D = library.texture_for_id(localized)
+			if localized_image != null:
+				textures[image_name] = localized_image
+				source_names[image_name] = drawn_name
+				continue
+			result.diagnostics.append("%s image %s (texture %d) is missing; using %s" % [
+				GameLanguage.NAMES[result.language], drawn_name, localized, image_name])
 		var identity: int = data.tables.names.images.index_of(image_name)
 		var image: Texture2D = library.texture_for_id(identity) if identity >= 0 else null
 		if image == null:
 			result.error = "Front-end image %s (texture %d) is missing from the supplied banks" % [image_name, identity]
 			return result
 		textures[image_name] = image
+		source_names[image_name] = image_name
 	for image_name: String in WATER_NAMES:
 		var identity: int = data.tables.names.images.index_of(image_name)
 		var record: VloImage = library.image_for_id(identity, library.find_bank(WATER_BANK)) if identity >= 0 else null
@@ -70,6 +113,7 @@ static func from_data(data: GameData) -> FrontEndAssets:
 			result.error = "Front-end image %s (texture %d) is missing from %s" % [image_name, identity, WATER_BANK]
 			return result
 		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
+		source_names[image_name] = image_name
 	var table: LevelSelectTable = data.tables.level_select()
 	var pointers: BmpPointers = data.tables.bmp_pointers()
 	if not table.error.is_empty() or not pointers.error.is_empty():
@@ -86,6 +130,7 @@ static func from_data(data: GameData) -> FrontEndAssets:
 				return result
 			level_textures[Vector2i(row.level, kind)] = image
 	result._textures = textures
+	result._source_names = source_names
 	result._level_textures = level_textures
 	return result
 
@@ -93,6 +138,11 @@ static func from_data(data: GameData) -> FrontEndAssets:
 ## The image called [param image_name] (one of [constant NAMES] or [constant WATER_NAMES]), or null.
 func texture(image_name: String) -> Texture2D:
 	return _textures.get(image_name, null)
+
+
+## The FrogLord name drawn for English [param image_name] in this language, or "" when not loaded.
+func source_name(image_name: String) -> String:
+	return _source_names.get(image_name, "")
 
 
 ## The [param kind] image of arcade level [param level] (one of [constant LEVEL_IMAGES]), or null.

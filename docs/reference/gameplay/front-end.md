@@ -2,9 +2,8 @@
 
 The single-player front end is a main menu and the 3D level-select stack in front
 of the game scene. Menu text, the logo and level names are the player's own images,
-resolved by FrogLord name ([menu assets](#menu-assets)). The options page, high
-scores, attract demos, multiplayer pages, videos and languages other than English
-are not built; see the [roadmap](../../PORTING.md).
+resolved by FrogLord name ([menu assets](#menu-assets)). High scores, attract demos,
+multiplayer pages and videos are not built; see the [roadmap](../../PORTING.md).
 
 ## Page flow
 
@@ -68,10 +67,45 @@ Replay with R restarts with the values the level began with.
 
 Progress is saved to `user://progress.cfg` (`ProgressStore`) after each finished
 level: the arcade flag words, the gold-frog bits, music and sound volume (defaults
-3 and 5 of 8) and key bindings (unused until the options page). Retail uses a
+3 and 5 of 8), the key bindings and the language setting. Retail uses a
 registry key, which the port does not read or write. A missing file means a fresh
 game; a corrupt or foreign-version file is reported in the menu and ignored.
-Volumes and bindings are stored but not yet applied.
+The options page also saves on leaving, which retail does not.
+
+## Options page
+
+Options on the main menu opens `OptionsMenu` (`src/game/frontend/`), the 30 Hz
+state machine of retail's four-lily page: exit, controller configuration and the
+volume logs. The port shows two logs, music then effects, where retail has one
+(which of the two it is was never decoded), and hides the high-score row until P13d.
+Left/Right step a volume by one, clamped 0..8; both levels are `127·step/8`
+(`AudioLevels`), the music on the Music bus and the effects through
+`SoundVoiceView.effect_volume`. Menu keys are fixed and the bindings do not apply.
+The page draws flat stand-ins for the `OPTIONS.WAD` lily, log and frog models:
+discs, a frog disc and bars of eight cels. The unselected glow is 0x20 as the C
+sets it, not the 0x60 the retail pictures might suggest. The
+[specification](../../../tests/golden/specs/frontend.md) lists the facts and their C lines.
+
+## Controller page
+
+`ControlsPage` is retail's page 25: four player records of nine actions (left, right,
+up, down, super-hop, tongue, croak, camera clockwise and anticlockwise) as DirectInput
+scancodes, with the retail capture rules (named keys only, none bound twice). Gameplay
+and the level stack read player 1 through `BindingInput`. The retail defaults apply:
+arrows, Return, right Ctrl, right Shift, `'` and `;`. Space, R and Escape stay fixed
+unless a binding claims the key; the sandbox and inspection tools keep their own keys.
+Key names and labels are English in the default font and no joystick can be chosen.
+The bindings are saved as 44 integers (`device, valid, nine scancodes` per player).
+
+## Languages
+
+Retail has no language screen: the OS locale picks English, Italian, German, French or
+Spanish. `GameLanguage` does the same (`OS.get_locale()`), `--language=en|it|de|fr|es`
+overrides it for one session and the saved setting can pin one. `FrontEndAssets` loads
+the language's `OPT` and `FIX` banks after the English ones and resolves each menu image
+by its localized FrogLord name, falling back to English with a recorded diagnostic. The
+logo, font, arrows and gold frog have no localized variants. Level names, the water and
+the in-game HUD stay English.
 
 ## Menu assets
 

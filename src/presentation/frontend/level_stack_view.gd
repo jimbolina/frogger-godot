@@ -3,8 +3,8 @@ extends Control
 ## The arcade level-select stack: the boxes, camera, spinning box, gold frogs and sprites drawn
 ## from a [StackSelector] stepped at 30 Hz.
 ##
-## Arrow keys up and down are held directions; Enter or Space is go and Escape is back, each
-## counted once per press. Each tick's events are raised through [signal stack_event]. Between
+## Player 1's bound UP and DOWN keys ([BindingInput]) are held directions; Enter or Space is go
+## and Escape is back, each counted once per press. Each tick's events are raised through [signal stack_event]. Between
 ## ticks the camera, box slides, spinning box and sprites are interpolated from the last two
 ## committed states, which drawing never changes. The camera uses the source's fixed
 ## orientation and perspective 1000 on the 640x480 display, with the projection's unequal
@@ -45,6 +45,8 @@ var gold_frogs: Array[MeshInstance3D] = []
 var panel: StackPanel
 ## The water behind the stack, or null.
 var water: MenuWaterView
+## Player 1's key bindings, read for the UP and DOWN keys.
+var input: BindingInput = BindingInput.new()
 ## Interpolate between the last two ticks; off draws each tick as committed.
 var smoothing_enabled: bool = true
 ## Time since the last tick.
@@ -190,19 +192,28 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or key.echo:
 		return
-	match key.physical_keycode:
-		KEY_UP:
+	match input.action(key):
+		KeyBindings.Action.UP:
 			_up_held = key.pressed
 			_up_tapped = _up_tapped or key.pressed
-		KEY_DOWN:
+			_handled()
+			return
+		KeyBindings.Action.DOWN:
 			_down_held = key.pressed
 			_down_tapped = _down_tapped or key.pressed
+			_handled()
+			return
+	match key.physical_keycode:
 		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 			_go_pressed = _go_pressed or key.pressed
 		KEY_ESCAPE:
 			_back_pressed = _back_pressed or key.pressed
 		_:
 			return
+	_handled()
+
+
+func _handled() -> void:
 	if is_inside_tree():
 		get_viewport().set_input_as_handled()
 

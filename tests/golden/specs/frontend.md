@@ -388,4 +388,290 @@ one-line diff), then restore it. For the C cross-checks, copy the C folder,
 change `HIGH_SCORE_VIEW_WAVE_AMP_Z` in `HSView.h` and pass the copy as
 `--c-reference`.
 
+## Languages
+
+`make_golden_language.py` writes the language facts for `GameLanguage` and
+the localized `FrontEndAssets` lookup:
+
+```sh
+python3 tools/make_golden_language.py           # write both files
+python3 tools/make_golden_language.py --check   # diff against the committed files, exit 1 on change
+```
+
+It reads FrogLord's retail image list and VLO configuration, and the committed
+`vlo_files.tsv`/`vlo_images.tsv` for which bank holds each texture id. The
+retail locale arithmetic is transcribed from retail page 5 (`0x00444CE0`);
+`--map-header` compares it with froggy's pinned `frogger_language_map.h`.
+`--c-reference` checks the `tempopt.h` enum order and the `Opt_resource_files`
+and `Language_res` bank order in `tempopt.c`. Missing sources skip their check.
+
+### Language file (`synthetic/frontend_language.json`)
+
+| Key | Facts |
+|---|---|
+| `languages` | Game_language id, key, name, bank letter, ISO code, `FIX?_VRAM.VLO`, `OPT?_RAM.VLO` and the front-end bank upload order |
+| `lcid` | `& 0x3FF`, bias 7, bound 9, the ten map bytes and the language each jump-table arm stores |
+| `exe` | File offsets of the routine prologue, the map and the five arm stores, with the prologue and store opcode bytes |
+| `locale_primary_ids` | ISO 639-1 code to Windows primary language id for the ten ids the map spans |
+| `lcid_cases`, `locale_cases` | Locale ids and names with the language they select |
+| `name_rule` | Variant order (I, G, F, S), first words taking the prefix form, and variants with no English name |
+| `families` | Every English name with localized variants, then its I, G, F and S names |
+| `front_end_images` | Each `FrontEndAssets.NAMES` entry, its I, G, F and S names (null when the list has none) and whether every language shares it |
+
+### Retail images (`pc-retail-v3.0e/frontend_language.tsv`)
+
+One row per language and front-end name: `language`, `english_name`,
+`source_name`, `texture_id` and the last front-end bank in upload order
+holding that id. The retail test loads `FrontEndAssets` for each language,
+expects no diagnostics, compares the drawn name and the pixels with that bank's
+image, and reads the map and arm stores from the supplied executable.
+
+### Rules and retail notes
+
+- **Detection.** Primary ids 0x07 German, 0x0A Spanish, 0x0C French and 0x10
+  Italian select their language; every other id, including the five the map
+  spans that ship no language, is English. A locale name maps through its ISO
+  code's primary id.
+- **Names.** Names whose first word is `opt` or `sel` put the letter after
+  that word (`optg_start`, `self_loading`); others append `_<letter>`
+  (`select1_g`). A name without variants is shared. `hi_f`/`_g`/`_i`/`_s`
+  have no English name.
+- **Banks.** Localized texture ids sit in their language's `FIX`/`OPT` bank.
+  Ids shared across the five banks have identical pixels, so the port loads
+  the language banks after the English ones and English fills any gap.
+- **Not covered.** Retail's `Options_text_textures` pointer table is not read;
+  level-stack names, the water and the HUD stay English.
+
+### Deliberate break
+
+Change the German result of `de_DE` in `locale_cases` to 0 and run
+`make_golden_language.py --check` (exit 1), then restore it (exit 0).
+
+## Options page
+
+A generator transcribes the options page (`OptionsStartup`, `OptionsUpdate`,
+`OptionsUpdateFrog` and `OptionsSetupVolumeLogAnimatedPolys`,
+`tempopt.c:4295-5067`; `HSUpdateFlying` and `HSProjectMatricesOntoWaterSurface`,
+`HSView.c:2760-2993`) with the retail PC layout, and replays scripted input
+over the port's rows:
+
+```sh
+python3 tools/make_golden_options.py           # write synthetic/frontend_options.json
+python3 tools/make_golden_options.py --check   # diff against the committed file, exit 1 on change
+```
+
+It needs Python 3's standard library only and reads no retail data.
+`--c-reference` works as for the other generators. The cross-checks compare
+the `tempopt.h` sound, start-volume, row-count, fly and move-time defines and
+the option-row enum, `HIGH_SCORE_VIEW_FROG_JUMP_TIME`, and each transcribed
+statement (lily, log and title placement, scales, fly-on reset, update order,
+back and fire guards, Right/Left edges and clamps, volume commits, glow,
+held Up/Down hops, jump parabola, test croak, log cels, fly-off and fly-on
+motion) with the squashed C text. The generator also checks that the vendored
+z formula with retail's row count and pitch gives KF-110's measured
+positions. [Page flow](#page-flow-syntheticfrontend_flowjson) holds the page
+rows: OPTIONS backs out to MAIN_OPTIONS by the back key (`tempopt.c:4662`) or
+the exit row (`:4782`), goes to CHOOSE_WIN_CONTROLLER on the controller row
+(`:4833`) and to HIGH_SCORE_VIEW on the high-score row (`:4801`, P13d), and the
+controller page returns to OPTIONS (`:5744`).
+
+### Options file (`synthetic/frontend_options.json`)
+
+Units are PSX world units, Y down. Keys:
+
+- `constants`: `sound_stages` 8, start volumes 3 (music) and 5 (sound),
+  `volume_scale` 127, `frog_jump_time` 12, fly-on and fly-off 10 ticks at
+  speeds 0xa0 and 0x100, `fly_on_height` -1600, `camera_move_time` 20,
+  `prompt_step` 10, `glow_idle` 0x20, the glow rule and the log cels.
+- `volume_levels`: `127 * step / 8` for steps 0-8, the level both
+  `MRSND_FX_VOLUME` and `MRSND_CD_VOLUME` take.
+- `volume_log_cels`: the cel of the eight log stages per step: stages below the
+  step 11 (full), the step's own stage 12 (half), the rest 10 (blank); step 0
+  is all blank, so a full log never shows.
+- `jump_lift`: `-8 * (36 - (count - 6)^2)` for counts 12 down to 1, the
+  parabola above the straight hop line; the landing tick snaps to the lily.
+- `cameras`: the controller-page sweep (source 1500, -2400, -1000, target 0)
+  and the MAIN and OPTIONS presets of the [water file](#water-file-syntheticfrontend_waterjson).
+- `retail`: four lilies at x -0x380 and z `-7*0xc0 + (4 - i)*0x200`
+  (0x2c0, 0xc0, -0x140, -0x340), three titles on the first three, one drawn
+  log at x 0 on the fourth (two allocated), six extras, the vendored title x
+  rule and the scales (KEY_FACTS KF-110).
+- `vendored`: the seven-row source layout at pitch 0x180 with two logs.
+- `undecoded`: the port's choices where retail is not decoded (below).
+- `events`: the event names in order.
+- `scenarios`: `name`, `description`, `scores_available`, start volumes,
+  `start_row`, `frame_start` (the options viewport frame count seen on tick
+  1, rising by one per tick), `inputs` (`[count, [inputs]]` runs; `up`/`down`
+  are held, `left`, `right`, `fire` and `back` are pressed on that tick) and
+  `trace`.
+
+Trace row 0 is the state after `OptionsStartup`; each later row is the state
+after that tick: `row` (the frog's lily), `frog` (`STATIONARY`/`JUMPING`),
+`count`, `lift`, `music`, `effects`, `glow` (music and effects model
+ambient), `fly_on`, `fly_off`, `camera` (`OPTIONS`, `MAIN`, `CONTROLS`),
+`camera_timer`, `test_sound`, `request` (`MAIN_MENU`, `CONTROLS`,
+`VIEW_SCORES` or null) and `events`: `hop`, `splash`, `volume_step` (with the
+hop sound), `croak`, `volume_test_sound` (the repeating croak),
+`stop_test_sound`, `back`, `controls`, `view_scores` and `leave` (the page
+request). A scenario ends at `leave`.
+
+| Scenario | Covers |
+|---|---|
+| `walk_volumes_and_controls` | fire ignored during fly-on, held DOWN hopping every 13 ticks, a step on the landing tick, clamp at 8, Right over Left, fire on a volume row, the test croak, controls fly-off |
+| `back_during_fly_and_hop_during_fly_off` | back ignored during fly-on while Right is not, back fly-off, Right ignored while leaving, a hop during fly-off |
+| `exit_row_and_low_clamp` | Left at 0, the exit row |
+| `scores_row_available` | the high-score row shown and requested at once |
+
+Rules replayed (`tempopt.c`, `HSView.c`):
+
+- **Tick order** (4551-4672): camera timer `MAX(1, t) - 1`, `HSUpdateFlying`
+  (fly-on down by one; fly-off down by one and the page request at 0), the
+  volume models' ambient reset to 0x20, the frog, then an early return while a
+  request is pending. Back is read next, then the stationary frog's row.
+- **Frog** (4878-5028): read only while stationary, held Up before Down,
+  clamped to the end lilies; the fly counters do not gate it. A hop sets the
+  count to 12; landing takes 12 ticks, so a held key hops every 13. Leaving the
+  effects row kills the test croak; landing on it starts it.
+- **Back and fire** (4650-4672, 4772-4842): back (triangle, start, retail
+  Escape) and fire need both fly counters at 0. Back and the exit row set
+  fly-off 10 and sweep to MAIN in 20; the controller row sweeps to the
+  controls camera; the high-score row requests its page with no fly-off. Fire
+  on a volume row only croaks.
+- **Volume** (4687-4767): on a stationary volume row the model glows
+  `(vp_frame_count & 7) << 5`; Right (pressed) steps up below 8, else Left
+  steps down above 0, without wrap. Neither waits for the fly counters.
+- **Fly motion** (`HSView.c:2772-2793`, `tempopt.c:4625-4629`, `:5030-5034`):
+  while fly-on is non-zero after its decrement, models fall 0xa0 from
+  `fly_on_height`, clamped to the water, then sit on it. While fly-off is
+  non-zero, models slide 0x100 away from x 0 (positive at x 0) and the frog
+  0x100 toward -x. The prompt rises 10 per fly-on tick and falls 10 per
+  fly-off tick.
+
+### Retail differences and undecoded choices
+
+- Retail's page has four lilies at pitch 0x200, not seven at 0x180; load and
+  save are removed (KF-110, KF-139).
+- Retail's `OptionsUpdate` switch was not disassembled, so the row identities
+  are undecoded. The port puts exit, view high scores and controller config
+  on the titled lilies top to bottom, the vendored order without load/save.
+- Retail draws one log, and whether it is music or effects is undecoded. The
+  port shows two volume rows, music then effects, at `0x2c0 - row * 0x200`.
+  With the high-score row hidden (until P13d) the four rows sit exactly on
+  retail's lilies.
+- The idle ambient is 0x20 (`tempopt.c:4617-4622`); no retail measurement
+  gives another value.
+
+### Deliberate break
+
+Change `volume_levels[3]` to 48 or `fly_on_height` to -1500 and run
+`make_golden_options.py --check` (exit 1, one-line diff), then restore it.
+For the C cross-checks, copy the C folder, change `OPTIONS_SOUND_STAGES` in
+`tempopt.h` and pass the copy as `--c-reference`. For the flow rows, change
+the controller row's `next` in `frontend_flow.json`, or its cited line in a
+copied `tempopt.c`, and run `make_golden_frontend.py --check`.
+
+## Controller page
+
+Retail PC replaces the vendored `ChooseWINController*` stub (`tempopt.c:5711-5770`)
+with page 25, a keyboard-redefinition page for four controller records. The
+vendored C has no body for it, so the generator transcribes froggy's decoded
+retail tables and page (`engine/asset_pipeline/include/frogger_page25_tables.h`,
+`engine/mr_stub/src/glue/mr_stub_page25.c`):
+
+```sh
+python3 tools/make_golden_controls.py           # write synthetic/frontend_controls.json
+python3 tools/make_golden_controls.py --check   # diff against the committed file, exit 1 on change
+```
+
+It needs Python 3's standard library only and reads no retail data.
+`--froggy-reference <dir>` names froggy's `engine` folder (default
+`../froggy/engine`); when it is missing the cross-checks are skipped. They compare
+the action list, the four default records, the 83 bindable scancodes with their
+English names and `PAGE25_BINDABLE_KEY_COUNT` with the tables header, and
+`P25_SLIDE_FRAMES`, the seven `P25_DIK_*` page keys and the six `P25_SFX_*`
+sounds with the page. The FrogLord sound names are always checked by index
+against `third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg`.
+
+### Controls file (`synthetic/frontend_controls.json`)
+
+- `layout`: 4 records of 11 integers, `device, valid, key0..key8`, 44 in all.
+  This is `KeyBindings`' serialised form and `ProgressStore.key_bindings`.
+  Retail's 0x84-byte record also holds a joystick index and a projected
+  15-slot key map, which the port derives instead of storing.
+- `devices`: 0 none, 1 keyboard, 2 upwards joysticks.
+- `actions`: the nine slots in retail order with their vendored
+  `FRInput_default_map` indices (`CAMERA_CLOCKWISE` 10, `CAMERA_ANTICLOCKWISE` 11).
+- `defaults` and `default_array`: the shipped records, all valid keyboards. P1
+  binds the arrows, Return, R-Ctrl, R-Shift, `'` and `;`; P2 `E R 2 W 1 T Tab 3 4`;
+  P3 `N M G B F , Space H J`; P4 `O P 8 I 7 [ Y 9 0`.
+- `scancodes`: every DirectInput scancode the port translates, with its `DIK_`
+  name, whether it is bindable, its English retail name, and the Godot physical
+  `godot_key` and `location` constant names. Left and right modifiers differ
+  only by location. Keys outside the table translate to `unknown_scancode` 0.
+- `page_keys`, `rules`, `events`: the page's key reads, slide length (16 ticks a
+  phase), the `shown` codes (-2 blank, -1 the `_` prompt), capture and validity
+  rules, and each event's vendored sound, id and FrogLord name.
+- `scenarios`: `joysticks`, `initial` (44 values), `inputs` (`[count, [scancodes]]`
+  runs: the scancodes are newly pressed on each of the `count` ticks) and `trace`.
+  Row 0 is the state after Startup; each later row is after one Update. Rows give
+  `state` (retail's 0-9), `helper_a`/`helper_b`/`helper_c` (chooser, key list and
+  capture sub-states), `phase`, `counter`, `record`, `cursor`, `action`,
+  `finished` and `events`. `bindings` and `shown` appear when they change.
+
+| Scenario | Covers |
+|---|---|
+| `enter_and_exit` | 0 -> 4 -> 1, ESC slides out and exits |
+| `device_carousel` | LEFT/RIGHT with clamps, RETURN commits none and keyboard, F3 needs the keyboard |
+| `record_paging` | F1/F2 clamps, the two-phase record turn, valid re-derived, an unattached joystick dropped to none, ESC refused while invalid |
+| `rebind_all_with_refusals` | unnamed and duplicate refusals, a slot's own key accepted, lowest scancode wins, nine captures |
+| `capture_escape_undo` | ESC in the capture restores the record; the key list redraws it |
+| `exit_refused_until_valid` | a repeated key keeps a record invalid until it is recaptured |
+| `joystick_choice` | one attached joystick reached and committed; no key list for it |
+
+### Rules
+
+- **Entry and exit.** State 0 seeds, state 4 slides in for 16 ticks, the
+  chooser's first tick reads no keys. ESC on the chooser enters state 9 only when
+  every record's valid flag is set, otherwise it croaks; state 9 slides for 16
+  ticks and requests OPTIONS.
+- **Chooser keys** are tested in retail order on one tick and fall through: ESC,
+  RETURN (store the cursor as the device and, for the keyboard, set valid from
+  whether the nine keys are distinct), F3 (keyboard only, to the key list), LEFT,
+  RIGHT, F1, F2. Paging clamps to records 0-3. LEFT/RIGHT slide 16 ticks; a
+  non-free joystick at the end steps the cursor on and slides again. The record
+  turn is 16 ticks, a turn that reads the new record's device into the cursor,
+  re-derives valid for a keyboard and drops a non-free joystick to none, then 16
+  more.
+- **Key list.** Its first tick draws the record's nine names. ESC goes back to the
+  chooser and F1 starts a capture; both blank the names. States 5-8 run 16 ticks
+  per phase.
+- **Capture.** The first tick copies the nine keys and shows the prompt in slot 0.
+  ESC restores the copy. Otherwise the lowest pressed scancode is refused when it
+  has no name or is bound in another record or in this record below the slot.
+  An accepted key is drawn, then 16 ticks pass, the prompt moves to the next slot,
+  and 16 more pass. After slot 8 valid is re-derived and the page returns to the
+  key list.
+- **Free devices.** None and keyboard are always free. Joystick `d` is free when
+  `d - 2` is an attached joystick that no other record holds. The cursor's upper
+  bound is the highest free device for record 0 at startup.
+
+### Retail differences and undecoded choices
+
+- Retail stores records in the registry (`keyboard 0`..`keyboard 3`); the port
+  keeps the 44 values in `user://progress.cfg`.
+- Retail's bindable test is a filled row in its 256-entry key-name table. The
+  port carries the 83 scancodes and English names; localised names come from the
+  executable's name rows (`PAGE25_KEY_NAME_LIST` in the tables header).
+- Joystick enumeration (`Page25_HighestFreeDevice` with attached devices) is not
+  decoded for more than zero devices; the cursor bound rule is the port's.
+- The capture scan order and the port's single unknown scancode (0) mean a
+  key with no retail identity is refused like an unnamed key.
+
+### Deliberate break
+
+Change `slide_frames` to 15 and run `make_golden_controls.py --check` (exit 1,
+one-line diff), then restore it. For the froggy cross-checks, copy the tables
+header and page into a scratch `engine` layout, change one default key and pass
+the copy as `--froggy-reference`.
+
 [Golden data index and shared rules](../README.md).

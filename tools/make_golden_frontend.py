@@ -50,6 +50,11 @@ FLOW = [
     ('MAIN_OPTIONS', 'start', 'LEVEL_SELECT', P13A, 'tempopt.c:1829', None),
     ('MAIN_OPTIONS', 'race', 'MULTIPLAYER_MODE_OPTIONS', LATER_MULTI, 'tempopt.c:1886', None),
     ('MAIN_OPTIONS', 'options', 'OPTIONS', LATER_OPTIONS, 'tempopt.c:1950', None),
+    ('OPTIONS', 'back', 'MAIN_OPTIONS', LATER_OPTIONS, 'tempopt.c:4662', None),
+    ('OPTIONS', 'exit', 'MAIN_OPTIONS', LATER_OPTIONS, 'tempopt.c:4782', None),
+    ('OPTIONS', 'controller_config', 'CHOOSE_WIN_CONTROLLER', LATER_OPTIONS, 'tempopt.c:4833', None),
+    ('OPTIONS', 'view_high_scores', 'HIGH_SCORE_VIEW', LATER_SCORES, 'tempopt.c:4801', None),
+    ('CHOOSE_WIN_CONTROLLER', 'back', 'OPTIONS', LATER_OPTIONS, 'tempopt.c:5744', None),
     ('LEVEL_SELECT', 'play', 'GAME', P13A, 'SELECT.C:1424', None),
     ('LEVEL_SELECT', 'back_before_first_play', 'MAIN_OPTIONS', P13A, 'SELECT.C:2046', None),
     ('GAME', 'level_complete', 'LEVEL_COMPLETE', P13A, 'gamesys.C:2729', None),
@@ -78,6 +83,11 @@ RETAIL_NOTES = {
     'HASBRO_LOGO': 'KF-288: retail HasbroLogoUpdate requests the language page, never INTRO',
     'LANGUAGE_SELECTION': 'KF-351: retail row 5 detects the language silently and requests MAIN_OPTIONS',
 }
+RETAIL_ROW_NOTES = {
+    ('OPTIONS', 'back'): 'KF-250, KF-368: retail ORs the pressed-edge Escape into the triangle and start back-out',
+    ('CHOOSE_WIN_CONTROLLER', 'back'): 'KF-482: retail page 25 is a rewrite whose shutdown sweeps the camera to '
+                                       'OPTIONS; the vendored WIN95 page leaves on fire',
+}
 DIFFERENCES = [
     {'topic': 'start page', 'source': 'VERSION (OPTIONS.H enum, PSX ANTI_PIRACY only)',
      'retail': 'ANTI_PIRACY is the seeded first page', 'followed': 'retail', 'reference': 'KF-294, KF-343'},
@@ -93,6 +103,11 @@ DIFFERENCES = [
     {'topic': 'level select back-out', 'source': 'Sel_first_time = TRUE in MainOptionsShutdown (tempopt.c:2006)',
      'retail': 'KF-250 says Sel_first_time is never written TRUE, making the back-out dead',
      'followed': 'frozen C: back-out live until the first play after the main menu', 'reference': 'KF-250'},
+    {'topic': 'options page rows', 'source': 'seven lilies: exit, view high scores, load, save, controller config, '
+                                             'music, effects (tempopt.h OPTIONS_NUM_OPTIONS 7)',
+     'retail': 'four lilies: three titled rows and one volume log, row pitch 0x200',
+     'followed': 'retail layout; row identities and the log are undecoded (frontend_options.json)',
+     'reference': 'KF-110, KF-139'},
 ]
 
 
@@ -244,6 +259,8 @@ def flow_document():
         if source_next is not None:
             item['source_next'] = source_next
             item['retail'] = RETAIL_NOTES[page]
+        elif (page, event) in RETAIL_ROW_NOTES:
+            item['retail'] = RETAIL_ROW_NOTES[(page, event)]
         transitions.append(item)
     pages = []
     for page, _, target, *_ in FLOW:

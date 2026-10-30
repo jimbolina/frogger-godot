@@ -16,6 +16,10 @@ const EXPECTED: Array = [
 	["GAME_OVER", "GAME_OVER_DONE", "CONTINUE"],
 	["CONTINUE", "CONTINUE_DONE", "MAIN_MENU"],
 	["ENDING", "ENDING_DONE", "MAIN_MENU"],
+	["MAIN_MENU", "OPTIONS", "OPTIONS"],
+	["OPTIONS", "CONTROLS", "CONTROLS"],
+	["OPTIONS", "BACK", "MAIN_MENU"],
+	["CONTROLS", "BACK", "OPTIONS"],
 ]
 
 func test_table_names_match_the_frozen_transitions() -> void:
@@ -55,6 +59,16 @@ func test_single_player_round_trip() -> void:
 	assert_eq(page, FrontEndPage.Page.MAIN_MENU)
 	assert_eq(diagnostics, PackedStringArray())
 
+func test_options_round_trip() -> void:
+	var diagnostics := PackedStringArray()
+	var page: int = FrontEndPage.Page.MAIN_MENU
+	for event: int in [FrontEndFlow.Event.OPTIONS, FrontEndFlow.Event.CONTROLS, FrontEndFlow.Event.BACK,
+			FrontEndFlow.Event.BACK, FrontEndFlow.Event.START]:
+		page = FrontEndFlow.next_page(page, event, diagnostics)
+	assert_eq(page, FrontEndPage.Page.LEVEL_SELECT)
+	assert_eq(diagnostics, PackedStringArray())
+	assert_false(FrontEndFlow.accepts(FrontEndPage.Page.CONTROLS, FrontEndFlow.Event.OPTIONS))
+
 func test_unknown_events_keep_the_page_and_are_reported() -> void:
 	var diagnostics := PackedStringArray()
 	assert_eq(FrontEndFlow.next_page(FrontEndPage.Page.MAIN_MENU, FrontEndFlow.Event.ALL_LIVES_LOST, diagnostics), FrontEndPage.Page.MAIN_MENU)
@@ -71,7 +85,8 @@ func test_names_resolve_both_ways() -> void:
 	assert_eq(FrontEndPage.name_of(FrontEndPage.Page.LEVEL_COMPLETE), "LEVEL_COMPLETE")
 	assert_eq(FrontEndPage.from_name("GAME_OVER"), FrontEndPage.Page.GAME_OVER)
 	assert_eq(FrontEndPage.name_of(-1), "")
-	assert_eq(FrontEndPage.from_name("OPTIONS"), -1)
+	assert_eq(FrontEndPage.from_name("OPTIONS"), FrontEndPage.Page.OPTIONS)
+	assert_eq(FrontEndPage.from_name("CHOOSE_WIN_CONTROLLER"), -1)
 	assert_eq(FrontEndFlow.event_name(FrontEndFlow.Event.ZONE_COMPLETE), "ZONE_COMPLETE")
 	assert_eq(FrontEndFlow.event_from_name("CONTINUE_DONE"), FrontEndFlow.Event.CONTINUE_DONE)
 	assert_eq(FrontEndFlow.event_name(100), "")

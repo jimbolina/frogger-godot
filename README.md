@@ -27,11 +27,14 @@ The game opens on the main menu: choose **Start**, then a level on the 3D stack
 out of the picture or, before the first level, to the menu);
 only unlocked levels can be picked, and score, lives and unlocks carry from level
 to level and are saved to `user://progress.cfg`. **Inspection tools** opens the
-older start screen, where a level can be played fresh without the menu. Arrow keys hop; press Shift alone to super-hop in the current facing
-direction (or skip the current checkpoint bonus stage). Ctrl uses the tongue,
-C croaks (the throat swells, in Cave levels the light swells, and the nearest
-baby frog or gold frog within sixteen squares answers), and Q/E turn the
-camera. Space pauses/resumes,
+older start screen, where a level can be played fresh without the menu. In a level the retail keys apply: arrow keys hop; Return super-hops in the current facing
+direction (or skips the current checkpoint bonus stage). Right Ctrl uses the tongue,
+right Shift croaks (the throat swells, in Cave levels the light swells, and the nearest
+baby frog or gold frog within sixteen squares answers), and `'` and `;` turn the
+camera. **Options** on the main menu sets the music and effects volume and, under
+control configuration, rebinds these keys (F1 redefine, F3 key list, Esc back); menu
+images follow your system language, or pass `--language=en|it|de|fr|es`. The inspection
+tools and sandbox keep their own keys. Space pauses/resumes,
 R restarts, and Escape returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
 **Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.
 
@@ -56,7 +59,7 @@ launcher replays such files through real key events with per-tick parity checks;
 recording is optional diagnostic material, not a requirement. The HUD uses the player's English retail UI
 assets. The frog's shadow, hop trail, slide, bubble and fire particles, death
 ring, splash, drowning tints and score popups are drawn from the player's
-data; entity particles, pops and glows follow. The options page, high scores and the 3D level-select stack remain future work. Forest bee swarms are visible gameplay hazards.
+data; entity particles, pops and glows follow. High scores remain future work. Forest bee swarms are visible gameplay hazards.
 
 ### Audio
 

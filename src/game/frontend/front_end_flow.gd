@@ -6,7 +6,9 @@ extends RefCounted
 ## (tempopt.c:3831-3996), so CONTINUE always moves on; with high scores not yet ported, the
 ## name-entry page's no-score exit to the main menu (hsinput.c:222-226) is taken directly.
 ## LEVEL_SELECT accepts BACK only before the first level of a game is chosen
-## (SELECT.C:2036-2046, Sel_first_time); the host decides when to offer it.
+## (SELECT.C:2036-2046, Sel_first_time); the host decides when to offer it. The options pages
+## leave once their fly-off ends (HSView.c:2991); BACK on OPTIONS covers both the back key and
+## the exit row.
 
 enum Event {
 	BOOT_DONE,
@@ -22,6 +24,8 @@ enum Event {
 	GAME_OVER_DONE,
 	CONTINUE_DONE,
 	ENDING_DONE,
+	OPTIONS,
+	CONTROLS,
 }
 
 ## Page of each transition, parallel to [constant EVENTS] and [constant TO_PAGES].
@@ -40,6 +44,10 @@ const FROM_PAGES: PackedInt32Array = [
 	FrontEndPage.Page.GAME_OVER,
 	FrontEndPage.Page.CONTINUE,
 	FrontEndPage.Page.ENDING,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.CONTROLS,
 ]
 ## Event of each transition.
 const EVENTS: PackedInt32Array = [
@@ -57,6 +65,10 @@ const EVENTS: PackedInt32Array = [
 	Event.GAME_OVER_DONE,
 	Event.CONTINUE_DONE,
 	Event.ENDING_DONE,
+	Event.OPTIONS,
+	Event.CONTROLS,
+	Event.BACK,
+	Event.BACK,
 ]
 ## Next page of each transition.
 const TO_PAGES: PackedInt32Array = [
@@ -74,6 +86,10 @@ const TO_PAGES: PackedInt32Array = [
 	FrontEndPage.Page.CONTINUE,
 	FrontEndPage.Page.MAIN_MENU,
 	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.CONTROLS,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.OPTIONS,
 ]
 
 ## The frozen request each transition follows.
@@ -92,6 +108,10 @@ const SOURCES: PackedStringArray = [
 	"tempopt.c:4124 and 4131 GameOverUpdate count-down or fire",
 	"tempopt.c:3993 ContinueUpdate, hsinput.c:222-226 no score to enter",
 	"credits.c:882 CreditsUpdate, hsinput.c:222-226 no score to enter",
+	"tempopt.c:1950 MainOptionsUpdate OPTIONS, after the fly-off",
+	"tempopt.c:4833 OptionsUpdate fire on controller config, after the fly-off",
+	"tempopt.c:4662 OptionsUpdate triangle, start or retail Escape; tempopt.c:4782 fire on exit",
+	"tempopt.c:5744 ChooseWINControllerUpdate; retail page 25 shuts down toward the options camera (KF-482)",
 ]
 
 

@@ -25,8 +25,14 @@ Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`.
 
 P13b and P13g are complete and accepted by the owner's play check: Start opens
 the 3D level-select stack ([front end](reference/gameplay/front-end.md#level-select-stack))
-over the animated water background. Options, high scores and the attract cycle
-are P13c–P13e.
+over the animated water background.
+
+P13c is implemented and awaits the owner's play check: Options on the main menu
+opens the options page (music and effects volumes) and the controller page
+(rebindable keys), and menu images follow the OS language or `--language=`. See the
+[front end](reference/gameplay/front-end.md#options-page). Retail key defaults now
+apply in game: Return super-hops, right Ctrl is the tongue, right Shift croaks,
+`'` and `;` turn the camera. High scores (P13d) and the attract cycle (P13e) follow.
 
 P12 audio playback is implemented and awaits the owner's by-ear check: sound
 effects play from committed voices and music from the disc image

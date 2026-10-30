@@ -1,0 +1,218 @@
+{
+ "source": "Game_language enum (tempopt.h:169), LanguageSelectionStartup map, FrogLord vlo/images retail cfg",
+ "auto": -1,
+ "languages": [
+  {
+   "id": 0,
+   "key": "ENGLISH",
+   "name": "English",
+   "letter": "E",
+   "code": "en",
+   "fixed_bank": "FIXE_VRAM.VLO",
+   "option_bank": "OPTE_RAM.VLO",
+   "front_end_banks": ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "LS_ALL.VLO"]
+  },
+  {
+   "id": 1,
+   "key": "ITALIAN",
+   "name": "Italian",
+   "letter": "I",
+   "code": "it",
+   "fixed_bank": "FIXI_VRAM.VLO",
+   "option_bank": "OPTI_RAM.VLO",
+   "front_end_banks": ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "FIXI_VRAM.VLO", "OPTI_RAM.VLO", "LS_ALL.VLO"]
+  },
+  {
+   "id": 2,
+   "key": "GERMAN",
+   "name": "German",
+   "letter": "G",
+   "code": "de",
+   "fixed_bank": "FIXG_VRAM.VLO",
+   "option_bank": "OPTG_RAM.VLO",
+   "front_end_banks": ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "FIXG_VRAM.VLO", "OPTG_RAM.VLO", "LS_ALL.VLO"]
+  },
+  {
+   "id": 3,
+   "key": "FRENCH",
+   "name": "French",
+   "letter": "F",
+   "code": "fr",
+   "fixed_bank": "FIXF_VRAM.VLO",
+   "option_bank": "OPTF_RAM.VLO",
+   "front_end_banks": ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "FIXF_VRAM.VLO", "OPTF_RAM.VLO", "LS_ALL.VLO"]
+  },
+  {
+   "id": 4,
+   "key": "SPANISH",
+   "name": "Spanish",
+   "letter": "S",
+   "code": "es",
+   "fixed_bank": "FIXS_VRAM.VLO",
+   "option_bank": "OPTS_RAM.VLO",
+   "front_end_banks": ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "FIXS_VRAM.VLO", "OPTS_RAM.VLO", "LS_ALL.VLO"]
+  }
+ ],
+ "lcid": {
+  "mask": 1023,
+  "primary_bias": 7,
+  "primary_bound": 9,
+  "primary_map": [0, 4, 4, 1, 4, 2, 4, 4, 4, 3],
+  "arm_languages": [2, 4, 3, 1, 0]
+ },
+ "exe": {
+  "map_offset": 278864,
+  "routine_offset": 278752,
+  "prologue": [255, 21, 204, 211, 74, 0, 37, 255, 3, 0, 0, 131, 232, 7, 131, 248, 9],
+  "store_opcode": [199, 5, 156, 169, 72, 0],
+  "arm_store_offsets": [278797, 278808, 278819, 278830, 278786]
+ },
+ "locale_primary_ids": {
+  "de": 7,
+  "el": 8,
+  "en": 9,
+  "es": 10,
+  "fi": 11,
+  "fr": 12,
+  "he": 13,
+  "hu": 14,
+  "is": 15,
+  "it": 16
+ },
+ "lcid_cases": [[0, 0], [1030, 0], [1031, 2], [2055, 2], [1032, 0], [1033, 0], [2057, 0], [1034, 4], [3082, 4], [2058, 4], [1035, 0], [1036, 3], [3084, 3], [1037, 0], [1038, 0], [1039, 0], [1040, 1], [2064, 1], [1041, 0], [1049, 0], [2070, 0], [1023, 0]],
+ "locale_cases": [["de_DE", 2], ["de-AT", 2], ["DE", 2], ["it_IT", 1], ["it", 1], ["fr_FR", 3], ["FR_ca", 3], ["es_ES", 4], ["es-MX", 4], ["en_US", 0], ["en_GB", 0], ["el_GR", 0], ["fi_FI", 0], ["he", 0], ["hu_HU", 0], ["is", 0], ["ja_JP", 0], ["pt_BR", 0], ["nl_NL", 0], ["zh_Hans_CN", 0], ["", 0], ["_", 0]],
+ "name_rule": {
+  "order": ["I", "G", "F", "S"],
+  "prefix_families": ["opt", "sel"],
+  "suffix": "_<letter>",
+  "variants_without_english": ["hi_f", "hi_g", "hi_i", "hi_s"]
+ },
+ "families": [["bonus", "bonus_i", "bonus_g", "bonus_f", "bonus_s"], ["choose_course", "choose_course_i", "choose_course_g", "choose_course_f", "choose_course_s"], ["croak", "croak_i", "croak_g", "croak_f", "croak_s"], ["go", "go_i", "go_g", "go_f", "go_s"], ["go_frogger", "go_frogger_i", "go_frogger_g", "go_frogger_f", "go_frogger_s"], ["go_get_em", "go_get_em_i", "go_get_em_g", "go_get_em_f", "go_get_em_s"], ["hop_to_it", "hop_to_it_i", "hop_to_it_g", "hop_to_it_f", "hop_to_it_s"], ["jump_to_it", "jump_to_it_i", "jump_to_it_g", "jump_to_it_f", "jump_to_it_s"], ["lost", "lost_i", "lost_g", "lost_f", "lost_s"], ["next", "next_i", "next_g", "next_f", "next_s"], ["opt_big_continue", "opti_big_continue", "optg_big_continue", "optf_big_continue", "opts_big_continue"], ["opt_ctrl_config", "opti_ctrl_config", "optg_ctrl_config", "optf_ctrl_config", "opts_ctrl_config"], ["opt_exit", "opti_exit", "optg_exit", "optf_exit", "opts_exit"], ["opt_insert_pad", "opti_insert_pad", "optg_insert_pad", "optf_insert_pad", "opts_insert_pad"], ["opt_local_race", "opti_local_race", "optg_local_race", "optf_local_race", "opts_local_race"], ["opt_lost_conn", "opti_lost_conn", "optg_lost_conn", "optf_lost_conn", "opts_lost_conn"], ["opt_network_race", "opti_network_race", "optg_network_race", "optf_network_race", "opts_network_race"], ["opt_no", "opti_no", "optg_no", "optf_no", "opts_no"], ["opt_options", "opti_options", "optg_options", "optf_options", "opts_options"], ["opt_paused", "opti_paused", "optg_paused", "optf_paused", "opts_paused"], ["opt_race", "opti_race", "optg_race", "optf_race", "opts_race"], ["opt_sec", "opti_sec", "optg_sec", "optf_sec", "opts_sec"], ["opt_start", "opti_start", "optg_start", "optf_start", "opts_start"], ["opt_view_hs", "opti_view_hs", "optg_view_hs", "optf_view_hs", "opts_view_hs"], ["opt_wait_sync", "opti_wait_sync", "optg_wait_sync", "optf_wait_sync", "opts_wait_sync"], ["opt_yes", "opti_yes", "optg_yes", "optf_yes", "opts_yes"], ["play_again", "play_again_i", "play_again_g", "play_again_f", "play_again_s"], ["play_off", "play_off_i", "play_off_g", "play_off_f", "play_off_s"], ["played", "played_i", "played_g", "played_f", "played_s"], ["press_fire", "press_fire_i", "press_fire_g", "press_fire_f", "press_fire_s"], ["press_superhop", "press_superhop_i", "press_superhop_g", "press_superhop_f", "press_superhop_s"], ["quit", "quit_i", "quit_g", "quit_f", "quit_s"], ["sel_loading", "seli_loading", "selg_loading", "self_loading", "sels_loading"], ["select1", "select1_i", "select1_g", "select1_f", "select1_s"], ["select2", "select2_i", "select2_g", "select2_f", "select2_s"], ["select3", "select3_i", "select3_g", "select3_f", "select3_s"], ["select4", "select4_i", "select4_g", "select4_f", "select4_s"], ["select5", "select5_i", "select5_g", "select5_f", "select5_s"], ["select6", "select6_i", "select6_g", "select6_f", "select6_s"], ["select7", "select7_i", "select7_g", "select7_f", "select7_s"], ["select_level", "select_level_i", "select_level_g", "select_level_f", "select_level_s"], ["skip_hi_score", "skip_hi_score_i", "skip_hi_score_g", "skip_hi_score_f", "skip_hi_score_s"], ["start_race", "start_race_i", "start_race_g", "start_race_f", "start_race_s"], ["timeout", "timeout_i", "timeout_g", "timeout_f", "timeout_s"], ["total_score", "total_score_i", "total_score_g", "total_score_f", "total_score_s"], ["total_time", "total_time_i", "total_time_g", "total_time_f", "total_time_s"], ["won", "won_i", "won_g", "won_f", "won_s"], ["zone_complete", "zone_complete_i", "zone_complete_g", "zone_complete_f", "zone_complete_s"]],
+ "front_end_images": [
+  {
+   "name": "opt_start",
+   "localized": ["opti_start", "optg_start", "optf_start", "opts_start"],
+   "shared": false
+  },
+  {
+   "name": "opt_options",
+   "localized": ["opti_options", "optg_options", "optf_options", "opts_options"],
+   "shared": false
+  },
+  {
+   "name": "opt_exit",
+   "localized": ["opti_exit", "optg_exit", "optf_exit", "opts_exit"],
+   "shared": false
+  },
+  {
+   "name": "opt_race",
+   "localized": ["opti_race", "optg_race", "optf_race", "opts_race"],
+   "shared": false
+  },
+  {
+   "name": "select_level",
+   "localized": ["select_level_i", "select_level_g", "select_level_f", "select_level_s"],
+   "shared": false
+  },
+  {
+   "name": "zone_complete",
+   "localized": ["zone_complete_i", "zone_complete_g", "zone_complete_f", "zone_complete_s"],
+   "shared": false
+  },
+  {
+   "name": "press_fire",
+   "localized": ["press_fire_i", "press_fire_g", "press_fire_f", "press_fire_s"],
+   "shared": false
+  },
+  {
+   "name": "sel_loading",
+   "localized": ["seli_loading", "selg_loading", "self_loading", "sels_loading"],
+   "shared": false
+  },
+  {
+   "name": "opt_big_continue",
+   "localized": ["opti_big_continue", "optg_big_continue", "optf_big_continue", "opts_big_continue"],
+   "shared": false
+  },
+  {
+   "name": "opt_yes",
+   "localized": ["opti_yes", "optg_yes", "optf_yes", "opts_yes"],
+   "shared": false
+  },
+  {
+   "name": "opt_no",
+   "localized": ["opti_no", "optg_no", "optf_no", "opts_no"],
+   "shared": false
+  },
+  {
+   "name": "opt_paused",
+   "localized": ["opti_paused", "optg_paused", "optf_paused", "opts_paused"],
+   "shared": false
+  },
+  {
+   "name": "froglogo",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
+   "name": "newfont",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
+   "name": "select1",
+   "localized": ["select1_i", "select1_g", "select1_f", "select1_s"],
+   "shared": false
+  },
+  {
+   "name": "select2",
+   "localized": ["select2_i", "select2_g", "select2_f", "select2_s"],
+   "shared": false
+  },
+  {
+   "name": "select5",
+   "localized": ["select5_i", "select5_g", "select5_f", "select5_s"],
+   "shared": false
+  },
+  {
+   "name": "ls_gold_frog",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
+   "name": "opt_view_hs",
+   "localized": ["opti_view_hs", "optg_view_hs", "optf_view_hs", "opts_view_hs"],
+   "shared": false
+  },
+  {
+   "name": "opt_ctrl_config",
+   "localized": ["opti_ctrl_config", "optg_ctrl_config", "optf_ctrl_config", "opts_ctrl_config"],
+   "shared": false
+  },
+  {
+   "name": "opt_insert_pad",
+   "localized": ["opti_insert_pad", "optg_insert_pad", "optf_insert_pad", "opts_insert_pad"],
+   "shared": false
+  },
+  {
+   "name": "select7",
+   "localized": ["select7_i", "select7_g", "select7_f", "select7_s"],
+   "shared": false
+  },
+  {
+   "name": "opt_keyboard",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
+   "name": "opt_arrow_small_left",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
+   "name": "opt_arrow_small_right",
+   "localized": [null, null, null, null],
+   "shared": true
+  }
+ ]
+}

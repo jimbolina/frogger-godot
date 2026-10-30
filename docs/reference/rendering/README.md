@@ -127,9 +127,10 @@ checkpoint gather/return and bonus displays follow `HUD.C`; start release and
 bonus awards remain owned by gameplay. Rendering consumes the existing checkpoint
 mask rather than maintaining a second progress value.
 
-P10 uses English UI assets. It does not yet read the options-language texture
-pointer table or support repointing those UI entries; localization and full
-options remain P13. Audio playback retains its separate roadmap scope;
+The in-game HUD uses English UI assets; only the front-end menu images are
+localized ([front end](../gameplay/front-end.md#languages)). The port does not
+read the options-language texture pointer table or support repointing those UI
+entries. Audio playback retains its separate roadmap scope;
 [effects](effects.md) own the particle, shadow, splash and tint drawing. The rendering limitations above also apply to the dedicated scene.
 
 The frozen port differs from unsanitized `HUD.C` here: its sanitizer changes

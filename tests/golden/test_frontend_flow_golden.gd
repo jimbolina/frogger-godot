@@ -7,12 +7,13 @@ const PAGE_ALIASES: Dictionary = {
 	"BOOT": ["ANTI_PIRACY", "HASBRO_LOGO", "LANGUAGE_SELECTION"],
 	"MAIN_MENU": ["MAIN_OPTIONS"],
 	"ENDING": ["OUTRO", "CREDITS"],
+	"CONTROLS": ["CHOOSE_WIN_CONTROLLER"],
 }
 const EVENT_ALIASES: Dictionary = {
 	"BOOT_DONE": ["language_detected"],
 	"START": ["start"],
 	"SELECT_LEVEL": ["play"],
-	"BACK": ["back_before_first_play", "back"],
+	"BACK": ["back_before_first_play", "back", "exit"],
 	"LEVEL_FINISHED": ["level_complete"],
 	"GAME_FINISHED": ["jungle_complete", "jungle_complete_all_gold_frogs"],
 	"ALL_LIVES_LOST": ["lives_lost"],
@@ -22,6 +23,8 @@ const EVENT_ALIASES: Dictionary = {
 	"GAME_OVER_DONE": ["timeout", "confirm"],
 	"CONTINUE_DONE": ["arcade"],
 	"ENDING_DONE": ["finished"],
+	"OPTIONS": ["options"],
+	"CONTROLS": ["controller_config"],
 }
 const SKIPPED_PAGES: Dictionary = {"HIGH_SCORE_INPUT": "no_high_score"}
 
@@ -100,8 +103,16 @@ func test_every_port_transition_agrees_with_the_frozen_requests() -> void:
 
 
 func test_every_p13a_request_is_ported() -> void:
+	_check_phase_is_ported("P13a")
+
+
+func test_every_p13c_request_is_ported() -> void:
+	_check_phase_is_ported("P13c")
+
+
+func _check_phase_is_ported(phase: String) -> void:
 	for item: Dictionary in _transitions:
-		if item.phase != "P13a" or SKIPPED_PAGES.has(item.page):
+		if item.phase != phase or SKIPPED_PAGES.has(item.page):
 			continue
 		var row: PackedStringArray = _port_row_for(str(item.page), str(item.event))
 		assert_eq(row.size(), 3, "%s %s is in the port table" % [item.page, item.event])
@@ -114,5 +125,13 @@ func test_retail_boot_order_is_recorded_over_the_vendored_one() -> void:
 	assert_eq(_golden_next("HASBRO_LOGO", "video_finished"), "LANGUAGE_SELECTION")
 	assert_eq(_golden_next("LANGUAGE_SELECTION", "language_detected"), "MAIN_OPTIONS")
 	for item: Dictionary in _transitions:
-		if item.has("source_next"):
+		if item.has("source_next") or item.has("retail"):
 			assert_true(str(item.retail).begins_with("KF-"), "%s cites the retail fact" % item.page)
+
+
+func test_options_rows_reach_the_controller_page_and_back() -> void:
+	assert_eq(_golden_next("MAIN_OPTIONS", "options"), "OPTIONS")
+	assert_eq(_golden_next("OPTIONS", "controller_config"), "CHOOSE_WIN_CONTROLLER")
+	assert_eq(_golden_next("CHOOSE_WIN_CONTROLLER", "back"), "OPTIONS")
+	assert_eq(_golden_next("OPTIONS", "back"), "MAIN_OPTIONS")
+	assert_eq(_golden_next("OPTIONS", "exit"), "MAIN_OPTIONS")

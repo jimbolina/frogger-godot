@@ -90,7 +90,7 @@ func _run() -> void:
 		var mask: int = inputs.get(tick, 0)
 		for bit: int in 8:
 			if (mask & (1 << bit)) != (prior_held & (1 << bit)):
-				_key(_code(bit), bool(mask & (1 << bit)))
+				_bound_key(bit, bool(mask & (1 << bit)))
 		if mask != prior_held:
 			await process_frame
 		var command := TickCommand.new()
@@ -182,14 +182,16 @@ func _capture(label: String) -> String:
 	await RenderingServer.frame_post_draw
 	return ViewerCapture.save_image(root.get_texture().get_image(), _folder.path_join(label + ".png"))
 
-func _code(bit: int) -> Key:
-	var codes: Array[Key] = [KEY_UP, KEY_RIGHT, KEY_DOWN, KEY_LEFT, KEY_SHIFT, KEY_E, KEY_Q, KEY_CTRL]
-	return codes[bit]
+func _bound_key(bit: int, pressed: bool) -> void:
+	var action: int = BindingInput.COMMANDS.find(1 << bit)
+	var scancode: int = _screen.input.bindings.key(_screen.input.record, action)
+	_key(KeyScancodes.godot_key(scancode) as Key, pressed, KeyScancodes.godot_location(scancode) as KeyLocation)
 
-func _key(code: Key, pressed: bool) -> void:
+func _key(code: Key, pressed: bool, location: KeyLocation = KEY_LOCATION_UNSPECIFIED) -> void:
 	var event := InputEventKey.new()
 	event.physical_keycode = code
 	event.keycode = code
+	event.location = location
 	event.pressed = pressed
 	Input.parse_input_event(event)
 

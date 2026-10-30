@@ -1,6 +1,10 @@
 class_name GameplayScreen
 extends GameplayWorldView
 ## Dedicated single-player scene sharing the transactional host and world renderer.
+##
+## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); Space pauses,
+## R restarts and Escape leaves unless a binding claims the key. The saved music and effects
+## volumes are applied when the scene opens.
 
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
@@ -32,6 +36,8 @@ var _model_origins: EntityModelOrigins = null
 var entity_model_diagnostics := PackedStringArray()
 ## The player's disc image for level music, located from the command line or environment, or null.
 var disc: DiscAudio = null
+## Player 1's key bindings: the shipped defaults until the saved options are read on opening.
+var input: BindingInput = BindingInput.new()
 
 func _ready() -> void:
 	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
@@ -40,6 +46,10 @@ func _ready() -> void:
 	smoothing = true
 	_build_interface()
 	if auto_open:
+		var settings: ProgressStore = FrontEndSession.settings()
+		input = BindingInput.from_array(settings.key_bindings)
+		if audio_enabled:
+			AudioLevels.apply(settings.music_volume, settings.sound_volume, voice_view())
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
 		recorder = InputRecorder.from_arguments(arguments)
 		level_code = selected_level if not selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
@@ -264,17 +274,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or key.echo:
 		return
-	var action: int = 0
-	match key.physical_keycode:
-		KEY_UP: action = TickCommand.NORTH
-		KEY_RIGHT: action = TickCommand.EAST
-		KEY_DOWN: action = TickCommand.SOUTH
-		KEY_LEFT: action = TickCommand.WEST
-		KEY_SHIFT: action = TickCommand.SUPER_HOP
-		KEY_CTRL: action = TickCommand.TONGUE
-		KEY_C: action = TickCommand.CROAK
-		KEY_E: action = TickCommand.CAMERA_CLOCKWISE
-		KEY_Q: action = TickCommand.CAMERA_ANTICLOCKWISE
+	var action: int = input.command(key)
 	if action != 0:
 		if key.pressed and playing:
 			_held |= action

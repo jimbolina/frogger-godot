@@ -31,3 +31,23 @@ func test_water_images_come_from_the_options_bank_first_loaded() -> void:
 	assert_eq(FrontEndAssets.WATER_BANK, "OPT_VRAM.VLO")
 	assert_eq(FrontEndAssets.BANKS[0], FrontEndAssets.WATER_BANK, "later banks keep winning for the other images")
 	assert_eq(FrontEndAssets.BANKS[FrontEndAssets.BANKS.size() - 1], "LS_ALL.VLO")
+
+
+func test_english_loads_only_the_english_banks() -> void:
+	assert_eq(FrontEndAssets.banks_for(GameLanguage.Id.ENGLISH), FrontEndAssets.BANKS)
+	assert_eq(FrontEndAssets.banks_for(GameLanguage.AUTO), FrontEndAssets.BANKS)
+
+
+func test_other_languages_add_their_banks_after_the_english_ones() -> void:
+	assert_eq(FrontEndAssets.banks_for(GameLanguage.Id.GERMAN), PackedStringArray([
+		"OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VLO", "FIXG_VRAM.VLO", "OPTG_RAM.VLO",
+		"LS_ALL.VLO"]))
+	assert_eq(FrontEndAssets.banks_for(GameLanguage.Id.ITALIAN)[4], "FIXI_VRAM.VLO")
+	assert_eq(FrontEndAssets.banks_for(GameLanguage.Id.SPANISH)[5], "OPTS_RAM.VLO")
+
+
+func test_unknown_language_is_reported_and_drawn_in_english() -> void:
+	var assets: FrontEndAssets = FrontEndAssets.from_data(null, 9)
+	assert_eq(assets.language, GameLanguage.Id.ENGLISH)
+	assert_string_contains(assets.diagnostics[0], "Language 9 is unknown")
+	assert_eq(assets.source_name("opt_start"), "")

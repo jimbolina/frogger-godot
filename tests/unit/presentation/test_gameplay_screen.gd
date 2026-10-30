@@ -82,24 +82,44 @@ func test_failed_launch_has_no_stale_run_or_replay_action() -> void:
 	assert_true(_screen._actions.visible)
 	assert_false(_screen._replay.visible)
 
-func _key(code: Key, pressed: bool) -> void:
+func _key(code: Key, pressed: bool, location: KeyLocation = KEY_LOCATION_UNSPECIFIED) -> void:
 	var event := InputEventKey.new()
 	event.physical_keycode = code
+	event.location = location
 	event.pressed = pressed
 	_screen._unhandled_key_input(event)
 
-func test_c_croaks_on_its_pressed_edge_like_the_tongue() -> void:
+func test_croak_key_croaks_on_its_pressed_edge_like_the_tongue() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
 	assert_true(_screen.playing)
-	_key(KEY_C, true)
+	_key(KEY_SHIFT, true, KEY_LOCATION_RIGHT)
 	assert_eq(_screen._held, TickCommand.CROAK)
 	var first: TickCommand = _screen._host.sample(1, _screen._held)
 	assert_eq(first.pressed_mask & TickCommand.CROAK, TickCommand.CROAK)
 	var held: TickCommand = _screen._host.sample(2, _screen._held)
 	assert_eq(held.pressed_mask & TickCommand.CROAK, 0, "a held croak key presses once")
-	_key(KEY_C, false)
+	_key(KEY_SHIFT, false, KEY_LOCATION_RIGHT)
 	assert_eq(_screen._held, 0)
+
+func test_player_one_bindings_drive_play_and_fixed_keys_stay() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_key(KEY_ENTER, true)
+	_key(KEY_CTRL, true, KEY_LOCATION_RIGHT)
+	_key(KEY_APOSTROPHE, true)
+	_key(KEY_SEMICOLON, true)
+	assert_eq(_screen._held, TickCommand.SUPER_HOP | TickCommand.TONGUE | TickCommand.CAMERA_CLOCKWISE | TickCommand.CAMERA_ANTICLOCKWISE)
+	_key(KEY_C, true)
+	_key(KEY_SHIFT, true, KEY_LOCATION_LEFT)
+	assert_eq(_screen._held & (TickCommand.CROAK | TickCommand.SUPER_HOP), TickCommand.SUPER_HOP, "C and left Shift are unbound")
+	var bindings := KeyBindings.create_default()
+	bindings.set_key(0, KeyBindings.Action.CROAK, KeyScancodes.from_godot(KEY_C))
+	_screen.input = BindingInput.new(bindings)
+	_key(KEY_C, true)
+	assert_eq(_screen._held & TickCommand.CROAK, TickCommand.CROAK, "a rebound key takes the action")
+	_key(KEY_SPACE, true)
+	assert_false(_screen.playing, "Space still pauses")
 
 func test_front_end_session_offers_next_level_after_completion_and_unlocks_it() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]

@@ -9,14 +9,15 @@
   "LEVEL_SELECT",
   "MULTIPLAYER_MODE_OPTIONS",
   "OPTIONS",
+  "CHOOSE_WIN_CONTROLLER",
+  "HIGH_SCORE_VIEW",
   "GAME",
   "LEVEL_COMPLETE",
   "GAME_OVER",
   "OUTRO",
   "CREDITS",
   "CONTINUE",
-  "HIGH_SCORE_INPUT",
-  "HIGH_SCORE_VIEW"
+  "HIGH_SCORE_INPUT"
  ],
  "transitions": [
   {
@@ -64,6 +65,43 @@
    "next": "OPTIONS",
    "phase": "P13c",
    "source": "tempopt.c:1950"
+  },
+  {
+   "page": "OPTIONS",
+   "event": "back",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13c",
+   "source": "tempopt.c:4662",
+   "retail": "KF-250, KF-368: retail ORs the pressed-edge Escape into the triangle and start back-out"
+  },
+  {
+   "page": "OPTIONS",
+   "event": "exit",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13c",
+   "source": "tempopt.c:4782"
+  },
+  {
+   "page": "OPTIONS",
+   "event": "controller_config",
+   "next": "CHOOSE_WIN_CONTROLLER",
+   "phase": "P13c",
+   "source": "tempopt.c:4833"
+  },
+  {
+   "page": "OPTIONS",
+   "event": "view_high_scores",
+   "next": "HIGH_SCORE_VIEW",
+   "phase": "P13d",
+   "source": "tempopt.c:4801"
+  },
+  {
+   "page": "CHOOSE_WIN_CONTROLLER",
+   "event": "back",
+   "next": "OPTIONS",
+   "phase": "P13c",
+   "source": "tempopt.c:5744",
+   "retail": "KF-482: retail page 25 is a rewrite whose shutdown sweeps the camera to OPTIONS; the vendored WIN95 page leaves on fire"
   },
   {
    "page": "LEVEL_SELECT",
@@ -262,6 +300,13 @@
    "retail": "KF-250 says Sel_first_time is never written TRUE, making the back-out dead",
    "followed": "frozen C: back-out live until the first play after the main menu",
    "reference": "KF-250"
+  },
+  {
+   "topic": "options page rows",
+   "source": "seven lilies: exit, view high scores, load, save, controller config, music, effects (tempopt.h OPTIONS_NUM_OPTIONS 7)",
+   "retail": "four lilies: three titled rows and one volume log, row pitch 0x200",
+   "followed": "retail layout; row identities and the log are undecoded (frontend_options.json)",
+   "reference": "KF-110, KF-139"
   }
  ]
 }

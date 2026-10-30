@@ -52,6 +52,9 @@ commands run from the repository root; generated facts live in
 | Front-end level flags, completion and gold-frog unlocks, JUN1 rewrite and page-flow requests | [Front end](specs/frontend.md) |
 | Level-select stack layout, camera, lights, gold-frog quads and scripted motion, glow, spin and fade traces | [Level-select stack](specs/frontend.md#level-select-stack) |
 | Front-end water and riverbed mesh, wave heights, prim colours, draw order and options camera presets | [Front-end water](specs/frontend.md#front-end-water) |
+| Locale-to-language detection, language banks and localized front-end image names | [Languages](specs/frontend.md#languages) |
+| Options page layout, volume steps and levels, log cels, hop, fly and camera timing and scripted page traces | [Options page](specs/frontend.md#options-page) |
+| Controller-page records, defaults, bindable scancodes, Godot key mapping, capture rules and scripted page traces | [Controller page](specs/frontend.md#controller-page) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |
