@@ -1,6 +1,6 @@
 class_name FrontEndAssets
 extends RefCounted
-## English main-menu, level-list and pause text images, resolved by FrogLord names
+## English main-menu, level-select and pause text images, resolved by FrogLord names
 ## and level-select texture records from the player's archive.
 ##
 ## Only the arcade rows are covered: the race rows' screenshots and names live
@@ -16,7 +16,7 @@ const BANKS: PackedStringArray = ["STARTNTSC.VLO", "FIXE_VRAM.VLO", "OPTE_RAM.VL
 const NAMES: PackedStringArray = [
 	"opt_start", "opt_options", "opt_exit", "opt_race", "select_level", "zone_complete",
 	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused",
-	"froglogo", "newfont",
+	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 ]
 ## Level images resolved for every arcade row.
 const LEVEL_IMAGES: Array[LevelImage] = [

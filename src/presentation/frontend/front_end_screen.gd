@@ -1,6 +1,8 @@
 class_name FrontEndScreen
 extends Control
-## Single-player main menu and level list driven by [FrontEndFlow], drawn from the player's menu images.
+## Single-player main menu and 3D level-select stack driven by [FrontEndFlow], drawn from the player's menu images.
+##
+## The stack plays the generic hop and croak sounds unless audio is turned off.
 
 ## The front-end scene.
 const SCENE: String = "res://scenes/front_end.tscn"
@@ -12,20 +14,28 @@ const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 const MARGIN: int = 24
 ## CD track played on the menu pages (LEVEL_SELECT in the music table).
 const MENU_TRACK: int = 13
+## Colour behind the menus and the level-select stack.
+const BACKGROUND_COLOUR: Color = Color(0.04, 0.12, 0.05)
+## FrogLord name of the generic hop sound the level-select stack plays.
+const HOP_SOUND: String = "GEN_FROG_HOP"
+## FrogLord name of the generic croak sound played when a level is started.
+const CROAK_SOUND: String = "GEN_FROG_CROAK"
 
 var page: int = FrontEndPage.Page.MAIN_MENU
 var assets: FrontEndAssets
 
+var _background: ColorRect
 var _content: Control
 var _first_focus: Control
 var _music: MusicPlayer
+var _sounds: Dictionary[String, AudioStreamPlayer] = {}
 
 
 func _ready() -> void:
-	var background := ColorRect.new()
-	background.color = Color(0.04, 0.12, 0.05)
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(background)
+	_background = ColorRect.new()
+	_background.color = BACKGROUND_COLOUR
+	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_background)
 	_content = Control.new()
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_content)
@@ -40,11 +50,14 @@ func _ready() -> void:
 		return
 	assets = FrontEndAssets.from_data(data)
 	var issue: String = assets.error if not assets.error.is_empty() else FrontEndSession.load_progress(data)
+	var audio: bool = not ViewerArguments.has_flag(arguments, GameplayScreen.NO_AUDIO_FLAG)
+	if issue.is_empty() and audio:
+		_load_sounds(data)
 	data.close()
 	if not issue.is_empty():
 		_show_message(issue)
 		return
-	if not ViewerArguments.has_flag(arguments, GameplayScreen.NO_AUDIO_FLAG):
+	if audio:
 		_music = MusicPlayer.new()
 		add_child(_music)
 		var disc: DiscAudio = DiscAudio.locate(arguments, OS.get_environment(DiscAudio.ENVIRONMENT_VARIABLE))
@@ -52,14 +65,6 @@ func _ready() -> void:
 		_music.restart()
 	page = FrontEndSession.start_page
 	_show_page()
-
-
-func _unhandled_key_input(event: InputEvent) -> void:
-	var key: InputEventKey = event as InputEventKey
-	if key == null or not key.pressed or key.echo or key.physical_keycode != KEY_ESCAPE:
-		return
-	if page == FrontEndPage.Page.LEVEL_SELECT and not FrontEndSession.level_chosen:
-		_send(FrontEndFlow.Event.BACK)
 
 
 ## Applies [param event] to the current page and shows the result.
@@ -81,6 +86,7 @@ func _show_page() -> void:
 		_content.remove_child(child)
 		child.queue_free()
 	_first_focus = null
+	_background.visible = page != FrontEndPage.Page.LEVEL_SELECT
 	match page:
 		FrontEndPage.Page.LEVEL_SELECT:
 			_build_level_select()
@@ -113,43 +119,23 @@ func _build_main_menu() -> void:
 
 
 func _build_level_select() -> void:
-	var column := _column()
-	var title := TextureRect.new()
-	title.texture = assets.texture("select_level")
-	title.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	column.add_child(title)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	column.add_child(scroll)
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(list)
-	var progress: LevelProgress = FrontEndSession.progress
-	for index: int in progress.arcade_levels.size():
-		var level: int = progress.arcade_levels[index]
-		var row := HBoxContainer.new()
-		row.alignment = BoxContainer.ALIGNMENT_CENTER
-		list.add_child(row)
-		var open: bool = progress.is_selectable(level)
-		var button := TextureButton.new()
-		button.texture_normal = assets.level_texture(level, FrontEndAssets.LevelImage.STACK_NAME)
-		button.disabled = not open
-		button.modulate = Color.WHITE if open else Color(1, 1, 1, 0.3)
-		button.focus_mode = Control.FOCUS_ALL if open else Control.FOCUS_NONE
-		button.pressed.connect(_select_level.bind(level))
-		row.add_child(button)
-		if progress.is_completed(level):
-			var mark := Label.new()
-			mark.text = "  done"
-			row.add_child(mark)
-		if open and _first_focus == null:
-			_first_focus = button
-	if not FrontEndSession.level_chosen:
-		var back := Button.new()
-		back.text = "Back"
-		back.pressed.connect(_send.bind(FrontEndFlow.Event.BACK))
-		column.add_child(back)
+	var first_time: bool = not FrontEndSession.level_chosen
+	var view := LevelStackView.create(assets, FrontEndSession.stack, FrontEndSession.progress, FrontEndSession.level,
+		first_time, BACKGROUND_COLOUR)
+	view.stack_event.connect(_on_stack_event, CONNECT_DEFERRED)
+	_content.add_child(view)
+
+
+func _on_stack_event(kind: int, level: int) -> void:
+	match kind:
+		StackSelector.EventKind.HOP:
+			_play_sound(HOP_SOUND)
+		StackSelector.EventKind.CROAK:
+			_play_sound(CROAK_SOUND)
+		StackSelector.EventKind.ENTER_GAME:
+			_select_level(level)
+		StackSelector.EventKind.BACK:
+			_send(FrontEndFlow.Event.BACK)
 
 
 func _column() -> VBoxContainer:
@@ -172,6 +158,34 @@ func _image_button(image_name: String, action: Callable) -> TextureButton:
 	button.focus_entered.connect(button.set_modulate.bind(Color(1.0, 1.0, 0.6)))
 	button.focus_exited.connect(button.set_modulate.bind(Color.WHITE))
 	return button
+
+
+func _load_sounds(data: GameData) -> void:
+	var setup: LogicalSoundSetup = LogicalSoundSetup.from_data(data, PackedInt32Array([FroggerIds.THEME_GENERAL]))
+	if not setup.error.is_empty():
+		push_warning("Level-select sounds are unavailable: " + setup.error)
+		return
+	var resources: AudioResources = AudioResources.from_data(data, setup.definitions)
+	SoundVoiceView.ensure_bus(SoundVoiceView.BUS, &"Master")
+	for sound_name: String in [HOP_SOUND, CROAK_SOUND]:
+		var sound_id: int = data.tables.names.sounds.index_of(sound_name) if data.tables.names.sounds != null else -1
+		var definition: LogicalSoundDefinition = resources.definition_for(sound_id)
+		var stream: AudioStreamWAV = resources.stream_for(sound_id) if definition != null else null
+		if stream == null:
+			push_warning("Level-select sound %s (%d) is unavailable" % [sound_name, sound_id])
+			continue
+		var player := AudioStreamPlayer.new()
+		player.stream = stream
+		player.pitch_scale = AudioResources.pitch_scale(definition.note, 0)
+		player.volume_db = SoundVoiceView.mix(AudioResources.fixed_volumes(definition)).x
+		player.bus = SoundVoiceView.BUS
+		add_child(player)
+		_sounds[sound_name] = player
+
+
+func _play_sound(sound_name: String) -> void:
+	if _sounds.has(sound_name):
+		_sounds[sound_name].play()
 
 
 func _show_message(text: String) -> void:

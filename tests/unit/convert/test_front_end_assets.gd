@@ -19,7 +19,8 @@ func test_invalid_data_has_actionable_error() -> void:
 
 func test_names_are_the_english_front_end_set() -> void:
 	for image_name: String in ["opt_start", "opt_options", "opt_exit", "select_level", "zone_complete",
-			"press_fire", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "froglogo", "newfont"]:
+			"press_fire", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "froglogo", "newfont",
+			"select1", "select2", "select5", "sel_loading", "ls_gold_frog"]:
 		assert_has(FrontEndAssets.NAMES, image_name)
 	assert_eq(FrontEndAssets.LEVEL_IMAGES.size(), 4)
 	assert_eq(int(FrontEndAssets.LevelImage.STACK_NAME), 4)

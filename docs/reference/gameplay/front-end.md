@@ -1,10 +1,10 @@
 # Front end: flow, progression and saves
 
-The single-player front end is a main menu and a level list in front of the game
-scene. Menu text, the logo and level names are the player's own images, resolved
-by FrogLord name ([menu assets](#menu-assets)). The 3D level-select stack,
-options page, high scores, attract demos, multiplayer pages, videos and
-languages other than English are not built; see the [roadmap](../../PORTING.md).
+The single-player front end is a main menu and the 3D level-select stack in front
+of the game scene. Menu text, the logo and level names are the player's own images,
+resolved by FrogLord name ([menu assets](#menu-assets)). The options page, high
+scores, attract demos, multiplayer pages, videos and languages other than English
+are not built; see the [roadmap](../../PORTING.md).
 
 ## Page flow
 
@@ -18,6 +18,24 @@ the first level of a game is chosen (`Sel_first_time`).
 
 `FrontEndScreen` shows the menu and list, `GameplayScreen` ends each level with the
 flow's next page, and `FrontEndSession` holds the game across scene changes.
+
+## Level-select stack
+
+`StackLayout` and `StackSelector` (`src/game/frontend/`) hold the frozen
+`SELECT.C` geometry and the 30 Hz page machine: camera slide with chained travel
+over selectable rows, box slide-out, glow, the spin to the level picture and the
+32-tick fade into the game. `LevelStackView` draws the 33 arcade boxes from
+`StackMeshBuilder` with the source camera (perspective 1000 on 640×480) and
+`StackPanel` draws the title, prompt, level name and loading images. The
+[specification](../../../tests/golden/specs/frontend.md#level-select-stack) lists
+the facts and their C lines. Up/Down are held, Enter or Space is Fire, Escape is
+Triangle.
+
+Retail PC runs the glow pulse that the vendored source builds only for PSX, so
+the port does. Not built: the options water background (the checker tiles belong
+to the high-score view), the high-score lines beside the picture (P13d), race
+rows and mouse picking. Gold-frog quads draw slightly in front of the boxes
+rather than on top, and the glow is unverified against retail pictures.
 
 ## Progression
 

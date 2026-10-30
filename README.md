@@ -22,7 +22,9 @@ Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port's 30 Hz target; see the
 [terrain contract](docs/reference/gameplay/terrain-movement.md).
 
-The game opens on the main menu: choose **Start**, then a level from the list;
+The game opens on the main menu: choose **Start**, then a level on the 3D stack
+(Up/Down move, Enter or Space shows the level and then starts it, Escape backs
+out of the picture or, before the first level, to the menu);
 only unlocked levels can be picked, and score, lives and unlocks carry from level
 to level and are saved to `user://progress.cfg`. **Inspection tools** opens the
 older start screen, where a level can be played fresh without the menu. Arrow keys hop; press Shift alone to super-hop in the current facing

@@ -21,8 +21,12 @@ checks. Both test modes, strict compilation and architecture checks pass.
 P13a front-end flow is complete and accepted by the owner's play check: the game opens on a
 main menu and level list ([front end](reference/gameplay/front-end.md)), unlocks
 and score carry between levels, and progress saves to `user://progress.cfg`.
-Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`. The 3D select
-stack, options, high scores and attract cycle are P13b–P13e.
+Launch with `tools/play.sh --scene=res://scenes/front_end.tscn`.
+
+P13b is implemented and awaits the owner's play check: Start opens the 3D
+level-select stack ([front end](reference/gameplay/front-end.md#level-select-stack)),
+with independent layout and motion goldens. Options, high scores and the attract
+cycle are P13c–P13e.
 
 P12 audio playback is implemented and awaits the owner's by-ear check: sound
 effects play from committed voices and music from the disc image

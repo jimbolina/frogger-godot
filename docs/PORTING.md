@@ -28,7 +28,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P11 | Effects and particles | L | By eye against reference pictures | Done; P11a effect signals and resources, P11b frog effects and P11c entity effects complete and accepted by the owner's play check |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Done; sound effects and disc music play from committed voices (owner's by-ear check pending) |
 | P13a | Front-end flow, unlock progression, saves, plain main menu and level list, score and lives carried between levels | M | Independent unlock and flow goldens; owner play check | Done; accepted by the owner's play check |
-| P13b | 3D level-select stack | L | Reference pictures; owner play check | |
+| P13b | 3D level-select stack | L | Independent layout and motion goldens; owner play check | Done; awaits the owner's play check |
 | P13c | Options page, volumes, controller page, languages | L | Reference pictures of the options pages | |
 | P13d | High scores: table view and name entry | L | Flow checklist | |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
