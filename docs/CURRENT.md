@@ -27,7 +27,7 @@ P13b and P13g are complete and accepted by the owner's play check: Start opens
 the 3D level-select stack ([front end](reference/gameplay/front-end.md#level-select-stack))
 over the animated water background.
 
-P13c is implemented and awaits the owner's play check: Options on the main menu
+P13c is complete and accepted by the owner's play check: Options on the main menu
 opens the options page (music and effects volumes) and the controller page
 (rebindable keys), and menu images follow the OS language or `--language=`. See the
 [front end](reference/gameplay/front-end.md#options-page). Retail key defaults now

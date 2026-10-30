@@ -30,7 +30,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P13a | Front-end flow, unlock progression, saves, plain main menu and level list, score and lives carried between levels | M | Independent unlock and flow goldens; owner play check | Done; accepted by the owner's play check |
 | P13b | 3D level-select stack | L | Independent layout and motion goldens; owner play check | Done; accepted by the owner's play check |
 | P13g | Front-end water background: the options water surface and river bed behind the menu and stack pages, a prerequisite of P13c and P13d | S–M | Independent wave and mesh goldens; owner play check | Done; accepted by the owner's play check |
-| P13c | Options page, volumes, controller page, languages | L | Independent options, controller-page and language goldens; reference pictures of the options pages; owner play check | Implemented; awaits the owner's play check |
+| P13c | Options page, volumes, controller page, languages | L | Independent options, controller-page and language goldens; reference pictures of the options pages; owner play check | Done; accepted by the owner's play check |
 | P13d | High scores: table view and name entry | L | Flow checklist | |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
