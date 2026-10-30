@@ -100,3 +100,23 @@ func test_c_croaks_on_its_pressed_edge_like_the_tongue() -> void:
 	assert_eq(held.pressed_mask & TickCommand.CROAK, 0, "a held croak key presses once")
 	_key(KEY_C, false)
 	assert_eq(_screen._held, 0)
+
+func test_front_end_session_offers_next_level_after_completion_and_unlocks_it() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.progress.arcade_flags[1] = 0
+	FrontEndSession.store = null
+	FrontEndSession.active = true
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(24)
+	var finished: GameplayState = _screen.run.snapshot()
+	finished.completed = true
+	finished.flow.phase = LevelFlowState.Phase.COMPLETE
+	var result := TickResult.new()
+	result.final_snapshot = finished
+	_screen._accept(result)
+	FrontEndSession.active = false
+	assert_true(_screen._advance.visible)
+	assert_eq(_screen._advance.text, "Next level")
+	assert_true(FrontEndSession.progress.is_selectable(25))

@@ -249,6 +249,7 @@ func _accept(result: TickResult) -> void:
 	if _current.completed:
 		playing = false
 		reset_interpolation()
+		_finish_front_end_level()
 		if recorder != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE:
 			var issue: String = recorder.save(_current.tick_index)
 			if not issue.is_empty():
