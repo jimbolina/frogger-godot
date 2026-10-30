@@ -74,6 +74,8 @@ var _music: int = START_MUSIC
 var _effects: int = START_SOUND
 var _fly_on: int = FLY_ON_TIME
 var _fly_off: int = 0
+var _flying_on: int = FLY_ON_TIME
+var _flying_off: int = 0
 var _camera: int = Camera.OPTIONS
 var _camera_timer: int = FLY_ON_TIME
 var _request: int = Request.NONE
@@ -122,6 +124,14 @@ var fly_on: int:
 var fly_off: int:
 	get:
 		return _fly_off
+## The fly-on counter as HSUpdateFlying left it on the last tick, before that tick's input.
+var flying_on: int:
+	get:
+		return _flying_on
+## The fly-off counter as HSUpdateFlying left it on the last tick, before that tick's input.
+var flying_off: int:
+	get:
+		return _flying_off
 ## The [enum Camera] the options camera is sweeping to.
 var camera: int:
 	get:
@@ -249,6 +259,8 @@ func step(buttons: Buttons, frame: int) -> PackedInt32Array:
 		if _fly_off == 0:
 			_finished = true
 			events.append(EventKind.LEAVE)
+	_flying_on = _fly_on
+	_flying_off = _fly_off
 	_music_glow = GLOW_IDLE
 	_effects_glow = GLOW_IDLE
 	_update_frog(buttons, events)

@@ -279,8 +279,8 @@ def document():
             'row_identities': 'retail OptionsUpdate was not disassembled; the port puts exit, view high scores and '
                               'controller config on the three titled lilies top to bottom, as the vendored enum '
                               'orders them with load/save removed',
-            'volume_log': 'retail draws one log on the fourth lily and it is not known whether it is music or '
-                          'effects; the port shows two volume rows, music then effects',
+            'volume_log': 'retail draws one log on the fourth lily with the effects model (OPT_SFX) beside it, so '
+                          'its volume row is the effects volume; the port shows two volume rows, music then effects',
             'port_rows': port_rows(True),
             'port_rows_without_scores': port_rows(False),
             'port_lily_z': '0x2c0 - row * 0x200 over the shown rows; with the scores row hidden it is the retail '

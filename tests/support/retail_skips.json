@@ -117,5 +117,7 @@
   "res://tests/golden/test_retail_frontend_progress.gd::test_constants_and_initial_flags_match_select_level_init": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_frontend_progress.gd::test_completing_every_level_in_stack_order": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_frontend_progress.gd::test_replaying_a_level_through_both_unlock_arms": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_frontend_progress.gd::test_gold_frogs_open_closed_worlds_in_stack_order": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_frontend_progress.gd::test_gold_frogs_open_closed_worlds_in_stack_order": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_options_models.gd::test_every_options_model_and_image_loads": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_options_models.gd::test_page_places_and_animates_the_models": "SKIP: FROGGER_DATA_DIR is not set"
 }

@@ -77,13 +77,27 @@ The options page also saves on leaving, which retail does not.
 Options on the main menu opens `OptionsMenu` (`src/game/frontend/`), the 30 Hz
 state machine of retail's four-lily page: exit, controller configuration and the
 volume logs. The port shows two logs, music then effects, where retail has one
-(which of the two it is was never decoded), and hides the high-score row until P13d.
+(its effects log: the effects model stands beside it), and hides the high-score
+row until P13d.
 Left/Right step a volume by one, clamped 0..8; both levels are `127·step/8`
 (`AudioLevels`), the music on the Music bus and the effects through
 `SoundVoiceView.effect_volume`. Menu keys are fixed and the bindings do not apply.
-The page draws flat stand-ins for the `OPTIONS.WAD` lily, log and frog models:
-discs, a frog disc and bars of eight cels. The unselected glow is 0x20 as the C
-sets it, not the 0x60 the retail pictures might suggest. The
+
+`OptionsScene` places the page as the C does each tick: every model, title and
+the frog sit on the front-end water's wave surface for the frame being drawn,
+drop onto it during the fly-on and slide away from x 0 during the fly-off.
+`OptionsModels` (`src/convert/`) loads the models by FrogLord name from
+`OPTIONSH.WAD`: `OPT_LILLYPAD_BLANK` lilies, `HI_LOG` volume logs whose 64
+animated polygons show each stage blank, full or half, the spinning `OPT_MUSIC`
+and `OPT_SFX` volume models beside them (glowing `(frame & 7) << 5` while selected,
+0x20 otherwise) and the `OPT_STAT_BULLRUSH`/`OPT_STAT_LILLY` extras, plus the
+`GEN_FROG` frog. The frog hops with `GEN_FROG_HOP`, lands into `WAIT1`, dances
+(`DANCE`) on the music row and pants (`PANT2`) on the effects row while the volume
+is above 0, and croaks `OUCH` on fire; a ripple splash marks each landing and its
+jump shadow lies on the water. The titles are 3D sprites over their lilies with
+flat subtracted reflections; models and sprites take the options viewport's
+lights. The unselected glow is 0x20 as the C sets it, not the 0x60 the retail
+pictures might suggest. The
 [specification](../../../tests/golden/specs/frontend.md) lists the facts and their C lines.
 
 ## Controller page

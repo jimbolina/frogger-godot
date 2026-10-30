@@ -1,6 +1,6 @@
 extends GutTest
 ## The options view steps its menu at 30 Hz from fixed menu keys, sweeps the shared camera and
-## draws the frog between lilies without changing committed state.
+## places the frog between lilies without changing committed state.
 
 
 func _view(rig: OptionsCamera = OptionsCamera.new()) -> OptionsView:
@@ -48,29 +48,32 @@ func test_camera_sweeps_to_the_options_preset_and_events_are_raised() -> void:
 	assert_true(view.menu.jumping)
 
 
-func test_frog_is_drawn_between_lilies_while_hopping() -> void:
+func test_frog_is_placed_between_lilies_while_hopping() -> void:
 	var view: OptionsView = _view()
 	_idle(view, OptionsMenu.FLY_ON_TIME)
 	view.tick(OptionsMenu.Buttons.new(OptionsMenu.Buttons.DOWN))
 	_idle(view, 6)
-	view.render(1.0)
-	var z: float = view._drawn.frog.z
-	assert_lt(z, float(OptionsMenu.lily_z(0)))
-	assert_gt(z, float(OptionsMenu.lily_z(1)))
-	assert_lt(view._drawn.frog.y, 0.0, "the hop lifts the frog")
+	var z: int = view.scene.frog[11]
+	assert_lt(z, OptionsMenu.lily_z(0))
+	assert_gt(z, OptionsMenu.lily_z(1))
+	assert_lt(view.scene.frog[10], view.scene.lilies[1][10], "the hop lifts the frog above the water")
 	_idle(view, 6)
-	view.render(1.0)
-	assert_eq(view._drawn.frog.z, float(OptionsMenu.lily_z(1)))
+	assert_eq(view.scene.frog[11], view.scene.lilies[1][11])
 	assert_eq(view.menu.row_kind, OptionsMenu.Row.CONTROLS)
 
 
-func test_fly_on_drops_models_onto_the_water() -> void:
-	var view: OptionsView = _view()
-	assert_eq(view._drawn.lilies[0].y, float(OptionsMenu.FLY_ON_HEIGHT))
+func test_fly_on_drops_models_onto_the_water_the_view_draws() -> void:
+	var animation: MenuWater = MenuWater.create(7)
+	var view: OptionsView = OptionsView.create(FrontEndAssets.new(), animation, OptionsCamera.new(), 3, 5)
+	autofree(view)
+	assert_eq(view.scene.lilies[0][10], OptionsMenu.FLY_ON_HEIGHT)
 	_idle(view, OptionsMenu.FLY_ON_TIME)
-	view.render(1.0)
-	assert_eq(view._drawn.lilies[0].y, 0.0)
-	assert_eq(view._drawn.logs.size(), view.menu.rows().size())
+	assert_eq(animation.frame_count, 7 + OptionsMenu.FLY_ON_TIME, "the view drives the water one frame a tick")
+	assert_eq(view.scene.frame, animation.frame_count, "models sit on the heights being drawn")
+	var lily: PackedInt32Array = view.scene.lilies[0]
+	assert_eq(lily[10], OptionsScene.surface_height(lily[9], lily[11], animation.frame_count))
+	assert_eq(view.scene.logs.size(), 2, "music and effects logs")
+	assert_eq(view.model_instances().size(), 0, "no models without player data")
 
 
 func test_projection_centres_the_camera_target() -> void:

@@ -41,7 +41,7 @@ func test_only_reviewed_retail_script_skips_get_exit_three() -> void:
 
 func test_manifest_is_exact_and_matches_current_retail_tests() -> void:
 	var manifest: Dictionary = Policy.approved_skips()
-	assert_eq(manifest.size(), 119, "Review each newly allowed retail identity")
+	assert_eq(manifest.size(), 121, "Review each newly allowed retail identity")
 	var discovered: Dictionary = {}
 	for file: String in DirAccess.get_files_at("res://tests/golden"):
 		if not file.begins_with("test_retail") or file.get_extension() != "gd":

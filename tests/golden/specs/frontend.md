@@ -554,8 +554,10 @@ Rules replayed (`tempopt.c`, `HSView.c`):
 - Retail's `OptionsUpdate` switch was not disassembled, so the row identities
   are undecoded. The port puts exit, view high scores and controller config
   on the titled lilies top to bottom, the vendored order without load/save.
-- Retail draws one log, and whether it is music or effects is undecoded. The
-  port shows two volume rows, music then effects, at `0x2c0 - row * 0x200`.
+- Retail draws one log, with the effects model beside it
+  ([model retail notes](#model-retail-notes)), so its volume row is the
+  effects volume. The port shows two volume rows, music then effects, at
+  `0x2c0 - row * 0x200`.
   With the high-score row hidden (until P13d) the four rows sit exactly on
   retail's lilies.
 - The idle ambient is 0x20 (`tempopt.c:4617-4622`); no retail measurement
@@ -569,6 +571,118 @@ For the C cross-checks, copy the C folder, change `OPTIONS_SOUND_STAGES` in
 `tempopt.h` and pass the copy as `--c-reference`. For the flow rows, change
 the controller row's `next` in `frontend_flow.json`, or its cited line in a
 copied `tempopt.c`, and run `make_golden_frontend.py --check`.
+
+## Options page models
+
+A second generator transcribes where the options page draws its models
+(`OptionsStartup`, `OptionsUpdate` and `OptionsUpdateFrog`, `tempopt.c:4295-5067`;
+`HSGetWaterSurfaceInfoFromXZ` and `HSProjectMatricesOntoWaterSurface`,
+`HSView.c:2697-2800`; the frog jump shadow tables, `FROG.C:136-179`; the
+options viewport lights, `options.c:446-454`) and replays scripted input
+through the [options page](#options-page) model over the port's rows:
+
+```sh
+python3 tools/make_golden_options_models.py           # write synthetic/frontend_options_models.json
+python3 tools/make_golden_options_models.py --check   # diff against the committed file, exit 1 on change
+```
+
+It needs Python 3's standard library only and reads no retail data.
+`--c-reference` works as for the other generators. The cross-checks compare
+`Options_extras_coords` and `Options_extras_resource_id`, the shadow-texture
+ABR, title and reflection sprite settings, the frog's start action, update
+period and croak-sack scale, the prompt start, each model transform and
+projection call, the volume-model spin, the shadow projection, every frog
+action change, the hop and landing statements, the splash sprite, the fly-off
+frog shift, the shadow phase, `High_score_splash_animlist`,
+`High_score_log_animated_poly_indices`, the surface and projection statements,
+the `HIGH_SCORE_VIEW_WAVE_*`/`WATER_*` defines, the three shadow tables,
+the light creation and FrogLord's `GEN_FROG` action list with the C text.
+
+### Models file (`synthetic/frontend_options_models.json`)
+
+Units are PSX world units, Y down; a matrix is nine row-major 4.12 rotation
+values and the translation. Keys:
+
+- `constants`: model scales (lilies 0x1600, logs 0x1300 after the half turn
+  about X, titles 0x1000/0x1400/0x1000, extras 0x1800, frog 0x1400 on its
+  lily's matrix), the volume-model tilt 0x400 and spin `vp_frame_count << 8`,
+  the title x rule, the volume-model offset from its log (x 0x400, z -0xc0),
+  the 3D sprite scale 10 << 16, the title raise -0x40, the reflection offset
+  0x48, colour 0x40, ABR 2 and OT offset 0x10, the splash OT offset -8, the
+  prompt start 76 (y = 480 - te_h + offset), the slope step 0x100, the frog's
+  update period 2, start action and croak-sack scale 0x200, and the log's
+  animated-poly indices.
+- `extras`: the vendored seven extras, retail's six (the effects model then
+  five statics, measured from the retail executable's extras tables) with
+  retail's log z, and the five statics the port draws.
+- `lights`: ambient 0x606060 and the parallel light 0xa0a0c0 (red in the
+  low byte) whose frame at (0x800, -0x1000, -0x1000) points at the origin.
+- `shadow`: the four corner tables, the phase-to-table map and the phase
+  images.
+- `splash_list`: the landing splash animation list.
+- `actions`: FrogLord's `GEN_FROG` action names in index order.
+- `log_poly_cels`: the cel of the log's 64 animated polys for steps 0-8.
+- `surface`: water heights and normalised x and z slopes at sample points
+  and frame counts.
+- `scenarios`: `name`, `description`, the [options page](#options-page)
+  scenario fields, `title_widths` (te_w by row) and `trace`. Trace row 0 is
+  `OptionsStartup`; each later row is the state after that tick with the
+  viewport `frame`: the `lilies`, `titles`, `logs`, `volume_models` and
+  `extras` matrices, the `frog` matrix and 16.16 `frog_position`, the
+  `frog_direction`, the frog `action`, whether the tick set it
+  (`action_set`), `looping` (one-shot cleared), the lilies given a splash,
+  `prompt_offset`, and the `shadow`'s visibility, phase, whether its corners
+  were set onto the water, and its four corners.
+
+| Scenario | Covers |
+|---|---|
+| `fly_on_hop_and_music` | fly-on, hops with their lift and splashes, DANCE on Right from 0 and on landing on music above 0, one-shot at 0, PANT2 on effects, OUCH on fire, the back fly-off |
+| `scores_row_and_controls_fly_off` | three titles with the logs below at the same pitch, a hop each way, the controls fly-off sliding models away from x 0 and the frog left |
+
+Rules replayed (`tempopt.c`, `HSView.c`):
+
+- **Surface** (`HSView.c:2697-2737`): from the water's first vertex,
+  `tx = dx * 0x2000 / (14 * 0x240) + t * 0x60` and `tz` likewise with 16 and
+  0x80; the height is the summed sines at amplitudes 0x40 and 0x50 shifted by
+  12; each slope samples 0x100 further and is normalised.
+- **Projection** (`HSView.c:2760-2800`): while fly-on runs (after
+  `HSUpdateFlying`) y falls 0xa0, stopping at the water, and sits on it once
+  fly-on ends; while fly-off runs x moves 0x100 away from 0 (positive at 0).
+  The axes are the x slope, the normalised `z slope x x slope` and
+  `x x y`, written as columns, then the model transform times them.
+- **Frog** (`tempopt.c:4878-5060`): stationary, it takes its lily's y and its
+  rotation times 0x1400, turned half about Y when facing south (the start).
+  A hop aims at the new lily's position after this tick's projection, with
+  velocities `(target << 16 - position) / 12`; each hop tick moves the line
+  y toward the lily, adds the lift and steps x and z; landing snaps to the
+  lily, sets WAIT1 and a splash. The fly-off moves it 0x100 left. The matrix
+  translation is the 16.16 position shifted by 16.
+- **Actions**: WAIT2 one-shot at start; HOP on a hop; WAIT1 on landing, then
+  DANCE looping on music above 0; Right from 0 starts PANT2 (effects) or DANCE
+  (music) looping; Left to 0 sets one-shot; fire croaks with OUCH, back does
+  not (`tempopt.c:4646`).
+- **Shadow**: hidden while fly-on runs; phase `((12 - count) * 6) / 12`
+  clamped to 0-5 while hopping, else 0; corners are the frog matrix applied to
+  the phase's offsets, set onto the water unless a page request was pending
+  before the tick.
+
+### Model retail notes
+
+- Retail draws one log and one volume model; its extras tables (high and low
+  resource ids, then coordinates) hold `OPT_SFX` at (0x400, -0x400) and the
+  five statics, so retail's volume row is the effects volume. The port keeps
+  both rows; each volume model sits 0xc0 nearer than its log, which puts the
+  effects model on retail's position in the four-row layout.
+- Retail picks the high or `_WIN95` twin by the `0x0049476C` flag (KF-096,
+  KF-110); the port draws the high-poly `OPTIONSH.WAD` models.
+
+### Deliberate break
+
+Change one `lilies` value in a trace row, or `log_poly_cels[3][0]`, and run
+`make_golden_options_models.py --check` (exit 1, one-line diff), then restore
+it. For the C cross-checks, copy the C folder, change
+`High_score_log_animated_poly_indices` in `HSView.c` and pass the copy as
+`--c-reference`.
 
 ## Controller page
 

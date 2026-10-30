@@ -43,8 +43,11 @@ var error: String = ""
 var language: int = GameLanguage.Id.ENGLISH
 ## English fallbacks taken for a missing language bank or localized image.
 var diagnostics: PackedStringArray = PackedStringArray()
+## The loaded banks, for drawing [method image_record] images as sprites; empty when loading failed.
+var texture_library: TextureLibrary = TextureLibrary.new()
 
 var _textures: Dictionary[String, Texture2D] = {}
+var _images: Dictionary[String, VloImage] = {}
 var _source_names: Dictionary[String, String] = {}
 var _level_textures: Dictionary[Vector2i, Texture2D] = {}
 
@@ -87,6 +90,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 			return result
 		library.add_bank(bank, bank_name)
 	var textures: Dictionary[String, Texture2D] = {}
+	var images: Dictionary[String, VloImage] = {}
 	var source_names: Dictionary[String, String] = {}
 	for image_name: String in NAMES:
 		var drawn_name: String = GameLanguage.image_name(image_name, result.language, data.tables.names.images)
@@ -95,6 +99,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 			var localized_image: Texture2D = library.texture_for_id(localized)
 			if localized_image != null:
 				textures[image_name] = localized_image
+				images[image_name] = library.image_for_id(localized)
 				source_names[image_name] = drawn_name
 				continue
 			result.diagnostics.append("%s image %s (texture %d) is missing; using %s" % [
@@ -105,6 +110,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 			result.error = "Front-end image %s (texture %d) is missing from the supplied banks" % [image_name, identity]
 			return result
 		textures[image_name] = image
+		images[image_name] = library.image_for_id(identity)
 		source_names[image_name] = image_name
 	for image_name: String in WATER_NAMES:
 		var identity: int = data.tables.names.images.index_of(image_name)
@@ -130,6 +136,8 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 				return result
 			level_textures[Vector2i(row.level, kind)] = image
 	result._textures = textures
+	result._images = images
+	result.texture_library = library
 	result._source_names = source_names
 	result._level_textures = level_textures
 	return result
@@ -138,6 +146,11 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 ## The image called [param image_name] (one of [constant NAMES] or [constant WATER_NAMES]), or null.
 func texture(image_name: String) -> Texture2D:
 	return _textures.get(image_name, null)
+
+
+## The texture record drawn for [param image_name] (one of [constant NAMES]), or null.
+func image_record(image_name: String) -> VloImage:
+	return _images.get(image_name, null)
 
 
 ## The FrogLord name drawn for English [param image_name] in this language, or "" when not loaded.

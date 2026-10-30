@@ -168,6 +168,27 @@ func set_texture_cel(cel: int) -> void:
 			_texture_durations[part_index][target_index] = 0
 
 
+## Sets animated polygon [param index] to cel [param cel] of its texture list, numbering the
+## animated polygons over the parts in order as MRMeshAnimatedPolySetCel does; false when there
+## is no such polygon or it cannot animate.
+func set_animated_poly_cel(index: int, cel: int) -> bool:
+	if _model == null or index < 0:
+		return false
+	var remaining: int = index
+	for part_index: int in _model.parts.size():
+		var part: MofPart = _model.parts[part_index]
+		if remaining >= part.texture_targets.size():
+			remaining -= part.texture_targets.size()
+			continue
+		if _texture_entries[part_index][remaining] < 0:
+			return false
+		var animation: MofPart.TextureAnimation = part.texture_lists[part.texture_targets[remaining].list_index]
+		_texture_entries[part_index][remaining] = clampi(cel, 0, animation.image_ids.size() - 1)
+		_texture_durations[part_index][remaining] = 0
+		return true
+	return false
+
+
 ## Resets all instance clocks and performs the first update, producing tick zero.
 func restart() -> void:
 	if _model == null:

@@ -38,6 +38,8 @@ const OPTIONS_SOUNDS: PackedStringArray = [HOP_SOUND, SPLASH_SOUND, HOP_SOUND, C
 
 var page: int = FrontEndPage.Page.MAIN_MENU
 var assets: FrontEndAssets
+## The options page's models, frog, sprite images and lights.
+var options_models: OptionsModels
 ## The water animation shared by the pages, its frame count starting when the screen opens.
 var water: MenuWater = MenuWater.create()
 ## The options camera shared by the main menu, options and controller pages.
@@ -77,7 +79,12 @@ func _ready() -> void:
 	assets = FrontEndAssets.from_data(data, session_language(arguments))
 	if issue.is_empty():
 		issue = assets.error
+	if issue.is_empty():
+		options_models = OptionsModels.from_data(data)
+		issue = options_models.error
 	FrontEndSession.diagnostics.append_array(assets.diagnostics)
+	if options_models != null:
+		FrontEndSession.diagnostics.append_array(options_models.diagnostics)
 	var audio: bool = not ViewerArguments.has_flag(arguments, GameplayScreen.NO_AUDIO_FLAG)
 	if issue.is_empty() and audio:
 		_load_sounds(data)
@@ -193,7 +200,7 @@ func _build_level_select() -> void:
 
 func _build_options() -> void:
 	_options = OptionsView.create(assets, water, camera_rig, FrontEndSession.music_volume, FrontEndSession.sound_volume,
-		_options_row)
+		_options_row, false, options_models)
 	_options.menu_event.connect(_on_options_event, CONNECT_DEFERRED)
 	_content.add_child(_options)
 
