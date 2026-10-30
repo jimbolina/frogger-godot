@@ -86,8 +86,8 @@ stage with no checkpoints and stays with P16 together with the end-of-game
 sequence frozen C runs after JUN1; the port shows the level-complete flow
 there. JUN3–JUN5 have no maps and JUNM is multiplayer.
 
-P9f Swamp is complete and awaits the owner's play check of SWP1–SWP5. They
-admit through whole-map setup with typed acid squirts, wall crushers, presses,
+P9f Swamp is complete and SWP1–SWP5 are accepted by the owner's play check.
+They admit through whole-map setup with typed acid squirts, wall crushers, presses,
 rats, slugs, nuclear barrels and the weir, the Swamp branch of the crusher
 callback, register payloads for the nuclear and bobbing waste barrels, and
 frozen `LOCAL_ALIGN` path alignment for the generic movers that carry it.

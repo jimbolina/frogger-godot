@@ -1,6 +1,6 @@
 # Current checkpoint
 
-P9f Swamp is implemented and awaits the owner's play check of SWP1–SWP5. The
+P9f Swamp is complete; SWP1–SWP5 passed the owner's play check. The
 dedicated game scene opens independent ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3,
 CAV1/CAV3/CAV4, DES1–DES5, JUN1 and SWP1–SWP5 sessions with the original-style
 English HUD from player assets. See [controls](../README.md), [roadmap](PORTING.md)

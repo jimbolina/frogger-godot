@@ -2,7 +2,8 @@
 
 ## Required commit gate
 
-Run both modes before every commit, including documentation changes.
+Run both modes before every commit that touches code, tests, goldens, tools or
+project configuration; documentation-only commits need no run.
 Use the wrappers: they import, strictly compile every script, check architecture,
 validate retail input, run GUT, then verify the saved result report against the
 log and process exit.

@@ -38,8 +38,10 @@ Delegate independent implementation, investigation and review to Opus
 sub-agents without asking again, with clear scopes and file ownership and no
 overlapping edits; the orchestrator integrates and verifies the whole result.
 
-Before every commit, run both retail and asset-free modes using
-`tools/run_tests.ps1` or `tools/run_tests.sh`. Read [testing](docs/reference/testing/README.md)
+Before every commit that touches code, tests, goldens, tools or project
+configuration, run both retail and asset-free modes using
+`tools/run_tests.ps1` or `tools/run_tests.sh`; documentation-only commits
+need no run. Read [testing](docs/reference/testing/README.md)
 for commands and process safety.
 Retail requires all tests passing without skips; asset-free allows only named
 retail skips (exit 3). Strict script compilation is required.
