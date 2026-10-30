@@ -104,6 +104,22 @@ func test_target_outside_the_grid_is_an_explicit_error() -> void:
 	state.frog.cell = Vector2i(1, 0)
 	assert_string_contains(FormCallback.crusher_bounce_back(_grid(), state, 8), "outside authored storage")
 
+func test_fly_score_callback_applies_the_reward_and_reports_it() -> void:
+	var frog := Frog.new()
+	frog.grid = _grid()
+	while frog.rewards.size() < 9:
+		frog.rewards.append(RewardDefinition.new())
+	frog.rewards[8].flags = RewardDefinition.SCORE
+	frog.rewards[8].value = 200
+	var state: GameplayState = _state(FrogMode.JUMPING, 2)
+	var events: Array[TickEvent] = []
+	assert_eq(FormCallback.apply(FormCallback.Kind.ORG_FLY_SCORE, frog, state, 7, events), "")
+	assert_eq(state.flow.score, 200)
+	assert_eq(events.size(), 1)
+	assert_eq(events[0].kind, TickEvent.Kind.REWARD)
+	assert_eq(events[0].reward_id, 8)
+	assert_eq(events[0].entity_index, 7)
+
 func test_apply_dispatches_without_the_active_guard() -> void:
 	var frog := Frog.new()
 	frog.grid = _grid()

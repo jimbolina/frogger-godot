@@ -25,7 +25,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | Done; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle, P9f Swamp and P9g Sky complete; every playable level accepted by the owner |
-| P11 | Effects and particles | L | By eye against reference pictures | In progress; P11a effect signals and resources done, P11b frog effects and P11c entity effects pending |
+| P11 | Effects and particles | L | By eye against reference pictures | In progress; P11a effect signals and resources and P11b frog effects done, P11c entity effects pending |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Metadata and logical voice timing implemented; audio playback pending |
 | P13 | Front end, level select, options, saves, high scores | XL | A flow checklist; reference pictures of the options pages | Largest remaining block, about 17,000 lines of C |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -120,10 +120,14 @@ tints and the croak light swell, emits splash and croak signals, and resolves
 particle hilites per entity model, the executable's particle generator
 records, splash animation lists, pop colours and effect images, with the
 synthetic and retail families in the [effects specification](../tests/golden/specs/effects.md).
-P11b draws the frog's shadow, hop trail, slide, bubble and fire particles,
-death ring, splash, tints and score popups; P11c draws entity shadows,
-poly-piece pops, the gold-frog glow, entity splashes, exhaust, cloud, smoke
-and fire sprites and the croak throat scale with its key.
+P11b is complete: the frog's shadow, hop trail, slide, bubble and fire
+particles, death ring, splash ripple, tints and score popups draw from
+committed state and events through the rule classes in `src/convert/effects/`
+and the views in `src/presentation/effects/`, matched to the synthetic
+families; the poly-piece conversion and pop rule are in place for P11c, which
+draws entity shadows, poly-piece pops, the gold-frog glow, entity splashes,
+exhaust, cloud, smoke and fire sprites and the croak throat scale with its
+key. See the [effects reference](reference/rendering/effects.md).
 
 Each level is accepted when the owner plays it in the game scene and confirms it
 looks and plays well; recorded replays are not required. The thirteen keyboard

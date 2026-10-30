@@ -54,6 +54,8 @@ static func advance(frog: Frog, state: GameplayState, entities: EntityRun, event
 			if definition.bonus_kind != FormCallback.Kind.NONE:
 				issue = FormCallback.apply(definition.bonus_kind, frog, state, target_index, events)
 			elif definition.pickup_reward != null:
+				if definition.pickup_type >= 0 and definition.pickup_type < EntityBonusFly.REWARD_IDS.size():
+					events.append(TickEvent.reward(EntityBonusFly.REWARD_IDS[definition.pickup_type]).for_entity(target_index))
 				issue = GameplayRewards.apply(definition.pickup_reward, state, events, frog.random)
 			else:
 				issue = "Tongue collection requires a verified bonus callback or pickup reward"

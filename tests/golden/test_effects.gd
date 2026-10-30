@@ -1,9 +1,10 @@
 extends GutTest
-## Frog tint, croak timeline and C particle generator constants against tests/golden/synthetic/effects.json.
+## Frog tint, croak timeline, C particle generator constants and the frog effect rules against tests/golden/synthetic/effects.json.
 ##
-## The shadow, trail, poly-piece, splash, pop ring, score popup and glow
-## families describe presentation the port does not evaluate yet, so this
-## script has no tests for them.
+## The shadow, trail, splash, pop ring and score popup families run through
+## the presentation rule classes; shadow heights depend on a level grid, so
+## the cases check the height rules, not values. The poly-piece, splash
+## offset and glow families belong to other scripts.
 
 var _facts: Dictionary = {}
 
@@ -180,3 +181,258 @@ func test_generator_parameters_match_the_c_constant_fallback() -> void:
 				symbols.append(symbol)
 		assert_eq(record.texture_kind, kind, generator_name + " texture source")
 		assert_eq(record.texture_symbols, symbols, generator_name + " textures")
+
+func _matrix(rotation_value: Variant, translation: Vector3i) -> PackedInt32Array:
+	var matrix := PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, translation.x, translation.y, translation.z])
+	if rotation_value is Array:
+		var rotation: Array = rotation_value
+		for index: int in 9:
+			matrix[index] = _int(rotation[index])
+	return matrix
+
+func _offsets(value: Variant) -> Array[Vector3i]:
+	var result: Array[Vector3i] = []
+	var rows: Array = value
+	for row: Variant in rows:
+		result.append(_vector(row))
+	return result
+
+func _pairs_xz(points: Array[Vector3i]) -> Array:
+	var result: Array = []
+	for point: Vector3i in points:
+		result.append([PlatformMath.s16(point.x), PlatformMath.s16(point.z)])
+	return result
+
+func _ints(value: Variant) -> Array:
+	var result: Array = []
+	var values: Array = value
+	for item: Variant in values:
+		result.append(_int(item) if not item is Array else _ints(item))
+	return result
+
+func test_frog_shadow_phase_matches_independent_facts() -> void:
+	var cases: Array = _facts["frog_shadow_phase"]
+	assert_gt(cases.size(), 0)
+	for index: int in cases.size():
+		var case: Dictionary = cases[index]
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var mode: int = FrogMode.JUMPING if input["mode"] == "jumping" else FrogMode.STATIONARY
+		var flags: int = 0
+		var superjump: bool = input["superjump"]
+		if superjump:
+			flags |= FrogFlags.SUPERJUMP
+		if input.get("on_spot", false):
+			flags |= FrogFlags.JUMP_ON_SPOT
+		var label: String = "shadow phase %d" % index
+		var jump_phase: int = FrogShadowGeometry.phase(mode, flags, _int(input["fr_count"]))
+		assert_eq(jump_phase, _int(expected["count"]), label + " count")
+		assert_eq(FrogShadowGeometry.PHASE_TABLES[jump_phase] + 1, _int(expected["offsets_table"]), label + " table")
+		assert_eq(FrogShadowGeometry.phase_offsets(jump_phase), _offsets(expected["offsets"]), label + " offsets")
+		var texture: String = expected["texture"]
+		assert_eq(FrogShadowGeometry.PHASE_TEXTURES[jump_phase], texture, label + " texture")
+
+func test_frog_shadow_layout_matches_independent_facts() -> void:
+	_check_shadow_family("frog_shadow")
+
+func test_shadow_split_matches_independent_facts() -> void:
+	_check_shadow_family("shadow_split")
+
+func _check_shadow_family(family: String) -> void:
+	var cases: Array = _facts[family]
+	assert_gt(cases.size(), 0)
+	assert_eq(FrogShadowView.DEPTH_BIAS, -2.0 * FrogShadowGeometry.OT_OFFSET, "four slots nearer")
+	for index: int in cases.size():
+		var case: Dictionary = cases[index]
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var label: String = "%s %d %s" % [family, index, input["name"]]
+		var translation: Vector3i = _vector(input["translation"])
+		var no_rotation: bool = input["no_rotation"]
+		var base: Array = input["grid_base"]
+		var texture: Dictionary = input["texture_uv"]
+		var uv := FrogShadowGeometry.TextureUv.new()
+		uv.u = PackedInt32Array([_int(texture["u0"]), _int(texture["u1"]), _int(texture["u2"]), _int(texture["u3"])])
+		uv.v = PackedInt32Array([_int(texture["v0"]), _int(texture["v1"]), _int(texture["v2"]), _int(texture["v3"])])
+		uv.h = _int(texture["h"])
+		var shape: FrogShadowGeometry.Layout = FrogShadowGeometry.layout(_offsets(input["offsets"]), translation, _matrix(input["rotation"], translation), no_rotation, Vector2i(_int(base[0]), _int(base[1])), uv)
+		if no_rotation:
+			var reordered: bool = expected["reordered"]
+			assert_true(expected["quadrant"] == null, label + " quadrant")
+			assert_eq(shape.reordered, reordered, label + " reordered")
+		else:
+			assert_true(expected["reordered"] == null, label + " reordered")
+			assert_eq(shape.quadrant, _int(expected["quadrant"]), label + " quadrant")
+		assert_eq(_pairs_xz(shape.corners), _ints(expected["corners"]), label + " corners")
+		var split: bool = expected["split"]
+		assert_eq(shape.split, split, label + " split")
+		if split:
+			var alignment: String = expected["alignment"]
+			assert_eq(shape.alignment, alignment, label + " alignment")
+		else:
+			assert_true(expected["alignment"] == null, label + " alignment")
+		var polys: Array = expected["polys"]
+		assert_eq(shape.polys.size(), polys.size(), label + " poly count")
+		for poly: int in mini(polys.size(), shape.polys.size()):
+			var points: Array = polys[poly]
+			for corner: int in 4:
+				var point: FrogShadowGeometry.Point = shape.polys[poly][corner]
+				var want: Dictionary = points[corner]
+				var rule: String = want["height"]
+				assert_eq([point.x, point.z, point.height_rule()], [_int(want["x"]), _int(want["z"]), rule], "%s poly %d corner %d" % [label, poly, corner])
+		var uvs: Array = []
+		for poly: Array in shape.uvs:
+			var corners: Array = []
+			for texel: Vector2i in poly:
+				corners.append([texel.x, texel.y])
+			uvs.append(corners)
+		assert_eq(uvs, _ints(expected["uv"]), label + " uv")
+		if expected.has("split_v"):
+			assert_eq(shape.split_v, _int(expected["split_v"]), label + " split v")
+		var name: String = input["name"]
+		var texture_symbol: String = expected["texture"]
+		if name.begins_with("phase"):
+			assert_eq(FrogShadowGeometry.PHASE_TEXTURES[name.substr(5).to_int()], texture_symbol, label + " texture")
+		elif no_rotation:
+			assert_eq(FrogShadowGeometry.NO_ROTATION_TEXTURE, texture_symbol, label + " texture")
+		assert_eq([FrogShadowGeometry.GREY, FrogShadowGeometry.GREY, FrogShadowGeometry.GREY], _ints(expected["rgb"]), label + " rgb")
+		assert_eq(FrogShadowGeometry.OT_OFFSET, _int(expected["ot_offset"]), label + " ot offset")
+		var semi_transparent: bool = expected["semi_transparent"]
+		assert_true(semi_transparent, label + " semi-transparent")
+
+func test_hop_trail_matches_independent_facts() -> void:
+	var cases: Array = _facts["hop_trail"]
+	assert_gt(cases.size(), 0)
+	for case: Dictionary in cases:
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var label: String = input["name"]
+		assert_eq(HopTrailState.SECTIONS, _int(expected["sections"]), label + " sections")
+		assert_eq(HopTrailState.OFFSETS, _offsets(expected["offsets"]), label + " offsets")
+		var hops: Dictionary = {}
+		var hop_list: Array = input["hops"]
+		for hop: Dictionary in hop_list:
+			hops[_int(hop["tick"])] = hop["super"]
+		var translations: Array = input["translations"]
+		var rows: Array = expected["rows"]
+		var trail := HopTrailState.new()
+		for tick: int in translations.size():
+			if hops.has(tick):
+				var superjump: bool = hops[tick]
+				trail.start(superjump)
+			trail.step(_matrix(input["rotation"], _vector(translations[tick])))
+			var row: Dictionary = rows[tick]
+			var at: String = "%s tick %d" % [label, tick]
+			var rgb: Vector3i = HopTrailState.bytes(trail.rgb)
+			var drawn: bool = row["drawn"]
+			assert_eq([trail.timer, [rgb.x, rgb.y, rgb.z], trail.display_sections, trail.current_section, trail.drawn()],
+				[_int(row["timer"]), _ints(row["rgb"]), _int(row["display_sections"]), _int(row["current_section"]), drawn], at)
+			if not trail.drawn():
+				continue
+			var colours: Array = []
+			for colour: int in trail.section_colours():
+				var bytes: Vector3i = HopTrailState.bytes(colour)
+				colours.append([bytes.x, bytes.y, bytes.z])
+			assert_eq(colours, _ints(row["section_rgb"]), at + " section colours")
+			var pairs: Array = []
+			for pair: Array in trail.pairs():
+				var points: Array = []
+				for point: Vector3i in pair:
+					points.append([point.x, point.y, point.z])
+				pairs.append(points)
+			assert_eq(pairs, _ints(row["pairs"]), at + " pairs")
+
+func test_splash_timeline_matches_independent_facts() -> void:
+	var cases: Array = _facts["splash_timeline"]
+	assert_gt(cases.size(), 0)
+	for case: Dictionary in cases:
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var label: String = input["list"]
+		var listed: Array = []
+		for command: SplashTimeline.Command in SplashTimeline.splash_list():
+			var entry: Array = [SplashTimeline.OP_NAMES[command.op]]
+			if command.op == SplashTimeline.Op.SETIMAGE:
+				entry.append(command.image)
+			elif command.op != SplashTimeline.Op.NOP and command.op != SplashTimeline.Op.KILL:
+				entry.append(command.value)
+			listed.append(entry)
+		var animlist: Array = expected["animlist"]
+		var wanted: Array = []
+		for entry: Array in animlist:
+			var wanted_entry: Array = [entry[0]]
+			if entry.size() >= 2:
+				wanted_entry.append(entry[1] if entry[1] is String else _int(entry[1]))
+			wanted.append(wanted_entry)
+		assert_eq(listed, wanted, label + " list")
+		var timeline := SplashTimeline.new()
+		var initial: Array = expected["initial_rgb"]
+		var start_rgb: Vector3i = timeline.rgb()
+		assert_eq([timeline.scale, [start_rgb.x, start_rgb.y, start_rgb.z]], [_int(expected["initial_scale"]), _ints(initial)], label + " initial")
+		var killed_at: int = -1
+		var rows: Array = expected["rows"]
+		for row: Dictionary in rows:
+			timeline.update()
+			var tick: int = _int(row["tick"])
+			var image: String = "" if row["image"] == null else str(row["image"])
+			var executed: Array = row["executed"]
+			var killed: bool = row["killed"]
+			var rgb: Vector3i = timeline.rgb()
+			assert_eq([Array(timeline.executed), timeline.image, timeline.scale, [rgb.x, rgb.y, rgb.z], timeline.speed, timeline.count, timeline.killed],
+				[executed, image, _int(row["scale"]), _ints(row["rgb"]), _int(row["speed"]), _int(row["count"]), killed], "%s update %d" % [label, tick])
+			if timeline.killed and killed_at < 0:
+				killed_at = tick
+		assert_eq(killed_at, _int(expected["kill_update"]), label + " kill update")
+
+func test_pop_ring_matches_independent_facts() -> void:
+	var cases: Array = _facts["pop_ring"]
+	assert_gt(cases.size(), 0)
+	for case: Dictionary in cases:
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var colour: int = _int(input["colour"])
+		var label: String = "pop ring player %d" % _int(input["player"])
+		var projection: Dictionary = expected["projection"]
+		assert_eq([PopRingGeometry.DURATION, PopRingGeometry.SYSTEM_PERSPECTIVE], [_int(expected["duration"]), _int(projection["z"])], label + " constants")
+		var ring := PopRingGeometry.new(colour)
+		var rows: Array = expected["rows"]
+		for row: Dictionary in rows:
+			ring.step()
+			var life: int = _int(row["life"])
+			assert_eq(ring.life, life, label + " life")
+			var shape: PopRingGeometry.Frame = ring.frame(_int(row["game_timer"]))
+			var outer: Array = []
+			for point: Vector2i in shape.outer:
+				outer.append([point.x, point.y])
+			var inner: Array = []
+			for point: Vector2i in shape.inner:
+				inner.append([point.x, point.y])
+			assert_eq([shape.scale, shape.angle, shape.cosine, shape.sine, outer, inner, [shape.outer_rgb.x, shape.outer_rgb.y, shape.outer_rgb.z], [shape.inner_rgb.x, shape.inner_rgb.y, shape.inner_rgb.z]],
+				[_int(row["scale"]), _int(row["angle"]), _int(row["cos"]), _int(row["sin"]), _ints(row["outer"]), _ints(row["inner"]), _ints(row["outer_rgb"]), _ints(row["inner_rgb"])], "%s life %d" % [label, life])
+		ring.step()
+		assert_false(ring.drawn(), label + " ends at life 0")
+
+func test_score_popup_matches_independent_facts() -> void:
+	var cases: Array = _facts["score_popup"]
+	assert_gt(cases.size(), 0)
+	for case: Dictionary in cases:
+		var input: Dictionary = case["input"]
+		var expected: Dictionary = case["expected"]
+		var start := Vector2i(_int(input["x"]), _int(input["y"]))
+		var label: String = "score popup %s" % start
+		var popup := ScorePopupState.new(1, start)
+		var start_rgb: Array = expected["start_rgb"]
+		assert_eq([popup.timer, popup.grey], [_int(expected["lifetime"]), _int(start_rgb[0])], label + " start")
+		var killed_at: int = -1
+		var rows: Array = expected["rows"]
+		for row: Dictionary in rows:
+			popup.update()
+			var tick: int = _int(row["tick"])
+			var at: String = "%s update %d" % [label, tick]
+			var killed: bool = row["killed"]
+			assert_eq([popup.timer, popup.killed], [_int(row["timer"]), killed], at)
+			if popup.killed:
+				killed_at = tick if killed_at < 0 else killed_at
+				continue
+			assert_eq([popup.y_16, [popup.screen().x, popup.screen().y], [popup.grey, popup.grey, popup.grey]], [_int(row["y_16"]), _ints(row["screen"]), _ints(row["rgb"])], at)
+		assert_eq(killed_at, _int(expected["kill_update"]), label + " kill update")

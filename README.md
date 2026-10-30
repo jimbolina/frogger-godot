@@ -47,9 +47,11 @@ the level completes, the held keys of every tick are written as a replay fixture
 to `user://playthroughs/<level>_keyboard_playthrough.json` (the completion message
 shows the absolute path; `--record-inputs=<file>` chooses another). The capture
 launcher replays such files through real key events with per-tick parity checks;
-recording is optional regression material, not a requirement. The HUD uses the player's English retail UI
-assets. Full menus, progression between levels, saves, audio playback and
-decorative particles remain future work. Forest bee swarms are visible gameplay hazards.
+recording is optional diagnostic material, not a requirement. The HUD uses the player's English retail UI
+assets. The frog's shadow, hop trail, slide, bubble and fire particles, death
+ring, splash, drowning tints and score popups are drawn from the player's
+data; entity particles, pops and glows follow. Full menus, progression between
+levels, saves and audio playback remain future work. Forest bee swarms are visible gameplay hazards.
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.

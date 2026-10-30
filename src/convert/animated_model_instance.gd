@@ -3,6 +3,10 @@ extends Node3D
 ## Draws a player's integer pose with reusable meshes and optional motion interpolation.
 ## The owner advances the player at the game tick rate, then renders between ticks.
 
+## Unlit tint baseline: the options-screen ambient and parallel light bytes, summing to 4096 after the << 4.
+const TINT_AMBIENT: float = 0x60
+const TINT_PARALLEL: float = 0xA0
+
 ## The player supplying transforms, flipbook cels and texture entries.
 var player: ModelAnimationPlayer
 ## Resources built once for this instance.
@@ -38,6 +42,12 @@ var _sampled_frame: int = -1
 var _sampled_action: int = -1
 var _geometry_constant: bool = true
 var _rendered_weight: float = -1.0
+var _tinted: bool = false
+var _tint_light: Vector3 = Vector3.ZERO
+var _tint_flags: int = 0
+var _tint_scale: Vector3i = Vector3i.ZERO
+var _tint_ambient: Vector3i = Vector3i.ZERO
+var _part_scales: Dictionary[int, float] = {}
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -52,6 +62,9 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 	_materials.clear()
 	_rendered_weight = -1.0
 	_lighting = null
+	_tinted = false
+	_tint_flags = 0
+	_part_scales.clear()
 	model_mesh = mesh
 	if mesh.morph_meshes.is_empty():
 		mesh.morph_meshes.resize(mesh.part_meshes.size())
@@ -104,6 +117,72 @@ func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector
 	if first_lighting:
 		refresh_materials()
 
+## Applies committed source mesh colour scaling and custom ambient to an otherwise unlit model.
+##
+## [param flags] holds [constant FrogTint.CUSTOM_AMBIENT] and
+## [constant FrogTint.SCALED_COLOURS]. Without either flag the model draws
+## exactly as before: its own polygon colours. With them, instance-local
+## materials light every vertex by [method tint_light], an approximation that
+## keeps the directional map lights off; it is meant for models drawn without
+## [method set_source_lighting].
+func set_tint(scale: Vector3i, ambient: Vector3i, flags: int) -> void:
+	flags &= FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS
+	if flags == 0 and not _tinted:
+		return
+	if flags == _tint_flags and scale == _tint_scale and ambient == _tint_ambient and _tinted:
+		return
+	_tint_flags = flags
+	_tint_scale = scale
+	_tint_ambient = ambient
+	_tint_light = tint_light(scale, ambient, flags)
+	if not _tinted:
+		_tinted = true
+		_prepare_materials()
+		for original: ShaderMaterial in _materials:
+			_apply_tint(_materials[original])
+		refresh_materials()
+		return
+	for original: ShaderMaterial in _materials:
+		_apply_tint(_materials[original])
+
+
+## Per-channel light, 4096 being unlit, for a tint of [param scale] and
+## [param ambient] bytes under [param flags]. The unlit model is taken as the
+## options-screen split of ambient 0x60 plus one parallel light 0xA0 (together
+## 4096); a custom ambient replaces the 0x60 part, and a colour scale
+## multiplies both by scale / 128, as the source colour matrix does.
+static func tint_light(scale: Vector3i, ambient: Vector3i, flags: int) -> Vector3:
+	if flags & (FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS) == 0:
+		return Vector3(4096.0, 4096.0, 4096.0)
+	var multiplier: Vector3 = Vector3(scale) / 128.0 if flags & FrogTint.SCALED_COLOURS else Vector3.ONE
+	var base: Vector3 = Vector3(ambient) if flags & FrogTint.CUSTOM_AMBIENT else Vector3(TINT_AMBIENT, TINT_AMBIENT, TINT_AMBIENT)
+	var parallel := Vector3(TINT_PARALLEL, TINT_PARALLEL, TINT_PARALLEL)
+	return ((base * multiplier).floor() + (parallel * multiplier).floor()) * 16.0
+
+
+## Scales part [param part] by [param scale] in its own space after its pose, as a source imported part transform does.
+func set_part_scale(part: int, scale: float) -> void:
+	if _part_scales.get(part, 1.0) == scale and (_part_scales.has(part) or scale == 1.0):
+		return
+	_part_scales[part] = scale
+	_rendered_weight = -1.0
+
+
+## Removes every part scale override.
+func clear_part_scales() -> void:
+	if _part_scales.is_empty():
+		return
+	_part_scales.clear()
+	_rendered_weight = -1.0
+
+
+func _apply_tint(material: ShaderMaterial) -> void:
+	material.set_shader_parameter("source_lighting", _tint_flags != 0)
+	material.set_shader_parameter("source_ambient", _tint_light)
+	for index: int in 3:
+		material.set_shader_parameter("source_colour%d" % index, Vector3.ZERO)
+
+
 func _prepare_materials() -> void:
 	for mesh: ArrayMesh in model_mesh.part_meshes:
 		if mesh != null:
@@ -120,12 +199,14 @@ func _prepare_material(original: ShaderMaterial) -> void:
 		_materials[original] = original.duplicate() as ShaderMaterial
 
 func _material(original: ShaderMaterial, local: bool = false) -> ShaderMaterial:
-	if (_lighting == null and not local) or original == null:
+	if (_lighting == null and not _tinted and not local) or original == null:
 		return original
 	if not _materials.has(original):
 		_materials[original] = original.duplicate() as ShaderMaterial
 		if _lighting != null:
 			_update_lighting(_materials[original], original)
+		elif _tinted:
+			_apply_tint(_materials[original])
 	var projection: Variant = original.get_shader_parameter("projection_scale")
 	if _materials[original].get_shader_parameter("projection_scale") != projection:
 		_materials[original].set_shader_parameter("projection_scale", projection)
@@ -218,6 +299,9 @@ func render(fraction: float) -> void:
 				before.basis.y.lerp(now.basis.y, weight), before.basis.z.lerp(now.basis.z, weight)), before.origin.lerp(now.origin, weight))
 		else:
 			node.transform = before.interpolate_with(now, weight)
+		if _part_scales.has(index):
+			var posed: Transform3D = node.transform
+			node.transform = Transform3D(posed.basis * Basis.from_scale(Vector3.ONE * _part_scales[index]), posed.origin)
 		if node.mesh != null:
 			var current_cel: int = _current.partcels[index] if index < _current.partcels.size() else 0
 			var previous_cel: int = _previous.partcels[index] if _previous != null and index < _previous.partcels.size() else current_cel
@@ -260,7 +344,7 @@ func refresh_materials(textures_only: bool = false) -> void:
 		if mesh == null:
 			continue
 		var overrides: Dictionary[int, ShaderMaterial] = {}
-		if (_lighting != null or model_mesh.morph_meshes[index] != null) and not textures_only:
+		if (_lighting != null or _tinted or model_mesh.morph_meshes[index] != null) and not textures_only:
 			for surface: int in mesh.get_surface_count():
 				overrides[surface] = mesh.surface_get_material(surface) as ShaderMaterial
 		if index < model_mesh.texture_tracks.size():

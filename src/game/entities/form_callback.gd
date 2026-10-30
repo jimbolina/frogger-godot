@@ -32,10 +32,12 @@ static func apply(kind: Kind, frog: Frog, state: GameplayState, entity_index: in
 		state.frog.flags |= FrogFlags.JUMP_FROM_COLLPRIM
 		return ""
 	if kind == Kind.ORG_FLY_SCORE:
+		events.append(TickEvent.reward(8).for_entity(entity_index))
 		return GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
 	if kind == Kind.CAV_FIREFLY_SCORE:
 		if state.entity_environment == null:
 			return "Firefly callback requires the shared entity environment"
+		events.append(TickEvent.reward(8).for_entity(entity_index))
 		var issue: String = GameplayRewards.apply(frog.rewards[8], state, events, frog.random)
 		if not issue.is_empty():
 			return issue

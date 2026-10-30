@@ -80,6 +80,9 @@ func open_data(data: GameData, code: String, take_ownership: bool = false) -> St
 		_frog_model.queue_free()
 		_frog_model = null
 	build_map(scene_data)
+	var effect_issue: String = _hud.configure_effects(scene_data.effects)
+	if not effect_issue.is_empty():
+		scene_data.diagnostics.append(effect_issue)
 	build_frog(assets)
 	var issue: String = restart()
 	if not issue.is_empty():
@@ -107,6 +110,7 @@ func _detach_game() -> void:
 	_previous = null
 	playing = false
 	_clear_entity_visuals()
+	collapse_effects()
 	if _frog_model != null:
 		remove_child(_frog_model)
 		_frog_model.queue_free()
@@ -142,6 +146,7 @@ func open_run(definition: LevelDefinition, start: RunStart, origins: EntityModel
 	if not replacement.error.is_empty():
 		return _show_error(replacement.error)
 	_definition = definition
+	set_effect_grid(definition.grid)
 	run = replacement
 	_host.open(run)
 	_held = 0
@@ -206,7 +211,7 @@ func _accept(result: TickResult) -> void:
 		_show_error(result.error)
 		reset_interpolation()
 		return
-	accept_state(result.final_snapshot)
+	accept_state(result.final_snapshot, result.events)
 	_host.render_elapsed = 0.0
 	if _current.completed:
 		playing = false

@@ -6,6 +6,8 @@ extends Node3D
 ## enters the global one at origin depth plus FROG_GLOBAL_OT_OFFSET (-0x30, FROG.H)
 ## before the otz shift (FROG.C, MR_ANIM.C).
 const FROG_DEPTH_BIAS: float = 48.0
+## Frog generator kinds by Frog_particle_effects slot.
+const FROG_PARTICLE_KINDS: Array[ParticleField.Kind] = [ParticleField.Kind.FROG_SLIDE, ParticleField.Kind.FROG_BUBBLE, ParticleField.Kind.FROG_FIRE]
 
 var playing: bool = false
 var smoothing: bool = false:
@@ -39,6 +41,22 @@ var _entity_generations: Array[int] = []
 var _entity_pose_tick: int = -1
 var _entity_lighting: MapLighting = null
 var _motion := TerrainMotion.new()
+## Level grid that supplies shadow heights; null leaves shadows off.
+var effect_grid: GridDefinition = null
+var _shadow_view: FrogShadowView
+var _trail_view: HopTrailView
+var _particle_view: ParticleSpriteView
+var _pop_view: PopRingView
+var _splash_view: SplashView
+var _effects: EffectResources = null
+var _trail := HopTrailState.new()
+var _fields: Array[ParticleField] = []
+var _frog_field: ParticleField = null
+var _rings: Array[PopRingGeometry] = []
+var _splashes: Array[SplashView.Splash] = []
+var _effect_tick: int = -1
+var _effect_drawn_tick: int = -1
+var _tint_tick: int = -1
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -87,7 +105,11 @@ func draw_state(fraction: float) -> void:
 			player.frame = _current.animation.cel
 			_frog_model.capture_pose(not playing)
 			_frog_pose_tick = _current.tick_index
+		if _tint_tick != _current.tick_index:
+			_frog_model.set_tint(_current.frog.colour_scale, _current.frog.custom_ambient, _current.frog.tint_flags)
+			_tint_tick = _current.tick_index
 		_frog_model.render(weight)
+	_draw_effects(frog_transform, weight)
 	if _current.camera != null:
 		_camera.transform = _motion.camera(weight)
 	if _map_instance != null:
@@ -150,6 +172,16 @@ func build_world() -> void:
 	_overlay_view = EntityOverlayModelView.new()
 	_overlay_view.smoothing = smoothing
 	add_child(_overlay_view)
+	_shadow_view = FrogShadowView.new()
+	add_child(_shadow_view)
+	_trail_view = HopTrailView.new()
+	add_child(_trail_view)
+	_particle_view = ParticleSpriteView.new()
+	add_child(_particle_view)
+	_splash_view = SplashView.new()
+	add_child(_splash_view)
+	_pop_view = PopRingView.new()
+	add_child(_pop_view)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -378,6 +410,8 @@ func _update_projection() -> void:
 		_placeholder_view.set_projection_scale(scale)
 	if _tongue_view != null:
 		_tongue_view.set_projection_scale(scale)
+	if _shadow_view != null:
+		_set_effect_projection(scale)
 	if _map_instance != null:
 		_map_instance.set_projection_scale(scale)
 	if frog_assets != null and frog_assets.mesh != null:
@@ -433,6 +467,7 @@ func _apply_frog_depth_bias() -> void:
 func build_frog(assets: TerrainFrogAssets) -> void:
 	frog_assets = assets
 	_apply_frog_depth_bias()
+	_tint_tick = -1
 	_frog_model = AnimatedModelInstance.new()
 	add_child(_frog_model)
 	_frog_model.setup(frog_assets.mesh, frog_assets.player)
@@ -448,8 +483,10 @@ func build_frog(assets: TerrainFrogAssets) -> void:
 		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
 	_frog.visible = false
 
-## Captures a committed state and reconciles authored entity lifetimes.
-func accept_state(state: GameplayState) -> void:
+## Captures a committed state and reconciles authored entity lifetimes; the
+## tick's [param events] start and stop presentation effects.
+func accept_state(state: GameplayState, events: Array[TickEvent] = []) -> void:
+	var fresh: bool = _current == null
 	_previous = _current if _current != null else state
 	_current = state
 	var created: PackedInt32Array = _sync_entity_models()
@@ -457,6 +494,194 @@ func accept_state(state: GameplayState) -> void:
 		if _entity_models[slot] != null and not created.has(slot):
 			_entity_models[slot].player.advance_tick()
 	_motion.capture(_previous, _current)
+	if fresh:
+		collapse_effects()
+	if state != null and state.tick_index != _effect_tick:
+		_step_effects(_previous, state, events)
+		_effect_tick = state.tick_index
+
+## Supplies the level grid that shadows read heights from.
+func set_effect_grid(grid: GridDefinition) -> void:
+	effect_grid = grid
+	if _shadow_view != null:
+		_shadow_view.set_grid(grid)
+
+## Forgets every running effect: trail, particles, pop rings and splashes.
+func collapse_effects() -> void:
+	_trail.collapse()
+	_fields.clear()
+	_frog_field = null
+	_rings.clear()
+	_splashes.clear()
+	_effect_tick = -1
+	_effect_drawn_tick = -1
+	_tint_tick = -1
+	if _shadow_view != null:
+		_shadow_view.draw_shadows([])
+		_trail_view.clear()
+		_particle_view.draw_fields([], null, 1.0)
+		_pop_view.clear()
+		_splash_view.draw_splashes([])
+
+## Live particle fields, the frog's first.
+func effect_fields() -> Array[ParticleField]:
+	return _fields
+
+## Live pop rings.
+func effect_rings() -> Array[PopRingGeometry]:
+	return _rings
+
+## Live splashes.
+func effect_splashes() -> Array[SplashView.Splash]:
+	return _splashes
+
+## The frog's trail.
+func effect_trail() -> HopTrailState:
+	return _trail
+
+## Canvas point of game point [param at] on the 640x480 game view of [param camera].
+static func canvas_point(camera: GameplayCameraSnapshot, at: Vector3i) -> Vector2i:
+	var relative := Vector3(at - camera.source_world)
+	var depth: float = relative.dot(Vector3(camera.axis_z_12)) / 4096.0
+	if depth <= 0.0:
+		return Vector2i(-0x8000, -0x8000)
+	var right: float = relative.dot(Vector3(camera.axis_x_12)) / 4096.0
+	var down: float = relative.dot(Vector3(camera.axis_y_12)) / 4096.0
+	return Vector2i(floori(320.0 + EffectSpriteMaterial.FOCAL_X * right / depth), floori(240.0 + EffectSpriteMaterial.FOCAL_Y * down / depth))
+
+## True when game point [param at] lies in front of [param camera].
+static func in_front_of(camera: GameplayCameraSnapshot, at: Vector3i) -> bool:
+	return Vector3(at - camera.source_world).dot(Vector3(camera.axis_z_12)) > 0.0
+
+func _configure_effects(scene_data: MapSceneData) -> void:
+	collapse_effects()
+	_effects = scene_data.effects if scene_data != null else null
+	if _shadow_view == null:
+		return
+	var issues := PackedStringArray()
+	var shadow_symbols := PackedStringArray(["im_frog_shadow0", "im_frog_shadow1", "im_frog_shadow2", FrogShadowGeometry.NO_ROTATION_TEXTURE])
+	issues.append(_shadow_view.configure(scene_data, effect_grid, shadow_symbols))
+	var names := PackedStringArray()
+	if _effects != null and _effects.generators != null:
+		for generator_name: String in _effects.generators.frog_particle_single:
+			if not generator_name.is_empty():
+				names.append(generator_name)
+	issues.append(_particle_view.configure(scene_data, names))
+	issues.append(_splash_view.configure(scene_data))
+	_set_effect_projection(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	if scene_data != null:
+		for issue: String in issues:
+			if not issue.is_empty():
+				scene_data.diagnostics.append(issue)
+
+func _set_effect_projection(scale: Vector2) -> void:
+	_shadow_view.set_projection_scale(scale)
+	_trail_view.set_projection_scale(scale)
+	_particle_view.set_projection_scale(scale)
+	_pop_view.set_projection_scale(scale)
+	_splash_view.set_projection_scale(scale)
+
+func _step_effects(before: GameplayState, after: GameplayState, events: Array[TickEvent]) -> void:
+	var collected_before: int = before.entity_environment.collected if before.entity_environment != null else 0
+	var collected_after: int = after.entity_environment.collected if after.entity_environment != null else 0
+	if collected_after & ~collected_before:
+		_kill_frog_field(-1)
+	for event: TickEvent in events:
+		match event.kind:
+			TickEvent.Kind.SUPER_HOP:
+				_trail.start(true)
+			TickEvent.Kind.HOP, TickEvent.Kind.QUICK_HOP, TickEvent.Kind.AUTO_HOP, TickEvent.Kind.ROLL:
+				_trail.start(false)
+			TickEvent.Kind.SLIDE_PARTICLES_REQUEST:
+				_start_frog_field(0, after.tick_index)
+			TickEvent.Kind.SLIDE_PARTICLES_STOP:
+				if _frog_field != null and _frog_field.kind == ParticleField.Kind.FROG_SLIDE:
+					_kill_frog_field(-1)
+			TickEvent.Kind.DEATH_FIRE_PARTICLE_REQUEST:
+				_kill_frog_field(ParticleField.KILL_WHEN_FROG_DEAD)
+				_start_frog_field(2, after.tick_index)
+			TickEvent.Kind.DEATH_ANIMATION:
+				_kill_frog_field(ParticleField.KILL_WHEN_FROG_DEAD)
+				_rings.append(PopRingGeometry.new(_pop_colour()))
+			TickEvent.Kind.SPLASH:
+				_splashes.append(SplashView.Splash.new(event.position))
+				if event.entity_index < 0 and after.frog.death_equate == FrogAnimationCatalog.DROWN:
+					_start_frog_field(1, after.tick_index)
+			TickEvent.Kind.LEVEL_TRANSITION:
+				if event.flow_phase == LevelFlowState.Phase.PLAY:
+					_kill_frog_field(ParticleField.KILL_WHEN_FROG_RESET)
+					_trail.collapse()
+	var frog: FrogState = after.frog
+	_trail.step(frog.matrix12)
+	var fields: Array[ParticleField] = []
+	for field: ParticleField in _fields:
+		field.step(frog.matrix12, frog.velocity_16 != Vector3i.ZERO)
+		if not field.finished:
+			fields.append(field)
+	_fields = fields
+	if _frog_field != null and _frog_field.finished:
+		_frog_field = null
+	var rings: Array[PopRingGeometry] = []
+	for ring: PopRingGeometry in _rings:
+		ring.step()
+		if ring.drawn():
+			rings.append(ring)
+	_rings = rings
+	var splashes: Array[SplashView.Splash] = []
+	for splash: SplashView.Splash in _splashes:
+		splash.timeline.update()
+		if not splash.timeline.killed:
+			splashes.append(splash)
+	_splashes = splashes
+
+func _start_frog_field(slot: int, tick: int) -> void:
+	if (_frog_field != null and not _frog_field.finished) or _effects == null or _effects.generators == null:
+		return
+	var generators: ExeParticleGenerators = _effects.generators
+	if slot >= generators.frog_particle_single.size() or generators.frog_particle_single[slot].is_empty():
+		return
+	var record: ParticleGeneratorRecord = generators.find(generators.frog_particle_single[slot])
+	if record == null:
+		return
+	var flags: int = generators.frog_particle_flags[slot] if slot < generators.frog_particle_flags.size() else 0
+	_frog_field = ParticleField.new(FROG_PARTICLE_KINDS[slot], record, flags, hash([tick, slot]))
+	_fields.push_front(_frog_field)
+
+func _kill_frog_field(flags: int) -> void:
+	if _frog_field == null:
+		return
+	if flags >= 0 and not _frog_field.kill_flags & flags:
+		return
+	_frog_field.kill()
+	_fields.erase(_frog_field)
+	_frog_field = null
+
+func _pop_colour() -> int:
+	if _effects != null and _effects.generators != null and not _effects.generators.pop_colours.is_empty():
+		return _effects.generators.pop_colours[0]
+	return ExeParticleGenerators.C_POP_COLOURS[0]
+
+func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
+	if _shadow_view == null:
+		return
+	var requests: Array[FrogShadowView.Request] = []
+	if effect_grid != null and not FrogShadowGeometry.hidden(_current):
+		var request := FrogShadowView.Request.new()
+		var frog: FrogState = _current.frog
+		var jump_phase: int = FrogShadowGeometry.phase(frog.mode, frog.flags, frog.remaining_ticks)
+		request.matrix12 = frog.matrix12
+		request.translation = GameSpace.to_game(frog_transform.origin)
+		request.offsets = FrogShadowGeometry.phase_offsets(jump_phase)
+		request.symbol = FrogShadowGeometry.PHASE_TEXTURES[jump_phase]
+		requests.append(request)
+	_shadow_view.draw_shadows(requests)
+	_particle_view.draw_fields(_fields, _current.camera, weight)
+	var origin: Vector3 = Vector3(frog_transform.origin.x, -frog_transform.origin.y, -frog_transform.origin.z) * GameSpace.UNITS_PER_SQUARE
+	_pop_view.draw_rings(_rings, origin, _current.camera, _current.game_timer)
+	if _effect_drawn_tick != _current.tick_index:
+		_trail_view.draw_trail(_trail)
+		_splash_view.draw_splashes(_splashes)
+		_effect_drawn_tick = _current.tick_index
 
 ## Instantiates a decoded map without advancing simulation.
 func build_map(scene_data: MapSceneData) -> void:
@@ -467,3 +692,4 @@ func build_map(scene_data: MapSceneData) -> void:
 	_map_instance = MapMeshBuilder.new().build(scene_data).create_instance()
 	_ground.add_child(_map_instance)
 	_map_instance.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	_configure_effects(scene_data)

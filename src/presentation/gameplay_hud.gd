@@ -3,6 +3,11 @@ extends Control
 ## Source-style single-player HUD drawn exclusively from committed simulation snapshots.
 
 const CANVAS: Vector2 = Vector2(640, 480)
+## Score_library slots of the hop, checkpoint and gold frog awards.
+const SCORE_SUPER_HOP: int = 1
+const SCORE_ROLL: int = 3
+const SCORE_CHECKPOINT: int = 9
+const SCORE_GOLD_FROG: int = 10
 var assets: GameplayHudAssets
 var _state: GameplayState
 var _tick: int = 0
@@ -13,6 +18,7 @@ var _help_seen: Dictionary[String, bool] = {}
 var _rewards: Array[RewardDefinition] = []
 var _panels: GameplayHudInk
 var _letters: GameplayHudInk
+var _score_popups: ScorePopupView
 
 ## Releases the previous level's display values and decoded UI textures.
 func clear() -> void:
@@ -22,6 +28,8 @@ func clear() -> void:
 	_help_seen.clear()
 	_help_text = ""
 	_gold_tick = -1
+	if _score_popups != null:
+		_score_popups.release()
 	if _panels != null:
 		_panels.hide()
 		_letters.hide()
@@ -42,12 +50,23 @@ func configure(data: GameData) -> String:
 	queue_redraw()
 	return assets.error
 
+## Prepares the level's score sprite images; returns diagnostics for missing images.
+func configure_effects(effects: EffectResources) -> String:
+	return _popup_view().configure(effects)
+
+## The score sprite layer drawn over the HUD.
+func score_popups() -> ScorePopupView:
+	return _popup_view()
+
 ## Copies committed display values without advancing any gameplay clock.
 func present(state: GameplayState, tick: int, events: Array[TickEvent] = []) -> void:
 	if _state == null or tick < _tick:
 		_help_tick = -100
 		_help_text = ""
 		_help_seen.clear()
+		_popup_view().clear()
+	if _state != null and tick > _tick:
+		_present_score_sprites(state, events)
 	if _state != null and state.tongue.mode != TongueState.Mode.IDLE and _state.tongue.mode == TongueState.Mode.IDLE:
 		_help("TONGUE", tick, false, true)
 	for event: TickEvent in events:
@@ -69,6 +88,45 @@ func present(state: GameplayState, tick: int, events: Array[TickEvent] = []) -> 
 	_state = state.copy(false)
 	_tick = tick
 	queue_redraw()
+
+## Score_library slots AddFrogScore receives this tick: the tick's reward
+## requests, the hop scores (SCORE_10 for a super jump, SCORE_50 for a quick
+## jump or roll; SCORE_5 has no image), each newly collected checkpoint
+## (SCORE_500) and the gold frog (SCORE_1000).
+static func score_slots(before: GameplayState, after: GameplayState, events: Array[TickEvent]) -> PackedInt32Array:
+	var slots := PackedInt32Array()
+	for event: TickEvent in events:
+		match event.kind:
+			TickEvent.Kind.REWARD:
+				slots.append(event.reward_id)
+			TickEvent.Kind.SUPER_HOP:
+				slots.append(SCORE_SUPER_HOP)
+			TickEvent.Kind.QUICK_HOP, TickEvent.Kind.ROLL:
+				slots.append(SCORE_ROLL)
+	var collected_before: int = before.entity_environment.collected if before.entity_environment != null else 0
+	var collected_after: int = after.entity_environment.collected if after.entity_environment != null else 0
+	for checkpoint: int in 5:
+		if collected_after & ~collected_before & (1 << checkpoint):
+			slots.append(SCORE_CHECKPOINT)
+	if after.flow.gold_collected and not before.flow.gold_collected:
+		slots.append(SCORE_GOLD_FROG)
+	return slots
+
+func _present_score_sprites(state: GameplayState, events: Array[TickEvent]) -> void:
+	var popups: ScorePopupView = _popup_view()
+	if state.camera != null:
+		var at := Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11])
+		for slot: int in score_slots(_state, state, events):
+			if popups.has_image(slot) and GameplayWorldView.in_front_of(state.camera, at):
+				popups.spawn(slot, GameplayWorldView.canvas_point(state.camera, at))
+	popups.step()
+
+func _popup_view() -> ScorePopupView:
+	if _score_popups == null:
+		_score_popups = ScorePopupView.new()
+		_score_popups.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_score_popups)
+	return _score_popups
 
 ## Source spare-life grouping: each large icon represents three spare lives.
 static func life_icons(lives: int) -> Vector2i:
@@ -102,11 +160,15 @@ func _draw() -> void:
 		_letters = GameplayHudInk.new()
 		_letters.configure(CanvasItemMaterial.BLEND_MODE_MIX)
 		add_child(_letters)
+		move_child(_popup_view(), -1)
 	for ink: GameplayHudInk in [_panels, _letters]:
 		ink.show()
 		ink.position = (size - CANVAS * factor) * 0.5
 		ink.scale = Vector2.ONE * factor
 		ink.queue_redraw()
+	var popups: ScorePopupView = _popup_view()
+	popups.position = (size - CANVAS * factor) * 0.5
+	popups.scale = Vector2.ONE * factor
 	_letters.font_texture = assets.textures.get("newfont")
 	_letters.glyphs.clear()
 	draw_set_transform((size - CANVAS * factor) * 0.5, 0.0, Vector2.ONE * factor)

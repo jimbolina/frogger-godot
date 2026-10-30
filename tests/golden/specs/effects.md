@@ -270,10 +270,10 @@ records from the supplied executable and follows them, as it does every other
 table; the C constants are only the fallback when a build's records cannot
 be located, and the retail test pins the `c_differences` column.
 
-`test_effects` covers `generator_parameters`, `frog_tint` and
-`croak_timeline`; the other synthetic families gain their tests with the
-presentation rules that consume them (P11b and P11c), and their deliberate
-breaks are checked then.
+`test_effects` covers every synthetic family except `poly_piece_pop`, which
+`test_effects_pieces` checks through `PolyPiecePopState`, and `splash_offsets`,
+`gold_glow` and `pickup_glow`, whose tests land with the entity effect views
+(P11c).
 
 `test_retail_effects` compares the port's decoded hilites, generator
 records, effect texture ids, score library and pop colours with these rows.

@@ -129,8 +129,8 @@ mask rather than maintaining a second progress value.
 
 P10 uses English UI assets. It does not yet read the options-language texture
 pointer table or support repointing those UI entries; localization and full
-options remain P13. Audio playback and particles retain their separate roadmap
-scope. The rendering limitations above also apply to the dedicated scene.
+options remain P13. Audio playback retains its separate roadmap scope;
+[effects](effects.md) own the particle, shadow, splash and tint drawing. The rendering limitations above also apply to the dedicated scene.
 
 The frozen port differs from unsanitized `HUD.C` here: its sanitizer changes
 the score and timer background carriers from subtractive ABR2 to average ABR0.
