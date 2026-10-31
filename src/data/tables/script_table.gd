@@ -12,12 +12,6 @@ extends Resource
 @export var error: String = ""
 
 
-## Reads the script table of [param exe], sized and named by [param names]
-## (see [ScriptTableReader]).
-static func read(exe: ExeImage, names: NameBank) -> ScriptTable:
-	return ScriptTableReader.read(exe, names)
-
-
 ## Number of scripts.
 func size() -> int:
 	return scripts.size()

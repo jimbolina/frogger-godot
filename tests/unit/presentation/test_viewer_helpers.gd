@@ -17,8 +17,8 @@ func after_each() -> void:
 
 
 func test_arguments_preserve_first_prefix_match_and_exact_flags() -> void:
-	var arguments := PackedStringArray(["--data-dir=first", "--data-dir=second", "--tick=", "--tick=9", "--benchmark=true", "--probe-model", "--model=A=B"])
-	assert_eq(ViewerArguments.value(arguments, "--data-dir="), "first")
+	var arguments := PackedStringArray(["--level=first", "--level=second", "--tick=", "--tick=9", "--benchmark=true", "--probe-model", "--model=A=B"])
+	assert_eq(ViewerArguments.value(arguments, "--level="), "first")
 	assert_eq(ViewerArguments.value(arguments, "--tick="), "")
 	assert_true(ViewerArguments.has_prefix(arguments, "--tick="))
 	assert_eq(ViewerArguments.value(arguments, "--model="), "A=B")
@@ -27,6 +27,15 @@ func test_arguments_preserve_first_prefix_match_and_exact_flags() -> void:
 	assert_true(ViewerArguments.has_flag(arguments, "--probe-model"))
 	assert_false(ViewerArguments.has_flag(arguments, "--benchmark"))
 	assert_true(ViewerArguments.has_flag(PackedStringArray(["--benchmark"]), "--benchmark"))
+
+
+
+func test_assets_are_used_for_a_level_or_the_frog_only() -> void:
+	assert_false(ViewerArguments.uses_assets(PackedStringArray()))
+	assert_false(ViewerArguments.uses_assets(PackedStringArray(["--level=", "--scenario=normal"])))
+	assert_true(ViewerArguments.uses_assets(PackedStringArray(["--level=ORG1"])))
+	assert_true(ViewerArguments.uses_assets(PackedStringArray(["--frog-assets"])))
+	assert_false(ViewerArguments.uses_assets(PackedStringArray(["--frog-assets=false"])))
 
 
 func test_capture_validation_normalizes_paths_and_preserves_sibling_boundaries() -> void:

@@ -2,7 +2,7 @@ extends GutTest
 ## The frog tint uses instance-local source lighting uniforms only while a flag is set, and part scales stay inert unless set.
 
 func _instance() -> AnimatedModelInstance:
-	var file: MofFile = MofFile.parse(SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
 	var mesh: ModelMesh = ModelMeshBuilder.new(TextureLibrary.new()).build_animated(file)
 	var instance := AnimatedModelInstance.new()
 	add_child_autofree(instance)

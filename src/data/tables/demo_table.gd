@@ -44,12 +44,6 @@ const TERMINATOR: int = -1
 @export var error: String = ""
 
 
-## Finds and reads the demo table of [param exe], using [param mwi] to find
-## the demo files (see [DemoTableReader]).
-static func read(exe: ExeImage, mwi: MwiIndex) -> DemoTable:
-	return DemoTableReader.read(exe, mwi)
-
-
 ## Number of rows.
 func size() -> int:
 	return entries.size()

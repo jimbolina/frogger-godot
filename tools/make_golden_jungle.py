@@ -13,7 +13,7 @@ import make_golden_exe_tables as exe_tables
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'tests/golden/synthetic/jungle.json'
-SOUND_CFG = ROOT / 'third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
+SOUND_CFG = ROOT / 'archive/third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
 SCRIPT_LIST = '1997-09-18-psx-build63'
 U16 = 0xffff
 SYSTEM_GRAVITY = 0x100000

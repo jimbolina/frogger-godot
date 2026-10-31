@@ -107,7 +107,7 @@ static func from_data(data: AssetCatalog, level: int, low_poly: bool = false, pl
 			var model: MofFile = data.read_model(model_id, problems)
 			if model != null:
 				models[span.form_id] = model
-	return from_map(map, book, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name, platforms_enabled, visibility_enabled)
+	return from_map(map, book, models, data.version_name + ":" + row.code(), row.map_id(low_poly), data.version_name, platforms_enabled, visibility_enabled)
 
 func _issue(code: String, message: String, entity: EntityDefinition, fallback: String) -> void:
 	var diagnostic := EntitySetupDiagnostic.new()

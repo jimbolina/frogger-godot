@@ -71,12 +71,11 @@ def check_png(path):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    selection = parser.add_mutually_exclusive_group(required=True)
-    selection.add_argument('--scenario-file', type=Path)
-    selection.add_argument('--data-dir', type=Path)
+    parser.add_argument('--scenario-file', type=Path,
+                        help='Synthetic scenario; the imported --level is used when omitted')
     parser.add_argument('--case-index', type=int, default=0,
                         help='Case inside a scenario file with a cases array (default: 0)')
-    parser.add_argument('--level', default='DES2', help='Retail level code (default: DES2)')
+    parser.add_argument('--level', default='DES2', help='Imported level code (default: DES2)')
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
 
@@ -121,11 +120,11 @@ def main():
             selected_path = args.scenario_file.resolve()
         selected.append('--scenario-file=' + str(selected_path))
     else:
-        selected.extend(('--data-dir=' + str(args.data_dir.resolve()), '--level=' + args.level))
+        selected.append('--level=' + args.level)
     identity = hashlib.sha256(args.scenario_file.read_bytes()).hexdigest() if args.scenario_file else None
     source_hashes = source_identities()
     (evidence / 'provenance.json').write_text(json.dumps({'source_sha256': source_hashes,
-        'scenario_sha256': identity, 'retail_data_dir': str(args.data_dir.resolve()) if args.data_dir else None},
+        'scenario_sha256': identity, 'level': None if args.scenario_file else args.level},
         indent=2), encoding='utf-8')
     print('Entity POP evidence: ' + str(evidence), flush=True)
 

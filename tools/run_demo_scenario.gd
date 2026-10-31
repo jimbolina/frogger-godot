@@ -28,38 +28,35 @@ func _run() -> void:
 			provenance["level"] = "synthetic"
 		issue = scenario.error
 		var demo_path: String = ViewerArguments.value(args, "--demo-file=")
-		demo = SourceDemoFile.parse(FileAccess.get_file_as_bytes(demo_path), demo_path)
+		demo = _synthetic_demo(demo_path)
 		if issue.is_empty():
 			issue = demo.error
 		provenance["source"] = "external synthetic fixture"
 	else:
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(args)
-		issue = found.error if not found.is_ok() else ""
+		var data: AssetCatalog = ImportedAssets.open()
+		issue = data.error
 		if issue.is_empty():
-			var data: AssetCatalog = GameData.open(found.source, found.version)
-			issue = data.error
+			var setup: DemoSetup = DemoSetup.resolve(data, map_index)
+			issue = setup.error
+			demo = setup.demo
+			provenance.merge({"build": data.version_name, "demo_resource_id": setup.resource_id,
+				"demo_resource_name": setup.resource_name})
 			if issue.is_empty():
-				var setup: DemoSetup = DemoSetup.resolve(data, map_index)
-				issue = setup.error
-				demo = setup.demo
-				provenance.merge({"build": data.version.internal_name, "demo_resource_id": setup.resource_id,
-					"demo_resource_name": setup.resource_name})
+				scenario = TerrainScenario.builtin("normal")
+				if data.is_playable_level(map_index):
+					scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
+					scenario.options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
+				issue = scenario.attach_data(data, level_code)
 				if issue.is_empty():
-					scenario = TerrainScenario.builtin("normal")
-					if GameplaySetup.supports_level(map_index):
-						scenario.options.reactions = ScenarioOptions.Reaction.PLATFORMS
-						scenario.options.lifecycle = ScenarioOptions.Lifecycle.VISIBILITY
-					issue = scenario.attach_data(data, level_code)
-					if issue.is_empty():
-						trace.configure(data, scenario.map_scene)
-						if not GameplaySetup.supports_level(map_index) and not scenario.map_scene.map.zones.is_empty():
-							issue = "Demo requires unsupported retail camera-zone admission"
-						elif not GameplaySetup.supports_level(map_index) and not scenario.map_scene.map.entities.is_empty():
-							issue = "Demo requires complete entity/checkpoint admission for " + level_code
-			if ViewerArguments.has_flag(args, "--viewer") and issue.is_empty():
-				visual_data = data
-			else:
-				data.close()
+					trace.configure(data, scenario.map_scene)
+					if not data.is_playable_level(map_index) and not scenario.map_scene.map.zones.is_empty():
+						issue = "Demo requires unsupported retail camera-zone admission"
+					elif not data.is_playable_level(map_index) and not scenario.map_scene.map.entities.is_empty():
+						issue = "Demo requires complete entity/checkpoint admission for " + level_code
+		if ViewerArguments.has_flag(args, "--viewer") and issue.is_empty():
+			visual_data = data
+		else:
+			data.close()
 	if demo != null and demo.error.is_empty():
 		provenance.merge({"duration": demo.duration, "start_grid": [demo.start_grid_x, demo.start_grid_z],
 			"input_bytes": demo.input_bytes.size(), "initialization": "demo start cell, FAST_RESET, 30-tick start timer"})
@@ -136,3 +133,20 @@ func _run() -> void:
 		return
 	print("demo playback: %s; %s; %d ticks, %d inputs" % [session.status, session.reason, session.elapsed_ticks, session.input_cursor])
 	quit(0)
+
+## Decodes a synthetic demo fixture: three little-endian signed integers
+## (duration, start X, start Z), then the action bytes.
+static func _synthetic_demo(path: String) -> SourceDemoFile:
+	var bytes: PackedByteArray = FileAccess.get_file_as_bytes(path)
+	var demo := SourceDemoFile.new()
+	if bytes.size() < 12:
+		demo.error = "%s: demo header needs 12 bytes, found %d" % [path, bytes.size()]
+		return demo
+	demo.duration = bytes.decode_s32(0)
+	demo.start_grid_x = bytes.decode_s32(4)
+	demo.start_grid_z = bytes.decode_s32(8)
+	if demo.duration < 0 or demo.start_grid_x < 0 or demo.start_grid_z < 0:
+		demo.error = "%s: negative demo duration or starting grid coordinate" % path
+		return demo
+	demo.input_bytes = bytes.slice(12)
+	return demo

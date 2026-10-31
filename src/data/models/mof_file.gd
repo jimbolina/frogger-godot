@@ -50,21 +50,6 @@ const DUMMY_SIGNATURE: String = "DUMY"
 @export var error: String = ""
 
 
-## What [param bytes] hold, judged by their first bytes ([method MofReader.kind_of]).
-static func kind_of(bytes: PackedByteArray) -> Kind:
-	return MofReader.kind_of(bytes)
-
-
-## True if [param bytes] hold an incomplete model ([method MofReader.needs_counterpart]).
-static func needs_counterpart(bytes: PackedByteArray) -> bool:
-	return MofReader.needs_counterpart(bytes)
-
-
-## Parses [param bytes] with [method MofReader.parse].
-static func parse(bytes: PackedByteArray, counterpart: MofFile = null) -> MofFile:
-	return MofReader.parse(bytes, counterpart)
-
-
 ## True when the file parsed cleanly.
 func is_valid() -> bool:
 	return error.is_empty()

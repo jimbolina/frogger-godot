@@ -144,11 +144,3 @@ func test_binary_and_text_resources_round_trip_maps() -> void:
 		var group_script: Script = loaded.groups.get_typed_script()
 		assert_eq(group_script.get_global_name(), &"MapGroup")
 		assert_true(loaded.packets["GRID"] is MapPacket)
-
-
-func test_record_shims_delegate_to_readers() -> void:
-	assert_eq(MapFile.read(PackedByteArray()).error, MapFileReader.read(PackedByteArray()).error)
-	assert_false(MapFile.read(PackedByteArray()).error.is_empty())
-	var sky := PackedByteArray([1, 0, 1, 0, 5, 64])
-	assert_eq(SkyLandFile.read(sky).rotations, SkyLandReader.read(sky).rotations)
-	assert_eq(SkyLandFile.read(sky).texture_ids, PackedInt32Array([5]))

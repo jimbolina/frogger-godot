@@ -4,7 +4,8 @@ extends GameplayWorldView
 ##
 ## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); Space pauses,
 ## R restarts and Escape leaves unless a binding claims the key. The saved music and effects
-## volumes are applied when the scene opens.
+## volumes are applied when the scene opens. The level is read from the imported assets
+## ([method ImportedAssets.open]).
 
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
@@ -14,7 +15,7 @@ var auto_open: bool = true
 var level_code: String = "ORG1"
 var run: GameplayRun
 var last_error: String = ""
-var _data: GameData
+var _data: AssetCatalog
 var _owns_data: bool = false
 var _definition: LevelDefinition
 var _host := GameplayHost.new()
@@ -34,8 +35,6 @@ var _session_finished: bool = false
 var _model_origins: EntityModelOrigins = null
 ## Problems from the latest map-less entity model resolution, shown to callers instead of failing.
 var entity_model_diagnostics := PackedStringArray()
-## The player's disc image for level music, located from the command line or environment, or null.
-var disc: DiscAudio = null
 ## Player 1's key bindings: the shipped defaults until the saved options are read on opening.
 var input: BindingInput = BindingInput.new()
 
@@ -56,19 +55,17 @@ func _ready() -> void:
 		if level_code.is_empty():
 			level_code = "ORG1"
 		selected_level = ""
-		if audio_enabled:
-			disc = DiscAudio.locate(arguments, OS.get_environment(DiscAudio.ENVIRONMENT_VARIABLE))
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-		if found.is_ok():
-			open_data(GameData.open(found.source, found.version), level_code, true)
+		var data: ImportedAssets = ImportedAssets.open()
+		if data.is_valid():
+			open_data(data, level_code, true)
 		else:
-			_show_error(found.error)
+			_show_error("The imported assets cannot be opened: %s" % data.error)
 
 func _exit_tree() -> void:
 	close_data()
 
 ## Opens an explicitly selected level, borrowing the data unless ownership is transferred.
-func open_data(data: GameData, code: String, take_ownership: bool = false) -> String:
+func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -> String:
 	_finish_pending()
 	if data != _data:
 		close_data()
@@ -80,10 +77,10 @@ func open_data(data: GameData, code: String, take_ownership: bool = false) -> St
 	_data = data
 	level_code = code
 	var level_number: int = FroggerIds.level_from_code(code)
-	if not GameplaySetup.supports_level(level_number):
-		return _show_error("Playable levels are ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4")
 	if data == null or not data.is_valid():
-		return _show_error("A valid player data folder is required")
+		return _show_error("Valid imported assets are required")
+	if not data.is_playable_level(level_number):
+		return _show_error("Playable levels are " + ", ".join(data.playable_level_codes()))
 	var scene_data: MapSceneData = MapSceneData.load_level(data, level_number)
 	if not scene_data.error.is_empty():
 		return _show_error(scene_data.error)
@@ -124,17 +121,16 @@ func close_data() -> void:
 	_data = null
 	_owns_data = false
 	configure_audio(null)
-	configure_music(null, -1)
+	configure_music(-1)
 
-func _configure_level_audio(data: GameData, level_number: int) -> void:
+func _configure_level_audio(data: AssetCatalog, level_number: int) -> void:
 	if voice_view() == null:
 		return
 	var ids := PackedInt32Array()
 	for sound: LogicalSoundDefinition in _definition.sounds:
 		ids.append(sound.sound_id)
 	configure_audio(AudioResources.from_data(data, _definition.sounds), ids)
-	var directory: String = data.source.directory if data.source != null else ""
-	configure_music(disc, data.tables.music().track_for_level(level_number), directory)
+	configure_music(data.tables.music().track_for_level(level_number))
 
 func _detach_game() -> void:
 	_host.close()

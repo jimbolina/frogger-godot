@@ -36,7 +36,7 @@ func test_every_texture_bank_matches() -> void:
 		var t0: int = Time.get_ticks_usec()
 		var bytes: PackedByteArray = _data.read_resource(entry.index, problems)
 		var t1: int = Time.get_ticks_usec()
-		var vlo: VloFile = VloFile.parse(bytes)
+		var vlo: VloFile = VloFileReader.parse(bytes)
 		decode_usec += Time.get_ticks_usec() - t1
 		read_usec += t1 - t0
 		assert_eq(vlo.error, "", entry.display_name())

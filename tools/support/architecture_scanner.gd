@@ -28,6 +28,7 @@ const APPLICATION_IO: PackedStringArray = [
 	"res://src/application/loaders/", "res://src/application/storage/",
 ]
 const ARCHIVE: String = "res://archive/"
+const SOURCE_ROOTS: PackedStringArray = ["res://src/source/", "res://archive/source/"]
 const ARCHIVE_GUARDED: PackedStringArray = [
 	"res://src/", "res://scenes/", "res://assets/", "res://tests/", "res://tools/",
 ]
@@ -227,7 +228,7 @@ func _visit(path: String, origin: String, layer: String,
 	var record: Source = records[path]
 	_check_symbols(path, origin, layer, record, records, names, into)
 	for edge: Edge in record.edges:
-		if edge.path.begins_with(ARCHIVE):
+		if edge.path.begins_with(ARCHIVE) and not origin.begins_with(ARCHIVE):
 			continue
 		if _forbidden_path(edge.path, layer):
 			into.append(Violation.new(path, edge.line, "layer",
@@ -388,7 +389,7 @@ func _is_literal_load(tokens: Array[Token], index: int) -> bool:
 
 
 func _protected_layer(path: String) -> String:
-	if path.begins_with("res://src/source/"):
+	if _is_source(path):
 		return "source"
 	if path.begins_with("res://src/game/"):
 		return "game"
@@ -412,7 +413,14 @@ func _forbidden_path(path: String, layer: String) -> bool:
 		return true
 	if layer == "source" or layer == "data":
 		return path.begins_with("res://src/game/")
-	return path.begins_with("res://src/source/") or path.begins_with("res://src/data/")
+	return _is_source(path) or path.begins_with("res://src/data/")
+
+
+func _is_source(path: String) -> bool:
+	for root: String in SOURCE_ROOTS:
+		if path.begins_with(root):
+			return true
+	return false
 
 
 func _resolve_path(source: String, target: String) -> String:

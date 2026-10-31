@@ -51,7 +51,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_golden_manifest import read_mwi
 
-CFG_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "third_party", "froglord_cfg")
+CFG_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "archive", "third_party", "froglord_cfg")
 
 LEVEL_CODES = [
     "CAV1", "CAV2", "CAV3", "CAV4", "CAV5", "CAVM",

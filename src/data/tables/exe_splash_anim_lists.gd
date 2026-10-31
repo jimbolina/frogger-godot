@@ -38,12 +38,6 @@ const FADES: PackedInt64Array = [0x606060, 0x404040, 0x202020]
 @export var warnings: PackedStringArray = PackedStringArray()
 
 
-## Finds the splash lists of [param exe], resolving images through [param bmp]
-## (see [ExeSplashAnimListsReader]).
-static func read(exe: ExeImage, bmp: BmpPointers) -> ExeSplashAnimLists:
-	return ExeSplashAnimListsReader.read(exe, bmp)
-
-
 ## The six ripple texture ids every found list shows, or empty when there is
 ## no list or the lists disagree.
 func ripple_texture_ids() -> PackedInt32Array:

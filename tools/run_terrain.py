@@ -15,14 +15,14 @@ def main():
     parser.add_argument('--scenario', choices=('normal', 'blocked', 'buffer'), default='normal')
     parser.add_argument('--scenario-file', type=Path)
     parser.add_argument('--camera-inspection', choices=('jun1-camera-zones',), help='Prescribed retail camera probe, without gameplay route admission')
-    parser.add_argument('--data-dir', type=Path, help='Optional player data for the rendered frog')
+    parser.add_argument('--frog-assets', action='store_true', help='Render the imported frog in a synthetic scenario')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--render-rate', type=int, choices=(30, 60, 144, 200, 240), default=60)
     parser.add_argument('--frame-schedule', choices=('regular', 'irregular'), default='regular')
     parser.add_argument('--smoothing', choices=('true', 'false'), default='false', help='Reference captures default to exact committed poses')
     parser.add_argument('--motion-capture', action='store_true', help='Save every rendered frame externally; diagnostic only')
-    parser.add_argument('--level', help='Optional single-player map code for terrain inspection')
+    parser.add_argument('--level', help='Optional single-player map code from the imported assets')
     parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
     parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
                         help='Select entity lifetime for an integrated FORM scenario')
@@ -30,8 +30,8 @@ def main():
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
     args = parser.parse_args()
-    if args.camera_inspection and (not args.data_dir or args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
-        parser.error('Camera inspection requires --data-dir and excludes gameplay scenario, entity, tick-limit and motion-capture options')
+    if args.camera_inspection and (args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
+        parser.error('Camera inspection excludes gameplay scenario, entity, tick-limit and motion-capture options')
     repo = Path(__file__).resolve().parents[1]
     output = args.output_directory.resolve()
     for protected in (repo, (repo.parent / 'froggy').resolve()):
@@ -81,8 +81,8 @@ def main():
         if not args.viewer:
             parser.error('--motion-capture requires --viewer')
         selected.append('--motion-capture')
-    if args.data_dir:
-        selected += ['--data-dir=' + str(args.data_dir.resolve())]
+    if args.frog_assets:
+        selected.append('--frog-assets')
     if args.level:
         selected += ['--level=' + args.level]
     if args.entity_reactions:

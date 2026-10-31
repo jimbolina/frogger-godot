@@ -68,7 +68,6 @@ def main():
     parser.add_argument('--godot', default='godot')
     parser.add_argument('--scenario', choices=('line', 'arc', 'spline'), default='line')
     parser.add_argument('--scenario-file', type=Path)
-    parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--level')
     parser.add_argument('--path-index', type=int)
     parser.add_argument('--tick-limit', type=int)
@@ -77,8 +76,6 @@ def main():
     runner = Path(__file__).with_name('run_paths.py')
     selected = ['--scenario-file', str(args.scenario_file)] if args.scenario_file else ['--scenario', args.scenario]
     shared = ['--godot', args.godot, '--output-directory', str(args.output_directory), *selected]
-    if args.data_dir:
-        shared += ['--data-dir', str(args.data_dir)]
     if args.level:
         shared += ['--level', args.level]
     if args.path_index is not None:

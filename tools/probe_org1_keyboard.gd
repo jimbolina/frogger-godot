@@ -9,12 +9,11 @@ func _initialize() -> void:
 
 func _run() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not found.is_ok():
-		push_error(found.error)
+	var data: AssetCatalog = ImportedAssets.open()
+	if not data.is_valid():
+		push_error(data.error)
 		quit(1)
 		return
-	var data: AssetCatalog = GameData.open(found.source, found.version)
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	var issue: String = TerrainScenarioArguments.apply(scenario, arguments)
 	if not issue.is_empty():

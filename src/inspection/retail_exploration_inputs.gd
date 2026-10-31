@@ -2,14 +2,15 @@ class_name RetailExplorationInputs
 extends RefCounted
 ## Validates supplied determining resources against independently generated proof facts.
 
-## Checks resource mappings, source-ordered books, scripts and model bytes.
+## Checks the imported build, resource mappings, source-ordered books, scripts
+## and model counterparts.
 static func validate(data: AssetCatalog, map: MapFile, proof: Dictionary, level: int) -> String:
+	var source_issue: String = provenance_error(data, proof)
+	if not source_issue.is_empty():
+		return source_issue
 	var row: MapBookEntry = data.map_book_entry(level)
 	if row == null or row.map_id(false) != _integer(proof.map_resource_id):
 		return "High-detail MAP resource identity"
-	var problems := PackedStringArray()
-	if _digest(data.read_resource(row.map_id(false), problems)) != proof.map_sha256:
-		return "MAP resource %d geometry, entity, path or zone records" % row.map_id(false)
 	var book: ThemeBook = data.tables.theme_book()
 	var theme: ThemeBookEntry = data.theme_book_entry(map.general.theme)
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
@@ -45,25 +46,33 @@ static func validate(data: AssetCatalog, map: MapFile, proof: Dictionary, level:
 	for value: Variant in model_facts:
 		var model: Dictionary = value
 		var model_id: int = _integer(model.resource_id)
-		var bytes: PackedByteArray = data.read_resource(model_id, problems)
-		if _digest(bytes) != model.sha256:
-			return "model resource %d geometry or primitive facts" % model_id
-		var counterpart: int = data.counterpart_of(model_id) if MofFile.needs_counterpart(bytes) else -1
+		var record: MofFile = data.read_model(model_id)
+		if record == null:
+			return "model resource %d is unavailable" % model_id
+		var counterpart: int = data.counterpart_of(model_id) if record.is_incomplete else -1
 		if counterpart != _integer(model.get("counterpart_resource_id", -1)):
 			return "model resource %d counterpart mapping" % model_id
-	return "; ".join(problems)
+	return ""
+
+
+## Checks that [param data] comes from the retail executable and archive
+## [param proof] was generated from, by the SHA-256 digests the catalog
+## reports ([method AssetCatalog.source_digests]). Returns the reason, or "".
+static func provenance_error(data: AssetCatalog, proof: Dictionary) -> String:
+	var digests: Dictionary[String, String] = data.source_digests()
+	var exe: String = digests.get("exe", "")
+	var mwd: String = digests.get("mwd", "")
+	if exe.is_empty() or mwd.is_empty():
+		return "the catalog does not report its retail source digests"
+	if exe != proof.get("exe_sha256", "") or mwd != proof.get("mwd_sha256", ""):
+		return "the catalog does not come from the audited executable and archive"
+	return ""
 
 static func _numeric_row(values: Array) -> String:
 	var strings := PackedStringArray()
 	for value: Variant in values:
 		strings.append(str(_integer(value)))
 	return ",".join(strings)
-
-static func _digest(bytes: PackedByteArray) -> String:
-	var context := HashingContext.new()
-	context.start(HashingContext.HASH_SHA256)
-	context.update(bytes)
-	return context.finish().hex_encode()
 
 static func _integer(value: Variant) -> int:
 	var number: float = value

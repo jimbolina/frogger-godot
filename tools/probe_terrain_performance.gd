@@ -17,12 +17,11 @@ func _run() -> void:
 	if not issue.is_empty():
 		_fail(issue)
 		return
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not found.is_ok():
-		_fail(found.error)
-		return
 	var started: int = Time.get_ticks_usec()
-	var data: AssetCatalog = GameData.open(found.source, found.version)
+	var data: AssetCatalog = ImportedAssets.open()
+	if not data.is_valid():
+		_fail(data.error)
+		return
 	var workload: String = ViewerArguments.value(arguments, "--performance-workload=")
 	var whole_map: bool = workload in ["whole-map-idle", "whole-map-hops"]
 	var hopping: bool = workload == "whole-map-hops"

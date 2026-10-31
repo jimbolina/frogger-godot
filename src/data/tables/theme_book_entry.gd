@@ -45,11 +45,6 @@ const SIZE: int = 40
 @export var forms: Array[FormBookEntry] = []
 
 
-## Reads one row at [param reader]'s cursor (see [ThemeBookRowReader]).
-static func read(reader: ByteReader, theme_number: int) -> ThemeBookEntry:
-	return ThemeBookRowReader.read_entry(reader, theme_number)
-
-
 ## True when the theme has any data (FrogLord's test; RUINS has none on PC).
 func is_valid() -> bool:
 	return high_vlo_id != 0 or low_vlo_id != 0 or form_library_pointer != 0

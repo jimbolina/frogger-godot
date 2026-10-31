@@ -65,7 +65,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   selected entity, with unit tests and headless/rendered inspection.
   `python tools/run_entities.py --godot <executable> --scenario shared-path
   --output-directory <external-folder>` writes a trace; add `--viewer` for
-  world and full-window captures. `--data-dir <game-folder> --level ORG1`
+  world and full-window captures. `--level ORG1`
   selects player data. The Entities tab has probe X/Y/Z controls and a
   first-cell placement button. `--tick-limit` and `--render-rate 30|60|144`
   select duration and frame schedule. Use `tools/verify_entity_schedules.py`
@@ -123,9 +123,9 @@ A level without an enabled demo reports that missing resource. Other themes
 retain explicit unsupported-dependency diagnostics.
 
 ```text
-python tools/run_demo.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+python tools/run_demo.py --godot <executable> --output-directory <external-folder>
 python tools/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24 --segment 0
-python tools/verify_demo_schedules.py --godot <executable> --data-dir <game-folder> --output-directory <external-folder>
+python tools/verify_demo_schedules.py --godot <executable> --output-directory <external-folder>
 python -m unittest discover -s tools -p test_demo_trace.py
 ```
 
@@ -166,7 +166,7 @@ The schedule verifier compares both CSVs, committed JSONL and playback provenanc
 across headless and rendered 30/60/144 Hz and irregular frames. To exercise a
 complete synthetic run independently of current retail admission, supply paired
 `--scenario-file <terrain-json>` and `--demo-file <synthetic-demo>` instead of
-`--data-dir`. The JSON uses the existing terrain fixture schema; the binary demo
+`--level`. The JSON uses the existing terrain fixture schema; the binary demo
 is three little-endian signed integers (duration, start X, start Z), then action
 bytes. These supplied fixtures are inputs, never expected-data goldens. Rendered
 runs reuse `TerrainViewer` and retain `demo.png` outside the checkout; inspect it.
@@ -208,8 +208,7 @@ check; replays and demo comparisons are diagnostics. Bounded incomplete fixtures
 
 ## Dedicated game scene captures
 
-Use `python tools/run_gameplay_capture.py --godot <executable> --data-dir
-<game-folder> --level ORG1 --output-directory <external-folder>` to capture
+Use `python tools/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>` to capture
 startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4;
 `--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
 replay the existing sparse keyboard stimulus format through actual key events.
@@ -266,7 +265,7 @@ route or establishes level behaviour. The effects preset (ice, water, a car,
 a bison, a lava spray, a balloon, a barrel, a fly, a gold frog and a
 checkpoint) is the play check for the [effects](../rendering/effects.md); the sounds preset
 (vulture, press, crusher, beaver, tumbleweed, fly, gold frog and checkpoint) is
-the by-ear check for [audio playback](../data/archives.md#sound-playback).
+the by-ear check for [audio playback](../../../archive/docs/formats/archives.md#sound-playback).
 
 ## Focused iteration and guardrails
 

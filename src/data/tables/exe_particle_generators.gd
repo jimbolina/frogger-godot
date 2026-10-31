@@ -79,12 +79,6 @@ const C_GRAVITY: int = -(1 << 16)
 @export var warnings: PackedStringArray = PackedStringArray()
 
 
-## Locates and names the records of [param exe], resolving textures through
-## [param bmp] (see [ExeParticleGeneratorsReader]).
-static func read(exe: ExeImage, bmp: BmpPointers) -> ExeParticleGenerators:
-	return ExeParticleGeneratorsReader.read(exe, bmp)
-
-
 ## The frozen PARTICLE.C initialisers in declaration order, the C hilite and
 ## frog particle tables and pop colours. Callback addresses and primitive
 ## sizes are zero; textures are source image symbols.
@@ -129,12 +123,6 @@ static func c_constants() -> ExeParticleGenerators:
 	result.frog_particle_multi = C_FROG_PARTICLE_MULTI.duplicate()
 	result.pop_colours = C_POP_COLOURS.duplicate()
 	return result
-
-
-## The program bytes of [param exe] as unsigned little-endian words (see
-## [ExeParticleGeneratorsReader]).
-static func program_words(exe: ExeImage) -> PackedInt64Array:
-	return ExeParticleGeneratorsReader.program_words(exe)
 
 
 ## The record called [param generator_name], or null.

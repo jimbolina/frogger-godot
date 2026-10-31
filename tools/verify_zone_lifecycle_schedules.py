@@ -56,7 +56,7 @@ def verify(rows, golden, retail):
 
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--godot',required=True);ap.add_argument('--data-dir',type=Path,required=True)
+    ap.add_argument('--godot',required=True)
     ap.add_argument('--output-directory',type=Path,required=True)
     args=ap.parse_args();repo=Path(__file__).resolve().parents[1];output=args.output_directory.resolve()
     for protected in (repo,(repo.parent/'froggy').resolve()):
@@ -75,7 +75,7 @@ def main():
             name=f'{label}-'+(f'render{rate}' if viewer else 'headless')
             command=[sys.executable,'-B',str(repo/'tools/run_terrain.py'),'--godot',args.godot,
                      '--entity-lifecycle','visibility','--render-rate',str(rate),'--output-directory',str(output/name)]
-            if retail:command+=['--data-dir',str(args.data_dir.resolve()),'--camera-inspection','jun1-camera-zones']
+            if retail:command+=['--camera-inspection','jun1-camera-zones']
             else:command+=['--scenario-file',str(repo/'tests/golden/fixtures/lifecycle_zones.json')]
             if viewer:command+=['--viewer']
             run=subprocess.run(command,cwd=repo,capture_output=True,text=True,timeout=1200)

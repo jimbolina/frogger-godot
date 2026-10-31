@@ -4,7 +4,7 @@ extends Resource
 ##
 ## Nothing here is compiled into this project: every value comes from the
 ## player's own executable (retail, or saved by FrogLord with edits), read
-## the way FrogLord reads it ([ExeTablesReader]). Each table records whether
+## the way FrogLord reads it. Each table records whether
 ## it read cleanly in its [code]error[/code]; [method errors] collects them
 ## for a report. A table that was not read is null.
 

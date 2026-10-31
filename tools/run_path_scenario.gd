@@ -24,11 +24,7 @@ func _run() -> void:
 		if not path_index_text.is_valid_int() or path_index_text.to_int() < 0:
 			_fail("A level path requires --path-index=0 or greater")
 			return
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-		if not found.is_ok():
-			_fail(found.error)
-			return
-		var data: AssetCatalog = GameData.open(found.source, found.version)
+		var data: AssetCatalog = ImportedAssets.open()
 		if not data.is_valid():
 			_fail(data.error)
 			return

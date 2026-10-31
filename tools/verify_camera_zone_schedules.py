@@ -28,7 +28,6 @@ def verify_reference(rows, golden):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', required=True)
-    parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
@@ -41,7 +40,7 @@ def main():
     baseline = None
     for label, rate, viewer in [('headless',30,False),('render30',30,True),('render60',60,True),('render144',144,True)]:
         command = [sys.executable, '-B', str(repo/'tools/run_terrain.py'), '--godot', args.godot,
-                   '--data-dir', str(args.data_dir.resolve()), '--camera-inspection', 'jun1-camera-zones',
+                   '--camera-inspection', 'jun1-camera-zones',
                    '--render-rate', str(rate), '--output-directory', str(output/label)]
         if viewer: command.append('--viewer')
         result = subprocess.run(command, cwd=repo, capture_output=True, text=True, timeout=1200)

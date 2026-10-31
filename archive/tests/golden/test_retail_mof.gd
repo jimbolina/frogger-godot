@@ -149,7 +149,7 @@ func _form_rows(level: int, code: String, theme: int, multiplayer_general: bool)
 				var entry: MwiEntry = _data.mwi.get_entry(resource_id)
 				kind = "other"
 				if GameData.is_model_entry(entry):
-					kind = MofFile.KIND_NAMES[MofFile.kind_of(_data.read_resource(resource_id))]
+					kind = MofFile.KIND_NAMES[MofReader.kind_of(_data.read_resource(resource_id))]
 			row.append_array(PackedStringArray([str(wad), str(resource_id), kind]))
 		rows.append(row)
 	return rows

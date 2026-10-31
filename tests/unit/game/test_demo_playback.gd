@@ -202,13 +202,11 @@ func test_recorded_tongue_consumes_byte_and_advances_effect_atomically() -> void
 	assert_eq(run.snapshot().tongue.mode, TongueState.Mode.OUT)
 
 func test_demo_start_uses_explicit_maximum_lives_and_keyboard_keeps_three() -> void:
-	var bytes := PackedByteArray()
-	bytes.resize(12)
-	bytes.encode_s32(0, 826)
-	bytes.encode_s32(4, 10)
-	bytes.encode_s32(8, 10)
-	bytes.append(128)
-	var demo: SourceDemoFile = SourceDemoFile.parse(bytes)
+	var demo := SourceDemoFile.new()
+	demo.duration = 826
+	demo.start_grid_x = 10
+	demo.start_grid_z = 10
+	demo.input_bytes = PackedByteArray([128])
 	assert_true(demo.is_valid())
 	var start: RunStart = DemoSetup.start_for(demo)
 	assert_eq(DemoSetup.DEMO_LIVES, 10)

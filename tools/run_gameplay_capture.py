@@ -11,7 +11,6 @@ from godot_project import isolated_project
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--route', type=Path)
     parser.add_argument('--level', choices=('ORG1', 'ORG2', 'ORG3', 'ORG4', 'ORG5', 'SUB1', 'FOR1', 'FOR2', 'VOL1', 'VOL2', 'VOL3', 'CAV1', 'CAV3', 'CAV4', 'DES1', 'DES2', 'DES3', 'DES4', 'DES5', 'JUN1', 'SWP1', 'SWP2', 'SWP3', 'SWP4', 'SWP5', 'SKY1', 'SKY2', 'SKY3', 'SKY4'), default='ORG1')
     parser.add_argument('--ticks', type=int, default=240)
@@ -52,7 +51,7 @@ def main():
               ('check', ['-s', 'res://tools/check_scripts.gd'], True),
               ('architecture', ['-s', 'res://tools/check_architecture.gd'], True),
               ('keyboard', ['-s', 'res://tools/probe_gameplay_capture.gd', '--',
-                            '--data-dir=' + str(args.data_dir.resolve()), '--level=' + args.level,
+                            '--level=' + args.level,
                             '--route=' + (str(route) if route else ''), '--ticks=' + str(args.ticks), '--flow-check=' + str(args.flow_check).lower(), '--output=' + str(evidence / 'captures')], False)]
     for name, arguments, headless in stages:
         log = evidence / (name + '.log')

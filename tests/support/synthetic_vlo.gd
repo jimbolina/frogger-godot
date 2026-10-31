@@ -1,10 +1,10 @@
 class_name SyntheticVlo
 extends RefCounted
-## Builds small PC texture banks ("2GRP") for tests, laid out as the game's
-## tools lay them out (see VloFile).
+## Describes small PC texture banks for tests and builds them as [VloFile]
+## records, with the values a bank laid out the same way decodes to.
 
 
-## One image for [method build_vlo]: header values and stored A,B,G,R pixels.
+## One image for [method bank]: header values and stored A,B,G,R pixels.
 class Spec:
 	extends RefCounted
 	var vram_x: int = 0
@@ -32,47 +32,39 @@ static func spec(w: int, h: int, pad: int, texture_id: int, flags: int, stored: 
 	return s
 
 
-## A "2GRP" bank of [param specs], as the game's tools lay it out.
-static func build_vlo(specs: Array[Spec], names_trailer: PackedByteArray = PackedByteArray()) -> PackedByteArray:
-	var out := PackedByteArray()
-	out.append_array("2GRP".to_ascii_buffer())
-	out.resize(12)
-	out.encode_s32(4, specs.size())
-	out.encode_s32(8, 12)
-	var offset: int = 12 + 24 * specs.size()
-	var headers := PackedByteArray()
-	var pixel_blob := PackedByteArray()
-	for s: Spec in specs:
-		offset = (offset + 3) & ~3
-		var h := PackedByteArray()
-		h.resize(24)
-		h.encode_s16(0, s.vram_x)
-		h.encode_s16(2, s.vram_y)
-		h.encode_s16(4, s.padded_width)
-		h.encode_s16(6, s.padded_height)
-		h.encode_s32(8, offset)
-		h.encode_s16(12, s.texture_id)
-		h.encode_u16(14, ((s.vram_y / 256) & 0xFF) | (s.blend_mode << 8))
-		h.encode_u16(16, s.flags)
-		h.encode_s16(18, 0)
-		h[20] = (s.vram_x % 256) + (s.padded_width - s.width) / 2
-		h[21] = (s.vram_y % 256) + (s.padded_height - s.height) / 2
-		h[22] = s.width & 0xFF
-		h[23] = s.height & 0xFF
-		headers.append_array(h)
-		while (12 + 24 * specs.size() + pixel_blob.size()) % 4 != 0:
-			pixel_blob.append(0)
-		pixel_blob.append_array(s.abgr)
-		offset += s.abgr.size()
-	out.append_array(headers)
-	out.append_array(pixel_blob)
-	out.append_array(names_trailer)
-	return out
-
-
 ## Stored pixels from R,G,B triples, with alpha byte [param stored_alpha].
 static func abgr(rgb: Array[int], stored_alpha: int = 0) -> PackedByteArray:
 	var out := PackedByteArray()
 	for i: int in range(0, rgb.size(), 3):
 		out.append_array(PackedByteArray([stored_alpha, rgb[i + 2], rgb[i + 1], rgb[i]]))
 	return out
+
+
+## The bank of [param specs]; with [param decode_pixels] false the images
+## keep no pixels.
+static func bank(specs: Array[Spec], decode_pixels: bool = true) -> VloFile:
+	var vlo := VloFile.new()
+	var offset: int = VloFile.HEADER_SIZE + 24 * specs.size()
+	for i: int in specs.size():
+		var s: Spec = specs[i]
+		offset = (offset + 3) & ~3
+		var image := VloImage.new()
+		image.index = i
+		image.vram_x = s.vram_x
+		image.vram_y = s.vram_y
+		image.padded_width = s.padded_width
+		image.padded_height = s.padded_height
+		image.data_offset = offset
+		image.texture_id = s.texture_id
+		image.texture_page_word = ((s.vram_y / 256) & 0xFF) | (s.blend_mode << 8)
+		image.flags = s.flags
+		image.u = ((s.vram_x % 256) + (s.padded_width - s.width) / 2) & 0xFF
+		image.v = ((s.vram_y % 256) + (s.padded_height - s.height) / 2) & 0xFF
+		image.width = s.width & 0xFF if s.width & 0xFF != 0 else 256
+		image.height = s.height & 0xFF if s.height & 0xFF != 0 else 256
+		if decode_pixels:
+			image.pixels = VloFile.decode_rgba(s.abgr, s.padded_width, s.padded_height,
+				image.has_flag(VloImage.FLAG_BLACK_IS_TRANSPARENT))
+		vlo.images.append(image)
+		offset += s.abgr.size()
+	return vlo

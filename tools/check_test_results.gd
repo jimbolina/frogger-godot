@@ -16,7 +16,7 @@ const SUITE_OPTION: String = "--suite="
 func _init() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
 	if arguments.size() == 1 and arguments[0] == "--input":
-		var problem: String = Policy.input_error(OS.get_environment(GameDataLocator.ENV_VAR))
+		var problem: String = Policy.input_error(OS.get_environment("FROGGER_DATA_DIR"))
 		if not problem.is_empty():
 			print("RESULT ERROR: " + problem)
 			quit(1)

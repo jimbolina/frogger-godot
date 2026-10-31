@@ -16,18 +16,18 @@ static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecy
 		result.error = "JUN1 zone/lifecycle admission manifest unavailable"
 		return result
 	var proof: Dictionary = parsed
-	if proof.get("schema") != "jun1-zone-lifecycle-admission-v1" or data.version.internal_name != proof.get("build"):
+	if proof.get("schema") != "jun1-zone-lifecycle-admission-v1" or data.version_name != proof.get("build"):
 		result.error = "JUN1 zone/lifecycle requires audited pc-retail-v3.0e data"
 		return result
 	var book: MapBookEntry = data.map_book_entry(scene.level)
 	if book == null or book.map_id(false) != _integer(proof.map_resource_id):
 		result.error = "JUN1 zone/lifecycle high-detail map mapping changed"
 		return result
-	var problems := PackedStringArray()
-	if _digest(data.read_resource(book.map_id(false), problems)) != proof.map_sha256:
-		result.error = "JUN1 zone/lifecycle map, paths or zones changed"
+	var source_issue: String = RetailExplorationInputs.provenance_error(data, proof)
+	if not source_issue.is_empty():
+		result.error = "JUN1 zone/lifecycle map, paths or zones changed: " + source_issue
 		return result
-	var setup: EntitySetup = EntitySetup.from_map(scene.map, data.tables.theme_book(), "JUN1", book.map_id(false), data.version.internal_name)
+	var setup: EntitySetup = EntitySetup.from_map(scene.map, data.tables.theme_book(), "JUN1", book.map_id(false), data.version_name)
 	if not setup.error.is_empty():
 		result.error = setup.error
 		return result
@@ -43,14 +43,6 @@ static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecy
 	if JSON.stringify(JSON.parse_string(JSON.stringify(bindings))) != JSON.stringify(proof.bindings):
 		result.error = "JUN1 zone/lifecycle log identities, named behaviors or models changed"
 		return result
-	for raw: Variant in proof.models:
-		var model: Dictionary = raw
-		if _digest(data.read_resource(_integer(model.resource_id), problems)) != model.sha256:
-			result.error = "JUN1 zone/lifecycle log model changed"
-			return result
-	if not problems.is_empty():
-		result.error = "; ".join(problems)
-		return result
 	var groups: EntityLifecycleSetup = EntityLifecycleSetup.from_map(scene.map)
 	result.error = groups.error
 	result.lifecycle = groups.definition
@@ -61,12 +53,6 @@ static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecy
 		if not admitted:
 			result.diagnostics.append("JUN1 EMTP[%d]: omitted from log-only camera/lifecycle probe; no behavior or contact executed" % index)
 	return result
-
-static func _digest(bytes: PackedByteArray) -> String:
-	var context := HashingContext.new()
-	context.start(HashingContext.HASH_SHA256)
-	context.update(bytes)
-	return context.finish().hex_encode()
 
 static func _integer(value: Variant) -> int:
 	var number: float = value

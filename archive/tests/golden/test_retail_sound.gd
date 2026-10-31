@@ -8,7 +8,7 @@ func test_retail_sound_tables_and_durations_match_independent_facts() -> void:
 	var data: GameData = _data()
 	assert_eq(data.error, "")
 	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/pc-retail-v3.0e/sound_tables.json"))
-	var tables: SoundTables = SoundTables.read(data.exe)
+	var tables: SoundTables = SoundTablesReader.read(data.exe)
 	assert_eq(tables.error, "")
 	assert_eq(tables.samples.size(), 174)
 	for index: int in tables.banks.size():
@@ -43,12 +43,15 @@ func test_retail_sound_tables_and_durations_match_independent_facts() -> void:
 	for bank: Dictionary in facts.headers:
 		var header_id: int = bank.header_id
 		var body_id: int = bank.body_id
-		var setup: SoundBankSetup = SoundBankSetup.from_resources(data, header_id, body_id)
-		assert_eq(setup.error, "")
+		var problems := PackedStringArray()
+		var body_size: int = data.read_resource(body_id, problems).size()
+		var header: SoundBankHeader = SoundBankReader.read(data.read_resource(header_id, problems), body_size, data.mwi.get_entry(header_id).display_name())
+		assert_eq(problems, PackedStringArray())
+		assert_eq(header.error, "")
 		var count: int = bank.count
-		assert_eq(setup.header.entries.size(), count)
+		assert_eq(header.entries.size(), count)
 		for row: Array in bank.rows:
-			var entry: SoundBankEntry = setup.header.entries[row[0]]
+			var entry: SoundBankEntry = header.entries[row[0]]
 			var observed: Array[int] = [entry.sound_id, entry.data_offset, entry.data_size, entry.sample_rate, entry.sample_bits, entry.frame_count()]
 			var expected: Array[int] = []
 			expected.assign(row)
@@ -67,11 +70,11 @@ func test_saved_sound_table_edits_are_resolved_and_unknown_groups_diagnosed() ->
 	bytes.encode_u16(offset + 14, 512)
 	bytes.encode_u32(offset, LogicalSoundDefinition.LOOPED)
 	var edited: ExeImage = ExeImage.create(bytes, data.version)
-	var tables: SoundTables = SoundTables.read(edited)
+	var tables: SoundTables = SoundTablesReader.read(edited)
 	assert_eq(tables.error, "")
 	assert_eq(tables.samples[0].note, 72)
 	assert_eq(tables.samples[0].pitch_mod, 512)
 	assert_eq(tables.samples[0].flags, LogicalSoundDefinition.LOOPED)
 	bytes.encode_u16(offset + 6, 4)
-	tables = SoundTables.read(ExeImage.create(bytes, data.version))
+	tables = SoundTablesReader.read(ExeImage.create(bytes, data.version))
 	assert_string_contains(tables.error, "Sound sample 0 at 0x46F938")

@@ -4,7 +4,7 @@ extends GutTest
 
 
 func _images(pairs: String) -> NameBank:
-	return NameBank.from_indexed_config(FrogLordConfig.parse_legacy(pairs), "Image")
+	return SyntheticNames.indexed(pairs, "Image")
 
 
 func test_enum_follows_retail_order() -> void:

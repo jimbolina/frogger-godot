@@ -3,18 +3,19 @@
 A rewrite of **Frogger** (Hasbro Interactive / Millennium Interactive, 1997;
 the PC release, also known as *Frogger: He's Back*) in
 [Godot 4](https://godotengine.org) with statically typed GDScript. The aim is
-the original game's feel on modern desktops (Windows, Linux, macOS), running
-on the data from the player's own copy of the PC game, and staying compatible
-with levels and changes made in [FrogLord](https://github.com/Kneesnap/FrogLord),
-the community's Frogger editor.
+the original game's feel on modern desktops (Windows, Linux, macOS), playing
+from the retail PC game's assets imported once into this private repository
+and edited from there. The formats were decoded following
+[FrogLord](https://github.com/Kneesnap/FrogLord), the community's Frogger
+editor; loading FrogLord-saved edits at run time is deferred.
 
-This is an early stage: the project can find and identify the game files,
-read every file in their archives (the MWI index, the MWD archive, WAD
-bundles and PowerPacker compression) and decode the game tables held in the
-executable (levels, themes, forms, texture remaps and pointers, entity
-scripts, music, level select, demos, bugs), decode every texture, and read
-and animate models, flipbooks and polygon textures. The map inspection viewer
-renders terrain, water, sky and map animations, including FrogLord-saved edits.
+The importer under `archive/` reads every file in the retail archives (the
+MWI index, the MWD archive, WAD bundles and PowerPacker compression), decodes
+the game tables held in the executable (levels, themes, forms, texture remaps
+and pointers, entity scripts, music, level select, demos, bugs), every
+texture, every model with its flipbooks and polygon textures, the sound banks
+and the CD music, and writes them as Godot resources under `assets/`. The map
+inspection viewer renders terrain, water, sky and map animations.
 The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4, with the original-style
 single-player HUD, tongue collection, pickup and firefly sprites, the cave light, Desert rock explosions, Swamp crushers and presses, Sky balloons and the complete level loop.
 
@@ -49,14 +50,14 @@ R restarts, and Escape returns to the start screen. From the menu, completion of
 To launch a level directly:
 
 ```text
-godot --path . res://scenes/game/gameplay.tscn -- --data-dir=<game-folder> --level=SUB1
+godot --path . res://scenes/game/gameplay.tscn -- --level=SUB1
 ```
 
 A direct launch reads the project's class-name cache in `.godot/`, which goes
 stale when new scripts arrive and then fails with a script parse error. Prefer
 `tools/play.sh --level=SUB1` (or `tools/play.ps1`), which refreshes the cache
-before launching and takes `--data-dir=` from `FROGGER_DATA_DIR` when omitted;
-`--scene=` selects another scene. `tools/run_tests.sh` also refreshes the
+before launching; `--scene=` selects another scene. No data folder is needed:
+the game reads `assets/`. `tools/run_tests.sh` also refreshes the
 checkout cache after strict compilation, and on Windows the wrapper's import
 stage already targets the checkout.
 The default is high-detail ORG1. Add `--record-inputs` to record your play: when
@@ -71,18 +72,16 @@ data; entity particles, pops and glows follow. Forest bee swarms are visible gam
 
 ### Audio
 
-Sound effects play from the player's sound banks. Music is CD audio read from the
-player's disc image: pass `--disc=<FROGGER.mds>` (or its folder) or set
-`FROGGER_DISC`. Without a disc the game looks for `track_NN.ogg`, `.mp3` or `.wav`
-(NN is the track number) in a `music` folder beside the game folder or in
-`user://music`, and otherwise stays silent with a diagnostic. `--no-audio`
-turns all sound off.
+Sound effects play from the imported banks under `assets/audio/sfx/` and
+music from the imported CD tracks under `assets/audio/music/` (`track_NN.ogg`,
+NN being the disc track number). A missing track stays silent with a
+diagnostic. `--no-audio` turns all sound off.
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
 Space plays/pauses, Period steps, R resets and I changes interpolation.
 A direct retail-map launch selects live arrow-key input:
-`godot --path . res://scenes/tools/terrain_viewer.tscn -- --data-dir=<game-folder> --level=ORG1`.
+`godot --path . res://scenes/tools/terrain_viewer.tscn -- --level=ORG1`.
 Press Space to start hopping. The overlay shows LIVE/REPLAY and running/paused;
 Tab switches input mode, Shift requests a super hop (or skips the current
 checkpoint bonus phase), Ctrl uses the tongue, and
@@ -107,16 +106,16 @@ The game runs in GDScript. C files under `tools/` are offline reference
 validation adapters; playing or loading data does not require C code or a compiler.
 For isolated headless or rendered evidence, use `python tools/run_terrain.py
 --godot <executable> --scenario buffer --output-directory <external-folder>`;
-add `--viewer` for a captured scene and `--data-dir <game-folder>` for frog assets.
+add `--viewer` for a captured scene and `--frog-assets` for the real frog model.
 Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
 `--tick-limit <integer>` for overrides, or `--level <name>` to inspect a player's
 selected map. The [inspection contract](docs/reference/testing/terrain-inspection.md)
 defines scenario fields and omitted level systems.
 
-Recorded demo inspection uses the player's high-detail demo table and archive:
+Recorded demo inspection uses the imported high-detail demo table:
 
 ```text
-python tools/run_demo.py --godot <executable> --data-dir <game-folder> --level ORG1 --output-directory <external-folder>
+python tools/run_demo.py --godot <executable> --level ORG1 --output-directory <external-folder>
 ```
 
 Add `--viewer` for rendered playback and a capture, `--render-rate
@@ -158,8 +157,6 @@ Python 3 is needed for the Mac test runner and inspection launchers.
 Double-click `tools/launch_macos.command` in Finder to open the project in the editor.
 Let the initial import finish, then press F5 (Fn-F5 when the keyboard uses media
 keys) to run the start screen.
-It uses `FROGGER_DATA_DIR` when set, otherwise the existing retail folder at
-`../froggy/resources/pc-version/extracted/FROGGER` when present.
 The same launcher works from Terminal. After the initial editor import,
 launch whole-map ORG1 directly with:
 
@@ -176,8 +173,9 @@ export FROGGER_DATA_DIR="$(cd ../froggy/resources/pc-version/extracted/FROGGER &
 bash tools/run_tests.sh
 ```
 
-The wrapper runs the game suite and, with `FROGGER_DATA_DIR` set, the archive
-suite; exit 0 is the only pass. See the
+Only the test wrapper's archive suite and the importer read `FROGGER_DATA_DIR`;
+the game itself needs no retail files. The wrapper runs the game suite and,
+with the variable set, the archive suite; exit 0 is the only pass. See the
 [testing guide](docs/reference/testing/README.md) for isolated Mac profiles.
 Use `python3` for Python commands on macOS.
 
@@ -187,46 +185,33 @@ provide its location, export commands, provenance and comparison limits.
 The PowerShell oracle builders remain Windows-only. Packaged exports remain
 future work.
 
-## No game data is included
+## Assets
 
-This repository contains **no part of the original game**: no executable, no
-archives, no textures, models, sounds, music or video. You need your own copy
-of the retail PC game. The project reads everything it needs at run time from
-your files; nothing from them is ever copied into this repository, and tests
-that need them only store facts about them (file sizes, counts, checksums).
+The game plays from `assets/`, which holds every asset of the retail PC game
+imported once as Godot resources: textures and baked texture pages, model
+meshes, scenes and preview animations, maps, the executable's tables, demos,
+sound effects and the CD music. Binary files are Git LFS objects: run
+`git lfs install` before cloning (or `git lfs pull` afterwards), and expect
+about 120 MB on disk. The test wrapper refuses to run while any asset is still
+an LFS pointer. The assets are the source of truth and are edited directly;
+hand-edited assets get reviewed golden overrides. See [assets](docs/reference/assets.md).
 
-The compatibility target is `pc-retail-v3.0e`, the common worldwide PC release,
-including FrogLord-saved edits based on that build. Other PC builds are outside
-the current compatibility scope. PlayStation data is not supported.
-
-## Pointing the game at your files
-
-The game needs the folder holding `FROGGER.EXE` and `FROGPSX.MWD` from the
-installed game (or FrogLord's saved `modded_FROGGER.EXE` and
-`modded_FROGPSX.MWD`; when both kinds are in one folder the modded files are
-used). It looks, in this order, at:
-
-1. the command line: `godot --path . -- --data-dir=<folder>`
-2. the environment variable `FROGGER_DATA_DIR=<folder>`
-3. the folder remembered from the last successful start.
-
-The build is recognised the way FrogLord recognises it: by the build
-information FrogLord writes into a modded executable, or else by the CRC-32
-checksum of the executable, which FrogLord's version files list.
-
-Running the project opens the level picker and inspection tools, with a report
-of the files/build found or instructions for setting the data folder.
+The importer and the retail readers live in `archive/`, which the game never
+loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`
+regenerates `assets/` from the owner's copy of `pc-retail-v3.0e`; see
+[archive](archive/README.md). FrogLord-saved edits and other builds are not
+supported for now.
 
 ### Sandbox
 
-The start screen's **Sandbox** button (or `godot --path . -- --sandbox`, optionally
-with `--data-dir=<game-folder>`; `--level=SANDBOX` also works) opens a flat 32×32
+The start screen's **Sandbox** button (or `godot --path . -- --sandbox`;
+`--level=SANDBOX` also works) opens a flat 32×32
 arena of coloured terrain zones: plain floor, water, ice, freeform ice, bouncy,
-deadly, soft, checkpoint, cliff steps, a sloped cliff and a camera zone. It finds
-player data like the game. With data, the frog, HUD and entities use the real
-models, and the palette offers every entity kind a supported level places, with
-that level's forms, scripts and payloads. Without data, the frog is a marker,
-entities are orange footprint placeholders, and only `STATIC`, `DYNAMIC`,
+deadly, soft, checkpoint, cliff steps, a sloped cliff and a camera zone. The
+frog, HUD and entities use the real models, and the palette offers every entity
+kind a supported level places, with that level's forms, scripts and payloads.
+In a synthetic scenario without models, the frog is a marker, entities are
+orange footprint placeholders, and only `STATIC`, `DYNAMIC`,
 `FOR_SWAYING_BRANCH`, `MOVING` and `MOVING_TONGUEABLE` spawn, as one-cell
 platforms. The sandbox never ends: when a run completes or the last life is
 lost, it restarts with full lives.
@@ -266,16 +251,6 @@ fly, gold frog and checkpoint, for listening to moving sounds, doppler and loops
 
 The sandbox is a play-check tool, not acceptance evidence; its
 [limitations](docs/reference/architecture.md#sandbox) are listed with its design.
-
-### Texture viewer
-
-The start screen's **Texture viewer** button (or
-`godot --path . res://scenes/tools/texture_viewer.tscn`) shows every texture
-bank (VLO file) of the game: pick one on the left to see its images with
-their position, texture id, name, size and flags. Keys: Up/Down choose a
-bank, F switches nearest/linear filtering, C switches the checkerboard
-behind transparent pixels, Page Up/Page Down scroll, Esc returns to the
-start screen.
 
 ### Model viewer
 
@@ -351,7 +326,7 @@ For reproducible path traces and an optional rendered capture, run
 `python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
 Add `--viewer` for the map overlay, `--scenario arc` or `--scenario spline`
 for other built-in paths, or `--scenario-file <JSON-file>` for a custom case.
-With player data, use `--data-dir <game-folder> --level SUB1 --path-index 0`;
+With an imported map, use `--level SUB1 --path-index 0`;
 `--tick-limit` and `--render-rate 30|60|144` select the duration and rendered
 frame schedule. The wrapper writes a JSONL trace and keeps captures and logs
 outside the repository. With `--viewer` it also writes a world-only path image
@@ -364,15 +339,15 @@ headless trace against rendered runs at 30, 60 and 144 frames per second, use
 
 For source-ordered entity transforms, run `python tools/run_entities.py --godot
 <executable> --scenario shared-path --output-directory <external-folder>`.
-Use `--viewer` to capture world and full-window images, or `--data-dir
-<game-folder> --level ORG1` to inspect player data. `--tick-limit` and
+Use `--viewer` to capture world and full-window images, or `--level ORG1`
+to inspect an imported map. `--tick-limit` and
 `--render-rate 30|60|144` control the trace duration and render schedule.
 `python tools/verify_entity_schedules.py --godot <executable> --scenario
 shared-path --output-directory <external-folder>` compares schedules, including
 the fixed contact probe. Traces,
 logs and captures stay outside the repository.
 
-For repeatable captures on Windows, set `GODOT` and `FROGGER_DATA_DIR`, then:
+For repeatable captures on Windows, set `GODOT`, then:
 
 ```powershell
 tools/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Camera map-slice -Tick 0 -Linear -Benchmark
@@ -383,11 +358,9 @@ repository. Use `-Linear` for frozen-C comparisons; omit it for nearest filterin
 Add `-LowDetail` to inspect the matching low-detail map and textures. The viewer also accepts
 `-- --level=SUB1 --low-poly=false --camera=map-slice --tick=0 --linear=false
 --screenshot-dir=<absolute external folder>`. An optional `--probe-model=GEN_CHECKPOINT_1.XMR`
-shows a static model with map ambient/parallel lighting. Saved FrogLord files
-use the EXE's embedded index; a supplied standalone MWI is compared and any
-mismatch is reported.
+shows a static model with map ambient/parallel lighting.
 High- and low-detail maps are separate resources: select the detail variant
-you edited in FrogLord. For fixed-pose comparisons, the capture wrapper accepts
+you want. For fixed-pose comparisons, the capture wrapper accepts
 `-CameraSource 'x,y,z'`, `-CameraTarget 'x,y,z'` (game units) and `-Projection 500`.
 
 ## Running the tests
@@ -433,7 +406,6 @@ commit.
 | Path | What |
 |---|---|
 | `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, and `AssetCatalog`, the abstract data provider. No scene tree, no file access. |
-| `src/source/` | Readers that decode the retail files into those records: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs), `source/` (finding the game files), `formats/`, `exe/`, `sound/`. `game_data.gd` is the retail-backed `AssetCatalog`. Moves to `archive/` in S1d. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
 | `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
 | `src/application/` | Source-to-game adapters and resolved behavior catalog. |
@@ -442,9 +414,8 @@ commit.
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
 | `tests/golden/` | Golden tests over committed synthetic facts and keyboard fixtures, and the retail text facts the archive suite compares with. |
-| `archive/` | The retail readers' tests (`archive/tests/golden/test_retail_*.gd`, run only with `FROGGER_DATA_DIR`) and, as S1 proceeds, the readers, the importer and FrogLord's configuration. The game never depends on it. |
+| `archive/` | Everything that reads the retail files, which the game never loads: `source/` (the readers and the retail-backed `GameData`), `import/` (the one-time importer that writes `assets/`), `tests/` (the archive suite, run only with `FROGGER_DATA_DIR`), `tools/`, `docs/formats/` (the retail format references) and `third_party/froglord_cfg/` (FrogLord's configuration files, unmodified; see `archive/third_party/README.md`). |
 | `tools/` | Test runners, a script compile check, the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`), and `probe_model_shader.gd`, which measures the colours the model shaders put on screen. |
-| `third_party/` | FrogLord's configuration files, unmodified (see `third_party/README.md`). |
 | `addons/gut/` | The GUT test framework, unmodified. |
 
 ## Contributing and project documentation
@@ -458,9 +429,9 @@ stay outside the repository, and Git retains development history.
 
 ## Licence
 
-The licence for this project's own code is **to be decided by the project
-owner**; until then, no licence is granted. Third-party material keeps its own
-licence: FrogLord's configuration files (MIT, `third_party/froglord_cfg/LICENSE.md`)
+This repository is permanently private: it holds assets derived from the
+retail game, and nothing in it is distributed or licensed to others. Third-party material keeps its own
+licence: FrogLord's configuration files (MIT, `archive/third_party/froglord_cfg/LICENSE.md`)
 and GUT (MIT, `addons/gut/LICENSE.md`).
 
 ## Credits

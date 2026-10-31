@@ -21,7 +21,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 		return "ORG1 admission manifest is unavailable"
 	var proof: Dictionary = parsed
 	var schema: String = "org1-visibility-admission-v2" if visibility else "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
-	if proof.get("schema") != schema or data.version.internal_name != proof.get("build"):
+	if proof.get("schema") != schema or data.version_name != proof.get("build"):
 		return "ORG1 exploration requires audited pc-retail-v3.0e inputs"
 	var map: MapFile = scenario.map_scene.map
 	var issue: String = RetailExplorationInputs.validate(data, map, proof, scenario.map_scene.level)
@@ -46,7 +46,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	for index: int in expected_callbacks.size():
 		if expected_callbacks[index] != callback_names.name_of(index):
 			return "ORG1 callback name mapping changed"
-	var setup: EntitySetup = EntitySetup.from_map(map, book, scenario.level.source_id, scenario.level.resource_id, data.version.internal_name, true)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, scenario.level.source_id, scenario.level.resource_id, data.version_name, true)
 	if not setup.error.is_empty() or setup.definitions.size() != _integer(proof.authored_count):
 		return "ORG1 requires every authored logical update: " + setup.error
 	var models: Dictionary[int, MofFile] = {}

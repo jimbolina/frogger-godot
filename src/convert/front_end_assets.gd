@@ -1,7 +1,7 @@
 class_name FrontEndAssets
 extends RefCounted
 ## Main-menu, options, level-select and pause text images in one [GameLanguage], resolved by
-## FrogLord names and level-select texture records from the player's archive.
+## FrogLord names and level-select texture records from the imported texture banks.
 ##
 ## English loads [constant BANKS]. Another language also loads its fixed-UI and options
 ## text banks after the English ones and draws each name's localized image
@@ -65,8 +65,7 @@ static func banks_for(for_language: int) -> PackedStringArray:
 	return banks
 
 
-## Loads the front-end banks for [param for_language] from either catalog without retaining
-## the archive or copying retail pixels to disk.
+## Loads the front-end banks for [param for_language] from [param data].
 static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.ENGLISH) -> FrontEndAssets:
 	var result := FrontEndAssets.new()
 	result.language = for_language if GameLanguage.is_language(for_language) else GameLanguage.Id.ENGLISH

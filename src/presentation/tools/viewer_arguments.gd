@@ -24,6 +24,8 @@ static func has_flag(arguments: PackedStringArray, flag: String) -> bool:
 	return arguments.has(flag)
 
 
-## Locates data using the first explicit folder, then the locator's environment/saved precedence.
-static func locate_data(arguments: PackedStringArray) -> GameDataLocator.Located:
-	return GameDataLocator.new().locate(value(arguments, "--data-dir="))
+## Whether a scenario run attaches the imported assets: a map selected with
+## [code]--level=[/code], or the rendered frog of a synthetic scenario selected
+## with [code]--frog-assets[/code]. Other runs stay synthetic.
+static func uses_assets(arguments: PackedStringArray) -> bool:
+	return not value(arguments, "--level=").is_empty() or has_flag(arguments, "--frog-assets")

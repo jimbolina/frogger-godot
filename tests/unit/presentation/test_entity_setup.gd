@@ -208,16 +208,13 @@ func test_structural_map_failure_is_setup_error() -> void:
 	map.packets["EMTP"].count = 1
 	assert_string_contains(EntitySetup.from_map(map, _book()).error, "count")
 
-func test_all_supported_build_name_lists_include_base_types_and_override() -> void:
-	var library := FrogLordConfigLibrary.new()
-	for build: String in ["pc-retail-v3.0e", "pc-retail-v1.0", "pc-retail-v3.0e-vogons"]:
-		var version: GameVersionConfig = library.load_version(build)
-		var names: GameNameLists = GameNameListsReader.load_for(version, library)
-		assert_eq(names.errors.size(), 0, build)
-		assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("STATIC")), "STATIC", build)
-		assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("MOVING")), "MOVING", build)
-		assert_eq(names.entity_name_for("CAV_SNAIL", names.entities.index_of("STATIC")), "MOVING", build)
-		assert_true(names.forms.get_sub_bank("GENERAL").index_of("GEN_CHECKPOINT_1") >= 0, build)
+func test_imported_name_lists_include_base_types_and_override() -> void:
+	var names: GameNameLists = _imported_names()
+	assert_eq(names.errors.size(), 0)
+	assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("STATIC")), "STATIC")
+	assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("MOVING")), "MOVING")
+	assert_eq(names.entity_name_for("CAV_SNAIL", names.entities.index_of("STATIC")), "MOVING")
+	assert_true(names.forms.get_sub_bank("GENERAL").index_of("GEN_CHECKPOINT_1") >= 0)
 
 func test_bonus_fly_payload_types_and_source_located_rejection() -> void:
 	var book: ThemeBook = _book()
@@ -447,8 +444,7 @@ func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> voi
 	assert_eq(setup.diagnostics[0].code, "unsupported_transform")
 
 func test_froglord_entity_override_is_reported_without_omission() -> void:
-	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = _imported_names()
 	var book: ThemeBook = _book()
 	var form: FormBookEntry = book.entries[1].forms[1]
 	form.form_name = "CAV_SNAIL"
@@ -704,3 +700,8 @@ func test_jungle_path_followers_read_path_info_and_hippo_requires_its_type() -> 
 			assert_eq(setup.diagnostics[0].entity_index, 1)
 		setup = EntitySetup.from_map(map, book, "jun.map", 657, "pc-retail-v3.0e")
 		assert_true(setup.definitions.is_empty(), name)
+
+func _imported_names() -> GameNameLists:
+	var catalog: ImportedAssets = ImportedAssets.open()
+	assert_eq(catalog.error, "")
+	return catalog.names

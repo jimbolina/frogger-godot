@@ -15,7 +15,7 @@ import make_golden_paths as paths
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'tests/golden/synthetic/swamp.json'
-SOUND_CFG = ROOT / 'third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
+SOUND_CFG = ROOT / 'archive/third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
 SCRIPT_LIST = jungle.SCRIPT_LIST
 U16 = 0xffff
 NO_FROG = 9999999

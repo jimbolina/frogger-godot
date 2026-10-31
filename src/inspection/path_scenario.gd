@@ -164,7 +164,7 @@ func attach_data(data: AssetCatalog, selected_level_code: String, selected_path_
 	var map: MapFile = data.read_map(resource_id, problems)
 	if map == null:
 		return "Path inspection cannot read map: " + "; ".join(problems)
-	var setup: PathSetup = PathSetup.from_map(map, data.version.internal_name + ":" + selected_level_code.to_upper(), resource_id, data.version.internal_name)
+	var setup: PathSetup = PathSetup.from_map(map, data.version_name + ":" + selected_level_code.to_upper(), resource_id, data.version_name)
 	if not setup.error.is_empty():
 		return setup.error
 	for diagnostic: PathSetupDiagnostic in setup.diagnostics:

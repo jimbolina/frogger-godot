@@ -112,7 +112,7 @@ def run(args):
             result=subprocess.run(command+arguments,cwd=repo,env=env,startupinfo=startup,stdout=stream,stderr=subprocess.STDOUT,timeout=1800)
         log=(evidence/(label+'.log')).read_text()
         if result.returncode or any(x in log for x in ('SCRIPT ERROR','Parse Error','CHECK FAILED','ERROR:')):raise RuntimeError(f'{label} failed; see {evidence}')
-    selected=['--level=ORG1','--exploration='+args.exploration,'--scenario-file='+str(args.scenario_file.resolve()),'--data-dir='+str(args.data_dir.resolve())]
+    selected=['--level=ORG1','--exploration='+args.exploration,'--scenario-file='+str(args.scenario_file.resolve())]
     stage('import',['--import']);stage('check',['-s','res://tools/check_scripts.gd'])
     baseline=evidence/'headless.jsonl'
     stage('headless',['-s','res://tools/run_terrain_scenario.gd','--','--trace-jsonl='+str(baseline),*selected])

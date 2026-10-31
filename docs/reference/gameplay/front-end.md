@@ -122,7 +122,7 @@ The bindings are saved as 44 integers (`device, valid, nine scancodes` per playe
 `HighScoreBoard` (`src/game/frontend/`) holds the main table of ten rows and three
 rows per level (`HighScoreRow`: three initials, a score and five checkpoint seconds).
 The defaults are read from the executable's `Game_high_score` and `Level_high_scores`
-(`HighScoreTable`, `src/source/exe/`); retail's tables differ from the vendored
+(`HighScoreTable`, `src/data/tables/`); retail's tables differ from the vendored
 source in two Volcano rows, which the [specification](../../../tests/golden/specs/frontend.md#default-high-scores)
 records. Achieved scores persist in `user://high_scores.cfg` (`HighScoreStore`),
 written after name entry and at the end of a game; retail writes registry blobs,

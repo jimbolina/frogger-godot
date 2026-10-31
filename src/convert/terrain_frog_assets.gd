@@ -9,7 +9,7 @@ var player: ModelAnimationPlayer
 var hidden_parts: PackedInt64Array = PackedInt64Array()
 var action_lengths: PackedInt32Array = PackedInt32Array()
 
-## Resolves the GENERAL high-detail frog and texture bank through the existing data APIs.
+## Resolves the GENERAL high-detail frog, its texture bank and its hidden parts from [param data].
 static func from_data(data: AssetCatalog) -> TerrainFrogAssets:
 	var assets := TerrainFrogAssets.new()
 	if data == null or not data.is_valid():
@@ -35,7 +35,17 @@ static func from_data(data: AssetCatalog) -> TerrainFrogAssets:
 		return assets
 	for action: int in assets.player.action_count():
 		assets.action_lengths.append(assets.player.action_frame_count(action) if assets.player.action_error(action).is_empty() else 0)
-	if data.version.hidden_parts.has("GEN_FROG.XAR"):
-		var hidden: PackedInt64Array = data.version.hidden_parts["GEN_FROG.XAR"]
-		assets.hidden_parts = hidden.duplicate()
+	assets.hidden_parts = data.hidden_parts_of("GEN_FROG.XAR").duplicate()
 	return assets
+
+
+## A copy of these assets drawn with [param drawn_mesh] instead of [member mesh].
+func with_mesh(drawn_mesh: ModelMesh) -> TerrainFrogAssets:
+	var copy := TerrainFrogAssets.new()
+	copy.error = error
+	copy.model = model
+	copy.mesh = drawn_mesh
+	copy.player = player
+	copy.hidden_parts = hidden_parts.duplicate()
+	copy.action_lengths = action_lengths.duplicate()
+	return copy

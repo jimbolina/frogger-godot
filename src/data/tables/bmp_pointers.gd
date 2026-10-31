@@ -23,11 +23,6 @@ extends Resource
 var _id_by_pointer: Dictionary[int, int] = {}
 
 
-## Reads the list of [param exe] (see [BmpPointersReader]).
-static func read(exe: ExeImage) -> BmpPointers:
-	return BmpPointersReader.read(exe)
-
-
 ## Number of texture ids.
 func size() -> int:
 	return pointers.size()

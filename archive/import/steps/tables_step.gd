@@ -50,6 +50,6 @@ func run(context: ImportContext, phase: String) -> void:
 		table.resource_name = TABLES[property]
 		ImportContext.number_sub_resources(table)
 		context.save_resource(table, context.table_path(TABLES[property]))
-	tables.resource_name = "%s tables" % context.data.version.internal_name
+	tables.resource_name = "%s tables" % context.data.version_name
 	ImportContext.number_sub_resources(tables)
 	context.save_resource(tables, context.table_path("game_tables"))

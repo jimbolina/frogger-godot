@@ -259,7 +259,7 @@ func _send_key(code: Key) -> void:
 
 func test_boot_flags_and_scene_select_the_sandbox() -> void:
 	assert_true(BootScreen.wants_sandbox(PackedStringArray(["--sandbox"])))
-	assert_true(BootScreen.wants_sandbox(PackedStringArray(["--level=sandbox", "--data-dir=x"])))
+	assert_true(BootScreen.wants_sandbox(PackedStringArray(["--level=sandbox", "--no-audio"])))
 	assert_false(BootScreen.wants_sandbox(PackedStringArray(["--level=ORG1"])))
 	var scene: PackedScene = load(BootScreen.SANDBOX_SCENE)
 	var instance: Node = scene.instantiate()

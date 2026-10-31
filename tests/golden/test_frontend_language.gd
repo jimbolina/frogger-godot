@@ -2,6 +2,8 @@ extends GutTest
 ## GameLanguage and FrontEndAssets agree with the independent language facts in
 ## tests/golden/synthetic/frontend_language.json (tools/make_golden_language.py).
 
+## The imported FrogLord name lists of the retail build.
+const NAMES: String = "res://assets/tables/names.tres"
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_language.json"
 
 var _document: Dictionary = {}
@@ -10,8 +12,7 @@ var _images: NameBank
 
 func before_all() -> void:
 	_document = JSON.parse_string(FileAccess.get_file_as_string(GOLDEN))
-	var library := FrogLordConfigLibrary.new()
-	_images = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library).images
+	_images = (load(NAMES) as GameNameLists).images
 
 
 static func _int(value: Variant) -> int:

@@ -154,7 +154,7 @@ and `synthetic/zones.tsv` additionally pin inclusive edges, empty child lists,
 region gaps, overlapping zones/source order, inverted bounds and unsigned outer
 versus signed child bounds. Both query families compare independent Python
 results with unchanged frozen `CheckCoordsInZones`; GDScript never generates
-expected data. The [map contract](../../../docs/reference/data/maps.md) owns
+expected data. The [map contract](../../../archive/docs/formats/maps.md) owns
 the packet layout and signedness disagreement.
 
 Build the existing platform oracle into an external directory, then generate

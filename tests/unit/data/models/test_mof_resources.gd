@@ -40,7 +40,7 @@ func _animated_part() -> SyntheticMof.Part:
 
 
 func test_a_static_model_survives_text_and_binary_resources() -> void:
-	var parsed: MofFile = MofFile.parse(SyntheticMof.build_static([_animated_part()]))
+	var parsed: MofFile = SyntheticMof.static_file([_animated_part()])
 	assert_eq(parsed.error, "")
 	parsed.static_models[0].parts[0].matrices.append(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 1, -2, 3]))
 	for name: String in ["static.tres", "static.res"]:
@@ -74,9 +74,9 @@ func test_a_static_model_survives_text_and_binary_resources() -> void:
 func test_an_animated_model_samples_the_same_after_loading() -> void:
 	var transforms: Array[MofTransform] = [SyntheticMofAnimation.transform(5, [4096, 0, 0, 0, 0, 0, 0, 32, 32, 32, 1]),
 		SyntheticMofAnimation.transform(5, [0, 0, 0, 4096, 100, -101, 0, 64, 16, -32, 1])]
-	var statics: Array[PackedByteArray] = [SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)])]
-	var parsed: MofFile = MofFile.parse(SyntheticMofAnimation.build(statics, 5, transforms,
-		[SyntheticMofAnimation.action(1, 2, [0, 1, 0, 0, 1, 2048, 0, 1, 4096], [0, 1], true)]))
+	var statics: Array[MofStatic] = [SyntheticMof.static_model([SyntheticMof.square(MofPolygonType.F4)])]
+	var parsed: MofFile = SyntheticMofAnimation.animated_file(statics, 5, transforms,
+		[SyntheticMofAnimation.action(1, 2, [0, 1, 0, 0, 1, 2048, 0, 1, 4096], [0, 1], true)])
 	assert_eq(parsed.error, "")
 	parsed.animated.bounding_boxes.append(PackedInt32Array([1, 2, 3]))
 	var loaded: MofFile = _round_trip(parsed, "animated.res")

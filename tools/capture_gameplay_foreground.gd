@@ -18,11 +18,10 @@ func _capture() -> void:
 		_fail("Foreground output must be outside both repositories")
 		return
 	var fixture: Dictionary = parsed
-	var located: GameDataLocator.Located = ViewerArguments.locate_data(args)
-	if not located.is_ok():
-		_fail(located.error)
+	var data: AssetCatalog = ImportedAssets.open()
+	if not data.is_valid():
+		_fail(data.error)
 		return
-	var data: AssetCatalog = GameData.open(located.source, located.version)
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(data)
 	if not assets.error.is_empty():
 		data.close()

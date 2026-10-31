@@ -9,7 +9,7 @@ disagreements in the relevant technical reference; do not invent rules.
 
 | Area | References |
 |---|---|
-| Source data | [Build recognition](data/build-detection.md), [archives](data/archives.md), [executable tables](data/executable-tables.md), [textures](data/textures.md), [models](data/models.md), [model animation](data/animation.md), [maps](data/maps.md) |
+| Source data | [Build recognition](../../archive/docs/formats/build-detection.md), [archives](../../archive/docs/formats/archives.md), [executable tables](../../archive/docs/formats/executable-tables.md), [textures](../../archive/docs/formats/textures.md), [models](../../archive/docs/formats/models.md), [model animation](../../archive/docs/formats/animation.md), [maps](../../archive/docs/formats/maps.md) |
 | Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [paths](gameplay/paths.md), [entities](gameplay/entities.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md), [front end](gameplay/front-end.md) |
 | Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [single-player HUD](rendering/README.md#single-player-hud), [gameplay projection](rendering/gameplay-projection.md), [effects](rendering/effects.md) |
 | Assets | [Assets](assets.md), [archive](../../archive/README.md) |
@@ -35,14 +35,14 @@ owns a separate runner, including when paths share geometry. See
 
 | Term | Meaning and authoritative contract |
 |---|---|
-| Source / build | Selected files versus the recognized executable configuration. Identities are scoped to that source/build; see [build detection](data/build-detection.md). |
-| Archive resource / Godot Resource | An original indexed file versus an engine resource object. An archive index is meaningful only with its owning source; see [archives](data/archives.md). |
-| Map / level | A decoded map resource versus a level selected through the executable map book and its dependencies; see [maps](data/maps.md). High/low detail use different resources. |
+| Source / build | Selected files versus the recognized executable configuration. Identities are scoped to that source/build; see [build detection](../../archive/docs/formats/build-detection.md). |
+| Archive resource / Godot Resource | An original indexed file versus an engine resource object. An archive index is meaningful only with its owning source; see [archives](../../archive/docs/formats/archives.md). |
+| Map / level | A decoded map resource versus a level selected through the executable map book and its dependencies; see [maps](../../archive/docs/formats/maps.md). High/low detail use different resources. |
 | Path / path runner | Authored map geometry and its source index versus one mutable cursor over a detached definition. A path can serve multiple entities with separate cursors; see [paths](gameplay/paths.md). |
 | Form book entry / form grid | A named object kind selecting behavior, model and script versus a map's indexed collision grid. Form-book ids are scoped to a theme (or GENERAL); bounded contact inspection reads the grid without running frog reactions. |
 | Map entity / live entity | A persistent authored record/path cursor versus a run-owned live instance. Optional visibility lifetime can destroy and recreate instances without changing authored identity; the array index remains the identity even with gaps. See [entities](gameplay/entities.md). |
-| Entity script / GDScript | Original opcode data versus this project's implementation language. Decoding a script does not execute it; see [executable tables](data/executable-tables.md). |
-| Tick / rendered frame / animation frame / cel | A logic update, displayed image, animation clock position and authored pose selection. See [simulation](gameplay/simulation.md) and [animation](data/animation.md). |
+| Entity script / GDScript | Original opcode data versus this project's implementation language. Decoding a script does not execute it; see [executable tables](../../archive/docs/formats/executable-tables.md). |
+| Tick / rendered frame / animation frame / cel | A logic update, displayed image, animation clock position and authored pose selection. See [simulation](gameplay/simulation.md) and [animation](../../archive/docs/formats/animation.md). |
 | Game position / grid cell / render position | Distinct units. Conversion belongs to `GameSpace`; see [coordinates](rendering/coordinates.md). |
 
 ## Following a form

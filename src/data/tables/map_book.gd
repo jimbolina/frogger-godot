@@ -12,11 +12,6 @@ extends Resource
 @export var error: String = ""
 
 
-## Reads the map book of [param exe] (see [MapBookReader]).
-static func read(exe: ExeImage) -> MapBook:
-	return MapBookReader.read(exe)
-
-
 ## Number of rows.
 func size() -> int:
 	return entries.size()

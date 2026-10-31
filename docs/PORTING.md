@@ -35,8 +35,8 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S1a | [Boundaries and archive staging](#s1-and-s2-native-asset-and-modern-rendering-spikes): Git LFS, the `archive/` folder with the retail goldens, two test suites with no skips, scanner isolation and `src/data` rules | S | Game suite with zero skips; archive suite with `FROGGER_DATA_DIR`; strict compilation and the architecture check | Done |
 | S1b | Typed `Resource` schema in `src/data/` and the abstract `AssetCatalog`; readers split out in `src/source/` | M | Every retail golden passes through the Resource-typed records; both suites green; no behaviour change | Done |
 | S1c | Importer and committed assets: PNG textures, baked pages, model meshes and scenes, map resources, WAV effects, Ogg music, tables, demos; import goldens with independent oracles | L | Second import leaves `assets/` unchanged; import goldens and deliberate-break checks pass | Done; shaders moved to files |
-| S1d | Runtime switch: every scene opens `ImportedAssets`; `--data-dir`, `FROGGER_DATA_DIR` and `--disc` leave the game; readers and FrogLord configs move to `archive/` | L | Both suites green; every accepted level, the front end and the sandbox play from imported resources (owner play check); captures compared with pre-S1 captures | Next |
-| S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | |
+| S1d | Runtime switch: every scene opens `ImportedAssets`; `--data-dir`, `FROGGER_DATA_DIR` and `--disc` leave the game; readers and FrogLord configs move to `archive/` | L | Both suites green; every accepted level, the front end and the sandbox play from imported resources (owner play check); captures compared with pre-S1 captures | Done; owner's play check pending |
+| S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | Next |
 | S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | After S1 |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
@@ -87,11 +87,12 @@ to what still holds (geometry, animation, gameplay).
 
 | What | Needed by | Why |
 |---|---|---|
-| A licence for this project's own code | Before the repository is made public | |
-| A repository host | Before P17's CI | CI needs a runner and retained logs |
+| A licence for this project's own code | Decided 2026-10-31 | The repository is permanently private, so no public licence is needed; third-party material keeps its own licences. |
+| A repository host | Decided 2026-10-31 | `https://github.com/jimbolina/frogger-godot.git`, private; pushes happen only when the owner asks. GitHub's free Git LFS allowance (1 GB storage and bandwidth) bounds how often the assets can be re-imported or replaced before a data pack is needed. |
 | Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds, music and maps are committed as project resources through Git LFS; the repository stays private and the licence decision covers them. |
 | Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
-| Licence position on retail-derived assets | Before the repository is made public | `assets/` is derived from Frogger (1997); the owner decides how it is licensed or excluded. |
+| Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
+| Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only; `compare_map_captures.py` needs Pillow. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage

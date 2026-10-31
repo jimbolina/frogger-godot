@@ -22,8 +22,8 @@ import make_golden_stack as stack
 
 ROOT = frontend.ROOT
 ENTRY_JSON = frontend.GOLDEN / 'synthetic' / 'frontend_high_score_entry.json'
-FROGLORD_SOUNDS = ROOT / 'third_party' / 'froglord_cfg' / 'sounds' / '1997-11-19-pc-retail.cfg'
-FROGLORD_ANIMS = ROOT / 'third_party' / 'froglord_cfg' / 'anims' / 'main-pc.cfg'
+FROGLORD_SOUNDS = ROOT / 'archive' / 'third_party' / 'froglord_cfg' / 'sounds' / '1997-11-19-pc-retail.cfg'
+FROGLORD_ANIMS = ROOT / 'archive' / 'third_party' / 'froglord_cfg' / 'anims' / 'main-pc.cfg'
 
 NUM_EXTRAS = 6
 NUM_INITIALS = 3

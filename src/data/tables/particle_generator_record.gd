@@ -54,12 +54,6 @@ const WORDS: int = 11
 @export var texture_symbols: PackedStringArray = PackedStringArray()
 
 
-## The record whose first word is [param words][[param index]], or null when
-## it does not have the generator shape (see [ExeParticleGeneratorsReader]).
-static func from_words(words: PackedInt64Array, index: int) -> ParticleGeneratorRecord:
-	return ExeParticleGeneratorsReader.record_from_words(words, index)
-
-
 ## True for the generator shape: 2D type, flags 0 or no-geometry, a 16-80
 ## byte primitive and program addresses for the prim-init, move and display
 ## callbacks.

@@ -80,7 +80,7 @@ var entry_frog_bank: VloFile
 var entry_frog_actions: Dictionary[StringName, int] = {}
 
 
-## Loads every model, image and light from [param data] without retaining the archive.
+## Loads every model, image and light from [param data].
 static func from_data(data: AssetCatalog) -> OptionsModels:
 	var result := OptionsModels.new()
 	result.lighting = options_lighting()

@@ -79,6 +79,6 @@ func test_jun1_zone_lifecycle_matches_independent_reference() -> void:
 	assert_string_contains(Jun1ZoneLifecycleSetup.from_data(data, inspection.map_scene).error, "changed")
 	form.script_id = saved_script
 	assert_eq(Jun1ZoneLifecycleSetup.from_data(data, inspection.map_scene).error, "")
-	var collision: EntityCollisionSetup = EntityCollisionSetup.from_map(inspection.map_scene.map, data.tables.theme_book(), {}, "JUN1", 656, data.version.internal_name, false, true)
+	var collision: EntityCollisionSetup = EntityCollisionSetup.from_map(inspection.map_scene.map, data.tables.theme_book(), {}, "JUN1", 656, data.version_name, false, true)
 	assert_string_contains(collision.error, "without authored zones")
 	data.close()

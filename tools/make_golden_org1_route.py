@@ -49,10 +49,10 @@ def admission_manifest(context,geometry,probes):
         books.append([r['entity_index'],r['unique_id'],r['form_grid_id'],fid,r['flags'],b['entity_type'],b['id'],
                       b['script'],b['flags'],b['collision'],b['radius2'],b['death'],b['bonus']])
         models.append(-1 if b['flags']&1 else r['model_resource_id'])
-    model_facts=[{k:r[k] for k in ('resource_id','sha256','counterpart_resource_id')} for r in geometry['models']]
-    model_facts.append(dict(resource_id=214,sha256=probes['animation_sha256'],counterpart_resource_id=-1))
-    return dict(schema='org1-route-admission-v1',build='pc-retail-v3.0e',map_resource_id=658,
-        map_sha256=geometry['map_sha256'],form_book_rows_sha256=admission.platform.route_numeric_digest(books),
+    model_facts=[{k:r[k] for k in ('resource_id','counterpart_resource_id')} for r in geometry['models']]
+    model_facts.append(dict(resource_id=214,counterpart_resource_id=-1))
+    return dict(schema='org1-route-admission-v1',build='pc-retail-v3.0e',exe_sha256=geometry['executable_sha256'],
+        mwd_sha256=hashlib.sha256(context['mwd']).hexdigest(),map_resource_id=658,form_book_rows_sha256=admission.platform.route_numeric_digest(books),
         script_rows_sha256=admission.platform.route_numeric_digest([[i,len(s['stream']),*s['stream']] for i,s in enumerate(context['scripts'])]),
         model_resources=sorted(model_facts,key=lambda r:r['resource_id']),entity_model_resources=models,
         name_bindings=[dict(index=r['entity_index'],form=r['form_name'],entity=r['entity_type'],script=context['script_names'][r['script_id']]) for r in geometry['neighbors']],

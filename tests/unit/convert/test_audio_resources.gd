@@ -10,24 +10,28 @@ func _definition(sound_id: int, flags: int, minimum: int = 20, maximum: int = 10
 	definition.maximum_volume = maximum
 	return definition
 
-func _row(sound_id: int, present: bool, offset: int, size: int, bits: int) -> SoundBankEntry:
+func _row(sound_id: int, samples: PackedByteArray) -> SoundBankEntry:
 	var entry := SoundBankEntry.new()
 	entry.sound_id = sound_id
-	entry.audio_present = present
-	entry.data_offset = offset
-	entry.data_size = size
+	entry.audio_present = not samples.is_empty()
+	entry.data_size = samples.size()
 	entry.sample_rate = 22050
-	entry.sample_bits = bits
+	entry.sample_bits = 16
+	if entry.audio_present:
+		var stream := AudioStreamWAV.new()
+		stream.format = AudioStreamWAV.FORMAT_16_BITS
+		stream.mix_rate = entry.sample_rate
+		stream.data = samples
+		entry.stream = stream
 	return entry
 
 func _bank() -> SoundBankSetup:
 	var bank := SoundBankSetup.new()
 	bank.header = SoundBankHeader.new()
-	bank.header.entries.append(_row(0, false, 0, 0, 16))
-	bank.header.entries.append(_row(1, true, 0, 4, 16))
-	bank.header.entries.append(_row(2, true, 4, 2, 8))
-	bank.header.entries.append(_row(3, false, 0, 0, 16))
-	bank.body = PackedByteArray([1, 2, 3, 4, 0, 255])
+	bank.header.entries.append(_row(0, PackedByteArray()))
+	bank.header.entries.append(_row(1, PackedByteArray([1, 2, 3, 4])))
+	bank.header.entries.append(_row(2, PackedByteArray([0, 128, 0, 127])))
+	bank.header.entries.append(_row(3, PackedByteArray()))
 	return bank
 
 func _moving(position: Vector3i) -> LogicalMovingSound:
@@ -71,10 +75,10 @@ func test_streams_are_built_lazily_once_per_bank() -> void:
 	assert_eq(resources.diagnostics.size(), 0)
 
 func test_repeat_samples_loop_like_looped_samples() -> void:
-	var pcm := SoundBankPcm.new()
-	pcm.sample_bits = 16
-	pcm.bytes = PackedByteArray([0, 0, 1, 0, 2, 0])
-	var stream: AudioStreamWAV = AudioResources.build_stream(pcm, LogicalSoundDefinition.REPEAT)
+	var imported := AudioStreamWAV.new()
+	imported.format = AudioStreamWAV.FORMAT_16_BITS
+	imported.data = PackedByteArray([0, 0, 1, 0, 2, 0])
+	var stream: AudioStreamWAV = AudioResources.imported_stream(imported, LogicalSoundDefinition.REPEAT)
 	assert_eq(stream.loop_mode, AudioStreamWAV.LOOP_FORWARD)
 	assert_eq(stream.loop_end, 3)
 
@@ -86,7 +90,7 @@ func test_imported_streams_are_copied_with_their_loop() -> void:
 	var bank := SoundBankSetup.new()
 	bank.header = SoundBankHeader.new()
 	for sound_id: int in 3:
-		var row: SoundBankEntry = _row(sound_id, true, 0, 6, 16)
+		var row: SoundBankEntry = _row(sound_id, imported.data)
 		row.stream = imported
 		bank.header.entries.append(row)
 	var definitions: Array[LogicalSoundDefinition] = [
@@ -160,13 +164,3 @@ func test_definition_copy_carries_volumes() -> void:
 	var copied: LogicalSoundDefinition = _definition(1, LogicalSoundDefinition.SINGLE, 12, 34).copy()
 	assert_eq(copied.minimum_volume, 12)
 	assert_eq(copied.maximum_volume, 34)
-
-func test_music_stream_wraps_stereo_pcm() -> void:
-	var pcm := PackedByteArray()
-	pcm.resize(2352)
-	var stream: AudioStreamWAV = AudioResources.music_stream(pcm, true)
-	assert_true(stream.stereo)
-	assert_eq(stream.mix_rate, 44100)
-	assert_eq(stream.loop_mode, AudioStreamWAV.LOOP_FORWARD)
-	assert_eq(stream.loop_end, 588)
-	assert_eq(AudioResources.music_stream(pcm, false).loop_mode, AudioStreamWAV.LOOP_DISABLED)

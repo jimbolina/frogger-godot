@@ -25,9 +25,18 @@ static func report_path(suite: String) -> String:
 
 ## Describes why a player folder is unusable for the archive suite, or "".
 static func input_error(directory: String) -> String:
-	if directory.is_empty() or not RetailDirSource.looks_like(directory):
+	if not _has_file(directory, "FROGGER.EXE") or not _has_file(directory, "FROGPSX.MWD"):
 		return "FROGGER_DATA_DIR lacks FROGGER.EXE + FROGPSX.MWD"
 	return ""
+
+
+static func _has_file(directory: String, file_name: String) -> bool:
+	if directory.is_empty() or not DirAccess.dir_exists_absolute(directory):
+		return false
+	for candidate: String in DirAccess.get_files_at(directory):
+		if candidate.to_lower() == file_name.to_lower():
+			return true
+	return false
 
 
 ## Counts records; any failure, skip, pending test or problem gives exit 1.

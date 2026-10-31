@@ -7,17 +7,22 @@ extends RefCounted
 ## slot 3 of this WAD", without caring where each lives. The answers that
 ## follow from the archive index ([member mwi]), the decoded executable tables
 ## ([member tables]) and FrogLord's name lists ([member names]) are worked out
-## here; fetching and decoding archive resources is left to a concrete catalog
-## such as [GameData], which reads the player's own files.
+## here; loading the records themselves is left to a concrete catalog such as
+## [ImportedAssets], which reads the committed imported assets.
 
-## The build the data belongs to.
-var version: GameVersionConfig
+## The internal name of the build the data comes from, as FrogLord names it,
+## for example [code]pc-retail-v3.0e[/code]. Behaviour that depends on the
+## build, such as callback addresses, is chosen by this name.
+var version_name: String = ""
 ## The executable's decoded tables, or null when they were not read.
 var tables: GameTables
 ## The archive index.
 var mwi: MwiIndex
 ## FrogLord's name lists for this build.
 var names: GameNameLists
+## The parts FrogLord's settings hide, as part indices by model file name
+## (for example the frog's throat in [code]GEN_FROG.XAR[/code]).
+var hidden_parts: Dictionary[String, PackedInt64Array] = {}
 ## Why the data cannot be used, or "".
 var error: String = ""
 ## Non-fatal source inconsistencies, including a saved standalone index mismatch.
@@ -53,23 +58,6 @@ func remap_for_resource(map_resource_id: int) -> TextureRemap:
 ## The MWI entry called [param file_name] (folders ignored, any case), or null.
 func find_resource(file_name: String) -> MwiEntry:
 	return mwi.find_by_name(file_name)
-
-
-## The contents of resource [param resource_id], decompressed. Returns an
-## empty array, and adds the reason to [param problems], when the resource
-## cannot be read. A concrete catalog provides this.
-func read_resource(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> PackedByteArray:
-	_unavailable("resource %d" % resource_id, problems)
-	return PackedByteArray()
-
-
-## The contents of the resource called [param file_name], or an empty array.
-func read_resource_by_name(file_name: String, problems: PackedStringArray = PackedStringArray()) -> PackedByteArray:
-	var entry: MwiEntry = mwi.find_by_name(file_name)
-	if entry == null:
-		problems.append("no resource called %s" % file_name)
-		return PackedByteArray()
-	return read_resource(entry.index, problems)
 
 
 ## Every regular map resource, excluding the separate sky-land tile files.
@@ -153,6 +141,48 @@ func model_entries() -> Array[MwiEntry]:
 ## the model it takes its shape from. A concrete catalog provides this.
 func read_model(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> MofFile:
 	_unavailable("model %d" % resource_id, problems)
+	return null
+
+
+## The codes of the levels the game can play from this catalog, in
+## level-select order. A concrete catalog provides this.
+func playable_level_codes() -> PackedStringArray:
+	_unavailable("the playable levels", PackedStringArray())
+	return PackedStringArray()
+
+
+## True if level number [param level] (see [FroggerIds]) is one of
+## [method playable_level_codes].
+func is_playable_level(level: int) -> bool:
+	var code: String = FroggerIds.level_code(level)
+	return not code.is_empty() and code in playable_level_codes()
+
+
+## The lower-case hex SHA-256 of the retail files the catalog's data comes
+## from, keyed [code]"exe"[/code] and [code]"mwd"[/code]; empty when the
+## catalog does not know them. A concrete catalog provides this.
+func source_digests() -> Dictionary[String, String]:
+	return {}
+
+
+## The parts hidden in the model file called [param model_name], or an empty
+## array.
+func hidden_parts_of(model_name: String) -> PackedInt64Array:
+	return hidden_parts.get(model_name.to_upper(), PackedInt64Array())
+
+
+## The demo with resource id [param resource_id]; null, with the reason in
+## [param problems], when it cannot be read. A concrete catalog provides this.
+func read_demo(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> SourceDemoFile:
+	_unavailable("demo %d" % resource_id, problems)
+	return null
+
+
+## The sound bank whose sample body has resource id [param resource_id], its
+## present entries carrying their streams; null, with the reason in
+## [param problems], when it cannot be read. A concrete catalog provides this.
+func read_sound_bank(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> SoundBankHeader:
+	_unavailable("sound bank %d" % resource_id, problems)
 	return null
 
 

@@ -1,13 +1,12 @@
 class_name GameplayHudAssets
 extends RefCounted
-## Runtime single-player HUD textures resolved by FrogLord names from the player's archive.
+## Runtime single-player HUD textures resolved by FrogLord names from the catalog's texture banks.
 
 const PHRASES: PackedStringArray = ["hop_to_it", "go_frogger", "go", "go_get_em", "jump_to_it", "croak"]
 var error: String = ""
 var textures: Dictionary[String, Texture2D] = {}
 
-## Loads the HUD banks from either catalog without retaining the archive or copying retail
-## pixels to disk.
+## Loads the HUD banks from [param data].
 static func from_data(data: AssetCatalog) -> GameplayHudAssets:
 	var result := GameplayHudAssets.new()
 	if data == null or not data.is_valid() or data.names.images == null:

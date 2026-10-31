@@ -19,7 +19,7 @@ func run() -> void:
 		problems.append("unknown test suite: " + suite)
 	elif suite == "archive":
 		var input_problem: String = Policy.input_error(
-			OS.get_environment(GameDataLocator.ENV_VAR))
+			OS.get_environment("FROGGER_DATA_DIR"))
 		if not input_problem.is_empty():
 			problems.append(input_problem)
 	var test_filter: String = runner.get("unit_test_name")

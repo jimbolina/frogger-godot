@@ -123,7 +123,3 @@ var _grid_stack_records: PackedInt32Array = PackedInt32Array()
 var _grid_squares: Array[MapGridSquare] = []
 var _grid_squares_packed: bool = false
 var _grid_square_records: PackedInt64Array = PackedInt64Array()
-
-## Parses a final map, checking error before using the result.
-static func read(bytes: PackedByteArray) -> MapFile:
-	return MapFileReader.read(bytes)

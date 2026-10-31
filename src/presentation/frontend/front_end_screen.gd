@@ -1,7 +1,7 @@
 class_name FrontEndScreen
 extends Control
 ## Single-player main menu, options and controller pages, 3D level-select stack and high-score
-## pages driven by [FrontEndFlow], drawn from the player's menu images in the chosen language.
+## pages driven by [FrontEndFlow], drawn from the imported menu images in the chosen language.
 ##
 ## The pages play the generic menu sounds unless audio is turned off, at the saved effects
 ## volume; the saved music volume sets the music bus. Every page draws the front-end water: the
@@ -36,7 +36,7 @@ const CLOUD_BORDER: int = 8
 const CLOUD_COLOUR: Color = Color(0.25, 0.25, 0.25)
 ## CD track played on the menu pages (LEVEL_SELECT in the music table).
 const MENU_TRACK: int = 13
-## Colour behind the messages shown when the player's files cannot be used.
+## Colour behind the messages shown when the imported assets cannot be used.
 const BACKGROUND_COLOUR: Color = Color(0.04, 0.12, 0.05)
 ## FrogLord name of the generic hop sound the level-select stack plays.
 const HOP_SOUND: String = "GEN_FROG_HOP"
@@ -102,13 +102,9 @@ func _ready() -> void:
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_content)
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not found.is_ok():
-		_show_message("No usable Frogger files were found (%s).\nSet FROGGER_DATA_DIR or use --data-dir=<folder>." % found.error)
-		return
-	var data: AssetCatalog = GameData.open(found.source, found.version)
+	var data: ImportedAssets = ImportedAssets.open()
 	if not data.is_valid():
-		_show_message("Game tables are unreadable: %s" % data.error)
+		_show_message("The imported assets cannot be opened: %s" % data.error)
 		return
 	var issue: String = FrontEndSession.load_progress(data)
 	assets = FrontEndAssets.from_data(data, session_language(arguments))
@@ -132,8 +128,7 @@ func _ready() -> void:
 	if audio:
 		_music = MusicPlayer.new()
 		add_child(_music)
-		var disc: DiscAudio = DiscAudio.locate(arguments, OS.get_environment(DiscAudio.ENVIRONMENT_VARIABLE))
-		_music.select(disc, MENU_TRACK, found.source.directory)
+		_music.select(MENU_TRACK)
 		_music.restart()
 	page = FrontEndSession.start_page
 	_show_page()

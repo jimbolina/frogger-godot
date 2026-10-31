@@ -23,7 +23,7 @@ func run(context: ImportContext, phase: String) -> void:
 		if bytes.is_empty():
 			context.report("demo %s: %s" % [file_name, "; ".join(problems)])
 			continue
-		var demo: SourceDemoFile = SourceDemoFile.parse(bytes, file_name)
+		var demo: SourceDemoFile = SourceDemoFileReader.parse(bytes, file_name)
 		if not demo.is_valid():
 			context.report("demo %s: %s" % [file_name, demo.error])
 			continue

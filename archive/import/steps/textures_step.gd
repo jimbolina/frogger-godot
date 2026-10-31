@@ -52,7 +52,7 @@ func _write_images(context: ImportContext, bank_name: String, bank: VloFile, dig
 
 func _save_bank(context: ImportContext, entry: MwiEntry, bank_name: String, bank: VloFile) -> void:
 	var problems := PackedStringArray()
-	var saved: VloFile = VloFile.parse(context.data.read_resource(entry.index, problems), false)
+	var saved: VloFile = VloFileReader.parse(context.data.read_resource(entry.index, problems), false)
 	if not problems.is_empty() or not saved.error.is_empty() or saved.size() != bank.size():
 		context.report("texture bank %s: %s" % [bank_name, "; ".join(problems) + saved.error])
 		return

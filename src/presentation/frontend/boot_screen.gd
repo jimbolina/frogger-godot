@@ -1,14 +1,9 @@
 class_name BootScreen
 extends Control
-## First screen: finds the player's Frogger files and says what was found.
+## The tools launcher: plays a chosen level and opens the texture, model and map
+## inspection tools and the sandbox, all reading the imported assets.
 ##
-## The data folder comes from, in order: [code]--data-dir=<folder>[/code] on the
-## command line (after [code]--[/code]), the [code]FROGGER_DATA_DIR[/code]
-## environment variable, or the folder remembered from a previous run. A
-## folder found on the command line or in the environment is remembered.
-##
-## A menu at the top opens the texture, model and map inspection tools and the
-## sandbox; [code]--sandbox[/code] or [code]--level=SANDBOX[/code] opens the sandbox directly.
+## [code]--sandbox[/code] or [code]--level=SANDBOX[/code] opens the sandbox directly.
 
 ## The texture viewer's scene.
 const TEXTURE_VIEWER_SCENE: String = "res://scenes/tools/texture_viewer.tscn"
@@ -36,11 +31,13 @@ func _ready() -> void:
 	add_child(layout)
 	var menu := HBoxContainer.new()
 	layout.add_child(menu)
+	var data: ImportedAssets = ImportedAssets.open()
+	var codes: PackedStringArray = data.playable_level_codes() if data.is_valid() else PackedStringArray()
 	_level_picker = OptionButton.new()
-	for code: String in GameplaySetup.LEVEL_CODES:
+	for code: String in codes:
 		_level_picker.add_item(code)
 	var requested_level: String = ViewerArguments.value(OS.get_cmdline_user_args(), "--level=").to_upper()
-	var requested_index: int = GameplaySetup.LEVEL_CODES.find(requested_level)
+	var requested_index: int = codes.find(requested_level)
 	if requested_index >= 0:
 		_level_picker.select(requested_index)
 	menu.add_child(_level_picker)
@@ -68,9 +65,7 @@ func _ready() -> void:
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	layout.add_child(_label)
-	var report: String = build_report(command_line_data_dir())
-	_label.text = report
-	print(report)
+	_label.text = status(data)
 	viewer_button.grab_focus()
 	if wants_sandbox(OS.get_cmdline_user_args()) and not sandbox_requested:
 		sandbox_requested = true
@@ -79,11 +74,13 @@ func _ready() -> void:
 
 ## Opens a fresh game in the selected supported level.
 func open_game() -> void:
+	if _level_picker.selected < 0:
+		return
 	GameplayScreen.selected_level = _level_picker.get_item_text(_level_picker.selected)
 	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
 
 
-## Opens the sandbox arena; it locates player data the same way as the game.
+## Opens the sandbox arena.
 func open_sandbox() -> void:
 	get_tree().change_scene_to_file(SANDBOX_SCENE)
 
@@ -103,99 +100,11 @@ func open_model_viewer() -> void:
 	get_tree().change_scene_to_file(MODEL_VIEWER_SCENE)
 
 
-## The folder given as [code]--data-dir=<folder>[/code] after [code]--[/code], or "".
-static func command_line_data_dir() -> String:
-	return ViewerArguments.value(OS.get_cmdline_user_args(), "--data-dir=")
-
-
-## Locates the game files and returns a human-readable report of the result.
-static func build_report(explicit_dir: String) -> String:
-	var locator := GameDataLocator.new()
-	var found: GameDataLocator.Located = locator.locate(explicit_dir)
-	var lines := PackedStringArray(["Frogger", ""])
-	if not found.is_ok():
-		lines.append("No usable Frogger files were found (%s)." % found.error)
-		lines.append("")
-		lines.append("This game needs your own copy of Frogger (1997, PC). Point it at the folder")
-		lines.append("holding FROGGER.EXE and FROGPSX.MWD (or FrogLord's modded_ files) by either:")
-		lines.append("  - starting it with:  -- --data-dir=<folder>")
-		lines.append("  - setting the environment variable %s=<folder>" % GameDataLocator.ENV_VAR)
-		lines.append("")
-		lines.append("Searched:")
-		for attempt: String in found.attempts:
-			lines.append("  " + attempt)
-		return "\n".join(lines)
-	if found.origin != "saved setting":
-		locator.remember_directory(found.source.directory)
-	lines.append("Game data: %s" % found.source.describe())
-	lines.append("Found via: %s" % found.origin)
-	lines.append("Version: %s (%s), recognised by %s" % [found.version.display_name,
-		found.version.internal_name, found.detection_method])
-	lines.append("Executable CRC-32: %d" % found.exe_crc32)
-	lines.append("")
-	lines.append_array(describe_archive(found.source, found.version))
-	lines.append("")
-	lines.append_array(describe_tables(found.source, found.version))
-	return "\n".join(lines)
-
-
-## A few lines counting the game tables read from the executable: a quick
-## smoke check that the tables decode.
-static func describe_tables(source: GameDataSource, version: GameVersionConfig) -> PackedStringArray:
-	var lines := PackedStringArray()
-	var data: AssetCatalog = GameData.open(source, version)
-	if not data.is_valid():
-		lines.append("Game tables: unreadable: %s" % data.error)
-		return lines
-	var tables: GameTables = data.tables
-	var used_levels: int = 0
-	for e: MapBookEntry in tables.map_book().entries:
-		if e.high_map_id > 0:
-			used_levels += 1
-	var form_counts := PackedStringArray()
-	for t: ThemeBookEntry in tables.theme_book().entries:
-		if not t.forms.is_empty():
-			form_counts.append("%s %d" % [t.theme_name(), t.forms.size()])
-	lines.append("Levels: %d rows, %d with a map" % [tables.map_book().size(), used_levels])
-	lines.append("Themes: %d; forms %d (%s)" % [tables.theme_book().entries.size(), tables.theme_book().form_count(),
-		", ".join(form_counts)])
-	lines.append("Scripts: %d (%d commands); texture remaps: %d; texture ids: %d" % [tables.scripts().size(),
-		tables.scripts().command_count(), tables.remaps().size(), tables.bmp_pointers().size()])
-	lines.append("Music entries: %d; demos: %d; level select: %d arcade + %d race; bug kinds: %d" % [
-		tables.music().size(), tables.demo_table().size(), tables.level_select().arcade.size(),
-		tables.level_select().race.size(), tables.pickups().size()])
-	var problems: PackedStringArray = tables.errors()
-	if not problems.is_empty():
-		lines.append("Table problems: %s" % "; ".join(problems))
-	data.close()
-	return lines
-
-
-## A few lines summarising the archive index and checking the archive opens:
-## a quick smoke check that the data can be read.
-static func describe_archive(source: GameDataSource, version: GameVersionConfig) -> PackedStringArray:
-	var lines := PackedStringArray()
-	var index: MwiIndex = MwiIndex.from_exe(source.get_exe_bytes(), version)
-	if not index.is_valid():
-		lines.append("Archive index (MWI): unreadable: %s" % index.error)
-		return lines
-	lines.append("Archive index (MWI): %d entries, %d WADs, %d compressed" % [
-		index.size(), index.wad_entries().size(), index.compressed_count()])
-	var counts: Dictionary[int, int] = index.count_by_type()
-	var type_ids: Array[int] = counts.keys()
-	type_ids.sort()
-	var parts := PackedStringArray()
-	for type_id: int in type_ids:
-		parts.append("type %d: %d" % [type_id, counts[type_id]])
-	lines.append("Entries by type: " + ", ".join(parts))
-	var problems := PackedStringArray()
-	var archive: MwdArchive = MwdArchive.open(source.get_mwd_path(), problems)
-	if archive == null:
-		lines.append("Archive (MWD): unreadable: %s" % ", ".join(problems))
-	else:
-		lines.append("Archive (MWD): %d bytes, header OK" % archive.size())
-		archive.close()
-	return lines
+## A line naming the build of the imported assets in [param data], or why they cannot be used.
+static func status(data: AssetCatalog) -> String:
+	if data == null or not data.is_valid():
+		return "Frogger: the imported assets cannot be opened (%s)." % (data.error if data != null else "none")
+	return "Frogger: imported assets of %s." % data.version_name
 
 
 ## Switches to the map inspection tool.

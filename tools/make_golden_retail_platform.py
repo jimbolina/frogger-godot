@@ -503,13 +503,14 @@ def route_fixture(data_dir, version, return_context=False):
         zone_records.append((index, at, zone_type, region_count,
                              (xmin, zmin, xmax, zmax), regions_at, camera_flags,
                              camera_direction, camera_offsets, regions))
-    admission = dict(schema='jun1-route-admission-v1', build=version, map_resource_id=656,
-                     map_sha256=hashlib.sha256(data).hexdigest(),
+    admission = dict(schema='jun1-route-admission-v1', build=version,
+                     exe_sha256=hashlib.sha256((data_dir / 'FROGGER.EXE').read_bytes()).hexdigest(),
+                     mwd_sha256=hashlib.sha256(mwd).hexdigest(), map_resource_id=656,
                      form_book_rows_sha256=numeric_book_digest,
                      script_rows_sha256=numeric_script_digest,
-                     model_resources=[{'resource_id': model_id, 'sha256': digest,
+                     model_resources=[{'resource_id': model_id,
                                        'counterpart_resource_id': counterpart_ids[model_id]}
-                                      for model_id, digest in model_facts],
+                                      for model_id, _digest in model_facts],
                      entity_model_resources=resolved_models,
                      numeric_digest_encoding='ASCII decimal integers separated by commas, LF after each row',
                      theme_index=theme, theme_death_height=themes[theme]['death_height'],

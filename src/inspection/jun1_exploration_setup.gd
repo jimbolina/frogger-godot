@@ -13,7 +13,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	if not parsed is Dictionary:
 		return "JUN1 exploration admission manifest is unavailable"
 	var proof: Dictionary = parsed
-	if proof.get("schema", "") != "jun1-route-admission-v1" or data.version.internal_name != proof.get("build", ""):
+	if proof.get("schema", "") != "jun1-route-admission-v1" or data.version_name != proof.get("build", ""):
 		return "jun1-log-bank requires audited pc-retail-v3.0e inputs"
 	var issue: String = _validate_inputs(data, scenario.map_scene.map, proof)
 	if not issue.is_empty():
@@ -27,7 +27,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 			scenario.entity_collision.contacts.remove_at(slot)
 	scenario.level.entity_collision = scenario.entity_collision.copy()
 	scenario.diagnostics.append("JUN1 bounded proof omits moving tongue collectables; whole-map behavior is unaffected")
-	var zones: ZoneSetup = ZoneSetup.from_map(scenario.map_scene.map, scenario.level.source_id, scenario.level.resource_id, data.version.internal_name)
+	var zones: ZoneSetup = ZoneSetup.from_map(scenario.map_scene.map, scenario.level.source_id, scenario.level.resource_id, data.version_name)
 	if not zones.error.is_empty():
 		return zones.error
 	var guard := ExplorationGuard.new()

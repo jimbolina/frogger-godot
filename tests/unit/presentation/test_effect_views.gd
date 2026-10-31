@@ -15,7 +15,7 @@ func _scene() -> MapSceneData:
 		spec.blend_mode = 1
 		specs.append(spec)
 	var scene := MapSceneData.new()
-	scene.library.add_bank(VloFile.parse(SyntheticVlo.build_vlo(specs)), "TEST.VLO")
+	scene.library.add_bank(SyntheticVlo.bank(specs), "TEST.VLO")
 	scene.effects = EffectResources.new()
 	scene.effects.generators = ExeParticleGenerators.c_constants()
 	for symbol: String in ["im_frog_shadow0", "im_frog_shadow1", "im_frog_shadow2", "im_gen_shadow"]:

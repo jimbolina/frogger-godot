@@ -27,7 +27,7 @@ var _generators: ExeParticleGenerators
 func before_all() -> void:
 	if retail_skip_reason().is_empty():
 		_data = GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e"))
-		_generators = ExeParticleGenerators.read(_data.exe, _data.tables.bmp_pointers())
+		_generators = ExeParticleGeneratorsReader.read(_data.exe, _data.tables.bmp_pointers())
 
 func after_all() -> void:
 	if _data != null:
@@ -123,13 +123,13 @@ func test_hilites_and_census_match_independent_facts() -> void:
 	var covered: Dictionary[int, bool] = {}
 	var kinds: Dictionary[int, bool] = {}
 	var theme_book: ThemeBook = _data.tables.theme_book()
-	for code: String in GameplaySetup.LEVEL_CODES:
+	for code: String in _data.playable_level_codes():
 		var level: int = FroggerIds.level_from_code(code)
 		var map: MapFile = _data.read_map(_data.map_book_entry(level).map_id(false), problems)
 		assert_not_null(map, code)
 		if map == null:
 			continue
-		var setup: EntitySetup = EntitySetup.from_map(map, theme_book, code, _data.map_book_entry(level).map_id(false), _data.version.internal_name, true, _data.names)
+		var setup: EntitySetup = EntitySetup.from_map(map, theme_book, code, _data.map_book_entry(level).map_id(false), _data.version_name, true, _data.names)
 		var diagnostics := PackedStringArray()
 		EffectSetup.resolve_hilites(_data, level, setup.definitions, diagnostics, _generators, map.general.theme)
 		assert_eq(diagnostics.size(), 0, code + ": " + "; ".join(diagnostics))
@@ -152,7 +152,7 @@ func test_generator_records_tables_and_pop_colours_match_independent_facts() -> 
 	assert_true(_generators.from_executable, "; ".join(_generators.warnings))
 	assert_eq(_generators.warnings.size(), 0, "; ".join(_generators.warnings))
 	var reference: ExeParticleGenerators = ExeParticleGenerators.c_constants()
-	var resources: EffectResources = EffectResources.resolve(_generators, ExeSplashAnimLists.read(_data.exe, _data.tables.bmp_pointers()), _data.tables.scores(), _data.tables.bmp_pointers(), _data.names.images)
+	var resources: EffectResources = EffectResources.resolve(_generators, ExeSplashAnimListsReader.read(_data.exe, _data.tables.bmp_pointers()), _data.tables.scores(), _data.tables.bmp_pointers(), _data.names.images)
 	var rows: Array[PackedStringArray] = []
 	for record: ParticleGeneratorRecord in _generators.records:
 		var user2: String = ["0", "texture", "texture_list"][record.texture_kind]

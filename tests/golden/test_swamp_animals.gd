@@ -1,6 +1,8 @@
 extends GutTest
 ## Independent frozen Swamp rat cycle, slug action, weir rotation and LOCAL_ALIGN facts at source widths.
 
+## The imported FrogLord name lists of the retail build.
+const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/swamp.json"
 
 var _cache: Dictionary = {}
@@ -143,8 +145,7 @@ func test_weir_matrix_and_rotation_match_independent_facts() -> void:
 		var expected: Dictionary = fixture.expected
 		var matrix := PackedInt32Array(_ints(initial.matrix))
 		assert_eq(EntitySetup.weir_matrix(matrix), PackedInt32Array(_ints(expected.matrix)), "weir override %s" % str(matrix))
-	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = load(NAMES) as GameNameLists
 	assert_not_null(names)
 	if names == null:
 		return

@@ -11,7 +11,6 @@ extends Resource
 ##
 ## Texture names use a different shape ([code]id=name[/code] pairs, not a
 ## list) and fill [member names_by_id] instead of [member names].
-## [NameBankReader] builds banks from FrogLord's files.
 
 ## Names in index order.
 @export var names: PackedStringArray = PackedStringArray()
@@ -21,16 +20,6 @@ extends Resource
 @export var sub_banks: Dictionary[String, NameBank] = {}
 ## Names by id for an indexed bank ([code]id=name[/code] pairs); empty for a list.
 @export var names_by_id: Dictionary[int, String] = {}
-
-
-## Builds a bank from a list-style config (see [method NameBankReader.from_list_config]).
-static func from_list_config(config: FrogLordConfig, children_extend_main: bool, label: String) -> NameBank:
-	return NameBankReader.from_list_config(config, children_extend_main, label)
-
-
-## Builds a bank from [code]id=name[/code] pairs (see [method NameBankReader.from_indexed_config]).
-static func from_indexed_config(config: FrogLordConfig, label: String) -> NameBank:
-	return NameBankReader.from_indexed_config(config, label)
 
 
 ## Number of names in the main list (for an indexed bank, the number of pairs).

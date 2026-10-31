@@ -12,7 +12,7 @@ import make_golden_paths as paths
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / 'tests/golden/synthetic/desert.json'
-SOUND_CFG = ROOT / 'third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
+SOUND_CFG = ROOT / 'archive/third_party/froglord_cfg/sounds/1997-11-19-pc-retail.cfg'
 U16, U32 = 0xffff, 0xffffffff
 WORLD_GRAVITY = 0x2d800
 SYSTEM_GRAVITY = 0x100000

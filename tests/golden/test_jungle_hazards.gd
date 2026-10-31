@@ -1,6 +1,8 @@
 extends GutTest
 ## Independent frozen Jungle plant timeline, outro-door bounce-back and hippo no-dive facts at source widths.
 
+## The imported FrogLord name lists of the retail build.
+const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/jungle.json"
 const SNAP_SOUND: int = 93
 
@@ -173,8 +175,7 @@ func test_door_bounce_back_match_independent_facts() -> void:
 		assert_eq(state.frog.old_y, 12345 if expected.old_y == null else _int(expected.old_y), label + " old y")
 
 func test_hippo_no_dive_match_independent_facts() -> void:
-	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = load(NAMES) as GameNameLists
 	assert_not_null(names)
 	if names == null:
 		return

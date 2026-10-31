@@ -17,9 +17,3 @@ const SAMPLE_ADDRESS: int = 0x46f938
 @export var samples: Array[SoundSampleEntry] = []
 ## Why the tables could not be read, or "".
 @export var error: String = ""
-
-
-## Reads original or saved table contents, including PC-specific 32-byte
-## sample rows (see [SoundTablesReader]).
-static func read(exe: ExeImage) -> SoundTables:
-	return SoundTablesReader.read(exe)

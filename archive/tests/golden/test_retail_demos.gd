@@ -15,7 +15,7 @@ func test_demo_headers_and_input_summaries_match_independent_facts() -> void:
 				continue
 			var rid: int = entry.demo_id(low)
 			var problems := PackedStringArray()
-			var demo: SourceDemoFile = SourceDemoFile.parse(data.read_resource(rid, problems), "resource %d" % rid)
+			var demo: SourceDemoFile = SourceDemoFileReader.parse(data.read_resource(rid, problems), "resource %d" % rid)
 			assert_eq(problems.size(), 0)
 			assert_eq(demo.error, "")
 			var values := PackedInt64Array()

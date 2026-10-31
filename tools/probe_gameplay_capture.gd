@@ -2,7 +2,7 @@ extends SceneTree
 ## Captures the dedicated game scene while replaying real keyboard stimuli against pure rules.
 
 var _screen: GameplayScreen
-var _data: GameData
+var _data: AssetCatalog
 var _folder: String
 var _forest_captures: Dictionary[String, bool] = {}
 var _volcano_captures: Dictionary[String, bool] = {}
@@ -53,11 +53,10 @@ func _run() -> void:
 	if ticks <= 0 or ticks > 10000:
 		_finish("Capture duration must be 1..10000")
 		return
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not found.is_ok():
-		_finish(found.error)
+	_data = ImportedAssets.open()
+	if not _data.is_valid():
+		_finish(_data.error)
 		return
-	_data = GameData.open(found.source, found.version)
 	_screen = GameplayScreen.new()
 	_screen.auto_open = false
 	root.add_child(_screen)

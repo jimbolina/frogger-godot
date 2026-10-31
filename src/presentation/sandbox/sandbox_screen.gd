@@ -43,12 +43,12 @@ func _ready() -> void:
 	_build_sandbox_interface()
 	if not auto_open:
 		return
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
-	if found.is_ok():
-		open_sandbox(GameData.open(found.source, found.version), true)
+	var data: ImportedAssets = ImportedAssets.open()
+	if data.is_valid():
+		open_sandbox(data, true)
 	else:
 		open_sandbox(null)
-		data_status = "No player data (%s); entities are placeholders" % found.error
+		data_status = "The imported assets cannot be opened (%s); entities are placeholders" % data.error
 		palette.refresh()
 
 ## Builds a fresh arena and spawner, borrowing `data` unless ownership is transferred; null data uses placeholders.

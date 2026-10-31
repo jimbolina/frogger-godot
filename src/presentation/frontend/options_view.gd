@@ -6,8 +6,8 @@ extends Control
 ## by an [OptionsScene] stepped with an [OptionsMenu] at 30 Hz.
 ##
 ## The view drives its water: each tick advances the shared frame count, then the menu and scene
-## step with that count, so the models sit on the heights being drawn. Models are lit by the
-## options viewport's lights; the volume models take the menu's glow as their custom ambient, and
+## step with that count, so the models sit on the heights being drawn. Models are drawn from the
+## view's own mesh copies ([ModelMeshCopy]) and lit by the options viewport's lights; the volume models take the menu's glow as their custom ambient, and
 ## each log shows its volume through its 64 animated polygons (cels 10, 11 and 12). The frog plays
 ## the actions the scene chooses at update period 2, holding the last frame while one-shot, with
 ## the croak sack shown at its smallest. Title sprites stand 0x40 above their lily rows at scale
@@ -89,6 +89,7 @@ var _reflection_materials: Array[ShaderMaterial] = []
 var _title_images: Array[VloImage] = []
 var _image_materials: Dictionary[String, ShaderMaterial] = {}
 var _splashes: Array[_Splash] = []
+var _drawn: Dictionary[ModelMesh, ModelMesh] = {}
 
 
 class _Frame:
@@ -280,9 +281,6 @@ func _build_models() -> void:
 	var root := Node3D.new()
 	root.name = "OptionsModels"
 	water.add_child(root)
-	for kind: int in OptionsModels.Kind.values():
-		_set_projection(_models.model_mesh(kind), projection)
-	_set_projection(_models.frog.mesh, projection)
 	for _index: int in scene.lilies.size():
 		_lilies.append(_instance(root, OptionsModels.Kind.LILY))
 	for index: int in scene.log_rows.size():
@@ -302,7 +300,7 @@ func _build_models() -> void:
 	_frog = AnimatedModelInstance.new()
 	_frog.name = "Frog"
 	root.add_child(_frog)
-	_frog.setup(_models.frog.mesh, player)
+	_frog.setup(_drawn_mesh(_models.frog.mesh), player)
 	_frog.smoothing_enabled = smoothing_enabled
 	_frog.set_source_lighting(_models.lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
 	for index: int in _frog.part_nodes.size():
@@ -327,10 +325,19 @@ func _build_models() -> void:
 func _instance(root: Node3D, kind: int) -> AnimatedModelInstance:
 	var instance := AnimatedModelInstance.new()
 	root.add_child(instance)
-	instance.setup(_models.model_mesh(kind), ModelAnimationPlayer.new(_models.model_file(kind)))
+	instance.setup(_drawn_mesh(_models.model_mesh(kind)), ModelAnimationPlayer.new(_models.model_file(kind)))
 	instance.smoothing_enabled = smoothing_enabled
 	instance.set_source_lighting(_models.lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
 	return instance
+
+
+func _drawn_mesh(shared: ModelMesh) -> ModelMesh:
+	if shared == null:
+		return null
+	if not _drawn.has(shared):
+		_drawn[shared] = ModelMeshCopy.of(shared)
+		_set_projection(_drawn[shared], GameplayProjection.clip_scale(MenuWaterView.DISPLAY_SIZE))
+	return _drawn[shared]
 
 
 static func _set_projection(mesh: ModelMesh, projection: Vector2) -> void:

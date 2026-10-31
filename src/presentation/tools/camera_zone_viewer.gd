@@ -18,11 +18,10 @@ var _last_tick: int = -1
 func _ready() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
 	_automated = ViewerArguments.has_flag(arguments, "--run-scenario")
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not found.is_ok():
-		_fail(found.error)
+	_data = ImportedAssets.open()
+	if not _data.is_valid():
+		_fail(_data.error)
 		return
-	_data = GameData.open(found.source, found.version)
 	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
 	if lifetime not in ["", "all-attached", "visibility"]:
 		_fail("Camera probe entity-lifecycle must be all-attached or visibility")

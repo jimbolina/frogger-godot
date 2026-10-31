@@ -120,7 +120,7 @@ func _view() -> EntityOverlayModelView:
 	return view
 
 func _flipbook(cels: int) -> MofFile:
-	var file: MofFile = MofFile.parse(SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
 	var part: MofPart = file.static_models[0].parts[0]
 	for index: int in range(1, cels):
 		var cel := MofPart.Partcel.new()

@@ -17,8 +17,7 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario', choices=('line', 'arc', 'spline'), default='line')
     parser.add_argument('--scenario-file', type=Path)
-    parser.add_argument('--data-dir', type=Path)
-    parser.add_argument('--level')
+    parser.add_argument('--level', help='Map code from the imported assets')
     parser.add_argument('--path-index', type=int)
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--render-rate', type=int, choices=(30, 60, 144), default=60)
@@ -77,8 +76,6 @@ def main():
         '--scenario=' + args.scenario]
     selected += ['--trace-jsonl=' + str(evidence / 'trace.jsonl')]
     selected += ['--render-rate=' + str(args.render_rate)]
-    if args.data_dir:
-        selected += ['--data-dir=' + str(args.data_dir.resolve())]
     if args.level:
         selected += ['--level=' + args.level, '--path-index=' + str(args.path_index)]
     if args.tick_limit is not None:

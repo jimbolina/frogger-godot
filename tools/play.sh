@@ -11,17 +11,12 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
 fi
 scene="res://scenes/game/gameplay.tscn"
 args=()
-data_given=0
 for argument in "$@"; do
     case "$argument" in
         --scene=*) scene="${argument#--scene=}" ;;
-        --data-dir=*) data_given=1; args+=("$argument") ;;
         *) args+=("$argument") ;;
     esac
 done
-if [ "$data_given" -eq 0 ] && [ -n "${FROGGER_DATA_DIR:-}" ]; then
-    args+=("--data-dir=$FROGGER_DATA_DIR")
-fi
 if ! "$GODOT" --headless --disable-crash-handler --path . --import >/dev/null 2>&1; then
     echo "play: class-name cache refresh failed; run godot --headless --path . --import to see why" >&2
     exit 1

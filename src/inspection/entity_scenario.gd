@@ -93,7 +93,7 @@ func attach_data(data: AssetCatalog, selected_level_code: String = "ORG1") -> St
 	if map == null:
 		return "Entity inspection cannot read map: " + "; ".join(problems)
 	var selected_code: String = selected_level_code.to_upper()
-	var setup: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), data.version.internal_name + ":" + selected_code, resource_id, data.version.internal_name)
+	var setup: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), data.version_name + ":" + selected_code, resource_id, data.version_name)
 	if not setup.error.is_empty():
 		return setup.error
 	var copies: Array[EntityDefinition] = []

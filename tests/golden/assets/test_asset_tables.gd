@@ -25,7 +25,7 @@ func _check(label: String, got: Array[PackedStringArray]) -> void:
 
 func test_catalog_opens() -> void:
 	assert_eq(_assets.error, "")
-	assert_eq(_assets.version.internal_name, "pc-retail-v3.0e")
+	assert_eq(_assets.version_name, "pc-retail-v3.0e")
 	assert_eq(_tables.errors().size(), 0, ", ".join(_tables.errors()))
 	assert_not_null(_assets.names)
 	assert_eq(_assets.names.errors.size(), 0)

@@ -1,7 +1,6 @@
 class_name VloFile
 extends Resource
-## A PC texture bank ("VLO", signature [code]2GRP[/code]): a list of [VloImage]s,
-## decoded by [VloFileReader].
+## A PC texture bank ("VLO", signature [code]2GRP[/code]): a list of [VloImage]s.
 ##
 ## Layout (FrogLord's [code]vlo2/VloFile[/code], PC form):
 ## [codeblock]
@@ -39,16 +38,6 @@ const NAMES_SIGNATURE: String = "FROGLORD"
 @export var error: String = ""
 
 var _by_texture_id: Dictionary[int, VloImage] = {}
-
-
-## True if [param bytes] start with the PC bank signature.
-static func is_vlo(bytes: PackedByteArray) -> bool:
-	return VloFileReader.is_vlo(bytes)
-
-
-## Parses [param bytes]; see [method VloFileReader.parse].
-static func parse(bytes: PackedByteArray, decode_pixels: bool = true) -> VloFile:
-	return VloFileReader.parse(bytes, decode_pixels)
 
 
 ## Converts [param width] x [param height] stored pixels (A, B, G, R) to RGBA8

@@ -304,6 +304,50 @@ func test_archive_scripts_may_depend_on_shipped_code() -> void:
 	}).size(), 0)
 
 
+func test_archived_source_keeps_the_source_layer_rules() -> void:
+	var archived: String = "res://archive/source/reader.gd"
+	assert_eq(_check({
+		archived: "extends RefCounted\nvar level: LevelData\nfunc read():\n\treturn FileAccess.open(\"data\", 1)\n",
+		"res://src/data/level.gd": "class_name LevelData\nextends Resource\n",
+	}).size(), 0)
+	for target: String in ["src/game", "src/application", "src/convert", "src/presentation",
+			"src/inspection", "scenes"]:
+		assert_true(_has_rule(_check({
+			archived: "extends RefCounted\nconst BAD = preload(\"res://" + target + "/bad.gd\")\n",
+		}), "layer"), target)
+	var node: Array[Scanner.Violation] = _check({archived: "extends Node\n"})
+	assert_true(_has_rule(node, "base"))
+	assert_true(_has_rule(node, "tree"))
+
+
+func test_archived_source_helpers_are_checked_transitively() -> void:
+	var archived: String = "res://archive/source/reader.gd"
+	var helper: String = "res://archive/source/helper.gd"
+	var violations: Array[Scanner.Violation] = _check({
+		archived: "extends RefCounted\nvar helper: ReaderHelper\n",
+		helper: "class_name ReaderHelper\nextends RefCounted\nvar view: View\n",
+		"res://src/presentation/view.gd": "class_name View\nextends RefCounted\n",
+	})
+	assert_eq(violations.size(), 2)
+	for violation: Scanner.Violation in violations:
+		assert_eq(violation.rule, "layer")
+		assert_eq(violation.path, helper)
+		assert_eq(violation.line, 3)
+
+
+func test_archive_tests_may_use_archived_source_but_shipped_tests_may_not() -> void:
+	var reader: String = "res://archive/source/reader.gd"
+	var sources: Dictionary[String, String] = {
+		"res://archive/tests/unit/test_reader.gd": "extends Node\nfunc f():\n\treturn RetailReader.new()\n",
+		reader: "class_name RetailReader\nextends RefCounted\n",
+	}
+	assert_eq(_check(sources).size(), 0)
+	sources["res://tests/unit/test_reader.gd"] = "extends Node\nfunc f():\n\treturn RetailReader.new()\n"
+	var violations: Array[Scanner.Violation] = _check(sources)
+	assert_eq(_rule_count(violations, "archive"), 1)
+	assert_eq(violations[0].origin, "res://tests/unit/test_reader.gd")
+
+
 func test_scene_and_resource_archive_references_are_rejected() -> void:
 	var scene: String = "res://scenes/level.tscn"
 	var text: String = "[gd_scene format=3]\n\n" \

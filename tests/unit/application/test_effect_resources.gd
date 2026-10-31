@@ -2,7 +2,7 @@ extends GutTest
 ## Effect image resolution order, the frozen C fallback and bank lookups without player files.
 
 func _names(pairs: String) -> NameBank:
-	return NameBank.from_indexed_config(FrogLordConfig.parse_legacy(pairs), "Image")
+	return SyntheticNames.indexed(pairs, "Image")
 
 func _image(id: int) -> VloImage:
 	var image := VloImage.new()

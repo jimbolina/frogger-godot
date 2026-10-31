@@ -50,7 +50,7 @@ const VIEW_ASPECT: float = 4.0 / 3.0
 const MODEL_TOP: float = 210.0
 const MODEL_BOTTOM: float = 390.0
 
-## When false, [method _ready] does not look for the game files (tests set
+## When false, [method _ready] does not open the imported assets (tests set
 ## this to drive the viewer with their own data).
 var auto_open: bool = true
 ## The game data being shown, or null.
@@ -110,14 +110,7 @@ func _ready() -> void:
 		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
 		get_tree().quit(1)
 		return
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
-	if not found.is_ok():
-		_status.text = "No Frogger files found (%s). See the start screen for how to set the folder." % found.error
-		if not screenshot_dir.is_empty():
-			push_error(_status.text)
-			get_tree().quit(1)
-		return
-	open_data(GameData.open(found.source, found.version), true)
+	open_data(ImportedAssets.open(), true)
 	if not data.is_valid():
 		if not screenshot_dir.is_empty():
 			push_error(_status.text)
@@ -206,15 +199,13 @@ func load_model_by_name(file_name: String) -> int:
 	return -1
 
 
-## Shows [param bytes] (a model file called [param model_name]) without any
-## game files, textured from [param bank] if given. An incomplete model
-## takes its shape from [param counterpart]. Returns the number of triangles
-## drawn, or -1 if the bytes do not parse.
-func load_model_bytes(model_name: String, bytes: PackedByteArray, bank: VloFile = null, counterpart: MofFile = null) -> int:
-	var model: MofFile = MofFile.parse(bytes, counterpart)
-	if not model.is_valid():
+## Shows [param model] (a model file called [param model_name]) without a
+## catalog, textured from [param bank] if given. Returns the number of
+## triangles drawn, or -1 if the model is missing or did not decode.
+func load_model(model_name: String, model: MofFile, bank: VloFile = null) -> int:
+	if model == null or not model.is_valid():
 		_clear_model()
-		_status.text = "%s: %s" % [model_name, model.error]
+		_status.text = "%s: %s" % [model_name, model.error if model != null else "no model"]
 		return -1
 	_library = TextureLibrary.new()
 	_preferred = bank
@@ -472,7 +463,8 @@ func _show_wad(index: int) -> void:
 	var used: int = 0
 	for i: int in wad.children.size():
 		var child_entry: MwiEntry = data.mwi.get_entry(wad.children[i].resource_id)
-		var placeholder: bool = MofFile.kind_of(wad.child_contents(wad.children[i])) == MofFile.Kind.DUMMY
+		var child: MofFile = data.read_model(wad.children[i].resource_id)
+		var placeholder: bool = child == null or child.kind == MofFile.Kind.DUMMY
 		if not placeholder:
 			used += 1
 		_model_list.add_item("%d  %s" % [i, "(placeholder)" if placeholder else child_entry.display_name()])
@@ -578,9 +570,9 @@ func _describe(shape: MofStatic) -> String:
 
 
 func _hidden_parts() -> PackedInt64Array:
-	if data == null or data.version == null or not data.version.hidden_parts.has(_model_name):
+	if data == null:
 		return PackedInt64Array()
-	return data.version.hidden_parts[_model_name]
+	return data.hidden_parts_of(_model_name)
 
 
 func _clear_model() -> void:

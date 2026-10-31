@@ -41,11 +41,6 @@ const SIZE: int = 36
 @export var palette_id: int = 0
 
 
-## Reads one row at [param reader]'s cursor (see [MapBookReader]).
-static func read(reader: ByteReader, level_number: int) -> MapBookEntry:
-	return MapBookReader.read_entry(reader, level_number)
-
-
 ## True when FrogLord treats the row as an unused level (no remaps at all).
 func is_dummy() -> bool:
 	return high_remap_pointer == 0 and low_remap_pointer == 0

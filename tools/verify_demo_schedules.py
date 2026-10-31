@@ -10,7 +10,6 @@ import sys
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--level', default='ORG1')
     parser.add_argument('--scenario-file', type=Path)
     parser.add_argument('--demo-file', type=Path)
@@ -19,7 +18,7 @@ def main():
     args = parser.parse_args()
     shared = ['--godot', args.godot, '--level', args.level,
               '--output-directory', str(args.output_directory)]
-    for name in ('data_dir', 'scenario_file', 'demo_file', 'tick_limit'):
+    for name in ('scenario_file', 'demo_file', 'tick_limit'):
         value = getattr(args, name)
         if value is not None:
             shared += ['--' + name.replace('_', '-'), str(value)]

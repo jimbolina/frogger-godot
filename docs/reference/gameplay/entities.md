@@ -159,7 +159,7 @@ launch commands belong to [inspection](../testing/terrain-inspection.md#combined
 
 ## FORM contact inspection
 
-`MapFileReader` decodes indexed FORM grids into `MapFile` under the [map format contract](../data/maps.md).
+`MapFileReader` decodes indexed FORM grids into `MapFile` under the [map format contract](../../../archive/docs/formats/maps.md).
 `FormContactSetup` reads every authored EMTP entity in source order before
 attaching contact facts to the accepted base transforms. Frozen `mapload.C`
 writes a FORM grid's runtime maximum Y from each loaded model; when entities

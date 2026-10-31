@@ -181,7 +181,7 @@ func test_the_throat_shows_and_scales_only_while_croaking() -> void:
 	for _index: int in GameplayWorldView.THROAT_PART + 1:
 		parts.append(SyntheticMof.square(MofPolygonType.F4))
 	var assets := TerrainFrogAssets.new()
-	assets.model = MofFile.parse(SyntheticMof.build_static(parts))
+	assets.model = SyntheticMof.static_file(parts)
 	assets.mesh = ModelMeshBuilder.new(TextureLibrary.new()).build_animated(assets.model)
 	assets.player = ModelAnimationPlayer.new(assets.model)
 	assets.hidden_parts = PackedInt64Array([GameplayWorldView.THROAT_PART])

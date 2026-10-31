@@ -8,9 +8,9 @@ extends Node3D
 
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const RENDER_SIZE: Vector2i = Vector2i(640, 480)
-## Tests may provide scene data without locating retail files.
+## Tests may provide scene data without opening the imported assets.
 var auto_open: bool = true
-var data: GameData
+var data: AssetCatalog
 var _owns_data: bool = false
 var scene_data: MapSceneData
 var current_mesh: MapMesh
@@ -107,14 +107,7 @@ func _ready() -> void:
 	_probe_name = _arg("--probe-model=")
 	if _probe_name.is_empty() and ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--probe-model"):
 		_probe_name = "GEN_CHECKPOINT_1.XMR"
-	var found: GameDataLocator.Located = ViewerArguments.locate_data(OS.get_cmdline_user_args())
-	if not found.is_ok():
-		_status.text = "No Frogger files found: %s" % found.error
-		if not folder.is_empty():
-			push_error(_status.text)
-			get_tree().quit(1)
-		return
-	open_data(GameData.open(found.source, found.version), true)
+	open_data(ImportedAssets.open(), true)
 	if not data.is_valid():
 		if not folder.is_empty():
 			push_error(_status.text)
@@ -138,7 +131,7 @@ func _ready() -> void:
 
 ## Populates maps from [param game_data], borrowed unless [param take_ownership] is true.
 ## Replacement/exit closes owned data only; reopening the same object retains ownership.
-func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+func open_data(game_data: AssetCatalog, take_ownership: bool = false) -> void:
 	if data != game_data:
 		if _owns_data and data != null:
 			data.close()
@@ -527,8 +520,7 @@ func _setup_paths() -> void:
 		var row: MapBookEntry = data.map_book_entry(scene_data.level)
 		if row != null:
 			resource_id = row.map_id(scene_data.low_poly)
-		if data.version != null:
-			build_id = data.version.internal_name
+		build_id = data.version_name
 	if not build_id.is_empty():
 		source_id = build_id + ":" + source_id
 	_path_setup = PathSetup.from_map(scene_data.map, source_id, resource_id, build_id)
@@ -713,7 +705,7 @@ func _setup_entities() -> void:
 	var source_id: String = FroggerIds.LEVEL_CODES[scene_data.level]
 	var row: MapBookEntry = data.map_book_entry(scene_data.level)
 	var resource_id: int = row.map_id(scene_data.low_poly) if row != null else -1
-	var build_id: String = data.version.internal_name if data.version != null else ""
+	var build_id: String = data.version_name
 	var setup: EntitySetup = EntitySetup.from_map(scene_data.map, data.tables.theme_book(), build_id + ":" + source_id, resource_id, build_id)
 	if not setup.error.is_empty():
 		scene_data.diagnostics.append(setup.error)
@@ -1007,11 +999,7 @@ func _run_path_scenario() -> void:
 		if not path_index_text.is_valid_int() or path_index_text.to_int() < 0:
 			_fail_path_run("A level path requires --path-index=0 or greater")
 			return
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-		if not found.is_ok():
-			_fail_path_run(found.error)
-			return
-		open_data(GameData.open(found.source, found.version), true)
+		open_data(ImportedAssets.open(), true)
 		if data == null or not data.is_valid():
 			_fail_path_run(data.error if data != null else "No game data")
 			return
@@ -1167,11 +1155,7 @@ func _run_entity_scenario() -> void:
 		return
 	var level_code: String = ViewerArguments.value(arguments, "--level=")
 	if not level_code.is_empty():
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-		if not found.is_ok():
-			_fail_path_run(found.error)
-			return
-		open_data(GameData.open(found.source, found.version), true)
+		open_data(ImportedAssets.open(), true)
 		if data == null or not data.is_valid():
 			_fail_path_run(data.error if data != null else "No game data")
 			return
@@ -1337,7 +1321,7 @@ func capture_metadata(benchmark: Dictionary, allocations_before: Dictionary, all
 	if OS.has_method("get_memory_info"):
 		var memory_info: Dictionary = OS.call("get_memory_info")
 		machine["memory_info"] = memory_info
-	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "standalone_index_checked": data.standalone_index_checked, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
+	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
 	metadata.merge(benchmark)
 	return metadata
 

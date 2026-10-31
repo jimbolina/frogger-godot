@@ -10,7 +10,7 @@ func after_all() -> void:
 
 func test_bank_round_trip_rebuilds_texture_lookup() -> void:
 	var spec: SyntheticVlo.Spec = SyntheticVlo.spec(2, 1, 0, 77, VloImage.FLAG_2D_SPRITE, SyntheticVlo.abgr([1, 2, 3, 4, 5, 6]))
-	var bank: VloFile = VloFile.parse(SyntheticVlo.build_vlo([spec]))
+	var bank: VloFile = SyntheticVlo.bank([spec])
 	assert_eq(bank.error, "")
 	assert_eq(ResourceSaver.save(bank, PATH), OK)
 	var loaded := ResourceLoader.load(PATH, "", ResourceLoader.CACHE_MODE_IGNORE_DEEP) as VloFile

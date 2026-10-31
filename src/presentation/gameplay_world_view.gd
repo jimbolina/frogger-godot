@@ -45,6 +45,7 @@ var _frog_pose_tick: int = -1
 var _projection_size: Vector2i = Vector2i.ZERO
 var _entity_models: Array[AnimatedModelInstance] = []
 var _entity_meshes: Array[ModelMesh] = []
+var _drawn_meshes: Dictionary[ModelMesh, ModelMesh] = {}
 var _entity_files: Array[MofFile] = []
 var _entity_generations: Array[int] = []
 var _entity_pose_tick: int = -1
@@ -239,6 +240,7 @@ func _clear_entity_visuals() -> void:
 			model.queue_free()
 	_entity_models.clear()
 	_entity_meshes.clear()
+	_drawn_meshes.clear()
 	_entity_files.clear()
 	_entity_generations.clear()
 
@@ -298,7 +300,7 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 			meshes[resource] = ModelMeshLibrary.mesh_for(selected_data, resource, scene_data.library, scene_data.preferred)
 		if not meshes.has(resource):
 			continue
-		_entity_meshes[slot] = meshes[resource]
+		_entity_meshes[slot] = _drawn_mesh(meshes[resource])
 		_entity_files[slot] = files[resource]
 		if _piece_view != null:
 			_piece_view.set_model(slot, files[resource], scene_data.library, scene_data.preferred)
@@ -326,7 +328,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	for slot: int in definitions.entities.size():
 		var entity: EntityDefinition = definitions.entities[slot]
 		_entity_models.append(null)
-		_entity_meshes.append(resources.meshes[slot])
+		_entity_meshes.append(_drawn_mesh(resources.meshes[slot]))
 		_entity_files.append(resources.files[slot])
 		_entity_generations.append(-1)
 		if origins == null or not origins.resolvable(slot) or origins.data == null or not origins.data.is_valid():
@@ -475,6 +477,13 @@ func _update_projection() -> void:
 	if marker != null:
 		marker.set_shader_parameter("projection_scale", scale)
 
+func _drawn_mesh(shared: ModelMesh) -> ModelMesh:
+	if shared == null:
+		return null
+	if not _drawn_meshes.has(shared):
+		_drawn_meshes[shared] = ModelMeshCopy.of(shared)
+	return _drawn_meshes[shared]
+
 func _set_model_projection(model_mesh: ModelMesh, scale: Vector2) -> void:
 	_set_model_parameter(model_mesh, "projection_scale", scale)
 
@@ -505,9 +514,9 @@ func _apply_frog_depth_bias() -> void:
 			if material != null:
 				material.set_shader_parameter("depth_bias", FROG_DEPTH_BIAS)
 
-## Attaches the shared high-detail frog rendering assets.
+## Attaches the high-detail frog rendering assets, drawn with this view's own copy of their materials.
 func build_frog(assets: TerrainFrogAssets) -> void:
-	frog_assets = assets
+	frog_assets = assets.with_mesh(ModelMeshCopy.of(assets.mesh))
 	_apply_frog_depth_bias()
 	_frog_light_tick = -1
 	_frog_lit = false
@@ -575,10 +584,10 @@ func configure_audio(resources: AudioResources, sound_ids: PackedInt32Array = Pa
 	_voice_view.configure(resources)
 	_voice_view.preload_sounds(sound_ids)
 
-## Selects the level music played from each run start: [param track] of [param disc], else a supplied file beside [param files_dir]; -1 plays none.
-func configure_music(disc: DiscAudio, track: int, files_dir: String = "") -> void:
+## Selects the level music played from each run start: imported CD track [param track]; -1 plays none.
+func configure_music(track: int) -> void:
 	if _music_player != null:
-		_music_player.select(disc, track, files_dir)
+		_music_player.select(track)
 
 ## Holds or resumes every sound effect and the music where they are.
 func pause_audio(paused: bool) -> void:

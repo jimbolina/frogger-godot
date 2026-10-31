@@ -1,6 +1,6 @@
 class_name DemoSetup
 extends RefCounted
-## Resolves recorded resources through the supplied executable's detail-specific list.
+## Resolves a level's recorded demo through the executable's detail-specific demo list.
 
 ## Lives for demo playback. Frozen C never reinitialises lives between attract demos
 ## (tempopt.c:1437-1440 calls GameStart only), so a lone demo has no faithful count;
@@ -22,7 +22,7 @@ static func resolve(data: AssetCatalog, level: int, low_poly: bool = false) -> D
 	if not table.error.is_empty():
 		result.error = "Demo table: " + table.error
 		return result
-	var row: DemoTable.Entry = table.entry_for_level(level)
+	var row: DemoTableEntry = table.entry_for_level(level)
 	if row == null:
 		result.error = "No enabled demo table entry for level %d" % level
 		return result
@@ -33,11 +33,10 @@ static func resolve(data: AssetCatalog, level: int, low_poly: bool = false) -> D
 		return result
 	result.resource_name = entry.display_name()
 	var problems := PackedStringArray()
-	var bytes: PackedByteArray = data.read_resource(result.resource_id, problems)
-	if not problems.is_empty():
+	result.demo = data.read_demo(result.resource_id, problems)
+	if result.demo == null:
 		result.error = "Demo resource %d: %s" % [result.resource_id, "; ".join(problems)]
 		return result
-	result.demo = SourceDemoFile.parse(bytes, result.resource_name)
 	result.error = result.demo.error
 	return result
 

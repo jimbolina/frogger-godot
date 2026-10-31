@@ -522,7 +522,7 @@ def check_c(c_root):
                     'light1=MRCreateLight(MR_LIGHT_TYPE_PARALLEL,0xa0a0c0,frame1,NULL);'):
         if stack.squash(snippet) not in opts:
             problems.append('options.c no longer contains: %s' % snippet[:90])
-    anims = (ROOT / 'third_party' / 'froglord_cfg' / 'anims' / 'main-pc.cfg').read_text(encoding='latin-1')
+    anims = (ROOT / 'archive' / 'third_party' / 'froglord_cfg' / 'anims' / 'main-pc.cfg').read_text(encoding='latin-1')
     section = anims.split('[GEN_FROG]', 1)[1].split('[', 1)[0].split()
     if section != ACTIONS:
         problems.append('FrogLord main-pc.cfg GEN_FROG actions differ from the transcription')

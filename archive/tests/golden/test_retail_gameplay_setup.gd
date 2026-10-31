@@ -12,7 +12,7 @@ func test_all_playable_levels_resolve_and_start_with_supplied_identity() -> void
 	if not assets.error.is_empty():
 		data.close()
 		return
-	for code: String in GameplaySetup.LEVEL_CODES:
+	for code: String in data.playable_level_codes():
 		var number: int = FroggerIds.level_from_code(code)
 		var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 		var issue: String = scenario.attach_data(data, code, assets)

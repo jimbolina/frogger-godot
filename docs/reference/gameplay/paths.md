@@ -1,6 +1,6 @@
 # Paths and inspection
 
-The [map decoder](../data/maps.md) reads final-PC PATH records using FrogLord's
+The [map decoder](../../../archive/docs/formats/maps.md) reads final-PC PATH records using FrogLord's
 packet and segment layout. `PathSetup` copies valid, supported records into
 detached `PathDefinition` values with source, resource, path and byte-offset
 identity. Unknown segment types and unsafe geometry produce source-located

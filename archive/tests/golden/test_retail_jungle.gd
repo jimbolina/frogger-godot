@@ -63,7 +63,7 @@ func _definitions(maps: Dictionary[int, Vector2i]) -> Dictionary[int, EntitySetu
 		var map: MapFile = _data.read_map(resource_id, PackedStringArray())
 		assert_not_null(map, "map %d" % resource_id)
 		if map != null:
-			result[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "jungle", resource_id, _data.version.internal_name, true, _data.names)
+			result[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "jungle", resource_id, _data.version_name, true, _data.names)
 	return result
 
 func _definition(setup: EntitySetup, entity_index: int) -> EntityDefinition:
@@ -185,7 +185,7 @@ func test_jungle_payloads_match_independent_facts() -> void:
 		assert_eq(address, CALLBACK_ADDRESS)
 		var name: String = FormCallbackCatalog.NAMES.get(address, "")
 		assert_eq(name, row[5])
-		assert_eq(FormCallbackCatalog.resolve(_data.version.internal_name, address), FormCallback.Kind.CRUSHER_BOUNCE_BACK)
+		assert_eq(FormCallbackCatalog.resolve(_data.version_name, address), FormCallback.Kind.CRUSHER_BOUNCE_BACK)
 		var forms := PackedStringArray()
 		for form: FormBookEntry in theme_book.all_forms:
 			if form.collision_callback == address:
@@ -200,7 +200,7 @@ func test_jun1_admits_through_whole_map_setup() -> void:
 	if not assets.error.is_empty():
 		return
 	var level: int = FroggerIds.level_from_code("JUN1")
-	assert_true(GameplaySetup.supports_level(level), "JUN1 is a whole-map level")
+	assert_true(_data.is_playable_level(level), "JUN1 is a whole-map level")
 	var map: MapFile = _data.read_map(_data.map_book_entry(level).map_id(false), PackedStringArray())
 	assert_not_null(map)
 	if map == null:

@@ -24,7 +24,7 @@ var diagnostics: PackedStringArray = PackedStringArray()
 ## Resolves high-detail JUN1 through the supplied executable and copies its camera data.
 static func from_data(data: AssetCatalog, visibility_enabled: bool = false) -> CameraZoneInspection:
 	var result := CameraZoneInspection.new()
-	if data == null or data.version.internal_name != "pc-retail-v3.0e":
+	if data == null or data.version_name != "pc-retail-v3.0e":
 		result.error = "jun1-camera-zones inspection is verified only for pc-retail-v3.0e"
 		return result
 	var number: int = FroggerIds.level_from_code("JUN1")
@@ -33,7 +33,7 @@ static func from_data(data: AssetCatalog, visibility_enabled: bool = false) -> C
 		result.error = result.map_scene.error
 		return result
 	var book: MapBookEntry = data.map_book_entry(number)
-	var setup: ZoneSetup = ZoneSetup.from_map(result.map_scene.map, "JUN1", book.map_id(false), data.version.internal_name)
+	var setup: ZoneSetup = ZoneSetup.from_map(result.map_scene.map, "JUN1", book.map_id(false), data.version_name)
 	if not setup.error.is_empty():
 		result.error = setup.error
 		return result

@@ -1,7 +1,7 @@
 class_name MapSceneData
 extends RefCounted
 ## One level's decoded map and rendering dependencies, owned by its active viewer.
-## All resource choices come from the supplied executable; no retail IDs are baked in.
+## All resource choices come from the executable tables; no retail IDs are baked in.
 
 ## Selected level and detail.
 var level: int = 0

@@ -130,17 +130,15 @@ func test_missing_images_return_diagnostics_and_draw_nothing() -> void:
 	var lists := GameNameLists.new()
 	lists.images = NameBank.new()
 	lists.images.names = PackedStringArray(["fire_fly", "fire_flya"])
-	var tables := ExeTables.new(null, null, lists)
 	var row := PickupData.new()
 	row.fly_type = 3
 	row.sprite_size = 65536
 	row.frame_pointers = PackedInt64Array([0x401000])
 	var rows: Array[PickupData] = [row, row, row, row]
-	tables._pickups = rows
-	tables._pickups_read = true
-	tables._bmp_pointers = BmpPointers.new()
-	var data := GameData.new()
-	data.tables = tables.decoded
+	var data := AssetCatalog.new()
+	data.tables = GameTables.new()
+	data.tables.pickup_table = rows
+	data.tables.bmp_pointer_table = BmpPointers.new()
 	data.names = lists
 	var issue: String = view.configure(MapSceneData.new(), data, definitions)
 	assert_string_contains(issue, "fire_fly is missing")
@@ -159,7 +157,7 @@ func test_images_absent_from_scene_banks_resolve_from_resident_banks() -> void:
 	var pixels: Array[int] = []
 	for _index: int in 10 * 6:
 		pixels.append_array([200, 120, 40])
-	var resident: VloFile = VloFile.parse(SyntheticVlo.build_vlo([SyntheticVlo.spec(8, 4, 2, 40, 0, SyntheticVlo.abgr(pixels))]))
+	var resident: VloFile = SyntheticVlo.bank([SyntheticVlo.spec(8, 4, 2, 40, 0, SyntheticVlo.abgr(pixels))])
 	var scene := MapSceneData.new()
 	assert_null(view._image_for_id(scene, 40))
 	view._resident = TextureLibrary.new()

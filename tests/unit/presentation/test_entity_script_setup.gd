@@ -2,7 +2,7 @@ extends GutTest
 ## Supplied-name resolution and turtle custom-creation script replacement.
 
 func _names() -> NameBank:
-	return NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE\nSCRIPT_TURTLE_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n"), false, "Script")
+	return SyntheticNames.list("SCRIPT_NONE\nSCRIPT_TURTLE\nSCRIPT_TURTLE_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n", false, "Script")
 
 func _table(names: NameBank) -> ScriptTable:
 	var table := ScriptTable.new()
@@ -64,7 +64,7 @@ func test_supplied_named_program_outside_old_allowlist_uses_dependency_checks() 
 	assert_ne(EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray()).error, "")
 
 func test_start_script_and_helium_callback_copy_named_dependencies() -> void:
-	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nsynthetic_root\nSCRIPT_SKY_HELIUM_BALLOON_RISING\n[CallbackNames]\nSCRIPT_CB_SKY_HELIUM_BALLOON\n"), false, "Script")
+	var names: NameBank = SyntheticNames.list("SCRIPT_NONE\nsynthetic_root\nSCRIPT_SKY_HELIUM_BALLOON_RISING\n[CallbackNames]\nSCRIPT_CB_SKY_HELIUM_BALLOON\n", false, "Script")
 	var table: ScriptTable = _table(names)
 	var stop := EntityScript.Command.new()
 	stop.opcode = 38
@@ -88,7 +88,7 @@ func test_start_script_and_helium_callback_copy_named_dependencies() -> void:
 	assert_ne(EntityScriptSetup.from_tables(table, names, 1, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray()).error, "")
 
 func test_callback_repointing_resolves_names_to_detached_typed_kinds() -> void:
-	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE\nSCRIPT_TURTLE_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_LOG_SPLASH\n"), false, "Script")
+	var names: NameBank = SyntheticNames.list("SCRIPT_NONE\nSCRIPT_TURTLE\nSCRIPT_TURTLE_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_LOG_SPLASH\n", false, "Script")
 	var table: ScriptTable = _table(names)
 	table.scripts[0].pointer = 0x401000
 	var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("STATIC"), PackedByteArray())
@@ -161,7 +161,7 @@ func test_matrix_mechanism_reads_six_signed_registers_and_rejects_truncation() -
 	assert_ne(EntityScriptSetup.from_tables(table, names, 0, EntityBehaviorCatalog.resolve("DYNAMIC"), payload).error, "")
 
 func test_hippo_payload_replaces_its_own_no_dive_script_by_name() -> void:
-	var names: NameBank = NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE_NO_DIVE\nSCRIPT_JUN_HIPPO\nSCRIPT_JUN_HIPPO_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n"), false, "Script")
+	var names: NameBank = SyntheticNames.list("SCRIPT_NONE\nSCRIPT_TURTLE_NO_DIVE\nSCRIPT_JUN_HIPPO\nSCRIPT_JUN_HIPPO_NO_DIVE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n", false, "Script")
 	var table := ScriptTable.new()
 	for id: int in 4:
 		var script_entry := EntityScript.new()

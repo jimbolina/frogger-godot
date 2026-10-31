@@ -79,11 +79,6 @@ const FLAG_UNIT_FORM: int = 1 << 9
 @export var bonus_callback: int = 0
 
 
-## Reads one form at [param reader]'s cursor (see [ThemeBookRowReader]).
-static func read(reader: ByteReader, theme_number: int, local: int, global: int) -> FormBookEntry:
-	return ThemeBookRowReader.read_form(reader, theme_number, local, global)
-
-
 ## True if flag bit(s) [param flag] are set.
 func has_flag(flag: int) -> bool:
 	return flags & flag == flag

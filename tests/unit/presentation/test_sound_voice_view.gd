@@ -31,16 +31,21 @@ func _definition(sound_id: int, flags: int, minimum: int, maximum: int) -> Logic
 func _bank() -> SoundBankSetup:
 	var bank := SoundBankSetup.new()
 	bank.header = SoundBankHeader.new()
+	var samples := AudioStreamWAV.new()
+	samples.format = AudioStreamWAV.FORMAT_16_BITS
+	samples.mix_rate = 11025
+	var silence := PackedByteArray()
+	silence.resize(800)
+	samples.data = silence
 	for sound_id: int in 4:
 		var entry := SoundBankEntry.new()
 		entry.sound_id = sound_id
 		entry.audio_present = sound_id > 0
-		entry.data_offset = 0
 		entry.data_size = 800 if sound_id > 0 else 0
 		entry.sample_rate = 11025
 		entry.sample_bits = 16
+		entry.stream = samples if sound_id > 0 else null
 		bank.header.entries.append(entry)
-	bank.body.resize(800)
 	return bank
 
 func _state(tick: int) -> GameplayState:

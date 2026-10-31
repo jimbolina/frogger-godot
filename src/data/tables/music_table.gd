@@ -16,11 +16,6 @@ const TERMINATOR: int = 0xFF
 @export var error: String = ""
 
 
-## Reads the music list of [param exe] (see [MusicTableReader]).
-static func read(exe: ExeImage) -> MusicTable:
-	return MusicTableReader.read(exe)
-
-
 ## Number of levels listed.
 func size() -> int:
 	return tracks.size()

@@ -1,6 +1,6 @@
 class_name TerrainScenarioArguments
 extends RefCounted
-## Translates process arguments and environment into explicit inspection options.
+## Translates process arguments into explicit inspection options.
 
 ## Applies CLI selections through the shared options validation boundary.
 static func apply(scenario: TerrainScenario, arguments: PackedStringArray) -> String:
@@ -9,6 +9,6 @@ static func apply(scenario: TerrainScenario, arguments: PackedStringArray) -> St
 		ViewerArguments.value(arguments, "--entity-lifecycle="),
 		ViewerArguments.value(arguments, "--exploration="),
 		ViewerArguments.value(arguments, "--level="),
-		ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty(),
+		ViewerArguments.uses_assets(arguments),
 		ViewerArguments.value(arguments, "--seed="),
 		ViewerArguments.value(arguments, "--tick-limit="))

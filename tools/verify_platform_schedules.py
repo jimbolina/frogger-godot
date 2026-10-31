@@ -223,25 +223,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario-file', type=Path)
-    parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--exploration', choices=('jun1-log-bank', 'org1-turtle-log-bank', 'org1-road-river','org1-turtle-log-bank-visibility'))
     parser.add_argument('--case-index', type=int, default=0,
                         help='Case inside a scenario file with a cases array (default: 0)')
-    parser.add_argument('--level', default='JUN1', help='Retail level code (default: JUN1)')
+    parser.add_argument('--level', default='JUN1',
+                        help='Imported level code used without --scenario-file (default: JUN1)')
     parser.add_argument('--tick-limit', type=int,
                         help='Override selected scenario duration (retail default: 90)')
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
     if args.exploration in ('org1-turtle-log-bank', 'org1-road-river','org1-turtle-log-bank-visibility'):
-        if args.scenario_file is None or args.data_dir is None or args.level.upper() != 'ORG1':
-            parser.error(args.exploration + ' requires --scenario-file, --data-dir and --level=ORG1')
+        if args.scenario_file is None or args.level.upper() != 'ORG1':
+            parser.error(args.exploration + ' requires --scenario-file and --level=ORG1')
         from org1_schedule_verification import run
         run(args)
         return
-    if args.exploration and (args.scenario_file is None or args.data_dir is None or args.level.upper() != 'JUN1'):
-        parser.error('jun1-log-bank requires both --scenario-file, --data-dir and --level=JUN1')
-    if not args.exploration and bool(args.scenario_file) == bool(args.data_dir):
-        parser.error('select exactly one of --scenario-file or --data-dir outside exploration')
+    if args.exploration and (args.scenario_file is None or args.level.upper() != 'JUN1'):
+        parser.error('jun1-log-bank requires both --scenario-file and --level=JUN1')
     if args.tick_limit is not None and not 0 <= args.tick_limit <= 100000:
         parser.error('tick-limit must be in 0..100000')
 
@@ -252,8 +250,6 @@ def main():
             parser.error('Evidence must be outside this repository and froggy')
     if args.scenario_file and not args.scenario_file.is_file():
         parser.error('scenario-file does not exist')
-    if args.data_dir and not args.data_dir.is_dir():
-        parser.error('data-dir does not exist')
 
     def source_identities():
         paths = [path for path in (repo / 'src').rglob('*') if path.suffix in ('.gd', '.gdshader', '.json')]
@@ -294,19 +290,20 @@ def main():
             selected_path = args.scenario_file.resolve()
         selected.append('--scenario-file=' + str(selected_path))
     else:
-        selected.extend(('--data-dir=' + str(args.data_dir.resolve()), '--level=' + args.level))
+        selected.append('--level=' + args.level)
         if args.tick_limit is None:
             selected.append('--tick-limit=90')
     if args.exploration:
-        selected.extend(('--data-dir=' + str(args.data_dir.resolve()), '--level=JUN1'))
+        selected.append('--level=JUN1')
     if args.tick_limit is not None:
         selected.append('--tick-limit=' + str(args.tick_limit))
+    imported = bool(args.exploration) or args.scenario_file is None
     identity = hashlib.sha256(args.scenario_file.read_bytes()).hexdigest() if args.scenario_file else None
     route_golden = repo / 'tests/golden/pc-retail-v3.0e/platform_jun1_route.tsv'
     route_golden_sha = hashlib.sha256(route_golden.read_bytes()).hexdigest() if args.exploration else None
     source_hashes = source_identities()
     (evidence / 'provenance.json').write_text(json.dumps({'source_sha256': source_hashes,
-        'scenario_sha256': identity, 'retail_data_dir': str(args.data_dir.resolve()) if args.data_dir else None},
+        'scenario_sha256': identity, 'level': args.level if imported else None},
         indent=2), encoding='utf-8')
     print('Entity platform evidence: ' + str(evidence), flush=True)
 
@@ -329,7 +326,7 @@ def main():
     baseline = evidence / 'headless.jsonl'
     stage('headless', ['-s', 'res://tools/run_terrain_scenario.gd', '--',
                        '--trace-jsonl=' + str(baseline), *selected])
-    retail = bool(args.data_dir) and args.level.upper() == 'JUN1'
+    retail = imported and args.level.upper() == 'JUN1'
     reference = read_trace(baseline, retail, bool(args.exploration))
     if args.exploration:
         check_exploration_source_trace(reference, route_golden)

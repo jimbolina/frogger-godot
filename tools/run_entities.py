@@ -16,8 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario', choices=('shared-path',), default='shared-path')
-    parser.add_argument('--data-dir', type=Path)
-    parser.add_argument('--level')
+    parser.add_argument('--level', help='Map code from the imported assets; synthetic when omitted')
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--render-rate', type=int, choices=(30, 60, 144), default=60)
     parser.add_argument('--output-directory', type=Path, required=True)
@@ -28,8 +27,6 @@ def main():
     for protected in (repo, (repo.parent / 'froggy').resolve()):
         if output == protected or protected in output.parents:
             parser.error('Output must be outside this repository and frozen froggy')
-    if args.level and not args.data_dir:
-        parser.error('--level requires --data-dir')
     if args.tick_limit is not None and not 0 <= args.tick_limit <= 100000:
         parser.error('--tick-limit must be in 0..100000')
     output.mkdir(parents=True, exist_ok=True)
@@ -72,9 +69,8 @@ def main():
     selected = ['--scenario=' + args.scenario,
                 '--trace-jsonl=' + str(evidence / 'trace.jsonl'),
                 '--render-rate=' + str(args.render_rate)]
-    if args.data_dir:
-        selected += ['--data-dir=' + str(args.data_dir.resolve()),
-                     '--level=' + (args.level or 'ORG1')]
+    if args.level:
+        selected += ['--level=' + args.level]
     if args.tick_limit is not None:
         selected += ['--tick-limit=' + str(args.tick_limit)]
     if args.viewer:
@@ -96,7 +92,7 @@ def main():
     (evidence / 'run.json').write_text(json.dumps({
         'mode': 'viewer' if args.viewer else 'headless',
         'scenario': args.scenario,
-        'level': args.level or 'ORG1' if args.data_dir else None,
+        'level': args.level,
         'render_rate': args.render_rate if args.viewer else None,
         'stage_seconds': stage_durations,
         'snapshot_count': len(rows) - 1,

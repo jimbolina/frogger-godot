@@ -36,7 +36,7 @@ func _bank(flags: int = 0, blend_mode: int = 0) -> VloFile:
 		pixels.append_array([200, 120, 40])
 	var spec: SyntheticVlo.Spec = SyntheticVlo.spec(8, 4, 2, 7, flags, SyntheticVlo.abgr(pixels))
 	spec.blend_mode = blend_mode
-	var bank: VloFile = VloFile.parse(SyntheticVlo.build_vlo([spec]))
+	var bank: VloFile = SyntheticVlo.bank([spec])
 	assert_eq(bank.error, "")
 	return bank
 

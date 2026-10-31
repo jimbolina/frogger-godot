@@ -1,8 +1,7 @@
 class_name GameplaySetup
 extends RefCounted
-## Whole-map single-player dependency validation using supplied executable tables.
+## Whole-map single-player dependency validation of a catalog's playable level.
 
-const LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1", "SWP1", "SWP2", "SWP3", "SWP4", "SWP5", "SKY1", "SKY2", "SKY3", "SKY4"]
 ## Named sprite images the frozen firefly animation list draws.
 const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
 ## Resident general sprite bank holding the standard-resolution pickup and firefly images.
@@ -37,10 +36,6 @@ var definition: LevelDefinition = null
 var diagnostics: Array[EntitySetupDiagnostic] = []
 var _explosion_lengths: PackedInt32Array = PackedInt32Array()
 
-## Whether the selected level has complete single-player dependency support.
-static func supports_level(level_number: int) -> bool:
-	return FroggerIds.level_code(level_number) in LEVEL_CODES
-
 ## Resolves player tables, scripts, callbacks, geometry and visibility once at setup.
 static func from_data(data: AssetCatalog, level_number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> GameplaySetup:
 	var result := GameplaySetup.new()
@@ -50,20 +45,20 @@ static func from_data(data: AssetCatalog, level_number: int, map: MapFile, frog_
 	return result
 
 func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
-	if not supports_level(number):
-		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
 		return "Gameplay setup requires valid player data, map and frog model"
+	if not data.is_playable_level(number):
+		return "Gameplay setup requires one of the playable levels " + ", ".join(data.playable_level_codes())
 	var code: String = FroggerIds.level_code(number)
-	if data.version.internal_name != "pc-retail-v3.0e":
+	if data.version_name != "pc-retail-v3.0e":
 		return "Gameplay requires the verified pc-retail-v3.0e build"
 	var book: MapBookEntry = data.map_book_entry(number)
 	var theme: ThemeBookEntry = data.theme_book_entry(map.general.theme)
 	if book == null or theme == null:
 		return "Gameplay requires map and theme definitions"
-	var source: String = data.version.internal_name + ":" + code
+	var source: String = data.version_name + ":" + code
 	var grid: TerrainGridSetup = TerrainGridSetup.from_map(map)
-	var zones: ZoneSetup = ZoneSetup.from_map(map, source, book.map_id(false), data.version.internal_name)
+	var zones: ZoneSetup = ZoneSetup.from_map(map, source, book.map_id(false), data.version_name)
 	var lifecycle: EntityLifecycleSetup = EntityLifecycleSetup.from_map(map)
 	var frog: FrogCollisionSetup = FrogCollisionSetup.from_model(frog_model)
 	var rewards: RewardSetup = RewardSetup.from_table(data.tables.scores())
@@ -73,7 +68,7 @@ func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, 
 			return issue
 	if code in SOURCE_ALLOCATION_CODES:
 		lifecycle.definition.source_allocation = true
-	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true, data.names)
+	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version_name, true, data.names)
 	diagnostics.append_array(entities.diagnostics)
 	if not entities.error.is_empty():
 		return entities.error
@@ -132,7 +127,7 @@ func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, 
 			return code + " entity %d at 0x%X %s" % [entity.entity_index, entity.source_offset, swamp_issue]
 		if entity.behavior.kind in [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.FAT_FIRE_FLY]:
 			entity.pickup_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.pickup_type]].copy()
-		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version.internal_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
+		if entity.bonus_kind == FormCallback.Kind.BUTTERFLY_SCORE or FormCallbackCatalog.resolve(data.version_name, entity.collision_callback) == FormCallback.Kind.BUTTERFLY_SCORE:
 			if entity.butterfly_type < 0 or entity.butterfly_type >= EntityBonusFly.REWARD_IDS.size():
 				return code + " entity %d has no valid butterfly reward type" % entity.entity_index
 			entity.butterfly_reward = rewards.definitions[EntityBonusFly.REWARD_IDS[entity.butterfly_type]].copy()
@@ -171,7 +166,7 @@ func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, 
 				var target: EntityDefinition = identities[target_id]
 				if target.behavior.kind != EntityBehavior.Kind.MOVING_PLATFORM:
 					return code + " colour switch entity %d target %d requires moving-platform behavior and payload" % [entity.entity_index, target_id]
-	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version.internal_name, true, true, entity_models)
+	var contacts: FormContactSetup = FormContactSetup.from_map(map, data.tables.theme_book(), entities.definitions, models, source, book.map_id(false), data.version_name, true, true, entity_models)
 	diagnostics.append_array(contacts.diagnostics)
 	if not contacts.error.is_empty():
 		return contacts.error
@@ -181,7 +176,7 @@ func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, 
 		var diagnostic := EntitySetupDiagnostic.new()
 		diagnostic.code = "effect_hilite"
 		diagnostic.source_id = source
-		diagnostic.build_id = data.version.internal_name
+		diagnostic.build_id = data.version_name
 		diagnostic.resource_id = book.map_id(false)
 		diagnostic.message = message
 		diagnostic.fallback = "the hilite starts no effect"

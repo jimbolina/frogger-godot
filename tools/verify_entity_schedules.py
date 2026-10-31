@@ -24,7 +24,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario', choices=('shared-path',), default='shared-path')
-    parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--level')
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--output-directory', type=Path, required=True)
@@ -32,8 +31,6 @@ def main():
     runner = Path(__file__).with_name('run_entities.py')
     shared = ['--godot', args.godot, '--output-directory', str(args.output_directory),
               '--scenario', args.scenario]
-    if args.data_dir:
-        shared += ['--data-dir', str(args.data_dir)]
     if args.level:
         shared += ['--level', args.level]
     if args.tick_limit is not None:

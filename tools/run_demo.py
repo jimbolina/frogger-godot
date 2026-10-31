@@ -17,7 +17,6 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario-file', type=Path)
     parser.add_argument('--demo-file', type=Path)
-    parser.add_argument('--data-dir', type=Path)
     parser.add_argument('--level', default='ORG1')
     parser.add_argument('--tick-limit', type=int)
     parser.add_argument('--render-rate', choices=('30', '60', '144', 'irregular'), default='60')
@@ -29,10 +28,8 @@ def main():
     for protected in (repo, (repo.parent / 'froggy').resolve()):
         if output == protected or protected in output.parents:
             parser.error('Output must be outside this repository and frozen froggy')
-    if not args.data_dir and not (args.scenario_file and args.demo_file):
-        parser.error('Supply --data-dir or both --scenario-file and --demo-file')
-    if bool(args.scenario_file) != bool(args.demo_file) or args.data_dir and args.scenario_file:
-        parser.error('Use player data or a paired external synthetic scenario/demo')
+    if bool(args.scenario_file) != bool(args.demo_file):
+        parser.error('Use the imported demo of --level or a paired external synthetic scenario/demo')
     if args.tick_limit is not None and not 0 <= args.tick_limit <= 100000:
         parser.error('--tick-limit must be in 0..100000')
     output.mkdir(parents=True, exist_ok=True)
@@ -74,8 +71,6 @@ def main():
     stage('architecture', ['-s', 'res://tools/check_architecture.gd'])
     selected = ['--output-directory=' + str(evidence),
                 '--render-rate=' + args.render_rate, '--level=' + args.level]
-    if args.data_dir:
-        selected += ['--data-dir=' + str(args.data_dir.resolve())]
     if args.scenario_file:
         selected += ['--scenario-file=' + str(args.scenario_file.resolve()),
                      '--demo-file=' + str(args.demo_file.resolve())]

@@ -48,7 +48,7 @@ func test_light_payloads_and_pickup_counts_match_independent_facts() -> void:
 		assert_eq(light, PackedInt64Array([row[2].to_int(), row[3].to_int(), row[4].to_int(), row[5].to_int()]), row[1])
 		assert_eq([counts["FIREFLY"], counts["CAV_FAT_FIRE_FLY"], counts["GLOWWORM"], map.entities.size()],
 			[row[11].to_int(), row[12].to_int(), row[13].to_int(), row[14].to_int()], row[1])
-		var setup: EntitySetup = EntitySetup.from_map(map, _data.tables.theme_book(), "cave", resource_id, _data.version.internal_name, true, _data.names)
+		var setup: EntitySetup = EntitySetup.from_map(map, _data.tables.theme_book(), "cave", resource_id, _data.version_name, true, _data.names)
 		var lights: Array[EntityDefinition] = []
 		for definition: EntityDefinition in setup.definitions:
 			if definition.behavior.kind == EntityBehavior.Kind.CAVE_LIGHT:

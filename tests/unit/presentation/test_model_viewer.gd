@@ -1,5 +1,5 @@
 extends GutTest
-## The model viewer, driven with made-up models. Needs no game files.
+## The model viewer, driven with made-up models. Needs no catalog.
 
 const VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
 
@@ -13,9 +13,9 @@ func before_each() -> void:
 	add_child_autofree(_viewer)
 
 
-func test_shows_a_model_from_bytes() -> void:
+func test_shows_a_decoded_model() -> void:
 	var parts: Array[SyntheticMof.Part] = [SyntheticMof.square(MofPolygonType.F4), SyntheticMof.square(MofPolygonType.G4)]
-	assert_eq(_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static(parts)), 4)
+	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file(parts)), 4)
 	assert_eq(_viewer.part_node_count(), 2)
 	assert_eq(_viewer.visible_part_count(), 2)
 	assert_string_contains(_viewer.facts_text(), "2 parts")
@@ -23,22 +23,25 @@ func test_shows_a_model_from_bytes() -> void:
 
 
 func test_a_placeholder_shows_nothing() -> void:
-	assert_eq(_viewer.load_model_bytes("NULL", SyntheticMof.build_dummy()), 0)
+	assert_eq(_viewer.load_model("NULL", SyntheticMof.dummy_file()), 0)
 	assert_eq(_viewer.part_node_count(), 0)
 
 
-func test_bad_bytes_are_refused() -> void:
-	assert_eq(_viewer.load_model_bytes("BAD.XMR", "not a model at all".to_ascii_buffer()), -1)
+func test_invalid_or_missing_models_are_refused() -> void:
+	var bad := MofFile.new()
+	bad.error = "not a model at all"
+	assert_eq(_viewer.load_model("BAD.XMR", bad), -1)
 	assert_eq(_viewer.part_node_count(), 0)
+	assert_eq(_viewer.load_model("NONE.XMR", null), -1)
 
 
 func test_an_animated_file_shows_its_first_model() -> void:
-	var inside: PackedByteArray = SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)])
-	assert_eq(_viewer.load_model_bytes("TEST.XAR", SyntheticMof.build_animated([inside, inside])), 2)
+	var inside: MofStatic = SyntheticMof.static_model([SyntheticMof.square(MofPolygonType.F4)])
+	assert_eq(_viewer.load_model("TEST.XAR", SyntheticMofAnimation.animated_file([inside, inside])), 2)
 	assert_eq(_viewer.current_model.static_models.size(), 2)
 
 
-func test_without_game_data_nothing_is_listed() -> void:
+func test_without_a_catalog_nothing_is_listed() -> void:
 	assert_eq(_viewer.wad_names().size(), 0)
 	assert_eq(_viewer.load_wad_model("THEME_GEN_HI.WAD", 0), -1)
 	assert_eq(_viewer.load_model_by_name("GEN_FROG.XAR"), -1)
@@ -48,7 +51,7 @@ func test_animation_controls_pause_seek_step_restart_and_preserve_mesh() -> void
 	var part: SyntheticMof.Part = SyntheticMof.square(MofPolygonType.F4)
 	part.poses.append(part.poses[0].duplicate())
 	part.flipbook_actions = 1
-	_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([part]))
+	_viewer.load_model("TEST.XMR", SyntheticMof.static_file([part]))
 	assert_true(_viewer.select_action(0))
 	_viewer.set_playing(true)
 	assert_true(_viewer.playing)
@@ -69,7 +72,7 @@ func test_render_options_preserve_texture_phase_and_player_settings() -> void:
 	part.animated_polygons = PackedInt32Array([0])
 	part.animation_images = PackedInt32Array([7, 8])
 	part.animation_durations = PackedInt32Array([2, 3])
-	assert_eq(_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([part])), 2)
+	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file([part])), 2)
 	_viewer.set_playing(false)
 	var original_player: ModelAnimationPlayer = _viewer.player
 	for _tick: int in 3:
@@ -97,8 +100,8 @@ func test_capture_folder_must_stay_outside_the_repository() -> void:
 
 
 func test_replacement_with_null_or_invalid_data_clears_model_selections_and_caches() -> void:
-	for invalid: AssetCatalog in [null, GameData.new()]:
-		_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	for invalid: AssetCatalog in [null, AssetCatalog.new()]:
+		_viewer.load_model("TEST.XMR", SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)]))
 		_viewer._banks[1] = VloFile.new()
 		_viewer._current_wad = 12
 		_viewer._actions.add_item("Old action")
@@ -120,7 +123,7 @@ func test_replacement_with_null_or_invalid_data_clears_model_selections_and_cach
 
 
 func test_detached_viewer_releases_model_resources_and_caches() -> void:
-	_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	_viewer.load_model("TEST.XMR", SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)]))
 	_viewer._banks[1] = VloFile.new()
 	var old_mesh: WeakRef = weakref(_viewer.current_mesh)
 	var old_bank: WeakRef = weakref(_viewer._banks[1])
@@ -147,7 +150,7 @@ func test_action_changes_and_held_geometry_keep_texture_clocks_independent() -> 
 	part.animated_polygons = PackedInt32Array([0])
 	part.animation_images = PackedInt32Array([7, 8])
 	part.animation_durations = PackedInt32Array([2, 3])
-	assert_eq(_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([part])), 2)
+	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file([part])), 2)
 	_viewer.set_playing(false)
 	_viewer.player.advance_tick()
 	_viewer.player.advance_tick()
@@ -169,7 +172,7 @@ func test_animation_shortcuts_work_while_a_list_has_focus() -> void:
 	var part: SyntheticMof.Part = SyntheticMof.square(MofPolygonType.F4)
 	part.poses.append(part.poses[0].duplicate())
 	part.flipbook_actions = 1
-	_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([part]))
+	_viewer.load_model("TEST.XMR", SyntheticMof.static_file([part]))
 	_viewer._wad_list.grab_focus()
 	_send_key(KEY_SPACE)
 	assert_false(_viewer.playing)

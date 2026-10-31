@@ -66,18 +66,17 @@ func test_configured_pickups_and_fireflies_receive_source_biases() -> void:
 	var lists := GameNameLists.new()
 	lists.images = NameBank.new()
 	lists.images.names = image_names
-	var tables := ExeTables.new(null, null, lists)
+	var tables := GameTables.new()
 	var row := PickupData.new()
 	row.fly_type = 3
 	row.sprite_size = 65536
 	row.frame_pointers = PackedInt64Array([PICKUP_POINTER])
 	var rows: Array[PickupData] = [row, row, row, row]
-	tables._pickups = rows
-	tables._pickups_read = true
-	tables._bmp_pointers = BmpPointers.new()
-	tables._bmp_pointers._id_by_pointer[PICKUP_POINTER] = PICKUP_TEXTURE
-	var data := GameData.new()
-	data.tables = tables.decoded
+	tables.pickup_table = rows
+	tables.bmp_pointer_table = BmpPointers.new()
+	tables.bmp_pointer_table._id_by_pointer[PICKUP_POINTER] = PICKUP_TEXTURE
+	var data := AssetCatalog.new()
+	data.tables = tables
 	data.names = lists
 	var pixels: Array[int] = []
 	for _index: int in 10 * 6:
@@ -86,7 +85,7 @@ func test_configured_pickups_and_fireflies_receive_source_biases() -> void:
 	for identity: int in [PICKUP_TEXTURE, 41, 42, CaveSpriteView.GLOW_TEXTURE_ID]:
 		specs.append(SyntheticVlo.spec(8, 4, 2, identity, 0, SyntheticVlo.abgr(pixels)))
 	var scene := MapSceneData.new()
-	scene.library.add_bank(VloFile.parse(SyntheticVlo.build_vlo(specs)), "CAV_VRAM.VLO")
+	scene.library.add_bank(SyntheticVlo.bank(specs), "CAV_VRAM.VLO")
 	var definitions: Array[EntityDefinition] = [_definition(EntityBehavior.Kind.FIREFLY, 0), _definition(EntityBehavior.Kind.PICKUP, 3)]
 	var issue: String = view.configure(scene, data, definitions)
 	assert_false(issue.contains("fire_fly"), issue)

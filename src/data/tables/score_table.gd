@@ -10,9 +10,3 @@ extends Resource
 @export var texture_pointers: PackedInt64Array = PackedInt64Array()
 ## Why the table could not be read, or "".
 @export var error: String = ""
-
-
-## Reads original or FrogLord-saved table contents without executing supplied
-## code (see [ScoreTableReader]).
-static func read(exe: ExeImage) -> ScoreTable:
-	return ScoreTableReader.read(exe)

@@ -133,7 +133,7 @@ func _scene() -> MapSceneData:
 		spec.blend_mode = 0
 		specs.append(spec)
 	var scene := MapSceneData.new()
-	scene.library.add_bank(VloFile.parse(SyntheticVlo.build_vlo(specs)), "TEST.VLO")
+	scene.library.add_bank(SyntheticVlo.bank(specs), "TEST.VLO")
 	scene.effects = _effects()
 	scene.effects.texture_ids["im_frog_smoke1"] = SMOKE_ID
 	scene.effects.texture_ids["im_tongue_tip"] = TONGUE_ID

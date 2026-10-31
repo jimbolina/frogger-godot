@@ -5,7 +5,7 @@ extends Resource
 ## On PC the index is stored inside [code]FROGGER.EXE[/code], at the offset and
 ## length the build's version config gives ([code]mwiOffset[/code],
 ## [code]mwiLength[/code]). FrogLord also writes it as a standalone
-## [code].MWI[/code] file; both are parsed the same way by [MwiIndexReader].
+## [code].MWI[/code] file; both hold the same entries.
 
 ## Every entry, in index order.
 @export var entries: Array[MwiEntry] = []
@@ -13,18 +13,6 @@ extends Resource
 @export var error: String = ""
 
 var _by_name: Dictionary[String, int] = {}
-
-
-## Parses the index held in [param bytes] (the MWI region only, not the whole
-## executable); see [method MwiIndexReader.parse].
-static func parse(bytes: PackedByteArray) -> MwiIndex:
-	return MwiIndexReader.parse(bytes)
-
-
-## Reads the index out of a whole executable using [param version]'s location;
-## see [method MwiIndexReader.from_exe].
-static func from_exe(exe: PackedByteArray, version: GameVersionConfig) -> MwiIndex:
-	return MwiIndexReader.from_exe(exe, version)
 
 
 ## True when the index parsed cleanly.

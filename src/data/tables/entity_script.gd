@@ -21,11 +21,6 @@ const Command := preload("res://src/data/tables/entity_script_command.gd")
 @export var commands: Array[EntityScriptCommand] = []
 
 
-## Reads the script at [param reader]'s cursor (see [ScriptTableReader]).
-static func read(reader: ByteReader, script_id: int, script_name: String, address: int) -> EntityScript:
-	return ScriptTableReader.read_script(reader, script_id, script_name, address)
-
-
 ## The script as the flat word list it is stored as (opcodes and arguments).
 func words() -> PackedInt32Array:
 	var out := PackedInt32Array()

@@ -157,8 +157,8 @@ Rules and deliberate-break checks are in the
 
 ## Logical sound clock
 
-Whole-map ORG1 resolves [supplied sound tables](../data/executable-tables.md#sound-metadata)
-and [Windows bank durations](../data/archives.md#windows-sound-bank-metadata)
+Whole-map ORG1 resolves [supplied sound tables](../../../archive/docs/formats/executable-tables.md#sound-metadata)
+and [Windows bank durations](../../../archive/docs/formats/archives.md#windows-sound-bank-metadata)
 into detached definitions. The logical clock advances before entity updates,
 with moving objects visited newest first and voices allocated from the first
 free slot in their source group. A successful allocation consumes pitch RNG
@@ -176,7 +176,7 @@ likewise allocate at the call site. Entity retirement releases its moving owner;
 selective recreation gets a new owner generation while the shared RNG and frame
 clock continue. Full restart clears voice state. Later failure rolls back voices,
 sample cursors, object generations, random draws and emitted requests together.
-Audio playback reads the committed voices; see [sound playback](../data/archives.md#sound-playback).
+Audio playback reads the committed voices; see [sound playback](../../../archive/docs/formats/archives.md#sound-playback).
 
 Killed logical voices retain their occupied slots until the source voice-update
 pass, including first-update protection. Retirement clears moving ownership and

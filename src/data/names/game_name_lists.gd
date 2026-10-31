@@ -6,7 +6,6 @@ extends Resource
 ## configuration names their entries. Some tables also take their [i]length[/i]
 ## from these lists, exactly as FrogLord does: the form libraries (one list
 ## section per theme) and the script table (the main script list).
-## [GameNameListsReader] loads them from FrogLord's files.
 
 ## Form names, all themes in theme order; each theme is also a sub-bank named
 ## after it (e.g. "SWAMP").

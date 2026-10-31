@@ -1,15 +1,17 @@
 """Run an isolated native foreground and verify predeclared source-derived bounds."""
-import argparse,json,os,subprocess,uuid,hashlib
+import argparse,json,os,re,subprocess,uuid,hashlib
 from pathlib import Path
 from PIL import Image,ImageChops,ImageFilter
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--godot',required=True);p.add_argument('--fixture',type=Path,required=True);p.add_argument('--data-dir',type=Path,required=True);p.add_argument('--output-directory',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--godot',required=True);p.add_argument('--fixture',type=Path,required=True);p.add_argument('--output-directory',type=Path,required=True);a=p.parse_args()
  repo=Path(__file__).resolve().parents[1];out=a.output_directory.resolve()
  for protected in (repo,repo.parent/'froggy'):
   if out==protected.resolve() or protected.resolve() in out.parents:p.error('Output must be outside both repositories')
  fixture=json.loads(a.fixture.read_text());source=Path(fixture['source_image']);assert hashlib.sha256(source.read_bytes()).hexdigest()==fixture['source_sha256']
- for name,digest in fixture['input_sha256'].items():assert hashlib.sha256((a.data_dir/name).read_bytes()).hexdigest()==digest, 'Candidate input identity differs from source'
+ catalog=(repo/'assets/catalog.tres').read_text(encoding='utf-8')
+ imported={name:re.search(key+r' = "([0-9a-f]{64})"',catalog).group(1) for name,key in (('FROGGER.EXE','exe_sha256'),('FROGPSX.MWD','mwd_sha256'))}
+ for name,digest in fixture['input_sha256'].items():assert imported[name]==digest, 'Imported assets come from other inputs than the source'
  run=out/('foreground-'+uuid.uuid4().hex);(run/'profile').mkdir(parents=True);(run/'temp').mkdir()
  env=os.environ.copy();env.update(APPDATA=str(run/'profile'),XDG_DATA_HOME=str(run/'profile'),TEMP=str(run/'temp'),TMP=str(run/'temp'))
  startup=None
@@ -20,7 +22,7 @@ def main():
   text=log.read_text() if log.exists() else ''
   if result.returncode or not text or any(s in text for s in ('SCRIPT ERROR','Parse Error','Failed to load script','CHECK FAILED')):raise RuntimeError(f'{name} failed, see {log}')
  stage('import',['--import']);stage('check',['-s','res://tools/check_scripts.gd'])
- stage('capture',['-s','res://tools/capture_gameplay_foreground.gd','--','--fixture='+str(a.fixture.resolve()),'--data-dir='+str(a.data_dir.resolve()),'--output-directory='+str(run)],False)
+ stage('capture',['-s','res://tools/capture_gameplay_foreground.gd','--','--fixture='+str(a.fixture.resolve()),'--output-directory='+str(run)],False)
  actual=json.loads((run/'candidate-landmarks.json').read_text());assert actual['size']==[640,480]
  observed={(v['part'],v['vertex']):v['screen'] for v in actual['landmarks']};failures=[];max_errors=[0,0]
  for v in fixture['landmarks']:

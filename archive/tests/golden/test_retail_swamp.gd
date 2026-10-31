@@ -74,7 +74,7 @@ func test_swamp_payloads_match_independent_facts() -> void:
 			if map == null:
 				return
 			payloads[resource_id] = map
-			setups[resource_id] = EntitySetup.from_map(map, theme_book, "swamp", resource_id, _data.version.internal_name, true, _data.names)
+			setups[resource_id] = EntitySetup.from_map(map, theme_book, "swamp", resource_id, _data.version_name, true, _data.names)
 		var definition: EntityDefinition = _definition(setups[resource_id], row[3].to_int())
 		assert_not_null(definition, label)
 		if definition == null:
@@ -187,7 +187,7 @@ func test_swamp_models_primitives_and_callbacks_match_independent_facts() -> voi
 				found = true
 				assert_eq(form.collision_callback, address, facts["form"])
 		assert_true(found, facts["form"])
-		var kind: FormCallback.Kind = FormCallbackCatalog.resolve(_data.version.internal_name, address) if address != 0 else FormCallback.Kind.NONE
+		var kind: FormCallback.Kind = FormCallbackCatalog.resolve(_data.version_name, address) if address != 0 else FormCallback.Kind.NONE
 		assert_eq(kind, FormCallback.Kind.CRUSHER_BOUNCE_BACK if facts["callback"] == "SwpCrusherCallback" else FormCallback.Kind.NONE, facts["form"])
 		if address != 0:
 			var callback_name: String = FormCallbackCatalog.NAMES.get(address, "")
@@ -217,7 +217,7 @@ func test_swamp_levels_admit_through_whole_map_setup() -> void:
 	var forms_checked: int = 0
 	for code: String in LEVELS:
 		var level: int = FroggerIds.level_from_code(code)
-		assert_true(GameplaySetup.supports_level(level), "%s is a whole-map level" % code)
+		assert_true(_data.is_playable_level(level), "%s is a whole-map level" % code)
 		var resource_id: int = _data.map_book_entry(level).map_id(false)
 		var map: MapFile = _data.read_map(resource_id, PackedStringArray())
 		assert_not_null(map, code)

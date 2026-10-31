@@ -19,11 +19,6 @@ extends Resource
 @export var error: String = ""
 
 
-## Reads both lists of [param exe] (see [LevelSelectTableReader]).
-static func read(exe: ExeImage) -> LevelSelectTable:
-	return LevelSelectTableReader.read(exe)
-
-
 ## The arcade entry for level [param level], else the race entry, else null.
 func entry_for_level(level: int) -> LevelSelectEntry:
 	for e: LevelSelectEntry in arcade:

@@ -155,7 +155,7 @@ func test_authored_lifecycle_auto_selects_new_trace_without_changing_legacy_defa
 func test_visibility_requires_entity_source_before_tick_execution() -> void:
 	var builtin: TerrainScenario = TerrainScenario.builtin("normal")
 	assert_string_contains(TerrainScenarioArguments.apply(builtin, PackedStringArray(["--entity-lifecycle=visibility"])), "authored entity fixture or player data")
-	assert_eq(TerrainScenarioArguments.apply(builtin, PackedStringArray(["--entity-lifecycle=visibility", "--data-dir=C:/player"])), "Visibility lifecycle requires an authored entity fixture or player data with --level")
+	assert_eq(TerrainScenarioArguments.apply(builtin, PackedStringArray(["--entity-lifecycle=visibility", "--frog-assets"])), "Visibility lifecycle requires an authored entity fixture or player data with --level")
 
 func test_lifecycle_overlay_releases_and_recreates_only_live_markers() -> void:
 	var overlay := EntityInspection.new()
@@ -198,7 +198,7 @@ func test_lifecycle_overlay_releases_and_recreates_only_live_markers() -> void:
 
 func test_exploration_arguments_require_audited_level_and_all_attached_platforms() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	var arguments := PackedStringArray(["--exploration=jun1-log-bank", "--level=JUN1", "--data-dir=player-owned"])
+	var arguments := PackedStringArray(["--exploration=jun1-log-bank", "--level=JUN1"])
 	assert_eq(TerrainScenarioArguments.apply(scenario, arguments), "")
 	assert_true(scenario.options.entity_reactions)
 	assert_true(scenario.options.platforms_enabled)
@@ -227,7 +227,7 @@ func test_integrated_lifecycle_fixture_decodes_and_selects_visibility() -> void:
 func test_org1_presets_require_org1_all_attached_platforms() -> void:
 	for preset: String in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET]:
 		var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-		var arguments := PackedStringArray(["--exploration=" + preset, "--level=ORG1", "--data-dir=player-owned"])
+		var arguments := PackedStringArray(["--exploration=" + preset, "--level=ORG1"])
 		assert_eq(TerrainScenarioArguments.apply(scenario, arguments), "")
 		assert_true(scenario.options.entity_reactions)
 		assert_true(scenario.options.platforms_enabled)

@@ -1,6 +1,8 @@
 extends GutTest
 ## Independent frozen Sky trigger, PATH_INFO, drift, Game_timer and balloon-script register facts at source widths.
 
+## The imported FrogLord name lists of the retail build.
+const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/sky.json"
 const SKY_THEME: int = 8
 const DRIFT_LABELS: Array[String] = ["sky:drift_x", "sky:drift_z"]
@@ -366,8 +368,7 @@ func test_game_timer_cadence_match_independent_facts() -> void:
 		assert_eq(run.snapshot().game_timer, _int(expected.final_game_timer), label + " final")
 
 func _names() -> NameBank:
-	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = load(NAMES) as GameNameLists
 	assert_not_null(names)
 	return names.scripts if names != null else null
 

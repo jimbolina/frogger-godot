@@ -6,10 +6,9 @@ extends RefCounted
 ## stream plays at the frozen 11025 Hz reference ([constant MIX_RATE]) whatever
 ## its header rate, so [method pitch_scale] alone reproduces the native step.
 ## LOOPED samples loop over the whole sample; REPEAT samples, which the frozen
-## backend retriggers until killed, loop the same way. A sound that cannot be
+## backend retriggers until killed, loop the same way. Each bank row's imported
+## stream is copied before its rate and loop are set. A sound that cannot be
 ## built returns [code]null[/code] and adds one entry to [member diagnostics].
-## An imported bank supplies each row's stream, which is copied before its
-## loop is set.
 
 const MIX_RATE: int = 11025
 const OUTPUT_RATE: int = 44100
@@ -24,7 +23,7 @@ var _banks: Dictionary[int, SoundBankSetup] = {}
 var _streams: Dictionary[int, AudioStreamWAV] = {}
 var _failed: Dictionary[int, bool] = {}
 
-## Resolves banks through the supplied executable's sound tables; loading waits for the first request.
+## Resolves banks through the catalog's sound tables; loading waits for the first request.
 static func from_data(data: AssetCatalog, definitions: Array[LogicalSoundDefinition]) -> AudioResources:
 	if data == null or not data.is_valid():
 		var invalid := from_loader(definitions, {}, Callable())
@@ -40,7 +39,7 @@ static func from_data(data: AssetCatalog, definitions: Array[LogicalSoundDefinit
 			var missing := SoundBankSetup.new()
 			missing.error = "Unknown sound bank %d" % bank_id
 			return missing
-		return SoundBankSetup.from_resources(data, banks[bank_id].x, banks[bank_id].y)
+		return SoundBankSetup.from_catalog(data, banks[bank_id].y)
 	var result := from_loader(definitions, bank_of, loader)
 	if not tables.error.is_empty():
 		result.diagnostics.append(tables.error)
@@ -79,33 +78,14 @@ func stream_for(sound_id: int) -> AudioStreamWAV:
 			problem = "Sound %d bank %d: %s" % [sound_id, _bank_of[sound_id], bank.error]
 		elif bank.header == null or sound_id >= bank.header.entries.size():
 			problem = "Sound %d is missing from bank %d" % [sound_id, _bank_of[sound_id]]
-	if problem.is_empty() and bank.header.entries[sound_id].stream is AudioStreamWAV:
+		elif not bank.header.entries[sound_id].stream is AudioStreamWAV:
+			problem = "Sound %d has no imported sample in bank %d" % [sound_id, _bank_of[sound_id]]
+	if problem.is_empty():
 		_streams[sound_id] = imported_stream(bank.header.entries[sound_id].stream as AudioStreamWAV, definition.flags)
 		return _streams[sound_id]
-	if problem.is_empty():
-		var pcm: SoundBankPcm = SoundBankPcm.slice(bank.header.entries[sound_id], bank.body)
-		problem = pcm.error
-		if problem.is_empty():
-			_streams[sound_id] = build_stream(pcm, definition.flags)
-			return _streams[sound_id]
 	_failed[sound_id] = true
 	diagnostics.append(problem)
 	return null
-
-## Builds a mono 16-bit stream at [constant MIX_RATE], looping whole LOOPED and REPEAT samples.
-static func build_stream(pcm: SoundBankPcm, flags: int) -> AudioStreamWAV:
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.stereo = false
-	stream.mix_rate = MIX_RATE
-	stream.data = pcm.to_signed_16()
-	if flags == LogicalSoundDefinition.LOOPED or flags == LogicalSoundDefinition.REPEAT:
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_begin = 0
-		stream.loop_end = pcm.frame_count()
-	else:
-		stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
-	return stream
 
 ## A copy of the imported [param stream] at [constant MIX_RATE], looping whole LOOPED and REPEAT samples; the shared import is left unchanged.
 static func imported_stream(stream: AudioStreamWAV, flags: int) -> AudioStreamWAV:
@@ -118,19 +98,6 @@ static func imported_stream(stream: AudioStreamWAV, flags: int) -> AudioStreamWA
 	else:
 		copy.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	return copy
-
-## Wraps Redbook PCM ([DiscAudio]'s 16-bit stereo 44100 Hz) as a stream, optionally looping the whole track.
-static func music_stream(pcm: PackedByteArray, looping: bool) -> AudioStreamWAV:
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.stereo = true
-	stream.mix_rate = DiscAudio.SAMPLE_RATE
-	stream.data = pcm
-	if looping:
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_begin = 0
-		stream.loop_end = pcm.size() / 4
-	return stream
 
 ## Playback-rate ratio for a [constant MIX_RATE] stream, using [method LogicalSoundVoice.key_on]'s rounded 16.16 step.
 static func pitch_scale(note: int, fine: int, bend: int = 64) -> float:

@@ -44,11 +44,10 @@ func _run() -> void:
 	if not issue.is_empty():
 		_finish(issue)
 		return
-	var located: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-	if not located.is_ok():
-		_finish(located.error)
+	_data = ImportedAssets.open()
+	if not _data.is_valid():
+		_finish(_data.error)
 		return
-	_data = GameData.open(located.source, located.version)
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	scenario.level_code = "ORG1"
 	_viewer = TerrainViewer.new()

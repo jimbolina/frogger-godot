@@ -13,7 +13,7 @@ func before_each() -> void:
 	add_child_autofree(_view)
 	_view.build_world()
 	var assets := TerrainFrogAssets.new()
-	assets.model = MofFile.parse(SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	assets.model = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
 	assets.mesh = ModelMeshBuilder.new(TextureLibrary.new()).build_animated(assets.model)
 	assets.player = ModelAnimationPlayer.new(assets.model)
 	_view.build_frog(assets)

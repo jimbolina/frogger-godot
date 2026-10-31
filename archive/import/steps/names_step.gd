@@ -19,7 +19,7 @@ func run(context: ImportContext, phase: String) -> void:
 		return
 	if not names.errors.is_empty():
 		context.report("names: %s" % "; ".join(names.errors))
-	names.resource_name = "%s names" % context.data.version.internal_name
+	names.resource_name = "%s names" % context.data.version_name
 	ImportContext.number_sub_resources(names)
 	context.save_resource(names, context.table_path("names"))
 

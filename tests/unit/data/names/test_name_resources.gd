@@ -21,12 +21,11 @@ func _round_trip(resource: Resource, file_name: String) -> Resource:
 
 
 func _list_bank() -> NameBank:
-	var config: FrogLordConfig = FrogLordConfig.parse_legacy("SCRIPT_NONE\nSCRIPT_TURTLE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n")
-	return NameBankReader.from_list_config(config, false, "Script")
+	return SyntheticNames.list("SCRIPT_NONE\nSCRIPT_TURTLE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n", false, "Script")
 
 
 func _image_bank() -> NameBank:
-	return NameBankReader.from_indexed_config(FrogLordConfig.parse_legacy("12=for_swarm\n40=fire_fly\n"), "Image")
+	return SyntheticNames.indexed("12=for_swarm\n40=fire_fly\n", "Image")
 
 
 func test_list_bank_round_trip_keeps_names_and_sections() -> void:
@@ -53,7 +52,7 @@ func test_indexed_bank_round_trip_keeps_ids() -> void:
 
 func test_lists_round_trip_keeps_banks_overrides_and_errors() -> void:
 	var lists := GameNameLists.new()
-	lists.entities = NameBankReader.from_list_config(FrogLordConfig.parse_legacy("STATIC\nMOVING\n"), true, "Entity")
+	lists.entities = SyntheticNames.list("STATIC\nMOVING\n", true, "Entity")
 	lists.scripts = _list_bank()
 	lists.images = _image_bank()
 	lists.entity_overrides["SUB_TURTLE"] = "MOVING"

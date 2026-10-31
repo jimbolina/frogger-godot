@@ -6,7 +6,7 @@ from the executable at the v3.0e addresses. Each record is HSView.h's
 HIGH_SCORE_ENTRY: he_initials[4] (three letters and a zero), the 32-bit
 he_score and five 16-bit he_time_to_checkpoint values, padded to 20 bytes.
 The program address is turned into a file offset with the build's
-ramOffset from third_party/froglord_cfg, as make_golden_exe_tables.py does.
+ramOffset from archive/third_party/froglord_cfg, as make_golden_exe_tables.py does.
 
 With --c-reference (default ../froggy/engine/vendor/frogger-psx-src/source)
 the HSView.c initialisers are parsed (the non-DEBUG branches, 'Z'+1,

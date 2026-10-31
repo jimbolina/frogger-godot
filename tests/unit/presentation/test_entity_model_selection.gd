@@ -1,7 +1,7 @@
 extends GutTest
 ## Colour-selected models follow player map-book WADs without fixed resource IDs.
 
-class SelectedData extends GameData:
+class SelectedData extends AssetCatalog:
 	var selected_row := MapBookEntry.new()
 	var requested_wad: int = -1
 	var requested_slot: int = -1

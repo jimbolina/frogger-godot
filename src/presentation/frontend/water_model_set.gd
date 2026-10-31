@@ -4,7 +4,9 @@ extends Node3D
 ## shadow and the landing ripple splashes, shared by the high-score pages and the main menu's
 ## scrolly table.
 ##
-## Models come from [OptionsModels] by FrogLord name and are lit by the options viewport's lights.
+## Models come from [OptionsModels] by FrogLord name and are lit by the options viewport's lights;
+## each is drawn from this set's own copy of its mesh ([ModelMeshCopy]), so the projection set on
+## its materials never reaches the shared imported materials.
 ## Splashes play High_score_splash_animlist on an anchor matrix at scale 10 in the XZ plane; the
 ## shadow and splashes draw in layers after the water in the options page's ordering-table order,
 ## each sprite lit on its normal as the options page lights its sprites. Without usable
@@ -25,6 +27,7 @@ var _layers: Array[MeshInstance3D] = []
 var _image_materials: Dictionary[String, ShaderMaterial] = {}
 var _splashes: Array[_Splash] = []
 var _projection: Vector2 = Vector2.ONE
+var _drawn: Dictionary[ModelMesh, ModelMesh] = {}
 
 
 class _Splash:
@@ -118,10 +121,6 @@ func setup(with_models: OptionsModels) -> void:
 		_layers.append(instance)
 	if not available():
 		return
-	for kind: int in OptionsModels.Kind.values():
-		_set_projection(models.model_mesh(kind), _projection)
-	_set_projection(models.frog.mesh, _projection)
-	_set_projection(models.entry_frog_mesh, _projection)
 	for symbol: String in models.images:
 		var record: VloImage = models.images[symbol]
 		var blend: ModelShaders.Blend = EffectSpriteMaterial.image_blend(record)
@@ -248,7 +247,7 @@ func draw_effects(shadow_before: Array[Vector3i], shadow_now: Array[Vector3i], p
 func _add_instance(mesh: ModelMesh, player: ModelAnimationPlayer) -> AnimatedModelInstance:
 	var instance := AnimatedModelInstance.new()
 	add_child(instance)
-	instance.setup(mesh, player)
+	instance.setup(drawn_mesh(mesh), player)
 	instance.smoothing_enabled = smoothing_enabled
 	instance.set_source_lighting(models.lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
 	return instance
@@ -278,6 +277,16 @@ static func _blend_matrix(before: PackedInt32Array, after: PackedInt32Array, wei
 	for index: int in 12:
 		result[index] = lerpf(before[index], after[index], weight)
 	return result
+
+
+## The drawing copy this set uses for [param shared], made on first use.
+func drawn_mesh(shared: ModelMesh) -> ModelMesh:
+	if shared == null:
+		return null
+	if not _drawn.has(shared):
+		_drawn[shared] = ModelMeshCopy.of(shared)
+		_set_projection(_drawn[shared], _projection)
+	return _drawn[shared]
 
 
 static func _set_projection(mesh: ModelMesh, projection: Vector2) -> void:

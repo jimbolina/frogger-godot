@@ -2,6 +2,10 @@ class_name SandboxEntityTemplates
 extends RefCounted
 ## Borrows fully resolved entities from supported player levels as sandbox spawn templates.
 
+## The order in which levels are searched for a template; only the catalog's
+## playable levels are used.
+const LEVEL_ORDER: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL2", "VOL3", "CAV1", "CAV3", "CAV4", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1", "SWP1", "SWP2", "SWP3", "SWP4", "SWP5", "SKY1", "SKY2", "SKY3", "SKY4"]
+
 ## One resolved entity and contact pair copied from a supported level's whole-map setup.
 class Template extends RefCounted:
 	var entity: EntityDefinition = null
@@ -72,7 +76,7 @@ func templates_for(entity_name: String, form_name: String = "") -> Array[Templat
 func _index(data: AssetCatalog, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if data == null or not data.is_valid() or frog_model == null:
 		return "Sandbox templates require valid player data and the frog model"
-	if data.version.internal_name != "pc-retail-v3.0e":
+	if data.version_name != "pc-retail-v3.0e":
 		return "Sandbox templates require the verified pc-retail-v3.0e build"
 	var rewards_setup: RewardSetup = RewardSetup.from_table(data.tables.scores())
 	if not rewards_setup.error.is_empty():
@@ -86,7 +90,7 @@ func _index(data: AssetCatalog, frog_model: MofFile, action_lengths: PackedInt32
 	frog_collision = frog.definition
 	frog_action_lengths = action_lengths.duplicate()
 	_load_sounds(data)
-	for code: String in GameplaySetup.LEVEL_CODES:
+	for code: String in _level_codes():
 		var map: MapFile = _read_map(code)
 		if map == null:
 			continue
@@ -106,10 +110,20 @@ func level_for(entity_name: String, form_name: String = "") -> String:
 	var forms: Dictionary = _forms.get(entity_name, {})
 	if not form_name.is_empty():
 		return str(forms.get(form_name, ""))
-	for code: String in GameplaySetup.LEVEL_CODES:
+	for code: String in _level_codes():
 		if forms.values().has(code):
 			return code
 	return ""
+
+func _level_codes() -> PackedStringArray:
+	var codes := PackedStringArray()
+	if _data == null:
+		return codes
+	var playable: PackedStringArray = _data.playable_level_codes()
+	for code: String in LEVEL_ORDER:
+		if code in playable:
+			codes.append(code)
+	return codes
 
 func _read_map(code: String) -> MapFile:
 	var book: MapBookEntry = _data.map_book_entry(FroggerIds.level_from_code(code))

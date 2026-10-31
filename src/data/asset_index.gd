@@ -6,8 +6,9 @@ extends Resource
 ## It records the build the assets were imported from (with the SHA-256 of
 ## its executable and archive), the archive index, the asset file of every
 ## resource id that has one, the contents of every WAD, the counterpart of
-## every incomplete model, the baked texture page sets and the levels the
-## game can play. [ImportedAssets] answers [AssetCatalog] questions from it.
+## every incomplete model, the baked texture page sets, the model parts
+## FrogLord's settings hide and the levels the game can play.
+## [ImportedAssets] answers [AssetCatalog] questions from it.
 
 ## The build's FrogLord internal name, for example [code]pc-retail-v3.0e[/code].
 @export var version_name: String = ""
@@ -30,7 +31,9 @@ extends Resource
 @export var counterparts: Dictionary[int, int] = {}
 ## The baked [TexturePageSet] files by set name ([method TexturePageSet.name_for]).
 @export var page_sets: Dictionary[String, String] = {}
-## The codes of the levels the game plays, in level order.
+## The parts FrogLord's settings hide, as part indices by model file name.
+@export var hidden_parts: Dictionary[String, PackedInt64Array] = {}
+## The codes of the levels the game plays, in level-number order.
 @export var playable_levels: PackedStringArray = PackedStringArray()
 
 

@@ -21,12 +21,6 @@ extends Resource
 @export var frame_pointers: PackedInt64Array = PackedInt64Array()
 
 
-## Reads the whole pickup table of [param exe]. Sets [param problems] entries
-## for anything unreadable; returns what could be read (see [PickupDataReader]).
-static func read_table(exe: ExeImage, problems: PackedStringArray) -> Array[PickupData]:
-	return PickupDataReader.read_table(exe, problems)
-
-
 ## The bug kind's name, e.g. "SCORE_100".
 func fly_type_name() -> String:
 	return FroggerIds.FLY_SCORE_TYPES[fly_type] if fly_type >= 0 and fly_type < FroggerIds.FLY_SCORE_TYPES.size() else ""

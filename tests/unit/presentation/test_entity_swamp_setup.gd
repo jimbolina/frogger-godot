@@ -283,7 +283,7 @@ func test_run_requires_rat_and_curvy_slug_actions_and_selects_the_slug_bend() ->
 	assert_ne(EntityRun.create([rat]).error, "")
 
 func _names() -> NameBank:
-	return NameBank.from_list_config(FrogLordConfig.parse_legacy("SCRIPT_NONE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n"), false, "Script")
+	return SyntheticNames.list("SCRIPT_NONE\n[CallbackNames]\nSCRIPT_CB_HIT_TURTLE\n", false, "Script")
 
 func _table(names: NameBank, offset: int, count: int) -> ScriptTable:
 	var table := ScriptTable.new()
@@ -341,6 +341,7 @@ func test_register_payload_follows_the_layout_offset_with_one_to_six_registers()
 		assert_ne(_definition(offset, count).validate(PackedInt32Array(), 0, has_path), "", str(rejected))
 
 func test_swamp_levels_are_supported_without_multiplayer() -> void:
+	var data: ImportedAssets = ImportedAssets.open()
 	for code: String in ["SWP1", "SWP2", "SWP3", "SWP4", "SWP5"]:
-		assert_true(GameplaySetup.supports_level(FroggerIds.level_from_code(code)), code)
-	assert_false(GameplaySetup.supports_level(FroggerIds.level_from_code("SWPM")))
+		assert_true(data.is_playable_level(FroggerIds.level_from_code(code)), code)
+	assert_false(data.is_playable_level(FroggerIds.level_from_code("SWPM")))

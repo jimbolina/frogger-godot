@@ -76,8 +76,8 @@ func test_failure_and_capture_destination_boundaries() -> void:
 	assert_true(MapViewer._external_capture_folder(OS.get_environment("TEMP")))
 
 
-func test_invalid_game_data_reports_failure_before_table_access() -> void:
-	var invalid := GameData.new()
+func test_invalid_catalog_reports_failure_before_table_access() -> void:
+	var invalid := AssetCatalog.new()
 	invalid.error = "Invalid executable tables"
 	_viewer.open_data(invalid)
 	assert_string_contains(_viewer.facts_text(), "Invalid executable tables")
@@ -85,7 +85,7 @@ func test_invalid_game_data_reports_failure_before_table_access() -> void:
 
 
 func test_replacement_with_null_or_invalid_data_releases_scene_and_probe_state() -> void:
-	for invalid: GameData in [null, GameData.new()]:
+	for invalid: AssetCatalog in [null, AssetCatalog.new()]:
 		var source: MapSceneData = _scene()
 		source.diagnostics.append("Old source warning")
 		assert_true(_viewer.show_scene(source))

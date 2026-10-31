@@ -64,4 +64,5 @@ func test_wad_round_trip_and_child_alias() -> void:
 	assert_not_null(loaded)
 	assert_true(loaded.children[0] is WadChild)
 	assert_eq(loaded.children[0].resource_id, 5)
-	assert_eq(loaded.child_contents(loaded.children[0]), "abc".to_ascii_buffer())
+	assert_false(loaded.children[0].is_packed)
+	assert_eq(loaded.children[0].data, "abc".to_ascii_buffer())

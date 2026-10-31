@@ -26,7 +26,7 @@ func test_invalid_selection_and_player_data_report_errors() -> void:
 	assert_string_contains(EntityScenario.builtin("missing").error, "Unknown")
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")
 	assert_string_contains(scenario.attach_data(null), "valid player data")
-	var invalid := GameData.new()
+	var invalid := AssetCatalog.new()
 	invalid.error = "bad data"
 	assert_string_contains(scenario.attach_data(invalid), "valid player data")
 

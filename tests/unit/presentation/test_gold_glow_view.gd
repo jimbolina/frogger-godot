@@ -17,7 +17,7 @@ func _scene() -> MapSceneData:
 	spec.blend_mode = 1
 	var specs: Array[SyntheticVlo.Spec] = [spec]
 	var scene := MapSceneData.new()
-	scene.library.add_bank(VloFile.parse(SyntheticVlo.build_vlo(specs)), "TEST.VLO")
+	scene.library.add_bank(SyntheticVlo.bank(specs), "TEST.VLO")
 	scene.effects = EffectResources.new()
 	scene.effects.texture_ids[EffectResources.GLOW_SYMBOL] = GLOW_ID
 	var libraries: Array[TextureLibrary] = [scene.library]

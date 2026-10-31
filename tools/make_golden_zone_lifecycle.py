@@ -77,7 +77,7 @@ def retail_inputs(data_dir):
     group=struct.unpack_from('<I',blob,grap+8)[0]
     groups=dict(base=list(struct.unpack_from('<3h',blob,group+4)),dimensions=list(struct.unpack_from('<2H',blob,group+12)),size=list(struct.unpack_from('<2H',blob,group+16)))
     groups['counts']=[sum(blob[group+20+i*72:group+28+i*72]) for i in range(groups['dimensions'][0]*groups['dimensions'][1])]
-    entities=[]; bindings=[]; models={}
+    entities=[]; bindings=[]
     for index in range(struct.unpack_from('<H',blob,emtp+8)[0]):
         at=struct.unpack_from('<I',blob,emtp+12+index*4)[0]
         grid,uid,fid,flags=struct.unpack_from('<4H',blob,at)
@@ -88,7 +88,6 @@ def retail_inputs(data_dir):
         if kind!='MOVING' or form['script'] or form['collision'] or form['bonus'] or flags:
             raise ValueError('JUN_LOG behavior changed')
         model_id=wads[level['high_wad']][form['id']][0]
-        models[model_id]=hashlib.sha256(retail.resource(files,entries,archive,model_id)).hexdigest()
         bindings.append([index,fid,uid,name,kind,form['script'],form['collision'],form['bonus'],flags,model_id])
         pid,segment,distance,motion,speed,padding=struct.unpack_from('<6H',blob,at+24)
         if padding or motion & ~14: raise ValueError('Unsupported log path start')
@@ -108,9 +107,9 @@ def retail_inputs(data_dir):
         entities.append(dict(index=index,kind='MOVING',flags=flags,segments=segments,
                              start=dict(segment_index=segment,distance=distance,speed=speed,flags=motion|1)))
     if len(entities)!=11: raise ValueError('Expected eleven JUN_LOG records')
-    proof=dict(schema='jun1-zone-lifecycle-admission-v1',build='pc-retail-v3.0e',map_resource_id=656,
-               map_sha256=hashlib.sha256(blob).hexdigest(),bindings=bindings,
-               models=[dict(resource_id=i,sha256=h) for i,h in sorted(models.items())])
+    proof=dict(schema='jun1-zone-lifecycle-admission-v1',build='pc-retail-v3.0e',
+               exe_sha256=hashlib.sha256((data_dir/'FROGGER.EXE').read_bytes()).hexdigest(),
+               mwd_sha256=hashlib.sha256(archive).hexdigest(),map_resource_id=656,bindings=bindings)
     return proof,[dict(case=dict(case,initial=[0,0,0]),entities=entities,groups=groups,gameplay=False) for case in camera.retail_cases(data_dir)]
 
 

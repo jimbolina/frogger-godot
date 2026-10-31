@@ -2,7 +2,7 @@
 """Golden facts for the Redbook music tracks of the retail disc image.
 
 Reads the Alcohol 120% table (.mds) with the layout and checks that
-src/source/sound/disc_audio.gd documents: one CD session, track 1 data,
+archive/source/sound/disc_audio.gd documents: one CD session, track 1 data,
 later tracks audio, 2352-byte sectors laid out contiguously from offset 0,
 the last ending at the .mdf's size. Each audio track's raw sectors (signed
 16-bit little-endian stereo at 44100 Hz) are streamed from the .mdf, never

@@ -1,8 +1,9 @@
 {
   "schema": "jun1-zone-lifecycle-admission-v1",
   "build": "pc-retail-v3.0e",
+  "exe_sha256": "215b444ebb6317c136cfaded17922909b743deb34ab16f72e140a99d87340e06",
+  "mwd_sha256": "9ad17b4092e4acb9e898b9540b251271646dfc73725b6adac97b51ca7d289b97",
   "map_resource_id": 656,
-  "map_sha256": "0feb59bbb595caaeb520bcfc978203893e0da81abf6bdf18e7a088f8d175f46c",
   "bindings": [
     [
       1,
@@ -136,11 +137,5 @@
       0,
       323
     ]
-  ],
-  "models": [
-    {
-      "resource_id": 323,
-      "sha256": "e9b84182fe46233766dc1bbf333a07ae8f09fc784861232c672194529f4aac69"
-    }
   ]
 }

@@ -10,7 +10,7 @@ func test_missing_data_has_actionable_error() -> void:
 
 
 func test_invalid_data_has_actionable_error() -> void:
-	var data := GameData.new()
+	var data := AssetCatalog.new()
 	data.error = "archive could not be opened"
 	var assets: FrontEndAssets = FrontEndAssets.from_data(data)
 	assert_string_contains(assets.error, "valid player data")

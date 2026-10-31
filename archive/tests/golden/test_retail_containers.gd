@@ -14,7 +14,7 @@ func before_all() -> void:
 		return
 	_version = FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")
 	var started: int = Time.get_ticks_usec()
-	_index = MwiIndex.from_exe(retail_source().get_exe_bytes(), _version)
+	_index = MwiIndexReader.from_exe(retail_source().get_exe_bytes(), _version)
 	print("TIMING: MWI parse %.1f ms (%d entries)" % [(Time.get_ticks_usec() - started) / 1000.0, _index.size()])
 
 
@@ -129,11 +129,11 @@ func test_every_wad_child_matches() -> void:
 	var archive: MwdArchive = _open_archive()
 	var got_rows: Array[PackedStringArray] = []
 	for wad_entry: MwiEntry in _index.wad_entries():
-		var wad: WadFile = WadFile.parse(archive.read(wad_entry))
+		var wad: WadFile = WadFileReader.parse(archive.read(wad_entry))
 		assert_eq(wad.error, "", wad_entry.display_name())
 		for position: int in wad.children.size():
 			var child: WadFile.Child = wad.children[position]
-			var contents: PackedByteArray = wad.child_contents(child)
+			var contents: PackedByteArray = WadFileReader.child_contents(wad, child)
 			var child_entry: MwiEntry = WadFile.entry_for(child, _index)
 			assert_not_null(child_entry)
 			if child_entry != null:

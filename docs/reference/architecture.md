@@ -2,10 +2,11 @@
 
 ## Dependencies
 
-- `src/source/` decodes the retail files into `src/data` records, with file I/O
-  where needed. Classes derive from `RefCounted` and depend on neither
+- `archive/source/` decodes the retail files into `src/data` records, with file
+  I/O where needed. Classes derive from `RefCounted` and depend on neither
   Nodes/tree access nor conversion, gameplay, scenes or presentation. `GameData`
-  is the retail-backed `AssetCatalog`.
+  is the retail-backed `AssetCatalog`, used by the importer and the archive suite
+  only; the game opens `ImportedAssets` from `assets/`.
 - `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
   path, entity, camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;

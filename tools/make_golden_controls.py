@@ -25,7 +25,7 @@ CONTROLS_JSON = frontend.GOLDEN / 'synthetic' / 'frontend_controls.json'
 DEFAULT_FROGGY = ROOT.parent / 'froggy' / 'engine'
 TABLES_H = Path('asset_pipeline') / 'include' / 'frogger_page25_tables.h'
 PAGE_C = Path('mr_stub') / 'src' / 'glue' / 'mr_stub_page25.c'
-SOUND_CFG = ROOT / 'third_party' / 'froglord_cfg' / 'sounds' / '1997-11-19-pc-retail.cfg'
+SOUND_CFG = ROOT / 'archive' / 'third_party' / 'froglord_cfg' / 'sounds' / '1997-11-19-pc-retail.cfg'
 
 RECORD_COUNT = 4
 KEY_SLOTS = 9

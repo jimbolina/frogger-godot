@@ -1,104 +1,86 @@
 {
   "schema": "org1-route-admission-v1",
   "build": "pc-retail-v3.0e",
+  "exe_sha256": "215b444ebb6317c136cfaded17922909b743deb34ab16f72e140a99d87340e06",
+  "mwd_sha256": "9ad17b4092e4acb9e898b9540b251271646dfc73725b6adac97b51ca7d289b97",
   "map_resource_id": 658,
-  "map_sha256": "369c0eb23140ef408b1fa77363ddd608389ef6c1cf2cfc42960985c587a604b4",
   "form_book_rows_sha256": "6f6c3cf6040f569be89b34e415e7f1053d504a2f93813d4c55660b68e697b03f",
   "script_rows_sha256": "4598300941b69843fad8770aeef8e747b59b8792f1989b61681171f25ba591a2",
   "model_resources": [
     {
       "resource_id": 206,
-      "sha256": "de15b44f404d19a7bb2e45eb4222273d13cd57a13ed1a529261df1f6c30193ef",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 207,
-      "sha256": "45ca3b7b7dd93c0bdbeece6ec7e18192012816c9fc6712925a0339c96d2b6345",
       "counterpart_resource_id": 206
     },
     {
       "resource_id": 208,
-      "sha256": "798708bcdac1085b22c399b84fa4a2484782b85e9421c124d4f3aa60280fa965",
       "counterpart_resource_id": 206
     },
     {
       "resource_id": 209,
-      "sha256": "81d58f2139db24ee617bd1b6e2c7e8ea9e0e5c1dd5c2ffbd899518333b809c1d",
       "counterpart_resource_id": 206
     },
     {
       "resource_id": 210,
-      "sha256": "b4a215d189a52af07f3ec24cd110a27940c49d039b4fb7060a2dbc83586c9da5",
       "counterpart_resource_id": 206
     },
     {
       "resource_id": 211,
-      "sha256": "bd4e78bd391c0600aeee050a04415f61db9feb432ea93a696f57d1342b654090",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 214,
-      "sha256": "f5291c43344661b84ba61379cb3d312e98af4e7eff6bd89f3ccea1f93cb01ca1",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 380,
-      "sha256": "b9c97c1671088fb646d83c0957fbf0cf8e7ed402e7cc9abf530ab1e9f4edceeb",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 381,
-      "sha256": "74ac313b842b6a3fec4718b53828730ef16a4e3af96fdd678c66f9c8b61f7e40",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 382,
-      "sha256": "3d4f124ebcbf4926130d7d78601a2051bafdedba55412fb75d3f5a23fa7ec3e1",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 383,
-      "sha256": "0b0052bb947c2ac405da1f33f4ee40c04c5483fa6e53f7a978bf0b86eb7ea6ea",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 384,
-      "sha256": "eb82782f71d7124709001449ac2fe0c786d902f1fd4e39243bc0b760ce6b9a9f",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 385,
-      "sha256": "9c9fb963555c8b1845684b55da415ab41a3fef97fc31e58fb7d8c7cf8ed62ae7",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 386,
-      "sha256": "51004c250dd84b7551e487131a1ad13bb2ae66d6bd2d514c1f9d034c395f20f7",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 387,
-      "sha256": "3d33fadd44a6536ff3e35da6f9d623d57b4816f8c0d6a9dae89aaa863979e9c7",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 388,
-      "sha256": "e10f147ec70623c4aa78594465b9f0c7d1cad44192baff334739b530e9981427",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 389,
-      "sha256": "974f6b11bfae0abebca60f41c40a007b3f0cf2ab95691792820439d59f767da2",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 390,
-      "sha256": "885b04d64fb925d61581ff917cec2638a438c4aaa107c463123627edfe7b1095",
       "counterpart_resource_id": -1
     },
     {
       "resource_id": 391,
-      "sha256": "90a4163d9fb3e33add5dad3b864a91e8248db0375fa9e0278fe77161e89f406c",
       "counterpart_resource_id": -1
     }
   ],

@@ -1,6 +1,6 @@
 # Current checkpoint
 
-The front end and every accepted level play from the player's retail files.
+The front end and every accepted level play from the imported assets.
 Launch `tools/play.sh --scene=res://scenes/front_end.tscn`: the main menu
 scrolls the high-score table behind its buttons, Start opens the 3D level-select
 stack over the animated water, Options sets volumes, rebinds keys and views the
@@ -11,20 +11,16 @@ and [front end](reference/gameplay/front-end.md). X2's per-part frog lighting
 and P12 audio await the owner's play and by-ear checks.
 
 S1 is in progress ([roadmap](PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)).
-S1a–S1c are done: every retail asset is committed under `assets/` through Git
-LFS (textures and baked pages, model meshes, scenes and preview animations,
-maps, tables, demos, sound effects and the CD music), imported once by
-`archive/import/import_assets.sh` and checked by the import goldens
-([assets](reference/assets.md), [spec](../tests/golden/specs/imported-assets.md)).
-`ImportedAssets` serves them behind the abstract `AssetCatalog`; the shaders
-are files under `src/convert/shaders/`. The scenes still open `GameData` from
-the retail files until S1d.
+S1a–S1d are done: the game, sandbox, viewers and inspection tools play from
+the committed `assets/` through `ImportedAssets` ([assets](reference/assets.md));
+the retail readers, importer, retail goldens, format references and FrogLord
+configs live in `archive/`, which nothing in the game may reference. Launch
+`tools/play.sh --level=ORG1`; no data folder is needed. The owner's play
+check of every accepted level, the front end and the sandbox from imported
+resources is pending.
 
-Next: S1d, the runtime switch: every scene opens `ImportedAssets`, the
-`--data-dir`, `FROGGER_DATA_DIR` and `--disc` inputs leave the game, the
-readers and FrogLord configs move to `archive/`, and the owner play-checks
-every accepted level; then S1e (layout audit, domain model documentation,
-cleanup). S2 follows.
+Next: S1e, the layout audit, the domain model documentation and the cleanup
+of code that only served runtime decoding; then S2.
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand

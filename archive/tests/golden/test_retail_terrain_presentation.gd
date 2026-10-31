@@ -19,7 +19,8 @@ func test_live_frog_attachment_releases_replaced_render_resources() -> void:
 	assert_eq(viewer.open_scenario(scenario), "")
 	for repeat: int in 3:
 		assert_eq(viewer.open_data(data), "")
-		assert_same(viewer.frog_assets, scenario.frog_assets, "Setup and drawing share one bundle")
+		assert_same(viewer.frog_assets.model, scenario.frog_assets.model, "Setup and drawing share one frog record")
+		assert_same(viewer.frog_assets.player, scenario.frog_assets.player, "Setup and drawing share one animation player")
 		assert_not_null(viewer._frog_model)
 		var old_assets: WeakRef = weakref(viewer.frog_assets)
 		var old_mesh: WeakRef = weakref(viewer.frog_assets.mesh)

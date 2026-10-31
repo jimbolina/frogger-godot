@@ -81,8 +81,8 @@ The community editor, MIT licensed, at commit `5416ae4f`. Its Java source is the
 | What is written on save | `games/sony/shared/ui/SCMainMenuUIController.java`, `saveMainGameData()` |
 | The block appended to a saved executable | `utils/FileUtils.java`, around lines 965 to 1070 |
 
-Its config files are under `resources/games/frogger/`. This repository ships unmodified copies in `third_party/froglord_cfg/`.
+Its config files are under `resources/games/frogger/`. This repository ships unmodified copies in `archive/third_party/froglord_cfg/`.
 
 ## The retail game files
 
-`../froggy/resources/pc-version/extracted/FROGGER/` holds `FROGGER.EXE` and `FROGPSX.MWD`; the videos are in `../froggy/resources/pc-version/extracted/VIDEO/`. These are the owner's own copy. Point `FROGGER_DATA_DIR` at the first folder. Never copy any of it into a repository.
+`../froggy/resources/pc-version/extracted/FROGGER/` holds `FROGGER.EXE` and `FROGPSX.MWD`; the videos are in `../froggy/resources/pc-version/extracted/VIDEO/`. These are the owner's own copy. The importer and the archive test suite read the first folder through `FROGGER_DATA_DIR`; the game plays from the imported `assets/`.

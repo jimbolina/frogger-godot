@@ -131,7 +131,7 @@ func test_name_entry_page_places_the_grid_flips_initials_and_pops_the_frog() -> 
 	for _tick: int in 6:
 		view.tick(0)
 	var initial: AnimatedModelInstance = view.model_instances()[HighScoreEntry.PAD_COUNT]
-	assert_eq(initial.model_mesh, models.mesh_by_name("HI_O.XMR"), "the first initials pad shows O after its flip")
+	assert_same(initial.model_mesh, view.models.drawn_mesh(models.mesh_by_name("HI_O.XMR")), "the first initials pad shows O after its flip")
 	view.tick(HighScoreEntry.Buttons.RIGHT)
 	assert_eq(frog.player.action_index, view.frog_action_index(HighScoreEntryScene.ACTION_HOP))
 	for _tick: int in HighScoreEntry.FROG_JUMP_TIME:
@@ -167,7 +167,7 @@ func test_scrolly_table_shows_ranks_initials_scores_and_the_hopping_frog() -> vo
 	var water: MenuWater = MenuWater.create()
 	var instances: Array[AnimatedModelInstance] = view.model_instances()
 	assert_eq(instances.size(), 10 + 30 + 10 + HighScoreScene.EXTRA_MODELS.size() + 1)
-	assert_eq(view.pads[2].model_mesh, models.mesh_by_name("HI_DOT.XMR"))
+	assert_same(view.pads[2].model_mesh, view.drawn_mesh(models.mesh_by_name("HI_DOT.XMR")))
 	var pose: ModelPose = view.logs[0].player.sample_pose()
 	var cels: PackedInt32Array = HighScoreScene.log_poly_cels(rows[0].score)
 	assert_eq(pose.texture_entries[0][OptionsScene.LOG_POLY_INDICES[2]], cels[OptionsScene.LOG_POLY_INDICES[2]], "rank 1 log digit 3")

@@ -41,9 +41,3 @@ const ENTRY_SIZE: int = 20
 @export var level_times: PackedInt32Array = PackedInt32Array()
 ## Why the tables could not be read, or "".
 @export var error: String = ""
-
-
-## Reads both tables from [param exe]; only the v3.0e layout is verified
-## (see [HighScoreTableReader]).
-static func read(exe: ExeImage) -> HighScoreTable:
-	return HighScoreTableReader.read(exe)

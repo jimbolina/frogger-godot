@@ -14,11 +14,6 @@ extends Resource
 @export var error: String = ""
 
 
-## Decodes a demo resource; see [method SourceDemoFileReader.parse].
-static func parse(bytes: PackedByteArray, source_name: String = "demo") -> SourceDemoFile:
-	return SourceDemoFileReader.parse(bytes, source_name)
-
-
 ## True when the complete header was decoded and its values are nonnegative.
 func is_valid() -> bool:
 	return error.is_empty()

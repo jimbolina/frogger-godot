@@ -25,8 +25,9 @@ func run(context: ImportContext, phase: String) -> void:
 	if phase != PHASE_RESOURCES:
 		return
 	var index := AssetIndex.new()
-	index.resource_name = "%s assets" % context.data.version.internal_name
-	index.version_name = context.data.version.internal_name
+	index.resource_name = "%s assets" % context.data.version_name
+	index.version_name = context.data.version_name
+	index.hidden_parts = context.data.hidden_parts
 	index.exe_sha256 = FileAccess.get_sha256(context.data.source.get_exe_path())
 	index.mwd_sha256 = FileAccess.get_sha256(context.data.source.get_mwd_path())
 	if index.exe_sha256.is_empty() or index.mwd_sha256.is_empty():
@@ -43,11 +44,11 @@ func run(context: ImportContext, phase: String) -> void:
 			index.paths[entry.index] = found
 		if entry.is_wad():
 			_add_wad(context, index, entry)
-		elif AssetCatalog.is_model_entry(entry) and MofFile.needs_counterpart(context.data.read_resource(entry.index)):
+		elif AssetCatalog.is_model_entry(entry) and MofReader.needs_counterpart(context.data.read_resource(entry.index)):
 			index.counterparts[entry.index] = context.data.counterpart_of(entry.index)
 	_add_page_sets(context, index)
 	for row: MapBookEntry in context.data.tables.map_book().entries:
-		if not row.is_dummy() and GameplaySetup.supports_level(row.level):
+		if not row.is_dummy() and context.data.is_playable_level(row.level):
 			index.playable_levels.append(row.code())
 	ImportContext.number_sub_resources(index)
 	context.save_resource(index, context.catalog_path())

@@ -119,7 +119,7 @@ func _scene() -> MapSceneData:
 		pixels.append_array([200, 120, 40])
 	var spec: SyntheticVlo.Spec = SyntheticVlo.spec(8, 4, 2, 100, VloImage.FLAG_TRANSLUCENT, SyntheticVlo.abgr(pixels))
 	var second: SyntheticVlo.Spec = SyntheticVlo.spec(8, 4, 2, 101, 0, SyntheticVlo.abgr(pixels))
-	scene.preferred = VloFile.parse(SyntheticVlo.build_vlo([spec, second]))
+	scene.preferred = SyntheticVlo.bank([spec, second])
 	scene.library.add_bank(scene.preferred)
 	scene.remap = TextureRemap.new()
 	scene.remap.texture_ids = PackedInt32Array([100, 101])
@@ -410,7 +410,7 @@ func test_optional_model_map_lighting_uses_probe_world_normal() -> void:
 	light.color = Color8(64, 64, 64)
 	var lighting := MapLighting.new()
 	lighting.configure([light])
-	var file: MofFile = MofFile.parse(SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4, Color8(128, 128, 128))]))
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4, Color8(128, 128, 128))])
 	var builder := ModelMeshBuilder.new(scene.library)
 	builder.lighting = lighting
 	var built: ModelMesh = builder.build(file.static_models[0])

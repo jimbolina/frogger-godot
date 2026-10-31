@@ -12,7 +12,7 @@ def axes(matrix):
  z=[matrix[a]/4096 for a in (2,5,8)];dx=dot(x,z);dy=dot(y,z)
  return x,y,normalize([a-b*dx-c*dy for a,b,c in zip(z,x,y)])
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--log',type=Path,required=True);p.add_argument('--source-image',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--data-dir',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--log',type=Path,required=True);p.add_argument('--source-image',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
  repo=Path(__file__).resolve().parents[1]
  for protected in (repo,repo.parent/'froggy'):
   if a.output.resolve()==protected.resolve() or protected.resolve() in a.output.resolve().parents:p.error('Output must be outside both repositories')
@@ -20,7 +20,8 @@ def main():
  def vector(key):return list(map(int,re.search(r'(?:^| )'+key+r'=([-0-9,]+)',line).group(1).split(',')))
  camera=vector('camera');basis=vector('basis');frog=vector('frog');frog_basis=vector('frog_basis');camera_axes=axes(basis)
  fixture={'source_image':str(a.source_image.resolve()),'source_sha256':hashlib.sha256(a.source_image.read_bytes()).hexdigest(),'source_log_sha256':hashlib.sha256(a.log.read_bytes()).hexdigest(),'camera':camera,'camera_basis':basis,'frog':frog,'frog_basis':frog_basis,'action':vector('action')[0],'cel':vector('cel')[0],'landmarks':[]}
- fixture['input_sha256']={name:hashlib.sha256((a.data_dir/name).read_bytes()).hexdigest() for name in ('FROGGER.EXE','FROGPSX.MWD')}
+ catalog=(repo/'assets/catalog.tres').read_text(encoding='utf-8')
+ fixture['input_sha256']={name:re.search(key+r' = "([0-9a-f]{64})"',catalog).group(1) for name,key in (('FROGGER.EXE','exe_sha256'),('FROGPSX.MWD','mwd_sha256'))}
  fixture['part_flags']={int(v[1]):{'flags':int(v[2]),'rendered':bool(int(v[3]))} for v in (line.split() for line in text.splitlines() if line.startswith('PART_FLAGS '))}
  assert fixture['part_flags'], 'Source visibility facts required'
  gamma=(146*2**-24)/(1-146*2**-24)

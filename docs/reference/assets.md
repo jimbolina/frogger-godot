@@ -55,5 +55,8 @@ it.
 | `demos/<NAME>.tres` | The recorded demos. |
 
 Gameplay collision and hilites come from `model.res`; editing a part mesh
-changes only what is drawn. Shared materials are files: runtime code must set
-per-instance parameters on copies.
+changes only what is drawn. Shared materials are files: a view draws a
+committed mesh through `ModelMeshCopy`, which gives every surface its own
+material copy (a flipbook part's morph surface shares its part's copy, so the
+view's projection reaches it) and leaves geometry, cel atlases and textures
+shared.

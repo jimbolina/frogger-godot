@@ -26,11 +26,6 @@ var _by_resource: Dictionary[int, TextureRemap] = {}
 var _by_name: Dictionary[String, TextureRemap] = {}
 
 
-## Finds and reads every remap of [param exe] (see [TextureRemapListReader]).
-static func read(exe: ExeImage, mwi: MwiIndex, map_book: MapBook) -> TextureRemapList:
-	return TextureRemapListReader.read(exe, mwi, map_book)
-
-
 ## Number of remaps.
 func size() -> int:
 	return remaps.size()

@@ -7,7 +7,7 @@ extends AssetCatalog
 ## executable tables and the name lists; every other record is loaded on
 ## request through Godot's resource cache, so a record asked for twice is the
 ## same object. Records are shared and must not be changed. The retail archive
-## is not kept: [method read_resource] has no raw bytes to give.
+## is not kept, so no raw resource bytes are available.
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
@@ -26,8 +26,8 @@ static func open(assets_root: String = "res://assets") -> ImportedAssets:
 	if catalog.index == null:
 		catalog.error = "no asset index at %s" % index_path
 		return catalog
-	catalog.version = GameVersionConfig.new()
-	catalog.version.internal_name = catalog.index.version_name
+	catalog.version_name = catalog.index.version_name
+	catalog.hidden_parts = catalog.index.hidden_parts
 	catalog.mwi = catalog.index.mwi
 	if catalog.mwi == null:
 		catalog.error = "the asset index has no archive index"
@@ -42,11 +42,23 @@ static func open(assets_root: String = "res://assets") -> ImportedAssets:
 	return catalog
 
 
-## Always empty: raw archive resources are not imported. The reason is added
-## to [param problems].
-func read_resource(resource_id: int, problems_out: PackedStringArray = PackedStringArray()) -> PackedByteArray:
-	problems_out.append("resource %d: raw resources are not imported" % resource_id)
-	return PackedByteArray()
+## The SHA-256 of the executable and archive the assets were imported from.
+func source_digests() -> Dictionary[String, String]:
+	return {"exe": index.exe_sha256, "mwd": index.mwd_sha256}
+
+
+## The codes of the levels the importer recorded as playable, in the arcade
+## level-select stack's order, then any others in level-number order.
+func playable_level_codes() -> PackedStringArray:
+	var codes := PackedStringArray()
+	for entry: LevelSelectEntry in tables.level_select().arcade:
+		var code: String = FroggerIds.level_code(entry.level)
+		if code in index.playable_levels and not code in codes:
+			codes.append(code)
+	for code: String in index.playable_levels:
+		if not code in codes:
+			codes.append(code)
+	return codes
 
 
 ## The imported map with resource id [param resource_id], or null.

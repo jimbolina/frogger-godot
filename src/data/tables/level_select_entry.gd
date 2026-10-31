@@ -39,11 +39,6 @@ const TERMINATOR_LEVEL: int = -1
 @export var runtime_area_dirty: bool = false
 
 
-## Reads one entry at [param reader]'s cursor (see [LevelSelectTableReader]).
-static func read(reader: ByteReader) -> LevelSelectEntry:
-	return LevelSelectTableReader.read_entry(reader)
-
-
 ## True for the row that ends a list.
 func is_terminator() -> bool:
 	return level == TERMINATOR_LEVEL

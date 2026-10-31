@@ -19,11 +19,7 @@ func _run() -> void:
 		scenario.tick_limit = limit_text.to_int()
 	var level_code: String = ViewerArguments.value(arguments, "--level=")
 	if not level_code.is_empty():
-		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-		if not found.is_ok():
-			_fail(found.error)
-			return
-		var data: AssetCatalog = GameData.open(found.source, found.version)
+		var data: AssetCatalog = ImportedAssets.open()
 		if not data.is_valid():
 			_fail(data.error)
 			data.close()

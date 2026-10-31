@@ -75,7 +75,7 @@ func test_sky_payloads_match_independent_facts() -> void:
 			if map == null:
 				return
 			payloads[resource_id] = map
-			setups[resource_id] = EntitySetup.from_map(map, theme_book, "sky", resource_id, _data.version.internal_name, true, _data.names)
+			setups[resource_id] = EntitySetup.from_map(map, theme_book, "sky", resource_id, _data.version_name, true, _data.names)
 		var definition: EntityDefinition = _definition(setups[resource_id], row[3].to_int())
 		assert_not_null(definition, label)
 		if definition == null:
@@ -173,7 +173,7 @@ func test_sky_models_primitives_and_callbacks_match_independent_facts() -> void:
 		assert_eq([form.collision_callback, form.bonus_callback, form.script_id], [address, facts["bonus"].hex_to_int(), facts["script"].to_int()], facts["form"])
 		if form.script_id != 0:
 			assert_eq(bank.name_of(form.script_id), facts["root_script"], facts["form"])
-		var kind: FormCallback.Kind = FormCallbackCatalog.resolve(_data.version.internal_name, address)
+		var kind: FormCallback.Kind = FormCallbackCatalog.resolve(_data.version_name, address)
 		assert_eq(kind, FormCallback.Kind.TRIGGER if facts["callback"] == "TriggerEntityCallback" else FormCallback.Kind.NONE, facts["form"])
 		if address != 0:
 			var callback_name: String = FormCallbackCatalog.NAMES.get(address, "")
@@ -204,15 +204,15 @@ func test_sky_levels_admit_through_whole_map_setup() -> void:
 	var forms_checked: int = 0
 	for code: String in LEVELS:
 		var level: int = FroggerIds.level_from_code(code)
-		assert_true(GameplaySetup.supports_level(level), "%s is a whole-map level; add it to GameplaySetup.LEVEL_CODES" % code)
-		if not GameplaySetup.supports_level(level):
+		assert_true(_data.is_playable_level(level), "%s is a whole-map level; add it to the playable levels" % code)
+		if not _data.is_playable_level(level):
 			continue
 		var resource_id: int = _data.map_book_entry(level).map_id(false)
 		var map: MapFile = _data.read_map(resource_id, PackedStringArray())
 		assert_not_null(map, code)
 		if map == null:
 			continue
-		var entities: EntitySetup = EntitySetup.from_map(map, theme_book, code, resource_id, _data.version.internal_name, true, _data.names)
+		var entities: EntitySetup = EntitySetup.from_map(map, theme_book, code, resource_id, _data.version_name, true, _data.names)
 		assert_eq(entities.error, "", code)
 		for diagnostic: EntitySetupDiagnostic in entities.diagnostics:
 			assert_false(diagnostic.code in ADMISSION_DIAGNOSTICS, "%s entity %d: %s %s" % [code, diagnostic.entity_index, diagnostic.code, diagnostic.message])

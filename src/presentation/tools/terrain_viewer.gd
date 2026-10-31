@@ -41,13 +41,13 @@ func _ready() -> void:
 		if selected.error.is_empty():
 			selected.error = TerrainScenarioArguments.apply(selected, arguments)
 		open_scenario(selected)
-		if ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty():
-			var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
-			if found.is_ok():
+		if ViewerArguments.uses_assets(arguments):
+			var assets: ImportedAssets = ImportedAssets.open()
+			if assets.is_valid():
 				selected.level_code = ViewerArguments.value(arguments, "--level=")
-				open_data(GameData.open(found.source, found.version), true)
+				open_data(assets, true)
 			else:
-				last_error = found.error
+				last_error = assets.error
 		if ViewerArguments.has_flag(arguments, "--run-scenario"):
 			_capture_scenario.call_deferred(arguments)
 

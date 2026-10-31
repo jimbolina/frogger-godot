@@ -92,7 +92,7 @@ func attach_data(data: AssetCatalog, selected_level_code: String = "", assets: T
 	level.theme = map_scene.map.general.theme
 	level.theme_name = FroggerIds.animation_theme(level.theme)
 	level.theme_death_height = theme.death_height
-	level.source_id = data.version.internal_name + ":" + level_code.to_upper()
+	level.source_id = data.version_name + ":" + level_code.to_upper()
 	level.resource_id = book.map_id(false)
 	level.map_index = number
 	level.camera = GameplayCameraDefinition.new()
@@ -101,7 +101,7 @@ func attach_data(data: AssetCatalog, selected_level_code: String = "", assets: T
 	level.collision_enabled = true
 	level.collision_bounds = Rect2i(-32767, -32767, 65534, 65534)
 	identifier = level_code.to_upper().to_lower() + "-terrain"
-	if GameplaySetup.supports_level(number) and options.exploration_preset.is_empty() and not _bounded_probe():
+	if data.is_playable_level(number) and options.exploration_preset.is_empty() and not _bounded_probe():
 		var gameplay: GameplaySetup = GameplaySetup.from_data(data, number, map_scene.map, frog_assets.model, frog_assets.action_lengths)
 		if not gameplay.error.is_empty():
 			return gameplay.error

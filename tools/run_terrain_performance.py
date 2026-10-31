@@ -43,7 +43,6 @@ def workload_arguments(repo, route):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--resolution', choices=('640x480', '2560x1440'), default='2560x1440')
     parser.add_argument('--route', choices=('round-trip', 'diver', 'both', 'whole-map-idle', 'whole-map-hops'), default='both')
@@ -111,7 +110,7 @@ def main():
     sources.append(repo / 'project.godot')
     identities = {str(path.relative_to(repo)): hashlib.sha256(path.read_bytes()).hexdigest() for path in sources}
     (evidence / 'provenance.json').write_text(json.dumps(dict(arguments=vars(args) | {
-        'data_dir': str(args.data_dir), 'output_directory': str(output)}, sources=identities), indent=2))
+        'output_directory': str(output)}, sources=identities), indent=2))
     reports = []
     for route in (('round-trip', 'diver') if args.route == 'both' else (args.route,)):
         workload = workload_arguments(repo, route)
@@ -122,7 +121,6 @@ def main():
                 flags += ['--disable-vsync', '--max-fps', '0']
             stage(name, [*flags, '-s', 'res://tools/probe_terrain_performance.gd', '--',
                          '--level=ORG1', *workload,
-                         '--data-dir=' + str(args.data_dir.resolve()),
                          '--performance-mode=' + args.mode, '--smoothing=' + args.smoothing,
                          '--performance-size=' + args.resolution,
                          '--window-mode=' + args.window_mode, '--threaded=' + args.threaded,

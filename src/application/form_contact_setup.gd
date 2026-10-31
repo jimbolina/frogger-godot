@@ -197,7 +197,7 @@ static func from_data(data: AssetCatalog, level: int, low_poly: bool, entities: 
 			var model: MofFile = data.read_model(model_id, problems)
 			if model != null:
 				models[span.form_id] = model
-	result = from_map(map, book, entities, models, data.version.internal_name + ":" + row.code(), row.map_id(low_poly), data.version.internal_name)
+	result = from_map(map, book, entities, models, data.version_name + ":" + row.code(), row.map_id(low_poly), data.version_name)
 	return result
 
 static func _maximum_y(form: FormBookEntry, model: MofFile) -> Array[int]:

@@ -1,6 +1,6 @@
 class_name LogicalSoundSetup
 extends RefCounted
-## Binds supplied executable sample definitions to selected Windows bank durations.
+## Binds the executable's sample definitions to the durations of the selected Windows banks.
 
 var music_pitches: Array[Vector2i] = []
 var definitions: Array[LogicalSoundDefinition] = []
@@ -22,8 +22,7 @@ static func from_data(data: AssetCatalog, bank_ids: PackedInt32Array) -> Logical
 		if bank_id < 0 or bank_id >= tables.banks.size():
 			result.error = "Unknown sound bank %d" % bank_id
 			return result
-		var resources: Vector2i = tables.banks[bank_id]
-		var bank: SoundBankSetup = SoundBankSetup.from_resources(data, resources.x, resources.y)
+		var bank: SoundBankSetup = SoundBankSetup.from_catalog(data, tables.banks[bank_id].y)
 		if not bank.error.is_empty():
 			result.error = bank.error
 			return result

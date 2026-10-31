@@ -3,7 +3,7 @@ extends GutTest
 
 
 func _flipbook() -> MofFile:
-	var file: MofFile = MofFile.parse(SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
 	var part: MofPart = file.static_models[0].parts[0]
 	var cel := MofPart.Partcel.new()
 	cel.vertices = part.partcels[0].vertices.duplicate()
@@ -189,11 +189,11 @@ func test_unchanged_geometry_settles_interpolation_and_keeps_visibility_tick_dri
 
 
 func test_skeletal_smoothing_retains_exact_endpoints_and_authoritative_state() -> void:
-	var bytes: PackedByteArray = SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)])
+	var statics: Array[MofStatic] = [SyntheticMof.static_model([SyntheticMof.square(MofPolygonType.F4)])]
 	var first: MofTransform = SyntheticMofAnimation.transform(0, [4095, 0, 0, 0, 4095, 0, 0, 0, 4095, 0, 0, 0])
 	var second: MofTransform = SyntheticMofAnimation.transform(0, [4095, 0, 0, 0, 4095, 0, 0, 0, 4095, 512, 0, 0])
 	var action: MofAnimated.Action = SyntheticMofAnimation.action(1, 2, [0, 1], [0, 1])
-	var file: MofFile = MofFile.parse(SyntheticMofAnimation.build([bytes], 0, [first, second], [action]))
+	var file: MofFile = SyntheticMofAnimation.animated_file(statics, 0, [first, second], [action])
 	assert_eq(file.error, "")
 	var instance: AnimatedModelInstance = _instance(file)
 	var exact: Transform3D = instance.part_nodes[0].transform
@@ -211,11 +211,11 @@ func test_skeletal_smoothing_retains_exact_endpoints_and_authoritative_state() -
 
 
 func test_smoothing_a_zero_scale_stays_finite() -> void:
-	var bytes: PackedByteArray = SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)])
+	var statics: Array[MofStatic] = [SyntheticMof.static_model([SyntheticMof.square(MofPolygonType.F4)])]
 	var first: MofTransform = SyntheticMofAnimation.transform(5, [4096, 0, 0, 0, 0, 0, 0, 32, 32, 32, 1])
 	var second: MofTransform = SyntheticMofAnimation.transform(5, [4096, 0, 0, 0, 512, 0, 0, 32, 0, 32, 1])
 	var action: MofAnimated.Action = SyntheticMofAnimation.action(1, 2, [0, 1], [0, 1])
-	var file: MofFile = MofFile.parse(SyntheticMofAnimation.build([bytes], 5, [first, second], [action]))
+	var file: MofFile = SyntheticMofAnimation.animated_file(statics, 5, [first, second], [action])
 	var instance: AnimatedModelInstance = _instance(file)
 	instance.smoothing_enabled = true
 	instance.advance_tick()
@@ -240,13 +240,13 @@ func _texture_bank(include_original: bool = true) -> VloFile:
 	var specs: Array[SyntheticVlo.Spec] = [second]
 	if include_original:
 		specs.push_front(first)
-	return VloFile.parse(SyntheticVlo.build_vlo(specs))
+	return SyntheticVlo.bank(specs)
 
 
 func test_animated_texture_keeps_original_pixel_offsets_and_uses_current_blend_rate() -> void:
 	var spec: SyntheticMof.Part = SyntheticMof.square(MofPolygonType.F4)
 	spec.polygons.append(SyntheticMof.polygon(MofPolygonType.FT3, [0, 1, 2], [0], Color8(128, 128, 128), 7, [0, 0, 255, 0, 255, 255]))
-	var file: MofFile = MofFile.parse(SyntheticMof.build_static([spec]))
+	var file: MofFile = SyntheticMof.static_file([spec])
 	var part: MofPart = file.static_models[0].parts[0]
 	var target := MofPart.TextureTarget.new()
 	target.polygon_type = MofPolygonType.FT3

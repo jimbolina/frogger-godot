@@ -124,10 +124,13 @@ func test_loop_modes_follow_sample_flags() -> void:
 	for row: Dictionary in _facts.loop:
 		var flags: int = row.flags
 		var frames: int = row.frames
-		var pcm := SoundBankPcm.new()
-		pcm.sample_bits = 16
-		pcm.bytes.resize(frames * 2)
-		var stream: AudioStreamWAV = AudioResources.build_stream(pcm, flags)
+		var imported := AudioStreamWAV.new()
+		imported.format = AudioStreamWAV.FORMAT_16_BITS
+		imported.mix_rate = reference_rate
+		var pcm := PackedByteArray()
+		pcm.resize(frames * 2)
+		imported.data = pcm
+		var stream: AudioStreamWAV = AudioResources.imported_stream(imported, flags)
 		var label: String = "flags %d frames %d" % [flags, frames]
 		var loop: bool = row.loop
 		assert_eq(stream.mix_rate, reference_rate, label)
@@ -143,8 +146,6 @@ func _voice_resources(diff: Dictionary) -> AudioResources:
 	var definitions: Array[LogicalSoundDefinition] = []
 	var bank_of: Dictionary[int, int] = {}
 	var header := SoundBankHeader.new()
-	var body := PackedByteArray()
-	body.resize(64)
 	var pairs: Array = diff.sample_flags
 	for pair: Array in pairs:
 		var sound_id: int = pair[0]
@@ -161,10 +162,16 @@ func _voice_resources(diff: Dictionary) -> AudioResources:
 		entry.data_size = 64
 		entry.sample_rate = 11025
 		entry.sample_bits = 16
+		var stream := AudioStreamWAV.new()
+		stream.format = AudioStreamWAV.FORMAT_16_BITS
+		stream.mix_rate = 11025
+		var body := PackedByteArray()
+		body.resize(64)
+		stream.data = body
+		entry.stream = stream
 		header.entries.append(entry)
 	var bank := SoundBankSetup.new()
 	bank.header = header
-	bank.body = body
 	var loader: Callable = func(_bank_id: int) -> SoundBankSetup:
 		return bank
 	return AudioResources.from_loader(definitions, bank_of, loader)

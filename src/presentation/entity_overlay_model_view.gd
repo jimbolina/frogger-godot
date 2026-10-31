@@ -32,7 +32,7 @@ static func uses_overlay(kind: EntityBehavior.Kind) -> bool:
 static func overlay_transform(at: Vector3i) -> Transform3D:
 	return Transform3D(Basis.IDENTITY, GameSpace.position(at.x, at.y, at.z))
 
-## Adopts the decoded overlay model and its built mesh; returns a diagnostic when either is unusable.
+## Adopts the decoded overlay model and a drawing copy of its built mesh ([ModelMeshCopy]); returns a diagnostic when either is unusable.
 func configure(file: MofFile, model_mesh: ModelMesh, lighting: MapLighting = null) -> String:
 	clear()
 	if file == null or not file.error.is_empty() or file.static_models.is_empty():
@@ -40,7 +40,7 @@ func configure(file: MofFile, model_mesh: ModelMesh, lighting: MapLighting = nul
 	if model_mesh == null or model_mesh.part_meshes.is_empty():
 		return "Desert rock explosion model has no drawable geometry"
 	_file = file
-	_mesh = model_mesh
+	_mesh = ModelMeshCopy.of(model_mesh)
 	_lighting = lighting
 	set_projection_scale(_projection_scale)
 	return ""

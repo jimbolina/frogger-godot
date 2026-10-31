@@ -1,6 +1,8 @@
 extends GutTest
 ## Independent frozen Swamp squirt, crusher, press, crusher callback and barrel-script facts at source widths.
 
+## The imported FrogLord name lists of the retail build.
+const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/swamp.json"
 const ENTITY_INDEX: int = 4
 
@@ -270,8 +272,7 @@ func test_swamp_crusher_callback_match_independent_facts() -> void:
 		assert_eq(state.frog.old_y, 12345 if expected.old_y == null else _int(expected.old_y), label + " old y")
 
 func _names() -> NameBank:
-	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = load(NAMES) as GameNameLists
 	assert_not_null(names)
 	return names.scripts if names != null else null
 

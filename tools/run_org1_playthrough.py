@@ -10,7 +10,6 @@ from godot_project import isolated_project
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
-    parser.add_argument('--data-dir', type=Path, required=True)
     parser.add_argument('--route', type=Path)
     parser.add_argument('--output-directory', type=Path, required=True)
     args = parser.parse_args()
@@ -40,7 +39,7 @@ def main():
     stages = [('import', ['--import'], True),
               ('check', ['-s', 'res://tools/check_scripts.gd'], True),
               ('keyboard', ['-s', 'res://tools/probe_org1_playthrough.gd', '--',
-                            '--data-dir=' + str(args.data_dir.resolve()), '--level=ORG1',
+                            '--level=ORG1',
                             '--route=' + str(route), '--output=' + str(evidence / 'captures')], False)]
     for name, arguments, headless in stages:
         log = evidence / (name + '.log')

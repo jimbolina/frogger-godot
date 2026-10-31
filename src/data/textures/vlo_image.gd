@@ -17,7 +17,7 @@ extends Resource
 ## The texture page word holds the page in its low byte and the blend mode used
 ## for translucent drawing in bits 8-9.
 ##
-## Pixels are decoded to RGBA8 by [VloFileReader] (see [VloFile] for the exact rule).
+## Pixels are decoded to RGBA8 (see [VloFile] for the exact rule).
 
 ## Bit 0: drawn translucent (blended with what is behind it).
 const FLAG_TRANSLUCENT: int = 1 << 0
