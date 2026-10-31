@@ -140,7 +140,8 @@ func test_missing_images_return_diagnostics_and_draw_nothing() -> void:
 	tables._pickups_read = true
 	tables._bmp_pointers = BmpPointers.new()
 	var data := GameData.new()
-	data.tables = tables
+	data.tables = tables.decoded
+	data.names = lists
 	var issue: String = view.configure(MapSceneData.new(), data, definitions)
 	assert_string_contains(issue, "fire_fly is missing")
 	assert_string_contains(issue, "fire_flya is missing")

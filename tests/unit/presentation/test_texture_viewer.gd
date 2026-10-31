@@ -34,7 +34,7 @@ func test_replacement_with_null_or_invalid_data_clears_the_grid_and_names() -> v
 	var viewer: TextureViewer = _viewer()
 	var bank: PackedByteArray = SyntheticVlo.build_vlo([
 		SyntheticVlo.spec(1, 1, 0, 10, 0, SyntheticVlo.abgr([1, 2, 3]))])
-	for invalid: GameData in [null, GameData.new()]:
+	for invalid: AssetCatalog in [null, GameData.new()]:
 		assert_eq(viewer.load_vlo_bytes("TEST.VLO", bank), 1)
 		viewer.image_names = NameBank.new()
 		if invalid != null:

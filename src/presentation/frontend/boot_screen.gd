@@ -143,11 +143,11 @@ static func build_report(explicit_dir: String) -> String:
 ## smoke check that the tables decode.
 static func describe_tables(source: GameDataSource, version: GameVersionConfig) -> PackedStringArray:
 	var lines := PackedStringArray()
-	var data: GameData = GameData.open(source, version)
+	var data: AssetCatalog = GameData.open(source, version)
 	if not data.is_valid():
 		lines.append("Game tables: unreadable: %s" % data.error)
 		return lines
-	var tables: ExeTables = data.tables
+	var tables: GameTables = data.tables
 	var used_levels: int = 0
 	for e: MapBookEntry in tables.map_book().entries:
 		if e.high_map_id > 0:

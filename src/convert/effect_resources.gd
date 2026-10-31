@@ -81,9 +81,9 @@ var diagnostics: PackedStringArray = PackedStringArray()
 
 
 ## Resolves the effect resources of [param scene] from [param data].
-static func from_scene(data: GameData, scene: MapSceneData) -> EffectResources:
+static func from_scene(data: AssetCatalog, scene: MapSceneData) -> EffectResources:
 	var bmp: BmpPointers = data.tables.bmp_pointers()
-	var result: EffectResources = resolve(ExeParticleGenerators.read(data.exe, bmp), ExeSplashAnimLists.read(data.exe, bmp), data.tables.scores(), bmp, data.tables.names.images)
+	var result: EffectResources = resolve(data.tables.particle_generators(), data.tables.splash_lists(), data.tables.scores(), bmp, data.names.images)
 	var resident := TextureLibrary.new()
 	for bank_name: String in RESIDENT_BANKS:
 		var entry: MwiEntry = data.find_resource(bank_name) if data.mwi != null else null

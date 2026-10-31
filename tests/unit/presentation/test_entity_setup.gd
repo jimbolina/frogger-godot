@@ -212,7 +212,7 @@ func test_all_supported_build_name_lists_include_base_types_and_override() -> vo
 	var library := FrogLordConfigLibrary.new()
 	for build: String in ["pc-retail-v3.0e", "pc-retail-v1.0", "pc-retail-v3.0e-vogons"]:
 		var version: GameVersionConfig = library.load_version(build)
-		var names: GameNameLists = GameNameLists.load_for(version, library)
+		var names: GameNameLists = GameNameListsReader.load_for(version, library)
 		assert_eq(names.errors.size(), 0, build)
 		assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("STATIC")), "STATIC", build)
 		assert_eq(names.entity_name_for("UNNAMED", names.entities.index_of("MOVING")), "MOVING", build)
@@ -448,7 +448,7 @@ func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> voi
 
 func test_froglord_entity_override_is_reported_without_omission() -> void:
 	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
 	var book: ThemeBook = _book()
 	var form: FormBookEntry = book.entries[1].forms[1]
 	form.form_name = "CAV_SNAIL"

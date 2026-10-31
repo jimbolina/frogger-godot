@@ -15,7 +15,7 @@ func _run() -> void:
 		"map": map_index, "detail": "high", "call_numbering": "local committed logic ticks from zero",
 		"reference_validation": "not performed", "gameplay_completion": "not established"}
 	var issue: String = ""
-	var visual_data: GameData
+	var visual_data: AssetCatalog
 	var viewer: TerrainViewer
 	var scenario: TerrainScenario
 	var demo: SourceDemoFile
@@ -36,7 +36,7 @@ func _run() -> void:
 		var found: GameDataLocator.Located = ViewerArguments.locate_data(args)
 		issue = found.error if not found.is_ok() else ""
 		if issue.is_empty():
-			var data: GameData = GameData.open(found.source, found.version)
+			var data: AssetCatalog = GameData.open(found.source, found.version)
 			issue = data.error
 			if issue.is_empty():
 				var setup: DemoSetup = DemoSetup.resolve(data, map_index)

@@ -7,7 +7,7 @@ var body: PackedByteArray = PackedByteArray()
 var error: String = ""
 
 ## Loads a caller-selected bank pair, keeping the body bytes for slicing and constructing no playback objects.
-static func from_resources(data: GameData, header_resource_id: int, body_resource_id: int) -> SoundBankSetup:
+static func from_resources(data: AssetCatalog, header_resource_id: int, body_resource_id: int) -> SoundBankSetup:
 	var result := SoundBankSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Sound bank setup requires valid supplied game data"

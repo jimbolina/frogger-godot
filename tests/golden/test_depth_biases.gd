@@ -77,7 +77,8 @@ func test_configured_pickups_and_fireflies_receive_source_biases() -> void:
 	tables._bmp_pointers = BmpPointers.new()
 	tables._bmp_pointers._id_by_pointer[PICKUP_POINTER] = PICKUP_TEXTURE
 	var data := GameData.new()
-	data.tables = tables
+	data.tables = tables.decoded
+	data.names = lists
 	var pixels: Array[int] = []
 	for _index: int in 10 * 6:
 		pixels.append_array([200, 120, 40])

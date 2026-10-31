@@ -7,12 +7,12 @@ var definitions: Array[LogicalSoundDefinition] = []
 var error: String = ""
 
 ## Loads only the requested banks and resolves their original source voice groups.
-static func from_data(data: GameData, bank_ids: PackedInt32Array) -> LogicalSoundSetup:
+static func from_data(data: AssetCatalog, bank_ids: PackedInt32Array) -> LogicalSoundSetup:
 	var result := LogicalSoundSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Logical sound setup requires valid supplied data"
 		return result
-	var tables: SoundTables = SoundTables.read(data.exe)
+	var tables: SoundTables = data.tables.sound_tables()
 	if not tables.error.is_empty():
 		result.error = tables.error
 		return result

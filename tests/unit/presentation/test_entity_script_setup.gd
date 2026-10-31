@@ -9,7 +9,7 @@ func _table(names: NameBank) -> ScriptTable:
 	for id: int in 3:
 		var script_entry := EntityScript.new()
 		script_entry.id = id
-		script_entry.name = names.get_name(id)
+		script_entry.name = names.name_of(id)
 		var callback := EntityScript.Command.new()
 		callback.opcode = 34
 		callback.arguments = PackedInt32Array([0, 0, 0, 0])
@@ -166,7 +166,7 @@ func test_hippo_payload_replaces_its_own_no_dive_script_by_name() -> void:
 	for id: int in 4:
 		var script_entry := EntityScript.new()
 		script_entry.id = id
-		script_entry.name = names.get_name(id)
+		script_entry.name = names.name_of(id)
 		var stop := EntityScript.Command.new()
 		stop.opcode = 38
 		script_entry.commands = [stop]

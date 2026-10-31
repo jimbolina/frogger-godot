@@ -106,7 +106,7 @@ func _ready() -> void:
 	if not found.is_ok():
 		_show_message("No usable Frogger files were found (%s).\nSet FROGGER_DATA_DIR or use --data-dir=<folder>." % found.error)
 		return
-	var data: GameData = GameData.open(found.source, found.version)
+	var data: AssetCatalog = GameData.open(found.source, found.version)
 	if not data.is_valid():
 		_show_message("Game tables are unreadable: %s" % data.error)
 		return
@@ -503,7 +503,7 @@ func _image_button(image_name: String, action: Callable) -> TextureButton:
 	return button
 
 
-func _load_sounds(data: GameData) -> void:
+func _load_sounds(data: AssetCatalog) -> void:
 	var setup: LogicalSoundSetup = LogicalSoundSetup.from_data(data, PackedInt32Array([FroggerIds.THEME_GENERAL]))
 	if not setup.error.is_empty():
 		push_warning("Menu sounds are unavailable: " + setup.error)
@@ -515,7 +515,7 @@ func _load_sounds(data: GameData) -> void:
 		if not ControlsPage.sound_name(kind).is_empty() and not names.has(ControlsPage.sound_name(kind)):
 			names.append(ControlsPage.sound_name(kind))
 	for sound_name: String in names:
-		var sound_id: int = data.tables.names.sounds.index_of(sound_name) if data.tables.names.sounds != null else -1
+		var sound_id: int = data.names.sounds.index_of(sound_name) if data.names.sounds != null else -1
 		var definition: LogicalSoundDefinition = resources.definition_for(sound_id)
 		var stream: AudioStreamWAV = resources.stream_for(sound_id) if definition != null else null
 		if stream == null:

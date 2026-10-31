@@ -52,7 +52,7 @@ func _ready() -> void:
 		palette.refresh()
 
 ## Builds a fresh arena and spawner, borrowing `data` unless ownership is transferred; null data uses placeholders.
-func open_sandbox(data: GameData, take_ownership: bool = false) -> String:
+func open_sandbox(data: AssetCatalog, take_ownership: bool = false) -> String:
 	_finish_pending()
 	if data != _data:
 		close_data()
@@ -261,7 +261,7 @@ func _sandbox_key(code: Key) -> bool:
 		_: return false
 	return true
 
-func _attach_data(data: GameData) -> String:
+func _attach_data(data: AssetCatalog) -> String:
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(data)
 	if not assets.error.is_empty():
 		return "Frog assets are unavailable (%s); entities are placeholders" % assets.error

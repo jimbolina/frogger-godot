@@ -7,9 +7,9 @@ var error: String = ""
 var textures: Dictionary[String, Texture2D] = {}
 
 ## Loads the source HUD banks without retaining the archive or copying retail pixels to disk.
-static func from_data(data: GameData) -> GameplayHudAssets:
+static func from_data(data: AssetCatalog) -> GameplayHudAssets:
 	var result := GameplayHudAssets.new()
-	if data == null or not data.is_valid() or data.tables.names.images == null:
+	if data == null or not data.is_valid() or data.names.images == null:
 		result.error = "HUD requires valid player data and named images"
 		return result
 	var library := TextureLibrary.new()
@@ -37,7 +37,7 @@ static func from_data(data: GameData) -> GameplayHudAssets:
 		required.append("lifes%d" % (frame + 1))
 		required.append("lives_bg%d" % (frame + 1))
 	for name: String in required:
-		var identity: int = data.tables.names.images.index_of(name)
+		var identity: int = data.names.images.index_of(name)
 		var texture: Texture2D = library.texture_for_id(identity)
 		if texture == null:
 			result.error = "HUD image %s (texture %d) is missing from the supplied banks" % [name, identity]

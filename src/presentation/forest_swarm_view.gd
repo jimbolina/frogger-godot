@@ -7,11 +7,11 @@ var _material: ShaderMaterial
 var _state: GameplayState
 
 ## Resolves the supplied named image without retaining player data or advancing rules.
-func configure(scene: MapSceneData, data: GameData) -> String:
+func configure(scene: MapSceneData, data: AssetCatalog) -> String:
 	clear()
-	if scene == null or data == null or data.tables.names.images == null:
+	if scene == null or data == null or data.names.images == null:
 		return "Forest swarms require named player textures"
-	var identity: int = data.tables.names.images.index_of("for_swarm")
+	var identity: int = data.names.images.index_of("for_swarm")
 	var image: VloImage = scene.library.image_for_id(identity, scene.preferred)
 	if image == null:
 		return "Forest swarm image for_swarm is missing from the supplied banks"

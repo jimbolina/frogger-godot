@@ -66,7 +66,7 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 			decoded.root_id = names.index_of(NO_DIVE_SCRIPTS[behavior.kind])
 			roots.append(decoded.root_id)
 	var register_payload: PackedByteArray = payload
-	if behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER and not behavior.tongueable and names.get_name(root_id) == "SCRIPT_TURTLE" and payload.size() >= 12:
+	if behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER and not behavior.tongueable and names.name_of(root_id) == "SCRIPT_TURTLE" and payload.size() >= 12:
 		register_payload = payload.slice(0, 12)
 		register_payload.resize(24)
 	var callback_names: NameBank = names.get_sub_bank("CallbackNames")
@@ -75,7 +75,7 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 		if decoded.programs.has(id):
 			continue
 		var program: EntityScript = table.get_script_by_id(id)
-		if program == null or program.name.is_empty() or not names.has_name(id) or names.get_name(id) != program.name:
+		if program == null or program.name.is_empty() or not names.has_name(id) or names.name_of(id) != program.name:
 			result.error = "Unsupported supplied script id/name %d" % id
 			return result
 		decoded.programs[id] = program.words()
@@ -109,10 +109,10 @@ static func from_tables(table: ScriptTable, names: NameBank, root_id: int, behav
 				roots.append(command.arguments[0])
 			elif command.opcode == 34:
 				var callback_id: int = command.arguments[1]
-				if callback_names == null or not callback_names.has_name(callback_id) or not CALLBACK_KINDS.has(callback_names.get_name(callback_id)):
+				if callback_names == null or not callback_names.has_name(callback_id) or not CALLBACK_KINDS.has(callback_names.name_of(callback_id)):
 					result.error = "Unsupported supplied callback name %d in %s at 0x%08x" % [callback_id, program.name, source_address]
 					return result
-				decoded.callbacks[callback_id] = CALLBACK_KINDS[callback_names.get_name(callback_id)]
+				decoded.callbacks[callback_id] = CALLBACK_KINDS[callback_names.name_of(callback_id)]
 				if decoded.callbacks[callback_id] == EntityScriptDefinition.CallbackKind.SKY_HELIUM_BALLOON:
 					var target: int = names.index_of("SCRIPT_SKY_HELIUM_BALLOON_RISING")
 					decoded.callback_programs[callback_id] = target

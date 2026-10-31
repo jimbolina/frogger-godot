@@ -60,7 +60,7 @@ func test_every_language_draws_its_localized_images() -> void:
 			var fields: PackedStringArray = entry
 			var row_label: String = "%s %s" % [label, fields[1]]
 			assert_eq(assets.source_name(fields[1]), fields[2], row_label)
-			assert_eq(data.tables.names.images.index_of(fields[2]), fields[3].to_int(), row_label)
+			assert_eq(data.names.images.index_of(fields[2]), fields[3].to_int(), row_label)
 			if not banks.has(fields[4]):
 				var only := TextureLibrary.new()
 				only.add_bank(data.read_texture_bank(data.find_resource(fields[4]).index), fields[4])

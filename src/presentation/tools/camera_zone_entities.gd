@@ -8,7 +8,7 @@ var _instances: Array[AnimatedModelInstance] = []
 var _generations: Array[int] = []
 
 ## Builds shared draw resources from the supplied log models.
-func configure(data: GameData, inspection: CameraZoneInspection) -> String:
+func configure(data: AssetCatalog, inspection: CameraZoneInspection) -> String:
 	var cache: Dictionary[int, ModelMesh] = {}
 	var files: Dictionary[int, MofFile] = {}
 	var problems := PackedStringArray()

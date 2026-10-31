@@ -67,12 +67,12 @@ static func banks_for(for_language: int) -> PackedStringArray:
 
 ## Loads the front-end banks for [param for_language] without retaining the archive or
 ## copying retail pixels to disk.
-static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLISH) -> FrontEndAssets:
+static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.ENGLISH) -> FrontEndAssets:
 	var result := FrontEndAssets.new()
 	result.language = for_language if GameLanguage.is_language(for_language) else GameLanguage.Id.ENGLISH
 	if not GameLanguage.is_language(for_language):
 		result.diagnostics.append("Language %d is unknown; using English" % for_language)
-	if data == null or not data.is_valid() or data.tables.names.images == null:
+	if data == null or not data.is_valid() or data.names.images == null:
 		result.error = "Front end requires valid player data and named images"
 		return result
 	var library := TextureLibrary.new()
@@ -95,9 +95,9 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 	var images: Dictionary[String, VloImage] = {}
 	var source_names: Dictionary[String, String] = {}
 	for image_name: String in NAMES:
-		var drawn_name: String = GameLanguage.image_name(image_name, result.language, data.tables.names.images)
+		var drawn_name: String = GameLanguage.image_name(image_name, result.language, data.names.images)
 		if drawn_name != image_name:
-			var localized: int = data.tables.names.images.index_of(drawn_name)
+			var localized: int = data.names.images.index_of(drawn_name)
 			var localized_image: Texture2D = library.texture_for_id(localized)
 			if localized_image != null:
 				textures[image_name] = localized_image
@@ -106,7 +106,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 				continue
 			result.diagnostics.append("%s image %s (texture %d) is missing; using %s" % [
 				GameLanguage.NAMES[result.language], drawn_name, localized, image_name])
-		var identity: int = data.tables.names.images.index_of(image_name)
+		var identity: int = data.names.images.index_of(image_name)
 		var image: Texture2D = library.texture_for_id(identity) if identity >= 0 else null
 		if image == null:
 			result.error = "Front-end image %s (texture %d) is missing from the supplied banks" % [image_name, identity]
@@ -115,7 +115,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 		images[image_name] = library.image_for_id(identity)
 		source_names[image_name] = image_name
 	for image_name: String in WATER_NAMES:
-		var identity: int = data.tables.names.images.index_of(image_name)
+		var identity: int = data.names.images.index_of(image_name)
 		var record: VloImage = library.image_for_id(identity, library.find_bank(WATER_BANK)) if identity >= 0 else null
 		if record == null:
 			result.error = "Front-end image %s (texture %d) is missing from %s" % [image_name, identity, WATER_BANK]
@@ -123,7 +123,7 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
 		source_names[image_name] = image_name
 	for image_name: String in BACKGROUND_NAMES:
-		var identity: int = data.tables.names.images.index_of(image_name)
+		var identity: int = data.names.images.index_of(image_name)
 		var record: VloImage = library.image_for_id(identity) if identity >= 0 else null
 		if record == null:
 			result.diagnostics.append("Level-stack background image %s (texture %d) is missing" % [image_name, identity])

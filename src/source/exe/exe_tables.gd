@@ -1,12 +1,11 @@
 class_name ExeTables
 extends RefCounted
-## Every game table in the executable, each decoded the first time it is asked for.
+## Every game table in the player's executable, decoded when the tables are made.
 ##
-## Nothing here is compiled into this project: every value comes from the
-## player's own executable (retail, or saved by FrogLord with edits), read
-## the way FrogLord reads it. Each getter returns a table object whose
-## [code]error[/code] says whether it read cleanly; [method errors] collects
-## them for a report.
+## The decoded tables are [member decoded], a [GameTables] record read by
+## [ExeTablesReader]; the accessors here return its tables, and [method errors]
+## collects their problems for a report. The executable, archive index and
+## name lists they were read from stay available beside them.
 
 ## The executable the tables come from.
 var exe: ExeImage
@@ -14,118 +13,103 @@ var exe: ExeImage
 var mwi: MwiIndex
 ## FrogLord's name lists, which also give some tables their length.
 var names: GameNameLists
+## The decoded tables.
+var decoded: GameTables = GameTables.new()
 
-var _map_book: MapBook
-var _theme_book: ThemeBook
-var _bmp_pointers: BmpPointers
-var _remaps: TextureRemapList
-var _scripts: ScriptTable
-var _scores: ScoreTable
-var _high_scores: HighScoreTable
-var _music: MusicTable
-var _level_select: LevelSelectTable
-var _demo_table: DemoTable
-var _pickups: Array[PickupData] = []
-var _pickup_problems := PackedStringArray()
+var _bmp_pointers: BmpPointers:
+	get:
+		return decoded.bmp_pointer_table
+	set(value):
+		decoded.bmp_pointer_table = value
+var _pickups: Array[PickupData]:
+	get:
+		return decoded.pickup_table
+	set(value):
+		decoded.pickup_table = value
 var _pickups_read: bool = false
 
 
-## Tables of [param image], with its archive index [param index] and name lists [param lists].
-func _init(image: ExeImage, index: MwiIndex, lists: GameNameLists) -> void:
+## Tables of [param image], with its archive index [param index] and name
+## lists [param lists]; with no [param image] every table is left unread.
+func _init(image: ExeImage = null, index: MwiIndex = null, lists: GameNameLists = null) -> void:
 	exe = image
 	mwi = index
 	names = lists
+	if image != null:
+		decoded = ExeTablesReader.read(image, index, lists)
+		_pickups_read = true
 
 
 ## The level list.
 func map_book() -> MapBook:
-	if _map_book == null:
-		_map_book = MapBook.read(exe)
-	return _map_book
+	return decoded.map_book()
 
 
 ## The theme list, with every theme's forms.
 func theme_book() -> ThemeBook:
-	if _theme_book == null:
-		_theme_book = ThemeBook.read(exe, names)
-	return _theme_book
+	return decoded.theme_book()
 
 
 ## The texture pointer list (texture id to texture record).
 func bmp_pointers() -> BmpPointers:
-	if _bmp_pointers == null:
-		_bmp_pointers = BmpPointers.read(exe)
-	return _bmp_pointers
+	return decoded.bmp_pointers()
 
 
 ## Every texture remap.
 func remaps() -> TextureRemapList:
-	if _remaps == null:
-		_remaps = TextureRemapList.read(exe, mwi, map_book())
-	return _remaps
+	return decoded.remaps()
 
 
 ## The entity scripts.
 func scripts() -> ScriptTable:
-	if _scripts == null:
-		_scripts = ScriptTable.read(exe, names.scripts)
-	return _scripts
+	return decoded.scripts()
 
 
 ## The verified gameplay reward values.
 func scores() -> ScoreTable:
-	if _scores == null:
-		_scores = ScoreTable.read(exe)
-	return _scores
+	return decoded.scores()
 
 
 ## The default main and per-level high-score tables.
 func high_scores() -> HighScoreTable:
-	if _high_scores == null:
-		_high_scores = HighScoreTable.read(exe)
-	return _high_scores
+	return decoded.high_scores()
 
 
 ## The per-level music list.
 func music() -> MusicTable:
-	if _music == null:
-		_music = MusicTable.read(exe)
-	return _music
+	return decoded.music()
 
 
 ## The level-select stacks.
 func level_select() -> LevelSelectTable:
-	if _level_select == null:
-		_level_select = LevelSelectTable.read(exe)
-	return _level_select
+	return decoded.level_select()
 
 
 ## The attract-mode demo list.
 func demo_table() -> DemoTable:
-	if _demo_table == null:
-		_demo_table = DemoTable.read(exe, mwi)
-	return _demo_table
+	return decoded.demo_table()
 
 
 ## The pickup (bug) appearance table, one entry per bug kind.
 func pickups() -> Array[PickupData]:
-	if not _pickups_read:
-		_pickups = PickupData.read_table(exe, _pickup_problems)
-		_pickups_read = true
-	return _pickups
+	return decoded.pickups()
 
 
-## Reads every table and returns one line per problem found; empty when all read cleanly.
+## The sound banks, groups, samples and music pitches.
+func sound_tables() -> SoundTables:
+	return decoded.sound_tables()
+
+
+## The particle generator records and tables.
+func particle_generators() -> ExeParticleGenerators:
+	return decoded.particle_generators()
+
+
+## The water splash animation lists.
+func splash_lists() -> ExeSplashAnimLists:
+	return decoded.splash_lists()
+
+
+## One line per problem found in the tables; empty when all read cleanly.
 func errors() -> PackedStringArray:
-	var out := PackedStringArray()
-	for pair: Array in [["map book", map_book().error], ["theme book", theme_book().error],
-			["texture pointers", bmp_pointers().error], ["texture remaps", remaps().error],
-			["scripts", scripts().error], ["music", music().error], ["level select", level_select().error],
-			["demo table", demo_table().error]]:
-		var message: String = pair[1]
-		if not message.is_empty():
-			out.append("%s: %s" % [pair[0], message])
-	pickups()
-	for problem: String in _pickup_problems:
-		out.append("pickups: %s" % problem)
-	return out
+	return decoded.errors()

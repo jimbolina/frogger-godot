@@ -9,7 +9,7 @@ var lifecycle: EntityLifecycleDefinition = null
 var diagnostics: PackedStringArray = PackedStringArray()
 
 ## Resolves supplied behavior names and resources; this does not admit frog contact.
-static func from_data(data: GameData, scene: MapSceneData) -> Jun1ZoneLifecycleSetup:
+static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecycleSetup:
 	var result := Jun1ZoneLifecycleSetup.new()
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
 	if not parsed is Dictionary:

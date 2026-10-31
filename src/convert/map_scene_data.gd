@@ -33,7 +33,7 @@ var error: String = ""
 
 
 ## Resolves a level from the player's map/theme books and reads only its dependencies.
-static func load_level(data: GameData, level_number: int, use_low_poly: bool = false) -> MapSceneData:
+static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool = false) -> MapSceneData:
 	var scene := MapSceneData.new()
 	scene.level = level_number
 	scene.low_poly = use_low_poly
@@ -53,7 +53,7 @@ static func load_level(data: GameData, level_number: int, use_low_poly: bool = f
 	if scene.remap == null or not data.tables.remaps().error.is_empty():
 		scene.error = "Map texture remap is unavailable: %s" % data.tables.remaps().error
 		return scene
-	var multiplayer: bool = GameData.is_multiplayer_level(level_number)
+	var multiplayer: bool = AssetCatalog.is_multiplayer_level(level_number)
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
 	var theme: ThemeBookEntry = data.theme_book_entry(scene.map.general.theme)
 	if general == null or theme == null:
@@ -92,7 +92,7 @@ func uses_environment() -> bool:
 	return false
 
 
-func _load_bank(data: GameData, theme: ThemeBookEntry, multiplayer: bool) -> VloFile:
+func _load_bank(data: AssetCatalog, theme: ThemeBookEntry, multiplayer: bool) -> VloFile:
 	var id: int = theme.vlo_id(multiplayer, low_poly)
 	if id == 0:
 		id = theme.vlo_id(false, low_poly)
@@ -117,7 +117,7 @@ func _measure_bounds() -> void:
 		(bounds_min.y + bounds_max.y) / 2, (bounds_min.z + bounds_max.z) / 2)
 
 
-func _read_cave_light(data: GameData) -> void:
+func _read_cave_light(data: AssetCatalog) -> void:
 	var found: bool = false
 	for entity: MapEntitySpan in map.entities:
 		var form: FormBookEntry = data.tables.theme_book().get_form(map.general.theme, entity.form_id)

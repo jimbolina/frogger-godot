@@ -61,7 +61,7 @@ static func builtin(name: String) -> TerrainScenario:
 	return scenario
 
 ## Resolves player resources before creating rules; scene records never enter gameplay.
-func attach_data(data: GameData, selected_level_code: String = "", assets: TerrainFrogAssets = null) -> String:
+func attach_data(data: AssetCatalog, selected_level_code: String = "", assets: TerrainFrogAssets = null) -> String:
 	level_code = selected_level_code
 	frog_assets = assets if assets != null else TerrainFrogAssets.from_data(data)
 	if not frog_assets.error.is_empty():
@@ -74,7 +74,7 @@ func attach_data(data: GameData, selected_level_code: String = "", assets: Terra
 	if level_code.is_empty():
 		return ""
 	var number: int = FroggerIds.level_from_code(level_code)
-	if number < 0 or GameData.is_multiplayer_level(number):
+	if number < 0 or AssetCatalog.is_multiplayer_level(number):
 		return "Terrain inspection requires a known single-player level code"
 	map_scene = MapSceneData.load_level(data, number, false)
 	if not map_scene.error.is_empty():

@@ -181,7 +181,7 @@ func entity_collision() -> EntityCollisionDefinition:
 	return collision
 
 ## Returns each placement's source theme and level in entity-table order, borrowing `data` for model lookup.
-func model_origins(data: GameData) -> EntityModelOrigins:
+func model_origins(data: AssetCatalog) -> EntityModelOrigins:
 	var origins := EntityModelOrigins.new(data)
 	for placement: Placement in placements:
 		origins.add(placement.theme, FroggerIds.level_from_code(placement.level_code) if not placement.level_code.is_empty() else -1)

@@ -79,7 +79,7 @@ var entry_frog_actions: Dictionary[StringName, int] = {}
 
 
 ## Loads every model, image and light from [param data] without retaining the archive.
-static func from_data(data: GameData) -> OptionsModels:
+static func from_data(data: AssetCatalog) -> OptionsModels:
 	var result := OptionsModels.new()
 	result.lighting = options_lighting()
 	if data == null or not data.is_valid():
@@ -134,7 +134,7 @@ static func from_data(data: GameData) -> OptionsModels:
 			result.diagnostics.append("Options sprite image %s is unavailable" % symbol)
 			continue
 		result.images[symbol] = record
-	var cloud_id: int = data.tables.names.images.index_of(CLOUD_IMAGE) if data.tables.names.images != null else -1
+	var cloud_id: int = data.names.images.index_of(CLOUD_IMAGE) if data.names.images != null else -1
 	var cloud: VloImage = result.library.image_for_id(cloud_id, general_bank) if cloud_id >= 0 else null
 	if cloud == null:
 		result.diagnostics.append("Options sprite image %s is unavailable" % CLOUD_IMAGE)
@@ -195,7 +195,7 @@ func model_mesh(kind: int) -> ModelMesh:
 	return meshes[kind] if kind < meshes.size() else null
 
 
-func _load_entry_frog(data: GameData, general: ThemeBookEntry, general_bank: VloFile) -> void:
+func _load_entry_frog(data: AssetCatalog, general: ThemeBookEntry, general_bank: VloFile) -> void:
 	var problems := PackedStringArray()
 	var entry: MwiEntry = data.find_resource(ENTRY_FROG_NAME)
 	var wad: WadFile = data.read_wad(general.high_multiplayer_wad_id) if general.high_multiplayer_wad_id != 0 else null
@@ -211,13 +211,13 @@ func _load_entry_frog(data: GameData, general: ThemeBookEntry, general_bank: Vlo
 	if bank == null or file == null or not file.error.is_empty() or file.static_models.is_empty():
 		diagnostics.append("%s cannot be decoded (%s); the name-entry frog uses GEN_FROG" % [ENTRY_FROG_NAME, "; ".join(problems)])
 		return
-	var names: NameBank = data.tables.names.anims.get_sub_bank(ENTRY_FROG_ACTIONS) if data.tables.names.anims != null else null
+	var names: NameBank = data.names.anims.get_sub_bank(ENTRY_FROG_ACTIONS) if data.names.anims != null else null
 	if names == null:
 		diagnostics.append("FrogLord names no %s actions; the name-entry frog uses GEN_FROG" % ENTRY_FROG_ACTIONS)
 		return
 	var actions: Dictionary[StringName, int] = {}
 	for index: int in names.size():
-		actions[StringName(names.get_name(index))] = index
+		actions[StringName(names.name_of(index))] = index
 	entry_frog_library = TextureLibrary.new()
 	entry_frog_library.add_bank(general_bank, "general")
 	entry_frog_library.add_bank(bank, "multiplayer")

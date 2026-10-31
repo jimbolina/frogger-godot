@@ -150,11 +150,11 @@ static func from_object(object: Dictionary) -> PathScenario:
 	return scenario
 
 ## Replaces synthetic geometry with a detached path from one player's level.
-func attach_data(data: GameData, selected_level_code: String, selected_path_index: int) -> String:
+func attach_data(data: AssetCatalog, selected_level_code: String, selected_path_index: int) -> String:
 	if data == null or not data.is_valid():
 		return "Path inspection requires valid player data"
 	var number: int = FroggerIds.level_from_code(selected_level_code)
-	if number < 0 or GameData.is_multiplayer_level(number):
+	if number < 0 or AssetCatalog.is_multiplayer_level(number):
 		return "Path inspection requires a known single-player level code"
 	var book: MapBookEntry = data.map_book_entry(number)
 	if book == null:

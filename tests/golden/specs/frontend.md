@@ -893,7 +893,7 @@ other-version or badly formed file is rejected whole, and the error names the
 path and ends "using defaults". Lengths must be 10/50 (main) and 180/900
 (levels), initials 3 characters, scores ≥ 0 and times 0-65535. Saving
 validates first, then writes `path.tmp` and renames it. Unit tests
-(`tests/unit/source/test_high_score_store.gd`) cover this file; no golden
+(`tests/unit/application/test_high_score_store.gd`) cover this file; no golden
 does.
 
 ### Deliberate break

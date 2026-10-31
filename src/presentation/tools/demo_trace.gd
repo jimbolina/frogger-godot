@@ -9,7 +9,7 @@ var entity_types: Dictionary[int, int] = {}
 var form_ids: Dictionary[int, int] = {}
 
 ## Records source form identities before application records leave scope.
-func configure(data: GameData, scene: MapSceneData) -> void:
+func configure(data: AssetCatalog, scene: MapSceneData) -> void:
 	for index: int in scene.map.entities.size():
 		var entity: MapEntitySpan = scene.map.entities[index]
 		var form: FormBookEntry = data.tables.theme_book().get_form(scene.map.general.theme, entity.form_id)

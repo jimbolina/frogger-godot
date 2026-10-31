@@ -3,7 +3,7 @@ extends RefCounted
 ## Validates supplied determining resources against independently generated proof facts.
 
 ## Checks resource mappings, source-ordered books, scripts and model bytes.
-static func validate(data: GameData, map: MapFile, proof: Dictionary, level: int) -> String:
+static func validate(data: AssetCatalog, map: MapFile, proof: Dictionary, level: int) -> String:
 	var row: MapBookEntry = data.map_book_entry(level)
 	if row == null or row.map_id(false) != _integer(proof.map_resource_id):
 		return "High-detail MAP resource identity"

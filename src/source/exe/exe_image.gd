@@ -65,7 +65,7 @@ func contains(offset: int, size: int) -> bool:
 ## True if [param value] looks like an address inside a Windows program
 ## (0x004xxxxx), the test FrogLord uses to find where pointer lists end.
 static func looks_like_pointer(value: int) -> bool:
-	return (value & 0xFFF00000) == 0x00400000
+	return ExePointer.looks_like(value)
 
 
 ## A reader over the program bytes with its cursor at file offset [param offset].

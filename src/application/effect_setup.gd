@@ -22,11 +22,11 @@ const HILITE_COLLISION: int = 0
 ## the hilite generator table (read from [param data] when null) and
 ## [param theme] the map theme (the level's book theme when negative).
 ## Problems are appended to [param diagnostics].
-static func resolve_hilites(data: GameData, level: int, definitions: Array[EntityDefinition], diagnostics: PackedStringArray, generators: ExeParticleGenerators = null, theme: int = -1) -> void:
+static func resolve_hilites(data: AssetCatalog, level: int, definitions: Array[EntityDefinition], diagnostics: PackedStringArray, generators: ExeParticleGenerators = null, theme: int = -1) -> void:
 	if data == null or not data.is_valid():
 		return
 	if generators == null:
-		generators = ExeParticleGenerators.read(data.exe, data.tables.bmp_pointers())
+		generators = data.tables.particle_generators()
 	var table: PackedStringArray = generators.special_generators if not generators.special_generators.is_empty() else ExeParticleGenerators.C_SPECIAL_GENERATORS
 	var map_theme: int = theme if theme >= 0 else FroggerIds.theme_of_level(level)
 	for definition: EntityDefinition in definitions:

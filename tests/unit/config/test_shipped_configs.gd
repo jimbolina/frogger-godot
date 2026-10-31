@@ -90,17 +90,17 @@ func test_every_referenced_name_list_exists_and_loads() -> void:
 
 func test_sound_names() -> void:
 	var sounds: NameBank = _library.load_name_bank("sounds", "1997-11-19-pc-retail")
-	assert_eq(sounds.get_name(0), "GEN_FLY_BUZZ")
-	assert_eq(sounds.get_name(4), "GEN_FROG_FALL", "the trailing comment is stripped")
+	assert_eq(sounds.name_of(0), "GEN_FLY_BUZZ")
+	assert_eq(sounds.name_of(4), "GEN_FROG_FALL", "the trailing comment is stripped")
 	assert_eq(sounds.index_of("gen_frog_croak"), 3)
 	assert_not_null(sounds.get_sub_bank("GENERIC"))
-	assert_eq(sounds.get_name(100000), "Unknown Sound [100000]")
+	assert_eq(sounds.name_of(100000), "Unknown Sound [100000]")
 
 
 func test_image_names() -> void:
 	var images: NameBank = _library.load_image_names("1997-11-15-pc-retail")
-	assert_eq(images.get_name(0), "gen_frogeye")
-	assert_eq(images.get_name(1), "sub_lorry")
+	assert_eq(images.name_of(0), "gen_frogeye")
+	assert_eq(images.name_of(1), "sub_lorry")
 	assert_true(images.size() > 100)
 
 

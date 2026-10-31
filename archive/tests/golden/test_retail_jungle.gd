@@ -63,7 +63,7 @@ func _definitions(maps: Dictionary[int, Vector2i]) -> Dictionary[int, EntitySetu
 		var map: MapFile = _data.read_map(resource_id, PackedStringArray())
 		assert_not_null(map, "map %d" % resource_id)
 		if map != null:
-			result[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "jungle", resource_id, _data.version.internal_name, true, _data.tables.names)
+			result[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "jungle", resource_id, _data.version.internal_name, true, _data.names)
 	return result
 
 func _definition(setup: EntitySetup, entity_index: int) -> EntityDefinition:
@@ -78,7 +78,7 @@ func test_jungle_payloads_match_independent_facts() -> void:
 	var setups: Dictionary[int, EntitySetup] = _definitions(maps)
 	var payloads: Dictionary[int, MapFile] = {}
 	var theme_book: ThemeBook = _data.tables.theme_book()
-	var bank: NameBank = _data.tables.names.scripts
+	var bank: NameBank = _data.names.scripts
 	var checked: int = 0
 	for row: PackedStringArray in _records("entity"):
 		var resource_id: int = row[1].to_int()
@@ -129,7 +129,7 @@ func test_jungle_payloads_match_independent_facts() -> void:
 				assert_eq(scripts.error, "", label)
 				if scripts.definition != null:
 					assert_eq(scripts.definition.payload_registers, PackedInt32Array([facts["dive_delay"].to_int(), facts["rise_delay"].to_int(), facts["turtle_type"].to_int()]), label + " registers")
-					assert_eq(bank.get_name(scripts.definition.root_id), facts["root_script"], label + " root script")
+					assert_eq(bank.name_of(scripts.definition.root_id), facts["root_script"], label + " root script")
 			EntityBehavior.Kind.JUN_OUTRO:
 				assert_not_null(jungle, label)
 				if jungle != null:

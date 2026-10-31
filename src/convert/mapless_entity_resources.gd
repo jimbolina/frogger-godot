@@ -28,7 +28,7 @@ static func resolve(definitions: Array[EntityDefinition], origins: EntityModelOr
 			continue
 		var theme: int = origins.themes[slot]
 		var level: int = origins.levels[slot]
-		var data: GameData = origins.data
+		var data: AssetCatalog = origins.data
 		var form: FormBookEntry = data.tables.theme_book().get_form(theme, entity.form_id)
 		if form == null:
 			result.diagnostics.append("Slot %d form %d is not in theme %d" % [slot, entity.form_id, theme])
@@ -56,7 +56,7 @@ static func resolve(definitions: Array[EntityDefinition], origins: EntityModelOr
 	return result
 
 ## Returns the GENERAL-then-theme texture bundle for `theme`; its `map` stays null.
-func scene_for(data: GameData, theme: int) -> MapSceneData:
+func scene_for(data: AssetCatalog, theme: int) -> MapSceneData:
 	if _scenes.has(theme):
 		return _scenes[theme]
 	var scene := MapSceneData.new()
@@ -71,7 +71,7 @@ func scene_for(data: GameData, theme: int) -> MapSceneData:
 		scene.preferred = _add_bank(data, scene, owner)
 	return scene
 
-static func _add_bank(data: GameData, scene: MapSceneData, theme: ThemeBookEntry) -> VloFile:
+static func _add_bank(data: AssetCatalog, scene: MapSceneData, theme: ThemeBookEntry) -> VloFile:
 	var id: int = theme.vlo_id(false, false)
 	var bank: VloFile = data.read_texture_bank(id, scene.diagnostics)
 	if bank == null:

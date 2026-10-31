@@ -22,7 +22,7 @@ var entities: EntityRun = null
 var diagnostics: PackedStringArray = PackedStringArray()
 
 ## Resolves high-detail JUN1 through the supplied executable and copies its camera data.
-static func from_data(data: GameData, visibility_enabled: bool = false) -> CameraZoneInspection:
+static func from_data(data: AssetCatalog, visibility_enabled: bool = false) -> CameraZoneInspection:
 	var result := CameraZoneInspection.new()
 	if data == null or data.version.internal_name != "pc-retail-v3.0e":
 		result.error = "jun1-camera-zones inspection is verified only for pc-retail-v3.0e"

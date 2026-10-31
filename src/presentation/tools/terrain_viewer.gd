@@ -10,7 +10,7 @@ var replay_commands: bool = true
 var record_trace: bool = false
 var trace: TerrainTrace
 var last_error: String = ""
-var data: GameData
+var data: AssetCatalog
 var _owns_data: bool = false
 var _held: int = 0
 var _label: Label
@@ -71,7 +71,7 @@ func configure_input(arguments: PackedStringArray) -> void:
 		or ViewerArguments.has_prefix(arguments, "--scenario-file=")
 
 ## Loads optional frog presentation; callers retain borrowed data until this viewer detaches.
-func open_data(selected: GameData, take_ownership: bool = false) -> String:
+func open_data(selected: AssetCatalog, take_ownership: bool = false) -> String:
 	_close_worker()
 	_projection_size = Vector2i.ZERO
 	_clear_entity_visuals()

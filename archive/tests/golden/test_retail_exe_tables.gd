@@ -12,7 +12,7 @@ func before_all() -> void:
 		return
 	var version: GameVersionConfig = FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e")
 	_data = GameData.open(retail_source(), version)
-	_tables = _data.tables
+	_tables = _data.exe_tables
 	var started: int = Time.get_ticks_usec()
 	var problems: PackedStringArray = _tables.errors()
 	print("TIMING: decoded every EXE table in %.1f ms" % ((Time.get_ticks_usec() - started) / 1000.0))

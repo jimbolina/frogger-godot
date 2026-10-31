@@ -445,4 +445,4 @@ static func _unsigned_square(value: int) -> int:
 static func _stored_entity_name(names: GameNameLists, form: FormBookEntry) -> String:
 	if names == null or names.entities == null:
 		return form.entity_name
-	return names.entities.get_name(form.entity_type) if names.entities.has_name(form.entity_type) else "unnamed type %d" % form.entity_type
+	return names.entities.name_of(form.entity_type) if names.entities.has_name(form.entity_type) else "unnamed type %d" % form.entity_type

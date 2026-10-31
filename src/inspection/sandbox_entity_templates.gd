@@ -21,13 +21,13 @@ var frog_action_lengths: PackedInt32Array = PackedInt32Array()
 var sounds: Array[LogicalSoundDefinition] = []
 ## Which listed sound banks failed to load, or "".
 var sound_error: String = ""
-var _data: GameData = null
+var _data: AssetCatalog = null
 var _frog_model: MofFile = null
 var _forms: Dictionary[String, Dictionary] = {}
 var _setups: Dictionary[String, LevelDefinition] = {}
 
 ## Indexes placed forms in every supported level, borrowing `data` until the caller closes it.
-static func from_data(data: GameData, frog_model: MofFile, action_lengths: PackedInt32Array) -> SandboxEntityTemplates:
+static func from_data(data: AssetCatalog, frog_model: MofFile, action_lengths: PackedInt32Array) -> SandboxEntityTemplates:
 	var result := SandboxEntityTemplates.new()
 	result.error = result._index(data, frog_model, action_lengths)
 	return result
@@ -69,7 +69,7 @@ func templates_for(entity_name: String, form_name: String = "") -> Array[Templat
 		result.append(template)
 	return result
 
-func _index(data: GameData, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
+func _index(data: AssetCatalog, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if data == null or not data.is_valid() or frog_model == null:
 		return "Sandbox templates require valid player data and the frog model"
 	if data.version.internal_name != "pc-retail-v3.0e":
@@ -148,8 +148,8 @@ static func _height_offset(grid: GridDefinition, entity: EntityDefinition) -> in
 	var info: GridSurfaceInfo = GridQueries.info_at(grid, position.x, position.z)
 	return position.y - info.height if info != null else 0
 
-func _load_sounds(data: GameData) -> void:
-	var tables: SoundTables = SoundTables.read(data.exe)
+func _load_sounds(data: AssetCatalog) -> void:
+	var tables: SoundTables = data.tables.sound_tables()
 	if not tables.error.is_empty():
 		sound_error = tables.error
 		return

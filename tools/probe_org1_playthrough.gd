@@ -2,7 +2,7 @@ extends SceneTree
 ## Replays sparse keyboard stimuli through the viewer and compares fresh rules playback.
 
 var _viewer: TerrainViewer
-var _data: GameData
+var _data: AssetCatalog
 
 func _initialize() -> void:
 	_run.call_deferred()

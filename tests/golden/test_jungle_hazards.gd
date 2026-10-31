@@ -174,7 +174,7 @@ func test_door_bounce_back_match_independent_facts() -> void:
 
 func test_hippo_no_dive_match_independent_facts() -> void:
 	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
 	assert_not_null(names)
 	if names == null:
 		return
@@ -184,7 +184,7 @@ func test_hippo_no_dive_match_independent_facts() -> void:
 	for id: int in range(maxi(dive, bank.index_of("SCRIPT_JUN_HIPPO_NO_DIVE")) + 1):
 		var program := EntityScript.new()
 		program.id = id
-		program.name = bank.get_name(id)
+		program.name = bank.name_of(id)
 		var stop := EntityScript.Command.new()
 		stop.opcode = 38
 		program.commands = [stop]
@@ -209,7 +209,7 @@ func test_hippo_no_dive_match_independent_facts() -> void:
 			if setup.definition == null:
 				continue
 			assert_eq(setup.definition.root_id, script_id, label)
-			assert_eq(bank.get_name(setup.definition.root_id), script_name, label)
+			assert_eq(bank.name_of(setup.definition.root_id), script_name, label)
 		else:
 			assert_eq(script_name, "SCRIPT_JUN_HIPPO", label)
 			assert_eq(setup.error, "Unsupported turtle payload type", label + " port rejects types frozen C treats as diving")

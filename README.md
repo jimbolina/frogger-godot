@@ -432,7 +432,8 @@ commit.
 
 | Path | What |
 |---|---|
-| `src/source/` | Readers for the original data formats and executable: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs and name lists), `source/` (finding the game files), `formats/` (MWI, MWD, WAD, texture banks, models), `exe/` (the game tables in the executable). `game_data.gd` puts them behind one object. Pure data classes with no scene tree, testable headless. |
+| `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, and `AssetCatalog`, the abstract data provider. No scene tree, no file access. |
+| `src/source/` | Readers that decode the retail files into those records: `io/` (byte reading, PowerPacker), `config/` (FrogLord configs), `source/` (finding the game files), `formats/`, `exe/`, `sound/`. `game_data.gd` is the retail-backed `AssetCatalog`. Moves to `archive/` in S1d. |
 | `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
 | `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
 | `src/application/` | Source-to-game adapters and resolved behavior catalog. |

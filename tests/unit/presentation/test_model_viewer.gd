@@ -97,7 +97,7 @@ func test_capture_folder_must_stay_outside_the_repository() -> void:
 
 
 func test_replacement_with_null_or_invalid_data_clears_model_selections_and_caches() -> void:
-	for invalid: GameData in [null, GameData.new()]:
+	for invalid: AssetCatalog in [null, GameData.new()]:
 		_viewer.load_model_bytes("TEST.XMR", SyntheticMof.build_static([SyntheticMof.square(MofPolygonType.F4)]))
 		_viewer._banks[1] = VloFile.new()
 		_viewer._current_wad = 12

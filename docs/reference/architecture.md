@@ -2,9 +2,10 @@
 
 ## Dependencies
 
-- `src/source/` decodes source facts, with file I/O where needed. Classes derive
-  from `RefCounted` and depend on neither Nodes/tree access nor conversion,
-  gameplay, scenes or presentation.
+- `src/source/` decodes the retail files into `src/data` records, with file I/O
+  where needed. Classes derive from `RefCounted` and depend on neither
+  Nodes/tree access nor conversion, gameplay, scenes or presentation. `GameData`
+  is the retail-backed `AssetCatalog`.
 - `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
   path, entity, camera, animation-control and RNG state.
   It receives validated definitions and tick commands from setup adapters;
@@ -13,9 +14,12 @@
 - `src/application/` owns source-to-game adapters. They resolve source names
   and supply concrete dependencies. Direct environment access is restricted to
   explicit loader adapters; source readers retain ownership of file I/O.
-- `src/data/` (from S1b) holds the typed `Resource` records the game plays
-  from; it depends on nothing game-side. `archive/` holds the retail readers,
-  importer and retail goldens; nothing in the game depends on it.
+- `src/data/` holds the typed `Resource` records the game plays from (maps,
+  models, textures, tables, sound banks, demos, names) and the abstract
+  `AssetCatalog` the rest of the game is typed against; it depends on nothing
+  game-side. Large map sections are stored as packed columns and rebuilt lazily.
+  `archive/` holds the retail readers, importer and retail goldens; nothing in
+  the game depends on it.
 - `src/inspection/` owns scenarios, validated options, corridor guards, presets
   and manifests. Presentation translates CLI/environment inputs into explicit
   options. Gameplay and application never depend on inspection.

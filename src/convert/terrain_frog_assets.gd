@@ -10,7 +10,7 @@ var hidden_parts: PackedInt64Array = PackedInt64Array()
 var action_lengths: PackedInt32Array = PackedInt32Array()
 
 ## Resolves the GENERAL high-detail frog and texture bank through the existing data APIs.
-static func from_data(data: GameData) -> TerrainFrogAssets:
+static func from_data(data: AssetCatalog) -> TerrainFrogAssets:
 	var assets := TerrainFrogAssets.new()
 	if data == null or not data.is_valid():
 		assets.error = "Frog presentation requires valid game data"

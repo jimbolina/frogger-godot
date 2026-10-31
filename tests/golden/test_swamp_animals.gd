@@ -121,7 +121,7 @@ func _table(bank: NameBank, programs: Dictionary) -> ScriptTable:
 	for id: int in range(highest + 1):
 		var program := EntityScript.new()
 		program.id = id
-		program.name = bank.get_name(id)
+		program.name = bank.name_of(id)
 		var words: Array[int] = [38]
 		if programs.has(str(id)):
 			words = _ints(programs[str(id)])
@@ -144,7 +144,7 @@ func test_weir_matrix_and_rotation_match_independent_facts() -> void:
 		var matrix := PackedInt32Array(_ints(initial.matrix))
 		assert_eq(EntitySetup.weir_matrix(matrix), PackedInt32Array(_ints(expected.matrix)), "weir override %s" % str(matrix))
 	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
 	assert_not_null(names)
 	if names == null:
 		return
@@ -155,7 +155,7 @@ func test_weir_matrix_and_rotation_match_independent_facts() -> void:
 	for fixture: Dictionary in weir.rotation:
 		var initial: Dictionary = fixture.input
 		var root: int = _int(initial.root)
-		assert_eq(bank.get_name(root), "SCRIPT_SWP_WEIR_ROTATE")
+		assert_eq(bank.name_of(root), "SCRIPT_SWP_WEIR_ROTATE")
 		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve("SWP_STAT_WEIR")
 		var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, bank, root, behavior, PackedByteArray(_ints(initial.payload)))
 		assert_eq(setup.error, "", "weir script")

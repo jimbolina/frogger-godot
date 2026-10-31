@@ -48,7 +48,7 @@ static var game_quit: bool = false
 
 
 ## Builds the stack and the saved progress from the executable's level-select table.
-static func load_progress(data: GameData) -> String:
+static func load_progress(data: AssetCatalog) -> String:
 	var table: LevelSelectTable = data.tables.level_select()
 	if not table.error.is_empty():
 		return table.error
@@ -76,7 +76,7 @@ static func load_progress(data: GameData) -> String:
 
 ## Builds [member board] once: from the high-score file when it is present, else from
 ## [param data]'s default tables, else empty with a diagnostic. A board already built is kept.
-static func load_scores(data: GameData) -> void:
+static func load_scores(data: AssetCatalog) -> void:
 	if board != null:
 		return
 	var saved: HighScoreStore = HighScoreStore.load_from(scores_store_path)

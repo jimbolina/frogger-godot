@@ -243,7 +243,7 @@ func _clear_entity_visuals() -> void:
 	_entity_generations.clear()
 
 ## Resolves render resources for the validated authored entity definitions.
-func build_entities(definitions: EntityCollisionDefinition, scene_data: MapSceneData, selected_data: GameData, use_lighting: bool = true) -> void:
+func build_entities(definitions: EntityCollisionDefinition, scene_data: MapSceneData, selected_data: AssetCatalog, use_lighting: bool = true) -> void:
 	_clear_entity_visuals()
 	_entity_pose_tick = -1
 	_entity_lighting = null
@@ -412,7 +412,7 @@ func _sync_entity_models() -> PackedInt32Array:
 		created.append(slot)
 	return created
 
-func _configure_overlay(data: GameData, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
+func _configure_overlay(data: AssetCatalog, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
 	if _overlay_view == null:
 		return ""
 	var resource: int = EntityModelSelection.explosion_resource_for(data, level)

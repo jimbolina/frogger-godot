@@ -63,7 +63,7 @@ func test_sky_payloads_match_independent_facts() -> void:
 	var setups: Dictionary[int, EntitySetup] = {}
 	var payloads: Dictionary[int, MapFile] = {}
 	var theme_book: ThemeBook = _data.tables.theme_book()
-	var bank: NameBank = _data.tables.names.scripts
+	var bank: NameBank = _data.names.scripts
 	var checked: int = 0
 	for row: PackedStringArray in _records("entity"):
 		var resource_id: int = row[1].to_int()
@@ -75,7 +75,7 @@ func test_sky_payloads_match_independent_facts() -> void:
 			if map == null:
 				return
 			payloads[resource_id] = map
-			setups[resource_id] = EntitySetup.from_map(map, theme_book, "sky", resource_id, _data.version.internal_name, true, _data.tables.names)
+			setups[resource_id] = EntitySetup.from_map(map, theme_book, "sky", resource_id, _data.version.internal_name, true, _data.names)
 		var definition: EntityDefinition = _definition(setups[resource_id], row[3].to_int())
 		assert_not_null(definition, label)
 		if definition == null:
@@ -121,7 +121,7 @@ func test_sky_payloads_match_independent_facts() -> void:
 			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(_data.tables.scripts(), bank, definition.script_id, definition.behavior, payload)
 			assert_eq(scripts.error, "", label + " script")
 			if scripts.definition != null:
-				assert_eq(bank.get_name(scripts.definition.root_id), facts["root_script"], label + " root script")
+				assert_eq(bank.name_of(scripts.definition.root_id), facts["root_script"], label + " root script")
 				assert_eq(scripts.definition.payload_registers, _ints(facts["registers"]), label + " registers")
 				if facts["register_offset"].to_int() >= 0:
 					assert_eq(scripts.definition.payload_offset, facts["register_offset"].to_int(), label + " register offset")
@@ -159,7 +159,7 @@ func test_sky_models_primitives_and_callbacks_match_independent_facts() -> void:
 		primitives += 1
 	assert_eq(primitives, 2, "magical balloon primitives at both detail levels")
 	var theme_book: ThemeBook = _data.tables.theme_book()
-	var bank: NameBank = _data.tables.names.scripts
+	var bank: NameBank = _data.names.scripts
 	var callbacks: int = 0
 	for row: PackedStringArray in _records("callback"):
 		var facts: Dictionary[String, String] = _fields(row)
@@ -172,7 +172,7 @@ func test_sky_models_primitives_and_callbacks_match_independent_facts() -> void:
 		assert_eq(form.entity_name, row[5], facts["form"])
 		assert_eq([form.collision_callback, form.bonus_callback, form.script_id], [address, facts["bonus"].hex_to_int(), facts["script"].to_int()], facts["form"])
 		if form.script_id != 0:
-			assert_eq(bank.get_name(form.script_id), facts["root_script"], facts["form"])
+			assert_eq(bank.name_of(form.script_id), facts["root_script"], facts["form"])
 		var kind: FormCallback.Kind = FormCallbackCatalog.resolve(_data.version.internal_name, address)
 		assert_eq(kind, FormCallback.Kind.TRIGGER if facts["callback"] == "TriggerEntityCallback" else FormCallback.Kind.NONE, facts["form"])
 		if address != 0:
@@ -212,7 +212,7 @@ func test_sky_levels_admit_through_whole_map_setup() -> void:
 		assert_not_null(map, code)
 		if map == null:
 			continue
-		var entities: EntitySetup = EntitySetup.from_map(map, theme_book, code, resource_id, _data.version.internal_name, true, _data.tables.names)
+		var entities: EntitySetup = EntitySetup.from_map(map, theme_book, code, resource_id, _data.version.internal_name, true, _data.names)
 		assert_eq(entities.error, "", code)
 		for diagnostic: EntitySetupDiagnostic in entities.diagnostics:
 			assert_false(diagnostic.code in ADMISSION_DIAGNOSTICS, "%s entity %d: %s %s" % [code, diagnostic.entity_index, diagnostic.code, diagnostic.message])

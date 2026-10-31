@@ -14,7 +14,7 @@ func _run() -> void:
 	if not scenario.error.is_empty():
 		_fail(scenario.error)
 		return
-	var data: GameData = null
+	var data: AssetCatalog = null
 	if ViewerArguments.has_prefix(arguments, "--data-dir=") or not OS.get_environment("FROGGER_DATA_DIR").is_empty():
 		var found: GameDataLocator.Located = ViewerArguments.locate_data(arguments)
 		if not found.is_ok():

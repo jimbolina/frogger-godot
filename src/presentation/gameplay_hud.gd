@@ -38,7 +38,7 @@ func clear() -> void:
 	queue_redraw()
 
 ## Resolves retail sprites; a missing dependency prevents a partially drawn HUD.
-func configure(data: GameData) -> String:
+func configure(data: AssetCatalog) -> String:
 	assets = GameplayHudAssets.from_data(data)
 	if data != null and data.is_valid():
 		var reward_setup: RewardSetup = RewardSetup.from_table(data.tables.scores())

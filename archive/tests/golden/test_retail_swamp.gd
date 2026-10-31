@@ -62,7 +62,7 @@ func test_swamp_payloads_match_independent_facts() -> void:
 	var setups: Dictionary[int, EntitySetup] = {}
 	var payloads: Dictionary[int, MapFile] = {}
 	var theme_book: ThemeBook = _data.tables.theme_book()
-	var bank: NameBank = _data.tables.names.scripts
+	var bank: NameBank = _data.names.scripts
 	var checked: int = 0
 	for row: PackedStringArray in _records("entity"):
 		var resource_id: int = row[1].to_int()
@@ -74,7 +74,7 @@ func test_swamp_payloads_match_independent_facts() -> void:
 			if map == null:
 				return
 			payloads[resource_id] = map
-			setups[resource_id] = EntitySetup.from_map(map, theme_book, "swamp", resource_id, _data.version.internal_name, true, _data.tables.names)
+			setups[resource_id] = EntitySetup.from_map(map, theme_book, "swamp", resource_id, _data.version.internal_name, true, _data.names)
 		var definition: EntityDefinition = _definition(setups[resource_id], row[3].to_int())
 		assert_not_null(definition, label)
 		if definition == null:
@@ -109,7 +109,7 @@ func test_swamp_payloads_match_independent_facts() -> void:
 			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(_data.tables.scripts(), bank, definition.script_id, definition.behavior, payload)
 			assert_eq(scripts.error, "", label + " script")
 			if scripts.definition != null:
-				assert_eq(bank.get_name(scripts.definition.root_id), facts["root_script"], label + " root script")
+				assert_eq(bank.name_of(scripts.definition.root_id), facts["root_script"], label + " root script")
 				assert_eq(scripts.definition.payload_registers, _ints(facts["registers"]), label + " registers")
 				if facts["register_offset"].to_int() >= 0:
 					assert_eq(scripts.definition.payload_offset, facts["register_offset"].to_int(), label + " register offset")

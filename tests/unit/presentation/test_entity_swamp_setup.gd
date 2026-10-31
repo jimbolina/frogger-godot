@@ -289,7 +289,7 @@ func _table(names: NameBank, offset: int, count: int) -> ScriptTable:
 	var table := ScriptTable.new()
 	var script_entry := EntityScript.new()
 	script_entry.id = 0
-	script_entry.name = names.get_name(0)
+	script_entry.name = names.name_of(0)
 	var prepare := EntityScript.Command.new()
 	prepare.opcode = 31
 	prepare.arguments = PackedInt32Array([offset, count])

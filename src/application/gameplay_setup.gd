@@ -42,14 +42,14 @@ static func supports_level(level_number: int) -> bool:
 	return FroggerIds.level_code(level_number) in LEVEL_CODES
 
 ## Resolves player tables, scripts, callbacks, geometry and visibility once at setup.
-static func from_data(data: GameData, level_number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> GameplaySetup:
+static func from_data(data: AssetCatalog, level_number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> GameplaySetup:
 	var result := GameplaySetup.new()
 	result.error = result._build(data, level_number, map, frog_model, action_lengths)
 	if not result.error.is_empty():
 		result.definition = null
 	return result
 
-func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
+func _build(data: AssetCatalog, number: int, map: MapFile, frog_model: MofFile, action_lengths: PackedInt32Array) -> String:
 	if not supports_level(number):
 		return "Gameplay setup requires ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4"
 	if data == null or not data.is_valid() or map == null or frog_model == null:
@@ -73,7 +73,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 			return issue
 	if code in SOURCE_ALLOCATION_CODES:
 		lifecycle.definition.source_allocation = true
-	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true, data.tables.names)
+	var entities: EntitySetup = EntitySetup.from_map(map, data.tables.theme_book(), source, book.map_id(false), data.version.internal_name, true, data.names)
 	diagnostics.append_array(entities.diagnostics)
 	if not entities.error.is_empty():
 		return entities.error
@@ -139,7 +139,7 @@ func _build(data: GameData, number: int, map: MapFile, frog_model: MofFile, acti
 		if entity.behavior.has_custom_update():
 			entity.behavior.execution = EntityBehavior.Execution.CONTACT
 		if entity.script_id != 0:
-			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.tables.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
+			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
 			if not scripts.error.is_empty():
 				return code + " entity %d: %s" % [entity.entity_index, scripts.error]
 			entity.script_definition = scripts.definition
@@ -263,7 +263,7 @@ static func bounds_for(top: EntityDefinition, bottom: EntityDefinition) -> Rect2
 	return Rect2i(top_left.x, bottom_right.y, bottom_right.x - top_left.x, top_left.y - bottom_right.y)
 
 ## Applies Desert action, explosion-model and rock-target gates to one decoded definition.
-func _desert_issue(data: GameData, number: int, entity: EntityDefinition, grid: GridDefinition, problems: PackedStringArray) -> String:
+func _desert_issue(data: AssetCatalog, number: int, entity: EntityDefinition, grid: GridDefinition, problems: PackedStringArray) -> String:
 	var kind: EntityBehavior.Kind = entity.behavior.kind
 	if DESERT_ACTION_COUNTS.has(kind) and entity.action_lengths.size() < DESERT_ACTION_COUNTS[kind]:
 		return "requires %d model actions, found %d" % [DESERT_ACTION_COUNTS[kind], entity.action_lengths.size()]
@@ -322,10 +322,10 @@ static func model_action_lengths(model: MofFile) -> PackedInt32Array:
 			lengths.append(action.frame_count)
 	return lengths
 
-static func _swarm_texture_issue(data: GameData, theme: ThemeBookEntry) -> String:
-	if data.tables.names.images == null:
+static func _swarm_texture_issue(data: AssetCatalog, theme: ThemeBookEntry) -> String:
+	if data.names.images == null:
 		return "Hive swarm requires named player textures"
-	var texture_id: int = data.tables.names.images.index_of("for_swarm")
+	var texture_id: int = data.names.images.index_of("for_swarm")
 	if texture_id < 0:
 		return "Hive swarm image for_swarm is not named in the supplied configuration"
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
@@ -340,12 +340,12 @@ static func _swarm_texture_issue(data: GameData, theme: ThemeBookEntry) -> Strin
 		found = found or bank.find_texture(texture_id) != null
 	return "" if found else "Hive swarm image for_swarm is missing from the supplied banks"
 
-static func _firefly_texture_issue(data: GameData, theme: ThemeBookEntry) -> String:
-	if data.tables.names.images == null:
+static func _firefly_texture_issue(data: AssetCatalog, theme: ThemeBookEntry) -> String:
+	if data.names.images == null:
 		return "Firefly requires named player textures"
 	var texture_ids := PackedInt32Array()
 	for image: String in FIREFLY_IMAGES:
-		var texture_id: int = data.tables.names.images.index_of(image)
+		var texture_id: int = data.names.images.index_of(image)
 		if texture_id < 0:
 			return "Firefly image %s is not named in the supplied configuration" % image
 		texture_ids.append(texture_id)

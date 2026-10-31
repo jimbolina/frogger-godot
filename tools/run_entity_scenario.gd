@@ -23,7 +23,7 @@ func _run() -> void:
 		if not found.is_ok():
 			_fail(found.error)
 			return
-		var data: GameData = GameData.open(found.source, found.version)
+		var data: AssetCatalog = GameData.open(found.source, found.version)
 		if not data.is_valid():
 			_fail(data.error)
 			data.close()

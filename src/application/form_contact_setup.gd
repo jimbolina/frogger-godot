@@ -170,7 +170,7 @@ static func _primitive_model(model: MofFile) -> bool:
 	return model != null and model.error.is_empty() and model.kind in [MofFile.Kind.STATIC, MofFile.Kind.ANIMATED] and model.static_models.size() == 1 and _has_collprims(model)
 
 ## Reads the selected map and all authored form models, including omitted entities.
-static func from_data(data: GameData, level: int, low_poly: bool, entities: Array[EntityDefinition]) -> FormContactSetup:
+static func from_data(data: AssetCatalog, level: int, low_poly: bool, entities: Array[EntityDefinition]) -> FormContactSetup:
 	var result := FormContactSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Valid game data is required for form contact"

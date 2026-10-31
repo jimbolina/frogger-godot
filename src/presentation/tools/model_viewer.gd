@@ -54,7 +54,7 @@ const MODEL_BOTTOM: float = 390.0
 ## this to drive the viewer with their own data).
 var auto_open: bool = true
 ## The game data being shown, or null.
-var data: GameData
+var data: AssetCatalog
 var _owns_data: bool = false
 ## The model file being shown, or null.
 var current_model: MofFile
@@ -144,7 +144,7 @@ func _exit_tree() -> void:
 
 ## Lists model WADs of [param game_data], borrowed unless [param take_ownership] is true.
 ## Replacement/exit closes owned data only; reopening the same object retains ownership.
-func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+func open_data(game_data: AssetCatalog, take_ownership: bool = false) -> void:
 	if data != game_data:
 		if _owns_data and data != null:
 			data.close()
@@ -194,7 +194,7 @@ func load_model_by_name(file_name: String) -> int:
 	if data == null or not data.is_valid():
 		return -1
 	var entry: MwiEntry = data.find_resource(file_name)
-	if entry == null or not GameData.is_model_entry(entry):
+	if entry == null or not AssetCatalog.is_model_entry(entry):
 		return -1
 	var wad_id: int = data.wad_holding(entry.index)
 	var wad: WadFile = data.read_wad(wad_id)
@@ -767,7 +767,7 @@ func _refresh_actions() -> void:
 		return
 	var bank: NameBank = _animation_name_bank()
 	for index: int in player.action_count():
-		var title: String = bank.get_name(index) if bank != null and bank.has_name(index) else "Action %d" % index
+		var title: String = bank.name_of(index) if bank != null and bank.has_name(index) else "Action %d" % index
 		_actions.add_item("%d  %s (%d frames)" % [index, title, player.action_frame_count(index)], index)
 		_actions.set_item_disabled(index, not player.action_error(index).is_empty())
 		_actions.set_item_tooltip(index, player.action_error(index))

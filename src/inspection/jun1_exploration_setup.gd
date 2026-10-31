@@ -6,7 +6,7 @@ const MANIFEST_PATH: String = "res://src/inspection/jun1_exploration_admission.j
 const PRESET: String = "jun1-log-bank"
 
 ## Validates proof dependencies and copies decoded zones into an inspection guard.
-static func apply(scenario: TerrainScenario, data: GameData) -> String:
+static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	if scenario.level_code.to_upper() != "JUN1" or scenario.options.entity_lifecycle:
 		return "jun1-log-bank requires high-detail JUN1 and all-attached lifetime"
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
@@ -53,7 +53,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	scenario.diagnostics.append("World boundary X[1900,2304), Z[-5376,-4864); rejected ticks roll back and pause")
 	return ""
 
-static func _validate_inputs(data: GameData, map: MapFile, proof: Dictionary) -> String:
+static func _validate_inputs(data: AssetCatalog, map: MapFile, proof: Dictionary) -> String:
 	return RetailExplorationInputs.validate(data, map, proof, 18)
 
 static func _integer(value: Variant) -> int:

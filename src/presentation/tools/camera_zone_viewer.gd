@@ -3,7 +3,7 @@ extends Node3D
 
 var inspection: CameraZoneInspection
 var playing: bool = false
-var _data: GameData
+var _data: AssetCatalog
 var _camera: Camera3D
 var _probe: MeshInstance3D
 var _label: Label

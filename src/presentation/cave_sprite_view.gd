@@ -63,7 +63,7 @@ var _projection_scale := Vector2.ONE
 var _state: GameplayState
 
 ## Resolves the images the supplied definitions draw; missing images are returned as diagnostics.
-func configure(scene: MapSceneData, data: GameData, definitions: Array[EntityDefinition]) -> String:
+func configure(scene: MapSceneData, data: AssetCatalog, definitions: Array[EntityDefinition]) -> String:
 	clear()
 	if scene == null or data == null or data.tables == null:
 		return "Cave sprites require player texture banks and executable tables"
@@ -182,13 +182,13 @@ static func screen_offsets(camera: GameplayCameraSnapshot, half: Vector2) -> Arr
 	var offsets: Array[Vector3] = [-axis_x - axis_y, axis_x - axis_y, -axis_x + axis_y, axis_x + axis_y]
 	return offsets
 
-func _configure_firefly(scene: MapSceneData, data: GameData, problems: PackedStringArray) -> void:
-	if data.tables.names == null or data.tables.names.images == null:
+func _configure_firefly(scene: MapSceneData, data: AssetCatalog, problems: PackedStringArray) -> void:
+	if data.names == null or data.names.images == null:
 		problems.append("Cave firefly sprites require named player textures")
 		return
 	var frames: Array[Sprite] = []
 	for image_name: String in FIREFLY_IMAGES:
-		var image: VloImage = _image_for_id(scene, data.tables.names.images.index_of(image_name))
+		var image: VloImage = _image_for_id(scene, data.names.images.index_of(image_name))
 		if image == null:
 			problems.append("Cave firefly image %s is missing from the supplied banks" % image_name)
 			continue
@@ -197,7 +197,7 @@ func _configure_firefly(scene: MapSceneData, data: GameData, problems: PackedStr
 	if frames.size() == FIREFLY_IMAGES.size():
 		_firefly = frames
 
-func _configure_pickups(scene: MapSceneData, data: GameData, types: Array, problems: PackedStringArray) -> void:
+func _configure_pickups(scene: MapSceneData, data: AssetCatalog, types: Array, problems: PackedStringArray) -> void:
 	var rows: Array[PickupData] = data.tables.pickups()
 	var pointers: BmpPointers = data.tables.bmp_pointers()
 	types.sort()
@@ -224,7 +224,7 @@ func _configure_pickups(scene: MapSceneData, data: GameData, types: Array, probl
 	else:
 		_glow = _sprite(scene, glow, ModelShaders.blend_for_mode(glow.blend_mode()), PICKUP_DEPTH_BIAS)
 
-func _load_resident(data: GameData, problems: PackedStringArray) -> void:
+func _load_resident(data: AssetCatalog, problems: PackedStringArray) -> void:
 	_resident = TextureLibrary.new()
 	for bank_name: String in RESIDENT_BANKS:
 		var entry: MwiEntry = data.find_resource(bank_name) if data.mwi != null else null

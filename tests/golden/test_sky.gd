@@ -367,7 +367,7 @@ func test_game_timer_cadence_match_independent_facts() -> void:
 
 func _names() -> NameBank:
 	var library := FrogLordConfigLibrary.new()
-	var names: GameNameLists = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library)
+	var names: GameNameLists = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library)
 	assert_not_null(names)
 	return names.scripts if names != null else null
 
@@ -380,7 +380,7 @@ func _table(bank: NameBank, programs: Dictionary) -> ScriptTable:
 	for id: int in range(highest + 1):
 		var program := EntityScript.new()
 		program.id = id
-		program.name = bank.get_name(id)
+		program.name = bank.name_of(id)
 		var words: Array[int] = [38]
 		if programs.has(str(id)):
 			words = _ints(programs[str(id)])

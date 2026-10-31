@@ -13,7 +13,7 @@ var resource_id: int = -1
 var resource_name: String = ""
 
 ## Reads the first enabled row for a level, preserving saved executable mappings.
-static func resolve(data: GameData, level: int, low_poly: bool = false) -> DemoSetup:
+static func resolve(data: AssetCatalog, level: int, low_poly: bool = false) -> DemoSetup:
 	var result := DemoSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Demo setup requires valid player data"

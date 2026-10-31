@@ -80,7 +80,7 @@ static func from_map(map: MapFile, book: ThemeBook, models_by_form: Dictionary[i
 	return result
 
 ## Reads player high-detail resources and detaches every accepted base entity.
-static func from_data(data: GameData, level: int, low_poly: bool = false, platforms_enabled: bool = false, visibility_enabled: bool = false) -> EntityCollisionSetup:
+static func from_data(data: AssetCatalog, level: int, low_poly: bool = false, platforms_enabled: bool = false, visibility_enabled: bool = false) -> EntityCollisionSetup:
 	var result := EntityCollisionSetup.new()
 	if data == null or not data.is_valid():
 		result.error = "Entity collision requires valid player data"

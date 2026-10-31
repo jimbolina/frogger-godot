@@ -10,7 +10,7 @@ const ROAD_PRESET: String = "org1-road-river"
 const ROAD_MANIFEST_PATH: String = "res://src/inspection/org1_road_river_admission.json"
 
 ## Validates proof inputs before enabling any custom update or contact exclusion.
-static func apply(scenario: TerrainScenario, data: GameData) -> String:
+static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	var road: bool = scenario.options.exploration_preset == ROAD_PRESET
 	var visibility: bool = scenario.options.exploration_preset == VISIBILITY_PRESET
 	var preset: String = VISIBILITY_PRESET if visibility else ROAD_PRESET if road else PRESET
@@ -34,17 +34,17 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 	if zones != null and zones.count != 0:
 		return "ORG1 admission requires no zones"
 	var book: ThemeBook = data.tables.theme_book()
-	var script_names: NameBank = data.tables.names.scripts
+	var script_names: NameBank = data.names.scripts
 	var callback_names: NameBank = script_names.get_sub_bank("CallbackNames")
 	var expected_scripts: Array = proof.get("script_names", [])
 	var expected_callbacks: Array = proof.get("callback_names", [])
 	if expected_scripts.size() != script_names.size() or callback_names == null or expected_callbacks.size() != callback_names.size():
 		return "ORG1 script/callback name inventory changed"
 	for index: int in expected_scripts.size():
-		if expected_scripts[index] != script_names.get_name(index):
+		if expected_scripts[index] != script_names.name_of(index):
 			return "ORG1 script name mapping changed"
 	for index: int in expected_callbacks.size():
-		if expected_callbacks[index] != callback_names.get_name(index):
+		if expected_callbacks[index] != callback_names.name_of(index):
 			return "ORG1 callback name mapping changed"
 	var setup: EntitySetup = EntitySetup.from_map(map, book, scenario.level.source_id, scenario.level.resource_id, data.version.internal_name, true)
 	if not setup.error.is_empty() or setup.definitions.size() != _integer(proof.authored_count):
@@ -59,7 +59,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 		if form == null:
 			return "ORG1 missing form"
 		var binding: Dictionary = bindings[entity.entity_index]
-		if binding.form != entity.form_name or binding.entity != entity.entity_name or binding.script != script_names.get_name(entity.script_id):
+		if binding.form != entity.form_name or binding.entity != entity.entity_name or binding.script != script_names.name_of(entity.script_id):
 			return "ORG1 named behavior mapping changed"
 		var model_id: int = data.model_resource_at(data.model_wad_for(form, scenario.map_scene.level, false), form.wad_index()) if form.model_id >= 0 else -1
 		if model_id >= 0 and not models.has(entity.form_id):
@@ -72,7 +72,7 @@ static func apply(scenario: TerrainScenario, data: GameData) -> String:
 				entity.action_lengths.append(action.frame_count)
 			entity.behavior.one_shot = entity.behavior.kind == EntityBehavior.Kind.BABY_FROG
 		if entity.script_id != 0:
-			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.tables.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
+			var scripts: EntityScriptSetup = EntityScriptSetup.from_tables(data.tables.scripts(), data.names.scripts, entity.script_id, entity.behavior, map.entities[entity.entity_index].payload)
 			if not scripts.error.is_empty():
 				return scripts.error
 			entity.script_definition = scripts.definition

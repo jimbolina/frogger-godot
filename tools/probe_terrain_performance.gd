@@ -22,7 +22,7 @@ func _run() -> void:
 		_fail(found.error)
 		return
 	var started: int = Time.get_ticks_usec()
-	var data: GameData = GameData.open(found.source, found.version)
+	var data: AssetCatalog = GameData.open(found.source, found.version)
 	var workload: String = ViewerArguments.value(arguments, "--performance-workload=")
 	var whole_map: bool = workload in ["whole-map-idle", "whole-map-hops"]
 	var hopping: bool = workload == "whole-map-hops"

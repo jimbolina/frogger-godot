@@ -23,12 +23,12 @@ var _streams: Dictionary[int, AudioStreamWAV] = {}
 var _failed: Dictionary[int, bool] = {}
 
 ## Resolves banks through the supplied executable's sound tables; loading waits for the first request.
-static func from_data(data: GameData, definitions: Array[LogicalSoundDefinition]) -> AudioResources:
+static func from_data(data: AssetCatalog, definitions: Array[LogicalSoundDefinition]) -> AudioResources:
 	if data == null or not data.is_valid():
 		var invalid := from_loader(definitions, {}, Callable())
 		invalid.diagnostics.append("Audio resources require valid supplied game data")
 		return invalid
-	var tables: SoundTables = SoundTables.read(data.exe)
+	var tables: SoundTables = data.tables.sound_tables()
 	var bank_of: Dictionary[int, int] = {}
 	for sample: SoundSampleEntry in tables.samples:
 		bank_of[sample.sound_id] = sample.bank_id

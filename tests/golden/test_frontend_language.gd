@@ -11,7 +11,7 @@ var _images: NameBank
 func before_all() -> void:
 	_document = JSON.parse_string(FileAccess.get_file_as_string(GOLDEN))
 	var library := FrogLordConfigLibrary.new()
-	_images = GameNameLists.load_for(library.load_version("pc-retail-v3.0e"), library).images
+	_images = GameNameListsReader.load_for(library.load_version("pc-retail-v3.0e"), library).images
 
 
 static func _int(value: Variant) -> int:

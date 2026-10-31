@@ -22,7 +22,7 @@ func _capture() -> void:
 	if not located.is_ok():
 		_fail(located.error)
 		return
-	var data: GameData = GameData.open(located.source, located.version)
+	var data: AssetCatalog = GameData.open(located.source, located.version)
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(data)
 	if not assets.error.is_empty():
 		data.close()

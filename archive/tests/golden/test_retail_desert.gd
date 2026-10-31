@@ -56,7 +56,7 @@ func test_desert_payloads_match_independent_facts() -> void:
 			assert_not_null(map, label)
 			if map == null:
 				return
-			setups[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "desert", resource_id, _data.version.internal_name, true, _data.tables.names)
+			setups[resource_id] = EntitySetup.from_map(map, _data.tables.theme_book(), "desert", resource_id, _data.version.internal_name, true, _data.names)
 		var definition: EntityDefinition = null
 		for candidate: EntityDefinition in setups[resource_id].definitions:
 			if candidate.entity_index == row[3].to_int():

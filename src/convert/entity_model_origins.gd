@@ -3,14 +3,14 @@ extends RefCounted
 ## Per-slot source theme and level that resolve entity models when no map scene supplies them.
 
 ## Borrowed player data; the caller keeps it open while any consumer draws from it.
-var data: GameData = null
+var data: AssetCatalog = null
 ## Theme book index owning each slot's form, or -1 for a slot drawn as a placeholder.
 var themes: PackedInt32Array = PackedInt32Array()
 ## Level number selecting each slot's model WAD, or -1 for a slot drawn as a placeholder.
 var levels: PackedInt32Array = PackedInt32Array()
 
 ## Borrows `game_data`, which may be null when every slot uses a placeholder.
-func _init(game_data: GameData = null) -> void:
+func _init(game_data: AssetCatalog = null) -> void:
 	data = game_data
 
 ## Appends the next slot's origin; negative values request a placeholder.

@@ -23,7 +23,7 @@ const SCREENSHOT_BANKS: PackedStringArray = ["SUB_VRAM.VLO", "GEN_VRAM.VLO", "SK
 ## this to drive the viewer with their own data).
 var auto_open: bool = true
 ## The game data being shown, or null.
-var data: GameData
+var data: AssetCatalog
 var _owns_data: bool = false
 ## The bank currently shown, or null.
 var current_bank: VloFile
@@ -80,7 +80,7 @@ func _exit_tree() -> void:
 
 ## Shows the banks of [param game_data], borrowed unless [param take_ownership] is true.
 ## Replacement/exit closes owned data only; reopening the same object retains ownership.
-func open_data(game_data: GameData, take_ownership: bool = false) -> void:
+func open_data(game_data: AssetCatalog, take_ownership: bool = false) -> void:
 	if data != game_data:
 		if _owns_data and data != null:
 			data.close()
@@ -232,7 +232,7 @@ func _make_cell(image: VloImage) -> Control:
 	var caption := Label.new()
 	var texture_name: String = image.custom_name
 	if texture_name.is_empty() and image_names != null and image_names.has_name(image.texture_id):
-		texture_name = image_names.get_name(image.texture_id)
+		texture_name = image_names.name_of(image.texture_id)
 	caption.text = "#%d  id %d\n%s\n%dx%d (%dx%d)  0x%04X" % [image.index, image.texture_id, texture_name,
 		image.width, image.height, image.padded_width, image.padded_height, image.flags]
 	caption.add_theme_font_size_override("font_size", 10)
