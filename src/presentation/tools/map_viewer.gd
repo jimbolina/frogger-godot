@@ -24,10 +24,15 @@ var decode_load_ms: float = 0.0
 var mesh_build_ms: float = 0.0
 var instance_build_ms: float = 0.0
 var probe_mesh: ModelMesh
+## The modern profile's scene light for the loaded map, or null under retail
+## and before a map loads; it owns the environment while it exists.
+var scene_lighting: SceneLighting
 
 var _viewport: SubViewport
 var _world: Node3D
 var _camera: Camera3D
+var _world_environment: WorldEnvironment
+var _viewer_environment: Environment
 var _ui: CanvasLayer
 var _status: Label
 var _levels: OptionButton
@@ -200,9 +205,10 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	_world.add_child(map_instance)
 	instance_build_ms = float(Time.get_ticks_usec() - instance_started) / 1000.0
 	map_instance.set_inspection_visibility(_inspection.button_pressed)
-	map_instance.set_reference_mode(camera_preset == "map-slice")
+	map_instance.set_reference_mode(_reference_camera())
 	map_instance.set_reference_target(source.midpoint)
 	map_instance.set_cave_frog(source.midpoint)
+	_light_scene(source)
 	_setup_paths()
 	_setup_entities()
 	reset_camera()
@@ -217,7 +223,7 @@ func set_camera_preset(preset: String) -> bool:
 	camera_preset = preset
 	_camera_choice.select(1 if preset == "map-slice" else 0)
 	if map_instance != null:
-		map_instance.set_reference_mode(preset == "map-slice")
+		map_instance.set_reference_mode(_reference_camera())
 	_update_path_visibility()
 	_update_entity_visibility()
 	reset_camera()
@@ -234,7 +240,7 @@ func reset_camera() -> void:
 	_vertical_ratio = preset.vertical_ratio
 	if map_instance != null:
 		map_instance.set_projection_scale(Vector2(1.0, _vertical_ratio))
-		map_instance.set_reference_projection(camera_preset == "map-slice")
+		map_instance.set_reference_projection(_reference_camera())
 	_custom_camera = false
 	_target = preset.look_target()
 	var offset: Vector3 = preset.position() - _target
@@ -304,6 +310,42 @@ func _process(delta: float) -> void:
 			break
 	_refresh_status()
 
+## The map-slice preset's reference group budget, disabled water and integer
+## projection apply only under the retail profile; modern keeps the pose alone.
+func _reference_camera() -> bool:
+	return camera_preset == "map-slice" and (current_mesh == null or not current_mesh.modern)
+
+## Under the modern profile, lights the map from its light records (or the
+## options screen's lights when it has none) and, on a cave map, places the
+## cave light at the viewer's static start position with the initial radii.
+func _light_scene(source: MapSceneData) -> void:
+	_release_scene_lighting()
+	if current_mesh == null or not current_mesh.modern:
+		return
+	_world_environment.environment = null
+	scene_lighting = SceneLighting.new()
+	scene_lighting.name = "SceneLighting"
+	_world.add_child(scene_lighting)
+	var lighting := MapLighting.new()
+	lighting.configure(source.map.lights)
+	if lighting.directions.is_empty() and lighting.ambient.is_zero_approx():
+		lighting = OptionsModels.options_lighting()
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(lighting))
+	if source.cave_enabled:
+		scene_lighting.set_cave_light(GameSpace.position(source.midpoint.x, source.midpoint.y, source.midpoint.z),
+			source.cave_min_r2, source.cave_max_r2)
+
+func _release_scene_lighting(detach: bool = true) -> void:
+	if scene_lighting != null:
+		if detach:
+			scene_lighting.clear()
+			if scene_lighting.get_parent() == _world:
+				_world.remove_child(scene_lighting)
+		scene_lighting.queue_free()
+		scene_lighting = null
+	if _world_environment != null:
+		_world_environment.environment = _viewer_environment
+
 func _place_camera() -> void:
 	var horizontal: float = cos(_pitch) * _distance
 	_camera.position = _target + Vector3(sin(_yaw) * horizontal, sin(_pitch) * _distance, cos(_yaw) * horizontal)
@@ -353,12 +395,12 @@ func _build_scene() -> void:
 	_camera.far = 2000.0
 	_camera.current = true
 	_world.add_child(_camera)
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color.BLACK
-	var world_environment := WorldEnvironment.new()
-	world_environment.environment = environment
-	_world.add_child(world_environment)
+	_viewer_environment = Environment.new()
+	_viewer_environment.background_mode = Environment.BG_COLOR
+	_viewer_environment.background_color = Color.BLACK
+	_world_environment = WorldEnvironment.new()
+	_world_environment.environment = _viewer_environment
+	_world.add_child(_world_environment)
 	var display := TextureRect.new()
 	display.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	display.texture = _viewport.get_texture()
@@ -1092,7 +1134,7 @@ func capture_metadata(benchmark: Dictionary, allocations_before: Dictionary, all
 	if OS.has_method("get_memory_info"):
 		var memory_info: Dictionary = OS.call("get_memory_info")
 		machine["memory_info"] = memory_info
-	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
+	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "rendering_profile": scene_data.library.rendering_profile().profile_name, "diagnostics": Array(_combined_diagnostics())}
 	metadata.merge(benchmark)
 	return metadata
 
@@ -1162,6 +1204,7 @@ func _release_scene(detach: bool = true) -> void:
 	tick = 0
 	_release_path(detach)
 	_release_entities(detach)
+	_release_scene_lighting(detach)
 	for instance: Node3D in [map_instance, _probe]:
 		if instance != null:
 			if detach:
@@ -1282,7 +1325,41 @@ func capture_allocations() -> Dictionary:
 		materials.append(material.get_instance_id())
 	materials.sort()
 	var page_ids: PackedInt64Array = scene_data.texture_pages.cached_texture_ids()
+	for issue: String in modern_texture_issues():
+		if not scene_data.diagnostics.has(issue):
+			scene_data.diagnostics.append(issue)
 	return {"sky_atlas_id": current_mesh.sky_atlas.get_instance_id() if current_mesh.sky_atlas != null else 0, "mesh_ids": meshes, "mesh_count": meshes.size(), "material_ids": materials, "material_count": materials.size(), "page_texture_ids": page_ids, "page_texture_count": page_ids.size(), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT)}
+
+## Under the modern profile, one line for each textured terrain material that
+## does not bind its image's own padded texture (at any texture-set scale);
+## empty under retail and when every material does.
+func modern_texture_issues() -> PackedStringArray:
+	var issues := PackedStringArray()
+	if current_mesh == null or not current_mesh.modern:
+		return issues
+	for group: int in current_mesh.surface_specs.size():
+		for index: int in current_mesh.surface_specs[group].size():
+			var spec: MapMesh.Surface = current_mesh.surface_specs[group][index]
+			if not spec.textured:
+				continue
+			var bindings: Dictionary[ShaderMaterial, VloImage] = {spec.original: spec.image}
+			for id: int in spec.frames:
+				bindings[spec.frames[id]] = scene_data.library.image_for_id(id, scene_data.preferred)
+			for material: ShaderMaterial in bindings:
+				var image: VloImage = bindings[material]
+				if image == null:
+					continue
+				var texture: Texture2D = material.get_shader_parameter("image_nearest")
+				if not _binds_padded_image(texture, image):
+					issues.append("Modern group %d surface %d binds %s, not texture %d's %dx%d padded image" % [
+						group, index, "no texture" if texture == null else "a %dx%d texture" % [texture.get_width(), texture.get_height()],
+						image.texture_id, image.padded_width, image.padded_height])
+	return issues
+
+static func _binds_padded_image(texture: Texture2D, image: VloImage) -> bool:
+	if texture == null or image.padded_width <= 0 or image.padded_height <= 0:
+		return false
+	return texture.get_width() % image.padded_width == 0 and texture.get_width() * image.padded_height == texture.get_height() * image.padded_width
 
 func _update_probe_projection() -> void:
 	if probe_mesh == null:

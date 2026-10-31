@@ -43,7 +43,11 @@ func test_arrays_match_across_profiles_and_carry_normals() -> void:
 	var floor_normals: PackedVector3Array = retail.groups[0].surface_get_arrays(0)[Mesh.ARRAY_NORMAL]
 	for normal: Vector3 in floor_normals:
 		assert_almost_eq(normal, Vector3.UP, Vector3.ONE * 0.001)
-	assert_eq(var_to_str(modern.sky_mesh.surface_get_arrays(0)), var_to_str(retail.sky_mesh.surface_get_arrays(0)))
+	var modern_sky: Array = modern.sky_mesh.surface_get_arrays(0)
+	var retail_sky: Array = retail.sky_mesh.surface_get_arrays(0)
+	for kind: int in Mesh.ARRAY_MAX:
+		if kind != Mesh.ARRAY_TEX_UV:
+			assert_eq(var_to_str(modern_sky[kind]), var_to_str(retail_sky[kind]), "sky array %d" % kind)
 	var sky_custom: PackedFloat32Array = retail.sky_mesh.surface_get_arrays(0)[Mesh.ARRAY_CUSTOM0]
 	var sky_ranks: PackedVector2Array = retail.sky_mesh.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV2]
 	for corner: int in sky_ranks.size():
@@ -257,10 +261,10 @@ func test_groups_cast_shadows_and_the_sky_does_not() -> void:
 	assert_eq(sky.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
 	var material: ShaderMaterial = sky.get_surface_override_material(0)
 	assert_eq(material.shader.resource_path, MapLitShaders.sky_shader_path())
-	var atlas: Texture2D = material.get_shader_parameter("image_nearest")
-	assert_same(atlas, instance.source.sky_atlas)
-	var pixel_scale: Vector2 = material.get_shader_parameter("pixel_scale")
-	assert_eq(pixel_scale, Vector2(1.0 / 256.0, 1.0 / (258.0 * 2.0)))
+	var tiles: Texture2DArray = material.get_shader_parameter("tiles")
+	assert_same(tiles, instance.source.sky_tiles)
+	assert_null(instance.source.sky_atlas)
+	assert_true(_unset(material, "pixel_scale"), "no atlas uniforms")
 	instance.free()
 	var retail: MapMesh.Instance = MapMeshBuilder.new().build(_rich_scene(false)).create_instance()
 	group = retail.get_child(0)
@@ -271,6 +275,42 @@ func test_groups_cast_shadows_and_the_sky_does_not() -> void:
 	assert_eq(material.shader.resource_path, MapShaders.sky_shader_path(false))
 	retail.free()
 
+
+
+func test_modern_sky_samples_a_tile_array_without_a_page_set() -> void:
+	var scene: MapSceneData = _rich_scene(true)
+	scene.page_set = null
+	scene.sky_land.dimensions = Vector2i(3, 1)
+	scene.sky_land.texture_ids = PackedInt32Array([1, 0, 1])
+	scene.sky_land.rotations = PackedInt32Array([0, 1, 2])
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	assert_true(built.diagnostics.is_empty(), ", ".join(built.diagnostics))
+	assert_null(built.sky_atlas)
+	assert_not_null(built.sky_tiles)
+	assert_eq(built.sky_tiles.get_layers(), 2, "one layer per distinct tile texture")
+	var narrow := Image.create(9, 6, false, Image.FORMAT_RGBA8)
+	scene.preferred.images[0].texture = ImageTexture.create_from_image(narrow)
+	var mismatched: MapMesh = MapMeshBuilder.new().build(scene)
+	assert_eq(mismatched.diagnostics.size(), 1, ", ".join(mismatched.diagnostics))
+	assert_string_contains(mismatched.diagnostics[0], "Sky tile layer 1 (texture 100)",
+		"first-seen texture 101 takes layer 0, so 100 is layer 1")
+	var arrays: Array = built.sky_mesh.surface_get_arrays(0)
+	var custom: PackedFloat32Array = arrays[Mesh.ARRAY_CUSTOM0]
+	var slots: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV2]
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	assert_eq(slots.size(), 18)
+	for corner: int in slots.size():
+		var expected: float = 1.0 if corner >= 6 and corner < 12 else 0.0
+		assert_eq(custom[corner * 4], expected, "corner %d layer" % corner)
+		assert_eq(slots[corner].x, expected)
+	assert_eq(uvs.slice(0, 6), PackedVector2Array([Vector2(0, 0), Vector2(8, 0), Vector2(0, 4), Vector2(8, 0),
+		Vector2(8, 4), Vector2(0, 4)]), "image-relative pixels without the page origin")
+	var material: ShaderMaterial = built.sky_mesh.surface_get_material(0)
+	var padding: Vector2 = material.get_shader_parameter("tile_padding")
+	var padded_size: Vector2 = material.get_shader_parameter("tile_padded_size")
+	assert_eq(padding, Vector2(1, 1))
+	assert_eq(padded_size, Vector2(10, 6))
+	assert_eq(scene.texture_pages.cached_texture_count(), 0)
 
 func _unset(material: ShaderMaterial, parameter: String) -> bool:
 	var value: Variant = material.get_shader_parameter(parameter)

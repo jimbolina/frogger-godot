@@ -9,6 +9,7 @@ uniform float vertex_tint = 1.0;
 uniform float omni_wrap = 0.0;
 uniform float specular_strength = 0.0;
 uniform float shininess = 32.0;
+uniform float reflection_emission = 0.0;
 uniform vec2 animation_offset = vec2(0.0);
 uniform bool animated = false;
 uniform bool missing_image = false;
@@ -65,7 +66,7 @@ void fragment() {
 			texel = texture(image_nearest, UV);
 		}
 	}
-	vec3 albedo = (textured ? texel.rgb * to_linear(min(COLOR.rgb * 2.0, vec3(1.0))) : to_linear(COLOR.rgb)) * vertex_tint;
+	vec3 albedo = textured ? texel.rgb * mix(vec3(1.0), to_linear(min(COLOR.rgb * 2.0, vec3(1.0))), vertex_tint) : mix(vec3(1.0), to_linear(COLOR.rgb), vertex_tint);
 #ifdef MAP_LIT_QUARTER
 	albedo *= 0.25;
 #endif
@@ -82,9 +83,11 @@ void fragment() {
 	ALPHA = missing_image ? 1.0 : texel.a;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 #endif
-	ALBEDO = missing_image ? vec3(0.0) : albedo;
+	vec3 shown = missing_image ? vec3(0.0) : albedo;
+	ALBEDO = shown * (1.0 - reflection_emission);
 	ROUGHNESS = 1.0;
 	METALLIC = 0.0;
+	EMISSION = shown * reflection_emission;
 	if (missing_image) {
 		EMISSION = vec3(1.0, 0.0, 1.0);
 	}

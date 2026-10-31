@@ -87,6 +87,8 @@ Stored UV bytes are normalized, then converted to integer pixels by
 `mapdisp.c/MapUpdateAnimatedPolys` owns counters, cel changes and byte wrapping.
 No source bytes are mutated in the Godot representation.
 
+The modern rendering profile samples per-image textures instead
+([modern profile](../../../docs/reference/rendering/modern-profile.md#terrain)).
 Map sampling reconstructs fourteen physical 256x256 PC texture pages in
 general-then-theme upload order. Final U/V bytes wrap independently before
 page lookup; they must not clamp to an individual image. Frozen PC page
@@ -118,6 +120,8 @@ triangle order across different tile textures. Duplicate atlas border rows
 keep linear sampling clamped within each original page. Grouping tiles by
 texture changes overlap order for depth-clamped tiles and is incorrect.
 
+The modern profile lights cave terrain with an omni light instead of the ramp
+([cave light](../../../docs/reference/rendering/modern-profile.md#cave-light)).
 Terrain normally uses baked polygon colours. Cave rendering replaces Gouraud
 colours with the C squared-distance grey ramp; it does not apply model lights
 to all terrain. The named cave-light entity payload supplies initial radii

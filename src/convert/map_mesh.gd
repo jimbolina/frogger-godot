@@ -9,6 +9,8 @@ var surface_specs: Array[Array] = []
 var sky_mesh: ArrayMesh
 ## One immutable page atlas keeps sky tile drawing in source row-major order.
 var sky_atlas: Texture2D
+## The modern sky's tile images, one layer per sky slot ([MapSkyTiles]); null under retail.
+var sky_tiles: Texture2DArray
 var group_count: int = 0
 var triangle_count: int = 0
 var surface_count: int = 0
@@ -46,6 +48,13 @@ func create_instance() -> Instance:
 class Instance extends Node3D:
 	## Diagnostic recorded when the modern profile is asked for the reference projection.
 	const MODERN_REFERENCE_DIAGNOSTIC: String = "The modern rendering profile has no reference projection; the call is ignored"
+	## Share of an environment-mapped water surface's colour drawn as emission
+	## under the modern profile, so it reads as a partial reflection.
+	const WATER_REFLECTION: float = 0.5
+	## Blinn specular strength of modern water surfaces.
+	const WATER_SPECULAR: float = 0.5
+	## Blinn specular exponent of modern water surfaces.
+	const WATER_SHININESS: float = 64.0
 	var source: MapMesh
 	var animation := MapAnimationPlayer.new()
 	var water := MapWaterState.new()
@@ -75,6 +84,9 @@ class Instance extends Node3D:
 	var _sky_external: bool = false
 	var _sky_override: Vector3 = Vector3.ZERO
 	var _vertex_tint: float = 1.0
+	var _water_reflection: float = WATER_REFLECTION
+	var _water_specular: float = WATER_SPECULAR
+	var _water_shininess: float = WATER_SHININESS
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -230,9 +242,10 @@ class Instance extends Node3D:
 			material.set_shader_parameter("cave_min_r2", float(minimum))
 			material.set_shader_parameter("cave_max_r2", float(maximum))
 
-	## Scales the modern profile's terrain albedo on every surface except cave
-	## Gouraud terrain, which stays black until the cave light exists; retail
-	## materials have no tint.
+	## Blends the modern profile's baked vertex shading toward white on every
+	## surface except cave Gouraud terrain: 0 ignores the stored colours, 1
+	## applies them fully. Cave terrain stays at 0 because the cave light
+	## replaces its stored shading, as in C; retail materials have no tint.
 	func set_vertex_tint(value: float) -> void:
 		if _vertex_tint == value:
 			return
@@ -246,6 +259,27 @@ class Instance extends Node3D:
 				_material_copies[spec.original].set_shader_parameter("vertex_tint", value)
 				for frame: ShaderMaterial in spec.frames.values():
 					_material_copies[frame].set_shader_parameter("vertex_tint", value)
+
+	## Sets the modern profile's look of environment-mapped water surfaces: the
+	## share of colour drawn as reflection emission and the Blinn specular
+	## strength and exponent. Riverbeds and retail materials are untouched.
+	func set_water_look(reflection: float, specular: float, shininess: float) -> void:
+		_water_reflection = reflection
+		_water_specular = specular
+		_water_shininess = shininess
+		if not source.modern:
+			return
+		for index: int in source.surface_specs.size():
+			for spec: Surface in source.surface_specs[index]:
+				if not spec.environment:
+					continue
+				_set_water_look(_material_copies[spec.original])
+				for frame: ShaderMaterial in spec.frames.values():
+					_set_water_look(_material_copies[frame])
+
+	## The water look as [code][reflection, specular, shininess][/code].
+	func water_look() -> PackedFloat32Array:
+		return PackedFloat32Array([_water_reflection, _water_specular, _water_shininess])
 
 	## Changes cached shader variants; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
@@ -345,7 +379,14 @@ class Instance extends Node3D:
 		material.set_shader_parameter("water_enabled", water.enabled)
 		material.set_shader_parameter("vertex_tint", 0.0 if spec.cave else _vertex_tint)
 		material.set_shader_parameter("omni_wrap", 1.0 if spec.cave else 0.0)
+		if spec.environment:
+			_set_water_look(material)
 		_configured[material] = true
+
+	func _set_water_look(material: ShaderMaterial) -> void:
+		material.set_shader_parameter("reflection_emission", _water_reflection)
+		material.set_shader_parameter("specular_strength", _water_specular)
+		material.set_shader_parameter("shininess", _water_shininess)
 
 	func _refresh_sky_drift() -> void:
 		if _sky_node == null:

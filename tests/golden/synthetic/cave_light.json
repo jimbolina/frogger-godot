@@ -1,0 +1,1000 @@
+{
+  "schema": "cave-light-v1",
+  "tolerance": 0.0001,
+  "fit_rings": 512,
+  "fit_reach": 4,
+  "scale_steps": 32,
+  "band": 1048576,
+  "fixtures": [
+    {
+      "name": "radius_1",
+      "min_r2": 1,
+      "max_r2": 65536,
+      "inner": 0.00390625,
+      "modes": {
+        "exact_edge": {
+          "range": 1.0,
+          "energy": 0.910947734,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 4096,
+              "window": 0.992202759,
+              "lit": 0.903844855,
+              "ramp": 0.949019608
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 16384,
+              "window": 0.87890625,
+              "lit": 0.800637657,
+              "ramp": 0.760784314
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 36864,
+              "window": 0.467300415,
+              "lit": 0.425686254,
+              "ramp": 0.447058824
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 65536,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.007843137
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 79298,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 1.035491019,
+          "energy": 0.881220513,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 4391,
+              "window": 0.992202759,
+              "lit": 0.874349424,
+              "ramp": 0.941176471
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 17567,
+              "window": 0.87890625,
+              "lit": 0.774510216,
+              "ramp": 0.737254902
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 39527,
+              "window": 0.467300415,
+              "lit": 0.411794711,
+              "ramp": 0.4
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 70270,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 85027,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_3",
+      "min_r2": 1,
+      "max_r2": 589824,
+      "inner": 0.00390625,
+      "modes": {
+        "exact_edge": {
+          "range": 3.0,
+          "energy": 0.916944148,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 36864,
+              "window": 0.992202759,
+              "lit": 0.909794514,
+              "ramp": 0.949019608
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 147456,
+              "window": 0.87890625,
+              "lit": 0.805907943,
+              "ramp": 0.760784314
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 331776,
+              "window": 0.467300415,
+              "lit": 0.428488381,
+              "ramp": 0.454901961
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 589824,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.023529412
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 713687,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 3.131711085,
+          "energy": 0.880638256,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 40171,
+              "window": 0.992202759,
+              "lit": 0.873771707,
+              "ramp": 0.941176471
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 160687,
+              "window": 0.87890625,
+              "lit": 0.773998467,
+              "ramp": 0.737254902
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 361547,
+              "window": 0.467300415,
+              "lit": 0.411522623,
+              "ramp": 0.4
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 642751,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 777729,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_4",
+      "min_r2": 0,
+      "max_r2": 1048576,
+      "inner": 0.0,
+      "modes": {
+        "exact_edge": {
+          "range": 4.0,
+          "energy": 0.910947734,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 65536,
+              "window": 0.992202759,
+              "lit": 0.903844855,
+              "ramp": 0.941176471
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 262144,
+              "window": 0.87890625,
+              "lit": 0.800637657,
+              "ramp": 0.752941176
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 589824,
+              "window": 0.467300415,
+              "lit": 0.425686254,
+              "ramp": 0.439215686
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 1048576,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 1268776,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 4.141964078,
+          "energy": 0.881220513,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 70270,
+              "window": 0.992202759,
+              "lit": 0.874349424,
+              "ramp": 0.941176471
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 281081,
+              "window": 0.87890625,
+              "lit": 0.774510216,
+              "ramp": 0.737254902
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 632433,
+              "window": 0.467300415,
+              "lit": 0.411794711,
+              "ramp": 0.4
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 1124326,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 1360435,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_5",
+      "min_r2": 589824,
+      "max_r2": 1638400,
+      "inner": 3.0,
+      "modes": {
+        "exact_edge": {
+          "range": 5.0,
+          "energy": 1.174546597,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 102400,
+              "window": 0.992202759,
+              "lit": 1.165388374,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 409600,
+              "window": 0.87890625,
+              "lit": 1.032316345,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 921600,
+              "window": 0.467300415,
+              "lit": 0.548866112,
+              "ramp": 0.690196078
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 1638400,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 1982464,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 5.437512944,
+          "energy": 1.093143398,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 121104,
+              "window": 0.992202759,
+              "lit": 1.084619895,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 484418,
+              "window": 0.87890625,
+              "lit": 0.960770564,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 1089941,
+              "window": 0.467300415,
+              "lit": 0.510826363,
+              "ramp": 0.525490196
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 1937673,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 2344584,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_8",
+      "min_r2": 3145728,
+      "max_r2": 4194304,
+      "inner": 6.92820323,
+      "modes": {
+        "exact_edge": {
+          "range": 8.0,
+          "energy": 1.301642478,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 262144,
+              "window": 0.992202759,
+              "lit": 1.291493257,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 1048576,
+              "window": 0.87890625,
+              "lit": 1.144021709,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 2359296,
+              "window": 0.467300415,
+              "lit": 0.60825807,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 4194304,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 5075107,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 9.581791768,
+          "energy": 1.165913793,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 376056,
+              "window": 0.992202759,
+              "lit": 1.156822882,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 1504227,
+              "window": 0.87890625,
+              "lit": 1.02472892,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 3384510,
+              "window": 0.467300415,
+              "lit": 0.544832,
+              "ramp": 0.776470588
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 6016908,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 7280458,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_12",
+      "min_r2": 8388608,
+      "max_r2": 9437184,
+      "inner": 11.313708499,
+      "modes": {
+        "exact_edge": {
+          "range": 12.0,
+          "energy": 1.311474283,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 589824,
+              "window": 0.992202759,
+              "lit": 1.301248401,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 2359296,
+              "window": 0.87890625,
+              "lit": 1.152662944,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 5308416,
+              "window": 0.467300415,
+              "lit": 0.612852477,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 9437184,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 11418992,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 14.899065341,
+          "energy": 1.172515194,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 909238,
+              "window": 0.992202759,
+              "lit": 1.16337281,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 3636955,
+              "window": 0.87890625,
+              "lit": 1.030530932,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 8183149,
+              "window": 0.467300415,
+              "lit": 0.547916837,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 14547822,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 17602864,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_255",
+      "min_r2": 4260429824,
+      "max_r2": 4261478400,
+      "inner": 254.968625521,
+      "modes": {
+        "exact_edge": {
+          "range": 255.0,
+          "energy": 1.3125,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 266342400,
+              "window": 0.992202759,
+              "lit": 1.302266121,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 1065369600,
+              "window": 0.87890625,
+              "lit": 1.153564453,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 2397081600,
+              "window": 0.467300415,
+              "lit": 0.613331795,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 4261478400,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 5156388864,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 325.518415829,
+          "energy": 1.173882524,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 434021331,
+              "window": 0.992202759,
+              "lit": 1.164729479,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 1736085324,
+              "window": 0.87890625,
+              "lit": 1.031732687,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 3906191980,
+              "window": 0.467300415,
+              "lit": 0.548555791,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 6944341297,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 8402652970,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_1_croaked",
+      "min_r2": 65533,
+      "max_r2": 131068,
+      "inner": 0.999977112,
+      "modes": {
+        "exact_edge": {
+          "range": 1.414191983,
+          "energy": 1.239252292,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 8191,
+              "window": 0.992202759,
+              "lit": 1.229589543,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 32767,
+              "window": 0.87890625,
+              "lit": 1.089186584,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 73725,
+              "window": 0.467300415,
+              "lit": 0.57910311,
+              "ramp": 0.878431373
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 131068,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.007843137
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 158592,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 1.464379519,
+          "energy": 1.212853004,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 8783,
+              "window": 0.992202759,
+              "lit": 1.203396097,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 35133,
+              "window": 0.87890625,
+              "lit": 1.065984086,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 79051,
+              "window": 0.467300415,
+              "lit": 0.566766712,
+              "ramp": 0.8
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 140535,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 170048,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_4_croaked",
+      "min_r2": 1048572,
+      "max_r2": 2097148,
+      "inner": 3.999992371,
+      "modes": {
+        "exact_edge": {
+          "range": 5.656848855,
+          "energy": 1.238925875,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 131071,
+              "window": 0.992202759,
+              "lit": 1.229265671,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 524286,
+              "window": 0.87890625,
+              "lit": 1.088899695,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 1179645,
+              "window": 0.467300415,
+              "lit": 0.578950576,
+              "ramp": 0.878431373
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 2097147,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.007843137
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 2537549,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 6.352514812,
+          "energy": 1.131747256,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 165291,
+              "window": 0.992202759,
+              "lit": 1.12292275,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 661167,
+              "window": 0.87890625,
+              "lit": 0.994699737,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 1487626,
+              "window": 0.467300415,
+              "lit": 0.528865963,
+              "ramp": 0.588235294
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 2644668,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 3200049,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_8_croaked",
+      "min_r2": 7340028,
+      "max_r2": 8388604,
+      "inner": 10.583002361,
+      "modes": {
+        "exact_edge": {
+          "range": 11.313705802,
+          "energy": 1.311029671,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 524287,
+              "window": 0.992202759,
+              "lit": 1.300807256,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 2097151,
+              "window": 0.87890625,
+              "lit": 1.152272172,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 4718589,
+              "window": 0.467300415,
+              "lit": 0.612644709,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 8388604,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 10150210,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 13.994084137,
+          "energy": 1.172127891,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 802137,
+              "window": 0.992202759,
+              "lit": 1.162988528,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 3208550,
+              "window": 0.87890625,
+              "lit": 1.03019053,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 7219238,
+              "window": 0.467300415,
+              "lit": 0.54773585,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 12834202,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 15529385,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "radius_12_croaked",
+      "min_r2": 17825792,
+      "max_r2": 18874368,
+      "inner": 16.492422502,
+      "modes": {
+        "exact_edge": {
+          "range": 16.970562748,
+          "energy": 1.312364414,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 1179647,
+              "window": 0.992202759,
+              "lit": 1.302131592,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 4718591,
+              "window": 0.87890625,
+              "lit": 1.153445286,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 10616832,
+              "window": 0.467300415,
+              "lit": 0.613268435,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 18874367,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.007843137
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 22837985,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        },
+        "fitted_range": {
+          "range": 21.36431703,
+          "energy": 1.173550172,
+          "samples": [
+            {
+              "fraction": 0.25,
+              "distance_r2": 1869553,
+              "window": 0.992202759,
+              "lit": 1.164399718,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.5,
+              "distance_r2": 7478215,
+              "window": 0.87890625,
+              "lit": 1.031440581,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 0.75,
+              "distance_r2": 16825984,
+              "window": 0.467300415,
+              "lit": 0.548400482,
+              "ramp": 1.0
+            },
+            {
+              "fraction": 1.0,
+              "distance_r2": 29912861,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            },
+            {
+              "fraction": 1.1,
+              "distance_r2": 36194562,
+              "window": 0.0,
+              "lit": 0.0,
+              "ramp": 0.0
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -197,25 +197,45 @@ func _add_surface(mesh: ArrayMesh, surface: Collected) -> void:
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES if surface.lines else Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
 
 
+## Sky tiles in source row-major order in one surface, so overlap order is kept.
+## Retail samples the baked page atlas at page-relative pixels with the page's
+## atlas slot; modern samples the tile array at image-relative pixels with the
+## image's layer. Both write the slot to [code]UV2.x[/code] and [code]CUSTOM0.x[/code].
 func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	var sky: SkyLandFile = scene.sky_land
 	var surface := Collected.new()
-	var pages: Dictionary[int, int] = {}
+	var slots: Dictionary[int, int] = {}
+	var slot_images: Array[VloImage] = []
 	var tile_images: Array[VloImage] = []
+	var tile_slots := PackedInt32Array()
 	for local_id: int in sky.texture_ids:
-		var image: VloImage = scene.library.image_for_id(scene.sky_remap.global_id(local_id), scene.preferred)
+		var id: int = scene.sky_remap.global_id(local_id)
+		var image: VloImage = scene.library.image_for_id(id, scene.preferred)
 		tile_images.append(image)
-		var page: int = image.page() if image != null else -1
-		if not pages.has(page):
-			pages[page] = pages.size()
-	result.sky_atlas = _baked_sky_atlas(scene, pages, result)
-	if result.sky_atlas == null:
-		return null
+		var key: int = id
+		if not result.modern:
+			key = image.page() if image != null else -1
+		if not slots.has(key):
+			slots[key] = slots.size()
+			slot_images.append(image)
+		tile_slots.append(slots[key])
 	var material: ShaderMaterial
 	if result.modern:
-		material = MapLitShaders.sky_material(result.sky_atlas, linear_filter)
+		result.sky_tiles = MapSkyTiles.build(slot_images, scene.library, linear_filter, result.diagnostics)
+		if result.sky_tiles == null:
+			return null
+		var reference: VloImage = MapSkyTiles.reference_image(slot_images, scene.library)
+		var padding := Vector2.ZERO
+		var padded_size := Vector2.ONE
+		if reference != null:
+			padding = Vector2(reference.left_padding(), reference.top_padding())
+			padded_size = Vector2(reference.padded_width, reference.padded_height)
+		material = MapLitShaders.sky_material(result.sky_tiles, linear_filter, padding, padded_size)
 	else:
+		result.sky_atlas = _baked_sky_atlas(scene, slots, result)
+		if result.sky_atlas == null:
+			return null
 		material = ShaderMaterial.new()
 		material.shader = MapShaders.sky_shader(linear_filter)
 		material.set_shader_parameter("image", result.sky_atlas)
@@ -243,15 +263,17 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 			var span: Vector2i = sky_uv_span(image)
 			pixels = [Vector2(0, 0), Vector2(span.x, 0), Vector2(0, span.y), Vector2(span.x, span.y)]
 		var order: PackedInt32Array = rotation_orders[sky.rotations[tile]]
-		var origin: Vector2 = Vector2(image.u, image.v) if image != null else Vector2.ONE
-		var atlas_page: int = pages[image.page() if image != null else -1]
+		var origin := Vector2.ZERO
+		if not result.modern:
+			origin = Vector2(image.u, image.v) if image != null else Vector2.ONE
+		var slot: int = tile_slots[tile]
 		for corner: int in triangle_corners(4):
 			var point: Vector3i = positions[corner]
 			surface.vertices.append(GameSpace.position(point.x, point.y, point.z))
 			surface.colours.append(colour)
 			surface.uvs.append(pixels[order[corner]] + origin)
-			surface.water_ranks.append(Vector2(atlas_page, 0))
-			surface.reference_depths.append_array(PackedFloat32Array([atlas_page, 0, 0, 0]))
+			surface.water_ranks.append(Vector2(slot, 0))
+			surface.reference_depths.append_array(PackedFloat32Array([slot, 0, 0, 0]))
 		result.triangle_count += 2
 	_add_surface(mesh, surface)
 	mesh.surface_set_material(0, material)

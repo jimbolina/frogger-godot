@@ -150,6 +150,12 @@ func draw_state(fraction: float) -> void:
 		_map_instance.set_cave_frog(_current.frog.world_position)
 		if _map_instance.source.scene.cave_enabled and _current.entity_environment != null:
 			_map_instance.set_cave_radii(_current.entity_environment.light_min_squared, _current.entity_environment.light_max_squared)
+	var cave_lit: bool = _cave_lit()
+	if cave_lit:
+		var radii: PackedInt64Array = cave_radii(weight)
+		scene_lighting.set_cave_light(frog_transform.origin, radii[0], radii[1])
+	elif scene_lighting != null and scene_lighting.cave_light_node() != null:
+		scene_lighting.clear_cave_light()
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
 	if _current.entities != null:
 		_entity_pose_tick = _current.tick_index
@@ -161,7 +167,10 @@ func draw_state(fraction: float) -> void:
 				if model.transform != transform_now:
 					model.transform = transform_now
 				if update_entities and _entity_lighting != null:
-					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, entity.colour_scaled or entity.colour_scale != Vector3i.ZERO, entity.ambient != Vector3i.ZERO)
+					var scaled: bool = entity.colour_scaled or entity.colour_scale != Vector3i.ZERO
+					if scaled and cave_lit and cave_faded(entity) and AnimatedModelInstance.has_lit_materials(model.model_mesh):
+						scaled = false
+					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, scaled, entity.ambient != Vector3i.ZERO)
 				if update_entities:
 					if entity.custom_state != null:
 						model.player.texture_animation_paused = entity.custom_state.texture_animation_paused
@@ -174,6 +183,29 @@ func draw_state(fraction: float) -> void:
 					model.capture_pose(not playing)
 				model.render(weight)
 				model.visible = entity.live and not entity.pop_allocated and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
+
+## Squared cave radii between the previous and current committed states at
+## [param weight]; the map's initial radii when no state carries an entity environment.
+func cave_radii(weight: float) -> PackedInt64Array:
+	var now: EntityEnvironmentState = _current.entity_environment if _current != null else null
+	if now == null:
+		var scene: MapSceneData = _map_instance.source.scene if _map_instance != null else null
+		return PackedInt64Array([scene.cave_min_r2, scene.cave_max_r2]) if scene != null else PackedInt64Array([0, 0])
+	var before: EntityEnvironmentState = _previous.entity_environment if _previous != null and _previous.entity_environment != null else now
+	return PackedInt64Array([
+		roundi(lerpf(float(before.light_min_squared), float(now.light_min_squared), weight)),
+		roundi(lerpf(float(before.light_max_squared), float(now.light_max_squared), weight)),
+	])
+
+## True when [param entity]'s colour scale is the cave fade alone
+## (EntityScaleColours replaces the scale with the fade grey), so a lit model
+## leaves it to the cave light. Entities that opt out of screen fades, are not
+## displayed, or multiply script colours by the fade keep their scale.
+static func cave_faded(entity: EntitySnapshot) -> bool:
+	return entity.colour_scaled and not entity.live_flags & (EntityLiveFlags.NO_SCREEN_FADE | EntityLiveFlags.RESPECT_SCALE_COLOURS) and not entity.entity_flags & EntityDefinition.NO_DISPLAY
+
+func _cave_lit() -> bool:
+	return scene_lighting != null and rendering_profile.is_modern() and _map_instance != null and _map_instance.source.scene.cave_enabled
 
 ## Creates the map, frog and camera drawing roots.
 func build_world() -> void:

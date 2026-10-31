@@ -3,7 +3,7 @@ extends RefCounted
 ## One level's decoded map and rendering dependencies, owned by its active viewer.
 ## All resource choices come from the executable tables; no retail IDs are baked in.
 
-## Theme of the sky levels, whose sky-land backdrop samples the baked atlas.
+## Theme of the sky levels, which draw the sky-land backdrop.
 const SKY_THEME: int = 8
 
 ## Selected level and detail.
@@ -19,7 +19,7 @@ var library: TextureLibrary = TextureLibrary.new()
 var texture_pages := MapTexturePages.new()
 ## The pages and sky atlas baked for this scene's two banks; null when the
 ## catalog has none, and the textured map draws magenta. The modern profile
-## samples per-image textures and loads it only for the sky atlas of a sky level.
+## samples per-image textures, sky tiles included, and never loads it.
 var page_set: TexturePageSet
 var preferred: VloFile
 var remap: TextureRemap
@@ -71,7 +71,7 @@ static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool
 	scene.preferred = scene._load_bank(data, theme, multiplayer)
 	if not scene.error.is_empty():
 		return scene
-	if not scene.library.rendering_profile().is_modern() or scene.map.general.theme == SKY_THEME:
+	if not scene.library.rendering_profile().is_modern():
 		scene._load_page_set(data, general, theme, multiplayer)
 	if row.environment_texture_pointer != 0:
 		scene.environment_image = scene.library.image_for_pointer(data.tables.bmp_pointers(), row.environment_texture_pointer, scene.preferred)

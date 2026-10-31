@@ -147,3 +147,137 @@ func test_the_retail_profile_applies_no_scene_lighting() -> void:
 	assert_null(_view.scene_lighting.world_environment())
 	assert_null(_view.scene_lighting.applied_spec)
 	assert_eq(_view.scene_lighting.applied_ambient, Vector3.ONE)
+
+func _cave_map() -> MapSceneData:
+	var scene: MapSceneData = _lit_map()
+	scene.remap = TextureRemap.new()
+	scene.cave_enabled = true
+	var radii: PackedInt64Array = MapLighting.initial_cave_radii(5)
+	scene.cave_min_r2 = radii[0]
+	scene.cave_max_r2 = radii[1]
+	return scene
+
+func _cave_state(tick: int, position_16: Vector3i, radius: int, entities: Array[EntitySnapshot] = []) -> GameplayState:
+	var state := GameplayState.new()
+	state.tick_index = tick
+	state.frog.position_16 = position_16
+	state.entity_environment = EntityEnvironmentState.new()
+	var radii: PackedInt64Array = MapLighting.initial_cave_radii(radius)
+	state.entity_environment.light_min_squared = radii[0]
+	state.entity_environment.light_max_squared = radii[1]
+	state.entities = EntityRunSnapshot.new()
+	state.entities.entities.assign(entities)
+	return state
+
+func _build_cave(profile: RenderingProfile, scene: MapSceneData = _cave_map()) -> void:
+	_view.rendering_profile = profile
+	_view.build_map(scene)
+	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
+
+func test_the_modern_profile_lights_a_cave_from_above_the_drawn_frog() -> void:
+	_build_cave(RenderingProfile.modern())
+	_view.smoothing = true
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
+	_view.accept_state(_cave_state(2, Vector3i(512 << 16, 0, -(256 << 16)), 8))
+	_view.draw_state(0.25)
+	var light: OmniLight3D = _view.scene_lighting.cave_light_node()
+	assert_not_null(light)
+	if light == null:
+		return
+	var frog: Vector3 = GameSpace.fixed_position(Vector3i(512 << 16, 0, -(256 << 16))) * 0.25
+	assert_almost_eq(light.position, frog + Vector3.UP * CaveLightShape.HEIGHT, Vector3.ONE * 1e-5)
+	var before: PackedInt64Array = MapLighting.initial_cave_radii(4)
+	var after: PackedInt64Array = MapLighting.initial_cave_radii(8)
+	var min_r2: int = roundi(lerpf(float(before[0]), float(after[0]), 0.25))
+	var max_r2: int = roundi(lerpf(float(before[1]), float(after[1]), 0.25))
+	assert_eq(_view.cave_radii(0.25), PackedInt64Array([min_r2, max_r2]))
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(max_r2, CaveLightShape.DEFAULT_MODE), 1e-5)
+	assert_almost_eq(light.light_energy, CaveLightShape.energy_of(min_r2, max_r2, CaveLightShape.DEFAULT_MODE), 1e-5)
+	assert_eq(_view.scene_lighting.light_nodes().size(), 0, "cave mode drops the directional lights")
+	_view.draw_state(1.0)
+	assert_almost_eq(light.omni_range, 8.0, 1e-5)
+
+func test_the_retail_profile_adds_no_cave_light() -> void:
+	_build_cave(RenderingProfile.retail())
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
+	_view.draw_state(1.0)
+	assert_null(_view.scene_lighting.cave_light_node())
+	assert_eq(_view.scene_lighting.get_child_count(), 0)
+
+func test_a_modern_map_without_caves_has_no_cave_light() -> void:
+	var scene: MapSceneData = _cave_map()
+	scene.cave_enabled = false
+	_build_cave(RenderingProfile.modern(), scene)
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
+	_view.draw_state(1.0)
+	assert_null(_view.scene_lighting.cave_light_node())
+	assert_gt(_view.scene_lighting.light_nodes().size(), 0)
+
+func _faded_entity() -> EntitySnapshot:
+	var entity := EntitySnapshot.new()
+	entity.live = true
+	entity.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
+	entity.colour_scale = Vector3i(40, 40, 40)
+	entity.colour_scaled = true
+	return entity
+
+func _lit_model() -> AnimatedModelInstance:
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
+	var builder := ModelMeshBuilder.new(TextureLibrary.new())
+	builder.lit_materials = true
+	var model := AnimatedModelInstance.new()
+	add_child_autofree(model)
+	model.setup(builder.build_animated(file), ModelAnimationPlayer.new(file))
+	return model
+
+func _with_entities(models: Array[AnimatedModelInstance], definitions: Array[EntityDefinition]) -> void:
+	for model: AnimatedModelInstance in models:
+		_view._entity_models.append(model)
+		_view._entity_meshes.append(null)
+		_view._entity_files.append(null)
+		_view._entity_generations.append(-1)
+	_view._sprite_definitions = definitions
+
+func _firefly_view() -> void:
+	var sprites: Array[CaveSpriteView.Sprite] = []
+	for _image: int in 2:
+		sprites.append(CaveSpriteView.Sprite.new(ModelShaders.material(null, ModelShaders.Blend.OPAQUE, false, true), 16, 10))
+	_view._cave_sprite_view._firefly = sprites
+
+func test_modern_cave_models_leave_the_fade_to_the_light_and_sprites_keep_it() -> void:
+	_build_cave(RenderingProfile.modern())
+	var model: AnimatedModelInstance = _lit_model()
+	var firefly := EntityDefinition.new()
+	firefly.behavior.kind = EntityBehavior.Kind.FIREFLY
+	_with_entities([model, null], [EntityDefinition.new(), firefly])
+	_firefly_view()
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4, [_faded_entity(), _faded_entity()]))
+	_view.draw_state(1.0)
+	assert_eq(model.scene_tint.scale, Vector3.ONE, "the omni light fades lit models")
+	var colours: PackedColorArray = _view._cave_sprite_view.mesh.surface_get_arrays(0)[Mesh.ARRAY_COLOR]
+	assert_eq(colours[0], Color(40 / 255.0, 40 / 255.0, 40 / 255.0), "sprites keep the committed fade")
+
+func test_cave_models_keep_scales_that_are_not_the_fade_alone() -> void:
+	_build_cave(RenderingProfile.modern())
+	var model: AnimatedModelInstance = _lit_model()
+	_with_entities([model], [])
+	var entity: EntitySnapshot = _faded_entity()
+	entity.live_flags = EntityLiveFlags.NO_SCREEN_FADE
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4, [entity]))
+	_view.draw_state(1.0)
+	assert_eq(model.scene_tint.scale, SceneTint.of(Vector3i(40, 40, 40), Vector3i.ZERO, true, false).scale)
+	assert_false(GameplayWorldView.cave_faded(entity))
+	entity.live_flags = EntityLiveFlags.RESPECT_SCALE_COLOURS
+	assert_false(GameplayWorldView.cave_faded(entity), "script colours times the fade cannot be told apart")
+	entity.live_flags = 0
+	assert_true(GameplayWorldView.cave_faded(entity))
+
+func test_lit_models_outside_caves_and_under_retail_keep_the_scale() -> void:
+	var scene: MapSceneData = _cave_map()
+	scene.cave_enabled = false
+	_build_cave(RenderingProfile.modern(), scene)
+	var model: AnimatedModelInstance = _lit_model()
+	_with_entities([model], [])
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4, [_faded_entity()]))
+	_view.draw_state(1.0)
+	assert_eq(model.scene_tint.scale, SceneTint.of(Vector3i(40, 40, 40), Vector3i.ZERO, true, false).scale)

@@ -44,6 +44,8 @@ commands run from the repository root; generated facts live in
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
 | Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
 | Modern scene lighting: linear ambient, directional light bases, colours, energies and shadow caster from synthetic map lights | [Scene lighting](specs/rendering.md#scene-lighting) |
+| Modern cave omni light: range, inner radius, fitted energy per mode and window-against-ramp samples from initial and croaked radii | [Cave light](specs/rendering.md#cave-light) |
+| Modern map UVs: normalised per-image and environment UVs, animation counters and cels, sky tile layers and HIT spans from synthetic texture records | [Modern map UVs](specs/rendering.md#modern-map-uvs) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Animated-part cuboids, decoded primitive matrices and the collision rotation cache | [Animated primitive contacts](specs/entities.md#animated-primitive-contacts) |
@@ -76,6 +78,7 @@ commands run from the repository root; generated facts live in
 | Synthetic gameplay projection and source-rendered geometry | [Gameplay projection](specs/gameplay-projection.md) |
 | Synthetic frog animation catalog and component records | [Frog animation](specs/frog-animation.md) |
 | Synthetic ordered terrain/camera/animation component records | [Integrated terrain](specs/integrated-terrain.md) |
+| Map UV ranges: static corners and animated scrolls against each padded image, ENVMAP images and minimum padding (`imported/map_uv_ranges.tsv`) | [Map UV ranges](specs/imported-assets.md#map-uv-ranges) |
 
 ## Digest convention
 

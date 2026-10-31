@@ -295,4 +295,72 @@ import test. Then restore the fact and rerun.
 The generators' `--check` mode was broken and restored in the same way for
 all five files. Each import-test break was restored and the test rerun.
 
+## Map UV ranges
+
+`imported/map_uv_ranges.tsv` pins the premise of the modern profile's
+[terrain](../../../docs/reference/rendering/modern-profile.md#terrain): a
+textured map polygon drawn from its own padded image with repeat wrapping
+lands on the texels the retail page held. `tools/make_golden_map_uv_ranges.py`
+measures it from the retail executable and archive.
+`test_asset_map_uv_ranges.gd` measures the committed maps and banks the same
+way through `MapAnimationPlayer` and compares. There is no tolerance.
+
+Each map is measured with the remap and banks of the one map-book row and
+detail that names it: the GENERAL theme's bank, then the map's theme bank,
+chosen as for [texture pages](#texture-pages). A global id is looked up in
+the theme bank first. A corner's pixel is `c * size / 255` per axis, kept in
+a byte (`mapload.C` `ResolveMapPolys`). The page byte is
+`(pixel + u) & 255`, so the corner lies `((pixel + u) & 255) - u` from the
+image's left edge (rows likewise with `v`). The corner is inside when that
+is in `[0, width] x [0, height]`. Reaching `width` or `height` lands on the
+first padding column or row, which repeats the edge, so every image a map
+shows needs at least one padding pixel on each side. A corner's reach is how
+many pixels past that range it lands.
+
+- Static polygons are the textured polygons (FT3, FT4, GT3, GT4) that no
+  animation targets and that lack the ENVMAP flag (bit 1).
+- An animated instance is one animation and one non-ENVMAP target. It is
+  stepped through one period of `mapdisp.c` `MapUpdateAnimatedPolys` from
+  the stored counters. The UV period is the duration, the cel period is the
+  cel period times the cel count, and the period is their least common
+  multiple. Base pixels come from the polygon's own image. Each state is
+  measured against the image the animation shows, with the offset added
+  before the byte wrap.
+- ENVMAP polygons get camera-driven UVs. They are only counted, and their
+  images get `env` rows.
+
+| First column | Other columns |
+|---|---|
+| `map` | name (the file name without `.MAP`), `textured_polygons`, `static_polygons`, `outside_static` (static polygons with a corner outside), `max_static_reach`, `animated_instances`, `outside_scroll` (instances with a state outside), `max_scroll_reach`, `scroll_textures` (ids shown while a state is outside), `env_polygons`, `env_textures` (sorted ids) |
+| `env` | texture id, bank (without `.VLO`), `u`, `v`, width, height, padded width, padded height, VRAM x, VRAM y, VRAM page; one row per ENVMAP image and bank |
+| `padding` | `minimum`, then the smallest one-side padding of any image a map polygon or cel shows |
+
+In retail no static corner leaves its image on any of the 78 maps. Two
+scrolls leave it. On `SWP5_WIN95`, 32 instances of texture 1456 scroll down
+4 rows a tick for 12 ticks from rows 47-96 of its 96 rows, up to 44 rows
+past the bottom. On the multiplayer maps `VOLM` and `VOLM_WIN95`, 2
+instances of texture 1068 scroll up 2 rows a tick for 16 ticks from row 0,
+up to 30 rows above the top. The ENVMAP images are 221 (SUB), 222 (ORG),
+293 (FOR and the multiplayer FORM bank) and 1361 (SWP): each sits at
+`u = v = 1`, 254 x 254 padded to 256 at VRAM x 0, and fills its page. 1465
+(SWP) is 253 x 253 padded to 255 at the top left of page 5. The minimum
+padding is 1.
+
+The test needs no retail files. It also checks that every committed map
+has one row and that each ENVMAP image's PNG, through
+`ImportedAssets.texture_of`, is its padded size. It measures all 78 maps in
+about 3 s.
+
+```
+python3 tools/make_golden_map_uv_ranges.py [<retail folder>] [<output>] --write
+```
+
+The folder defaults to `FROGGER_DATA_DIR` and the output to
+`tests/golden/imported/map_uv_ranges.tsv`. Without `--write` the generator
+compares with the output, prints a diff and exits 1 on a difference.
+
+Deliberate break: change `outside_scroll` of `SWP5_WIN95`. The generator
+without `--write` must exit 1 with the diff, and the test must name the map
+and column. Restore with `--write` and rerun both.
+
 [Golden data index and shared rules](../README.md). Commands above run from the repository root.

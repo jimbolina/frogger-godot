@@ -9,6 +9,7 @@ extends RefCounted
 ## coordinate inside the padded image: [code](pixel + padding) / padded_size[/code].
 ## Godot lights shade the result; the shadow pass skips the retail depth push
 ## and projection scaling so casters keep their true shape.
+## The unshaded sky samples one [Texture2DArray] of its tile images ([MapSkyTiles]).
 
 ## Folder of the lit map shader files and their shared include.
 const LIT_SHADER_DIR: String = "res://src/convert/shaders/modern"
@@ -61,22 +62,28 @@ static func material(image: VloImage, texture: Texture2D, blend: ModelShaders.Bl
 	return made
 
 
-## Sky material sampling the baked page [param atlas], whose slots hold
-## [constant TexturePageSet.SKY_SLOT_HEIGHT] retail rows each at any page scale.
-static func sky_material(atlas: Texture2D, linear: bool) -> ShaderMaterial:
+## Sky material sampling the tile array [param tiles] at the layer in
+## [code]CUSTOM0.x[/code], filtered linearly with mipmaps when [param linear].
+## Every tile shares [param padding] and [param padded_size] in retail pixels,
+## so the coordinates stay normalised at any texture scale.
+static func sky_material(tiles: Texture2DArray, linear: bool, padding: Vector2, padded_size: Vector2) -> ShaderMaterial:
 	var made := ShaderMaterial.new()
 	made.shader = sky_shader()
-	made.set_shader_parameter("image_nearest", atlas)
-	made.set_shader_parameter("image_linear", atlas)
+	made.set_shader_parameter("tiles", tiles)
+	made.set_shader_parameter("tiles_linear", tiles)
 	made.set_shader_parameter("linear_filter", linear)
-	made.set_shader_parameter("missing_image", atlas == null)
-	if atlas != null:
-		made.set_shader_parameter("pixel_scale", Vector2(1.0 / TexturePageSet.PAGE_SIZE,
-			float(atlas.get_width()) / (TexturePageSet.PAGE_SIZE * atlas.get_height())))
-	made.set_shader_parameter("texel_inset", MapShaders.texel_inset(atlas))
+	made.set_shader_parameter("tile_padding", padding)
+	made.set_shader_parameter("tile_padded_size", padded_size)
 	made.set_shader_parameter("far_layer", 0.0)
 	made.render_priority = -127
 	return made
+
+
+## The vertex lines of the lit sky that normalise a tile's image-relative
+## pixel into its padded layer and pass the layer on. Mirrors [method MapSkyTiles.layer_uv].
+static func sky_layer_code() -> String:
+	return ("\tUV = (UV + tile_padding) / tile_padded_size;\n"
+		+ "\ttile_layer = CUSTOM0.x;\n")
 
 
 ## The normalised coordinate inside the padded texture of [param image] that the
@@ -86,6 +93,16 @@ static func normalised_uv(pixel: Vector2, image: VloImage, animation_offset: Vec
 	var origin := Vector2(image.u, image.v)
 	var wrapped: Vector2 = (pixel + origin + animation_offset).posmod(256.0) - origin
 	return (wrapped + Vector2(image.left_padding(), image.top_padding())) / Vector2(image.padded_width, image.padded_height)
+
+
+## The normalised coordinate inside the padded texture of [param image] that the
+## lit vertex stage gives an environment-mapped corner at game position
+## [param game] seen from [param camera]: the continuous retail formula
+## without its per-vertex floor and byte wrap. Mirrors [method uv_code].
+static func normalised_environment_uv(game: Vector3, camera: Vector3, image: VloImage) -> Vector2:
+	var negative: Vector3 = (-camera + Vector3.ONE * 32768.0).posmod(65536.0) - Vector3.ONE * 32768.0
+	var pixel: Vector2 = Vector2(game.x + negative.x, game.z + negative.z) / 32.0 + Vector2(128.0, 128.0) - Vector2(image.u, image.v)
+	return (pixel + Vector2(image.left_padding(), image.top_padding())) / Vector2(image.padded_width, image.padded_height)
 
 
 ## The vertex lines of the lit include that wrap and normalise a polygon's pixel.

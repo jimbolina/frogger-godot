@@ -134,3 +134,62 @@ func test_nothing_is_built_before_a_spec_is_applied() -> void:
 	assert_eq(_lighting.get_child_count(), 0)
 	assert_null(_lighting.environment)
 	assert_null(_lighting.world_environment())
+
+
+func test_the_cave_light_is_created_once_and_follows_its_radii() -> void:
+	_lighting.apply(_spec())
+	var radii: PackedInt64Array = MapLighting.initial_cave_radii(5)
+	_lighting.set_cave_light(Vector3(1, 2, 3), radii[0], radii[1])
+	var light: OmniLight3D = _lighting.cave_light_node()
+	assert_not_null(light)
+	assert_eq(_children_of("OmniLight3D"), 1)
+	assert_eq(light.omni_attenuation, 0.0)
+	assert_false(light.shadow_enabled)
+	assert_eq(light.light_specular, 0.0)
+	assert_almost_eq(light.position, Vector3(1, 2 + CaveLightShape.HEIGHT, 3), Vector3.ONE * 1e-6)
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(radii[1], CaveLightShape.DEFAULT_MODE), 1e-5)
+	assert_almost_eq(light.light_energy, CaveLightShape.energy_of(radii[0], radii[1], CaveLightShape.DEFAULT_MODE), 1e-5)
+	var wider: PackedInt64Array = MapLighting.initial_cave_radii(8)
+	_lighting.set_cave_light(Vector3(-4, 0, 2), wider[0], wider[1], CaveLightShape.Mode.FITTED_RANGE)
+	assert_eq(_lighting.cave_light_node(), light, "the same light is updated")
+	assert_eq(_children_of("OmniLight3D"), 1)
+	assert_almost_eq(light.position, Vector3(-4, CaveLightShape.HEIGHT, 2), Vector3.ONE * 1e-6)
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(wider[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
+	assert_almost_eq(light.light_energy, CaveLightShape.energy_of(wider[0], wider[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
+
+
+func test_cave_mode_removes_the_directional_lights_and_dims_the_ambient() -> void:
+	var spec: SceneLightingSpec = _spec()
+	_lighting.apply(spec)
+	_lighting.set_cave_light(Vector3.ZERO, 1, 65536)
+	assert_eq(_children_of("DirectionalLight3D"), 0)
+	assert_eq(_lighting.light_nodes().size(), 0)
+	assert_eq(_lighting.applied_spec, spec, "the spec is kept for restoring")
+	assert_almost_eq(_lighting.environment.ambient_light_energy, CaveLightShape.CAVE_AMBIENT, 1e-6)
+	assert_eq(_lighting.environment.background_color, Color.BLACK)
+	assert_almost_eq(_lighting.applied_ambient, spec.ambient * CaveLightShape.CAVE_AMBIENT, Vector3.ONE * 1e-7)
+	_lighting.apply(spec)
+	assert_eq(_children_of("DirectionalLight3D"), 0, "reapplying keeps cave mode")
+	assert_almost_eq(_lighting.environment.ambient_light_energy, CaveLightShape.CAVE_AMBIENT, 1e-6)
+
+
+func test_clearing_the_cave_light_restores_the_spec() -> void:
+	var spec: SceneLightingSpec = _spec()
+	_lighting.apply(spec)
+	_lighting.set_cave_light(Vector3.ZERO, 1, 65536)
+	_lighting.clear_cave_light()
+	assert_null(_lighting.cave_light_node())
+	assert_eq(_children_of("OmniLight3D"), 0)
+	assert_eq(_children_of("DirectionalLight3D"), 2)
+	assert_eq(_lighting.environment.ambient_light_energy, 1.0)
+	assert_eq(_lighting.applied_ambient, spec.ambient)
+
+
+func test_clear_also_removes_the_cave_light() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_cave_light(Vector3.ZERO, 1, 65536)
+	_lighting.clear()
+	assert_null(_lighting.cave_light_node())
+	assert_eq(_children_of("OmniLight3D"), 0)
+	assert_eq(_lighting.applied_ambient, Vector3.ONE)
+	assert_eq(_lighting.environment.ambient_light_energy, 1.0)

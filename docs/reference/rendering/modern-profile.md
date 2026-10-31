@@ -104,7 +104,7 @@ wrapping instead of the fourteen reconstructed PC pages
 ([assets](../assets.md#layout)). The mesh is shared with retail: the builder
 adds corner normals (`MapNormals`: clockwise front faces, flat types keep the
 face normal, Gouraud types blend within 60° at shared vertices) and the sky's
-atlas slot in `CUSTOM0.x`; every other array is unchanged. `MapLitShaders`
+tile layer in `CUSTOM0.x`; every other array is unchanged. `MapLitShaders`
 binds the per-image texture through `TextureLibrary.texture_for`, so
 `--texture-set=x4` draws from `images_x4/` and needs no page bake. The family
 `map_lit_{opaque,average,add,subtract,add_quarter}{,_far}.gdshader` plus
@@ -118,27 +118,113 @@ the five ENVMAP textures each fill a page, so repeat sampling reproduces the
 page. Environment UVs drop the retail per-vertex `floor` and `mod`; varyings
 are perspective-correct. A custom `light()` gives Lambert diffuse with a wrap
 term for omni lights and optional Blinn specular; the albedo is the texel
-times the linearised doubled vertex colour, scaled by the owner-tunable
-`vertex_tint`. Opaque surfaces use alpha scissor at 0.5, translucent ones
+times `mix(1, linear(min(2 × colour, 1)), vertex_tint)`, so the owner-tunable
+`vertex_tint` runs from 0 (the stored shading ignored, only Godot's lights
+shade the texture) to 1 (full baked shading); cave Gouraud terrain stays at 0
+with `omni_wrap` 1 because C replaces those colours with the ramp that the
+[cave light](#cave-light) now is. Opaque surfaces use alpha scissor at 0.5, translucent ones
 discard; missing images show magenta. The terrain depth push, far-layer push
 and projection scale are skipped in the shadow pass; far layers and
 translucent surfaces never cast. Group meshes receive and cast shadows; the
 sky node casts none. The reference projection, `CUSTOM0` depths and the cave
 grey ramp are retail-only.
 
-Documented divergences: texture 1465 (253×253 padded to 255) repeats every
-255 texels instead of 256; on the low-detail `SWP5_WIN95` map texture 1456's
-scroll leaves its image, which retail shows as the neighbouring page pixels
-and modern wraps within the image; the retail page cache keys exact black
-page-wide while per-image textures carry each image's own alpha.
+Documented divergences, pinned by the
+[map UV ranges](../../../tests/golden/specs/imported-assets.md#map-uv-ranges)
+golden: texture 1465 (253×253 padded to 255) repeats every 255 texels instead
+of 256; on the low-detail `SWP5_WIN95` map 32 instances of texture 1456 and
+on the multiplayer `VOLM` maps two instances of texture 1068 scroll out of
+their image, which retail shows as the neighbouring page pixels and modern
+wraps within the image; the retail page cache keys exact black page-wide
+while per-image textures carry each image's own alpha. Frozen C scales map
+UV bytes by the HIT-trimmed texture size where the documented contract and
+the port use the in-game size
+([textures](../../../archive/docs/formats/textures.md#map-texture-contract)).
 
-## Limits after S2c
+## Sky
 
-Cave Gouraud terrain draws black (`vertex_tint` 0, `omni_wrap` 1) and cave
-entities keep the committed fade until S2d's omni light; the sky still samples
-the baked atlas, so sky levels still load their page set; water is lit like
-terrain; the front end, sandbox effects, viewers and shadow constants are
-S2e. Verification is by eye and by windowed tools, because the headless
+Under modern the sky samples a `Texture2DArray` of the sky-land tile images
+(`MapSkyTiles`), one layer per distinct tile texture in first-seen row-major
+order, with the layer index in `CUSTOM0.x`. Each tile's image-relative,
+HIT-trimmed pixel is normalised into the shared 40×40 padded layer,
+`(pixel + 4) / 40`, so sky levels load no page set and `--texture-set=x4`
+draws 160×160 layers. The tiles stay in one unshaded surface in source
+row-major order with the retail far push, sky colour, drift and camera
+placement; a missing or differently sized tile draws as a magenta layer with
+a diagnostic. The golden is
+[modern map UVs](../../../tests/golden/specs/rendering.md#modern-map-uvs).
+
+## Water
+
+Environment-mapped water surfaces (ENVMAP, the layer-2 far surfaces) stay lit
+terrain but read as a partial reflection: `reflection_emission` moves that
+share of the surface colour from albedo into emission (`ALBEDO = shown × (1 −
+r)`, `EMISSION = shown × r`), so the surface still darkens in shadow without
+going black, and a Blinn highlight from the scene lights (`specular_strength`,
+`shininess`) sits on top. `MapMesh.Instance` gives every ENVMAP surface
+`WATER_REFLECTION` 0.5, `WATER_SPECULAR` 0.5 and `WATER_SHININESS` 64, and
+`set_water_look(reflection, specular, shininess)` retunes them for the owner.
+The MAX_OT riverbed stays plain lit terrain; retail materials carry none of
+these uniforms.
+
+## Cave light
+
+A cave map (`MapSceneData.cave_enabled`) is lit by one `OmniLight3D` instead
+of the C grey ramp. Each drawn frame `GameplayWorldView` places the light
+`CaveLightShape.HEIGHT` (0.5) above the interpolated frog origin with the
+squared radii interpolated between the previous and current entity
+environments, so croak swells and the decay move smoothly.
+`SceneLighting.set_cave_light` creates the light once (attenuation exponent 0,
+no shadow, no specular); the first call switches the scene to cave mode: the
+directional lights go, the environment ambient energy drops to `CAVE_AMBIENT`
+(0.02), the `frogger_model_ambient` global is scaled the same way and the
+background stays black; `clear_cave_light` and `clear` restore the applied
+spec. Retail is unchanged.
+
+With attenuation 0 Godot weights an omni light by `(1 − (d/R)^4)^2` inside
+its range, measured on Forward+ within 8-bit quantisation, and the terrain's
+`LIGHT_COLOR / PI` equals the light energy. The retail ramp multiplies the
+texel by `min(2 × grey / 255, 1)`, falling linearly in squared distance from
+the minimum to the maximum radius. `CaveLightShape` fits the light to that
+ramp by area-weighted least squares over 512 rings, in two modes chosen with
+`CaveLightShape.DEFAULT_MODE`:
+
+- `EXACT_EDGE` (default): the range is the ramp's edge `sqrt(max_r2) / 256`,
+  so darkness begins where C's does; the fitted energy is about 0.91 for
+  radii up to four squares and about 1.3 from eight squares up, brighter than
+  retail near the frog and darker toward the edge.
+- `FITTED_RANGE`: range scale and energy fitted together, about 1.04× the edge
+  at energy 0.88 for small radii and 1.2–1.28× at about 1.17 for large ones;
+  closer inside, but dim light leaks up to a quarter of the radius past the C
+  edge, and the fit costs about 1.8 ms per radius change.
+
+The fit targets the retail factor directly, not in linear light, so falling
+edges read brighter than retail; the owner judges the mode, the 0.5 light
+height and the near-black ambient by eye on CAV1, CAV3 and CAV4 against the
+retail launch. Lit entity models on cave maps take their fade from the light
+instead of the committed cave colour scale (a scale counts as the fade alone
+when `colour_scaled` is set and the entity neither opts out of screen fades
+nor multiplies script colours nor is hidden); fireflies and pickups are
+sprites and keep the committed fade, as does everything outside caves. The
+golden is [cave light](../../../tests/golden/specs/rendering.md#cave-light).
+
+## Map viewer
+
+Under modern the map viewer lights each map like gameplay: a `SceneLighting`
+child in its own world applies the map's lights (or the options lights when
+the map has none) and owns the environment, and a cave map gets the cave
+light at the static start the retail ramp uses with the initial radii. The
+map-slice preset keeps its camera pose, but the reference group budget,
+frozen water and integer projection are retail-only. Captures record
+`rendering_profile` in their metadata so comparison tools can refuse a modern
+capture, and `modern_texture_issues()` reports any textured material that
+does not bind its image's own padded texture into the capture diagnostics.
+
+## Limits after S2d
+
+The front end, sandbox effects, the model, terrain and camera-zone viewers,
+the blob and rock shadow effects beside real shadows and the shadow
+constants are S2e. Verification is by eye and by windowed tools, because the headless
 suites never compile shaders: `tools/probe_model_shader.gd` under retail,
 `tools/probe_scene_lighting.gd` under Forward+, and captures with
 `--rendering modern` that fail on any `SHADER ERROR`

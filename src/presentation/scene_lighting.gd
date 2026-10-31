@@ -2,12 +2,17 @@ class_name SceneLighting
 extends Node3D
 ## The modern profile's scene light: one [WorldEnvironment] and up to three
 ## [DirectionalLight3D] children built from a [SceneLightingSpec], plus the
-## frogger_model_ambient shader global.
+## frogger_model_ambient shader global, and in caves one [OmniLight3D].
 ##
 ## Nothing is created until [method apply], so a view that never applies a
 ## spec draws exactly as before. The environment's ambient colour is an sRGB
 ## property the renderer converts to linear, so the spec's linear ambient is
 ## passed through [method Color.linear_to_srgb].
+##
+## [method set_cave_light] switches the scene to cave mode: the directional
+## lights go, the ambient dims to [constant CaveLightShape.CAVE_AMBIENT] and
+## the omni light shaped by [CaveLightShape] follows the frog;
+## [method clear_cave_light] restores the applied spec.
 
 ## Shader global carrying the linear ambient to the lit model shaders.
 const AMBIENT_GLOBAL: StringName = &"frogger_model_ambient"
@@ -23,25 +28,76 @@ var applied_ambient: Vector3 = Vector3.ONE
 var applied_spec: SceneLightingSpec = null
 var _world_environment: WorldEnvironment = null
 var _lights: Array[DirectionalLight3D] = []
+var _cave_light: OmniLight3D = null
+var _cave_key: PackedInt64Array = PackedInt64Array()
 
 
-## Replaces the lights with those of [param spec] and sets the environment and ambient global.
+## Replaces the lights with those of [param spec] and sets the environment and
+## ambient global; in cave mode the spec is kept for [method clear_cave_light]
+## and the scene stays dark around the cave light.
 func apply(spec: SceneLightingSpec) -> void:
+	applied_spec = spec
 	_free_lights()
+	if _cave_light != null:
+		_enter_cave_mode()
+		return
 	for index: int in mini(spec.lights.size(), MAX_LIGHTS):
 		var light := _light(spec, spec.lights[index])
 		add_child(light)
 		_lights.append(light)
-	_apply_environment(spec)
+	_apply_environment(spec.ambient, 1.0)
 	_set_ambient(spec.ambient)
-	applied_spec = spec
 
 
-## Frees the lights and resets the ambient global to one; the environment stays.
+## Frees the lights and the cave light and resets the ambient global to one; the environment stays.
 func clear() -> void:
+	_free_cave_light()
 	_free_lights()
 	_set_ambient(Vector3.ONE)
+	if environment != null:
+		environment.ambient_light_energy = 1.0
 	applied_spec = null
+
+
+## Places the cave light [constant CaveLightShape.HEIGHT] above [param position]
+## with the range and energy [CaveLightShape] gives the radii under
+## [param mode], creating it and entering cave mode on the first call.
+func set_cave_light(position: Vector3, min_r2: int, max_r2: int, mode: CaveLightShape.Mode = CaveLightShape.DEFAULT_MODE) -> void:
+	if _cave_light == null:
+		_cave_light = OmniLight3D.new()
+		_cave_light.name = "CaveLight"
+		_cave_light.omni_attenuation = 0.0
+		_cave_light.shadow_enabled = false
+		_cave_light.light_specular = 0.0
+		_cave_light.light_color = Color.WHITE
+		add_child(_cave_light)
+		_cave_key = PackedInt64Array()
+		_free_lights()
+		_enter_cave_mode()
+	_cave_light.position = position + Vector3.UP * CaveLightShape.HEIGHT
+	var key := PackedInt64Array([min_r2, max_r2, mode])
+	if key == _cave_key:
+		return
+	_cave_key = key
+	_cave_light.omni_range = CaveLightShape.range_of(max_r2, mode)
+	_cave_light.light_energy = CaveLightShape.energy_of(min_r2, max_r2, mode)
+
+
+## Frees the cave light and restores the applied spec's lights and ambient.
+func clear_cave_light() -> void:
+	if _cave_light == null:
+		return
+	_free_cave_light()
+	if applied_spec != null:
+		apply(applied_spec)
+	elif environment != null:
+		environment.ambient_light_energy = 1.0
+		_set_ambient(Vector3.ONE)
+
+
+## The cave light, or null outside cave mode.
+func cave_light_node() -> OmniLight3D:
+	return _cave_light
 
 
 ## The directional lights currently applied.
@@ -85,7 +141,13 @@ func _shadow_mode(splits: int) -> DirectionalLight3D.ShadowMode:
 	return DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 
 
-func _apply_environment(spec: SceneLightingSpec) -> void:
+func _enter_cave_mode() -> void:
+	var ambient: Vector3 = applied_spec.ambient if applied_spec != null else Vector3.ONE
+	_apply_environment(ambient, CaveLightShape.CAVE_AMBIENT)
+	_set_ambient(ambient * CaveLightShape.CAVE_AMBIENT)
+
+
+func _apply_environment(ambient: Vector3, energy: float) -> void:
 	if environment == null:
 		environment = Environment.new()
 	if _world_environment == null:
@@ -94,8 +156,8 @@ func _apply_environment(spec: SceneLightingSpec) -> void:
 	environment.background_mode = Environment.BG_COLOR
 	environment.background_color = Color.BLACK
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(spec.ambient.x, spec.ambient.y, spec.ambient.z).linear_to_srgb()
-	environment.ambient_light_energy = 1.0
+	environment.ambient_light_color = Color(ambient.x, ambient.y, ambient.z).linear_to_srgb()
+	environment.ambient_light_energy = energy
 	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	environment.tonemap_exposure = 1.0
 	environment.glow_enabled = false
@@ -111,6 +173,15 @@ func _apply_environment(spec: SceneLightingSpec) -> void:
 func _set_ambient(ambient: Vector3) -> void:
 	applied_ambient = ambient
 	RenderingServer.global_shader_parameter_set(AMBIENT_GLOBAL, ambient)
+
+
+func _free_cave_light() -> void:
+	if _cave_light == null:
+		return
+	remove_child(_cave_light)
+	_cave_light.free()
+	_cave_light = null
+	_cave_key = PackedInt64Array()
 
 
 func _free_lights() -> void:
