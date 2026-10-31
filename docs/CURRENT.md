@@ -22,9 +22,9 @@ play check of every accepted level, the front end and the sandbox.
 S2a is accepted: `--texture-set=x4` draws the upscaled textures
 ([assets](reference/assets.md#upscaled-textures)), with the pages baked
 locally by the wrappers; the retail set stays the default and is unchanged.
-The ML upscale is a placeholder the owner replaces by hand over time
-([roadmap](PORTING.md#needed-from-the-owner)). S2b is done pending the play
-check: the HUD and the level-stack score lines draw with `draw_string` from
+The ML upscale is a placeholder; hand-made replacements are on hold
+([roadmap](PORTING.md#needed-from-the-owner)). S2b is accepted by the owner's
+play check: the HUD and the level-stack score lines draw with `draw_string` from
 the bitmap fonts under `assets/fonts/`, one per texture set, generated from
 the `newfont` grid ([fonts](reference/assets.md#fonts)); the vector font stays
 the owner's decision. Next: S2, the modern rendering spike
