@@ -32,6 +32,8 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P13g | Front-end water background: the options water surface and river bed behind the menu and stack pages, a prerequisite of P13c and P13d | S–M | Independent wave and mesh goldens; owner play check | Done; accepted by the owner's play check |
 | P13c | Options page, volumes, controller page, languages | L | Independent options, controller-page and language goldens; reference pictures of the options pages; owner play check | Done; accepted by the owner's play check |
 | P13d | High scores: table view and name entry | L | Independent default-table, insertion, name-entry and view goldens; owner play check | Done; accepted by the owner's play check |
+| S1 | [Native assets and architecture spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): import models, textures, sounds, maps and animations as Godot project resources; audit project layout against Godot practice and domain-driven design; document the domain models | L | Every accepted level plays from imported resources; the structure audit and domain documentation are reviewed by the owner | Next after X2; abandons runtime loading of FrogLord-saved files for now |
+| S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | After S1 |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -45,12 +47,41 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 
 Network play is deferred. Multiplayer levels belong to P15.
 
+## S1 and S2: native asset and modern rendering spikes
+
+The owner has set two spikes ahead of P13e. They deliberately leave the
+compatibility mantra: until they conclude, FrogLord-saved files, runtime loading
+of the player's archive and executable, and the stored-colour fidelity checks
+stop being requirements. That compatibility is deferred, not discarded; P14 and
+the `pc-retail-v3.0e` target return to the plan later if the owner wants them.
+
+S1 imports every asset into the project: models and animations as Godot
+meshes and animations, textures as imported images, sounds and music as audio
+streams, maps as scenes or resources, with import tooling that reads the
+retail files once. It then audits the project layout, class boundaries and
+naming against Godot's project organisation practice and domain-driven design,
+and writes the domain model documentation (bounded contexts, aggregates and
+their invariants) under `docs/reference/`. The audit decides the reorganisation
+and the cleanup of code that only served runtime decoding.
+
+S2 replaces the C lighting recipe, its per-vertex stored-colour shaders and the
+map's light records with Godot's lights, shadows and material pipeline, and
+replaces texture-page reconstruction and colour keys with ordinary imported
+textures and materials. Goldens that assert C colours are retired or re-scoped
+to what still holds (geometry, animation, gameplay).
+
+Two decisions gate S1 and are listed below: where imported retail-derived
+assets live, since `AGENTS.md` forbids committing retail bytes, and the
+revised project boundaries that replace the runtime-loading rules once the
+spike starts.
+
 ## Needed from the owner
 
 | What | Needed by | Why |
 |---|---|---|
 | A licence for this project's own code | Before the repository is made public | |
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
+| Where imported assets live | Before S1 | Importing retail models, textures and sounds as project resources puts retail-derived bytes in the project. Either they are committed (the repository stays private and the licence decision covers them) or the import tool writes them to a git-ignored folder on each machine. `AGENTS.md`'s retail-bytes rule and runtime-loading boundaries are revised to match at S1's start. |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage
