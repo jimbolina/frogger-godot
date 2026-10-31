@@ -1,9 +1,11 @@
 # Domain language
 
-The core domain is faithful Frogger behavior on player-supplied PC data.
-The [source policy](sources.md) assigns format authority to FrogLord and
-behavior authority to frozen C, checked against retail observations. Record
-disagreements in the relevant technical reference; do not invent rules.
+The core domain is faithful Frogger behavior played from the imported assets.
+Frozen C is the behavior authority, checked against retail observations; the
+committed assets are the content authority; FrogLord is the format authority
+for the archive readers ([source policy](sources.md),
+[domain model](domain-model.md#authority)). Record disagreements in the
+relevant technical reference; do not invent rules.
 
 ## Subject index
 
@@ -12,22 +14,22 @@ disagreements in the relevant technical reference; do not invent rules.
 | Source data | [Build recognition](../../archive/docs/formats/build-detection.md), [archives](../../archive/docs/formats/archives.md), [executable tables](../../archive/docs/formats/executable-tables.md), [textures](../../archive/docs/formats/textures.md), [models](../../archive/docs/formats/models.md), [model animation](../../archive/docs/formats/animation.md), [maps](../../archive/docs/formats/maps.md) |
 | Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [paths](gameplay/paths.md), [entities](gameplay/entities.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md), [front end](gameplay/front-end.md) |
 | Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [single-player HUD](rendering/README.md#single-player-hud), [gameplay projection](rendering/gameplay-projection.md), [effects](rendering/effects.md) |
-| Assets | [Assets](assets.md), [archive](../../archive/README.md) |
+| Model and assets | [Domain model](domain-model.md), [architecture](architecture.md), [assets](assets.md), [archive](../../archive/README.md) |
 | Verification | [Testing and inspection guide](testing/README.md), [golden specifications](../../tests/golden/README.md), [sandbox](architecture.md#sandbox) |
 
 ## Contexts and identities
 
-**Source compatibility** describes the player's selected files and decoded
-facts. **Live play** describes one running game's state and rules.
-Application adapters translate between these meanings. Inspection owns scenarios,
-presets and verification restrictions; presentation owns host input and drawing.
-`GameplayRun` coordinates `Frog`, contacts and system candidates, publishing
-detached `GameplayState` values after an atomic commit. Whole-map single-player play includes entity reactions, checkpoints, rewards
-and level flow. A one-entity fixed-point probe remains available. See [architecture](architecture.md)
-for dependencies and ownership.
+**Archive** describes the retail files and the readers and importer that
+decode them; **data** is the typed records imported from them, which the game
+plays from; **live play** is one running game's state and rules. Application
+adapters translate data records into gameplay definitions. Inspection owns
+scenarios, presets and supported-scenario restrictions; presentation owns host
+input and drawing. The [domain model](domain-model.md) maps these contexts,
+their aggregates, events and asset identities; see
+[architecture](architecture.md) for dependencies and ownership.
 
-The first gameplay definitions are detached static terrain grids, copied by
-`TerrainGridSetup` from decoded map records. Pure `GridQueries` uses these
+Gameplay definitions are detached copies of data records. Terrain grids are
+copied by `TerrainGridSetup` from the imported map records; pure `GridQueries` uses these
 definitions without files or scene resources; see [grid](gameplay/grid.md).
 `PathSetup` likewise copies supported paths into definitions. Each moving entity
 owns a separate runner, including when paths share geometry. See
@@ -35,8 +37,8 @@ owns a separate runner, including when paths share geometry. See
 
 | Term | Meaning and authoritative contract |
 |---|---|
-| Source / build | Selected files versus the recognized executable configuration. Identities are scoped to that source/build; see [build detection](../../archive/docs/formats/build-detection.md). |
-| Archive resource / Godot Resource | An original indexed file versus an engine resource object. An archive index is meaningful only with its owning source; see [archives](../../archive/docs/formats/archives.md). |
+| Source / build | The retail files the importer read versus the recognized build they belong to. `AssetIndex` records the build name and the files' digests; build-specific identities such as callback addresses are keyed by it. See [build detection](../../archive/docs/formats/build-detection.md). |
+| Archive resource / Godot Resource | An original indexed file versus an engine resource object. The resource id (its MWI position) keys the imported asset in `AssetIndex`; see [archives](../../archive/docs/formats/archives.md) and [asset identities](domain-model.md#asset-identities). |
 | Map / level | A decoded map resource versus a level selected through the executable map book and its dependencies; see [maps](../../archive/docs/formats/maps.md). High/low detail use different resources. |
 | Path / path runner | Authored map geometry and its source index versus one mutable cursor over a detached definition. A path can serve multiple entities with separate cursors; see [paths](gameplay/paths.md). |
 | Form book entry / form grid | A named object kind selecting behavior, model and script versus a map's indexed collision grid. Form-book ids are scoped to a theme (or GENERAL); bounded contact inspection reads the grid without running frog reactions. |
@@ -47,13 +49,14 @@ owns a separate runner, including when paths share geometry. See
 
 ## Following a form
 
-`ExeTables.theme_book()` decodes forms through `ThemeBook`. A map's theme and
-form-book id select `ThemeBook.get_form()`; the GENERAL bit changes the owning
-theme. `GameNameLists` supplies the form name and `entity_name_for()` applies
-FrogLord's named entity overrides. `GameData` resolves the selected model/WAD
-for existing tools; `EntityModelSelection` substitutes behavior-selected level
-WAD slots (Volcano switch colours, Jungle plinth `op_id`). Parser examples live in the executable-table unit tests;
-retail facts live in the corresponding golden tests.
+`GameTables.theme_book()` on the catalog's tables gives the `ThemeBook`. A
+map's theme and form-book id select `ThemeBook.get_form()`, a `FormBookEntry`;
+the GENERAL bit changes the owning theme. `GameNameLists` supplies the form
+name and `entity_name_for()` applies FrogLord's named entity overrides.
+`AssetCatalog.model_resource_for()` picks the form's model through the level
+or GENERAL WAD; `EntityModelSelection` substitutes behavior-selected level WAD
+slots (Volcano switch colours, Jungle plinth `op_id`). Table examples live in
+`tests/unit/data/tables/`; retail facts live in the archive suite's goldens.
 
 Entity setup resolves FrogLord names through `EntityBehaviorCatalog` into
 typed implementation and payload capabilities. Unknown names retain the

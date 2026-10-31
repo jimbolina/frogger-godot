@@ -2,31 +2,34 @@
 
 ## Dependencies
 
-- `archive/source/` decodes the retail files into `src/data` records, with file
-  I/O where needed. Classes derive from `RefCounted` and depend on neither
-  Nodes/tree access nor conversion, gameplay, scenes or presentation. `GameData`
-  is the retail-backed `AssetCatalog`, used by the importer and the archive suite
-  only; the game opens `ImportedAssets` from `assets/`.
-- `src/game/` contains `RefCounted` definitions and exclusively owned terrain,
-  path, entity, camera, animation-control and RNG state.
-  It receives validated definitions and tick commands from setup adapters;
-  it does not depend on source readers, conversion or presentation, open files,
-  poll input, consult wall time or access Nodes. Godot math types are allowed.
-- `src/application/` owns source-to-game adapters. They resolve source names
-  and supply concrete dependencies. Direct environment access is restricted to
-  explicit loader adapters; source readers retain ownership of file I/O.
+The [domain model](domain-model.md#context-map) maps the contexts; this list
+states what each layer may use.
+
 - `src/data/` holds the typed `Resource` records the game plays from (maps,
-  models, textures, tables, sound banks, demos, names) and the abstract
-  `AssetCatalog` the rest of the game is typed against; it depends on nothing
+  models, textures, tables, sound banks, demos, names), the abstract
+  `AssetCatalog`, `AssetIndex` and `FroggerIds`. It depends on nothing
   game-side. Large map sections are stored as packed columns and rebuilt lazily.
-  `archive/` holds the retail readers, importer and retail goldens; nothing in
-  the game depends on it.
+- `src/game/` contains `RefCounted` definitions and exclusively owned run
+  state and rules. It receives validated definitions and tick commands; it does
+  not depend on data records, application, conversion, inspection or
+  presentation, open files, poll input, consult wall time or access Nodes.
+  Godot math types are allowed.
+- `src/application/` owns the adapters from data records to gameplay
+  definitions and the behavior and callback catalogs. Only `loaders/`
+  (`ImportedAssets`) and `storage/` (`ProgressStore`, `HighScoreStore`) may
+  touch files or the environment.
+- `src/convert/` builds render resources (meshes, materials, shaders, texture
+  pages, effect geometry) from data records and committed gameplay state.
 - `src/inspection/` owns scenarios, validated options, corridor guards, presets
-  and manifests. Presentation translates CLI/environment inputs into explicit
-  options. Gameplay and application never depend on inspection.
-- Conversion builds render resources from decoded data. Presentation owns
-  scene lifetimes, input translation and drawing. `MapSceneData` is a rendering
-  dependency bundle, not the future world's authoritative state.
+  and their manifests, and the sandbox. Presentation translates CLI and
+  environment inputs into explicit options. Gameplay and application never
+  depend on inspection.
+- `src/presentation/` and `scenes/` own scene lifetimes, input translation,
+  drawing and audio playback. `MapSceneData` is a rendering dependency bundle,
+  not authoritative state.
+- `archive/` holds the retail readers (`source/`, which depend only on
+  `src/data`), the retail-backed `GameData`, the importer and the retail
+  goldens. Nothing outside `archive/` depends on it.
 - Simulation uses direct calls for ordered updates. Notifications follow
   state changes; subscriber order must not decide collision outcomes or RNG use.
   Rendering interpolation cannot feed back into authoritative state.
@@ -74,11 +77,13 @@ the historical `fixture_lives` key. Runtime consumers use the composed records.
 
 ## Current lifetimes
 
-`GameData` owns its archive, decoded executable tables and caches. Treat shared
-decoded objects as read-only after construction. Closing it closes its archive;
-retained decoded records do not make later archive reads valid.
+`ImportedAssets` loads its index, tables and name lists on open and every other
+record through Godot's resource cache, so records are shared: treat them as
+read-only. In the archive suite and the importer, `GameData` owns its archive;
+closing it closes the archive, and retained records do not make later archive
+reads valid.
 
-Viewer `open_data(game_data, take_ownership = false)` borrows by default. The
+Viewer `open_data(catalog, take_ownership = false)` borrows by default. The
 caller must keep borrowed data open until every consumer has detached. A viewer
 that opens its own data passes `true`, closes it when replaced or exiting, and
 releases its drawing resources. Reattaching the same object never closes it or
@@ -96,7 +101,7 @@ Each command operates on private candidate copies and commits only on success.
 Recorded demo commands follow the same transaction: only a committed result
 reports consumed input. `DemoPlaybackSession` owns duration/cursor state and
 accepts that result after synchronous or worker completion. `DemoSetup` resolves
-source resources and initial state without relaxing inspection admission. See
+the demo's resources and initial state without relaxing a preset's guard. See
 [recorded control](gameplay/simulation.md#recorded-demo-control).
 Entity/path advancement builds its next independent state directly. The entity aggregate exposes `begin_candidate`, detached snapshots and ordered
 update methods; the gameplay aggregate never accesses its private state.
@@ -136,7 +141,7 @@ Optional visibility lifecycle adds a final camera-to-group selection and live
 creation/renewal phase after animation, before commit. Its pure selector and
 owned live-list state depend only on detached group facts and camera snapshots.
 Late selection or polygon-budget rejection rolls back the same aggregate.
-Persistent paths outlive live instances. Admitted scripted lifetimes initialize
+Persistent paths outlive live instances. Supported scripted lifetimes initialize
 immortals before the first tick and run retirement/custom/script visits in live
 order, retaining previous parent poses until their own visit. Authored slots never compact when
 instances disappear; live membership gates collision and attachment lookup.
@@ -148,10 +153,10 @@ Active zones can participate in this transaction: visibility consumes the
 updated candidate camera, and a late rejection restores the prior zone and
 camera along with the entity state. Prescribed retail camera probes use the
 same detached camera/entity components with private candidates; they do not
-add teleport commands or bypass gameplay admission in `GameplayRun`.
+add teleport commands or bypass gameplay validation in `GameplayRun`.
 
 Opt-in platform execution requires an integrated camera. The order is paths,
-source-ordered entity transforms and admitted custom/script updates, frog
+source-ordered entity transforms and supported custom/script updates, frog
 control, movement, modifiers, terrain collision,
 sequential primitive/FORM reactions, camera, animation scripts, pose, then aggregate commit.
 The scan caches its neighborhood and forbidden authored identity; each candidate
@@ -176,12 +181,13 @@ partial contact. `ZoneSetup` converts source records; pure `ZoneQueries` owns
 matching. Active zones are separately supplied through `LevelDefinition.camera_zones`.
 Frog selection (zone and region) and camera-consumed identity are detached
 transaction state; selection occurs here once, not again after contact correction.
-Empty active definitions preserve existing runs. The JUN1 setup adapter verifies
-the independent admission manifest before enabling its all-attached preset.
-ORG1 additionally pins supplied behavior names and the animated frog collision
-point closure; its guard validates admitted actions, roots and unpowered state
-before contacts and commit. Excluded contacts require that guard, while their
-admitted logical updates remain live. Setup rejects changed proof dependencies.
+Empty active definitions preserve existing runs. The JUN1 and ORG1 presets
+are supported scenarios: each checks its manifest's provenance (build, resource
+mappings, books, scripts and behavior names) against the supplied assets before
+it enables its guard and updates, and refuses to start when any of them differ.
+The ORG1 guard also limits the frog to the supported actions, collision roots
+and unpowered state before contacts and commit; contacts it excludes still run
+their logical updates.
 The viewer pauses on rejection. R reconstructs the whole inspection, including
 input buffers and presentation clocks, while retaining the selected input mode.
 
@@ -241,14 +247,14 @@ script/animation state, RNG, ordered requests and a frog effect; failures
 discard all candidate outputs. `EntityScriptSetup` supplies decoded named
 programs and callbacks, including turtle creation's script replacement.
 `GameplayRun` owns frog reactions, shared checkpoint covered bits and commit.
-Admitted pink frog updates receive the candidate frog pose/mode and previous HIT;
+Supported pink frog updates receive the candidate frog pose/mode and previous HIT;
 their owned carrier/timer/death state commits with the same aggregate. Presentation
 consumes the resulting pose and hides the dead frog without deciding pickup.
 Snapshot and contact-scan order stay
 separate from the source live-update order.
 The [entity contract](../../tests/golden/specs/entities.md#org1-route-proof) owns the
-expanded behavior closure and source proof. General inspection remains
-script-free; admitted definitions opt into these updates.
+expanded behavior set and its source provenance. General inspection remains
+script-free; supported definitions opt into these updates.
 
 The aggregate clones frog and shared state before entity updates. It visits
 entities in descending all-attached live order, executes custom/script updates,
@@ -292,7 +298,7 @@ the normal run; it adds no gameplay rules.
   `EntityCollisionDefinition` and component `RunStart`. `SandboxEntityTemplates`
   borrows resolved entities from `GameplaySetup` whole-map setups of the
   supported levels, so scripts, forms, payloads and rewards come from the
-  supplied executable. `SandboxPresets` holds the named layouts.
+  executable's tables. `SandboxPresets` holds the named layouts.
 - `src/convert/`: `EntityModelOrigins` records each slot's source theme and
   level; `MaplessEntityResources` builds entity meshes from those origins
   without a decoded map.
@@ -307,7 +313,8 @@ application setup, and presentation only translates input into spawner and
 preset calls. To cover a new mechanic, append a `Layout` with
 `Layout.add(entity, cell, path, speed, form)` entries in `SandboxPresets.all()`,
 using FrogLord names. Entries the current data cannot supply are skipped and
-reported; the retail preset test requires every entry to apply with player data.
+reported; the archive suite's preset test requires every entry to apply with the
+retail data.
 
 Limitations:
 
@@ -315,7 +322,7 @@ Limitations:
   their initial path and script state.
 - Zones are identified by colour and the panel legend; there are no in-world labels.
 - Map-less models are unlit: no map supplies lights.
-- With player data, five kinds stay unspawnable: `ORG_BABY_FROG` (needs a parent
+- With the complete data, five kinds stay unspawnable: `ORG_BABY_FROG` (needs a parent
   log and visibility lifecycle), `ORG_LOG_SNAKE` (needs a parent log),
   `GEN_TOP_LEFT` and `GEN_BOTTOM_RIGHT` (level fade bounds markers) and
   `FOR_SWAYING_BRANCH` (no supported level places it).

@@ -1,29 +1,29 @@
 class_name Jun1ZoneLifecycleSetup
 extends RefCounted
-## Admits only independently pinned JUN1 logs for the prescribed camera probe.
+## Selects only the pinned JUN1 logs for the prescribed camera probe.
 
-const MANIFEST: String = "res://src/inspection/jun1_zone_lifecycle_admission.json"
+const MANIFEST: String = "res://src/inspection/jun1_zone_lifecycle_preset.json"
 var error: String = ""
 var definitions: Array[EntityDefinition] = []
 var lifecycle: EntityLifecycleDefinition = null
 var diagnostics: PackedStringArray = PackedStringArray()
 
-## Resolves supplied behavior names and resources; this does not admit frog contact.
+## Resolves supplied behavior names and resources; this does not enable frog contact.
 static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecycleSetup:
 	var result := Jun1ZoneLifecycleSetup.new()
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
 	if not parsed is Dictionary:
-		result.error = "JUN1 zone/lifecycle admission manifest unavailable"
+		result.error = "JUN1 zone/lifecycle preset file unavailable"
 		return result
 	var proof: Dictionary = parsed
-	if proof.get("schema") != "jun1-zone-lifecycle-admission-v1" or data.version_name != proof.get("build"):
+	if proof.get("schema") != "jun1-zone-lifecycle-preset-v1" or data.version_name != proof.get("build"):
 		result.error = "JUN1 zone/lifecycle requires audited pc-retail-v3.0e data"
 		return result
 	var book: MapBookEntry = data.map_book_entry(scene.level)
 	if book == null or book.map_id(false) != _integer(proof.map_resource_id):
 		result.error = "JUN1 zone/lifecycle high-detail map mapping changed"
 		return result
-	var source_issue: String = RetailExplorationInputs.provenance_error(data, proof)
+	var source_issue: String = ExplorationInputs.provenance_error(data, proof)
 	if not source_issue.is_empty():
 		result.error = "JUN1 zone/lifecycle map, paths or zones changed: " + source_issue
 		return result
@@ -47,10 +47,10 @@ static func from_data(data: AssetCatalog, scene: MapSceneData) -> Jun1ZoneLifecy
 	result.error = groups.error
 	result.lifecycle = groups.definition
 	for index: int in scene.map.entities.size():
-		var admitted: bool = false
+		var selected: bool = false
 		for entity: EntityDefinition in result.definitions:
-			admitted = admitted or entity.entity_index == index
-		if not admitted:
+			selected = selected or entity.entity_index == index
+		if not selected:
 			result.diagnostics.append("JUN1 EMTP[%d]: omitted from log-only camera/lifecycle probe; no behavior or contact executed" % index)
 	return result
 

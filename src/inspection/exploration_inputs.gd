@@ -1,6 +1,6 @@
-class_name RetailExplorationInputs
+class_name ExplorationInputs
 extends RefCounted
-## Validates supplied determining resources against independently generated proof facts.
+## Checks that supplied resources match the facts an exploration preset file was generated from.
 
 ## Checks the imported build, resource mappings, source-ordered books, scripts
 ## and model counterparts.
@@ -19,7 +19,7 @@ static func validate(data: AssetCatalog, map: MapFile, proof: Dictionary, level:
 	var book_rows := PackedStringArray()
 	var expected_models: Array = proof.get("entity_model_resources", [])
 	if expected_models.size() != map.entities.size():
-		return "authored entity/model admission inventory"
+		return "authored entity/model inventory"
 	for index: int in map.entities.size():
 		var entity: MapEntitySpan = map.entities[index]
 		var form: FormBookEntry = book.get_form(map.general.theme, entity.form_id)

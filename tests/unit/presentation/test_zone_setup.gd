@@ -1,5 +1,5 @@
 extends GutTest
-## Admission is atomic and copies source rectangles before gameplay owns them.
+## Zone setup is atomic and copies source rectangles before gameplay owns them.
 
 func _map() -> MapFile:
 	var map := MapFile.new()

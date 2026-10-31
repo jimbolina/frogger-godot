@@ -82,7 +82,7 @@ absolute transfer/exit, forced turns, startup, frozen selection, fixed mode,
 manual and semiforced controls. Retail generation independently reads the
 player's archive and JUN1 GENE/ZONE records. Its two probe sequences use Y=0,
 40 ticks per cell, and a fresh camera per sequence. The second starts with a
-180-degree modification matrix. These are camera stimuli, not admitted frog routes.
+180-degree modification matrix. These are camera stimuli, not supported frog routes.
 
 ```powershell
 tools/build_terrain_oracle.ps1 -OutputDirectory <external-oracle>

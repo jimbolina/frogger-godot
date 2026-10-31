@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Independent ORG1 FORM writers and conservative all-neighbor admission facts.
+"""Independent ORG1 FORM writers and conservative all-neighbor facts.
 
-The input context comes from verify_org1_admission.retail_counterexamples. This
-module does not read GDScript output, admit a route, or serialize retail bytes.
+The input context comes from verify_org1_corridor.retail_counterexamples. This
+module does not read GDScript output, support a route, or serialize retail bytes.
 Bounds cover every integer path distance, rather than only authored starts.
 """
 from fractions import Fraction
@@ -263,8 +263,8 @@ def geometry_script_closure(context):
     return result
 
 
-def neighbor_admission(facts, context, candidate=CANDIDATE):
-    """Close FORM writers and classify all authored identities without admission."""
+def neighbor_facts(facts, context, candidate=CANDIDATE):
+    """Close FORM writers and classify all authored identities without supporting a route."""
     data = context['data']
     if (facts['entity_count'] != len(AUTHORED_FORMS)
             or [item['entity_index'] for item in context['inventory']] != list(range(len(AUTHORED_FORMS)))):
@@ -424,8 +424,8 @@ def neighbor_admission(facts, context, candidate=CANDIDATE):
         if item['bonus_callback'] and item['contact_status'] not in (
                 'excluded_by_origin_sphere','excluded_by_all_cycle_origin_sphere'):
             raise ValueError(f'ORG1 entity {index} bonus callback is not excluded by a certified origin sphere')
-    return dict(schema='org1-neighbor-admission-v1', candidate_x=list(candidate[:2]),
-                candidate_z=list(candidate[2:]), route_admitted=False,
+    return dict(schema='org1-neighbors-v1', candidate_x=list(candidate[:2]),
+                candidate_z=list(candidate[2:]), route_supported=False,
                 build=facts['build'], map_sha256=facts['map_sha256'], executable_sha256=facts['executable_sha256'],
                 authored_count=len(records), form_writer_closure_complete=True,
                 behavior_binding_closure_complete=True,

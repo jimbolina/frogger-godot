@@ -1,5 +1,5 @@
 extends RetailTest
-## Full admitted ORG1 phases and ordered visits against independent source facts.
+## Full supported ORG1 phases and ordered visits against independent source facts.
 
 var _data: GameData
 var _workers: Array[TerrainTickWorker] = []
@@ -43,7 +43,7 @@ func test_visibility_pickup_rollback_and_full_reset() -> void:
 	if not scenario.error.is_empty():
 		return
 	assert_true((scenario.level.tick_guard as ExplorationGuard).collectable_indices.is_empty())
-	assert_true((scenario.level.tick_guard as ExplorationGuard).scripted_visibility_admitted)
+	assert_true((scenario.level.tick_guard as ExplorationGuard).scripted_visibility_supported)
 	var run: GameplayRun = GameplayRun.create(scenario.level, scenario.initial)
 	assert_eq(run.error, "")
 	var initial: String = JSON.stringify(TerrainTrace.facts(run.snapshot(), true))
@@ -116,7 +116,7 @@ func _road_route(name: String) -> void:
 		return
 	_route(name, fixture.tick_limit, fixture.commands, Org1ExplorationSetup.ROAD_PRESET)
 
-func test_road_admission_and_rejected_tick_are_atomic() -> void:
+func test_road_preset_and_rejected_tick_are_atomic() -> void:
 	var scenario: TerrainScenario = _scenario(Org1ExplorationSetup.ROAD_PRESET)
 	assert_eq(scenario.error, "")
 	if not scenario.error.is_empty():
@@ -160,7 +160,7 @@ func test_road_admission_and_rejected_tick_are_atomic() -> void:
 	assert_eq(run.reset(scenario.initial), "")
 	assert_eq(JSON.stringify(TerrainTrace.facts(run.snapshot(), true)), initial)
 
-func test_admission_dependencies_and_complete_reset() -> void:
+func test_preset_dependencies_and_complete_reset() -> void:
 	var scenario: TerrainScenario = _scenario()
 	assert_eq(scenario.error, "")
 	if not scenario.error.is_empty():

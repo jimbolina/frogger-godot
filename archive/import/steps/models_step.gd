@@ -70,9 +70,9 @@ static func imported_banks(context: ImportContext) -> Dictionary[String, VloFile
 				continue
 			context.banks[bank_name] = bank
 		for image: VloImage in bank.images:
-			if image.texture != null:
-				continue
 			var path: String = context.texture_png_path(image.texture_id)
+			if image.texture != null and image.texture.resource_path == path:
+				continue
 			image.texture = load(path) as Texture2D if ResourceLoader.exists(path) else null
 			if image.texture == null:
 				context.report("models: texture %d of %s is not imported at %s" % [image.texture_id, bank_name, path])

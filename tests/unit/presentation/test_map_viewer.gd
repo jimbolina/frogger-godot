@@ -210,6 +210,6 @@ func test_synthetic_path_camera_frames_off_origin_geometry() -> void:
 	segment.start = Vector3i(4000, -200, 6000)
 	segment.end = Vector3i(5000, -200, 6000)
 	definition.segments.append(segment)
-	_viewer._frame_path(definition)
+	MapScenarioRun.frame_path(_viewer, definition)
 	assert_eq(GameSpace.to_game(_viewer._target), Vector3i(4500, -200, 6000))
 	assert_true(_viewer._custom_camera)

@@ -1,5 +1,5 @@
 extends RetailTest
-## Whole-map admission exercises every authored dependency of the playable level set.
+## Whole-map setup exercises every authored dependency of the playable level set.
 
 func test_all_playable_levels_resolve_and_start_with_supplied_identity() -> void:
 	var data: GameData = GameData.open(retail_source(), FrogLordConfigLibrary.new().load_version("pc-retail-v3.0e"))

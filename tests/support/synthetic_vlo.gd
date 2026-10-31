@@ -40,8 +40,9 @@ static func abgr(rgb: Array[int], stored_alpha: int = 0) -> PackedByteArray:
 	return out
 
 
-## The bank of [param specs]; with [param decode_pixels] false the images
-## keep no pixels.
+## The bank of [param specs], each image holding its pixels and a
+## [member VloImage.texture] of them; with [param decode_pixels] false the
+## images keep neither.
 static func bank(specs: Array[Spec], decode_pixels: bool = true) -> VloFile:
 	var vlo := VloFile.new()
 	var offset: int = VloFile.HEADER_SIZE + 24 * specs.size()
@@ -65,6 +66,36 @@ static func bank(specs: Array[Spec], decode_pixels: bool = true) -> VloFile:
 		if decode_pixels:
 			image.pixels = VloFile.decode_rgba(s.abgr, s.padded_width, s.padded_height,
 				image.has_flag(VloImage.FLAG_BLACK_IS_TRANSPARENT))
+			image.texture = ImageTexture.create_from_image(Image.create_from_data(s.padded_width, s.padded_height,
+				false, Image.FORMAT_RGBA8, image.pixels))
 		vlo.images.append(image)
 		offset += s.abgr.size()
 	return vlo
+
+
+## A [TexturePageSet] of [param banks]: each image's texture copied onto
+## black pages at its VRAM position in bank order, without a colour key; with
+## [param with_sky] also a magenta sky atlas with a slot per page of
+## [param sky_pages].
+static func page_set(banks: Array[VloFile], with_sky: bool = false, sky_pages: PackedInt32Array = PackedInt32Array()) -> TexturePageSet:
+	var result := TexturePageSet.new()
+	for page: int in TexturePageSet.PAGE_COUNT:
+		var pixels: Image = Image.create(TexturePageSet.PAGE_SIZE, TexturePageSet.PAGE_SIZE, false, Image.FORMAT_RGBA8)
+		pixels.fill(Color.BLACK)
+		var page_rect := Rect2i(0, page * TexturePageSet.PAGE_SIZE, TexturePageSet.PAGE_SIZE, TexturePageSet.PAGE_SIZE)
+		for source: VloFile in banks:
+			for image: VloImage in source.images:
+				var upload := Rect2i(image.vram_x, image.vram_y, image.padded_width, image.padded_height)
+				var overlap: Rect2i = upload.intersection(page_rect)
+				if image.texture != null and overlap.has_area():
+					pixels.blit_rect(image.texture.get_image(), Rect2i(overlap.position - upload.position, overlap.size),
+						overlap.position - page_rect.position)
+		result.pages.append(ImageTexture.create_from_image(pixels))
+		result.colour_keyed.append(false)
+	if with_sky:
+		var atlas: Image = Image.create(TexturePageSet.PAGE_SIZE, TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, sky_pages.size()),
+			false, Image.FORMAT_RGBA8)
+		atlas.fill(Color.MAGENTA)
+		result.sky_atlas = ImageTexture.create_from_image(atlas)
+		result.sky_pages = sky_pages
+	return result

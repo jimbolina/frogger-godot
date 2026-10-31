@@ -3,7 +3,7 @@
 import org1_traffic as traffic
 import make_golden_paths as paths
 import make_golden_grid as grid
-import org1_hilite_admission as hilite
+import org1_hilite_reach as hilite
 from org1_round_trip import Route
 
 
@@ -21,7 +21,7 @@ class RoadRoute(Route):
         super().pose_tick(tick);self.primitive_contacts=[]
 
     def store_pose(self,action,cel):
-        """Mirror STATIC source cache and previous admitted-root sample lifetime."""
+        """Mirror STATIC source cache and previous supported-root sample lifetime."""
         key=(action,self.decoded[2][action]['cels'][cel])
         if key==self.stored_key:return
         self.stored_key=key

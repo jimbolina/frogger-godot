@@ -11,8 +11,10 @@ static func is_vlo(bytes: PackedByteArray) -> bool:
 	return bytes.size() >= 4 and bytes.slice(0, 4) == VloFile.SIGNATURE.to_ascii_buffer()
 
 
-## Parses [param bytes]. With [param decode_pixels] false only the headers
-## are read (pixels stay empty). Check [member VloFile.error].
+## Parses [param bytes]. Each image gets its decoded pixels and, as an
+## imported image has, a [member VloImage.texture] of them. With
+## [param decode_pixels] false only the headers are read (no pixels or
+## texture). Check [member VloFile.error].
 static func parse(bytes: PackedByteArray, decode_pixels: bool = true) -> VloFile:
 	var vlo := VloFile.new()
 	var reader := ByteReader.new(bytes)
@@ -50,6 +52,8 @@ static func parse(bytes: PackedByteArray, decode_pixels: bool = true) -> VloFile
 		if decode_pixels:
 			image.pixels = VloFile.decode_rgba(bytes.slice(image.data_offset, image.data_offset + byte_count),
 				image.padded_width, image.padded_height, image.has_flag(VloImage.FLAG_BLACK_IS_TRANSPARENT))
+			image.texture = ImageTexture.create_from_image(Image.create_from_data(image.padded_width,
+				image.padded_height, false, Image.FORMAT_RGBA8, image.pixels))
 		reader.skip(byte_count)
 	reader.align(4)
 	if reader.has_more():

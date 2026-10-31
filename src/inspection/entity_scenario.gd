@@ -109,7 +109,8 @@ func attach_data(data: AssetCatalog, selected_level_code: String = "ORG1") -> St
 	contact_definitions.clear()
 	for contact: FormContactDefinition in contacts.definitions:
 		contact_definitions.append(contact.copy())
-	contact_entity_index = 12 if selected_code == "ORG1" and _has_contact_index(12) else -1
+	var preferred: int = ScenarioPresets.preferred_entity_id(selected_code)
+	contact_entity_index = preferred if preferred >= 0 and _has_contact_index(preferred) else -1
 	if contact_entity_index < 0:
 		for contact: FormContactDefinition in contact_definitions:
 			if contact.unsupported_reason.is_empty() and not (contact.entity_flags & EntityDefinition.NO_COLLISION):

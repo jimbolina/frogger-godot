@@ -91,8 +91,7 @@ func test_texture_builder() -> void:
 	assert_eq(TextureBuilder.pixel_rect(b), Rect2i(1, 1, 2, 2))
 	var inner: Image = TextureBuilder.build_unpadded_image(b)
 	assert_eq(inner.get_pixel(0, 0), Color8(5, 105, 205, 255))
-	var texture: ImageTexture = TextureBuilder.build_texture(b)
-	assert_eq(texture.get_size(), Vector2(4, 4))
+	assert_eq(b.texture.get_size(), Vector2(4, 4))
 
 
 func test_texture_library_lookup_order() -> void:
@@ -112,5 +111,4 @@ func test_texture_library_lookup_order() -> void:
 	remap.texture_ids = PackedInt32Array([11, 10])
 	assert_eq(library.image_for_local(remap, 0), first.images[1])
 	assert_null(library.image_for_local(remap, 2))
-	var texture: ImageTexture = library.texture_for_id(11)
-	assert_same(library.texture_for_id(11), texture, "textures are built once")
+	assert_same(library.texture_for_id(11), first.images[1].texture, "the image's own texture")

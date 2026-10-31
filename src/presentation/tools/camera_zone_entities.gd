@@ -18,7 +18,7 @@ func configure(data: AssetCatalog, inspection: CameraZoneInspection) -> String:
 		if not cache.has(resource):
 			var file: MofFile = data.read_model(resource, problems)
 			if file == null or not file.error.is_empty():
-				return "Cannot render admitted JUN1 log: " + "; ".join(problems)
+				return "Cannot render pinned JUN1 log: " + "; ".join(problems)
 			files[resource] = file
 			cache[resource] = ModelMeshLibrary.mesh_for(data, resource, inspection.map_scene.library, inspection.map_scene.preferred)
 		_meshes.append(cache[resource])

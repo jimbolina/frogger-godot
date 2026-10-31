@@ -1,6 +1,6 @@
 class_name EntityDistanceSound
 extends RefCounted
-## Frozen PlaySoundDistance admission shared by scripts and custom behaviors.
+## Frozen PlaySoundDistance gating shared by scripts and custom behaviors.
 
 ## Source closest-distance seed used when no frog is active.
 const NO_FROG_MODULUS: int = 9999999

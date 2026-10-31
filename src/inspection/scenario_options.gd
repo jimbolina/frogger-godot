@@ -13,7 +13,7 @@ var tick_limit_override: bool = false
 var exploration_preset: String = ""
 ## Whether this inspection supplies custom/script execution rather than transform-only facts.
 var scripted_entities: bool:
-	get: return exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]
+	get: return ScenarioPresets.exploration_scripted(exploration_preset)
 var entity_reactions: bool:
 	get: return reactions != Reaction.NONE
 var platforms_enabled: bool:
@@ -24,14 +24,14 @@ var entity_lifecycle: bool:
 ## Resolves explicit selections and fixture defaults, preserving command-line diagnostics.
 func configure(scenario: TerrainScenario, reaction: String, lifetime: String, preset: String, requested_level: String, data_available: bool, seed_text: String, limit_text: String) -> String:
 	exploration_preset = preset
-	if not exploration_preset.is_empty() and exploration_preset not in [Jun1ExplorationSetup.PRESET, Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET]:
+	if not exploration_preset.is_empty() and ScenarioPresets.exploration_level(exploration_preset).is_empty():
 		return "exploration must be jun1-log-bank, org1-turtle-log-bank or org1-road-river"
 	if not reaction.is_empty() and reaction not in ["pop", "platforms"]:
 		return "entity-reactions must be pop or platforms"
 	if not lifetime.is_empty() and lifetime not in ["all-attached", "visibility"]:
 		return "entity-lifecycle must be all-attached or visibility"
 	if not exploration_preset.is_empty():
-		var required_level: String = "ORG1" if exploration_preset in [Org1ExplorationSetup.PRESET, Org1ExplorationSetup.ROAD_PRESET, Org1ExplorationSetup.VISIBILITY_PRESET] else "JUN1"
+		var required_level: String = ScenarioPresets.exploration_level(exploration_preset)
 		if exploration_preset != Org1ExplorationSetup.VISIBILITY_PRESET and (lifetime == "visibility" or (scenario.entity_collision != null and scenario.entity_collision.lifecycle != null)):
 			return exploration_preset + " cannot be combined with visibility lifecycle"
 		if not reaction.is_empty() and reaction != "platforms":

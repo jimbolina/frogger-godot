@@ -67,7 +67,7 @@ func accept(result: TickResult) -> String:
 	reason = "duration elapsed" if status == "complete" else ""
 	return ""
 
-## Marks a capability or admission boundary without claiming demo completion.
+## Marks a capability or support boundary without claiming demo completion.
 func stop(issue: String) -> void:
 	status = "incomplete"
 	reason = issue

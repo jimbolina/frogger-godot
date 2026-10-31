@@ -40,7 +40,7 @@ callbacks through FrogLord names. Unknown names or unsupported instructions
 reject execution; general inspection can still display their decoded facts.
 The [entity contract](../../../docs/reference/gameplay/entities.md#supported-script-components) owns
 the implemented subset and turtle creation's named script replacement.
-Guarded ORG1 admission pins both the numeric program facts and named
+The guarded ORG1 corridor pins both the numeric program facts and named
 entity/form/script/callback bindings; changed names cannot silently reinterpret
 an otherwise identical instruction stream.
 

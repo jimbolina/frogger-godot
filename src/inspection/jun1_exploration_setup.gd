@@ -1,8 +1,8 @@
 class_name Jun1ExplorationSetup
 extends RefCounted
-## Admits only the independently audited JUN1 inputs for bounded bank/log inspection.
+## Sets up the bounded JUN1 bank/log exploration preset from audited inputs only.
 
-const MANIFEST_PATH: String = "res://src/inspection/jun1_exploration_admission.json"
+const MANIFEST_PATH: String = "res://src/inspection/jun1_exploration_preset.json"
 const PRESET: String = "jun1-log-bank"
 
 ## Validates proof dependencies and copies decoded zones into an inspection guard.
@@ -11,9 +11,9 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 		return "jun1-log-bank requires high-detail JUN1 and all-attached lifetime"
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
 	if not parsed is Dictionary:
-		return "JUN1 exploration admission manifest is unavailable"
+		return "JUN1 exploration preset file is unavailable"
 	var proof: Dictionary = parsed
-	if proof.get("schema", "") != "jun1-route-admission-v1" or data.version_name != proof.get("build", ""):
+	if proof.get("schema", "") != "jun1-route-preset-v1" or data.version_name != proof.get("build", ""):
 		return "jun1-log-bank requires audited pc-retail-v3.0e inputs"
 	var issue: String = _validate_inputs(data, scenario.map_scene.map, proof)
 	if not issue.is_empty():
@@ -31,8 +31,8 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	if not zones.error.is_empty():
 		return zones.error
 	var guard := ExplorationGuard.new()
-	var bounds_x: Array = proof.admitted_x
-	var bounds_z: Array = proof.admitted_z
+	var bounds_x: Array = proof.bounds_x
+	var bounds_z: Array = proof.bounds_z
 	guard.world_bounds = Rect2i(_integer(bounds_x[0]), _integer(bounds_z[0]), _integer(bounds_x[1]) - _integer(bounds_x[0]), _integer(bounds_z[1]) - _integer(bounds_z[0]))
 	for zone: ZoneDefinition in zones.definitions:
 		guard.zones.append(zone.copy())
@@ -54,7 +54,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	return ""
 
 static func _validate_inputs(data: AssetCatalog, map: MapFile, proof: Dictionary) -> String:
-	return RetailExplorationInputs.validate(data, map, proof, 18)
+	return ExplorationInputs.validate(data, map, proof, 18)
 
 static func _integer(value: Variant) -> int:
 	var number: float = value

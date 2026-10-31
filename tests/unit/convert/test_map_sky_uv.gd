@@ -19,8 +19,6 @@ func test_full_page_sky_quad_keeps_distinct_uv_corners() -> void:
 	image.padded_width = 256
 	image.padded_height = 256
 	image.flags = VloImage.FLAG_HIT_X | VloImage.FLAG_HIT_Y
-	image.pixels.resize(256 * 256 * 4)
-	image.pixels.fill(128)
 	var bank := VloFile.new()
 	bank.images = [image]
 	var scene := MapSceneData.new()
@@ -35,7 +33,8 @@ func test_full_page_sky_quad_keeps_distinct_uv_corners() -> void:
 	scene.sky_remap.texture_ids = PackedInt32Array([7])
 	scene.library.add_bank(bank)
 	scene.preferred = bank
-	scene.texture_pages.configure(scene.library)
+	var banks: Array[VloFile] = [bank]
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0]))
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
 	var arrays: Array = built.sky_mesh.surface_get_arrays(0)
 	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
@@ -62,19 +61,18 @@ func test_full_page_sky_quad_keeps_distinct_uv_corners() -> void:
 	second.padded_width = 256
 	second.padded_height = 256
 	second.flags = VloImage.FLAG_HIT_X | VloImage.FLAG_HIT_Y
-	second.pixels.resize(256 * 256 * 4)
-	second.pixels.fill(240)
 	bank.images.append(second)
 	scene.library.add_bank(bank)
 	scene.sky_remap.texture_ids = PackedInt32Array([7, 8])
 	scene.sky_land.texture_ids[1] = 1
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0, 1]))
 	built = MapMeshBuilder.new().build(scene)
-	var atlas: Image = built.sky_atlas.get_image()
-	assert_eq(atlas.get_height(), 516)
-	assert_eq(atlas.get_pixel(20, 0), atlas.get_pixel(20, 1), "top page clamp row")
-	assert_eq(atlas.get_pixel(20, 257), atlas.get_pixel(20, 256), "bottom page clamp row")
-	assert_eq(atlas.get_pixel(20, 258), atlas.get_pixel(20, 259), "second top clamp row")
-	assert_ne(atlas.get_pixel(20, 257), atlas.get_pixel(20, 258), "neighbour pages remain distinct")
+	assert_same(built.sky_atlas, scene.page_set.sky_atlas)
+	assert_eq(built.sky_atlas.get_height(), 516)
+	arrays = built.sky_mesh.surface_get_arrays(0)
+	var slots: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV2]
+	assert_eq(slots[0].x, 0.0, "the first tile samples the first atlas slot")
+	assert_eq(slots[6].x, 1.0, "the second tile samples the second atlas slot")
 
 func _sky_scene_with_page_set(sky_pages: PackedInt32Array) -> MapSceneData:
 	var image := VloImage.new()
@@ -117,11 +115,9 @@ func test_a_baked_sky_atlas_with_the_tile_page_order_is_used_as_is() -> void:
 	assert_same(bound, scene.page_set.sky_atlas)
 	assert_eq(scale, Vector2(1.0 / 256.0, 1.0 / 258.0))
 
-func test_a_baked_sky_atlas_with_other_pages_is_baked_again_from_the_set() -> void:
+func test_a_baked_sky_atlas_with_other_pages_is_reported_and_not_drawn() -> void:
 	var scene: MapSceneData = _sky_scene_with_page_set(PackedInt32Array([3]))
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
-	assert_ne(built.sky_atlas, scene.page_set.sky_atlas)
-	var atlas: Image = built.sky_atlas.get_image()
-	assert_eq(atlas.get_size(), Vector2i(256, 258))
-	assert_eq(atlas.get_pixel(5, 0), Color8(10, 20, 30), "rebaked from the set's page 0")
+	assert_null(built.sky_mesh)
+	assert_null(built.sky_atlas)
 	assert_true(Array(built.diagnostics).any(func(line: String) -> bool: return line.contains("baked sky atlas")))

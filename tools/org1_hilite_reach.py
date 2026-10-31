@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Independent, fail-closed ORG1 frog-probe reach diagnostic.
 
-This module does not admit a route.  It scans every hilite in every part and
+This module does not support a route.  It scans every hilite in every part and
 every discrete cel of both retail high-poly animation banks, including the
 three alternate player meshes.  All transforms use integer source arithmetic;
 the animation oracle's approximate quaternion interpolation is never used.
@@ -109,7 +109,7 @@ def check_reachable_probes(context, neighbors, oracle, acos, output):
     This establishes a conditional traffic separation for the narrower
     rectangle. Integrated phase timing and action preconditions remain gates.
     """
-    import org1_neighbor_admission as neighbor
+    import org1_neighbors as neighbor
     import make_golden_entities as entities
     definitions=neighbor.decode_paths(context['data'])
     supports=set()
@@ -149,14 +149,14 @@ def check_reachable_probes(context, neighbors, oracle, acos, output):
         if int(row['probe'])!=i or [int(row[a]) for a in 'xyz']!=point:
             raise ValueError(f'C/Python animated probe mismatch at {i}, pose {metadata[i]}')
     low=min(p[2] for p in wanted);which=next(i for i,p in enumerate(wanted) if p[2]==low)
-    import verify_org1_admission as admission
+    import verify_org1_corridor as corridor
     offsets=bounds(wanted)
     world_bounds=[[-512+offsets[0][0],511+offsets[0][1]],[-128+offsets[2][0],479+offsets[2][1]]]
-    traffic=admission.traffic_geometry(context,world_bounds)
+    traffic=corridor.traffic_geometry(context,world_bounds)
     if len(traffic['entities'])!=24:raise ValueError('traffic census changed')
     maximum=max(e['primitive_point_z'][1] for e in traffic['entities'])
     if world_bounds[1][0]<=maximum:raise ValueError('reachable animated frog probes overlap traffic')
-    return dict(status='conditional',route_admitted=False,candidate_x=[-512,512],candidate_z=[-128,480],
+    return dict(status='conditional',route_supported=False,candidate_x=[-512,512],candidate_z=[-128,480],
                 animation_resource_id=214,animation_sha256=hashlib.sha256(raw).hexdigest(),
                 live_actions=list(LIVE_ACTIONS),initial_action_cel=[0,0],roots=[list(r) for r in roots],
                 support_roots=[list(r) for r in sorted(supports)],probe_checks=len(wanted),root_checks=root_checks,
@@ -169,7 +169,7 @@ def check_reachable_probes(context, neighbors, oracle, acos, output):
                   'Every stored LW root origin is inside the narrower rectangle at every primitive scan.',
                   'Only SAFE bank/platforms and WATER reactions; no fall exceeding safe height.',
                   'Every support uses rotation snapping and the enumerated level path transforms.',
-                  'Dying frogs skip primitive scans; reset restores the admitted initial pose.'])
+                  'Dying frogs skip primitive scans; reset restores the supported initial pose.'])
 
 
 def check_root_oracle(roots, terrain, supports, oracle, acos, output):
@@ -363,8 +363,8 @@ def model_reach(raw, mesh_raw, label):
                                                  max(v[1] for v in envelope)])
 
 
-def traffic_hilite_admission(context, geometry):
-    """Consume verify_org1_admission context/traffic_geometry; never admit a route.
+def traffic_hilite_reach(context, geometry):
+    """Consume verify_org1_corridor context/traffic_geometry; never support a route.
 
     Unsupported inputs raise ValueError.  A conservative overlap returns
     blocked, with per-action facts and obligations.  The origin rectangle is
@@ -411,11 +411,11 @@ def traffic_hilite_admission(context, geometry):
                 if e['primitive_point_z'][1] >= world['z'][0]]
     reasons = ['No route/update-phase contract proves that stored per-part LW origins '
                'remain inside the candidate at every collision scan.',
-               'The high-poly selection prerequisite (single player) is not admitted by this diagnostic.']
+               'The high-poly selection prerequisite (single player) is not supported by this diagnostic.']
     if overlaps:
         reasons.append('The complete signed16-root enclosure overlaps traffic Z intervals; '
                        'narrowing reachable actions/root transforms is required.')
-    return dict(status='blocked', traffic_collision_exclusion_proved=False, route_admitted=False,
+    return dict(status='blocked', traffic_collision_exclusion_proved=False, route_supported=False,
                 candidate_x=list(CANDIDATE_X), candidate_z=list(CANDIDATE_Z),
                 models=models, arbitrary_signed16_root_offset=offset,
                 probe_world_short_bounds=world, unseparated_traffic=overlaps,

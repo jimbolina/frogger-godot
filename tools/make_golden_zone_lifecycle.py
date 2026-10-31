@@ -107,7 +107,7 @@ def retail_inputs(data_dir):
         entities.append(dict(index=index,kind='MOVING',flags=flags,segments=segments,
                              start=dict(segment_index=segment,distance=distance,speed=speed,flags=motion|1)))
     if len(entities)!=11: raise ValueError('Expected eleven JUN_LOG records')
-    proof=dict(schema='jun1-zone-lifecycle-admission-v1',build='pc-retail-v3.0e',
+    proof=dict(schema='jun1-zone-lifecycle-preset-v1',build='pc-retail-v3.0e',
                exe_sha256=hashlib.sha256((data_dir/'FROGGER.EXE').read_bytes()).hexdigest(),
                mwd_sha256=hashlib.sha256(archive).hexdigest(),map_resource_id=656,bindings=bindings)
     return proof,[dict(case=dict(case,initial=[0,0,0]),entities=entities,groups=groups,gameplay=False) for case in camera.retail_cases(data_dir)]
@@ -215,7 +215,7 @@ def main():
             cases.append(dict(workload=workload,expected=rows))
         save(ROOT/f'tests/golden/{label}/zone_lifecycle.json',dict(schema='zone-lifecycle-facts-v1',cases=cases),args.verify)
     save(ROOT/'tests/golden/fixtures/lifecycle_zones.json',authored,args.verify)
-    save(ROOT/'src/inspection/jun1_zone_lifecycle_admission.json',proof,args.verify)
+    save(ROOT/'src/inspection/jun1_zone_lifecycle_preset.json',proof,args.verify)
     print('Synthetic and JUN1 zone/lifecycle facts agree with frozen C.')
 
 

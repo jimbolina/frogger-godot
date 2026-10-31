@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Check the ORG1 turtle/log proposal's excluded-neighbor RNG obligation.
 
-This is a counterexample check, not a complete route/admission generator.
+This is a counterexample check, not a complete route/preset generator.
 Default exit 3 means the counterexample agrees; --background exits 0 when the
-expanded component proof agrees. --admission adds neighbor and animated-hilite
-checks and exits 3 while route obligations remain. No mode admits a route. Exit 1 means
+expanded component proof agrees. --corridor adds neighbor and animated-hilite
+checks and exits 3 while route obligations remain. No mode supports a route. Exit 1 means
 verification failed. Inputs are independently decoded with the existing readers.
 Only decoded facts, hashes and oracle output are written, outside repositories.
 """
@@ -454,7 +454,7 @@ def traffic_geometry(context, point_bounds=None):
             raise ValueError(f"traffic cuboid {item['entity_index']} intrudes into candidate: max Z {upper}")
         proof.append(dict(entity_index=item['entity_index'],model_resource_id=mid,model_sha256=digest,
                           path_id=path_id,integer_poses=len(sampled[path_id]),primitive_point_z=[lower,upper]))
-    return dict(candidate_x=[-512,512],candidate_z=[-224,480],route_admitted=False,entities=proof,
+    return dict(candidate_x=[-512,512],candidate_z=[-224,480],route_supported=False,entities=proof,
                 scope='Cuboid world-point bounds only. Animated frog-hilite reach is not bounded here; no traffic collision exclusion is certified.')
 
 
@@ -465,8 +465,8 @@ def main():
     parser.add_argument('--acos-table', required=True, type=Path)
     parser.add_argument('--output-directory', required=True, type=Path)
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument('--background', action='store_true', help='verify the expanded traffic/fly dependency closure; does not admit a route')
-    mode.add_argument('--admission', action='store_true', help='also inspect all neighbors and animated frog reach; exit 3 means route admission remains blocked')
+    mode.add_argument('--background', action='store_true', help='verify the expanded traffic/fly dependency closure; does not support a route')
+    mode.add_argument('--corridor', action='store_true', help='also inspect all neighbors and animated frog reach; exit 3 means the route corridor remains blocked')
     args = parser.parse_args()
     output = args.output_directory.resolve()
     project = Path(__file__).resolve().parent.parent
@@ -477,43 +477,43 @@ def main():
     output.mkdir(parents=True, exist_ok=True)
     rows = check_oracle(args.oracle.resolve(), args.acos_table.resolve(), output,
                         {item['divisor'] for item in evidence['traffic']})
-    if args.background or args.admission:
+    if args.background or args.corridor:
         closure = check_background(args.oracle.resolve(),args.acos_table.resolve(),output,evidence,context)
         closure.update(build=evidence['build'],map_sha256=evidence['map_sha256'],
                        executable_sha256=evidence['executable_sha256'],
-                       oracle_sha256=hashlib.sha256(args.oracle.read_bytes()).hexdigest(),route_admitted=False)
+                       oracle_sha256=hashlib.sha256(args.oracle.read_bytes()).hexdigest(),route_supported=False)
         (output/'org1-background-proof.json').write_text(json.dumps(closure,indent=2)+'\n',encoding='utf-8')
         print(f"Expanded traffic/fly C/Python dependency checks agree: {sum(c['rows'] for c in closure['cases'])} ordered rows.")
-        if args.admission:
-            from org1_hilite_admission import traffic_hilite_admission
-            from org1_neighbor_admission import neighbor_admission
-            closure['traffic_hilites'] = traffic_hilite_admission(context, closure['traffic_geometry'])
-            closure['neighbors'] = neighbor_admission(evidence, context)
-            closure['schema'] = 'org1-admission-v1'
+        if args.corridor:
+            from org1_hilite_reach import traffic_hilite_reach
+            from org1_neighbors import neighbor_facts
+            closure['traffic_hilites'] = traffic_hilite_reach(context, closure['traffic_geometry'])
+            closure['neighbors'] = neighbor_facts(evidence, context)
+            closure['schema'] = 'org1-corridor-v1'
             closure['status'] = 'blocked'
             closure['scope'] = ('Background C/Python components plus independent conditional neighbor '
-                                'and frog-probe diagnostics; no integrated route or runtime admission.')
+                                'and frog-probe diagnostics; no integrated route or runtime preset.')
             closure['verifier_sources'] = {name: hashlib.sha256((Path(__file__).parent / name).read_bytes()).hexdigest()
-                                           for name in ('verify_org1_admission.py', 'org1_neighbor_admission.py',
-                                                        'org1_hilite_admission.py')}
+                                           for name in ('verify_org1_corridor.py', 'org1_neighbors.py',
+                                                        'org1_hilite_reach.py')}
             closure['remaining_integration_gates'] = [
                 'Reachable frog action/mode/world-transform bounds and full traffic collision exclusion.',
                 'Active-frog script callbacks and sound/effect request semantics.',
                 'Turtle behavior, shared FORM writes and complete ordered entity updates.',
                 'Connected bank/turtle/log return trace with retail animation and phase guards.',
             ]
-            destination = output / 'org1-admission-proof.json'
+            destination = output / 'org1-corridor-proof.json'
             destination.write_text(json.dumps(closure, indent=2) + '\n', encoding='utf-8')
-            print('BLOCKED: neighbor and animated-hilite evidence does not admit an integrated route.')
+            print('BLOCKED: neighbor and animated-hilite evidence does not support an integrated route.')
             print(f'Evidence: {destination}')
             return 3
-        print('No ORG1 route or boundary is admitted by this component check.')
+        print('No ORG1 route or boundary is supported by this component check.')
         return 0
     evidence.update(status='blocked', reason='excluded traffic consumes shared MRrand state',
                     oracle_sha256=hashlib.sha256(args.oracle.read_bytes()).hexdigest(),
                     instruction_checks=rows,
                     scope='Counterexample only: no route, geometry exclusion or whole-engine trace is certified.')
-    (output / 'org1-admission-counterexample.json').write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
+    (output / 'org1-corridor-counterexample.json').write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
     for item in evidence['traffic']:
         print(f"EMTP[{item['entity_index']}] UID {item['unique_id']} offset {item['source_offset']}: "
               f"{item['form_name']} / {item['script_name']} -> RANDOM modulo {item['divisor']}")
@@ -527,5 +527,5 @@ if __name__ == '__main__':
     try:
         raise SystemExit(main())
     except (OSError, ValueError, KeyError, IndexError, struct.error, subprocess.SubprocessError) as error:
-        print(f'ORG1 admission verification failed: {error}', file=sys.stderr)
+        print(f'ORG1 corridor verification failed: {error}', file=sys.stderr)
         raise SystemExit(1)

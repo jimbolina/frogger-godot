@@ -105,7 +105,7 @@ func test_des2_demo_defaults_preserve_authored_inputs_and_tick_override() -> voi
 	var canned: TerrainScenario = TerrainScenario.builtin("normal")
 	canned.level_code = "DES2"
 	assert_eq(TerrainScenarioArguments.apply(canned, PackedStringArray(["--entity-reactions=pop", "--tick-limit=44"])), "")
-	canned.apply_des2_inspection_defaults()
+	canned.apply_level_start()
 	assert_eq(canned.initial.spawn_cell, Vector2i(17, 30))
 	assert_eq(canned.initial.spawn_direction, 1)
 	assert_eq(canned.tick_limit, 44)
@@ -114,7 +114,7 @@ func test_des2_demo_defaults_preserve_authored_inputs_and_tick_override() -> voi
 	authored.level_code = "DES2"
 	assert_eq(TerrainScenarioArguments.apply(authored, PackedStringArray(["--entity-reactions=pop"])), "")
 	var original_commands: int = authored.command_at(0).pressed_mask
-	authored.apply_des2_inspection_defaults()
+	authored.apply_level_start()
 	assert_eq(authored.tick_limit, 3)
 	assert_eq(authored.initial.spawn_cell, Vector2i(-1, -1))
 	assert_eq(authored.command_at(0).pressed_mask, original_commands)

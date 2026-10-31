@@ -55,7 +55,7 @@ class DemoTraceTests(unittest.TestCase):
         reference = [self.row(3, map_id=24, action=2), self.row(4, map_id=24)]
         status = self.status(0, 0, 'incomplete')
         status['duration'] = 724
-        status.update(map=24, reason='Demo requires unsupported corridor admission')
+        status.update(map=24, reason='Demo requires unsupported camera zones')
         report = compare(reference, [], status, 24)
         self.assertFalse(report['complete'])
         self.assertFalse(report['accepted'])

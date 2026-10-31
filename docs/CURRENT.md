@@ -10,17 +10,20 @@ SKY1–SKY4 are accepted by the owner's play check. See the [roadmap](PORTING.md
 and [front end](reference/gameplay/front-end.md). X2's per-part frog lighting
 and P12 audio await the owner's play and by-ear checks.
 
-S1 is in progress ([roadmap](PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)).
-S1a–S1d are done: the game, sandbox, viewers and inspection tools play from
-the committed `assets/` through `ImportedAssets` ([assets](reference/assets.md));
-the retail readers, importer, retail goldens, format references and FrogLord
+S1 is complete pending the owner's checks
+([roadmap](PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)).
+The game, sandbox, viewers and inspection tools play from the committed
+`assets/` through `ImportedAssets` ([assets](reference/assets.md)); the
+retail readers, importer, retail goldens, format references and FrogLord
 configs live in `archive/`, which nothing in the game may reference. Launch
-`tools/play.sh --level=ORG1`; no data folder is needed. The owner's play
-check of every accepted level, the front end and the sandbox from imported
-resources is pending.
+`tools/play.sh --level=ORG1`; no data folder is needed. S1e added the
+[domain model](reference/domain-model.md) and the
+[layout audit](PORTING.md#s1e-layout-audit); the owner's review of both, the
+two proposals it raises (`tools/` split, presets as data), and the play check
+of every accepted level, the front end and the sandbox from imported
+resources are pending.
 
-Next: S1e, the layout audit, the domain model documentation and the cleanup
-of code that only served runtime decoding; then S2.
+Next: S2, the modern rendering spike.
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand

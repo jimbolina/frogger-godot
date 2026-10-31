@@ -10,7 +10,7 @@ import struct
 import make_golden_paths as paths
 import make_golden_entities as entities
 import make_golden_form_contacts as contacts
-import org1_neighbor_admission as neighbor
+import org1_neighbors as neighbor
 
 
 def apply(matrix, point):
@@ -54,7 +54,7 @@ class Route:
 
     def update_root(self):
         """Frozen unscaled UpdateFrogMatrix for this bounded terrain/support route."""
-        from org1_hilite_admission import ROOTS,axes,multiply
+        from org1_hilite_reach import ROOTS,axes,multiply
         from make_golden_grid import cross,normal
         if self.flags&4:
             self.frog_root=multiply(self.poses[self.attached],self.relative_root)
@@ -200,7 +200,7 @@ class Route:
             self.attached=index;self.carry();self.y=self.old_y=self.world()[1]
             self.flags=(self.flags&~(2|16|32|64|128|256|16384|65536))|4
             self.direction=quadrant(apply(transpose(matrix),[0,0,4096 if self.heading==0 else -4096]))
-            from org1_hilite_admission import ROOTS,multiply
+            from org1_hilite_reach import ROOTS,multiply
             from org1_route_camera import projected
             self.frog_root=multiply(ROOTS[self.direction][1],matrix)
             self.relative_root=projected(multiply(self.frog_root,transpose(matrix)))

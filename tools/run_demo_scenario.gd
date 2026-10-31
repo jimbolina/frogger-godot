@@ -1,5 +1,5 @@
 extends SceneTree
-## Isolated demo driver through existing admission, gameplay host and playback ownership.
+## Isolated demo driver through existing level setup, gameplay host and playback ownership.
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -50,9 +50,9 @@ func _run() -> void:
 				if issue.is_empty():
 					trace.configure(data, scenario.map_scene)
 					if not data.is_playable_level(map_index) and not scenario.map_scene.map.zones.is_empty():
-						issue = "Demo requires unsupported retail camera-zone admission"
+						issue = "Demo requires unsupported retail camera zones"
 					elif not data.is_playable_level(map_index) and not scenario.map_scene.map.entities.is_empty():
-						issue = "Demo requires complete entity/checkpoint admission for " + level_code
+						issue = "Demo requires complete entity/checkpoint support for " + level_code
 		if ViewerArguments.has_flag(args, "--viewer") and issue.is_empty():
 			visual_data = data
 		else:

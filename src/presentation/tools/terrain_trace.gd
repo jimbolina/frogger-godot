@@ -161,12 +161,12 @@ static func facts(record: RefCounted, include_lifecycle: bool = false) -> Dictio
 			if record is EntityDefinition and key == "behavior":
 				var entity: EntityDefinition = record
 				values["animation_one_shot"] = entity.behavior.one_shot
-				values["background_admitted"] = entity.behavior.has_custom_update()
+				values["custom_update"] = entity.behavior.has_custom_update()
 				values["pink_frog_pickup"] = entity.behavior.execution == EntityBehavior.Execution.CONTACT
 				continue
 			if not include_lifecycle and _lifecycle_key(record, key):
 				continue
-			values["background" if record is EntitySnapshot and key == "custom_state" else "fixture_lives" if record is FrogState and key == "lives" else "admission_exclusion" if key == "disabled_reason" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
+			values["background" if record is EntitySnapshot and key == "custom_state" else "fixture_lives" if record is FrogState and key == "lives" else "exploration_guard" if key == "tick_guard" else key] = _value(record.get(key), include_lifecycle)
 	return values
 
 static func _lifecycle_key(record: RefCounted, key: String) -> bool:

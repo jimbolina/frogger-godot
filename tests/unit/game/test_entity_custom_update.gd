@@ -1,5 +1,5 @@
 extends GutTest
-## Logical global effects and explicit limits of the admitted background branches.
+## Logical global effects and explicit limits of the supported background branches.
 
 func _environment() -> EntityEnvironmentState:
 	var environment := EntityEnvironmentState.new()

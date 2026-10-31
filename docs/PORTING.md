@@ -36,8 +36,8 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S1b | Typed `Resource` schema in `src/data/` and the abstract `AssetCatalog`; readers split out in `src/source/` | M | Every retail golden passes through the Resource-typed records; both suites green; no behaviour change | Done |
 | S1c | Importer and committed assets: PNG textures, baked pages, model meshes and scenes, map resources, WAV effects, Ogg music, tables, demos; import goldens with independent oracles | L | Second import leaves `assets/` unchanged; import goldens and deliberate-break checks pass | Done; shaders moved to files |
 | S1d | Runtime switch: every scene opens `ImportedAssets`; `--data-dir`, `FROGGER_DATA_DIR` and `--disc` leave the game; readers and FrogLord configs move to `archive/` | L | Both suites green; every accepted level, the front end and the sandbox play from imported resources (owner play check); captures compared with pre-S1 captures | Done; owner's play check pending |
-| S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | Next |
-| S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | After S1 |
+| S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | Done; [audit](#s1e-layout-audit) and [domain model](reference/domain-model.md) await the owner's review |
+| S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | Next |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -83,6 +83,43 @@ replaces texture-page reconstruction and colour keys with ordinary imported
 textures and materials. Goldens that assert C colours are retired or re-scoped
 to what still holds (geometry, animation, gameplay).
 
+### S1e layout audit
+
+The project was checked against Godot's project-organisation practice and the
+[domain model](reference/domain-model.md). S1e itself renamed the inspection
+vocabulary from admitted/admission to supported scenarios, presets and
+provenance, moved the DES2 capture literals into preset data, and deleted the
+code that only served runtime decoding of the retail files.
+
+| Item | Verdict |
+|---|---|
+| Naming: snake_case files and folders, PascalCase `class_name`s | Pass |
+| `.uid` and `.import` sidecars committed, `.godot/` ignored | Pass |
+| `.gdignore` on raw data folders | Only `tests/golden/synthetic/` (CSV facts) has one. `docs/`, `archive/docs/` and `archive/third_party/` hold nothing Godot imports; `archive/`, `tests/` and `tools/` hold scripts the suites and scanner load, so they stay visible. |
+| Layer-first split under `src/` rather than feature-first | Kept deliberately: the architecture scanner enforces the layers by path prefix. Features are folders inside a layer (`game/entities/`, `game/frontend/`, `presentation/frontend/`, `presentation/sandbox/`). |
+| Scenes beside their scripts | Deferred. The eight scenes in `scenes/` are entry points launched by literal path from `project.godot`, the play and capture wrappers and tests (28 files); views build their nodes in code. Revisit when S2 adds authored scenes. |
+| `tools/` (219 tracked files) | Owner decision. Proposed split: `tools/golden/` (the `make_*` generators), `tools/oracles/` (C oracles, headers and `build_*_oracle.ps1`), `tools/inspection/` (scenario runners, schedule verifiers, captures, comparisons and probes) and `tools/test/` (`check_*.gd`, `support/`, `godot_project.py`, `godot_profile.py`). Each Python test goes beside the tool it tests; `play.*`, `run_tests.*` and `launch_macos.command` stay at the root as entry points. About 100 files name tool paths, so the move is one mechanical commit with a link check. |
+| `src/convert/` renamed `src/rendering/` | Deferred to S2, which rewrites most of the folder. |
+| Per-corridor inspection presets (`Org1ExplorationSetup`, `Jun1ExplorationSetup`, `Jun1ZoneLifecycleSetup` and five JSON manifests) | Owner decision. Proposed: one preset reader over data keyed by level code, so a new supported scenario is a data file rather than a class. Until then they stay. |
+| `reference/gameplay/entities.md` (1,086 lines) | Deferred documentation work: move route narrative (tick numbers, index ranges) beside the golden specifications and keep the rules. |
+| Viewer sizes | `map_viewer.gd` is 1,319 lines after `MapScenarioRun` took the rendered path and entity scenario runs; `gameplay_world_view.gd` 970, `model_viewer.gd` 907, `terrain_viewer.gd` 646. Deferred: split the map viewer's capture and overlay code when it next changes; S2 reworks the world view's drawing. |
+
+Findings for later work: `CameraZoneInspection` uses `TerrainTrace` from
+`src/presentation/tools/`, the one inspection-to-presentation dependency, and
+the scanner does not check inspection's direction.
+
+The domain-driven design review at `60cd252` is applied: inspection module and
+single `TickGuard` hook, `EntityBehavior` catalog with the scanner rule against
+name dispatch, `GameplayRun`/`Frog`/`FrogContacts` and the `GameplayState`
+split, flag catalogs, typed `TickEvent`s, the copy-contract test, the
+application layer, `GameplayHost`, and the renames. Still open from it:
+
+- the per-corridor presets and manifests (owner decision above);
+- route narrative in `entities.md`, and "admit" prose in the topic references,
+  the golden specifications and the `*_admission.py` tool names;
+- the size of `map_viewer.gd`;
+- the historical `fixture_lives` key in the terrain trace schema.
+
 ## Needed from the owner
 
 | What | Needed by | Why |
@@ -93,6 +130,7 @@ to what still holds (geometry, animation, gameplay).
 | Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
 | Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
 | Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only; `compare_map_captures.py` needs Pillow. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
+| S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | Before S2 | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage
@@ -116,7 +154,7 @@ never unlocks it. Pickups and fireflies draw as source sprites. CAV2/CAVM are
 dummy rows and CAV5 has no map; the player croak light swell is deferred.
 
 P9d Desert is complete and DES1–DES5 are accepted by the owner's play check.
-They admit through whole-map setup with typed
+They play through whole-map setup with typed
 falling rocks, rolling rocks, tumbleweeds, snakes, vultures, croc heads and
 cracks, the per-level explosion flipbook overlay, and the generic movers,
 cacti and butterflies. Independent facts cover every behavior and the retail
@@ -124,7 +162,7 @@ payloads; all five demos complete with schedule parity and no native baseline.
 DESM has no map.
 
 P9e Jungle is complete and JUN1 is accepted by the owner's play check. It
-admits through whole-map setup with typed plants,
+plays through whole-map setup with typed plants,
 rope bridges, hippos, scorpions, the bouncy mushroom and the outro set loaded
 as statics, animated-model collision primitives, the FORM bounce reaction and
 the crusher door callback. Independent facts cover every behavior and the
@@ -134,7 +172,7 @@ sequence frozen C runs after JUN1; the port shows the level-complete flow
 there. JUN3–JUN5 have no maps and JUNM is multiplayer.
 
 P9f Swamp is complete and SWP1–SWP5 are accepted by the owner's play check.
-They admit through whole-map setup with typed acid squirts, wall crushers, presses,
+They play through whole-map setup with typed acid squirts, wall crushers, presses,
 rats, slugs, nuclear barrels and the weir, the Swamp branch of the crusher
 callback, register payloads for the nuclear and bobbing waste barrels, and
 frozen `LOCAL_ALIGN` path alignment for the generic movers that carry it.
@@ -144,7 +182,7 @@ complete with schedule parity, and SWP1 and SWP5 match native traces per tick
 them also corrected the post-reset start timer, the landing cell kept by a
 slip reaction and the freefall reference height for every level. SWPM has no map.
 
-P9g Sky is complete and SKY1–SKY4 are accepted by the owner's play check. They admit
+P9g Sky is complete and SKY1–SKY4 are accepted by the owner's play check. They play
 through whole-map setup with the generic `TRIGGER` entity (the SKY3 magical
 popping balloon that releases the squadron through `TriggerEntityCallback`),
 the 12-byte `MOVING_PLATFORM` payload, and the sky backdrop drift stepped from

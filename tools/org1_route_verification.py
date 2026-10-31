@@ -3,9 +3,9 @@
 import struct
 
 import make_golden_frog_animation as animation
-import verify_org1_admission as admission
-import org1_neighbor_admission as neighbor
-import org1_hilite_admission as hilite
+import verify_org1_corridor as corridor
+import org1_neighbors as neighbor
+import org1_hilite_reach as hilite
 from org1_round_trip import Route
 from org1_script_state import Script,short
 from org1_route_camera import Camera
@@ -24,8 +24,8 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
         index=r['entity_index'];mid=r['model_resource_id'];m=neighbor.model_facts(context,mid,cache)['_model']
         if m['incomplete']:mid=cache[mid]['counterpart_resource_id'];m=cache[mid]['_model']
         p=m['statics'][0]['parts'][0];count=p['flipbook_actions'] if not m['incomplete'] else 0
-        raw=admission.platform.resource(context['files'],context['entries'],context['mwd'],mid)
-        actions[index]=[admission.contacts.read(raw,p['flipbook_ptr']+4+j*4,'<H') for j in range(count)]
+        raw=corridor.platform.resource(context['files'],context['entries'],context['mwd'],mid)
+        actions[index]=[corridor.contacts.read(raw,p['flipbook_ptr']+4+j*4,'<H') for j in range(count)]
         cels[index]=-1
         if not r['script_id']:continue
         regs=[];sid=r['script_id']
@@ -34,10 +34,10 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
             sid=context['script_names'].index(t['effective_script'])
         elif r['entity_type']=='STATIC_NOISE':regs=list(struct.unpack_from('<2i',context['data'],r['source_offset']+56))
         scripts[index]=Script(programs,sid,regs,actions[index])
-    raw=admission.platform.resource(context['files'],context['entries'],context['mwd'],214)
+    raw=corridor.platform.resource(context['files'],context['entries'],context['mwd'],214)
     data=animation.catalog();data['action_lengths']=[a['frames'] for a in hilite.discrete_actions(hilite.animation.parse_xar(raw),16)]
     frog_anim=animation.State(data);seed=1;sounds=0;hits=set();carried=-1
-    general=admission.contacts.read(context['data'],76,'<I')
+    general=corridor.contacts.read(context['data'],76,'<I')
     camera=Camera(struct.unpack_from('<3h',context['data'],general+24),struct.unpack_from('<3h',context['data'],general+32),route.world())
     fly_mode=0;fly_timer=60;fly_checkpoint=-1;fly_position=geometry['neighbors'][55]['initial_position'][:]
     markers={r['entity_type']:r['initial_position'] for r in geometry['neighbors'] if r['entity_type'].startswith('GEN_')}
@@ -76,7 +76,7 @@ def verify(context,geometry,ticks,commands,actual,entity_actual,expected_death_t
                 expired=fly_timer==0;fly_timer-=1
                 if expired:
                     if fly_mode==0:
-                        seed,draw=admission.random_step(seed);fly_checkpoint=draw%5;fly_mode=1;fly_timer=120
+                        seed,draw=corridor.random_step(seed);fly_checkpoint=draw%5;fly_mode=1;fly_timer=120
                         cp=geometry['neighbors'][[54,49,50,51,52][fly_checkpoint]]['initial_position']
                         fly_position=[short(cp[0]),short(cp[1]-256),short(cp[2]-50)]
                         route.poses[index][9:]=fly_position

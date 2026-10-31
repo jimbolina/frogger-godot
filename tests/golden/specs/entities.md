@@ -163,11 +163,11 @@ place of `<acos-table>` below. All stored golden files are text facts only.
 
 ```powershell
 & tools/build_platform_oracle.ps1 -OutputDirectory <external-oracle>
-python -B tools/verify_jun1_admission.py --data-dir <game-folder>
+python -B tools/verify_jun1_corridor.py --data-dir <game-folder>
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-fixture <external-route-input>
 & <external-oracle>/platform_oracle.exe <acos-table> --retail-route <external-route-input> > <external-route-csv>
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-trace <external-route-csv> --route-golden tests/golden/pc-retail-v3.0e/platform_jun1_route.tsv --verify
-python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-admission src/inspection/jun1_exploration_admission.json --verify
+python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --route-preset src/inspection/jun1_exploration_preset.json --verify
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-records-golden tests/golden/pc-retail-v3.0e/jun1_zone_records.tsv --verify
 python -B tools/make_golden_retail_platform.py --data-dir <game-folder> --zones-fixture <external-zone-input>
 & <external-oracle>/platform_oracle.exe <acos-table> --zones <external-zone-input> > <external-zone-csv>
@@ -182,7 +182,7 @@ and restore one fact in each new family, requiring the focused check to fail
 then pass. The [inspection guide](../../../docs/reference/testing/terrain-inspection.md#guarded-jun1-bank-exploration)
 owns full 30/60/144 schedule and keyboard/capture acceptance.
 
-The admission helper enumerates every integer distance on complete authored
+The corridor helper enumerates every integer distance on complete authored
 paths, checks exact unresolved broad-phase identities, transformed FORM bounds,
 the hippo's integer contact maximum and signed arithmetic closure. The source
 behavior exclusions are documented in the helper and corridor conditions below. Its
@@ -201,7 +201,7 @@ centring/carry lead to departure and a detached, alive terrain landing at
 The original PC input masks are LEFT 1/RIGHT 2; `TickCommand` uses its existing
 normalized cardinal encoding. The camera mapping is independently verified.
 
-World admission is X `[1900,2304)`, Z `[-5376,-4864)`. The initially proposed
+The world corridor is X `[1900,2304)`, Z `[-5376,-4864)`. The initially proposed
 west edge 1856 is unsafe: hippo 23 can contact `(1856,-256,-4924)` at advanced
 entity tick 27. Exhaustive integer path/FORM evaluation bounds hippo contacts
 in this Z band at X 1888. The revised boundary excludes them without changing
@@ -242,7 +242,7 @@ The frozen adapter retains all 115 authored scan identities. Six potentially
 contacting logs execute normally; other identities are explicit proof-excluded
 null-live shells, justified by the exhaustive geometry/behavior proof. This
 does not simulate their custom scripts or RNG/audio. The runtime still scans
-every admitted generic entity in source order. Its independent admission
+every supported generic entity in source order. Its independent corridor
 manifest pins determining map, form/behavior, script and model facts, including
 WAD mappings and incomplete-model counterparts. Changed dependencies reject
 this preset; ordinary inspection remains available for mods.
@@ -302,11 +302,11 @@ particle request is `death_pgen`. Full transports and C rows stay external.
 Build with `tools/build_platform_oracle.ps1`, then verify both families:
 
 ```powershell
-python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round-trip> --ticks 730 --golden-name org1_round_trip --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round-trip> --ticks 730 --golden-name org1_round_trip --preset
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-diver> --ticks 1255 --commands 1230:0 --expected-death-tick 1254 --golden-name org1_attached_diver
 ```
 
-Add `--write-goldens` only for reviewed regeneration. `--admission` also
+Add `--write-goldens` only for reviewed regeneration. `--preset` also
 compares every root transition and animated hilite with linked C and verifies
 the pinned setup manifest. It requires the frozen round-trip schedule. Corrupt
 and restore both phase and entity-digest families and the manifest; each must
@@ -320,12 +320,12 @@ script/callback names; geometry alone never suppresses logical neighbor updates.
 
 ### ORG1 corridor bounds and animated exclusions
 
-The independent proof admits high-detail v3.0e ORG1 (resource 658) within
+The independent proof supports high-detail v3.0e ORG1 (resource 658) within
 X `[-512,512)`, Z `[-128,480)` for a single unpowered frog and uninterrupted
 all-attached lifetime. The guarded `org1-turtle-log-bank` preset validates the
 proof before enabling scripts or excluding contact. The proof pins map, source-ordered form/behavior rows, script
 streams, model mappings, counterpart models and the selected frog resource in
-`src/inspection/org1_exploration_admission.json`.
+`src/inspection/org1_exploration_preset.json`.
 
 Starting at cell `(10,7)`, world `(128,-256,-128)`, north, normal NORTH commands
 at ticks 0 and 12 and SOUTH commands at 34 and 46 connect turtle 1, small log
@@ -346,7 +346,7 @@ the 512-unit croak trigger and 640-unit tongue radius. Their complete-model
 counterparts supply their real flipbook lengths.
 
 Traffic requires animated collision-point exclusion. The old research
-minimum Z `-224` is not admitted. For the narrower rectangle, every integer
+minimum Z `-224` is not supported. For the narrower rectangle, every integer
 orientation on both support paths generates a finite closure of 36 frog
 roots, including terrain normals, four headings, inherited up axes, snapping,
 centring/carry and linked departures. All generating transitions match frozen
@@ -380,10 +380,10 @@ reaction functions using decoded vehicle primitives and the previous stored
 frog pose. Python separately calculates the same source arithmetic. Golden
 generation requires their agreement before writing any text fact. Retail
 tests compare every phase, ordered update digest and diagnostic/worker result;
-they also verify primitive admission, rejection rollback and reset. The
+they also verify primitive support, rejection rollback and reset. The
 road preset has its own determining-resource manifest; the existing bank
 route keeps its narrower manifest and contact exclusions.
-The five traffic models have primitives and no FORM_DATA records. Admission
+The five traffic models have primitives and no FORM_DATA records. Setup
 preserves that absence; a missed primitive cannot invent a FORM fallback.
 
 The source animation function receives independently decoded quaternion,
@@ -398,7 +398,7 @@ Build with `tools/build_platform_oracle.ps1` into an external directory, then
 verify both families and the separate road manifest:
 
 ```powershell
-python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-crossing> --road --ticks 180 --commands 0:0,12:0,24:0,36:0,102:0,114:0,126:0,138:0 --golden-name org1_road_river --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-crossing> --road --ticks 180 --commands 0:0,12:0,24:0,36:0,102:0,114:0,126:0,138:0 --golden-name org1_road_river --preset
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-death> --road --ticks 60 --commands 0:0,12:0,24:0,36:0,48:0 --expected-death-tick 50 --golden-name org1_road_vehicle_death
 ```
 
@@ -406,12 +406,12 @@ Append `--write-goldens` only to intentionally regenerate reviewed expected
 facts. Corrupt a phase fact and ordered-update digest in each family, require
 its focused retail test to fail, restore both and require the test to pass.
 
-## ORG1 admission counterexample
+## ORG1 corridor counterexample
 
-`tools/verify_org1_admission.py` independently decodes the supplied v3.0e
+`tools/verify_org1_corridor.py` independently decodes the supplied v3.0e
 ORG1 identities, form/entity/script mappings and unconditional traffic script
 prefixes using the existing Python EXE/MAP readers and FrogLord names. It is
-a counterexample verifier, not an admission manifest or new golden family.
+a counterexample verifier, not a preset file or new golden family.
 The [entity contract](entities.md#org1-route-proof)
 owns the failed three-program assumption and expanded behavior closure.
 
@@ -419,8 +419,8 @@ Build the platform oracle outside both repositories, then run:
 
 ```powershell
 & tools/build_platform_oracle.ps1 -OutputDirectory <external-oracle>
-python -B tools/verify_org1_admission.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-evidence>
-# Expected exit 3: evidence agrees, admission is blocked. Exit 1 is a check failure.
+python -B tools/verify_org1_corridor.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-evidence>
+# Expected exit 3: evidence agrees, the route corridor is blocked. Exit 1 is a check failure.
 ```
 
 Use the builder provenance's frozen `acos_le.dat` path. Its source, linked
@@ -435,7 +435,7 @@ The oracle's `--script-rng` mode calls unchanged frozen
 executes; an invented target is a pointer marker, not simulated target behavior.
 No complete script loop, allocation effects, lifecycle, geometry exclusion or
 round trip is certified. A changed inventory or C/Python mismatch fails the
-check instead of producing admission evidence.
+check instead of producing corridor evidence.
 
 Add `--background` to verify the expanded dependency closure (exit 0 on
 agreement). This independently decodes all authored identities, the five
@@ -454,18 +454,18 @@ then exercises real `PLAY_MOVING_SOUND`, allocation and owner clearing. It
 checks suppression, first allocation, reuse, kill and recreation against
 independent expected state, with a real reference memory arena. Provenance
 includes the actual linked sound and script sources/libraries. The resulting
-`org1-background-proof.json` explicitly keeps `route_admitted` false. No
+`org1-background-proof.json` explicitly keeps `route_supported` false. No
 transport, per-run trace or new golden family belongs in the checkout.
 Its separate Python traffic-geometry facts enumerate complete integer line
 paths and decode cuboid frames/widths. They bound primitive world points;
 the background mode alone does not inspect animated frog hilites.
 
-Use `--admission` instead of `--background` to add the independent
-`org1_neighbor_admission.py` and `org1_hilite_admission.py` diagnostics. The
-external `org1-admission-proof.json` includes all authored identities, shared
+Use `--corridor` instead of `--background` to add the independent
+`org1_neighbors.py` and `org1_hilite_reach.py` diagnostics. The
+external `org1-corridor-proof.json` includes all authored identities, shared
 FORM writers, model hashes, complete path bounds, candidate terrain layers,
 per-action frog probe bounds and authored pose examples. It keeps
-`route_admitted` false and exits 3 for known remaining obligations. Unsupported
+`route_supported` false and exits 3 for known remaining obligations. Unsupported
 inputs or failed comparisons exit 1. The [entity contract](entities.md#org1-route-proof)
 owns the interpretation and limitations; these reports are not new goldens.
 
@@ -804,7 +804,7 @@ out-and-back workload with a relative-height camera zone. It crosses zone
 boundaries during real normal hops. Retail cases reuse the prescribed JUN1
 zone camera stimuli, with independent source decoding of eleven script-free
 logs, their paths and all group counts. Each sequence starts dormant and resets
-paths. `src/inspection/jun1_zone_lifecycle_admission.json` is generated
+paths. `src/inspection/jun1_zone_lifecycle_preset.json` is generated
 from the same supplied inputs: map digest, named bindings and log-model digests.
 Neither file contains retail bytes or executable code.
 
@@ -868,16 +868,16 @@ values are diagnostic placeholders; tests compare their membership and generatio
 and compare timer/cel only while live. No retail bytes are stored.
 
 ```sh
-python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round> --visibility --ticks 730 --golden-name org1_visibility_round_trip --admission
+python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-round> --visibility --ticks 730 --golden-name org1_visibility_round_trip --preset
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-diver> --visibility --ticks 203 --commands 170:0 --expected-death-tick 202 --golden-name org1_visibility_diver
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-pickup> --visibility --ticks 490 --commands 406:0,418:0,442:2,454:2 --golden-name org1_visibility_pickup
 python -B tools/make_golden_org1_route.py --data-dir <game-folder> --oracle <external-oracle>/platform_oracle.exe --acos-table <acos-table> --output-directory <external-pickup-death> --visibility --ticks 472 --commands 406:0,418:0,442:2 --expected-death-tick 467 --golden-name org1_visibility_pickup_death
 ```
 
 Build with `tools/build_platform_oracle.ps1`; append `--write-goldens` only to
-regenerate. The v2 admission retains independent geometry/root checks and pins
+regenerate. The v2 preset retains independent geometry/root checks and pins
 all source dependencies. Pink frog body contact replaces her proximity exclusion;
-checkpoint delivery and tongue pickup remain outside admission. The independent
+checkpoint delivery and tongue pickup remain outside the preset. The independent
 frog root calculation supplies her pre-control carrier pose; frozen C additionally
 checks her full matrix, continuation and display state. Perform the deliberate-break
 check for each new family by changing a phase fact or ordered-update digest, requiring
@@ -1047,7 +1047,7 @@ integers keep source units.
 
 `debug_valid` records the source DEBUG assertions (`1 < min < max`). Port setup
 also rejects maximum radii above 255, whose squares wrap; the test requires
-rejection outside that admitted range and compares arithmetic inside it.
+rejection outside that supported range and compares arithmetic inside it.
 `distance` is the unsigned squared XZ distance, recorded for diagnosis only.
 A width of at least 2³¹ is negative after narrowing, so `colour` can exceed 128.
 Model scales then use the bytes of `MR_SET32((c<<16)+(c<<8)+c)`. `sprite` is
@@ -1067,7 +1067,7 @@ Run `python3 -B tools/make_golden_cave.py` to verify reproducibility, or add
 through `EntitySetup`, `EntityCaveLight`, `GameplayRewards`, `FormCallback`,
 `EntityCaveFade`, `EntityFatFireFly` and `CaveSpriteView`. For deliberate breaks,
 change one expected value per family, require `test_cave` to fail, then restore
-it and rerun. Use the `die` of admitted `light_create` input (2, 4, 90), `light_decay[0].map_max`,
+it and rerun. Use the `die` of supported `light_create` input (2, 4, 90), `light_decay[0].map_max`,
 `light_add[0].map_min`, the first `entity_fade` `colour` and
 `fat_fire_fly_bob[0].y`; for `firefly_frames`, change `image` at age 2.
 These component facts do not replace native attract comparisons or normal-start
@@ -1084,7 +1084,7 @@ above. Columns: `resource_id`, `map`, `light_unique_id`, authored
 `entity_count`. Rows cover CAV1, CAV3 and CAV4 at both detail levels. The
 frogger-light payload follows the 32-byte matrix after the 24-byte entity
 header. `test_retail_cave` compares the port's decoded payloads, counts and
-precomputed radii. It also requires `GameplaySetup` to admit each high-detail
+precomputed radii. It also requires `GameplaySetup` to set up each high-detail
 level with its cave-light flag and frogger light. Finally, it checks that the
 `FIREFLY` form's bonus callback is `CavFireFlyCallBack`. That callback's code
 identity is listed in `form_callbacks.json`.
@@ -1517,7 +1517,7 @@ encoding, and decodes the supplied script table to find each form script's
 
 `test_retail_swamp` compares the port's payloads, registers, root scripts,
 rat timing and weir matrix. It also checks the model actions, primitives and
-callbacks, and admits SWP1–SWP5 through whole-map setup with every entity and
+callbacks, and sets up SWP1–SWP5 through whole-map setup with every entity and
 census-derived per-kind counts. The crusher and press contacts must match
 their `form_grid` rows. For the retail deliberate break, change SWP4.MAP entity
 52 `drop_time` (45), the SWP3.MAP `form_grid` 9 `runtime_max_y` (32767) and the
@@ -1655,7 +1655,7 @@ readers, script-register walk, collision-primitive rows and `fields` encoding.
 
 `test_retail_sky` compares the port's payloads, triggers, PATH_INFO starts,
 moving-platform operands, registers and root scripts with every entity row. It
-checks the model actions, primitives and callbacks. It admits SKY1–SKY4
+checks the model actions, primitives and callbacks. It sets up SKY1–SKY4
 through whole-map setup with every entity, no `unknown_behavior`,
 `invalid_payload` or `incompatible_callback` diagnostic and census-derived
 trigger, moving-platform and path-follower counts. Sky-form contacts must

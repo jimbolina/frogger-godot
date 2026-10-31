@@ -661,7 +661,7 @@ static void route_emit(int tick,const char *phase) {
     if(world_x<1900 || world_x>=2304 || world_z< -5376 || world_z>= -4864 ||
        f->fr_lwtrans->t[0]<1900 || f->fr_lwtrans->t[0]>=2304 ||
        f->fr_lwtrans->t[2]< -5376 || f->fr_lwtrans->t[2]>= -4864) {
-        fprintf(stderr,"admission rectangle escaped at tick %d phase %s\n",tick,phase);exit(3);
+        fprintf(stderr,"corridor rectangle escaped at tick %d phase %s\n",tick,phase);exit(3);
     }
     int selected=route_indices[route_selected_slot];
     int attached=f->fr_entity?(int)(f->fr_entity-entities):-1;

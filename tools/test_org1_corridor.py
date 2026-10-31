@@ -1,9 +1,9 @@
-"""Asset-free regressions for ORG1's bounded admission evidence checker.
+"""Asset-free regressions for ORG1's bounded corridor evidence checker.
 
 All programs, coordinates, model bytes and oracle responses below are invented.
 These checks protect the independent evaluator and evidence rejection gates;
 they do not replace agreement with the linked frozen-C oracle on owner assets.
-Run directly with: python -B tools/test_org1_admission.py
+Run directly with: python -B tools/test_org1_corridor.py
 """
 
 import copy
@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import verify_org1_admission as admission
+import verify_org1_corridor as corridor
 
 
 ROOT = [34, 0, 0, 0, 0, 11, 13, 0, 6, 2, 4, 7, 0, 0, 0, 0, 10, 12, 5]
@@ -28,30 +28,30 @@ ORIGIN = [7, 8, 9]
 def background(ticks, traffic=(), seed=12345, reverse=False, collected=0,
                programs=None, points=None):
     facts = {'traffic': [{'entity_index': index, 'script_id': 1} for index in traffic]}
-    return admission.background_expected(facts, programs or {1: ROOT, 2: TARGET},
+    return corridor.background_expected(facts, programs or {1: ROOT, 2: TARGET},
                                          points or POINTS, ORIGIN, ticks, seed,
                                          reverse, collected)
 
 
 class DecoderTests(unittest.TestCase):
     def test_operand_words_are_not_interpreted_as_opcodes(self):
-        self.assertEqual(admission.commands({'stream': [7, 0, -1, 5]}),
+        self.assertEqual(corridor.commands({'stream': [7, 0, -1, 5]}),
                          [('SET_TIMER', [0, -1]), ('RESTART', [])])
 
     def test_zero_operand_command_at_end_is_complete(self):
-        self.assertEqual(admission.commands({'stream': [12]}), [('ENDLOOP', [])])
+        self.assertEqual(corridor.commands({'stream': [12]}), [('ENDLOOP', [])])
 
     def test_all_operand_truncations_are_rejected(self):
         for missing in range(1, 5):
             with self.subTest(missing=missing), self.assertRaises(ValueError):
-                admission.commands({'stream': [34, 0, 0, 0, 0][:-missing]})
+                corridor.commands({'stream': [34, 0, 0, 0, 0][:-missing]})
 
     def test_opcode_must_be_in_unsigned_known_range(self):
-        for opcode in (-1, -len(admission.exe_tables.OPCODES),
-                       len(admission.exe_tables.OPCODES), 2**32 - 1,
+        for opcode in (-1, -len(corridor.exe_tables.OPCODES),
+                       len(corridor.exe_tables.OPCODES), 2**32 - 1,
                        True, 5.0, '5', None):
             with self.subTest(opcode=opcode), self.assertRaises(ValueError):
-                admission.commands({'stream': [opcode]})
+                corridor.commands({'stream': [opcode]})
 
 
 class BackgroundClosureTests(unittest.TestCase):
@@ -66,7 +66,7 @@ class BackgroundClosureTests(unittest.TestCase):
             position = POINTS[index] if index < 5 else ORIGIN
             struct.pack_into('<3i', data, at + 44, *position)
         scripts, script_names, traffic = {}, {}, []
-        for sid, name in enumerate(admission.TRAFFIC.values(), start=1):
+        for sid, name in enumerate(corridor.TRAFFIC.values(), start=1):
             root = ROOT[:]
             root[9] = sid + 10
             root[10] = 2 if name == 'SCRIPT_ORG_LORRY' else 4
@@ -84,7 +84,7 @@ class BackgroundClosureTests(unittest.TestCase):
                                    1: [{'global': 6}, {'global': 5}]})
 
     def inputs(self):
-        return admission.background_inputs(self.facts, self.context)
+        return corridor.background_inputs(self.facts, self.context)
 
     def test_complete_five_root_closure_decodes_source_checkpoint_and_fly_positions(self):
         programs, points, fly_position = self.inputs()
@@ -176,13 +176,13 @@ class BackgroundSemanticsTests(unittest.TestCase):
         for expected in ((1103527590, 16838), (2524885223, 5758),
                          (662824084, 10113), (3295386429, 17515),
                          (4182499122, 31051), (2516284547, 5627)):
-            self.assertEqual(admission.random_step(seed), expected)
+            self.assertEqual(corridor.random_step(seed), expected)
             seed = expected[0]
-        self.assertEqual(admission.random_step(0), (12345, 0))
-        self.assertEqual(admission.random_step(2**32), (12345, 0))
+        self.assertEqual(corridor.random_step(0), (12345, 0))
+        self.assertEqual(corridor.random_step(2**32), (12345, 0))
 
     def test_wait_and_endloop_each_yield_before_the_next_random_branch(self):
-        with patch.object(admission, 'random_step', return_value=(99, 0)) as rng:
+        with patch.object(corridor, 'random_step', return_value=(99, 0)) as rng:
             rows = background(12, traffic=[24])
         traffic = rows[::2]
         self.assertEqual([row[6] for row in traffic], list(range(1, 12)) + [1])
@@ -192,7 +192,7 @@ class BackgroundSemanticsTests(unittest.TestCase):
         self.assertTrue(all(row[-1] == 0 for row in rows))
 
     def test_taken_target_restart_keeps_root_and_may_draw_again_same_update(self):
-        with patch.object(admission, 'random_step',
+        with patch.object(corridor, 'random_step',
                           side_effect=[(11, 1), (22, 5), (33, 0)]) as rng:
             row = background(1, traffic=[24])[0]
         self.assertEqual(rng.call_count, 3)
@@ -236,7 +236,7 @@ class BackgroundSemanticsTests(unittest.TestCase):
             draws = iter((n, 0) for n in range(1, 1000))
             root = ROOT[:]
             root[16] = 0
-            with patch.object(admission, 'random_step', side_effect=lambda _: next(draws)):
+            with patch.object(corridor, 'random_step', side_effect=lambda _: next(draws)):
                 return background(61, traffic=[24, 25], reverse=reverse,
                                   programs={1: root, 2: TARGET})
         forward, backward = run(False), run(True)
@@ -289,8 +289,8 @@ class MovingSoundEvidenceTests(unittest.TestCase):
         text = (header or self.HEADER) + '\n'
         text += '\n'.join(','.join(map(str, row)) for row in (self.ROWS if rows is None else rows)) + '\n'
         response = SimpleNamespace(returncode=returncode, stdout=text, stderr='invented failure')
-        with patch.object(admission.subprocess, 'run', return_value=response):
-            return admission.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
+        with patch.object(corridor.subprocess, 'run', return_value=response):
+            return corridor.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
 
     def test_real_allocation_reuse_owner_clear_and_recreation_evidence(self):
         proof = self.check_response()
@@ -320,16 +320,16 @@ class MovingSoundEvidenceTests(unittest.TestCase):
 
     def test_inventory_change_is_rejected_before_oracle(self):
         self.context['inventory'].pop()
-        with patch.object(admission.subprocess, 'run') as oracle:
+        with patch.object(corridor.subprocess, 'run') as oracle:
             with self.assertRaisesRegex(ValueError, 'inventory changed'):
-                admission.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
+                corridor.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
             oracle.assert_not_called()
 
     def test_changed_register_binding_is_rejected_before_oracle(self):
         self.context['scripts'][1]['stream'][1] = 36
-        with patch.object(admission.subprocess, 'run') as oracle:
+        with patch.object(corridor.subprocess, 'run') as oracle:
             with self.assertRaisesRegex(ValueError, 'register operands'):
-                admission.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
+                corridor.check_moving_sound(Path('oracle'), Path('acos'), self.output, self.context)
             oracle.assert_not_called()
 
 
@@ -357,13 +357,13 @@ class TrafficGeometryTests(unittest.TestCase):
         struct.pack_into('<hhhhiHHHHi', self.raw, 44, offset, 0, 0, 0, 0, half_width, 40, 60, 0, matrix)
 
     def proof(self):
-        with patch.object(admission.platform, 'resource', return_value=self.raw), \
-                patch.object(admission.mof, 'parse_model', return_value=self.model):
-            return admission.traffic_geometry(self.context)
+        with patch.object(corridor.platform, 'resource', return_value=self.raw), \
+                patch.object(corridor.mof, 'parse_model', return_value=self.model):
+            return corridor.traffic_geometry(self.context)
 
-    def test_complete_integer_path_bound_keeps_admission_explicitly_false(self):
+    def test_complete_integer_path_bound_keeps_route_support_explicitly_false(self):
         proof = self.proof()
-        self.assertIs(proof['route_admitted'], False)
+        self.assertIs(proof['route_supported'], False)
         entity = proof['entities'][0]
         self.assertEqual(entity['integer_poses'], 21)
         self.assertEqual(entity['primitive_point_z'], [-609, -411])

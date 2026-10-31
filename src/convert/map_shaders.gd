@@ -44,22 +44,16 @@ static func sky_shader(linear_filter: bool) -> Shader:
 
 
 ## Material using pixel-space UVs; translucency is a polygon flag for maps.
-static func material(image: VloImage, library: TextureLibrary, blend: ModelShaders.Blend,
-		linear_filter: bool, layer: int = -1, pages: MapTexturePages = null) -> ShaderMaterial:
+static func material(image: VloImage, blend: ModelShaders.Blend, linear_filter: bool, layer: int,
+		pages: MapTexturePages) -> ShaderMaterial:
 	var made := ShaderMaterial.new()
 	made.shader = shader(image != null, blend, linear_filter, layer >= 0)
 	if image != null:
-		if pages != null:
-			var texture: Texture2D = pages.texture_for(image)
-			made.set_shader_parameter("image", texture)
-			made.set_shader_parameter("missing_image", texture == null)
-			made.set_shader_parameter("pixel_scale", Vector2.ONE / 256.0)
-			made.set_shader_parameter("pixel_padding", Vector2(image.u, image.v) / 256.0)
-		else:
-			made.set_shader_parameter("image", library.texture_for(image))
-			made.set_shader_parameter("pixel_scale", Vector2(1.0 / image.padded_width, 1.0 / image.padded_height))
-			made.set_shader_parameter("pixel_padding", Vector2(float(image.left_padding()) / image.padded_width,
-				float(image.top_padding()) / image.padded_height))
+		var texture: Texture2D = pages.texture_for(image)
+		made.set_shader_parameter("image", texture)
+		made.set_shader_parameter("missing_image", texture == null)
+		made.set_shader_parameter("pixel_scale", Vector2.ONE / 256.0)
+		made.set_shader_parameter("pixel_padding", Vector2(image.u, image.v) / 256.0)
 		made.set_shader_parameter("image_origin", Vector2(image.u, image.v))
 	made.set_shader_parameter("far_layer", float(layer))
 	if layer >= 0:

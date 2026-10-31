@@ -5,8 +5,8 @@ extends Resource
 ##
 ## A set is named after its banks: the GENERAL theme's bank, then the map's
 ## theme bank, without extensions and joined by [code]+[/code] (for example
-## [code]GEN_VRAM+CAV_VRAM_WIN95[/code]). Each page is composed as
-## [MapTexturePages] composes it: black, every valid upload copied in bank
+## [code]GEN_VRAM+CAV_VRAM_WIN95[/code]). The importer composes each page:
+## black, every valid upload copied in bank
 ## upload order, then the page-wide colour key when a texture whose own page
 ## it is has [constant VloImage.FLAG_BLACK_IS_TRANSPARENT].
 

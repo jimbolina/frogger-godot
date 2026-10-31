@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent retail transport for ORG1 route research, not an admission.
+"""Independent retail transport for ORG1 route research, not an corridor.
 
 Only decimal decoded facts leave this reader. The C trace is evidence to be
 compared with an independent simulation before any runtime preset is enabled.
@@ -16,12 +16,12 @@ import subprocess
 import sys
 
 sys.dont_write_bytecode = True
-import verify_org1_admission as admission
-import org1_neighbor_admission as neighbor
-import org1_hilite_admission as hilite
+import verify_org1_corridor as corridor
+import org1_neighbors as neighbor
+import org1_hilite_reach as hilite
 
 
-def admission_manifest(context,geometry,probes):
+def preset_manifest(context,geometry,probes):
     """Pin independently decoded inputs and the state-space proof conditions."""
     if geometry['zone_count'] or [i for i in geometry['included_FORM_indices'] if i!=53]!=[0,1,2,3,12,13,14,15,16,23]:
         raise ValueError('ORG1 contact/zone closure changed')
@@ -51,14 +51,14 @@ def admission_manifest(context,geometry,probes):
         models.append(-1 if b['flags']&1 else r['model_resource_id'])
     model_facts=[{k:r[k] for k in ('resource_id','counterpart_resource_id')} for r in geometry['models']]
     model_facts.append(dict(resource_id=214,counterpart_resource_id=-1))
-    return dict(schema='org1-route-admission-v1',build='pc-retail-v3.0e',exe_sha256=geometry['executable_sha256'],
-        mwd_sha256=hashlib.sha256(context['mwd']).hexdigest(),map_resource_id=658,form_book_rows_sha256=admission.platform.route_numeric_digest(books),
-        script_rows_sha256=admission.platform.route_numeric_digest([[i,len(s['stream']),*s['stream']] for i,s in enumerate(context['scripts'])]),
+    return dict(schema='org1-route-preset-v1',build='pc-retail-v3.0e',exe_sha256=geometry['executable_sha256'],
+        mwd_sha256=hashlib.sha256(context['mwd']).hexdigest(),map_resource_id=658,form_book_rows_sha256=corridor.platform.route_numeric_digest(books),
+        script_rows_sha256=corridor.platform.route_numeric_digest([[i,len(s['stream']),*s['stream']] for i,s in enumerate(context['scripts'])]),
         model_resources=sorted(model_facts,key=lambda r:r['resource_id']),entity_model_resources=models,
         name_bindings=[dict(index=r['entity_index'],form=r['form_name'],entity=r['entity_type'],script=context['script_names'][r['script_id']]) for r in geometry['neighbors']],
         script_names=context['script_names'],callback_names=context['callbacks'],
         theme_index=context['theme'],theme_death_height=context['themes'][context['theme']]['death_height'],
-        general_high_wad=geometry['general_high_wad'],admitted_x=[-512,512],admitted_z=[-128,480],
+        general_high_wad=geometry['general_high_wad'],bounds_x=[-512,512],bounds_z=[-128,480],
         frog_resource_id=214,live_frog_actions=probes['live_actions'],initial_action_cel=[0,0],frog_roots=probes['roots'],
         included_contact_indices=geometry['included_FORM_indices'],authored_count=64,
         contact_exclusions=[dict(index=r['entity_index'],unique_id=r['unique_id'],offset=r['source_offset'],
@@ -92,9 +92,9 @@ def golden_text(phases,entities):
 
 def transport(root, ticks, commands, road=False, visibility=False):
     """Decode complete terrain, paths, script closure and all authored identities."""
-    facts, c = admission.retail_counterexamples(root, True)
-    data = c['data']; read = admission.contacts.read
-    geometry = neighbor.neighbor_admission(facts, c,(-512,512,-1792,480)) if road else neighbor.neighbor_admission(facts,c)
+    facts, c = corridor.retail_counterexamples(root, True)
+    data = c['data']; read = corridor.contacts.read
+    geometry = neighbor.neighbor_facts(facts, c,(-512,512,-1792,480)) if road else neighbor.neighbor_facts(facts,c)
     if visibility:
         pink=geometry['neighbors'][53]
         form=geometry['form_grids'][pink['form_grid_id']]
@@ -109,7 +109,7 @@ def transport(root, ticks, commands, road=False, visibility=False):
     stacks = [struct.unpack_from('<BBH',data,grid+12+i*4) for i in range(width*depth)]
     total = max(first+count for count,avg,first in stacks)
     values = [ticks,*[commands.get(i,-1) for i in range(ticks)],width,depth,-width*128,-depth*128,
-              128,-256,-1664 if road else -128,gx,gz,nx,nz,sx,sz,admission.exe_tables.LEVEL_CODES.index('ORG1'),256,total]
+              128,-256,-1664 if road else -128,gx,gz,nx,nz,sx,sz,corridor.exe_tables.LEVEL_CODES.index('ORG1'),256,total]
     for count,avg,first in stacks:
         values += [count,avg]
         for i in range(count):
@@ -117,7 +117,7 @@ def transport(root, ticks, commands, road=False, visibility=False):
             values.append(flags)
             for vertex in struct.unpack_from('<4H',data,poly):
                 values += struct.unpack_from('<3h',data,vertices+8+vertex*8)
-    raw = admission.platform.resource(c['files'],c['entries'],c['mwd'],214)
+    raw = corridor.platform.resource(c['files'],c['entries'],c['mwd'],214)
     xar = hilite.animation.parse_xar(raw)
     values += [a['frames'] for a in hilite.discrete_actions(xar,16)]
     general = read(data,76,'<I')
@@ -126,7 +126,7 @@ def transport(root, ticks, commands, road=False, visibility=False):
     ids = {r['script_id'] for r in geometry['neighbors'] if r['script_id']}
     ids.add(c['script_names'].index('SCRIPT_TURTLE_NO_DIVE'))
     for script_id in list(ids):
-        for op,args in admission.commands(c['scripts'][script_id]):
+        for op,args in corridor.commands(c['scripts'][script_id]):
             if op == 'SCRIPT_IF': ids.add(args[2])
     values.append(len(ids))
     for script_id in sorted(ids):
@@ -139,7 +139,7 @@ def transport(root, ticks, commands, road=False, visibility=False):
         for seg in path:
             values += [seg['segment_type'],seg['length']]
             values += (seg['matrix']+seg['smooth_t']+seg['smooth_c'] if seg['segment_type']==0 else seg['start']+seg['end'])
-    forms = admission.contacts.parse_forms(data)
+    forms = corridor.contacts.parse_forms(data)
     model_cache = {}
     for r in geometry['neighbors']:
         index = r['entity_index']; at = r['source_offset']; fid = r['form_grid_id']; form = forms[fid]
@@ -164,7 +164,7 @@ def transport(root, ticks, commands, road=False, visibility=False):
         actions = parts[0]['flipbook_actions'] if not model['incomplete'] else 0
         values.append(actions)
         if actions:
-            raw = admission.platform.resource(c['files'],c['entries'],c['mwd'],model_id)
+            raw = corridor.platform.resource(c['files'],c['entries'],c['mwd'],model_id)
             values += [read(raw,parts[0]['flipbook_ptr']+4+j*4,'<H') for j in range(actions)]
     if road:
         import org1_traffic
@@ -181,7 +181,7 @@ def run(args):
     if any(output.is_relative_to(p.resolve()) for p in (project,project.parent/'froggy')):
         raise ValueError('route evidence must be outside both repositories')
     output.mkdir(parents=True,exist_ok=True)
-    if args.road and args.visibility:raise ValueError('road visibility is not admitted')
+    if args.road and args.visibility:raise ValueError('road visibility is not supported')
     commands={int(t):int(d) for t,d in (item.split(':') for item in args.commands.split(','))}
     fixture,geometry,context=transport(args.data_dir,args.ticks,commands,args.road,args.visibility)
     source=output/'org1-route-input.txt';source.write_text(fixture,encoding='ascii')
@@ -214,34 +214,34 @@ def run(args):
         directory=project/'tests/golden/pc-retail-v3.0e'
         outputs={directory/(args.golden_name+'.tsv'):phase_text,directory/(args.golden_name+'_entities.tsv'):entity_text,
                  directory/'org1_entity_update_fields.json':json.dumps(fields,indent=2)+'\n'}
-    if args.admission:
+    if args.preset:
         if args.road:
-            if args.golden_name!='org1_road_river':raise ValueError('road admission requires successful crossing')
+            if args.golden_name!='org1_road_river':raise ValueError('road preset requires successful crossing')
             import org1_traffic
-            proof=org1_traffic.admission_manifest(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
+            proof=org1_traffic.preset_manifest(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
             roots={tuple(r) for r in proof['frog_roots']}
             for row in rows:
                 if int(row['mode'])!=2 and not int(row['flags'])&8 and tuple(int(row[f'm{r}{c}']) for r in range(3) for c in range(3)) not in roots:
                     raise ValueError('road frog root escaped the independently closed pose set')
-            (output/'org1-road-admission-proof.json').write_text(json.dumps(dict(admission=proof,neighbors=geometry),indent=2)+'\n',encoding='ascii')
-            path=project/'src/inspection/org1_road_river_admission.json';content=json.dumps(proof,indent=2)+'\n'
+            (output/'org1-road-corridor-proof.json').write_text(json.dumps(dict(preset=proof,neighbors=geometry),indent=2)+'\n',encoding='ascii')
+            path=project/'src/inspection/org1_road_river_preset.json';content=json.dumps(proof,indent=2)+'\n'
             outputs[path]=content
-        elif args.golden_name!=('org1_visibility_round_trip' if args.visibility else 'org1_round_trip'):raise ValueError('admission requires the complete frozen round trip')
-    if args.admission and not args.road:
+        elif args.golden_name!=('org1_visibility_round_trip' if args.visibility else 'org1_round_trip'):raise ValueError('preset requires the complete frozen round trip')
+    if args.preset and not args.road:
         probes=hilite.check_reachable_probes(context,geometry,args.oracle.resolve(),args.acos_table.resolve(),output)
         roots={tuple(r) for r in probes['roots']}
         for row in rows:
             if int(row['mode'])!=2 and tuple(int(row[f'm{r}{c}']) for r in range(3) for c in range(3)) not in roots:
                 raise ValueError('integrated frog root escaped the independently closed pose set')
-        proof=admission_manifest(context,geometry,probes)
+        proof=preset_manifest(context,geometry,probes)
         if args.visibility:
-            proof['schema']='org1-visibility-admission-v2';proof['lifetime']='visibility'
+            proof['schema']='org1-visibility-preset-v2';proof['lifetime']='visibility'
             proof['conditions']=[v for v in proof['conditions'] if not v.startswith(('All 64','Checkpoint croak','No tongueable'))]
             proof['conditions'] += ['All 64 authored identities retain paths and source-ordered applicable live updates, including immortal initialization.',
-                'Pink frog body contact, next-update pickup, riding and death are admitted; tongue input, checkpoints and fly collection remain unsupported.',
+                'Pink frog body contact, next-update pickup, riding and death are supported; tongue input, checkpoints and fly collection remain unsupported.',
                 'Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically.']
             proof['attached_diver']=dict(commands=[[170,1]],observation_ticks=203,death_tick=202)
-        path=project/'src/inspection'/('org1_visibility_admission.json' if args.visibility else 'org1_exploration_admission.json');content=json.dumps(proof,indent=2)+'\n'
+        path=project/'src/inspection'/('org1_visibility_preset.json' if args.visibility else 'org1_exploration_preset.json');content=json.dumps(proof,indent=2)+'\n'
         outputs[path]=content
     if args.visibility:
         frozen=list(csv.DictReader(open(str(source)+'.lifecycle.csv')))
@@ -271,7 +271,7 @@ def run(args):
             changes.append({k:row[k] for k in ('tick','attached','mode','diver_y')} |
                            {'world':[int(row[k])>>16 for k in ('x16','y16','z16')]})
         previous=state
-    print(json.dumps(dict(route_admitted=bool(args.admission),independent_agreement=True,rows=len(rows),entity_rows=len(side),transitions=changes),indent=2))
+    print(json.dumps(dict(route_supported=bool(args.preset),independent_agreement=True,rows=len(rows),entity_rows=len(side),transitions=changes),indent=2))
 
 
 if __name__=='__main__':
@@ -282,7 +282,7 @@ if __name__=='__main__':
     parser.add_argument('--expected-death-tick',type=int)
     parser.add_argument('--golden-name')
     parser.add_argument('--write-goldens',action='store_true')
-    parser.add_argument('--admission',action='store_true')
+    parser.add_argument('--preset',action='store_true')
     parser.add_argument('--road',action='store_true')
     parser.add_argument('--visibility',action='store_true')
     run(parser.parse_args())

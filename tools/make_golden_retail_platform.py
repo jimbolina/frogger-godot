@@ -346,7 +346,7 @@ def route_fixture(data_dir, version, return_context=False):
     count = contacts.read(data, emtp + 8, '<H')
     if count != 115 or hashlib.sha256(data).hexdigest() != (
             '0feb59bbb595caaeb520bcfc978203893e0da81abf6bdf18e7a088f8d175f46c'):
-        raise ValueError('JUN1 admission MAP proof inputs changed')
+        raise ValueError('JUN1 preset MAP proof inputs changed')
     records = []
     for index in range(count):
         at = contacts.read(data, emtp + 12 + index * 4, '<I')
@@ -360,10 +360,10 @@ def route_fixture(data_dir, version, return_context=False):
                   for i, _at, grid_id, uid, _fid, flags, b in records]
     book_digest = hashlib.sha256(json.dumps(book_facts, separators=(',', ':')).encode()).hexdigest()
     if book_digest != '0b24c1ba6c7b4fd7a0be9acb51cebca50071ec582796e79b4d815bf7e282827f':
-        raise ValueError('JUN1 admission form-book proof inputs changed')
+        raise ValueError('JUN1 preset form-book proof inputs changed')
     themes = exe_tables.read_theme_book(image, exe_tables.java_int(cfg.values['themeBook']))
     if themes[theme]['death_height'] != 256 or themes[0]['high_wad'] != 205:
-        raise ValueError('JUN1 admission theme or GENERAL WAD changed')
+        raise ValueError('JUN1 preset theme or GENERAL WAD changed')
     script_names, _, _ = exe_tables.name_list('scripts',
         cfg.values.get('scriptList', '1997-09-18-psx-build63'), False)
     scripts = exe_tables.read_scripts(image, exe_tables.java_int(cfg.values['scripts']),
@@ -371,7 +371,7 @@ def route_fixture(data_dir, version, return_context=False):
     script_facts = [(index, script['stream']) for index, script in enumerate(scripts)]
     script_digest = hashlib.sha256(json.dumps(script_facts, separators=(',', ':')).encode()).hexdigest()
     if script_digest != '0d084966e0ab96c67a3421f4ac26ff3068a7d23efad878dcadc6bee71bb1c512':
-        raise ValueError('JUN1 admission script proof inputs changed')
+        raise ValueError('JUN1 preset script proof inputs changed')
     numeric_books = [(i, uid, grid_id, form_id, flags, b['entity_type'], b['id'],
                       b['script'], b['flags'], b['collision'], b['radius2'],
                       b['death'], b['bonus'])
@@ -410,7 +410,7 @@ def route_fixture(data_dir, version, return_context=False):
         raise ValueError('JUN1 incomplete model counterpart mapping changed')
     model_digest = hashlib.sha256(json.dumps(model_facts, separators=(',', ':')).encode()).hexdigest()
     if model_digest != '61c5f0fbaa6ec6767770cdaed0856f6338a20526fdc8c339412d847becd16a5f':
-        raise ValueError('JUN1 admission model proof inputs changed')
+        raise ValueError('JUN1 preset model proof inputs changed')
 
     def decoded_path(path_index):
         path = contacts.read(data, path_packet + 8 + path_index * 4, '<I')
@@ -503,7 +503,7 @@ def route_fixture(data_dir, version, return_context=False):
         zone_records.append((index, at, zone_type, region_count,
                              (xmin, zmin, xmax, zmax), regions_at, camera_flags,
                              camera_direction, camera_offsets, regions))
-    admission = dict(schema='jun1-route-admission-v1', build=version,
+    preset = dict(schema='jun1-route-preset-v1', build=version,
                      exe_sha256=hashlib.sha256((data_dir / 'FROGGER.EXE').read_bytes()).hexdigest(),
                      mwd_sha256=hashlib.sha256(mwd).hexdigest(), map_resource_id=656,
                      form_book_rows_sha256=numeric_book_digest,
@@ -517,7 +517,7 @@ def route_fixture(data_dir, version, return_context=False):
                      general_high_wad=themes[0]['high_wad'],
                      candidate_indices=list(candidate_indices),
                      excluded_indices=[i for i in range(count) if i not in candidate_indices],
-                     admitted_x=[1900, 2304], admitted_z=[-5376, -4864],
+                     bounds_x=[1900, 2304], bounds_z=[-5376, -4864],
                      source_pad_masks={'world_west': 1, 'world_east': 2},
                      normalized_command_masks={'world_west': 8, 'world_east': 2})
     supported_indices = [index for index, _at, _grid, _uid, _fid, flags, b in records
@@ -528,7 +528,7 @@ def route_fixture(data_dir, version, return_context=False):
                        start_y=spawn_y, return_y=return_y,
                        candidate_traces=candidate_traces, zones=zones,
                        zone_records=zone_records,
-                       admission=admission, supported_indices=supported_indices)
+                       preset=preset, supported_indices=supported_indices)
 
 
 def verify_route_trace(context, trace_path):
@@ -600,7 +600,7 @@ def verify_route_trace(context, trace_path):
                [matrix[9 + axis] + apply(matrix, [offset[j] >> 16 for j in range(3)])[axis]
                 for axis in range(3)]]
     if not (1900 <= mounted[0] >> 16 < 2304 and -5376 <= mounted[2] >> 16 < -4864):
-        raise ValueError('independent correction escaped admission rectangle')
+        raise ValueError('independent correction escaped corridor rectangle')
     check(3, 'collision', x16=mounted[0], y16=mounted[1], z16=mounted[2],
           attached=24, mode=5, count=8)
     landing_mounted = mounted[:]
@@ -664,7 +664,7 @@ def verify_route_trace(context, trace_path):
                     raise ValueError(f'unexpected eligible FORM query tick {tick} entity {index}')
                 frog_point = [value >> 16 for value in landing_mounted]
                 if not (1900 <= frog_point[0] < 2304 and -5376 <= frog_point[2] < -4864):
-                    raise ValueError('intermediate FORM correction escaped admission rectangle')
+                    raise ValueError('intermediate FORM correction escaped corridor rectangle')
         cell_x, cell_z = int(row['grid_x']), int(row['grid_z'])
         for zone_index, (_zone_type, (zx0, zz0, zx1, zz1), regions) in enumerate(context['zones']):
             if zx0 <= cell_x <= zx1 and zz0 <= cell_z <= zz1:
@@ -812,7 +812,7 @@ def main():
                         help='Write decoded numeric JUN1 route input outside the repository')
     parser.add_argument('--route-trace', type=Path,
                         help='Compare a frozen-C JUN1 CSV trace with independent Python route arithmetic')
-    parser.add_argument('--route-admission', type=Path,
+    parser.add_argument('--route-preset', type=Path,
                         help='Write compact proof-input fingerprint manifest')
     parser.add_argument('--route-golden', type=Path,
                         help='Write validated JUN1 movement/contact/camera TSV from --route-trace')
@@ -871,16 +871,16 @@ def main():
         return
     if args.data_dir is None:
         raise ValueError('--data-dir is required outside synthetic zone cases')
-    if args.route_admission:
+    if args.route_preset:
         _facts, context = route_fixture(args.data_dir, args.version, return_context=True)
-        content = json.dumps(context['admission'], indent=2) + '\n'
+        content = json.dumps(context['preset'], indent=2) + '\n'
         if args.verify:
-            if args.route_admission.read_text(encoding='ascii') != content:
+            if args.route_preset.read_text(encoding='ascii') != content:
                 raise ValueError('JUN1 proof-input manifest differs from retail data')
             print('JUN1 proof-input manifest verified.')
         else:
-            args.route_admission.parent.mkdir(parents=True, exist_ok=True)
-            args.route_admission.write_text(content, encoding='ascii')
+            args.route_preset.parent.mkdir(parents=True, exist_ok=True)
+            args.route_preset.write_text(content, encoding='ascii')
             print('Decoded JUN1 proof-input manifest written.')
         return
     if args.route_trace:

@@ -1,5 +1,5 @@
 extends RetailTest
-## Swamp payload decoding, script registers, models, primitives, callbacks, FORM squares and SWP1–SWP5 admission.
+## Swamp payload decoding, script registers, models, primitives, callbacks, FORM squares and SWP1–SWP5 whole-map setup.
 
 const LEVELS: PackedStringArray = ["SWP1", "SWP2", "SWP3", "SWP4", "SWP5"]
 const PATH_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
@@ -195,7 +195,7 @@ func test_swamp_models_primitives_and_callbacks_match_independent_facts() -> voi
 		callbacks += 1
 	assert_eq(callbacks, 3, "crusher, crusher2 and press callbacks")
 
-func test_swamp_levels_admit_through_whole_map_setup() -> void:
+func test_swamp_levels_set_up_the_whole_map() -> void:
 	assert_eq(_data.error, "")
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(_data)
 	assert_eq(assets.error, "")
@@ -228,7 +228,7 @@ func test_swamp_levels_admit_through_whole_map_setup() -> void:
 		if setup.definition == null:
 			continue
 		var collision: EntityCollisionDefinition = setup.definition.entity_collision
-		assert_eq(collision.entities.size(), map.entities.size(), "%s admits every entity" % code)
+		assert_eq(collision.entities.size(), map.entities.size(), "%s sets up every entity" % code)
 		assert_true(collision.lifecycle.source_allocation, code)
 		var counts: Dictionary = {}
 		for definition: EntityDefinition in collision.entities:

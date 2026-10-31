@@ -51,8 +51,8 @@ commands run from the repository root; generated facts live in
 | Cave light radii, fade, firefly pickups, fat fire fly bob and retail light payloads | [Cave entities](specs/entities.md#cave-entities) |
 | Desert rocks, tumbleweed, snake, vulture, croc head, crack and retail payloads/action lengths | [Desert entities](specs/entities.md#desert-entities) |
 | Jungle plant, rope bridge, mushroom bounce, outro door bounce-back, hippo script and retail payloads/plinths/action lengths | [Jungle entities](specs/entities.md#jungle-entities) |
-| Swamp squirt, crusher, press, crusher callback, rat, slug, weir, barrel script registers, LOCAL_ALIGN and retail payloads/FORMs/admission | [Swamp entities](specs/entities.md#swamp-entities) |
-| Sky triggers, PATH_INFO platforms, backdrop drift, Game_timer cadence, balloon/helicopter/hawk registers and retail payloads/FORMs/callbacks/admission | [Sky entities](specs/entities.md#sky-entities) |
+| Swamp squirt, crusher, press, crusher callback, rat, slug, weir, barrel script registers, LOCAL_ALIGN and retail payloads/FORMs/whole-map setup | [Swamp entities](specs/entities.md#swamp-entities) |
+| Sky triggers, PATH_INFO platforms, backdrop drift, Game_timer cadence, balloon/helicopter/hawk registers and retail payloads/FORMs/callbacks/whole-map setup | [Sky entities](specs/entities.md#sky-entities) |
 | Particle generators, shadows, hop trail, poly-piece pop, splash, pop ring, score popups, frog tint/croak, glows and retail hilites/effect textures/generator records | [Effects](specs/effects.md) |
 | Front-end level flags, completion and gold-frog unlocks, JUN1 rewrite and page-flow requests | [Front end](specs/frontend.md) |
 | Level-select stack layout, camera, lights, gold-frog quads and scripted motion, glow, spin and fade traces | [Level-select stack](specs/frontend.md#level-select-stack) |

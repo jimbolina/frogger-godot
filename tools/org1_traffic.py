@@ -2,9 +2,9 @@
 """Independent decoded traffic cuboids and stored animated frog collision poses."""
 import struct
 
-import verify_org1_admission as admission
-import org1_hilite_admission as hilite
-import org1_neighbor_admission as neighbor
+import verify_org1_corridor as corridor
+import org1_hilite_reach as hilite
+import org1_neighbors as neighbor
 from org1_round_trip import apply,transpose
 
 CANDIDATE=(-512,512,-1792,480)
@@ -14,19 +14,19 @@ def decode(context):
     """Read all five traffic models and every source frog collision hilite."""
     cache={};vehicles={}
     for identity in context['inventory']:
-        if identity['form_name'] not in admission.TRAFFIC:continue
-        at=identity['source_offset'];fid=admission.contacts.read(context['data'],at+4,'<H')
+        if identity['form_name'] not in corridor.TRAFFIC:continue
+        at=identity['source_offset'];fid=corridor.contacts.read(context['data'],at+4,'<H')
         book=context['forms'][context['theme']][fid]
         mid=context['wads'][context['level']['high_wad']][book['id']][0]
-        raw=admission.platform.resource(context['files'],context['entries'],context['mwd'],mid)
+        raw=corridor.platform.resource(context['files'],context['entries'],context['mwd'],mid)
         part=neighbor.model_facts(context,mid,cache)['_model']['statics'][0]['parts'][0]
         cp=part['collprim_ptr'];kind,flags=struct.unpack_from('<2H',raw,cp)
         ox,oy,oz,pad,radius,x,y,z,user,matrix=struct.unpack_from('<hhhhiHHHHi',raw,cp+12)
         if (part['collprims'],kind,flags,matrix,user,book['death'],book['collision'])!=(1,0,2,-1,1,0,0):
             raise ValueError('traffic primitive/death contract changed')
         vehicles[identity['entity_index']]=dict(offset=[ox,oy,oz],lengths=[x,y,z],reaction=user,death=book['death'])
-    raw=admission.platform.resource(context['files'],context['entries'],context['mwd'],214)
-    mesh=admission.mof.parse_model(raw,'frog',None,[])
+    raw=corridor.platform.resource(context['files'],context['entries'],context['mwd'],214)
+    mesh=corridor.mof.parse_model(raw,'frog',None,[])
     xar=hilite.animation.parse_xar(raw);actions=hilite.discrete_actions(xar,16)
     probes=list(hilite.all_hilites(mesh['statics'][0]))
     matrices=[[hilite.animation.sampled_matrix(xar,a,frame,part) for frame in range(a['frames']) for part in range(16)] for a in actions]
@@ -39,7 +39,7 @@ def transport_footer(context,geometry):
     for index,cp in vehicles.items():values += [index,*cp['offset'],*cp['lengths'],cp['reaction'],cp['death']]
     values.append(len(probes))
     for part,h,pc,v in probes:values += [part,*v]
-    raw=admission.platform.resource(context['files'],context['entries'],context['mwd'],214)
+    raw=corridor.platform.resource(context['files'],context['entries'],context['mwd'],214)
     xar=hilite.animation.parse_xar(raw)
     values += [int(xar['zero']),len(xar['raw'])]
     for row in xar['raw']:values += row
@@ -74,16 +74,16 @@ def primitive_hit(matrix,cp,points):
     return None
 
 
-def admission_manifest(context,geometry,oracle,acos,output):
+def preset_manifest(context,geometry,oracle,acos,output):
     """Prove the broader corridor while retaining the original river preset."""
     import make_golden_org1_route as generator
-    narrow=neighbor.neighbor_admission(dict(entity_count=64,build='pc-retail-v3.0e',
+    narrow=neighbor.neighbor_facts(dict(entity_count=64,build='pc-retail-v3.0e',
         map_sha256=geometry['map_sha256'],executable_sha256=geometry['executable_sha256']),context)
     probes=hilite.check_reachable_probes(context,narrow,oracle,acos,output)
     supports=[tuple(r) for r in probes['support_roots']]
     roots=hilite.root_closure(geometry['terrain'],supports)
     if roots!=[tuple(r) for r in probes['roots']]:raise ValueError('road terrain enlarges the independently checked root closure')
-    proof=generator.admission_manifest(context,narrow,probes)
+    proof=generator.preset_manifest(context,narrow,probes)
     vehicles,_,_,_=decode(context)
     included=sorted(geometry['included_FORM_indices']+list(vehicles))
     if geometry['zone_count'] or geometry['unresolved_contact_indices']!=list(vehicles):raise ValueError('road neighbor closure changed')
@@ -105,7 +105,7 @@ def admission_manifest(context,geometry,oracle,acos,output):
         x,y,z=r['geometry']['position_bounds']
         dx=max(abs(a-b) for a in x for b in world[0]);dz=max(abs(a-b) for a in z for b in world[1])
         if max(dx,dz)>=32768 or dx*dx+dz*dz+32768**2>=2**31:raise ValueError('traffic source-width closure changed')
-    proof.update(schema='org1-road-river-admission-v1',admitted_x=list(CANDIDATE[:2]),admitted_z=list(CANDIDATE[2:]),
+    proof.update(schema='org1-road-river-preset-v1',bounds_x=list(CANDIDATE[:2]),bounds_z=list(CANDIDATE[2:]),
         included_contact_indices=included,spawn_cell=[10,1],spawn_world=[128,-256,-1664],spawn_direction=0,default_ticks=180,
         contact_exclusions=[dict(index=r['entity_index'],unique_id=r['unique_id'],offset=r['source_offset'],reason=r['contact_status']) for r in geometry['neighbors'] if r['entity_index'] not in included],
         traffic_primitives=[dict(index=i,**cp) for i,cp in vehicles.items()],

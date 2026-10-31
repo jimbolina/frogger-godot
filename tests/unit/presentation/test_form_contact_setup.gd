@@ -217,7 +217,7 @@ func test_invalid_grid_id_excludes_one_contact_without_hiding_neighbor() -> void
 	assert_eq(setup.definitions[1].unsupported_reason, "")
 	assert_eq(setup.definitions[1].entity_index, 1)
 
-func test_primitive_only_model_admits_absent_form_data_but_not_malformed_records() -> void:
+func test_primitive_only_model_accepts_absent_form_data_but_not_malformed_records() -> void:
 	var map: MapFile = _map()
 	var entity: EntityDefinition = _authored(map, 0, 9)
 	var model: MofFile = _model(20, true)

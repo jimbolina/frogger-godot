@@ -101,7 +101,7 @@ func test_rock_targets_match_independent_facts() -> void:
 		var raw_grid: Dictionary = initial.grid
 		var resolved: EntityDesertRockTargets = EntityDesertRockTargets.resolve(authored, _grid(raw_grid), bounces)
 		if bounces < 1:
-			assert_ne(resolved.error, "", "port admission rejects zero bounces: %s" % label)
+			assert_ne(resolved.error, "", "port setup rejects zero bounces: %s" % label)
 			continue
 		if first_error >= 0:
 			assert_string_contains(resolved.error, "target %d" % first_error, label)

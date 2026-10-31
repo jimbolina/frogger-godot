@@ -52,7 +52,7 @@ func configure(effects: EffectResources) -> String:
 		if image == null:
 			problems.append("Score image %s is unavailable" % symbol)
 			continue
-		add_image(slot, TextureBuilder.build_texture(image), Rect2(TextureBuilder.pixel_rect(image)), EffectSpriteMaterial.image_blend(image))
+		add_image(slot, image.texture, Rect2(TextureBuilder.pixel_rect(image)), EffectSpriteMaterial.image_blend(image))
 	return "; ".join(problems)
 
 

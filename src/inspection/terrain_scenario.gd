@@ -134,51 +134,41 @@ func attach_data(data: AssetCatalog, selected_level_code: String = "", assets: T
 		else:
 			diagnostics.append("Platform inspection omits zones, scripts, lifecycle and authored boundary markers" if options.platforms_enabled else "Entity POP inspection omits platforms, zones, scripts and authored boundary markers")
 		if options.exploration_preset.is_empty():
-			apply_des2_inspection_defaults()
-			apply_jun1_inspection_defaults()
+			apply_level_start()
 	else:
 		diagnostics.append("Terrain inspection omits entities, forms, platforms, zones and authored boundary markers")
 	return ""
 
-## Whether POP reactions, or JUN1 platform reactions, without visibility lifecycle keep the bounded inspection path.
+## Whether POP reactions, or platform reactions on a level whose bounded start
+## needs them, without visibility lifecycle keep the bounded inspection path.
 func _bounded_probe() -> bool:
 	if not options.entity_reactions or options.entity_lifecycle:
 		return false
-	return options.reactions == ScenarioOptions.Reaction.POP or level_code.to_upper() == "JUN1"
+	return options.reactions == ScenarioOptions.Reaction.POP or ScenarioPresets.start_needs_platforms(level_code)
 
-## Selects the bounded DES2 hop only for the uncustomized built-in run.
-func apply_des2_inspection_defaults() -> void:
-	if not options.entity_reactions or level_code.to_upper() != "DES2" or options.authored_fixture:
+## Applies the level's bounded start from [ScenarioPresets] to the uncustomized
+## built-in run; authored fixtures and other levels keep their inputs.
+func apply_level_start() -> void:
+	var start: Dictionary = ScenarioPresets.level_start(level_code)
+	if start.is_empty() or options.authored_fixture:
 		return
-	initial.spawn_cell = Vector2i(17, 30)
-	initial.spawn_direction = 1
+	if not (options.platforms_enabled if start.needs == "platforms" else options.entity_reactions):
+		return
+	initial.spawn_cell = start.cell
+	initial.spawn_direction = start.direction
 	initial.controller_directions = PackedInt32Array()
 	initial.camera_startup = false
 	if not options.tick_limit_override:
-		tick_limit = 80
+		tick_limit = start.ticks
 	commands.clear()
-	var east := TickCommand.new()
-	east.tick_index = 0
-	east.pressed_mask = TickCommand.EAST
-	east.held_mask = TickCommand.EAST
-	commands[0] = east
-
-## Explicit water-cell start demonstrates contact; this is not a safe-bank route.
-func apply_jun1_inspection_defaults() -> void:
-	if not options.platforms_enabled or level_code.to_upper() != "JUN1" or options.authored_fixture:
-		return
-	initial.spawn_cell = Vector2i(18, 5)
-	initial.spawn_direction = 0
-	initial.controller_directions = PackedInt32Array()
-	initial.camera_startup = false
-	if not options.tick_limit_override:
-		tick_limit = 90
-	commands.clear()
-	var north := TickCommand.new()
-	north.pressed_mask = TickCommand.NORTH
-	north.held_mask = TickCommand.NORTH
-	commands[0] = north
-	diagnostics.append("JUN1 inspection starts on authored water cell (18,5); no playable safe-bank route is implied")
+	var first := TickCommand.new()
+	first.tick_index = 0
+	first.pressed_mask = start.press
+	first.held_mask = start.press
+	commands[0] = first
+	var diagnostic: String = start.diagnostic
+	if not diagnostic.is_empty():
+		diagnostics.append(diagnostic)
 
 ## Reads a scenario JSON object with builtin, tick_limit and optional command overrides.
 static func from_file(path: String) -> TerrainScenario:

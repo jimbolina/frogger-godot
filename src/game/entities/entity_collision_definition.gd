@@ -93,7 +93,7 @@ func validate() -> String:
 		if entity.behavior == null:
 			return "Entity collision requires a resolved behavior"
 		if entity.behavior.has_custom_update() and environment == null:
-			return "Admitted custom background requires its shared environment"
+			return "Custom background requires its shared environment"
 		if entity.behavior.execution == EntityBehavior.Execution.CONTACT and entity.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 			if entity.behavior.kind != EntityBehavior.Kind.BABY_FROG or not entity.behavior.has_custom_update() or lifecycle == null or entity.collision_callback != 0 or entity.bonus_callback != 0:
 				return "Pink frog pickup requires scripted visibility and callback-free behavior"

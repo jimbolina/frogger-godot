@@ -1,5 +1,5 @@
 extends RetailTest
-## Desert payload decoding, rock-target resolution, explosion and action facts, and whole-map admission.
+## Desert payload decoding, rock-target resolution, explosion and action facts, and whole-map setup.
 
 const LEVELS: PackedStringArray = ["DES1", "DES2", "DES3", "DES4", "DES5"]
 const PATH_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_ROLLING_ROCK]
@@ -99,7 +99,7 @@ func test_desert_payloads_match_independent_facts() -> void:
 		checked += 1
 	assert_eq(checked, 152, "high-detail Desert custom entities")
 
-func test_desert_levels_admit_with_resolved_targets_explosions_and_actions() -> void:
+func test_desert_levels_set_up_with_resolved_targets_explosions_and_actions() -> void:
 	assert_eq(_data.error, "")
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(_data)
 	assert_eq(assets.error, "")

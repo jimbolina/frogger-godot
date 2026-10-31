@@ -1,5 +1,5 @@
 extends GutTest
-## VloFile survives a resource save and load with pixels, names and its texture-id lookup.
+## VloFile survives a resource save and load with pixels, textures and its texture-id lookup.
 
 const PATH: String = "user://test_vlo_resources.tres"
 
@@ -20,4 +20,4 @@ func test_bank_round_trip_rebuilds_texture_lookup() -> void:
 	assert_null(loaded.find_texture(78))
 	assert_eq(loaded.images[0].pixels, bank.images[0].pixels)
 	assert_eq(loaded.images[0].unpadded_pixels(), bank.images[0].unpadded_pixels())
-	assert_null(loaded.images[0].texture)
+	assert_eq(loaded.images[0].texture.get_image().get_data(), bank.images[0].texture.get_image().get_data())

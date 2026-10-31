@@ -98,7 +98,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   `python3 tools/make_golden_frontend.py --check` diffs the committed facts.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
-- [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-admission-counterexample):
+- [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has
   its own complete proof and pinned inputs.

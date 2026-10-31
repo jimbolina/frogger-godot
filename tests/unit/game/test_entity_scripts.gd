@@ -235,7 +235,7 @@ func test_path_and_random_requests_disappear_on_late_script_failure() -> void:
 	assert_eq(state.cursor, 0)
 	assert_eq(random.state, 1)
 
-func test_named_programs_are_admitted_by_dependencies() -> void:
+func test_named_programs_are_supported_by_dependencies() -> void:
 	var definition: EntityScriptDefinition = _definition([13, 0, 9, 2, 0, 6])
 	definition.names[1] = "SCRIPT_GEN_BUTTERFLY"
 	definition.names[2] = "SCRIPT_ORG_SNAKE_SFX"

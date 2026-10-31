@@ -1,13 +1,13 @@
 class_name Org1ExplorationSetup
 extends RefCounted
-## Strict supplied-data admission for independently proved guarded ORG1 routes.
+## Sets up the guarded ORG1 exploration presets from supplied data checked against their preset files.
 
 const PRESET: String = "org1-turtle-log-bank"
-const MANIFEST_PATH: String = "res://src/inspection/org1_exploration_admission.json"
+const MANIFEST_PATH: String = "res://src/inspection/org1_exploration_preset.json"
 const VISIBILITY_PRESET: String = "org1-turtle-log-bank-visibility"
-const VISIBILITY_MANIFEST_PATH: String = "res://src/inspection/org1_visibility_admission.json"
+const VISIBILITY_MANIFEST_PATH: String = "res://src/inspection/org1_visibility_preset.json"
 const ROAD_PRESET: String = "org1-road-river"
-const ROAD_MANIFEST_PATH: String = "res://src/inspection/org1_road_river_admission.json"
+const ROAD_MANIFEST_PATH: String = "res://src/inspection/org1_road_river_preset.json"
 
 ## Validates proof inputs before enabling any custom update or contact exclusion.
 static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
@@ -18,21 +18,21 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 		return preset + " requires high-detail ORG1 and all-attached lifetime"
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(VISIBILITY_MANIFEST_PATH if visibility else ROAD_MANIFEST_PATH if road else MANIFEST_PATH))
 	if not parsed is Dictionary:
-		return "ORG1 admission manifest is unavailable"
+		return "ORG1 exploration preset file is unavailable"
 	var proof: Dictionary = parsed
-	var schema: String = "org1-visibility-admission-v2" if visibility else "org1-road-river-admission-v1" if road else "org1-route-admission-v1"
+	var schema: String = "org1-visibility-preset-v2" if visibility else "org1-road-river-preset-v1" if road else "org1-route-preset-v1"
 	if proof.get("schema") != schema or data.version_name != proof.get("build"):
 		return "ORG1 exploration requires audited pc-retail-v3.0e inputs"
 	var map: MapFile = scenario.map_scene.map
-	var issue: String = RetailExplorationInputs.validate(data, map, proof, scenario.map_scene.level)
+	var issue: String = ExplorationInputs.validate(data, map, proof, scenario.map_scene.level)
 	if not issue.is_empty():
 		return "ORG1 exploration proof inputs changed: " + issue
 	var frog: MwiEntry = data.find_resource("GEN_FROG.XAR")
 	if frog == null or frog.index != _integer(proof.frog_resource_id):
-		return "ORG1 admitted frog resource mapping changed"
+		return "ORG1 frog resource mapping changed"
 	var zones: MapPacket = map.packets.get("ZONE")
 	if zones != null and zones.count != 0:
-		return "ORG1 admission requires no zones"
+		return "ORG1 exploration requires no zones"
 	var book: ThemeBook = data.tables.theme_book()
 	var script_names: NameBank = data.names.scripts
 	var callback_names: NameBank = script_names.get_sub_bank("CallbackNames")
@@ -52,7 +52,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	var models: Dictionary[int, MofFile] = {}
 	var bindings: Array = proof.get("name_bindings", [])
 	if bindings.size() != setup.definitions.size():
-		return "ORG1 named behavior admission is incomplete"
+		return "ORG1 named behavior bindings are incomplete"
 	var problems := PackedStringArray()
 	for entity: EntityDefinition in setup.definitions:
 		var form: FormBookEntry = book.get_form(map.general.theme, entity.form_id)
@@ -67,7 +67,7 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 		var model: MofFile = models.get(entity.form_id)
 		if model != null and model.kind != MofFile.Kind.DUMMY and not form.has_flag(FormBookEntry.FLAG_NO_MODEL):
 			if model.static_models.is_empty() or model.static_models[0].parts.is_empty():
-				return "ORG1 model lacks admitted animation data"
+				return "ORG1 model lacks supported animation data"
 			for action: MofPart.FlipbookAction in model.static_models[0].parts[0].flipbook_actions:
 				entity.action_lengths.append(action.frame_count)
 			entity.behavior.one_shot = entity.behavior.kind == EntityBehavior.Kind.BABY_FROG
@@ -147,9 +147,9 @@ static func apply(scenario: TerrainScenario, data: AssetCatalog) -> String:
 	scenario.level.collision_bounds = Rect2i(top[9], bottom[11], bottom[9] - top[9], top[11] - bottom[11])
 	var guard := ExplorationGuard.new()
 	if visibility:
-		guard.scripted_visibility_admitted = true
-	var x: Array = proof.admitted_x
-	var z: Array = proof.admitted_z
+		guard.scripted_visibility_supported = true
+	var x: Array = proof.bounds_x
+	var z: Array = proof.bounds_z
 	guard.world_bounds = Rect2i(_integer(x[0]), _integer(z[0]), _integer(x[1]) - _integer(x[0]), _integer(z[1]) - _integer(z[0]))
 	for root: Array in proof.frog_roots:
 		var values := PackedInt32Array()

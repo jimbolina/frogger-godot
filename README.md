@@ -405,17 +405,18 @@ commit.
 
 | Path | What |
 |---|---|
-| `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, and `AssetCatalog`, the abstract data provider. No scene tree, no file access. |
-| `src/convert/` | Turning decoded game data into Godot resources: textures, model meshes, the shaders that draw them, and the conversion between the game's space and Godot's. |
-| `src/game/` | Detached terrain, path and entity definitions and run state, grid queries, movement/collision, gameplay camera, animation control and source RNG. Rules have no scene tree or file access. |
-| `src/application/` | Source-to-game adapters and resolved behavior catalog. |
-| `src/inspection/` | Developer scenarios, validated options, guards and manifests. |
-| `src/presentation/` | Screens (`frontend/`), the sandbox scene (`sandbox/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
-| `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
-| `tests/unit/` | Tests that need no game files. |
+| `assets/` | The game's content as committed Godot resources (binary files through Git LFS), with `catalog.tres` as the index; see [assets](docs/reference/assets.md). |
+| `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, `AssetCatalog` (the abstract data provider) and `AssetIndex`. No scene tree, no file access. |
+| `src/convert/` | Turning game data and committed gameplay state into Godot resources: texture pages, model meshes and materials, the shaders that draw them, effect geometry, and the conversion between the game's space and Godot's. |
+| `src/game/` | Gameplay definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, and the front-end rules (`frontend/`, `options/`). No scene tree, no file access. |
+| `src/application/` | Adapters from data records to gameplay definitions, the behavior and callback catalogs, `ImportedAssets` (`loaders/`) and the save files (`storage/`). |
+| `src/inspection/` | Developer scenarios, validated options, guards, presets and their manifests, and the sandbox arena. |
+| `src/presentation/` | The game and front-end screens (`frontend/`), the sandbox screen (`sandbox/`), audio, input and effect views, and development tools (`tools/`: the model, map, terrain and camera-zone viewers). |
+| `scenes/` | Godot scenes (`front_end.tscn` is the main scene and `boot.tscn` the developer tools menu; `game/` holds the game and sandbox scenes, `tools/` the viewers). |
+| `tests/unit/` | The game suite's unit tests, one folder per layer. |
 | `tests/golden/` | Golden tests over committed synthetic facts and keyboard fixtures, and the retail text facts the archive suite compares with. |
 | `archive/` | Everything that reads the retail files, which the game never loads: `source/` (the readers and the retail-backed `GameData`), `import/` (the one-time importer that writes `assets/`), `tests/` (the archive suite, run only with `FROGGER_DATA_DIR`), `tools/`, `docs/formats/` (the retail format references) and `third_party/froglord_cfg/` (FrogLord's configuration files, unmodified; see `archive/third_party/README.md`). |
-| `tools/` | Test runners, a script compile check, the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`), and `probe_model_shader.gd`, which measures the colours the model shaders put on screen. |
+| `tools/` | The play and test wrappers, the script and architecture checks, the golden-data generators `make_*.py` (see `tests/golden/README.md`), the C oracles, and the inspection runners, verifiers and probes. |
 | `addons/gut/` | The GUT test framework, unmodified. |
 
 ## Contributing and project documentation
@@ -423,7 +424,8 @@ commit.
 Start with [AGENTS.md](AGENTS.md) and the short [current checkpoint](docs/CURRENT.md).
 The [roadmap](docs/PORTING.md) owns status and remaining work. The
 [domain index](docs/reference/domain.md) groups references by data, gameplay
-and rendering; the [testing guide](docs/reference/testing/README.md) covers checks and
+and rendering, and the [domain model](docs/reference/domain-model.md) maps the
+contexts, aggregates and asset identities; the [testing guide](docs/reference/testing/README.md) covers checks and
 inspection tools. Documentation describes current behavior and use. Run logs
 stay outside the repository, and Git retains development history.
 

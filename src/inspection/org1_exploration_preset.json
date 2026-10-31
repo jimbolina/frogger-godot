@@ -1,5 +1,5 @@
 {
-  "schema": "org1-road-river-admission-v1",
+  "schema": "org1-route-preset-v1",
   "build": "pc-retail-v3.0e",
   "exe_sha256": "215b444ebb6317c136cfaded17922909b743deb34ab16f72e140a99d87340e06",
   "mwd_sha256": "9ad17b4092e4acb9e898b9540b251271646dfc73725b6adac97b51ca7d289b97",
@@ -693,12 +693,12 @@
   "theme_index": 5,
   "theme_death_height": 256,
   "general_high_wad": 205,
-  "admitted_x": [
+  "bounds_x": [
     -512,
     512
   ],
-  "admitted_z": [
-    -1792,
+  "bounds_z": [
+    -128,
     480
   ],
   "frog_resource_id": 214,
@@ -1128,31 +1128,7 @@
     14,
     15,
     16,
-    23,
-    24,
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31,
-    32,
-    33,
-    34,
-    35,
-    36,
-    37,
-    38,
-    39,
-    40,
-    41,
-    42,
-    43,
-    44,
-    45,
-    46,
-    47
+    23
   ],
   "authored_count": 64,
   "contact_exclusions": [
@@ -1239,6 +1215,150 @@
       "unique_id": 214,
       "offset": 2508,
       "reason": "excluded_by_complete_path_FORM_bounds"
+    },
+    {
+      "index": 24,
+      "unique_id": 554,
+      "offset": 2580,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 25,
+      "unique_id": 553,
+      "offset": 2616,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 26,
+      "unique_id": 552,
+      "offset": 2652,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 27,
+      "unique_id": 551,
+      "offset": 2688,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 28,
+      "unique_id": 550,
+      "offset": 2724,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 29,
+      "unique_id": 549,
+      "offset": 2760,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 30,
+      "unique_id": 213,
+      "offset": 2796,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 31,
+      "unique_id": 212,
+      "offset": 2832,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 32,
+      "unique_id": 211,
+      "offset": 2868,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 33,
+      "unique_id": 210,
+      "offset": 2904,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 34,
+      "unique_id": 206,
+      "offset": 2940,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 35,
+      "unique_id": 204,
+      "offset": 2976,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 36,
+      "unique_id": 203,
+      "offset": 3012,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 37,
+      "unique_id": 202,
+      "offset": 3048,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 38,
+      "unique_id": 201,
+      "offset": 3084,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 39,
+      "unique_id": 200,
+      "offset": 3120,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 40,
+      "unique_id": 199,
+      "offset": 3156,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 41,
+      "unique_id": 198,
+      "offset": 3192,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 42,
+      "unique_id": 197,
+      "offset": 3228,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 43,
+      "unique_id": 196,
+      "offset": 3264,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 44,
+      "unique_id": 195,
+      "offset": 3300,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 45,
+      "unique_id": 127,
+      "offset": 3336,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 46,
+      "unique_id": 125,
+      "offset": 3372,
+      "reason": "excluded_by_animated_frog_probe_closure"
+    },
+    {
+      "index": 47,
+      "unique_id": 967,
+      "offset": 3408,
+      "reason": "excluded_by_animated_frog_probe_closure"
     },
     {
       "index": 48,
@@ -1340,413 +1460,15 @@
   "lifetime": "all-attached",
   "spawn_cell": [
     10,
-    1
+    7
   ],
   "spawn_world": [
     128,
     -256,
-    -1664
+    -128
   ],
   "spawn_direction": 0,
-  "conditions": [
-    "Single unpowered player uses pinned GEN_FROG.XAR; source camera zones are absent.",
-    "Every current and retained collision-sample root origin stays in the half-open rectangle; rejected ticks roll back.",
-    "Road SAFE, bank SAFE and river WATER only; landing height difference stays below the source stun threshold.",
-    "Ten primitive-free SAFE FORMs and all 24 decoded static deadly vehicle cuboids participate in source ordered collision.",
-    "Every excluded neighbor has complete path FORM or source-width origin-sphere exclusion; no tongueable neighbor within640 units.",
-    "All64 authored logical updates persist in descending all-attached order, including next-update HIT callbacks.",
-    "Traffic has no FORM data fallback; all five named types use DEADLY primitive reaction1 and EXE death0 SQUISHED.",
-    "Cached LW refresh uses source actual-cel keys after final pose; dying and MUST_DIE frogs skip later primitive scans."
-  ],
-  "default_ticks": 180,
-  "traffic_primitives": [
-    {
-      "index": 24,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 25,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 26,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 27,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 28,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 29,
-      "offset": [
-        -1,
-        -229,
-        4
-      ],
-      "lengths": [
-        64,
-        264,
-        157
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 30,
-      "offset": [
-        0,
-        -204,
-        133
-      ],
-      "lengths": [
-        69,
-        250,
-        306
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 31,
-      "offset": [
-        0,
-        -204,
-        133
-      ],
-      "lengths": [
-        69,
-        250,
-        306
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 32,
-      "offset": [
-        0,
-        -204,
-        133
-      ],
-      "lengths": [
-        69,
-        250,
-        306
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 33,
-      "offset": [
-        0,
-        -204,
-        133
-      ],
-      "lengths": [
-        69,
-        250,
-        306
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 34,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 35,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 36,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 37,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 38,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 39,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 40,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 41,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 42,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 43,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 44,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 45,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 46,
-      "offset": [
-        0,
-        -203,
-        20
-      ],
-      "lengths": [
-        66,
-        225,
-        152
-      ],
-      "reaction": 1,
-      "death": 0
-    },
-    {
-      "index": 47,
-      "offset": [
-        1,
-        -292,
-        60
-      ],
-      "lengths": [
-        91,
-        374,
-        171
-      ],
-      "reaction": 1,
-      "death": 0
-    }
-  ],
-  "frog_probe_offset_bounds": [
-    [
-      -167,
-      165
-    ],
-    [
-      -249,
-      39
-    ],
-    [
-      -166,
-      204
-    ]
-  ],
-  "frog_probe_world_xz_bounds": [
-    [
-      -679,
-      676
-    ],
-    [
-      -1958,
-      683
-    ]
-  ],
-  "collision_pose_cache": "Explicit reset action0/cel0 priming; prior stored LW; frozen STATIC action/actual-cel cache at final pose.",
-  "road_river": {
+  "round_trip": {
     "commands": [
       [
         0,
@@ -1757,62 +1479,38 @@
         1
       ],
       [
-        24,
-        1
+        34,
+        4
       ],
       [
-        36,
-        1
-      ],
-      [
-        102,
-        1
-      ],
-      [
-        114,
-        1
-      ],
-      [
-        126,
-        1
-      ],
-      [
-        138,
-        1
+        46,
+        4
       ]
     ],
-    "observation_ticks": 180,
-    "bank_tick": 119,
-    "turtle_contact_tick": 129,
-    "small_log_contact_tick": 144
+    "observation_ticks": 730,
+    "bank_return_tick": 51
   },
-  "vehicle_death": {
+  "attached_diver": {
     "commands": [
       [
-        0,
-        1
-      ],
-      [
-        12,
-        1
-      ],
-      [
-        24,
-        1
-      ],
-      [
-        36,
-        1
-      ],
-      [
-        48,
+        1230,
         1
       ]
     ],
-    "observation_ticks": 60,
-    "collision_tick": 50,
-    "entity_index": 31,
-    "callback_tick": 51,
-    "sound_id": 13
-  }
+    "observation_ticks": 1255,
+    "contact_tick": 1233,
+    "death_tick": 1254
+  },
+  "traffic_probe_z_minimum": -294,
+  "traffic_point_z_maximum": -316,
+  "conditions": [
+    "Single unpowered player; the selected high-detail frog resource and reset state are pinned.",
+    "Every collision-bearing stored root origin remains in the half-open rectangle; rejected ticks roll back.",
+    "SAFE bank/platforms and WATER only; maximum landing-height difference is below the 512-unit stun threshold.",
+    "All support-path orientations, cardinal hops, snapping, centring and inherited up axes are included.",
+    "Death/MUST_DIE skips primitive scans before death animation changes; croak imports affect no hilite-bearing part.",
+    "No tongueable neighbor within 640 units, no collectable contact, no powerups or body scaling.",
+    "All 64 authored identities retain their ordered logical updates; only ten require FORM contact.",
+    "Checkpoint croak radius 512 is excluded; baby parent never retires; fly covered state and sound owners persist."
+  ]
 }

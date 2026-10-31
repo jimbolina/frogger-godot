@@ -1,6 +1,6 @@
 class_name ExplorationGuard
 extends TickGuard
-## Immutable inspection admission bounds; rejecting a candidate never creates a wall.
+## Immutable inspection corridor bounds; rejecting a candidate never creates a wall.
 
 var world_bounds: Rect2i = Rect2i()
 var zones: Array[ZoneDefinition] = []
@@ -9,18 +9,18 @@ var frog_roots: Array[PackedInt32Array] = []
 var frog_actions: PackedInt32Array = PackedInt32Array()
 ## Authored moving collectables whose excluded sphere must stay beyond the corridor.
 var collectable_indices: PackedInt32Array = PackedInt32Array()
-## Explicit source-proved scripted lifetime admission, independent of exclusions.
-var scripted_visibility_admitted: bool = false
+## Whether the preset supports scripted visibility lifetimes, independent of exclusions.
+var scripted_visibility_supported: bool = false
 
 ## Validates a half-open world rectangle and every supported zone definition.
 func validate() -> String:
-	if scripted_visibility_admitted and frog_roots.is_empty():
-		return "Scripted visibility requires the complete animated admission"
+	if scripted_visibility_supported and frog_roots.is_empty():
+		return "Scripted visibility requires the complete animated frog corridor"
 	if frog_roots.is_empty() != frog_actions.is_empty():
-		return "Animated admission requires both root and action closure"
+		return "Animated frog corridor requires both root and action closure"
 	for root: PackedInt32Array in frog_roots:
 		if root.size() != 9:
-			return "Animated admission root must contain nine values"
+			return "Animated frog corridor root must contain nine values"
 	if world_bounds.size.x <= 0 or world_bounds.size.y <= 0:
 		return "Exploration boundary requires positive width and depth"
 	for coordinate: int in [int(world_bounds.position.x) + world_bounds.size.x, int(world_bounds.position.y) + world_bounds.size.y]:
@@ -43,7 +43,7 @@ func copy() -> ExplorationGuard:
 	var result := ExplorationGuard.new()
 	result.world_bounds = world_bounds
 	result.collectable_indices = collectable_indices.duplicate()
-	result.scripted_visibility_admitted = scripted_visibility_admitted
+	result.scripted_visibility_supported = scripted_visibility_supported
 	for root: PackedInt32Array in frog_roots:
 		result.frog_roots.append(root.duplicate())
 	result.frog_actions = frog_actions.duplicate()
@@ -56,13 +56,13 @@ func check_frog(state: GameplayState) -> String:
 	if frog_roots.is_empty():
 		return ""
 	if state.frog.powerup_flags != 0:
-		return "Animated admission requires an unpowered frog; tick rolled back"
+		return "Animated frog corridor requires an unpowered frog; tick rolled back"
 	if state.frog.mode == FrogMode.DYING or state.frog.flags & FrogFlags.MUST_DIE:
 		return ""
 	if not frog_roots.has(state.frog.matrix12.slice(0, 9)):
-		return "Animated admission rejected an unproved frog root; tick rolled back"
+		return "Animated frog corridor rejected an unproved frog root; tick rolled back"
 	if state.animation == null or (not frog_actions.has(state.animation.action) and not (state.animation.action == 0 and state.animation.cel == 0)):
-		return "Animated admission rejected an unproved frog action; tick rolled back"
+		return "Animated frog corridor rejected an unproved frog action; tick rolled back"
 	return check_world(Vector3i(state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]))
 
 ## Checks actual source world X/Z using inclusive starts and exclusive ends.
@@ -89,7 +89,7 @@ func check_entities(entities: EntityRunSnapshot) -> String:
 	if collectable_indices.is_empty():
 		return ""
 	if entities == null:
-		return "Dynamic collectable admission requires entity state"
+		return "Dynamic collectable check requires entity state"
 	for identity: int in collectable_indices:
 		var found: bool = false
 		for entity: EntitySnapshot in entities.entities:
@@ -106,7 +106,7 @@ func check_entities(entities: EntityRunSnapshot) -> String:
 				return "Dynamic collectable %d entered the guarded corridor's collection radius; tick rolled back" % identity
 			break
 		if not found:
-			return "Dynamic collectable admission identity is missing"
+			return "Dynamic collectable identity is missing"
 	return ""
 
 ## Enforces inspection restrictions at each gameplay checkpoint.
@@ -115,10 +115,10 @@ func check(phase: Phase, candidate: TickGuardCandidate) -> String:
 		var issue: String = validate()
 		if not issue.is_empty():
 			return issue
-		if candidate.visibility_enabled and not scripted_visibility_admitted:
+		if candidate.visibility_enabled and not scripted_visibility_supported:
 			return "Guarded exploration requires all-attached entity lifetime"
 		if candidate.restricted_contacts and frog_roots.is_empty():
-			return "Contact exclusion requires animated inspection admission"
+			return "Contact exclusion requires the animated frog corridor"
 		return ""
 	var state: GameplayState = candidate.state
 	match phase:

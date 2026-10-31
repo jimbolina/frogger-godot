@@ -1,9 +1,9 @@
 extends RetailTest
-## Sky payload decoding, script registers, models, primitives, callbacks, FORM grids and SKY1–SKY4 admission.
+## Sky payload decoding, script registers, models, primitives, callbacks, FORM grids and SKY1–SKY4 whole-map setup.
 
 const LEVELS: PackedStringArray = ["SKY1", "SKY2", "SKY3", "SKY4"]
 const ENTITY_ROWS: int = 599
-const ADMISSION_DIAGNOSTICS: PackedStringArray = ["unknown_behavior", "invalid_payload", "incompatible_callback"]
+const SETUP_DIAGNOSTICS: PackedStringArray = ["unknown_behavior", "invalid_payload", "incompatible_callback"]
 const COUNTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.TRIGGER, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.PATH_FOLLOWER]
 
 var _data: GameData
@@ -181,7 +181,7 @@ func test_sky_models_primitives_and_callbacks_match_independent_facts() -> void:
 		callbacks += 1
 	assert_eq(callbacks, 28, "every Sky form")
 
-func test_sky_levels_admit_through_whole_map_setup() -> void:
+func test_sky_levels_set_up_the_whole_map() -> void:
 	assert_eq(_data.error, "")
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(_data)
 	assert_eq(assets.error, "")
@@ -215,14 +215,14 @@ func test_sky_levels_admit_through_whole_map_setup() -> void:
 		var entities: EntitySetup = EntitySetup.from_map(map, theme_book, code, resource_id, _data.version_name, true, _data.names)
 		assert_eq(entities.error, "", code)
 		for diagnostic: EntitySetupDiagnostic in entities.diagnostics:
-			assert_false(diagnostic.code in ADMISSION_DIAGNOSTICS, "%s entity %d: %s %s" % [code, diagnostic.entity_index, diagnostic.code, diagnostic.message])
+			assert_false(diagnostic.code in SETUP_DIAGNOSTICS, "%s entity %d: %s %s" % [code, diagnostic.entity_index, diagnostic.code, diagnostic.message])
 		assert_eq(entities.definitions.size(), map.entities.size(), "%s entity setup omits no entity" % code)
 		var setup: GameplaySetup = GameplaySetup.from_data(_data, level, map, assets.model, assets.action_lengths)
 		assert_eq(setup.error, "", "%s whole-map setup" % code)
 		if setup.definition == null:
 			continue
 		var collision: EntityCollisionDefinition = setup.definition.entity_collision
-		assert_eq(collision.entities.size(), map.entities.size(), "%s admits every entity" % code)
+		assert_eq(collision.entities.size(), map.entities.size(), "%s sets up every entity" % code)
 		var counts: Dictionary = {}
 		for definition: EntityDefinition in collision.entities:
 			var kind: EntityBehavior.Kind = definition.behavior.kind

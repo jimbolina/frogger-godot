@@ -1,5 +1,5 @@
 extends RetailTest
-## Jungle payload decoding, plinth models, action lengths, the crusher callback and JUN1 whole-map admission.
+## Jungle payload decoding, plinth models, action lengths, the crusher callback and JUN1 whole-map setup.
 
 const LEVELS: PackedStringArray = ["JUN1", "JUN2"]
 const CALLBACK_ADDRESS: int = 0x4241c0
@@ -193,7 +193,7 @@ func test_jungle_payloads_match_independent_facts() -> void:
 		forms.sort()
 		assert_eq(",".join(forms), facts["forms"], "forms using %s" % row[5])
 
-func test_jun1_admits_through_whole_map_setup() -> void:
+func test_jun1_sets_up_the_whole_map() -> void:
 	assert_eq(_data.error, "")
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(_data)
 	assert_eq(assets.error, "")

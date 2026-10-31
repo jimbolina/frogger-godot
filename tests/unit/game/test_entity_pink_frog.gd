@@ -76,7 +76,7 @@ func test_riding_turn_jump_and_death_are_source_ordered() -> void:
 	assert_true(entity.requests.is_empty())
 	assert_true(entity.custom_state.model_hidden)
 
-func test_contact_requires_admitted_context_and_preserves_caller_state() -> void:
+func test_contact_requires_supported_context_and_preserves_caller_state() -> void:
 	var definition := EntityDefinition.new()
 	definition.entity_name = "ORG_BABY_FROG"
 	definition.behavior = EntityBehaviorCatalog.resolve(definition.entity_name)

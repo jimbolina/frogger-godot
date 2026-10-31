@@ -1,5 +1,5 @@
 {
-  "schema": "org1-visibility-admission-v2",
+  "schema": "org1-visibility-preset-v2",
   "build": "pc-retail-v3.0e",
   "exe_sha256": "215b444ebb6317c136cfaded17922909b743deb34ab16f72e140a99d87340e06",
   "mwd_sha256": "9ad17b4092e4acb9e898b9540b251271646dfc73725b6adac97b51ca7d289b97",
@@ -693,11 +693,11 @@
   "theme_index": 5,
   "theme_death_height": 256,
   "general_high_wad": 205,
-  "admitted_x": [
+  "bounds_x": [
     -512,
     512
   ],
-  "admitted_z": [
+  "bounds_z": [
     -128,
     480
   ],
@@ -1504,7 +1504,7 @@
     "All support-path orientations, cardinal hops, snapping, centring and inherited up axes are included.",
     "Death/MUST_DIE skips primitive scans before death animation changes; croak imports affect no hilite-bearing part.",
     "All 64 authored identities retain paths and source-ordered applicable live updates, including immortal initialization.",
-    "Pink frog body contact, next-update pickup, riding and death are admitted; tongue input, checkpoints and fly collection remain unsupported.",
+    "Pink frog body contact, next-update pickup, riding and death are supported; tongue input, checkpoints and fly collection remain unsupported.",
     "Selected groups contain fewer than 2500 polygons; visibility failure rejects atomically."
   ]
 }

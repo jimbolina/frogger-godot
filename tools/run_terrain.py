@@ -14,7 +14,7 @@ def main():
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--scenario', choices=('normal', 'blocked', 'buffer'), default='normal')
     parser.add_argument('--scenario-file', type=Path)
-    parser.add_argument('--camera-inspection', choices=('jun1-camera-zones',), help='Prescribed retail camera probe, without gameplay route admission')
+    parser.add_argument('--camera-inspection', choices=('jun1-camera-zones',), help='Prescribed retail camera probe, without a gameplay route preset')
     parser.add_argument('--frog-assets', action='store_true', help='Render the imported frog in a synthetic scenario')
     parser.add_argument('--seed', type=int)
     parser.add_argument('--tick-limit', type=int)

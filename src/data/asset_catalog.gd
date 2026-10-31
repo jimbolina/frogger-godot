@@ -187,7 +187,7 @@ func read_sound_bank(resource_id: int, problems: PackedStringArray = PackedStrin
 
 
 ## The baked texture-page set for general bank [param general_bank_id] and
-## theme bank [param theme_bank_id], or null when pages are built at runtime.
+## theme bank [param theme_bank_id], or null when the catalog has none.
 @warning_ignore("unused_parameter")
 func page_set_for_banks(general_bank_id: int, theme_bank_id: int, problems: PackedStringArray = PackedStringArray()) -> TexturePageSet:
 	return null

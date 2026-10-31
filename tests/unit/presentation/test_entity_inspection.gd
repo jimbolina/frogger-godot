@@ -8,7 +8,7 @@ func before_each() -> void:
 	_viewer = packed.instantiate() as MapViewer
 	_viewer.auto_open = false
 	add_child_autofree(_viewer)
-	assert_true(_viewer.show_scene(_viewer._synthetic_path_scene()))
+	assert_true(_viewer.show_scene(MapScenarioRun.synthetic_scene()))
 
 func test_overlay_selection_visibility_and_shared_clock() -> void:
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")
@@ -61,7 +61,7 @@ func test_replacement_releases_run_definitions_and_markers() -> void:
 	assert_eq(_viewer.set_form_contacts(scenario.contact_definitions, scenario.probe_world, false), "")
 	var old: WeakRef = weakref(_viewer._entity_inspection)
 	assert_eq(_viewer._entity_inspection._contact_probe.get_parent(), _viewer._entity_inspection)
-	assert_true(_viewer.show_scene(_viewer._synthetic_path_scene()))
+	assert_true(_viewer.show_scene(MapScenarioRun.synthetic_scene()))
 	await get_tree().process_frame
 	var released: EntityInspection = old.get_ref()
 	assert_null(released)

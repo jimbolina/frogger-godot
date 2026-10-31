@@ -13,8 +13,8 @@ var sky_land: SkyLandFile
 var library: TextureLibrary = TextureLibrary.new()
 ## Whole physical texture pages, shared by this scene's cached map materials.
 var texture_pages := MapTexturePages.new()
-## The pages and sky atlas baked by the importer for this scene's two banks;
-## null when the catalog has none and the pages are composed from the banks.
+## The pages and sky atlas baked for this scene's two banks; null when the
+## catalog has none, and the textured map draws magenta.
 var page_set: TexturePageSet
 var preferred: VloFile
 var remap: TextureRemap
@@ -40,7 +40,6 @@ static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool
 	var scene := MapSceneData.new()
 	scene.level = level_number
 	scene.low_poly = use_low_poly
-	scene.diagnostics.append_array(data.warnings)
 	var row: MapBookEntry = data.map_book_entry(level_number)
 	if row == null or row.is_dummy() or row.map_id(use_low_poly) <= 0:
 		scene.error = "No map for level %d" % level_number
@@ -114,8 +113,7 @@ func _load_bank(data: AssetCatalog, theme: ThemeBookEntry, multiplayer: bool) ->
 
 func _load_page_set(data: AssetCatalog, general: ThemeBookEntry, theme: ThemeBookEntry, multiplayer: bool) -> void:
 	page_set = data.page_set_for_banks(_bank_id(general, multiplayer), _bank_id(theme, multiplayer), diagnostics)
-	if page_set != null:
-		texture_pages.configure_set(page_set)
+	texture_pages.configure_set(page_set)
 
 
 func _measure_bounds() -> void:

@@ -44,7 +44,7 @@ func test_light_creation_precalculation_and_seeding_match_independent_facts() ->
 		var issue: String = EntitySetup._cave_payload(definition, payload)
 		var debug_valid: bool = expected.debug_valid
 		if not debug_valid or _int(initial, "max_radius") > 255:
-			assert_ne(issue, "", "port admission rejects %s" % str(initial))
+			assert_ne(issue, "", "port setup rejects %s" % str(initial))
 			continue
 		assert_eq(issue, "", str(initial))
 		if definition.cave == null:

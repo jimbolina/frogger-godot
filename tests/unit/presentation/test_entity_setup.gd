@@ -420,7 +420,7 @@ func test_firefly_follows_path_and_requires_bonus_callback() -> void:
 	assert_eq(setup.definitions[0].path_definition.path_index, 0)
 	assert_true(setup.definitions[0].behavior.tongueable)
 
-func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> void:
+func test_project_on_land_accepts_path_movers_only_with_custom_behaviors() -> void:
 	var book: ThemeBook = _book()
 	var map: MapFile = _map()
 	_add_path(map)
@@ -434,7 +434,7 @@ func test_project_on_land_admits_path_movers_only_with_custom_behaviors() -> voi
 		return
 	assert_eq(setup.definitions[0].unique_id, 1)
 	assert_eq(setup.definitions[0].flags, 32)
-	assert_eq(setup.definitions[1].flags, 64, "LOCAL_ALIGN admits generic movers alone")
+	assert_eq(setup.definitions[1].flags, 64, "LOCAL_ALIGN accepts generic movers alone")
 	assert_eq(setup.diagnostics.size(), 2)
 	assert_eq(setup.diagnostics[0].code, "unsupported_transform")
 	assert_eq(setup.diagnostics[1].code, "unsupported_transform")

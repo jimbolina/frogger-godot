@@ -1,5 +1,5 @@
 extends RetailTest
-## Cave frogger-light payloads, pickup counts, whole-map admission and the firefly callback identity.
+## Cave frogger-light payloads, pickup counts, whole-map setup and the firefly callback identity.
 
 const LEVELS: PackedStringArray = ["CAV1", "CAV3", "CAV4"]
 
@@ -63,7 +63,7 @@ func test_light_payloads_and_pickup_counts_match_independent_facts() -> void:
 		EntityCaveLight.initialize(lights[0], EntitySnapshot.new(), environment)
 		assert_eq([environment.light_min_squared, environment.light_max_squared], [row[9].to_int(), row[10].to_int()], row[1])
 
-func test_cave_levels_admit_with_their_frogger_light() -> void:
+func test_cave_levels_set_up_with_their_frogger_light() -> void:
 	var facts: Dictionary[int, PackedStringArray] = _facts()
 	var assets: TerrainFrogAssets = TerrainFrogAssets.from_data(_data)
 	assert_eq(assets.error, "")

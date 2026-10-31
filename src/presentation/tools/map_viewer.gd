@@ -175,7 +175,7 @@ func load_level_by_code(code: String, low_poly: bool = false) -> bool:
 	_refresh_status()
 	return true
 
-## Displays decoded synthetic or retail data through the same renderer.
+## Displays synthetic or imported map data through the same renderer.
 func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	if not source.error.is_empty() or source.map == null:
 		_status.text = source.error if not source.error.is_empty() else "Missing decoded map"
@@ -722,7 +722,7 @@ func _setup_entities() -> void:
 		if not contact_setup.error.is_empty():
 			scene_data.diagnostics.append("FORM contact setup: " + contact_setup.error)
 		else:
-			var preferred_entity_id: int = MapInspectionDefaults.preferred_entity_id(source_id)
+			var preferred_entity_id: int = ScenarioPresets.preferred_entity_id(source_id)
 			if preferred_entity_id >= 0:
 				for item: int in _entity_choice.item_count:
 					if _entity_choice.get_item_id(item) == preferred_entity_id:
@@ -970,274 +970,44 @@ func _release_entities(detach: bool = true) -> void:
 		_entity_inspection = null
 
 func _run_path_scenario() -> void:
-	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
-	var trace_path: String = ViewerArguments.value(arguments, "--trace-jsonl=")
-	if not _external_capture_folder(folder) or not ViewerCapture.external_folder(trace_path.get_base_dir()):
-		_fail_path_run("Path output requires absolute external destinations")
-		return
-	var scenario_file: String = ViewerArguments.value(arguments, "--scenario-file=")
-	var selected: String = ViewerArguments.value(arguments, "--scenario=")
-	var scenario: PathScenario = PathScenario.from_file(scenario_file) if not scenario_file.is_empty() else PathScenario.builtin(selected if not selected.is_empty() else "line")
-	if not scenario.error.is_empty():
-		_fail_path_run(scenario.error)
-		return
-	var limit_text: String = ViewerArguments.value(arguments, "--tick-limit=")
-	if not limit_text.is_empty():
-		if not limit_text.is_valid_int() or limit_text.to_int() < 0 or limit_text.to_int() > 100000:
-			_fail_path_run("Path tick limit must be in 0..100000")
-			return
-		scenario.tick_limit = limit_text.to_int()
-	var rate_text: String = ViewerArguments.value(arguments, "--render-rate=")
-	var render_rate: int = 60 if rate_text.is_empty() else rate_text.to_int()
-	if render_rate not in [30, 60, 144]:
-		_fail_path_run("Path render rate must be 30, 60 or 144")
-		return
-	var level_code: String = ViewerArguments.value(arguments, "--level=")
-	var path_index_text: String = ViewerArguments.value(arguments, "--path-index=")
-	if not level_code.is_empty():
-		if not path_index_text.is_valid_int() or path_index_text.to_int() < 0:
-			_fail_path_run("A level path requires --path-index=0 or greater")
-			return
-		open_data(ImportedAssets.open(), true)
-		if data == null or not data.is_valid():
-			_fail_path_run(data.error if data != null else "No game data")
-			return
-		var attach_error: String = scenario.attach_data(data, level_code, path_index_text.to_int())
-		if not attach_error.is_empty():
-			_fail_path_run(attach_error)
-			return
-		if not load_level_by_code(level_code):
-			_fail_path_run(_status.text)
-			return
-		if not configure_path(path_index_text.to_int(), scenario.start):
-			_fail_path_run("Cannot start selected map path")
-			return
-		_frame_path(scenario.definition)
-	elif not path_index_text.is_empty():
-		_fail_path_run("--path-index requires --level")
-		return
-	else:
-		if not show_scene(_synthetic_path_scene()):
-			_fail_path_run(_status.text)
-			return
-		_path_setup = PathSetup.new()
-		_path_setup.definitions.append(scenario.definition.copy())
-		_path_inspection = PathInspection.new()
-		_world.add_child(_path_inspection)
-		_path_choice.add_item("Synthetic path", scenario.definition.path_index)
-		if not configure_path(scenario.definition.path_index, scenario.start):
-			_fail_path_run("Cannot start synthetic path")
-			return
-		_frame_path(scenario.definition)
-	set_path_visibility(true)
-	var trace := PathTrace.new()
-	trace.configure(scenario)
-	trace.append_snapshot(path_snapshot())
-	set_process(false)
-	set_playing(true)
-	var frames: int = 0
-	var frame_cap: int = ceili(float(scenario.tick_limit + 1) * float(render_rate) / 30.0) + render_rate
-	while tick < scenario.tick_limit and frames < frame_cap:
-		var before: int = tick
-		_process(1.0 / float(render_rate))
-		if tick > before:
-			if tick != before + 1 or path_snapshot() == null or path_snapshot().tick_index != tick:
-				_fail_path_run("Path render schedule advanced more than one tick")
-				return
-			trace.append_snapshot(path_snapshot())
-		elif not playing:
-			_fail_path_run("Path update stopped at tick %d" % tick)
-			return
-		frames += 1
-		await get_tree().process_frame
-		await RenderingServer.frame_post_draw
-	set_playing(false)
-	if tick != scenario.tick_limit:
-		_fail_path_run("Path render schedule did not reach tick %d" % scenario.tick_limit)
-		return
-	var trace_error: String = trace.save(trace_path)
-	if not trace_error.is_empty():
-		_fail_path_run(trace_error)
-		return
-	var capture_error: String = ViewerCapture.prepare_folder(folder)
-	if not capture_error.is_empty():
-		_fail_path_run(capture_error)
-		return
-	_ui.visible = false
-	await get_tree().process_frame
-	await RenderingServer.frame_post_draw
-	capture_error = ViewerCapture.save_image(_viewport.get_texture().get_image(), folder.path_join("path_tick%d.png" % tick))
-	if not capture_error.is_empty():
-		_fail_path_run(capture_error)
-		return
-	_ui.visible = true
-	await get_tree().process_frame
-	await RenderingServer.frame_post_draw
-	capture_error = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("path_controls.png"))
-	if not capture_error.is_empty():
-		_fail_path_run(capture_error)
-		return
-	print("path_viewer: %s, %d ticks, next tick %d" % [scenario.name, scenario.tick_limit, path_snapshot().tick_index])
-	get_tree().quit(0)
-
-func _synthetic_path_scene() -> MapSceneData:
-	var source := MapSceneData.new()
-	source.level = 48
-	source.map = MapFile.new()
-	source.remap = TextureRemap.new()
-	source.map.vertices = [Vector3i(-256, 0, -256), Vector3i(256, 0, -256), Vector3i(0, 0, 256)]
-	source.map.general.camera_source_offset = Vector3i(0, -512, -512)
-	source.map.general.camera_target_offset = Vector3i.ZERO
-	source.map.group_dimensions = Vector2i.ONE
-	source.map.group_size = Vector2i(768, 768)
-	var polygon := MapPolygon.new()
-	polygon.vertex_indices = PackedInt32Array([0, 1, 2])
-	polygon.colors = PackedColorArray([Color8(80, 80, 80)])
-	polygon.visible = true
-	source.map.polygons.append(polygon)
-	var group := MapGroup.new()
-	group.polygon_indices = PackedInt32Array([0])
-	source.map.groups.append(group)
-	return source
-
-## Frames sampled synthetic geometry in the ordinary inspection projection.
-func _frame_path(definition: PathDefinition) -> void:
-	var found: bool = false
-	var minimum := Vector3i.ZERO
-	var maximum := Vector3i.ZERO
-	for segment: PathSegmentDefinition in definition.segments:
-		for sample_index: int in 17:
-			var distance: int = roundi(float(segment.length) * float(sample_index) / 16.0)
-			var sample: PathSample = PathEvaluator.sample(segment, distance)
-			if not sample.error.is_empty():
-				continue
-			if not found:
-				minimum = sample.position
-				maximum = sample.position
-				found = true
-			else:
-				minimum = Vector3i(mini(minimum.x, sample.position.x), mini(minimum.y, sample.position.y), mini(minimum.z, sample.position.z))
-				maximum = Vector3i(maxi(maximum.x, sample.position.x), maxi(maximum.y, sample.position.y), maxi(maximum.z, sample.position.z))
-	if not found:
-		return
-	@warning_ignore("integer_division")
-	var midpoint: Vector3i = Vector3i((minimum.x + maximum.x) / 2, (minimum.y + maximum.y) / 2, (minimum.z + maximum.z) / 2)
-	var span: int = maxi(64, maxi(maximum.x - minimum.x, maxi(maximum.y - minimum.y, maximum.z - minimum.z)))
-	set_camera_pose(midpoint + Vector3i(0, -span, -span * 2), midpoint, 256)
-
-func _fail_path_run(message: String) -> void:
-	push_error(message)
-	get_tree().quit(1)
+	await MapScenarioRun.run_path(self)
 
 func _run_entity_scenario() -> void:
-	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var folder: String = ViewerArguments.value(arguments, "--screenshot-dir=")
-	var trace_path: String = ViewerArguments.value(arguments, "--trace-jsonl=")
-	if not _external_capture_folder(folder) or not ViewerCapture.external_folder(trace_path.get_base_dir()):
-		_fail_path_run("Entity output requires absolute external destinations")
-		return
-	var selected: String = ViewerArguments.value(arguments, "--scenario=")
-	var scenario: EntityScenario = EntityScenario.builtin(selected if not selected.is_empty() else "shared-path")
-	if not scenario.error.is_empty():
-		_fail_path_run(scenario.error)
-		return
-	var limit_text: String = ViewerArguments.value(arguments, "--tick-limit=")
-	if not limit_text.is_empty():
-		if not limit_text.is_valid_int() or limit_text.to_int() < 0 or limit_text.to_int() > 100000:
-			_fail_path_run("Entity tick limit must be in 0..100000")
-			return
-		scenario.tick_limit = limit_text.to_int()
-	var rate_text: String = ViewerArguments.value(arguments, "--render-rate=")
-	var render_rate: int = 60 if rate_text.is_empty() else rate_text.to_int()
-	if render_rate not in [30, 60, 144]:
-		_fail_path_run("Entity render rate must be 30, 60 or 144")
-		return
-	var level_code: String = ViewerArguments.value(arguments, "--level=")
-	if not level_code.is_empty():
-		open_data(ImportedAssets.open(), true)
-		if data == null or not data.is_valid():
-			_fail_path_run(data.error if data != null else "No game data")
-			return
-		var attach_error: String = scenario.attach_data(data, level_code)
-		if not attach_error.is_empty():
-			_fail_path_run(attach_error)
-			return
-		if not load_level_by_code(level_code):
-			_fail_path_run(_status.text)
-			return
-		if _entity_session.run == null or _entity_setup == null:
-			_fail_path_run("Entity setup did not attach the selected map")
-			return
-	else:
-		if not show_scene(_synthetic_path_scene()):
-			_fail_path_run(_status.text)
-			return
-		_frame_path(scenario.definitions[1].path_definition)
-		var attach_issue: String = set_entity_definitions(scenario.definitions)
-		if not attach_issue.is_empty():
-			_fail_path_run(attach_issue)
-			return
-	var contact_issue: String = set_form_contacts(scenario.contact_definitions, scenario.probe_world, false)
-	if not contact_issue.is_empty():
-		_fail_path_run(contact_issue)
-		return
+	await MapScenarioRun.run_entity(self)
+
+## The status line, which carries the last load or selection failure.
+func status_text() -> String:
+	return _status.text
+
+## Shows or hides the inspection controls for captures.
+func set_controls_visible(value: bool) -> void:
+	_ui.visible = value
+
+## Advances the inspection clock by [param delta] seconds, as one rendered frame does.
+func advance_clock(delta: float) -> void:
+	_process(delta)
+
+## Offers one synthetic path definition and starts it from a copied [param start].
+func attach_synthetic_path(definition: PathDefinition, start: PathStart) -> bool:
+	_path_setup = PathSetup.new()
+	_path_setup.definitions.append(definition.copy())
+	_path_inspection = PathInspection.new()
+	_world.add_child(_path_inspection)
+	_path_choice.add_item("Synthetic path", definition.path_index)
+	return configure_path(definition.path_index, start)
+
+## Whether the loaded map attached its entity setup and run.
+func entities_attached() -> bool:
+	return _entity_session.run != null and _entity_setup != null
+
+## Selects authored entity [param entity_index] when offered and shows the entity tab.
+func focus_entity(entity_index: int) -> void:
 	for index: int in _entity_choice.item_count:
-		if _entity_choice.get_item_id(index) == scenario.contact_entity_index:
+		if _entity_choice.get_item_id(index) == entity_index:
 			_entity_choice.select(index)
 			_on_entity_selected(index)
 			break
-	set_entity_visibility(true)
 	_inspection_tabs.current_tab = 1
-	var trace := EntityTrace.new()
-	trace.configure(scenario)
-	trace.append_snapshot(entity_snapshot())
-	set_process(false)
-	set_playing(true)
-	var frames: int = 0
-	var frame_cap: int = ceili(float(scenario.tick_limit + 1) * float(render_rate) / 30.0) + render_rate
-	while tick < scenario.tick_limit and frames < frame_cap:
-		var before: int = tick
-		_process(1.0 / float(render_rate))
-		if tick > before:
-			if tick != before + 1 or entity_snapshot() == null or entity_snapshot().tick_index != tick:
-				_fail_path_run("Entity render schedule advanced more than one tick")
-				return
-			trace.append_snapshot(entity_snapshot())
-		elif not playing:
-			_fail_path_run("Entity update stopped at tick %d" % tick)
-			return
-		frames += 1
-		await get_tree().process_frame
-		await RenderingServer.frame_post_draw
-	set_playing(false)
-	if tick != scenario.tick_limit:
-		_fail_path_run("Entity render schedule did not reach tick %d" % scenario.tick_limit)
-		return
-	var save_issue: String = trace.save(trace_path)
-	if not save_issue.is_empty():
-		_fail_path_run(save_issue)
-		return
-	var capture_issue: String = ViewerCapture.prepare_folder(folder)
-	if not capture_issue.is_empty():
-		_fail_path_run(capture_issue)
-		return
-	_ui.visible = false
-	await get_tree().process_frame
-	await RenderingServer.frame_post_draw
-	capture_issue = ViewerCapture.save_image(_viewport.get_texture().get_image(), folder.path_join("entity_tick%d.png" % tick))
-	if not capture_issue.is_empty():
-		_fail_path_run(capture_issue)
-		return
-	_ui.visible = true
-	await get_tree().process_frame
-	await RenderingServer.frame_post_draw
-	capture_issue = ViewerCapture.save_image(get_viewport().get_texture().get_image(), folder.path_join("entity_controls.png"))
-	if not capture_issue.is_empty():
-		_fail_path_run(capture_issue)
-		return
-	print("entity_viewer: %s, %d ticks, next tick %d" % [scenario.name, scenario.tick_limit, entity_snapshot().tick_index])
-	get_tree().quit(0)
 
 func _on_level_selected(index: int) -> void:
 	load_level_by_code(FroggerIds.LEVEL_CODES[_levels.get_item_id(index)], _low.button_pressed)

@@ -4,7 +4,7 @@ import math
 from make_golden_camera import damp,trig
 from make_golden_paths import divided,normalised
 from make_golden_grid import cross
-from org1_hilite_admission import multiply,axes,ROOTS
+from org1_hilite_reach import multiply,axes,ROOTS
 from org1_round_trip import apply,transpose,quadrant
 
 

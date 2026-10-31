@@ -1,10 +1,11 @@
 # Assets
 
-`assets/` will hold the game's content as committed Godot resources, imported
+`assets/` holds the game's content as committed Godot resources, imported
 once from the owner's `pc-retail-v3.0e` copy by the importer under
-`archive/import/` and edited directly afterwards. Until S1c lands the folder
-does not exist and the game still decodes the retail files at runtime through
-`GameData`; see the [roadmap](../PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes).
+`archive/import/` and edited directly afterwards. The game, sandbox, viewers
+and inspection tools read only these resources; see the
+[roadmap](../PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)
+and the [domain model](domain-model.md#asset-identities) for how they are keyed.
 
 ## Storage
 
@@ -34,9 +35,9 @@ squares as packed columns (`polygon_records`, `grid_stack_records`, ...) and
 rebuilds the record arrays on first access, which keeps SUB1 under 1.7 MB as
 a binary resource; compressed saving brings it under 0.4 MB.
 
-`AssetCatalog` is the abstract provider the game is typed against; `GameData`
-(retail files, until S1d) and `ImportedAssets` (`assets/`, from S1c) implement
-it.
+`AssetCatalog` is the abstract provider the game is typed against.
+`ImportedAssets` implements it over `assets/`; `GameData` in `archive/source/`
+implements it over the retail files for the importer and the archive suite.
 
 ## Layout
 
@@ -46,7 +47,7 @@ it.
 | `tables/<table>.tres`, `tables/game_tables.tres`, `tables/names.tres` | One file per executable table, linked from `game_tables.tres`; FrogLord's name lists. |
 | `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
-| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked with the page-wide colour key, plus the sky atlas. |
+| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). |
 | `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness. |
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |

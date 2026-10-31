@@ -50,7 +50,7 @@ func test_validation_duplicate_unknown_and_copy_detaches_nested_bounds() -> void
 	guard.world_bounds = Rect2i(0, 0, 0, 1)
 	assert_string_contains(guard.validate(), "positive")
 
-func test_animated_admission_rejects_unproved_roots_actions_and_powerups() -> void:
+func test_animated_corridor_rejects_unproved_roots_actions_and_powerups() -> void:
 	var guard := ExplorationGuard.new()
 	guard.world_bounds = Rect2i(-512, -128, 1024, 608)
 	guard.frog_roots.append(PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096]))

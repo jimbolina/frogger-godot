@@ -1,6 +1,6 @@
 class_name ZoneSetup
 extends RefCounted
-## Admits only completely decoded, known camera zones as detached definitions.
+## Accepts only completely decoded, known camera zones as detached definitions.
 
 var definitions: Array[ZoneDefinition] = []
 var error: String = ""

@@ -121,6 +121,8 @@ func _scene() -> MapSceneData:
 	var second: SyntheticVlo.Spec = SyntheticVlo.spec(8, 4, 2, 101, 0, SyntheticVlo.abgr(pixels))
 	scene.preferred = SyntheticVlo.bank([spec, second])
 	scene.library.add_bank(scene.preferred)
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks)
 	scene.remap = TextureRemap.new()
 	scene.remap.texture_ids = PackedInt32Array([100, 101])
 	return scene
@@ -353,6 +355,8 @@ func test_sky_rotations_camera_translation_and_fixed_height() -> void:
 	scene.sky_land.rotations = PackedInt32Array([1])
 	scene.sky_remap = scene.remap
 	scene.level = 43
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0]))
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
 	assert_not_null(built.sky_mesh)
 	var arrays: Array = built.sky_mesh.surface_get_arrays(0)
@@ -382,6 +386,8 @@ func test_committed_sky_drift_replaces_the_internal_clock() -> void:
 	scene.sky_land.rotations = PackedInt32Array([0])
 	scene.sky_remap = scene.remap
 	scene.level = 43
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0]))
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
 	var instance: MapMesh.Instance = built.create_instance()
 	var sky_node: MeshInstance3D = instance.get_child(instance.get_child_count() - 1)
