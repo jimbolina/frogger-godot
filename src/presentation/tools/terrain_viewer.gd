@@ -1,6 +1,13 @@
 class_name TerrainViewer
 extends GameplayWorldView
 ## Synthetic terrain driver. Scene input, clocks and drawing consume the same pure run API.
+##
+## Under the modern rendering profile the scene lights follow
+## [method TerrainCaptureStages.entity_lighting]: a scenario whose contract
+## includes entity lighting draws under the map's lights (or the options
+## screen's lights without a map); any other draws under a full flat ambient
+## and no lights, so terrain and entities show their stored colours as retail
+## draws unlit entities.
 
 var auto_open: bool = true
 var scenario: TerrainScenario
@@ -46,6 +53,7 @@ func _ready() -> void:
 			assets.note_renderer(RenderingServer.get_current_rendering_method())
 			if assets.is_valid():
 				selected.level_code = ViewerArguments.value(arguments, "--level=")
+				apply_shadow_arguments(arguments)
 				open_data(assets, true)
 			else:
 				last_error = assets.error
@@ -85,6 +93,7 @@ func open_data(selected: AssetCatalog, take_ownership: bool = false) -> String:
 	data = selected
 	if selected == null:
 		_owns_data = false
+	rendering_profile = selected.rendering_profile() if selected != null else RenderingProfile.retail()
 	if _frog_model != null:
 		remove_child(_frog_model)
 		_frog_model.queue_free()
@@ -471,14 +480,35 @@ func _clear_entity_visuals() -> void:
 func _build_entity_visuals() -> void:
 	if scenario == null or not scenario.options.entity_reactions or scenario.level.entity_collision == null:
 		_clear_entity_visuals()
+		_light_scene(_map_lighting())
 		return
 	build_entities(scenario.level.entity_collision, scenario.map_scene, data, TerrainCaptureStages.entity_lighting(scenario))
+	_light_scene(_map_lighting())
 	_entity_inspection.configure(scenario.level.entity_collision.entities)
 	_entity_inspection.configure_contacts(scenario.level.entity_collision.contacts)
 	_entity_inspection.visible = true
 	_entity_pose_tick = -1
 	if _current != null:
 		draw_state(1.0)
+
+func _map_lighting() -> MapLighting:
+	if scenario == null or scenario.map_scene == null or scenario.map_scene.map == null:
+		return null
+	var lighting := MapLighting.new()
+	lighting.configure(scenario.map_scene.map.lights)
+	return lighting
+
+## Applies the map lights only when the scenario's contract includes entity
+## lighting; otherwise a full flat ambient with no lights, under modern only.
+func _light_scene(lighting: MapLighting) -> void:
+	if scenario == null or TerrainCaptureStages.entity_lighting(scenario):
+		super._light_scene(lighting)
+		return
+	if scene_lighting == null or not rendering_profile.is_modern():
+		return
+	var flat := SceneLightingSpec.new()
+	flat.ambient = Vector3.ONE
+	scene_lighting.apply(flat)
 
 func _selected_contact_index() -> int:
 	if scenario == null or scenario.level.entity_collision == null:

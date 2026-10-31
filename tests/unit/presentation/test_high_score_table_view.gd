@@ -148,3 +148,38 @@ func test_direction_keys_follow_the_player_one_bindings() -> void:
 	var released: OptionsMenu.Buttons = view.sample_buttons()
 	assert_eq(released.held, 0)
 	assert_eq(released.pressed, OptionsMenu.Buttons.BACK)
+
+
+class ModernCatalog extends AssetCatalog:
+	func rendering_profile() -> RenderingProfile:
+		return RenderingProfile.modern()
+
+
+func test_modern_lights_the_stack_and_the_table_one_world_at_a_time() -> void:
+	var stack: LevelStack = StackLayoutTest.retail_stack()
+	var progress: LevelProgress = LevelProgress.create(stack)
+	var none: Array[HighScoreRow] = []
+	var board: HighScoreBoard = HighScoreBoard.create(none, none)
+	var tour: HighScoreTour = HighScoreTour.create(StackLayout.create(stack), progress, board.main, true, false,
+		false, board.new_levels)
+	var assets := FrontEndAssets.new()
+	assets.texture_library.catalog = ModernCatalog.new()
+	var models := OptionsModels.new()
+	models.frog = TerrainFrogAssets.new()
+	models.library.catalog = ModernCatalog.new()
+	var view: HighScoreTableView = HighScoreTableView.create(assets, MenuWater.create(), tour, stack, progress, board, models)
+	add_child_autofree(view)
+	assert_not_null(view.stack_view.scene_lighting)
+	assert_eq(view.stack_view.scene_lighting.environment.background_mode, Environment.BG_CANVAS)
+	assert_eq(view.find_children("*", "WorldEnvironment", true, false).size(), 1)
+	_idle(view, 1)
+	view.tick(OptionsMenu.Buttons.new(0, OptionsMenu.Buttons.LEFT))
+	assert_not_null(view.table)
+	assert_not_null(view.table.scene_lighting)
+	assert_eq(view.table.scene_lighting.light_nodes().size(), 1)
+	assert_null(view.water.world_environment, "the water gives up its environment")
+	var active: int = 0
+	for node: Node in view.find_children("*", "WorldEnvironment", true, false):
+		if (node as WorldEnvironment).environment != null:
+			active += 1
+	assert_eq(active, 1, "one environment applies in the table's world")

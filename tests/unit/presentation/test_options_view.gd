@@ -80,3 +80,34 @@ func test_projection_centres_the_camera_target() -> void:
 	var at: Vector3 = OptionsView.project(OptionsCamera.OPTIONS_SOURCE, OptionsCamera.OPTIONS_TARGET, Vector3(OptionsCamera.OPTIONS_TARGET))
 	assert_almost_eq(Vector2(at.x, at.y), OptionsView.CENTRE, Vector2.ONE * 0.5, "within the 4.12 camera matrix rounding")
 	assert_gt(at.z, 0.0)
+
+
+class ModernCatalog extends AssetCatalog:
+	func rendering_profile() -> RenderingProfile:
+		return RenderingProfile.modern()
+
+
+func test_retail_keeps_the_waters_environment_and_no_scene_lights() -> void:
+	var view: OptionsView = _view()
+	assert_null(view.water.scene_lighting)
+	assert_not_null(view.water.world_environment)
+	assert_eq(view.find_children("*", "DirectionalLight3D", true, false).size(), 0)
+
+
+func test_modern_lights_the_page_with_the_options_lights() -> void:
+	var assets := FrontEndAssets.new()
+	assets.texture_library.catalog = ModernCatalog.new()
+	var view: OptionsView = OptionsView.create(assets, MenuWater.create(), OptionsCamera.new(), 3, 5)
+	autofree(view)
+	var spec: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false)
+	var lighting: SceneLighting = view.water.scene_lighting
+	assert_not_null(lighting)
+	assert_null(view.water.world_environment, "the scene lighting owns the world's environment")
+	assert_eq(view.find_children("*", "WorldEnvironment", true, false).size(), 1)
+	assert_eq(lighting.light_nodes().size(), spec.lights.size())
+	assert_eq(lighting.light_nodes().size(), 1)
+	assert_false(lighting.light_nodes()[0].shadow_enabled)
+	assert_almost_eq(lighting.light_nodes()[0].light_energy, spec.lights[0].energy, 1e-6)
+	assert_almost_eq(lighting.applied_ambient, spec.ambient, Vector3.ONE * 1e-6)
+	assert_eq(lighting.environment.background_mode, Environment.BG_COLOR)
+	assert_eq(lighting.environment.background_color, Color.BLACK)

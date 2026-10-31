@@ -17,17 +17,17 @@ bitmap fonts (S2b, accepted). The owner's review of the
 [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) is pending.
 
-S2c and S2d add the [modern rendering profile](reference/rendering/modern-profile.md):
+S2c–S2e add the [modern rendering profile](reference/rendering/modern-profile.md):
 `tools/play.sh --level=ORG1 --rendering=modern` starts Godot on Forward+ and
-draws scene lights and shadows from the map light records, lit models with
-the committed tints, lit terrain sampling per-image textures, water as a
-partial reflection, the sky from a tile array and caves under an omni light
-at the frog; retail stays the default and byte-exact. Awaiting the owner's
-play check on ORG1, SUB1, SWP1, VOL1, DES1, CAV1 and SKY1 against the retail
-launch, with the cave light mode and `vertex_tint` as
-[open choices](PORTING.md#needed-from-the-owner). Next: S2e (front end, sandbox,
-viewers, shadow tuning), then S2f (cleanup and the `src/convert` rename,
-gated on acceptance) ([roadmap](PORTING.md#s2-modern-rendering-profile)).
+draws scene lights and real shadows from the map light records, lit models
+with the committed tints, lit terrain from per-image textures, water as a
+partial reflection with a glint, the sky from a tile array, caves under an
+omni light at the frog, and the lit front end, sandbox and viewers; retail
+stays the default and byte-exact. `--shadows=off` and `--effect-shadows=retail`
+compare the choices. Awaiting the owner's play check against the retail launch, the
+acceptance decision and the [open choices](PORTING.md#needed-from-the-owner). Next: S2f, the
+cleanup and the `src/convert` rename, gated on acceptance
+([roadmap](PORTING.md#s2-modern-rendering-profile)).
 
 Effects never reproduce the frozen generators' random draws. Replays and
 native attract comparisons are on-demand

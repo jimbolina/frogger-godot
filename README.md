@@ -207,7 +207,8 @@ profile keeps the original look on Compatibility. A direct launch needs
 `--rendering-method forward_plus` before the scene path; the modern profile on
 Compatibility (for example F5 in the editor) still runs and logs a warning
 that shadows and lighting differ. `frogger/rendering/default_profile` in
-`project.godot` changes the default.
+`project.godot` changes the default; `--shadows=off` compares without real
+shadows and `--effect-shadows=retail` keeps the blob shadows beside them.
 The first run bakes the matching texture pages into `assets/textures/pages_x4/`
 (about 113 MB, ignored by Git, Pillow required), which the play and test
 wrappers keep current. In-game text draws with the bitmap fonts under

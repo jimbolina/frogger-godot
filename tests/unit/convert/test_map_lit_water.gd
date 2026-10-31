@@ -20,13 +20,14 @@ func test_modern_water_surfaces_take_the_default_water_look() -> void:
 	assert_eq(_float(water, "reflection_emission"), MapMesh.Instance.WATER_REFLECTION)
 	assert_eq(_float(water, "specular_strength"), MapMesh.Instance.WATER_SPECULAR)
 	assert_eq(_float(water, "shininess"), MapMesh.Instance.WATER_SHININESS)
-	assert_eq(MapMesh.Instance.WATER_REFLECTION, 0.5)
-	assert_eq(MapMesh.Instance.WATER_SPECULAR, 0.5)
-	assert_eq(MapMesh.Instance.WATER_SHININESS, 64.0)
+	assert_eq(MapMesh.Instance.WATER_REFLECTION, 0.35)
+	assert_eq(MapMesh.Instance.WATER_SPECULAR, 0.2)
+	assert_eq(MapMesh.Instance.WATER_SHININESS, 512.0)
+	assert_lt(MapMesh.Instance.WATER_SPECULAR * PI, 1.0, "the highlight's peak alone stays below a full light")
 	for layer: int in [-1, 1]:
 		for parameter: String in WATER_UNIFORMS:
 			assert_true(_unset(surfaces[layer], parameter), "layer %d leaves %s at the shader default" % [layer, parameter])
-	assert_eq(instance.water_look(), PackedFloat32Array([0.5, 0.5, 64.0]))
+	assert_eq(instance.water_look(), PackedFloat32Array([0.35, 0.2, 512.0]))
 	instance.free()
 
 

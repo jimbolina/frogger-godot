@@ -2,6 +2,8 @@ extends GutTest
 ## A level opened under the modern profile draws its terrain, frog and entities with the lit
 ## shaders under scene lights; under the retail profile it keeps the retail shaders and no lights.
 ## A cave level draws under the cave omni light instead of the directional lights.
+## The mapless sandbox draws its frog and entities under the options lights and
+## keeps its unshaded zone faces.
 
 const MODERN_SHADERS: String = "res://src/convert/shaders/modern"
 const RETAIL_SHADERS: String = "res://src/convert/shaders"
@@ -141,7 +143,7 @@ func test_swp1_under_the_modern_profile_draws_reflective_water() -> void:
 			continue
 		for surface: int in node.mesh.get_surface_count():
 			var material: ShaderMaterial = node.get_active_material(surface) as ShaderMaterial
-			if material != null and is_equal_approx(_float(material.get_shader_parameter("reflection_emission")), 0.5):
+			if material != null and is_equal_approx(_float(material.get_shader_parameter("reflection_emission")), MapMesh.Instance.WATER_REFLECTION):
 				reflective += 1
 	assert_gt(reflective, 0)
 	screen.close_data()
@@ -152,3 +154,55 @@ func _float(value: Variant) -> float:
 		var result: float = value
 		return result
 	return 0.0
+
+
+func _sandbox(data: ImportedAssets) -> SandboxScreen:
+	var screen := SandboxScreen.new()
+	screen.auto_open = false
+	add_child_autofree(screen)
+	screen.set_process(false)
+	assert_eq(screen.open_sandbox(data), "")
+	assert_eq(screen.load_preset("effects"), "")
+	screen.draw_state(1.0)
+	return screen
+
+
+func _assert_zone_faces_unshaded(screen: SandboxScreen) -> void:
+	var faces: int = 0
+	for child: Node in screen._ground.get_children():
+		var face: MeshInstance3D = child as MeshInstance3D
+		if face == null:
+			continue
+		var material: ShaderMaterial = face.material_override as ShaderMaterial
+		assert_not_null(material, String(face.name))
+		if material != null:
+			assert_eq(material.shader.resource_path, "res://src/presentation/tools/terrain_debug.gdshader", String(face.name))
+		faces += 1
+	assert_gt(faces, 0)
+
+
+func test_sandbox_under_the_modern_profile_is_lit_by_the_options_lights() -> void:
+	var screen: SandboxScreen = _sandbox(_modern)
+	assert_true(screen.rendering_profile.is_modern())
+	var expected: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting())
+	assert_gt(expected.lights.size(), 0)
+	assert_eq(screen.scene_lighting.light_nodes().size(), expected.lights.size())
+	assert_eq(_count(screen, "DirectionalLight3D"), expected.lights.size())
+	assert_eq(_count(screen, "WorldEnvironment"), 1)
+	assert_eq(screen.scene_lighting.applied_ambient, expected.ambient)
+	assert_gt(screen.entity_model_count(), 0, "the effects preset places entity models")
+	_assert_all_in(_shader_paths(_model_nodes(screen)), MODERN_SHADERS, "frog and entity part")
+	_assert_zone_faces_unshaded(screen)
+	screen.close_data()
+
+
+func test_sandbox_under_the_retail_profile_keeps_the_retail_shaders_and_no_lights() -> void:
+	var screen: SandboxScreen = _sandbox(_retail)
+	assert_false(screen.rendering_profile.is_modern())
+	assert_eq(_count(screen, "DirectionalLight3D"), 0)
+	assert_eq(_count(screen, "WorldEnvironment"), 0)
+	assert_null(screen.scene_lighting.environment)
+	assert_gt(screen.entity_model_count(), 0)
+	_assert_all_in(_shader_paths(_model_nodes(screen)), RETAIL_SHADERS, "frog and entity part")
+	_assert_zone_faces_unshaded(screen)
+	screen.close_data()

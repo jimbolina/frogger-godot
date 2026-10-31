@@ -99,3 +99,58 @@ func test_drawing_leaves_the_committed_state_alone() -> void:
 	view.render(0.5)
 	view.render(1.0)
 	assert_eq(view.scene.frog, frog)
+
+
+class ModernCatalog extends AssetCatalog:
+	func rendering_profile() -> RenderingProfile:
+		return RenderingProfile.modern()
+
+
+static func _stub_models(modern: bool) -> OptionsModels:
+	var models := OptionsModels.new()
+	models.frog = TerrainFrogAssets.new()
+	if modern:
+		models.library.catalog = ModernCatalog.new()
+	return models
+
+
+func test_retail_models_draw_without_scene_lights() -> void:
+	var view: HighScoreEntryView = HighScoreEntryView.create(FrontEndAssets.new(), MenuWater.create(), HighScoreEntry.create(true, false), _stub_models(false))
+	add_child_autofree(view)
+	assert_null(view.models.scene_lighting)
+	assert_null(view.water.scene_lighting)
+	assert_not_null(view.water.world_environment)
+
+
+func test_modern_models_light_the_waters_world_with_the_options_lights() -> void:
+	var view: HighScoreEntryView = HighScoreEntryView.create(FrontEndAssets.new(), MenuWater.create(), HighScoreEntry.create(true, false), _stub_models(true))
+	add_child_autofree(view)
+	var spec: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false)
+	var lighting: SceneLighting = view.models.scene_lighting
+	assert_not_null(lighting)
+	assert_eq(lighting.get_parent(), view.models)
+	assert_null(view.water.world_environment, "the water gives up its environment")
+	assert_eq(_active_environments(view), 1, "one environment applies in the world")
+	assert_eq(lighting.light_nodes().size(), spec.lights.size())
+	assert_false(lighting.light_nodes()[0].shadow_enabled)
+	assert_almost_eq(lighting.applied_ambient, spec.ambient, Vector3.ONE * 1e-6)
+
+
+static func _active_environments(root: Node) -> int:
+	var count: int = 0
+	for node: Node in root.find_children("*", "WorldEnvironment", true, false):
+		if (node as WorldEnvironment).environment != null:
+			count += 1
+	return count
+
+
+func test_a_modern_set_outside_a_camera_water_lights_itself() -> void:
+	var models: WaterModelSet = WaterModelSet.create(_stub_models(true))
+	add_child_autofree(models)
+	assert_not_null(models.scene_lighting)
+	assert_eq(models.scene_lighting.get_parent(), models)
+	assert_eq(models.scene_lighting.light_nodes().size(), 1)
+	remove_child(models)
+	assert_eq(models.scene_lighting.light_nodes().size(), 0, "cleared on exit")
+	add_child(models)
+	assert_eq(models.scene_lighting.light_nodes().size(), 1, "applied again on entry")

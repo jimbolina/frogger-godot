@@ -48,8 +48,8 @@ node-free `SceneLightingSpec`. With stored fractions `a = ambient / 4096` and
   `ORG_LOG_SMALL` meshes), so that direction is the way the light travels.
 - the slot with the largest luminance casts shadows: two parallel splits,
   split 0.25, maximum distance 32 (8192 game units), fade 0.8, bias 0.05,
-  normal bias 1.0, blur 1.0, caster mask `SceneLightingSpec.SHADOW_CASTER_LAYER`.
-  These are starting values, tuned by eye in S2e.
+  normal bias 1.0, blur 1.0, caster mask `SceneLightingSpec.SHADOW_CASTER_LAYER`
+  ([shadows](#shadows)).
 
 `SceneLighting` (`src/presentation/`), a child of `GameplayWorldView`, is the
 only owner of light nodes: it builds the `DirectionalLight3D`s and one
@@ -162,10 +162,16 @@ share of the surface colour from albedo into emission (`ALBEDO = shown × (1 −
 r)`, `EMISSION = shown × r`), so the surface still darkens in shadow without
 going black, and a Blinn highlight from the scene lights (`specular_strength`,
 `shininess`) sits on top. `MapMesh.Instance` gives every ENVMAP surface
-`WATER_REFLECTION` 0.5, `WATER_SPECULAR` 0.5 and `WATER_SHININESS` 64, and
+`WATER_REFLECTION` 0.35, `WATER_SPECULAR` 0.2 and `WATER_SHININESS` 512, and
 `set_water_look(reflection, specular, shininess)` retunes them for the owner.
-The MAX_OT riverbed stays plain lit terrain; retail materials carry none of
-these uniforms.
+Godot's light colour already carries π, so the highlight peaks at π × strength
+× light energy and the exponent sets only its size; on a flat water plane the
+half-vector moves by about half the view angle per pixel, so exponents of
+64–256 spread the highlight over a large part of the frame (SUB1 at 0.5/64
+was about 16% near-white), while 512 gives a compact glint. No
+energy-conserving factor is applied, which keeps brightness and size
+independent. The MAX_OT riverbed stays plain lit terrain; retail materials
+carry none of these uniforms.
 
 ## Cave light
 
@@ -220,11 +226,71 @@ frozen water and integer projection are retail-only. Captures record
 capture, and `modern_texture_issues()` reports any textured material that
 does not bind its image's own padded texture into the capture diagnostics.
 
-## Limits after S2d
+## Shadows
 
-The front end, sandbox effects, the model, terrain and camera-zone viewers,
-the blob and rock shadow effects beside real shadows and the shadow
-constants are S2e. Verification is by eye and by windowed tools, because the headless
+Real shadows come from the brightest directional light with the values above,
+kept after the S2e check of ORG1, SUB1, JUN1 and VOL1 at 640x480: frames with
+and without shadows showed no acne on lit surfaces and no gap between casters
+and their shadows. `--shadows=off` after `--` (project setting
+`frogger/rendering/shadows`, default `on`) builds the scene lights without a
+caster so the owner can compare; `ViewerArguments.shadows` reads it and
+`GameplayWorldView.real_shadows` passes it to `SceneLightingBuilder.from_lighting`.
+
+The retail blob shadows (the frog's ground shadow and the Desert falling-rock
+and tumbleweed quads, [effects](effects.md#frog-effects-p11b)) would draw
+beside the real shadows, so under modern they follow
+`frogger/rendering/effect_shadows`: `off` (default) leaves them out, `retail`
+keeps them, and `--effect-shadows=retail|off` overrides it for one launch.
+`ShadowEffectPolicy` (`src/convert/effects/`) decides from the profile and the
+setting; `GameplayWorldView.shadow_requests` returns no requests when it says
+no, so nothing reaches `FrogShadowView`. Retail draws them under every
+setting and the shadow colours golden is unchanged. The sandbox's zone faces
+are unshaded, so real shadows have no surface to fall on there.
+
+## Front end
+
+The level-select stack, the options page, the name-entry page and the
+high-score pages draw their 3D models through the lit shaders. `StackLighting`
+(`src/convert/`) turns the stack's ambient and three parallel lights
+(`StackLayout`, SELECT.C) into one `MapLighting`, which both the retail box
+materials' source lighting and `SceneLightingBuilder.from_lighting` read, so
+the two profiles light the stack from one record. `LevelStackView` adds a
+`SceneLighting` to the stack's world without shadows and owns that world's
+environment, keeping the black background or the high-score canvas checker
+(`BG_CANVAS`). Box materials are the lit variants of the retail ones; a row's
+tint (glow, light or dark, `StackSelector`) reaches its box as the `SceneTint`
+of the grey scale tint/128 on the box's instance uniforms; the spinning box's
+level picture is its own child node with the neutral tint. The gold-frog
+quads stay unlit. The options page, the main menu's table, the name-entry
+page and the high-score table light their models with the options viewport's
+lights without shadows: the options page through `MenuWaterView.light_scene`,
+a `WaterModelSet` (hence `HighScoreSceneView`) through its own `SceneLighting`
+after making the enclosing water view give up its environment
+(`release_environment`), so each world has one environment. The volume
+models' glow still reaches them as custom ambient. The menu water, title
+sprites, reflections, splashes and the frog's jump shadow keep the retail
+shaders; the water reads lighter under Forward+ through the linear-light
+blend. Every front-end light is cleared when its view leaves the tree and
+applied again when it returns.
+
+## Sandbox and viewers
+
+The sandbox lights its frog and entities through `GameplayWorldView`'s
+options-light fallback; its zone faces stay unshaded `terrain_debug` tints.
+The model viewer shows lit models under a `SceneLighting` holding the options
+lights without shadows, in front of its grey backdrop; retail still shows each
+polygon's stored colour. The camera-zone viewer lights its map from the light
+records like the map viewer (options lights when the map has none, cave light
+at the static start on cave maps); its probe and markers stay unshaded. The
+terrain viewer takes the catalog's profile and follows
+`TerrainCaptureStages.entity_lighting`: a scenario whose contract includes
+entity lighting draws under the map's lights, any other under a flat ambient
+with no lights, so terrain and entities show their stored colours as retail
+draws unlit entities. Map-viewer scenario runs inherit its lighting.
+
+## Verification
+
+Verification is by eye and by windowed tools, because the headless
 suites never compile shaders: `tools/probe_model_shader.gd` under retail,
 `tools/probe_scene_lighting.gd` under Forward+, and captures with
 `--rendering modern` that fail on any `SHADER ERROR`

@@ -10,6 +10,16 @@ const TEXTURE_SET_SETTING: String = "frogger/textures/default_set"
 const RENDERING_ARGUMENT: String = "--rendering="
 ## The project setting holding the default rendering profile name.
 const RENDERING_SETTING: String = "frogger/rendering/default_profile"
+## The launch argument choosing whether the modern profile keeps the retail shadow effects.
+const EFFECT_SHADOWS_ARGUMENT: String = "--effect-shadows="
+## The project setting holding the default shadow-effect choice.
+const EFFECT_SHADOWS_SETTING: String = "frogger/rendering/effect_shadows"
+## The launch argument switching the modern profile's real shadows.
+const SHADOWS_ARGUMENT: String = "--shadows="
+## The project setting holding the default real-shadow switch.
+const SHADOWS_SETTING: String = "frogger/rendering/shadows"
+## The value of [constant SHADOWS_ARGUMENT] and [constant SHADOWS_SETTING] that turns real shadows off.
+const SHADOWS_OFF: String = "off"
 
 
 ## Value following the first argument starting with [param prefix], including an empty value.
@@ -51,6 +61,27 @@ static func rendering_profile(arguments: PackedStringArray) -> String:
 	if not requested.is_empty():
 		return requested
 	return str(ProjectSettings.get_setting(RENDERING_SETTING, RenderingProfile.RETAIL))
+
+
+## The shadow-effect choice a launch asked for, for [ShadowEffectPolicy]:
+## [code]--effect-shadows=[/code] in [param arguments], else the project setting
+## [code]frogger/rendering/effect_shadows[/code], else [constant ShadowEffectPolicy.DEFAULT].
+static func effect_shadows(arguments: PackedStringArray) -> String:
+	var requested: String = value(arguments, EFFECT_SHADOWS_ARGUMENT).strip_edges().to_lower()
+	if not requested.is_empty():
+		return requested
+	return str(ProjectSettings.get_setting(EFFECT_SHADOWS_SETTING, ShadowEffectPolicy.DEFAULT)).strip_edges().to_lower()
+
+
+## Whether the modern profile's lights cast real shadows: false when
+## [code]--shadows=off[/code] is in [param arguments], or, without the
+## argument, when the project setting [code]frogger/rendering/shadows[/code]
+## is [code]"off"[/code]; true otherwise.
+static func shadows(arguments: PackedStringArray) -> bool:
+	var requested: String = value(arguments, SHADOWS_ARGUMENT).strip_edges().to_lower()
+	if requested.is_empty():
+		requested = str(ProjectSettings.get_setting(SHADOWS_SETTING, "on")).strip_edges().to_lower()
+	return requested != SHADOWS_OFF
 
 
 ## Whether a scenario run attaches the imported assets: a map selected with

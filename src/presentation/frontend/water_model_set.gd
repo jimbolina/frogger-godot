@@ -11,6 +11,13 @@ extends Node3D
 ## shadow and splashes draw in layers after the water in the options page's ordering-table order,
 ## each sprite lit on its normal as the options page lights its sprites. Without usable
 ## [OptionsModels] nothing is built and drawing does nothing.
+##
+## Under the modern rendering profile the models draw through the lit shaders under the options
+## lights ([method MenuWaterView.options_spec], no shadows) of the set's own [member scene_lighting]
+## child. On entering the tree inside a [MenuWaterView] with its own camera the set takes over
+## that world's environment ([method MenuWaterView.release_environment]); the lights are cleared
+## when it leaves the tree and applied again when it returns. The shadow and splash sprites keep
+## their CPU light.
 
 ## Sprite layers, ordered as the options page's shadow and splash layers.
 enum Layer { SHADOW, SPLASHES }
@@ -22,6 +29,8 @@ const LAYER_PRIORITY: PackedInt32Array = [3, 4]
 var models: OptionsModels
 ## Interpolate between ticks; passed to every model instance.
 var smoothing_enabled: bool = true
+## The light the models draw under with the modern profile, or null under retail.
+var scene_lighting: SceneLighting
 
 var _layers: Array[MeshInstance3D] = []
 var _image_materials: Dictionary[String, ShaderMaterial] = {}
@@ -121,6 +130,11 @@ func setup(with_models: OptionsModels) -> void:
 		_layers.append(instance)
 	if not available():
 		return
+	if models.library.rendering_profile().is_modern():
+		scene_lighting = SceneLighting.new()
+		scene_lighting.name = "SceneLighting"
+		add_child(scene_lighting)
+		scene_lighting.apply(MenuWaterView.options_spec())
 	for symbol: String in models.images:
 		var record: VloImage = models.images[symbol]
 		var blend: ModelShaders.Blend = EffectSpriteMaterial.image_blend(record)
@@ -242,6 +256,31 @@ func draw_effects(shadow_before: Array[Vector3i], shadow_now: Array[Vector3i], p
 	for layer: int in _layers.size():
 		var batches: Dictionary[ShaderMaterial, EffectSpriteMaterial.Batch] = layers[layer]
 		_layers[layer].visible = EffectSpriteMaterial.commit(_layers[layer].mesh as ImmediateMesh, batches)
+
+
+func _enter_tree() -> void:
+	if scene_lighting == null:
+		return
+	if scene_lighting.applied_spec == null:
+		scene_lighting.apply(MenuWaterView.options_spec())
+	var water: MenuWaterView = _world_water()
+	if water != null:
+		water.release_environment()
+
+
+func _exit_tree() -> void:
+	if scene_lighting != null:
+		scene_lighting.clear()
+
+
+func _world_water() -> MenuWaterView:
+	var node: Node = get_parent()
+	while node != null and not (node is Viewport):
+		var water: MenuWaterView = node as MenuWaterView
+		if water != null and water.camera != null:
+			return water
+		node = node.get_parent()
+	return null
 
 
 func _add_instance(mesh: ModelMesh, player: ModelAnimationPlayer) -> AnimatedModelInstance:

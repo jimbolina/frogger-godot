@@ -34,6 +34,8 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 [frogger]
 
 rendering/default_profile="retail"
+rendering/effect_shadows="off"
+rendering/shadows="on"
 textures/default_set="retail"
 
 [importer_defaults]

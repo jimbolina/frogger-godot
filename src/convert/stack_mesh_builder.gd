@@ -7,8 +7,10 @@ extends RefCounted
 ## Surface 1 holds face 5, the whole world image on a stack box or the level picture on the
 ## spinning box. Corners are drawn as stored and quads split like model quads, so faces show
 ## their fronts outward; normals are the source's, pointing into the box, which the lights expect.
-## Materials use [ModelShaders] with its source lighting: the stack's ambient and three parallel
-## lights, scaled by the row's tint over 128 so the vertex colour stays neutral.
+## Retail materials use [ModelShaders] with its source lighting: the [StackLighting] ambient and
+## three parallel lights, scaled by the row's tint over 128 so the vertex colour stays neutral.
+## Lit materials of the modern profile take the scene's lights instead, and the tint reaches the
+## box as a [SceneTint] on its instance uniforms ([method set_instance_tint]).
 
 ## Vertex colour of every corner: the neutral polygon colour, the tint living in the material.
 const NEUTRAL_COLOUR: int = 0x80
@@ -79,17 +81,21 @@ static func quad_mesh(corners: Array[Vector3i]) -> ArrayMesh:
 	return mesh
 
 
-## A lit, opaque, back-face-culled material for a box surface showing [param texture]
-## (untextured when null), tinted by [param tint]; [param linear_filter] samples
-## with the linear, mipmapped shader.
+## An opaque, back-face-culled material for a box surface showing [param texture]
+## (untextured when null); [param linear_filter] samples with the linear, mipmapped shader.
+## A retail material is lit by the [StackLighting] source lights tinted by [param tint]; with
+## [param lit] it draws through the lit shader variant, ignores [param tint] and is lit by the
+## scene, the tint going to the box through [method set_instance_tint].
 static func box_material(texture: Texture2D, tint: int, projection_scale: Vector2 = Vector2.ONE,
-		linear_filter: bool = false) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, linear_filter, false)
+		linear_filter: bool = false, lit: bool = false) -> ShaderMaterial:
+	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, linear_filter, false, lit)
 	material.set_shader_parameter("projection_scale", projection_scale)
+	if lit:
+		return material
+	var lighting: MapLighting = StackLighting.lighting()
 	material.set_shader_parameter("source_lighting", true)
-	for index: int in StackLayout.LIGHT_COLOURS.size():
-		var direction: Vector3i = StackLayout.light_direction(index)
-		material.set_shader_parameter("source_direction%d" % index, GameSpace.normal(direction.x, direction.y, direction.z))
+	for index: int in lighting.directions.size():
+		material.set_shader_parameter("source_direction%d" % index, lighting.directions[index])
 	set_tint(material, tint)
 	return material
 
@@ -105,20 +111,43 @@ static func quad_material(texture: Texture2D, projection_scale: Vector2 = Vector
 	return material
 
 
-## Sets the light of [param material] for polygon colour [param tint]: the ambient and parallel
-## colours (stored bytes times 16) scaled by tint / 128 on the neutral vertex colour.
+## Sets the light of [param material] for polygon colour [param tint]: the [StackLighting]
+## ambient and parallel colours scaled by tint / 128 on the neutral vertex colour.
 static func set_tint(material: ShaderMaterial, tint: int) -> void:
+	var lighting: MapLighting = StackLighting.lighting()
 	var scale: float = float(tint) / NEUTRAL_COLOUR
-	material.set_shader_parameter("source_ambient", Vector3.ONE * float((StackLayout.AMBIENT_COLOUR & 0xff) << 4) * scale)
-	for index: int in StackLayout.LIGHT_COLOURS.size():
-		var colour: int = StackLayout.LIGHT_COLOURS[index] & 0xff
-		material.set_shader_parameter("source_colour%d" % index, Vector3.ONE * float(colour << 4) * scale)
+	material.set_shader_parameter("source_ambient", lighting.ambient * scale)
+	for index: int in lighting.colours.size():
+		material.set_shader_parameter("source_colour%d" % index, lighting.colours[index] * scale)
 
 
 ## The tint [param material] was last given by [method set_tint].
 static func material_tint(material: ShaderMaterial) -> int:
 	var ambient: Vector3 = material.get_shader_parameter("source_ambient")
-	return roundi(ambient.x * NEUTRAL_COLOUR / float((StackLayout.AMBIENT_COLOUR & 0xff) << 4))
+	return roundi(ambient.x * NEUTRAL_COLOUR / StackLighting.lighting().ambient.x)
+
+
+## The [SceneTint] of polygon colour [param tint] on a lit box: the grey colour scale tint / 128.
+static func scene_tint(tint: int) -> SceneTint:
+	return SceneTint.of(Vector3i(tint, tint, tint), Vector3i.ZERO, true, false)
+
+
+## Writes [method scene_tint] of [param tint] to [param box]'s instance uniforms
+## [constant ModelShaders.TINT_SCALE] and [constant ModelShaders.TINT_AMBIENT].
+static func set_instance_tint(box: GeometryInstance3D, tint: int) -> void:
+	var made: SceneTint = scene_tint(tint)
+	box.set_instance_shader_parameter(ModelShaders.TINT_SCALE, made.scale)
+	box.set_instance_shader_parameter(ModelShaders.TINT_AMBIENT, made.ambient)
+
+
+## A mesh holding only surface [param surface] of [param mesh], with its arrays and material.
+static func surface_mesh(mesh: ArrayMesh, surface: int) -> ArrayMesh:
+	var single := ArrayMesh.new()
+	single.add_surface_from_arrays(mesh.surface_get_primitive_type(surface), mesh.surface_get_arrays(surface))
+	var material: Material = mesh.surface_get_material(surface)
+	if material != null:
+		single.surface_set_material(0, material)
+	return single
 
 
 class _Surface:

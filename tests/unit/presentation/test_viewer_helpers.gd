@@ -44,6 +44,35 @@ func test_the_rendering_argument_wins_over_the_project_setting() -> void:
 	assert_eq(from_argument, RenderingProfile.RETAIL)
 
 
+func test_the_effect_shadows_argument_wins_over_the_project_setting() -> void:
+	var saved: String = str(ProjectSettings.get_setting(ViewerArguments.EFFECT_SHADOWS_SETTING))
+	assert_eq(saved, ShadowEffectPolicy.OFF, "the project hides the blob shadows under the modern profile")
+	assert_eq(ViewerArguments.effect_shadows(PackedStringArray()), ShadowEffectPolicy.OFF)
+	assert_eq(ViewerArguments.effect_shadows(PackedStringArray(["--effect-shadows="])), ShadowEffectPolicy.OFF)
+	assert_eq(ViewerArguments.effect_shadows(PackedStringArray(["--effect-shadows= Retail "])), ShadowEffectPolicy.RETAIL)
+	ProjectSettings.set_setting(ViewerArguments.EFFECT_SHADOWS_SETTING, ShadowEffectPolicy.RETAIL)
+	var from_setting: String = ViewerArguments.effect_shadows(PackedStringArray())
+	var from_argument: String = ViewerArguments.effect_shadows(PackedStringArray(["--effect-shadows=off"]))
+	ProjectSettings.set_setting(ViewerArguments.EFFECT_SHADOWS_SETTING, saved)
+	assert_eq(from_setting, ShadowEffectPolicy.RETAIL)
+	assert_eq(from_argument, ShadowEffectPolicy.OFF)
+
+
+func test_the_shadows_argument_wins_over_the_project_setting() -> void:
+	var saved: String = str(ProjectSettings.get_setting(ViewerArguments.SHADOWS_SETTING))
+	assert_eq(saved, "on", "real shadows are on by default")
+	assert_true(ViewerArguments.shadows(PackedStringArray()))
+	assert_true(ViewerArguments.shadows(PackedStringArray(["--shadows="])))
+	assert_true(ViewerArguments.shadows(PackedStringArray(["--shadows=on"])))
+	assert_false(ViewerArguments.shadows(PackedStringArray(["--shadows= OFF "])))
+	ProjectSettings.set_setting(ViewerArguments.SHADOWS_SETTING, ViewerArguments.SHADOWS_OFF)
+	var from_setting: bool = ViewerArguments.shadows(PackedStringArray())
+	var from_argument: bool = ViewerArguments.shadows(PackedStringArray(["--shadows=on"]))
+	ProjectSettings.set_setting(ViewerArguments.SHADOWS_SETTING, saved)
+	assert_false(from_setting)
+	assert_true(from_argument)
+
+
 func test_assets_are_used_for_a_level_or_the_frog_only() -> void:
 	assert_false(ViewerArguments.uses_assets(PackedStringArray()))
 	assert_false(ViewerArguments.uses_assets(PackedStringArray(["--level=", "--scenario=normal"])))

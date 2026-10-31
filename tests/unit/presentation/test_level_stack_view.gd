@@ -5,6 +5,11 @@ const StackLayoutTest := preload("res://tests/unit/game/frontend/test_stack_layo
 const ORG1: int = 24
 
 
+class ModernCatalog extends AssetCatalog:
+	func rendering_profile() -> RenderingProfile:
+		return RenderingProfile.modern()
+
+
 func _view(first_time: bool = true, gold_frogs: int = 0) -> LevelStackView:
 	var stack: LevelStack = StackLayoutTest.retail_stack()
 	var progress: LevelProgress = LevelProgress.create(stack)
@@ -12,6 +17,23 @@ func _view(first_time: bool = true, gold_frogs: int = 0) -> LevelStackView:
 	var view: LevelStackView = LevelStackView.create(FrontEndAssets.new(), stack, progress, -1, first_time)
 	autofree(view)
 	return view
+
+
+func _modern_assets() -> FrontEndAssets:
+	var assets := FrontEndAssets.new()
+	assets.texture_library.catalog = ModernCatalog.new()
+	return assets
+
+
+func _modern_view() -> LevelStackView:
+	var stack: LevelStack = StackLayoutTest.retail_stack()
+	var view: LevelStackView = LevelStackView.create(_modern_assets(), stack, LevelProgress.create(stack), -1, true)
+	autofree(view)
+	return view
+
+
+func _environments(node: Node) -> Array[Node]:
+	return node.find_children("*", "WorldEnvironment", true, false)
 
 
 func _idle(view: LevelStackView, ticks: int) -> void:
@@ -208,3 +230,93 @@ func test_score_mode_draws_the_tour_selector_without_input() -> void:
 static func _number(value: Variant) -> int:
 	var number: float = value
 	return int(number)
+
+
+func test_retail_draws_without_scene_lights() -> void:
+	var view: LevelStackView = _view()
+	assert_null(view.scene_lighting)
+	assert_eq(view.find_children("*", "DirectionalLight3D", true, false).size(), 0)
+	assert_eq(_environments(view).size(), 1)
+	var environment: Environment = (_environments(view)[0] as WorldEnvironment).environment
+	assert_eq(environment.background_mode, Environment.BG_COLOR)
+	for box: MeshInstance3D in view.boxes:
+		assert_false(ModelShaders.is_lit((box.get_surface_override_material(0) as ShaderMaterial).shader))
+
+
+func test_modern_lights_the_stack_with_its_lights_and_no_shadows() -> void:
+	var view: LevelStackView = _modern_view()
+	var spec: SceneLightingSpec = SceneLightingBuilder.from_lighting(StackLighting.lighting(), false)
+	assert_not_null(view.scene_lighting)
+	assert_eq(view.scene_lighting.get_parent().name, &"Stack", "a child of the stack's world")
+	var lights: Array[DirectionalLight3D] = view.scene_lighting.light_nodes()
+	assert_eq(lights.size(), 3)
+	for index: int in lights.size():
+		assert_false(lights[index].shadow_enabled, "light %d casts no shadow" % index)
+		assert_almost_eq(lights[index].light_energy, spec.lights[index].energy, 1e-6)
+		assert_eq(lights[index].transform.basis, spec.lights[index].basis)
+	assert_eq(_environments(view).size(), 1, "one environment in the stack's world")
+	var environment: Environment = view.scene_lighting.environment
+	assert_eq(view.scene_lighting.world_environment().environment, environment)
+	assert_eq(environment.ambient_light_color, Color(spec.ambient.x, spec.ambient.y, spec.ambient.z).linear_to_srgb())
+	assert_almost_eq(view.scene_lighting.applied_ambient, spec.ambient, Vector3.ONE * 1e-6)
+	assert_eq(environment.background_mode, Environment.BG_COLOR)
+	assert_eq(environment.background_color, Color.BLACK)
+
+
+func test_modern_boxes_draw_lit_with_the_row_tint_on_the_instance() -> void:
+	var view: LevelStackView = _modern_view()
+	_idle(view, 3)
+	for row: int in view.boxes.size():
+		var material: ShaderMaterial = view.boxes[row].get_surface_override_material(0)
+		assert_true(ModelShaders.is_lit(material.shader), "row %d" % row)
+		assert_eq(view.box_tint(row), view.selector.tint(row), "row %d" % row)
+		var scale: Vector3 = view.boxes[row].get_instance_shader_parameter(ModelShaders.TINT_SCALE)
+		assert_almost_eq(scale, StackMeshBuilder.scene_tint(view.selector.tint(row)).scale, Vector3.ONE * 1e-6, "row %d" % row)
+	for quad: MeshInstance3D in view.gold_frogs:
+		if quad != null:
+			assert_false(ModelShaders.is_lit((quad.get_surface_override_material(0) as ShaderMaterial).shader), "gold frogs stay unlit")
+
+
+func test_modern_spin_box_keeps_the_picture_neutral() -> void:
+	var view: LevelStackView = _modern_view()
+	_idle(view, 8)
+	view.tick(StackSelector.Buttons.new(false, false, true))
+	view.render(1.0)
+	assert_true(view.spin_box.visible)
+	assert_not_null(view.spin_picture)
+	assert_eq(view.spin_picture.get_parent(), view.spin_box)
+	assert_eq(view.spin_box.mesh.get_surface_count(), 1)
+	assert_eq(view.spin_picture.mesh.get_surface_count(), 1)
+	assert_true(ModelShaders.is_lit((view.spin_picture.get_surface_override_material(0) as ShaderMaterial).shader))
+	var picture: Vector3 = view.spin_picture.get_instance_shader_parameter(ModelShaders.TINT_SCALE)
+	assert_eq(picture, Vector3.ONE)
+	var sides: Vector3 = view.spin_box.get_instance_shader_parameter(ModelShaders.TINT_SCALE)
+	assert_almost_eq(sides, StackMeshBuilder.scene_tint(view.selector.tint(view.selector.spin_row)).scale, Vector3.ONE * 1e-6,
+		"the sides keep the row's tint when it spun out")
+
+
+func test_modern_lights_clear_on_exit_and_return_on_entry() -> void:
+	var view: LevelStackView = _modern_view()
+	add_child(view)
+	assert_eq(view.scene_lighting.light_nodes().size(), 3)
+	remove_child(view)
+	assert_eq(view.scene_lighting.light_nodes().size(), 0)
+	assert_eq(view.scene_lighting.applied_ambient, Vector3.ONE)
+	add_child(view)
+	assert_eq(view.scene_lighting.light_nodes().size(), 3)
+	assert_eq(view.scene_lighting.environment.background_mode, Environment.BG_COLOR)
+	remove_child(view)
+
+
+func test_modern_score_mode_keeps_the_canvas_checker() -> void:
+	var stack: LevelStack = StackLayoutTest.retail_stack()
+	var progress: LevelProgress = LevelProgress.create(stack)
+	var selector: StackSelector = StackSelector.create(StackLayout.create(stack), progress, ORG1, true, PackedInt32Array(), false)
+	var none: Array[HighScoreRow] = []
+	var view: LevelStackView = LevelStackView.create_for_scores(_modern_assets(), stack, progress, selector,
+		HighScoreBoard.create(none, none))
+	autofree(view)
+	assert_not_null(view.scene_lighting)
+	assert_eq(_environments(view).size(), 1)
+	assert_eq(view.scene_lighting.environment.background_mode, Environment.BG_CANVAS)
+	assert_eq(view.scene_lighting.environment.background_canvas_max_layer, -1)

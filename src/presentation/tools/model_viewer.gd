@@ -14,8 +14,11 @@ extends Node3D
 ## animated file, L lists low-poly WADs too, Esc goes back. Space plays or
 ## pauses, Period steps one tick, R restarts, and I switches motion smoothing.
 ##
-## Models are shown unlit, in the colours their polygons store: the game
-## lights them while it runs, from lights kept in each map. Skeletal parts,
+## Under the retail rendering profile models are shown unlit, in the colours
+## their polygons store: the game lights them while it runs, from lights kept
+## in each map. Under the modern profile the lit materials are drawn under a
+## [SceneLighting] child holding the options screen's ambient and parallel
+## light, without shadows, in front of the same grey backdrop. Skeletal parts,
 ## flipbook cels and animated textures advance on the 30 Hz reference clock.
 ## Motion smoothing is optional and starts disabled; texture changes remain discrete.
 ##
@@ -66,6 +69,9 @@ var player: ModelAnimationPlayer
 var animated_instance: AnimatedModelInstance
 ## Whether game ticks advance automatically.
 var playing: bool = false
+## The options lights drawn under the modern profile, or null while the shown
+## materials are unlit.
+var scene_lighting: SceneLighting = null
 
 var _wad_entries: Array[MwiEntry] = []
 var _wad_list: ItemList
@@ -129,6 +135,7 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	RenderingServer.set_default_clear_color(Color.BLACK)
 	_release_model(false)
+	_release_scene_lighting(false)
 	_clear_data_caches()
 	if _owns_data and data != null:
 		data.close()
@@ -519,6 +526,7 @@ func _show(model: MofFile, existing_player: ModelAnimationPlayer = null) -> int:
 	builder.two_sided = _sides_toggle.button_pressed
 	var shape: MofStatic = model.static_models[_static_index]
 	current_mesh = builder.build_animated(model, _static_index)
+	_light_scene(builder.lit_materials)
 	player = existing_player if existing_player != null else ModelAnimationPlayer.new(model, _static_index)
 	if existing_player == null:
 		player.end_mode = ModelAnimationPlayer.EndMode.LOOP if _loop_toggle.button_pressed else ModelAnimationPlayer.EndMode.HOLD
@@ -541,6 +549,29 @@ func _show(model: MofFile, existing_player: ModelAnimationPlayer = null) -> int:
 		_status.text += ", shape taken from another model"
 	_facts.text = _describe(shape)
 	return current_mesh.triangle_count
+
+
+func _light_scene(lit: bool) -> void:
+	if not lit:
+		_release_scene_lighting()
+		return
+	if scene_lighting != null:
+		return
+	scene_lighting = SceneLighting.new()
+	scene_lighting.name = "SceneLighting"
+	add_child(scene_lighting)
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false))
+	scene_lighting.environment.background_mode = Environment.BG_CLEAR_COLOR
+
+
+func _release_scene_lighting(detach: bool = true) -> void:
+	if scene_lighting == null:
+		return
+	if detach:
+		scene_lighting.clear()
+		remove_child(scene_lighting)
+	scene_lighting.queue_free()
+	scene_lighting = null
 
 
 func _describe(shape: MofStatic) -> String:

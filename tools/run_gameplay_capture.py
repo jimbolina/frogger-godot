@@ -51,12 +51,12 @@ def log_failure(text):
     return None
 
 
-def keyboard_arguments(level, route, ticks, flow_check, output, rendering):
-    """Script and user arguments of the windowed keyboard capture stage."""
+def keyboard_arguments(level, route, ticks, flow_check, output, rendering, game_arguments=()):
+    """Script and user arguments of the windowed keyboard capture stage; game arguments follow."""
     return ['-s', 'res://tools/probe_gameplay_capture.gd', '--',
             '--level=' + level, '--route=' + (str(route) if route else ''),
             '--ticks=' + str(ticks), '--flow-check=' + str(flow_check).lower(),
-            '--output=' + str(output), '--rendering=' + rendering]
+            '--output=' + str(output), '--rendering=' + rendering] + list(game_arguments)
 
 
 def stage_command(godot, project, log, headless, resolution, method, arguments):
@@ -75,7 +75,8 @@ def capture_stages(args, route, evidence):
             ('check', ['-s', 'res://tools/check_scripts.gd'], True),
             ('architecture', ['-s', 'res://tools/check_architecture.gd'], True),
             ('keyboard', keyboard_arguments(args.level, route, args.ticks, args.flow_check,
-                                            evidence / 'captures', args.rendering), False)]
+                                            evidence / 'captures', args.rendering,
+                                            args.game_argument), False)]
 
 
 def parse_arguments(argv=None):
@@ -88,6 +89,8 @@ def parse_arguments(argv=None):
     parser.add_argument('--flow-check', action='store_true', help='Idle through timeout, respawn, game over and keyboard restart')
     parser.add_argument('--resolution', default='640x480', help='Window size for aspect-ratio verification')
     parser.add_argument('--output-directory', type=Path, required=True)
+    parser.add_argument('--game-argument', action='append', default=[], metavar='ARGUMENT',
+                        help='Extra user argument for the game, given as --game-argument=--effect-shadows=retail; repeatable')
     add_rendering_arguments(parser)
     args = parser.parse_args(argv)
     if args.flow_check and args.route:

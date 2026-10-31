@@ -300,3 +300,25 @@ func test_interactive_smoothing_default_capture_override_and_rejection_reset() -
 	assert_false(_viewer.playing)
 	_viewer.draw_state(0.0)
 	assert_eq(_viewer._frog.position, GameSpace.fixed_position(_viewer._current.frog.position_16) + Vector3(0, 0.12, 0))
+
+func test_modern_scene_lights_follow_the_entity_lighting_stage() -> void:
+	_viewer.rendering_profile = RenderingProfile.modern()
+	var unlit: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_false(TerrainCaptureStages.entity_lighting(unlit))
+	assert_eq(_viewer.open_scenario(unlit), "")
+	assert_eq(_viewer.scene_lighting.light_nodes().size(), 0)
+	assert_eq(_viewer.scene_lighting.applied_ambient, Vector3.ONE)
+	var lit: TerrainScenario = TerrainScenario.builtin("normal")
+	lit.options.exploration_preset = Org1ExplorationSetup.PRESET
+	assert_true(TerrainCaptureStages.entity_lighting(lit))
+	assert_eq(_viewer.open_scenario(lit), "")
+	assert_eq(_viewer.scene_lighting.light_nodes().size(), SceneLightingBuilder.from_lighting(OptionsModels.options_lighting()).lights.size())
+	assert_gt(_viewer.scene_lighting.light_nodes().size(), 0)
+
+func test_retail_scenarios_create_no_scene_lights() -> void:
+	var lit: TerrainScenario = TerrainScenario.builtin("normal")
+	lit.options.exploration_preset = Org1ExplorationSetup.PRESET
+	assert_eq(_viewer.open_scenario(lit), "")
+	assert_null(_viewer.scene_lighting.applied_spec)
+	assert_eq(_viewer.find_children("*", "DirectionalLight3D", true, false).size(), 0)
+	assert_eq(_viewer.find_children("*", "WorldEnvironment", true, false).size(), 0)

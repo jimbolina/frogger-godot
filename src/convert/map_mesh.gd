@@ -50,11 +50,13 @@ class Instance extends Node3D:
 	const MODERN_REFERENCE_DIAGNOSTIC: String = "The modern rendering profile has no reference projection; the call is ignored"
 	## Share of an environment-mapped water surface's colour drawn as emission
 	## under the modern profile, so it reads as a partial reflection.
-	const WATER_REFLECTION: float = 0.5
-	## Blinn specular strength of modern water surfaces.
-	const WATER_SPECULAR: float = 0.5
-	## Blinn specular exponent of modern water surfaces.
-	const WATER_SHININESS: float = 64.0
+	const WATER_REFLECTION: float = 0.35
+	## Blinn specular strength of modern water surfaces; the highlight's peak
+	## adds this times the light colour, which Godot scales by pi.
+	const WATER_SPECULAR: float = 0.2
+	## Blinn specular exponent of modern water surfaces, high enough that the
+	## highlight on a flat water plane stays a glint rather than a wash.
+	const WATER_SHININESS: float = 512.0
 	var source: MapMesh
 	var animation := MapAnimationPlayer.new()
 	var water := MapWaterState.new()

@@ -17,6 +17,14 @@ extends Control
 ## clock of its own. It shows the tour's prompt and title, the three score lines of the level
 ## being shown and, behind the stack, SelectLevelCreateBG's checker of two theme tiles tinted
 ## 0x202020, scrolled by the tour's background counter in a direction chosen at random.
+##
+## Under the modern rendering profile the boxes draw through the lit shaders, each row's tint
+## reaching its box as a [SceneTint], and a [SceneLighting] child of the stack's world lights them
+## with the [StackLighting] lights, without shadows. It owns the world's environment, which keeps
+## the background colour or, for the high-score view, the canvas checker. The spinning box's
+## level picture is then its own node, [member spin_picture], so it keeps its neutral tint.
+## The gold-frog quads and the water stay unlit. The lights are cleared when the view leaves the
+## tree and applied again when it returns.
 
 ## A selector event of [enum StackSelector.EventKind] [param kind]; [param level] is the level
 ## to play for ENTER_GAME, otherwise -1.
@@ -53,6 +61,11 @@ var camera: Camera3D
 var boxes: Array[MeshInstance3D] = []
 ## The spinning box, shown while [method StackSelector.spin_visible].
 var spin_box: MeshInstance3D
+## The spinning box's level-picture face under the modern profile, a child of [member spin_box];
+## null under retail, where the face is the spinning box's second surface.
+var spin_picture: MeshInstance3D
+## The light of the stack's world under the modern profile, or null.
+var scene_lighting: SceneLighting
 ## Gold-frog quads per Level_table slot; null where the slot has no block.
 var gold_frogs: Array[MeshInstance3D] = []
 ## The 2D sprites.
@@ -81,6 +94,8 @@ var _background: Color = Color.BLACK
 var _water: MenuWater
 var _world: Node3D
 var _box_materials: Array[ShaderMaterial] = []
+var _box_tints: PackedInt32Array = PackedInt32Array()
+var _lit: bool = false
 var _spin_materials: Array[ShaderMaterial] = []
 var _spin_row: int = -1
 var _previous: _Frame
@@ -224,6 +239,11 @@ func follow(prompt: String, title_visible: bool, shown_level: int, background_co
 	render(0.0 if smoothing_enabled else 1.0)
 
 
+## The tint row [param row]'s box was last drawn with.
+func box_tint(row: int) -> int:
+	return _box_tints[row]
+
+
 ## Draws [param fraction] of the way from the previous tick to the last one.
 func render(fraction: float) -> void:
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing_enabled else 1.0
@@ -255,6 +275,16 @@ func sample_buttons() -> StackSelector.Buttons:
 
 func _ready() -> void:
 	camera.make_current()
+
+
+func _enter_tree() -> void:
+	if scene_lighting != null and scene_lighting.applied_spec == null:
+		_apply_lights()
+
+
+func _exit_tree() -> void:
+	if scene_lighting != null:
+		scene_lighting.clear()
 
 
 func _process(delta: float) -> void:
@@ -304,14 +334,9 @@ func _build() -> void:
 	_world = Node3D.new()
 	_world.name = "Stack"
 	add_child(_world)
-	var environment := WorldEnvironment.new()
-	environment.environment = Environment.new()
-	environment.environment.background_mode = Environment.BG_COLOR
-	environment.environment.background_color = _background
-	_world.add_child(environment)
+	_lit = _assets.texture_library.rendering_profile().is_modern()
+	_light_world()
 	if score_mode:
-		environment.environment.background_mode = Environment.BG_CANVAS
-		environment.environment.background_canvas_max_layer = -1
 		var layer := CanvasLayer.new()
 		layer.name = "Checker"
 		layer.layer = -1
@@ -339,10 +364,14 @@ func _build() -> void:
 		box.name = "Row%d" % row
 		box.mesh = StackMeshBuilder.row_mesh(layout, row, _world_image_height(row), stack_row.local_level,
 			stack_row.levels_in_world)
-		var material: ShaderMaterial = StackMeshBuilder.box_material(image, selector.tint(row), scale, _assets.texture_library.linear_filter())
+		var tint: int = selector.tint(row)
+		var material: ShaderMaterial = StackMeshBuilder.box_material(image, tint, scale, _assets.texture_library.linear_filter(), _lit)
 		box.set_surface_override_material(0, material)
 		box.set_surface_override_material(1, material)
+		if _lit:
+			StackMeshBuilder.set_instance_tint(box, tint)
 		_box_materials.append(material)
+		_box_tints.append(tint)
 		_world.add_child(box)
 		boxes.append(box)
 	spin_box = MeshInstance3D.new()
@@ -368,6 +397,31 @@ func _build() -> void:
 	panel.setup(_assets)
 	_current = _capture()
 	render(1.0)
+
+
+func _light_world() -> void:
+	if _lit:
+		scene_lighting = SceneLighting.new()
+		scene_lighting.name = "SceneLighting"
+		_world.add_child(scene_lighting)
+		_apply_lights()
+		return
+	var environment := WorldEnvironment.new()
+	environment.environment = Environment.new()
+	_set_background(environment.environment)
+	_world.add_child(environment)
+
+
+func _apply_lights() -> void:
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(StackLighting.lighting(), false))
+	_set_background(scene_lighting.environment)
+
+
+func _set_background(environment: Environment) -> void:
+	environment.background_mode = Environment.BG_CANVAS if score_mode else Environment.BG_COLOR
+	environment.background_color = _background
+	if score_mode:
+		environment.background_canvas_max_layer = -1
 
 
 func _world_image(row: int) -> Texture2D:
@@ -426,20 +480,43 @@ func _build_spin(row: int) -> void:
 	_spin_row = row
 	var stack_row: LevelStack.Row = _stack.arcade_row(row)
 	var image: Texture2D = _world_image(row)
-	spin_box.mesh = StackMeshBuilder.spin_mesh(layout, row, _world_image_height(row), stack_row.local_level,
+	var mesh: ArrayMesh = StackMeshBuilder.spin_mesh(layout, row, _world_image_height(row), stack_row.local_level,
 		stack_row.levels_in_world)
 	var scale: Vector2 = GameplayProjection.clip_scale(DISPLAY_SIZE)
 	var screenshot: Texture2D = _assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.SCREENSHOT)
-	_spin_materials = [StackMeshBuilder.box_material(image, selector.tint(row), scale, _assets.texture_library.linear_filter()),
-		StackMeshBuilder.box_material(screenshot, StackSelector.SPIN_IMAGE_COLOUR, scale, _assets.texture_library.linear_filter())]
-	spin_box.set_surface_override_material(0, _spin_materials[0])
-	spin_box.set_surface_override_material(1, _spin_materials[1])
+	var tint: int = selector.tint(row)
+	_spin_materials = [StackMeshBuilder.box_material(image, tint, scale, _assets.texture_library.linear_filter(), _lit),
+		StackMeshBuilder.box_material(screenshot, StackSelector.SPIN_IMAGE_COLOUR, scale, _assets.texture_library.linear_filter(), _lit)]
+	if not _lit:
+		spin_box.mesh = mesh
+		spin_box.set_surface_override_material(0, _spin_materials[0])
+		spin_box.set_surface_override_material(1, _spin_materials[1])
+	else:
+		_build_lit_spin(mesh, tint)
 	panel.set_level_name(_assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME),
 		_assets.level_retail_size(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME))
+
+
+func _build_lit_spin(mesh: ArrayMesh, tint: int) -> void:
+	spin_box.mesh = StackMeshBuilder.surface_mesh(mesh, 0)
+	spin_box.set_surface_override_material(0, _spin_materials[0])
+	StackMeshBuilder.set_instance_tint(spin_box, tint)
+	if spin_picture == null:
+		spin_picture = MeshInstance3D.new()
+		spin_picture.name = "Picture"
+		spin_box.add_child(spin_picture)
+	spin_picture.mesh = StackMeshBuilder.surface_mesh(mesh, 1)
+	spin_picture.set_surface_override_material(0, _spin_materials[1])
+	StackMeshBuilder.set_instance_tint(spin_picture, StackSelector.SPIN_IMAGE_COLOUR)
 
 
 func _apply_tints() -> void:
 	for row: int in _box_materials.size():
 		var tint: int = selector.tint(row)
-		if StackMeshBuilder.material_tint(_box_materials[row]) != tint:
+		if _box_tints[row] == tint:
+			continue
+		_box_tints[row] = tint
+		if _lit:
+			StackMeshBuilder.set_instance_tint(boxes[row], tint)
+		else:
 			StackMeshBuilder.set_tint(_box_materials[row], tint)

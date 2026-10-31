@@ -1,6 +1,7 @@
 extends GutTest
 ## The gameplay frog is lit per part from the map's lights with its committed colour scale and custom ambient, and tinted only without map lights;
-## the modern profile also lights the scene from the map's lights.
+## the modern profile also lights the scene from the map's lights, casts real shadows unless switched off
+## and draws the blob shadow effects only when the shadow-effect setting keeps them.
 
 const SCALE := Vector3i(0, 64, 192)
 const AMBIENT := Vector3i(32, 64, 64)
@@ -281,3 +282,65 @@ func test_lit_models_outside_caves_and_under_retail_keep_the_scale() -> void:
 	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4, [_faded_entity()]))
 	_view.draw_state(1.0)
 	assert_eq(model.scene_tint.scale, SceneTint.of(Vector3i(40, 40, 40), Vector3i.ZERO, true, false).scale)
+
+func _shadow_state() -> GameplayState:
+	var state := GameplayState.new()
+	state.tick_index = 1
+	state.frog.flags = FrogFlags.ACTIVE
+	state.entities = EntityRunSnapshot.new()
+	var rock := EntitySnapshot.new()
+	rock.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0])
+	rock.custom_state = EntityCustomState.new()
+	rock.custom_state.shadow_visible = true
+	state.entities.entities.append(rock)
+	return state
+
+func _shadow_requests(profile: RenderingProfile, setting: String) -> Array[FrogShadowView.Request]:
+	_view.rendering_profile = profile
+	_view.effect_shadows = setting
+	var definition := EntityDefinition.new()
+	definition.behavior.kind = EntityBehavior.Kind.DES_FALLING_ROCK
+	_view._definitions = [definition]
+	_view.effect_grid = GridDefinition.new()
+	_view.accept_state(_shadow_state())
+	return _view.shadow_requests(Transform3D.IDENTITY, 1.0)
+
+func test_the_modern_profile_draws_no_blob_shadows_when_the_setting_is_off() -> void:
+	assert_eq(_view.effect_shadows, ShadowEffectPolicy.DEFAULT)
+	assert_eq(_shadow_requests(RenderingProfile.modern(), ShadowEffectPolicy.OFF).size(), 0, "neither the frog's nor the rock's shadow")
+	assert_false(_view.draws_effect_shadows())
+
+func test_the_modern_profile_draws_blob_shadows_with_the_retail_setting() -> void:
+	var requests: Array[FrogShadowView.Request] = _shadow_requests(RenderingProfile.modern(), ShadowEffectPolicy.RETAIL)
+	assert_eq(requests.size(), 2, "the frog's and the rock's shadow")
+	assert_eq(requests[1].symbol, FrogShadowGeometry.NO_ROTATION_TEXTURE)
+
+func test_the_retail_profile_draws_blob_shadows_under_every_setting() -> void:
+	assert_eq(_shadow_requests(RenderingProfile.retail(), ShadowEffectPolicy.OFF).size(), 2)
+	assert_eq(_shadow_requests(RenderingProfile.retail(), ShadowEffectPolicy.RETAIL).size(), 2)
+
+func test_launch_arguments_choose_the_shadow_effects_and_real_shadows() -> void:
+	_view.apply_shadow_arguments(PackedStringArray(["--effect-shadows=retail", "--shadows=off"]))
+	assert_eq(_view.effect_shadows, ShadowEffectPolicy.RETAIL)
+	assert_false(_view.real_shadows)
+	_view.apply_shadow_arguments(PackedStringArray())
+	assert_eq(_view.effect_shadows, ShadowEffectPolicy.OFF, "the project setting")
+	assert_true(_view.real_shadows)
+
+func _casters() -> int:
+	var casters: int = 0
+	for light: DirectionalLight3D in _view.scene_lighting.light_nodes():
+		if light.shadow_enabled:
+			casters += 1
+	return casters
+
+func test_real_shadows_off_leaves_the_modern_lights_without_a_caster() -> void:
+	_view.rendering_profile = RenderingProfile.modern()
+	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
+	assert_eq(_casters(), 1, "the brightest light casts by default")
+	assert_true(_view.scene_lighting.applied_spec.shadows)
+	_view.real_shadows = false
+	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
+	assert_gt(_view.scene_lighting.light_nodes().size(), 0)
+	assert_eq(_casters(), 0, "no light casts")
+	assert_false(_view.scene_lighting.applied_spec.shadows)

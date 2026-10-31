@@ -55,6 +55,10 @@ class GameplayCaptureTest(unittest.TestCase):
         self.assertNotIn('--rendering-method', command)
         self.assertEqual(command[-1], '--rendering=retail')
 
+    def test_game_arguments_follow_the_rendering_profile(self):
+        command = self.keyboard('--game-argument=--effect-shadows=retail')
+        self.assertEqual(command[-2:], ['--rendering=retail', '--effect-shadows=retail'])
+
     def test_modern_selects_forward_plus_before_the_script(self):
         command = self.keyboard('--rendering', 'modern')
         method = command.index('--rendering-method')

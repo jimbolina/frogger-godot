@@ -88,7 +88,11 @@ gold-frog glows use the grey mask 1727, and the gold glow is (255, 255, 16).
 
 - **Entity shadows** (`ent_des.c:33-39, 255-533, 1674-1799`): live Desert
   falling rocks and tumbleweeds with the committed `shadow_visible` draw the
-  ±0x70 `im_gen_shadow` square through the frog's shadow view; rocks keep
+  ±0x70 `im_gen_shadow` square through the frog's shadow view (under the
+  modern profile these and the frog's blob shadow draw only when
+  `frogger/rendering/effect_shadows` or `--effect-shadows=` is `retail`; by
+  default the real shadows replace them,
+  [modern profile](modern-profile.md#shadows)); rocks keep
   `NO_ROTATION`, a tumbleweed inside the grid border rotates with its
   matrix. Rolling rocks cast none, as in C.
 - **Gold-frog glow** (`PARTICLE.C:2607-2724`): a camera-plane quad of the

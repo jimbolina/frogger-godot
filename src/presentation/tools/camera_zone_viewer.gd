@@ -1,9 +1,20 @@
+class_name CameraZoneViewer
 extends Node3D
 ## Camera inspection rendering and controls; camera ticks never depend on rendered transforms.
+##
+## Under the modern rendering profile the lit map and log models are drawn
+## under a [SceneLighting] child built from the map's light records (or the
+## options screen's lights when the map has none), with the cave light at the
+## map's static start on cave maps; the probe and markers stay unshaded.
 
+## When false, [method _ready] opens nothing; tests call [method open] with their own data.
+var auto_open: bool = true
 var inspection: CameraZoneInspection
 var playing: bool = false
+## The scene lights under the modern profile, or null under retail.
+var scene_lighting: SceneLighting = null
 var _data: AssetCatalog
+var _owns_data: bool = false
 var _camera: Camera3D
 var _probe: MeshInstance3D
 var _label: Label
@@ -16,30 +27,42 @@ var _entity_markers: EntityInspection
 var _last_tick: int = -1
 
 func _ready() -> void:
+	if not auto_open:
+		return
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
 	_automated = ViewerArguments.has_flag(arguments, "--run-scenario")
-	_data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
-	_data.note_renderer(RenderingServer.get_current_rendering_method())
-	if not _data.is_valid():
-		_fail(_data.error)
-		return
 	var lifetime: String = ViewerArguments.value(arguments, "--entity-lifecycle=")
 	if lifetime not in ["", "all-attached", "visibility"]:
 		_fail("Camera probe entity-lifecycle must be all-attached or visibility")
 		return
-	inspection = CameraZoneInspection.from_data(_data, lifetime == "visibility")
-	if not inspection.error.is_empty():
-		_fail(inspection.error)
+	var issue: String = open(ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments)), lifetime == "visibility", true)
+	if not issue.is_empty():
+		_fail(issue)
 		return
+	if _automated:
+		_capture.call_deferred(arguments)
+
+## Builds the JUN1 inspection from [param data], borrowed unless
+## [param take_ownership] is true, with log lifetimes when [param visibility]
+## is set; returns the error or "".
+func open(data: AssetCatalog, visibility: bool = false, take_ownership: bool = false) -> String:
+	_data = data
+	_owns_data = take_ownership
+	_data.note_renderer(RenderingServer.get_current_rendering_method())
+	if not _data.is_valid():
+		return _data.error
+	inspection = CameraZoneInspection.from_data(_data, visibility)
+	if not inspection.error.is_empty():
+		return inspection.error
 	_map = MapMeshBuilder.new().build(inspection.map_scene).create_instance()
 	add_child(_map)
+	_light_scene(inspection.map_scene)
 	if inspection.entities != null:
 		_entities = CameraZoneEntities.new()
 		add_child(_entities)
 		var model_issue: String = _entities.configure(_data, inspection)
 		if not model_issue.is_empty():
-			_fail(model_issue)
-			return
+			return model_issue
 		_entity_markers = EntityInspection.new()
 		add_child(_entity_markers)
 		_entity_markers.configure(inspection.entity_definitions)
@@ -71,11 +94,25 @@ func _ready() -> void:
 	_label.add_theme_constant_override("shadow_offset_y", 1)
 	canvas.add_child(_label)
 	_present()
-	if _automated:
-		_capture.call_deferred(arguments)
+	return ""
+
+func _light_scene(source: MapSceneData) -> void:
+	if not source.library.rendering_profile().is_modern():
+		return
+	scene_lighting = SceneLighting.new()
+	scene_lighting.name = "SceneLighting"
+	add_child(scene_lighting)
+	var lighting := MapLighting.new()
+	lighting.configure(source.map.lights)
+	if lighting.directions.is_empty() and lighting.ambient.is_zero_approx():
+		lighting = OptionsModels.options_lighting()
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(lighting))
+	if source.cave_enabled:
+		scene_lighting.set_cave_light(GameSpace.position(source.midpoint.x, source.midpoint.y, source.midpoint.z),
+			source.cave_min_r2, source.cave_max_r2)
 
 func _exit_tree() -> void:
-	if _data != null:
+	if _owns_data and _data != null:
 		_data.close()
 
 func _process(delta: float) -> void:

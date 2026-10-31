@@ -8,6 +8,13 @@ extends Node3D
 ## with [method create_with_camera] has its own options camera at perspective 256 on the
 ## 640x480 display, snapped to the MAIN preset, and clears to black; otherwise it draws in the
 ## world and through the camera of its parent, as the level select does.
+##
+## Under the modern rendering profile one [SceneLighting] lights the models drawn in a camera
+## view's world and owns that world's environment, still clearing to black: the view's own
+## ([method light_scene]) or one drawn in it, after which the view gives up its environment
+## ([method release_environment]). A view drawn through its parent's camera is lit by its
+## parent's world. The water itself stays unlit. The view's own lights are cleared when it leaves
+## the tree and applied again when it returns.
 
 ## Seconds per water tick.
 const PERIOD: float = GameplayHost.PERIOD
@@ -36,7 +43,12 @@ var camera: Camera3D
 var smoothing_enabled: bool = true
 ## Time since the last tick.
 var elapsed: float = 0.0
+## The light of the view's world once [method light_scene] was called, or null.
+var scene_lighting: SceneLighting
+## The view's own environment from [method create_with_camera], or null once [member scene_lighting] owns the world's.
+var world_environment: WorldEnvironment
 
+var _scene_spec: SceneLightingSpec
 var _previous := PackedInt32Array()
 var _current := PackedInt32Array()
 
@@ -68,11 +80,11 @@ static func create(animation: MenuWater, surface_texture: Texture2D, bed_texture
 ## background.
 static func create_with_camera(animation: MenuWater, surface_texture: Texture2D, bed_texture: Texture2D) -> MenuWaterView:
 	var view: MenuWaterView = create(animation, surface_texture, bed_texture, GameplayProjection.clip_scale(DISPLAY_SIZE))
-	var environment := WorldEnvironment.new()
-	environment.environment = Environment.new()
-	environment.environment.background_mode = Environment.BG_COLOR
-	environment.environment.background_color = Color.BLACK
-	view.add_child(environment)
+	view.world_environment = WorldEnvironment.new()
+	view.world_environment.environment = Environment.new()
+	view.world_environment.environment.background_mode = Environment.BG_COLOR
+	view.world_environment.environment.background_color = Color.BLACK
+	view.add_child(view.world_environment)
 	view.camera = Camera3D.new()
 	view.camera.name = "OptionsCamera"
 	view.camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -104,6 +116,40 @@ static func camera_transform(source: Vector3i, target: Vector3i) -> Transform3D:
 	return GameSpace.transform(values)
 
 
+## The modern scene light of the options viewport's lights ([method OptionsModels.options_lighting]),
+## without shadows.
+static func options_spec() -> SceneLightingSpec:
+	return SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false)
+
+
+## Lights the view's world with [param spec] through [member scene_lighting], created on the first
+## call, which replaces the view's own environment; later calls apply the new spec to it.
+func light_scene(spec: SceneLightingSpec) -> SceneLighting:
+	_scene_spec = spec
+	if scene_lighting == null:
+		release_environment()
+		scene_lighting = SceneLighting.new()
+		scene_lighting.name = "SceneLighting"
+		add_child(scene_lighting)
+	scene_lighting.apply(spec)
+	return scene_lighting
+
+
+## Gives up the view's own environment to a [SceneLighting] drawn in its world: the environment
+## stops applying at once and its node is freed (at the end of the frame while in the tree, where
+## it may be called as the tree is entered).
+func release_environment() -> void:
+	if world_environment == null:
+		return
+	world_environment.environment = null
+	if is_inside_tree():
+		world_environment.queue_free()
+	else:
+		remove_child(world_environment)
+		world_environment.free()
+	world_environment = null
+
+
 ## Advances the frame count one tick and draws the result.
 func tick() -> void:
 	water.advance()
@@ -126,6 +172,16 @@ func render(fraction: float) -> void:
 func _ready() -> void:
 	if camera != null:
 		camera.make_current()
+
+
+func _enter_tree() -> void:
+	if scene_lighting != null and scene_lighting.applied_spec == null and _scene_spec != null:
+		scene_lighting.apply(_scene_spec)
+
+
+func _exit_tree() -> void:
+	if scene_lighting != null:
+		scene_lighting.clear()
 
 
 func _process(delta: float) -> void:

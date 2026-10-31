@@ -101,3 +101,48 @@ func test_gold_frog_quad_keeps_gpu_corner_uvs() -> void:
 		var at: int = positions.find(GameSpace.position(corners[gpu].x, corners[gpu].y, corners[gpu].z))
 		assert_eq(uvs[at], StackMeshBuilder.corner_uv(gpu, StackMeshBuilder.FULL_REGION))
 	assert_eq(StackMeshBuilder.quad_mesh([]).get_surface_count(), 0)
+
+
+func test_lit_box_material_draws_through_the_lit_variant_without_source_lights() -> void:
+	var flat: ShaderMaterial = StackMeshBuilder.box_material(null, StackSelector.DARK_COLOUR, Vector2(1.0, 0.9), false, true)
+	assert_true(ModelShaders.is_lit(flat.shader))
+	assert_eq(flat.shader.resource_path, ModelShaders.LIT_SHADER_DIR.path_join("model_lit_flat_opaque.gdshader"))
+	var projection: Vector2 = flat.get_shader_parameter("projection_scale")
+	assert_eq(projection, Vector2(1.0, 0.9))
+	var source_lighting: Variant = flat.get_shader_parameter("source_lighting")
+	var source_ambient: Variant = flat.get_shader_parameter("source_ambient")
+	assert_eq(typeof(source_lighting), TYPE_NIL, "the scene lights it")
+	assert_eq(typeof(source_ambient), TYPE_NIL)
+	var image := ImageTexture.create_from_image(Image.create(4, 4, false, Image.FORMAT_RGBA8))
+	var textured: ShaderMaterial = StackMeshBuilder.box_material(image, StackSelector.LIGHT_COLOUR, Vector2.ONE, true, true)
+	assert_eq(textured.shader.resource_path, ModelShaders.LIT_SHADER_DIR.path_join("model_lit_textured_opaque_linear.gdshader"))
+	var bound: Texture2D = textured.get_shader_parameter("image")
+	assert_eq(bound, image)
+	var retail: ShaderMaterial = StackMeshBuilder.box_material(image, StackSelector.LIGHT_COLOUR)
+	assert_false(ModelShaders.is_lit(retail.shader))
+
+
+func test_instance_tint_of_a_dark_row_scales_the_lit_box() -> void:
+	var box := MeshInstance3D.new()
+	StackMeshBuilder.set_instance_tint(box, StackSelector.DARK_COLOUR)
+	var scale: Vector3 = box.get_instance_shader_parameter(ModelShaders.TINT_SCALE)
+	var ambient: Color = box.get_instance_shader_parameter(ModelShaders.TINT_AMBIENT)
+	assert_almost_eq(scale, Vector3.ONE * pow(0.5, SceneLightingBuilder.GAMMA), Vector3.ONE * 1e-6)
+	assert_eq(ambient, Color(0.0, 0.0, 0.0, 0.0), "no custom ambient")
+	StackMeshBuilder.set_instance_tint(box, StackSelector.LIGHT_COLOUR)
+	scale = box.get_instance_shader_parameter(ModelShaders.TINT_SCALE)
+	assert_eq(scale, Vector3.ONE, "the neutral colour leaves the box as lit")
+	box.free()
+
+
+func test_surface_mesh_keeps_one_surface() -> void:
+	var mesh: ArrayMesh = StackMeshBuilder.spin_mesh(_layout(), 0, 64, 0, 5)
+	var picture: ArrayMesh = StackMeshBuilder.surface_mesh(mesh, 1)
+	assert_eq(picture.get_surface_count(), 1)
+	var picture_uvs: PackedVector2Array = _surface(picture, 0)[Mesh.ARRAY_TEX_UV]
+	var end_uvs: PackedVector2Array = _surface(mesh, 1)[Mesh.ARRAY_TEX_UV]
+	var picture_positions: PackedVector3Array = _surface(picture, 0)[Mesh.ARRAY_VERTEX]
+	var end_positions: PackedVector3Array = _surface(mesh, 1)[Mesh.ARRAY_VERTEX]
+	assert_eq(picture_uvs, end_uvs)
+	assert_eq(picture_positions, end_positions)
+	assert_eq(StackMeshBuilder.surface_mesh(mesh, 0).get_surface_count(), 1)

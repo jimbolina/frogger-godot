@@ -66,6 +66,7 @@ func open_sandbox(data: AssetCatalog, take_ownership: bool = false) -> String:
 	_data = data
 	level_code = LEVEL_CODE
 	rendering_profile = data.rendering_profile() if data != null else RenderingProfile.retail()
+	apply_shadow_arguments(OS.get_cmdline_user_args())
 	sandbox = SandboxLevel.build()
 	templates = null
 	data_status = ""

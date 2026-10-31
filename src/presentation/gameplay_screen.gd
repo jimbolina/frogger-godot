@@ -79,6 +79,7 @@ func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -
 	_data = data
 	level_code = code
 	rendering_profile = data.rendering_profile() if data != null else RenderingProfile.retail()
+	apply_shadow_arguments(OS.get_cmdline_user_args())
 	var level_number: int = FroggerIds.level_from_code(code)
 	if data == null or not data.is_valid():
 		return _show_error("Valid imported assets are required")

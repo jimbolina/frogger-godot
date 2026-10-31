@@ -80,6 +80,12 @@ var _music_player: MusicPlayer = null
 var rendering_profile: RenderingProfile = RenderingProfile.retail()
 ## The modern profile's lights and environment, created by [method build_world].
 var scene_lighting: SceneLighting = null
+## The shadow-effect setting, [constant ShadowEffectPolicy.RETAIL] or
+## [constant ShadowEffectPolicy.OFF]; with [member rendering_profile] it decides
+## through [ShadowEffectPolicy] whether the blob shadow effects draw.
+var effect_shadows: String = ShadowEffectPolicy.DEFAULT
+## Whether the modern profile's lights cast real shadows; read when entities are built.
+var real_shadows: bool = true
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -464,7 +470,7 @@ func _light_scene(lighting: MapLighting) -> void:
 	var source: MapLighting = lighting
 	if source == null or (source.directions.is_empty() and source.ambient.is_zero_approx()):
 		source = OptionsModels.options_lighting()
-	scene_lighting.apply(SceneLightingBuilder.from_lighting(source))
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(source, real_shadows))
 
 func _configure_overlay(data: AssetCatalog, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
 	if _overlay_view == null:
@@ -859,10 +865,24 @@ func _pop_colour() -> int:
 		return _effects.generators.pop_colours[0]
 	return ExeParticleGenerators.C_POP_COLOURS[0]
 
-func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
-	if _shadow_view == null:
-		return
+## Sets [member effect_shadows] and [member real_shadows] from launch
+## [param arguments], falling back to the project settings.
+func apply_shadow_arguments(arguments: PackedStringArray) -> void:
+	effect_shadows = ViewerArguments.effect_shadows(arguments)
+	real_shadows = ViewerArguments.shadows(arguments)
+
+## Whether the frog and Desert blob shadow effects draw under
+## [member rendering_profile] and [member effect_shadows].
+func draws_effect_shadows() -> bool:
+	return ShadowEffectPolicy.draws_blob_shadows(rendering_profile, effect_shadows)
+
+## The blob shadows of the current state at render [param weight] with the
+## frog drawn at [param frog_transform]: the frog's, then each Desert rock's
+## and tumbleweed's; empty when [method draws_effect_shadows] is false.
+func shadow_requests(frog_transform: Transform3D, weight: float) -> Array[FrogShadowView.Request]:
 	var requests: Array[FrogShadowView.Request] = []
+	if _current == null or not draws_effect_shadows():
+		return requests
 	if effect_grid != null and not FrogShadowGeometry.hidden(_current):
 		var request := FrogShadowView.Request.new()
 		var frog: FrogState = _current.frog
@@ -877,7 +897,12 @@ func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
 			var shadow: FrogShadowView.Request = entity_shadow(_definitions[slot], _current.entities.entities[slot], GameSpace.to_game(_motion.entity(slot, weight).origin))
 			if shadow != null:
 				requests.append(shadow)
-	_shadow_view.draw_shadows(requests)
+	return requests
+
+func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
+	if _shadow_view == null:
+		return
+	_shadow_view.draw_shadows(shadow_requests(frog_transform, weight))
 	var fields: Array[ParticleField] = _fields.duplicate()
 	if _entity_fields != null:
 		fields.append_array(_entity_fields.fields())
