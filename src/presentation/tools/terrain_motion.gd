@@ -32,6 +32,8 @@ func capture(previous: GameplayState, current: GameplayState) -> void:
 		var continuous: bool = before != null and before.entity_index == now.entity_index and before.unique_id == now.unique_id and before.generation == now.generation and before.live and now.live
 		if continuous and before.custom_state != null and now.custom_state != null:
 			continuous = before.custom_state.carrier_index == now.custom_state.carrier_index and before.custom_state.parent_entity_index == now.custom_state.parent_entity_index
+		if continuous and path_jumped(before.path, now.path):
+			continuous = false
 		var transform_before: Transform3D = GameSpace.transform(before.matrix12) if continuous else transform_now
 		_entities.append(transform_now)
 		_before_entities.append(transform_before)
@@ -42,6 +44,14 @@ func capture(previous: GameplayState, current: GameplayState) -> void:
 			_attached_slot = slot
 			_before_local_frog = transform_before.affine_inverse() * _before_frog
 			_local_frog = transform_now.affine_inverse() * _frog
+
+## Whether a path repeated or was reset between two ticks, so its entity teleported.
+static func path_jumped(before: PathSnapshot, now: PathSnapshot) -> bool:
+	if before == null or now == null:
+		return false
+	if now.flags & (PathStart.JUST_REPEATED_START | PathStart.JUST_REPEATED_END):
+		return true
+	return absi(now.total_distance - before.total_distance) > maxi(absi(before.speed), absi(now.speed))
 
 ## Interpolates a carried frog in the same moving frame as its platform.
 func frog(fraction: float) -> Transform3D:

@@ -95,6 +95,34 @@ func test_pink_frog_pickup_collapses_previous_parent_history() -> void:
 	motion.capture(before, current)
 	assert_eq(motion.entity(0, 0.0), motion.entity(0, 1.0))
 
+func test_path_repeat_or_reset_snaps_while_steps_and_bounces_interpolate() -> void:
+	var before: GameplayState = _sample()
+	before.entities.entities[0].path = PathSnapshot.new()
+	before.entities.entities[0].path.speed = 16
+	before.entities.entities[0].path.total_distance = 1000
+	var current: GameplayState = before.copy()
+	current.entities.entities[0].matrix12[9] = 512
+	current.entities.entities[0].path.total_distance = 1016
+	var motion := TerrainMotion.new()
+	motion.capture(before, current)
+	assert_ne(motion.entity(0, 0.5), motion.entity(0, 1.0), "an ordinary step interpolates")
+	current.entities.entities[0].path.total_distance = 990
+	current.entities.entities[0].path.flags = PathStart.JUST_BOUNCED_END
+	motion.capture(before, current)
+	assert_ne(motion.entity(0, 0.5), motion.entity(0, 1.0), "a bounce stays continuous")
+	current.entities.entities[0].path.total_distance = 8
+	current.entities.entities[0].path.flags = PathStart.JUST_REPEATED_END
+	motion.capture(before, current)
+	assert_eq(motion.entity(0, 0.5), motion.entity(0, 1.0), "a repeat wraps without sliding across the lane")
+	current.entities.entities[0].path.total_distance = 1000 + 16 * 4
+	current.entities.entities[0].path.flags = PathStart.JUST_REPEATED_START
+	motion.capture(before, current)
+	assert_eq(motion.entity(0, 0.5), motion.entity(0, 1.0))
+	current.entities.entities[0].path.total_distance = 0
+	current.entities.entities[0].path.flags = 0
+	motion.capture(before, current)
+	assert_eq(motion.entity(0, 0.5), motion.entity(0, 1.0), "a motion reset without a flag also snaps")
+
 func test_inspector_axes_match_exact_pose_and_preserve_committed_contact_probe() -> void:
 	var inspection := EntityInspection.new()
 	add_child_autofree(inspection)
