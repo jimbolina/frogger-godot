@@ -13,6 +13,9 @@
 - `src/application/` owns source-to-game adapters. They resolve source names
   and supply concrete dependencies. Direct environment access is restricted to
   explicit loader adapters; source readers retain ownership of file I/O.
+- `src/data/` (from S1b) holds the typed `Resource` records the game plays
+  from; it depends on nothing game-side. `archive/` holds the retail readers,
+  importer and retail goldens; nothing in the game depends on it.
 - `src/inspection/` owns scenarios, validated options, corridor guards, presets
   and manifests. Presentation translates CLI/environment inputs into explicit
   options. Gameplay and application never depend on inspection.
@@ -325,12 +328,28 @@ project class names, literal script paths and inherited bases. It reports
 computed loads and dynamic calls for review. Gameplay runtime resource loading
 is file I/O; literal preloads of permitted script definitions are allowed.
 
+The scanner also enforces archive isolation. No script under `src/`, `scenes/`,
+`assets/`, `tests/` or `tools/` may depend on anything under `archive/`, directly
+or through other scripts, by class name, literal load path or base. Scene and
+resource files under `scenes/` and `assets/` must not reference `res://archive/`;
+these are found by a line scan. Archive scripts are scanned so their class names
+resolve, but they are not restricted themselves.
+
+`src/data/` is a protected layer for imported data schemas. Its scripts inherit
+`RefCounted` or `Resource`. They may hold `Texture2D`, `Mesh`, `ArrayMesh`,
+`AudioStream`, `AudioStreamWAV`, `Animation`, `AnimationLibrary` and
+`PackedScene` fields, but may not use other node or tree types or calls,
+environment I/O, runtime loads or dynamic calls. Data may not depend on gameplay,
+application, conversion, presentation, inspection or scenes. Application and
+source code may use data; gameplay may not. Application loaders and storage are
+the only application code allowed file and environment access.
+
 The scanner also rejects entity-name comparisons, membership tests and match
 dispatch in gameplay, while permitting raw names in diagnostics.
 
 This is a conservative static check, not a complete GDScript parser or proof of
 runtime purity. It does not resolve local type scopes, inner-class aliases or
-dependencies embedded in serialized resources. Identifier shadowing and reflective
+dependencies embedded in serialized resources beyond archive path references. Identifier shadowing and reflective
 code require human review; comments and unrelated strings are excluded. Ordinary
 data methods such as `FrogLordConfig.add_child()` are allowed. Keep dependencies
 explicit instead of obscuring them to pass the check. Hosted CI remains deferred.

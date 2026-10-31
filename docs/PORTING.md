@@ -32,14 +32,18 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P13g | Front-end water background: the options water surface and river bed behind the menu and stack pages, a prerequisite of P13c and P13d | S–M | Independent wave and mesh goldens; owner play check | Done; accepted by the owner's play check |
 | P13c | Options page, volumes, controller page, languages | L | Independent options, controller-page and language goldens; reference pictures of the options pages; owner play check | Done; accepted by the owner's play check |
 | P13d | High scores: table view and name entry | L | Independent default-table, insertion, name-entry and view goldens; owner play check | Done; accepted by the owner's play check |
-| S1 | [Native assets and architecture spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): import models, textures, sounds, maps and animations as Godot project resources; audit project layout against Godot practice and domain-driven design; document the domain models | L | Every accepted level plays from imported resources; the structure audit and domain documentation are reviewed by the owner | Next after X2; abandons runtime loading of FrogLord-saved files for now |
+| S1a | [Boundaries and archive staging](#s1-and-s2-native-asset-and-modern-rendering-spikes): Git LFS, the `archive/` folder with the retail goldens, two test suites with no skips, scanner isolation and `src/data` rules | S | Game suite with zero skips; archive suite with `FROGGER_DATA_DIR`; strict compilation and the architecture check | Done |
+| S1b | Typed `Resource` schema in `src/data/` and the abstract `AssetCatalog`; readers split to `archive/source/` | M | Every retail golden passes through the Resource-typed records; both suites green; no behaviour change | Next |
+| S1c | Importer and committed assets: PNG textures, baked pages, model meshes and scenes, map resources, WAV effects, Ogg music, tables, demos; import goldens with independent oracles | L | Second import leaves `assets/` unchanged; import goldens and deliberate-break checks pass | |
+| S1d | Runtime switch: every scene opens `ImportedAssets`; `--data-dir`, `FROGGER_DATA_DIR` and `--disc` leave the game; readers and FrogLord configs move to `archive/` | L | Both suites green; every accepted level, the front end and the sandbox play from imported resources (owner play check); captures compared with pre-S1 captures | |
+| S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | |
 | S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | After S1 |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
-| P17 | Export for Windows, Linux and macOS; hosted asset-free CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs and named skips | Mac source setup and isolated verification available; packaged exports and CI pending |
+| P17 | Export for Windows, Linux and macOS; hosted CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs | Mac source setup and isolated verification available; packaged exports and CI pending |
 | X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Original-hardware target remains unverified; further tuning deferred at the owner’s request |
 | X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md#animated-part-lighting) | M | Independent colour samples after each part's animation transform ([animated lighting golden](../tests/golden/specs/animation.md#animated-part-lighting)); owner play check | Done; the gameplay frog takes the map's lights, custom ambient and colour scale like every entity model (owner's play check pending) |
 | X3 | Owner decisions | | | See below |
@@ -50,19 +54,28 @@ Network play is deferred. Multiplayer levels belong to P15.
 ## S1 and S2: native asset and modern rendering spikes
 
 The owner has set two spikes ahead of P13e. They deliberately leave the
-compatibility mantra: until they conclude, FrogLord-saved files, runtime loading
-of the player's archive and executable, and the stored-colour fidelity checks
-stop being requirements. That compatibility is deferred, not discarded; P14 and
-the `pc-retail-v3.0e` target return to the plan later if the owner wants them.
+compatibility mantra: FrogLord-saved files, runtime loading of the player's
+archive and executable, and the stored-colour fidelity checks stop being
+requirements. That compatibility is deferred, not discarded; P14 and the
+`pc-retail-v3.0e` target return to the plan later if the owner wants them.
 
-S1 imports every asset into the project: models and animations as Godot
-meshes and animations, textures as imported images, sounds and music as audio
-streams, maps as scenes or resources, with import tooling that reads the
-retail files once. It then audits the project layout, class boundaries and
-naming against Godot's project organisation practice and domain-driven design,
-and writes the domain model documentation (bounded contexts, aggregates and
-their invariants) under `docs/reference/`. The audit decides the reorganisation
-and the cleanup of code that only served runtime decoding.
+S1 imports every asset once into `assets/` as committed Godot resources:
+models and animations as meshes, scenes and animation libraries (the XAR
+transforms stay authoritative for gameplay inside the model resource), textures
+as PNG images with baked texture pages, sound effects as WAV and the CD music
+as Ogg Vorbis, maps and the executable's tables as typed `Resource` records in
+`src/data/`. Binary assets go through Git LFS. The readers, the importer, the
+retail-format goldens and FrogLord's configuration live in `archive/`, which
+the game never depends on; the assets are then edited directly. S1 then audits
+the project layout, class boundaries and naming against Godot's project
+organisation practice and domain-driven design, and writes the domain model
+documentation (bounded contexts, aggregates and their invariants). The audit
+proposes the reorganisation; the owner decides. Sub-phases S1a–S1e are in the
+status table.
+
+Test suites: the game suite under `tests/` is asset-free and allows no skips;
+the archive suite under `archive/tests/` runs only with `FROGGER_DATA_DIR`
+set. The former exit 3 and the reviewed-skip manifest are retired.
 
 S2 replaces the C lighting recipe, its per-vertex stored-colour shaders and the
 map's light records with Godot's lights, shadows and material pipeline, and
@@ -70,18 +83,15 @@ replaces texture-page reconstruction and colour keys with ordinary imported
 textures and materials. Goldens that assert C colours are retired or re-scoped
 to what still holds (geometry, animation, gameplay).
 
-The owner has decided that imported retail-derived assets are committed to
-the repository (see below); `AGENTS.md`'s retail-bytes rule and runtime-loading
-boundaries are rewritten when S1 starts, not before, so the current goldens
-keep their text-only form until then.
-
 ## Needed from the owner
 
 | What | Needed by | Why |
 |---|---|---|
 | A licence for this project's own code | Before the repository is made public | |
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
-| Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds and maps are committed as project resources; the repository stays private and the licence decision covers them. `AGENTS.md`'s retail-bytes rule and runtime-loading boundaries are revised to match when S1 starts. |
+| Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds, music and maps are committed as project resources through Git LFS; the repository stays private and the licence decision covers them. |
+| Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
+| Licence position on retail-derived assets | Before the repository is made public | `assets/` is derived from Frogger (1997); the owner decides how it is licensed or excluded. |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage

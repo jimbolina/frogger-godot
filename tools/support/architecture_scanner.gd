@@ -18,6 +18,20 @@ const DYNAMIC_CALLS: PackedStringArray = [
 	"call", "callv", "call_deferred", "call_thread_safe", "call_deferred_thread_group",
 	"set_script", "Callable",
 ]
+const DATA_TYPES: PackedStringArray = [
+	"Texture2D", "Mesh", "ArrayMesh", "AudioStream", "AudioStreamWAV",
+	"Animation", "AnimationLibrary", "PackedScene",
+]
+const OBJECT_BASES: PackedStringArray = ["RefCounted"]
+const DATA_BASES: PackedStringArray = ["RefCounted", "Resource"]
+const APPLICATION_IO: PackedStringArray = [
+	"res://src/application/loaders/", "res://src/application/storage/",
+]
+const ARCHIVE: String = "res://archive/"
+const ARCHIVE_GUARDED: PackedStringArray = [
+	"res://src/", "res://scenes/", "res://assets/", "res://tests/", "res://tools/",
+]
+const RESOURCE_FILES: PackedStringArray = ["tscn", "tres"]
 
 
 ## A path and line diagnostic, retaining the protected script being checked.
@@ -82,12 +96,17 @@ class Source:
 
 
 ## Checks a synthetic or filesystem-derived map of res:// paths to source text.
-## The caller supplies every project script so names and inherited bases resolve.
+## The caller supplies every project script so names and inherited bases resolve;
+## scene and resource files in the map are line-scanned for archive references.
 func check(sources: Dictionary[String, String]) -> Array[Violation]:
 	var records: Dictionary[String, Source] = {}
 	var names: Dictionary[String, String] = {}
 	var paths: Array[String] = []
+	var resources: Array[String] = []
 	for path: String in sources:
+		if RESOURCE_FILES.has(path.get_extension()):
+			resources.append(path)
+			continue
 		paths.append(path)
 		var record := Source.new()
 		record.tokens = _tokenize(sources[path])
@@ -104,11 +123,71 @@ func check(sources: Dictionary[String, String]) -> Array[Violation]:
 		if layer.is_empty():
 			continue
 		var root_record: Source = records[origin]
-		if not _is_refcounted(origin, records, names, {}):
+		var allowed: PackedStringArray = _allowed_bases(origin, layer)
+		if not _inherits_allowed(origin, allowed, records, names, {}):
 			result.append(Violation.new(origin, root_record.base_line, "base",
-				"protected script must inherit RefCounted through a resolved base", origin))
+				"protected script must inherit %s through a resolved base"
+					% " or ".join(allowed), origin))
 		_visit(origin, origin, layer, records, names, {}, result)
+	_check_archive(paths, records, result)
+	resources.sort()
+	for path: String in resources:
+		result.append_array(scan_resource(path, sources[path]))
 	return result
+
+
+## Reports each line of a scene or resource file outside the archive that
+## references a path under res://archive/.
+static func scan_resource(path: String, text: String) -> Array[Violation]:
+	var result: Array[Violation] = []
+	if path.begins_with(ARCHIVE):
+		return result
+	var lines: PackedStringArray = text.split("\n")
+	for index: int in range(lines.size()):
+		if lines[index].contains(ARCHIVE):
+			result.append(Violation.new(path, index + 1, "archive",
+				"shipped resource must not reference archived code", path))
+	return result
+
+
+func _check_archive(paths: Array[String], records: Dictionary[String, Source],
+		into: Array[Violation]) -> void:
+	var tainted: Dictionary[String, bool] = {}
+	var changed: bool = true
+	while changed:
+		changed = false
+		for path: String in paths:
+			if tainted.has(path) or path.begins_with(ARCHIVE):
+				continue
+			for edge: Edge in records[path].edges:
+				if edge.path.begins_with(ARCHIVE) or tainted.has(edge.path):
+					tainted[path] = true
+					changed = true
+					break
+	for origin: String in paths:
+		if tainted.has(origin) and _archive_guarded(origin):
+			_visit_archive(origin, origin, records, tainted, {}, into)
+
+
+func _visit_archive(path: String, origin: String, records: Dictionary[String, Source],
+		tainted: Dictionary[String, bool], visited: Dictionary[String, bool],
+		into: Array[Violation]) -> void:
+	if visited.has(path):
+		return
+	visited[path] = true
+	for edge: Edge in records[path].edges:
+		if edge.path.begins_with(ARCHIVE):
+			into.append(Violation.new(path, edge.line, "archive",
+				"shipped code must not depend on archived %s" % edge.path, origin))
+		elif tainted.has(edge.path):
+			_visit_archive(edge.path, origin, records, tainted, visited, into)
+
+
+func _archive_guarded(path: String) -> bool:
+	for root: String in ARCHIVE_GUARDED:
+		if path.begins_with(root):
+			return true
+	return false
 
 
 func _read_declarations(record: Source) -> void:
@@ -148,6 +227,8 @@ func _visit(path: String, origin: String, layer: String,
 	var record: Source = records[path]
 	_check_symbols(path, origin, layer, record, records, names, into)
 	for edge: Edge in record.edges:
+		if edge.path.begins_with(ARCHIVE):
+			continue
 		if _forbidden_path(edge.path, layer):
 			into.append(Violation.new(path, edge.line, "layer",
 				"%s must not depend on %s" % [layer, edge.path], origin))
@@ -156,9 +237,9 @@ func _visit(path: String, origin: String, layer: String,
 		elif edge.path.get_extension() == "gd":
 			into.append(Violation.new(path, edge.line, "review",
 				"script dependency is outside the scanned source set: %s" % edge.path, origin))
-		elif layer == "game":
+		elif _is_pure(layer):
 			into.append(Violation.new(path, edge.line, "environment",
-				"gameplay cannot load file resources: %s" % edge.path, origin))
+				"%s cannot load file resources: %s" % [layer, edge.path], origin))
 
 
 func _check_symbols(path: String, origin: String, layer: String, record: Source,
@@ -172,7 +253,8 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 		var invoked: bool = index + 1 < record.tokens.size() \
 			and record.tokens[index + 1].value == "(" \
 			and not (index > 0 and record.tokens[index - 1].value == "func")
-		if not member and _is_tree_type(token.value):
+		if not member and _is_tree_type(token.value) \
+				and not (path.begins_with("res://src/data/") and DATA_TYPES.has(token.value)):
 			into.append(Violation.new(path, token.line, "tree",
 				"node/tree dependency %s" % token.value, origin))
 		elif token.value == "$" or _is_unique_node_path(record.tokens, index) \
@@ -182,7 +264,8 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 		if layer == "game" and token.value == "entity_name" and _entity_name_dispatch(record.tokens, index):
 			into.append(Violation.new(path, token.line, "behavior",
 				"gameplay must dispatch on resolved behavior kinds, not entity names", origin))
-		if (layer == "game" or (layer == "application" and path.begins_with("res://src/application/") and not path.begins_with("res://src/application/loaders/"))) and not member and GAME_ENVIRONMENT.has(token.value):
+		if not member and GAME_ENVIRONMENT.has(token.value) \
+				and _environment_restricted(path, layer):
 			into.append(Violation.new(path, token.line, "environment",
 				"gameplay must receive external data instead of using %s" % token.value, origin))
 		if invoked and (DYNAMIC_CALLS.has(token.value) \
@@ -195,15 +278,17 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 			if not _is_literal_load(record.tokens, index):
 				into.append(Violation.new(path, token.line, "review",
 					"computed resource load requires explicit architecture review", origin))
-			if layer == "game" and token.value == "load":
+			if _is_pure(layer) and token.value == "load":
 				into.append(Violation.new(path, token.line, "environment",
-					"gameplay cannot perform runtime resource loading", origin))
+					"%s cannot perform runtime resource loading" % layer, origin))
 		if token.value == "extends" and token.column > 1 \
 				and index + 1 < record.tokens.size():
 			var base: Token = record.tokens[index + 1]
-			if not _base_is_refcounted(path, base.value, base.is_string, records, names, {}):
+			var allowed: PackedStringArray = _allowed_bases(path, layer)
+			if not _base_is_allowed(path, base.value, base.is_string, allowed, records, names, {}):
 				into.append(Violation.new(path, token.line, "base",
-					"inner class must inherit RefCounted through a resolved base", origin))
+					"inner class must inherit %s through a resolved base"
+						% " or ".join(allowed), origin))
 
 
 func _entity_name_dispatch(tokens: Array[Token], index: int) -> bool:
@@ -223,23 +308,45 @@ func _entity_name_dispatch(tokens: Array[Token], index: int) -> bool:
 	return false
 
 
-func _is_refcounted(path: String, records: Dictionary[String, Source],
-		names: Dictionary[String, String], seen: Dictionary[String, bool]) -> bool:
+func _environment_restricted(path: String, layer: String) -> bool:
+	if _is_pure(layer):
+		return true
+	if layer != "application" or not path.begins_with("res://src/application/"):
+		return false
+	for exempt: String in APPLICATION_IO:
+		if path.begins_with(exempt):
+			return false
+	return true
+
+
+func _is_pure(layer: String) -> bool:
+	return layer == "game" or layer == "data"
+
+
+func _allowed_bases(path: String, layer: String) -> PackedStringArray:
+	if layer == "data" or path.begins_with("res://src/data/"):
+		return DATA_BASES
+	return OBJECT_BASES
+
+
+func _inherits_allowed(path: String, allowed: PackedStringArray,
+		records: Dictionary[String, Source], names: Dictionary[String, String],
+		seen: Dictionary[String, bool]) -> bool:
 	if seen.has(path) or not records.has(path):
 		return false
 	seen[path] = true
 	var record: Source = records[path]
-	return _base_is_refcounted(path, record.base, record.base_is_path, records, names, seen)
+	return _base_is_allowed(path, record.base, record.base_is_path, allowed, records, names, seen)
 
 
-func _base_is_refcounted(path: String, base: String, is_path: bool,
+func _base_is_allowed(path: String, base: String, is_path: bool, allowed: PackedStringArray,
 		records: Dictionary[String, Source], names: Dictionary[String, String],
 		seen: Dictionary[String, bool]) -> bool:
 	if is_path:
-		return _is_refcounted(_resolve_path(path, base), records, names, seen)
+		return _inherits_allowed(_resolve_path(path, base), allowed, records, names, seen)
 	if names.has(base):
-		return _is_refcounted(names[base], records, names, seen)
-	return base == "RefCounted"
+		return _inherits_allowed(names[base], allowed, records, names, seen)
+	return allowed.has(base)
 
 
 func _is_tree_type(value: String) -> bool:
@@ -283,6 +390,8 @@ func _protected_layer(path: String) -> String:
 		return "game"
 	if path.begins_with("res://src/application/"):
 		return "application"
+	if path.begins_with("res://src/data/"):
+		return "data"
 	return ""
 
 
@@ -297,9 +406,9 @@ func _forbidden_path(path: String, layer: String) -> bool:
 		return false
 	if path.begins_with("res://src/application/"):
 		return true
-	if layer == "source":
+	if layer == "source" or layer == "data":
 		return path.begins_with("res://src/game/")
-	return path.begins_with("res://src/source/")
+	return path.begins_with("res://src/source/") or path.begins_with("res://src/data/")
 
 
 func _resolve_path(source: String, target: String) -> String:

@@ -10,6 +10,27 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
     exit 2
 fi
 
+if [ -d assets ]; then
+    while IFS= read -r -d '' asset; do
+        first_line=""
+        IFS= read -r first_line <"$asset" || true
+        case "$first_line" in
+            "version https://git-lfs.github.com/spec"*)
+                echo "run_tests: assets contain git LFS pointers; run git lfs pull" >&2
+                exit 2
+                ;;
+        esac
+    done < <(find assets -type f -size -1024c -print0)
+fi
+
+archive_requested=0
+archive_data_dir=""
+if [ -n "${FROGGER_DATA_DIR+x}" ]; then
+    archive_requested=1
+    archive_data_dir="$FROGGER_DATA_DIR"
+fi
+unset FROGGER_DATA_DIR FROGGER_TEST_SUITE
+
 run_directory="$(mktemp -d "${TMPDIR:-/tmp}/frogger-tests.XXXXXX")" || exit 2
 mkdir "$run_directory/appdata" "$run_directory/data" "$run_directory/config" "$run_directory/temp" || exit 2
 export APPDATA="$run_directory/appdata"
@@ -73,27 +94,45 @@ if [ "$architecture_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/arc
     exit 1
 fi
 
-run_stage input -s res://tools/check_test_results.gd -- --input
-input_rc=$?
-if [ "$input_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/input.log" || ! grep -Eq '^test_input: valid[[:space:]]*$' "$run_directory/input.log"; then
-    cat "$run_directory/input.log" "$run_directory/input.console.log" 2>/dev/null
-    echo "run_tests: invalid test input; see $run_directory/input.log" >&2
-    exit 1
-fi
+rc=0
 
-run_stage tests -s res://addons/gut/gut_cmdln.gd "$@"
-rc=$?
-tests_rc=$rc
-cat "$run_directory/tests.log" 2>/dev/null
-if grep -Eq "$script_errors" "$run_directory/tests.log"; then
-    echo "run_tests: script errors found; see $run_directory/tests.log" >&2
-    rc=1
-fi
-run_stage results -s res://tools/check_test_results.gd -- "$run_directory/tests.log" "$tests_rc"
-results_rc=$?
-grep -E 'RESULT ERROR|test_results:' "$run_directory/results.log" 2>/dev/null
-if [ "$results_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/results.log" || ! grep -Eq '^test_results: valid, exit [013][[:space:]]*$' "$run_directory/results.log"; then
-    echo "run_tests: result validation failed; see $run_directory/results.log" >&2
-    rc=1
+check_suite() {
+    local suite="$1"
+    shift
+    run_stage "$suite" -s res://addons/gut/gut_cmdln.gd "$@"
+    local tests_rc=$?
+    cat "$run_directory/$suite.log" 2>/dev/null
+    if grep -Eq "$script_errors" "$run_directory/$suite.log"; then
+        echo "run_tests: script errors found in the $suite suite; see $run_directory/$suite.log" >&2
+        rc=1
+    fi
+    if [ "$tests_rc" -ne 0 ]; then
+        rc=1
+    fi
+    run_stage "$suite-results" -s res://tools/check_test_results.gd -- "$run_directory/$suite.log" "$tests_rc" "--suite=$suite"
+    local results_rc=$?
+    grep -E 'RESULT ERROR|test_results:' "$run_directory/$suite-results.log" 2>/dev/null
+    if [ "$results_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/$suite-results.log" || ! grep -Eq "^test_results: valid $suite suite, exit [01][[:space:]]*\$" "$run_directory/$suite-results.log"; then
+        echo "run_tests: $suite suite result validation failed; see $run_directory/$suite-results.log" >&2
+        rc=1
+    fi
+}
+
+check_suite game "$@"
+
+if [ "$archive_requested" -eq 1 ]; then
+    export FROGGER_DATA_DIR="$archive_data_dir"
+    run_stage input -s res://tools/check_test_results.gd -- --input
+    input_rc=$?
+    if [ "$input_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/input.log" || ! grep -Eq '^test_input: valid[[:space:]]*$' "$run_directory/input.log"; then
+        cat "$run_directory/input.log" "$run_directory/input.console.log" 2>/dev/null
+        echo "run_tests: invalid archive input; see $run_directory/input.log" >&2
+        exit 1
+    fi
+    export FROGGER_TEST_SUITE=archive
+    check_suite archive -gconfig=res://archive/tests/.gutconfig.json
+    unset FROGGER_TEST_SUITE
+else
+    echo "run_tests: archive suite not run (FROGGER_DATA_DIR unset)"
 fi
 exit "$rc"

@@ -36,8 +36,41 @@ function Invoke-GodotStage([string] $name, [string[]] $stageArguments) {
     return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output; LogPath = $logPath }
 }
 
+$assetDirectory = Join-Path $projectDirectory "assets"
+if (Test-Path -LiteralPath $assetDirectory -PathType Container) {
+    $pointerPrefix = "version https://git-lfs.github.com/spec"
+    foreach ($asset in Get-ChildItem -LiteralPath $assetDirectory -Recurse -File | Where-Object { $_.Length -lt 1024 }) {
+        $bytes = [IO.File]::ReadAllBytes($asset.FullName)
+        $start = [Text.Encoding]::ASCII.GetString($bytes, 0, [Math]::Min($bytes.Length, $pointerPrefix.Length))
+        if ($start -ceq $pointerPrefix) {
+            Write-Output "run_tests: assets contain git LFS pointers; run git lfs pull"
+            exit 2
+        }
+    }
+}
+
+$archiveRequested = Test-Path Env:FROGGER_DATA_DIR
+$archiveDataDirectory = if ($archiveRequested) { $env:FROGGER_DATA_DIR } else { "" }
+
+function Test-Suite([string] $suite, [string[]] $suiteArguments) {
+    $tests = Invoke-GodotStage $suite (@("-s", "res://addons/gut/gut_cmdln.gd") + $suiteArguments)
+    Write-Output $tests.Output
+    $passed = $tests.ExitCode -eq 0
+    if ($tests.Output -match $scriptErrorPattern) {
+        Write-Output "run_tests: script errors found in the $suite suite; see $($tests.LogPath)"
+        $passed = $false
+    }
+    $validation = Invoke-GodotStage "$suite-results" @("-s", "res://tools/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode, "--suite=$suite")
+    $validation.Output -split "`n" | Where-Object { $_ -match "RESULT ERROR|test_results:" }
+    if ($validation.ExitCode -ne 0 -or $validation.Output -match $scriptErrorPattern -or $validation.Output -notmatch "(?m)^test_results: valid $suite suite, exit [01]\s*$") {
+        Write-Output "run_tests: $suite suite result validation failed; see $($validation.LogPath)"
+        $passed = $false
+    }
+    $script:suiteFailed = $script:suiteFailed -or -not $passed
+}
+
 $savedEnvironment = @{}
-foreach ($name in @("APPDATA", "TEMP", "TMP")) {
+foreach ($name in @("APPDATA", "TEMP", "TMP", "FROGGER_DATA_DIR", "FROGGER_TEST_SUITE")) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
 }
 
@@ -51,6 +84,7 @@ try {
     $env:APPDATA = $profileDirectory
     $env:TEMP = $temporaryDirectory
     $env:TMP = $temporaryDirectory
+    Remove-Item Env:FROGGER_DATA_DIR, Env:FROGGER_TEST_SUITE -ErrorAction SilentlyContinue
     Write-Output "run_tests: logs and isolated profile: $runDirectory"
 
     $import = Invoke-GodotStage "import" @("--import")
@@ -76,27 +110,24 @@ try {
         exit 1
     }
 
-    $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
-    if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -match $scriptErrorPattern -or $inputCheck.Output -notmatch "(?m)^test_input: valid\s*$") {
-        Write-Output $inputCheck.Output
-        Write-Output "run_tests: invalid test input; see $($inputCheck.LogPath)"
-        exit 1
-    }
+    $script:suiteFailed = $false
+    Test-Suite "game" $gutArguments
 
-    $tests = Invoke-GodotStage "tests" (@("-s", "res://addons/gut/gut_cmdln.gd") + $gutArguments)
-    Write-Output $tests.Output
-    $result = $tests.ExitCode
-    if ($tests.Output -match $scriptErrorPattern) {
-        Write-Output "run_tests: script errors found; see $($tests.LogPath)"
-        $result = 1
+    if ($archiveRequested) {
+        $env:FROGGER_DATA_DIR = $archiveDataDirectory
+        $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
+        if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -match $scriptErrorPattern -or $inputCheck.Output -notmatch "(?m)^test_input: valid\s*$") {
+            Write-Output $inputCheck.Output
+            Write-Output "run_tests: invalid archive input; see $($inputCheck.LogPath)"
+            exit 1
+        }
+        $env:FROGGER_TEST_SUITE = "archive"
+        Test-Suite "archive" @("-gconfig=res://archive/tests/.gutconfig.json")
+        Remove-Item Env:FROGGER_TEST_SUITE -ErrorAction SilentlyContinue
+    } else {
+        Write-Output "run_tests: archive suite not run (FROGGER_DATA_DIR unset)"
     }
-    $validation = Invoke-GodotStage "results" @("-s", "res://tools/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode)
-    $validation.Output -split "`n" | Where-Object { $_ -match "RESULT ERROR|test_results:" }
-    if ($validation.ExitCode -ne 0 -or $validation.Output -match $scriptErrorPattern -or $validation.Output -notmatch "(?m)^test_results: valid, exit [013]\s*$") {
-        Write-Output "run_tests: result validation failed; see $($validation.LogPath)"
-        $result = 1
-    }
-    exit $result
+    exit $(if ($script:suiteFailed) { 1 } else { 0 })
 } catch {
     Write-Output "run_tests: $($_.Exception.Message)"
     if (-not $runPrepared) { exit 2 }

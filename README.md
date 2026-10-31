@@ -174,10 +174,10 @@ export GODOT=/Applications/Godot.app/Contents/MacOS/Godot
 export FROGGER_DATA_DIR="$(cd ../froggy/resources/pc-version/extracted/FROGGER && pwd)"
 "$GODOT" --path .
 bash tools/run_tests.sh
-env -u FROGGER_DATA_DIR bash tools/run_tests.sh
 ```
 
-The last command expects exit 3 for the approved retail-only skips. See the
+The wrapper runs the game suite and, with `FROGGER_DATA_DIR` set, the archive
+suite; exit 0 is the only pass. See the
 [testing guide](docs/reference/testing/README.md) for isolated Mac profiles.
 Use `python3` for Python commands on macOS.
 
@@ -403,27 +403,30 @@ GODOT=/path/to/godot tools/run_tests.sh              # bash (Linux, macOS, Git B
 $env:GODOT="C:\path\to\Godot.exe"; tools\run_tests.ps1   # PowerShell
 ```
 
-Set `FROGGER_DATA_DIR` to also run the tests that need the retail files
-(`tests/golden/test_retail*`); without it those are listed as `SKIPPED` by name. The
-report includes a summary such as `SUMMARY: PASS=70 FAIL=0 SKIP=3 EXIT=3`,
-followed by the wrapper's result-validation status.
+The game suite under `tests/` needs no game files and allows no skips. Set
+`FROGGER_DATA_DIR` to the folder holding the retail `FROGGER.EXE` and
+`FROGPSX.MWD` to also run the archive suite (`archive/tests/`), which checks
+the retail readers against the committed text facts; without it the wrapper
+reports that the archive suite was not run. Each suite prints a summary such
+as `SUMMARY: PASS=70 FAIL=0 SKIP=0 EXIT=0`, followed by the wrapper's
+result-validation status.
 
 | Exit code | Meaning |
 |---|---|
 | 0 | every test ran and passed |
-| 1 | a test failed, or a script does not compile |
-| 2 | runner setup failed (for example, Godot was not found) |
-| 3 | only approved asset-free retail skips (a skip is never a pass) |
+| 1 | a test failed or skipped, or a script does not compile |
+| 2 | runner setup failed (for example, Godot was not found, or `assets/` holds unfetched Git LFS pointers) |
 
 Every script is compiled before the tests run (`tools/check_scripts.gd`),
 with the project's strict typing warnings treated as errors. The wrappers also
-check architecture dependencies and validate the complete test report. Only
-reviewed retail tests may skip when `FROGGER_DATA_DIR` is unset; a supplied but
-invalid retail folder, an unexpected skip or an empty selection fails.
+check architecture dependencies, including that nothing in the game depends on
+`archive/`, and validate the complete test report. A supplied but invalid
+retail folder, any skip or an empty selection fails.
 The wrappers isolate writable user data, save explicit logs in a temporary
 folder, disable the crash handler and stop at the first failed stage.
 For a focused iteration, append `-gselect=test_model_viewer` to either wrapper.
-The complete retail and asset-free runs remain required before each commit.
+The complete run with `FROGGER_DATA_DIR` set remains required before each
+commit.
 
 ## Layout
 
@@ -437,7 +440,8 @@ The complete retail and asset-free runs remain required before each commit.
 | `src/presentation/` | Screens (`frontend/`), the sandbox scene (`sandbox/`), shared viewer helpers, and development tools (`tools/`, the texture, model, map and terrain viewers). |
 | `scenes/` | Godot scenes (`boot.tscn` is the start scene; `tools/` holds the viewers). |
 | `tests/unit/` | Tests that need no game files. |
-| `tests/golden/` | Tests against the retail files, and the committed facts they compare with. |
+| `tests/golden/` | Golden tests over committed synthetic facts and keyboard fixtures, and the retail text facts the archive suite compares with. |
+| `archive/` | The retail readers' tests (`archive/tests/golden/test_retail_*.gd`, run only with `FROGGER_DATA_DIR`) and, as S1 proceeds, the readers, the importer and FrogLord's configuration. The game never depends on it. |
 | `tools/` | Test runners, a script compile check, the golden-data generators `make_golden_*.py` (see `tests/golden/README.md`), and `probe_model_shader.gd`, which measures the colours the model shaders put on screen. |
 | `third_party/` | FrogLord's configuration files, unmodified (see `third_party/README.md`). |
 | `addons/gut/` | The GUT test framework, unmodified. |

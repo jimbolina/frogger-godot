@@ -4,10 +4,10 @@ extends SceneTree
 ##   godot --headless --path . -s res://tools/check_scripts.gd
 ##
 ## Tests only compile the scripts they reach; this compiles all of them
-## (src/, scenes/, tests/, tools/). Engine errors are printed by Godot itself;
+## (src/, scenes/, tests/, tools/, archive/). Engine errors are printed by Godot itself;
 ## the last line reports how many scripts failed and the exit code is 1 if any did.
 
-const ROOTS: Array[String] = ["res://src", "res://scenes", "res://tests", "res://tools"]
+const ROOTS: Array[String] = ["res://src", "res://scenes", "res://tests", "res://tools", "res://archive"]
 
 
 func _init() -> void:

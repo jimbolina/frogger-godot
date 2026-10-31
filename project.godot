@@ -31,6 +31,29 @@ window/stretch/aspect="keep"
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
+[importer_defaults]
+
+texture={
+"compress/mode": 0,
+"detect_3d/compress_to": 0,
+"mipmaps/generate": false,
+"process/fix_alpha_border": false,
+"process/premult_alpha": false,
+"process/size_limit": 0
+}
+wav={
+"compress/mode": 0,
+"edit/loop_mode": 0,
+"edit/normalize": false,
+"edit/trim": false,
+"force/8_bit": false,
+"force/max_rate": false,
+"force/mono": false
+}
+oggvorbisstr={
+"loop": false
+}
+
 [physics]
 
 common/physics_ticks_per_second=30
@@ -43,3 +66,4 @@ renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 anti_aliasing/quality/msaa_3d=0
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)
+textures/lossless_compression/force_png=true

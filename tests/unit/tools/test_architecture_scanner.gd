@@ -241,3 +241,142 @@ func test_application_adapters_reject_environment_and_inspection_dependencies() 
 	assert_true(_has_rule(_check({adapter: "extends RefCounted\nfunc f():\n\treturn OS.get_environment(\"DATA\")\n"}), "environment"))
 	assert_true(_has_rule(_check({adapter: "extends RefCounted\nconst Guard = preload(\"res://src/inspection/guard.gd\")\n"}), "layer"))
 	assert_eq(_check({adapter: "extends RefCounted\nvar facts: SourceFacts\n", "res://src/source/facts.gd": "class_name SourceFacts\nextends RefCounted\nfunc read():\n\treturn FileAccess.open(\"data\", 1)\n"}).size(), 0)
+
+
+func _rule_count(violations: Array[Scanner.Violation], rule: String) -> int:
+	var count: int = 0
+	for violation: Scanner.Violation in violations:
+		if violation.rule == rule:
+			count += 1
+	return count
+
+
+func test_shipped_script_cannot_load_archive_path() -> void:
+	var path: String = "res://scenes/boot.gd"
+	var violations: Array[Scanner.Violation] = _check({
+		path: "extends Node\nconst OLD = preload(\"res://archive/x.gd\")\n",
+		"res://archive/x.gd": "extends RefCounted\n",
+	})
+	assert_eq(_rule_count(violations, "archive"), 1)
+	assert_eq(violations[0].path, path)
+	assert_eq(violations[0].line, 2)
+
+
+func test_shipped_script_cannot_use_archive_class_name() -> void:
+	for path: String in ["res://src/convert/view.gd", "res://tests/unit/test_x.gd",
+			"res://tools/tool.gd", "res://assets/helper.gd"]:
+		var violations: Array[Scanner.Violation] = _check({
+			path: "extends Node\nfunc f():\n\treturn RetailReader.new()\n",
+			"res://archive/source/reader.gd": "class_name RetailReader\nextends RefCounted\n",
+		})
+		assert_eq(_rule_count(violations, "archive"), 1, path)
+
+
+func test_transitive_archive_dependency_reports_origin() -> void:
+	var adapter: String = "res://src/application/adapter.gd"
+	var scene: String = "res://scenes/level.gd"
+	var violations: Array[Scanner.Violation] = _check({
+		scene: "extends Node3D\nvar adapter: LevelAdapter\n",
+		adapter: "class_name LevelAdapter\nextends RefCounted\nvar reader: RetailReader\n",
+		"res://archive/source/reader.gd": "class_name RetailReader\nextends RefCounted\n",
+	})
+	assert_eq(_rule_count(violations, "archive"), 2)
+	for violation: Scanner.Violation in violations:
+		assert_eq(violation.rule, "archive")
+		assert_eq(violation.path, adapter)
+		assert_eq(violation.line, 3)
+	var origins: Array[String] = [violations[0].origin, violations[1].origin]
+	var expected: Array[String] = [adapter, scene]
+	origins.sort()
+	expected.sort()
+	assert_eq(origins, expected)
+	assert_true(violations[0].format().contains("required by") \
+		or violations[1].format().contains("required by"))
+
+
+func test_archive_scripts_may_depend_on_shipped_code() -> void:
+	assert_eq(_check({
+		"res://archive/tests/test_old.gd": "extends Node\nvar facts: SourceFacts\n" \
+			+ "const ARCHIVED = preload(\"res://archive/other.gd\")\n" \
+			+ "func f():\n\treturn FileAccess.open(\"data\", 1)\n",
+		"res://archive/other.gd": "extends Node\n",
+		"res://src/source/facts.gd": "class_name SourceFacts\nextends RefCounted\n",
+	}).size(), 0)
+
+
+func test_scene_and_resource_archive_references_are_rejected() -> void:
+	var scene: String = "res://scenes/level.tscn"
+	var text: String = "[gd_scene format=3]\n\n" \
+		+ "[ext_resource type=\"Script\" path=\"res://archive/old.gd\" id=\"1\"]\n"
+	var violations: Array[Scanner.Violation] = _check({scene: text})
+	assert_eq(violations.size(), 1)
+	assert_eq(violations[0].rule, "archive")
+	assert_eq(violations[0].path, scene)
+	assert_eq(violations[0].line, 3)
+	assert_eq(Scanner.scan_resource("res://assets/level.tres", text).size(), 1)
+	assert_eq(Scanner.scan_resource("res://archive/level.tscn", text).size(), 0)
+	assert_eq(Scanner.scan_resource(scene,
+		"[ext_resource type=\"Script\" path=\"res://src/view.gd\" id=\"1\"]\n").size(), 0)
+
+
+func test_data_resource_schema_is_allowed() -> void:
+	assert_eq(_check({
+		"res://src/data/level.gd": "class_name LevelData\nextends Resource\n" \
+			+ "@export var texture: Texture2D\n@export var mesh: ArrayMesh\n" \
+			+ "@export var scene: PackedScene\n@export var sound: AudioStreamWAV\n" \
+			+ "@export var animations: AnimationLibrary\n@export var parts: Array[PartData] = []\n",
+		"res://src/data/part.gd": "class_name PartData\nextends Resource\n" \
+			+ "class Inner:\n\textends Resource\n",
+	}).size(), 0)
+
+
+func test_data_rejects_nodes_tree_calls_and_environment() -> void:
+	var path: String = "res://src/data/bad.gd"
+	var node: Array[Scanner.Violation] = _check({path: "extends Node\n"})
+	assert_true(_has_rule(node, "base"))
+	assert_true(_has_rule(node, "tree"))
+	for expression: String in ["get_tree()", "scene.instantiate().get_node(\"X\")"]:
+		assert_true(_has_rule(_check({
+			path: "extends Resource\nfunc f(scene):\n\treturn " + expression + "\n",
+		}), "tree"), expression)
+	for expression: String in ["FileAccess.open(\"user://x\", 1)", "load(\"res://x.tres\")"]:
+		assert_true(_has_rule(_check({
+			path: "extends Resource\nfunc f():\n\treturn " + expression + "\n",
+		}), "environment"), expression)
+	assert_true(_has_rule(_check({
+		path: "extends Resource\nfunc f(o):\n\treturn o.call(\"x\")\n",
+	}), "review"))
+
+
+func test_packed_scene_exemption_is_limited_to_data() -> void:
+	assert_true(_has_rule(_check({
+		SOURCE: "extends RefCounted\nvar scene: PackedScene\n",
+	}), "tree"))
+
+
+func test_data_layer_dependency_rules() -> void:
+	var data: String = "res://src/data/level.gd"
+	var schema: String = "class_name LevelData\nextends Resource\n"
+	var use: String = "extends RefCounted\nvar level: LevelData\n"
+	assert_true(_has_rule(_check({GAME: use, data: schema}), "layer"))
+	assert_eq(_check({"res://src/application/adapter.gd": use, data: schema}).size(), 0)
+	assert_eq(_check({SOURCE: use, data: schema}).size(), 0)
+	for target: String in ["src/game", "src/application", "src/convert", "src/presentation",
+			"src/inspection", "scenes"]:
+		assert_true(_has_rule(_check({
+			data: schema + "const BAD = preload(\"res://" + target + "/bad.gd\")\n",
+		}), "layer"), target)
+	assert_true(_has_rule(_check({
+		data: schema + "const BAD = preload(\"res://assets/level.tscn\")\n",
+	}), "layer"))
+	assert_true(_has_rule(_check({
+		data: schema + "var old: RetailReader\n",
+		"res://archive/source/reader.gd": "class_name RetailReader\nextends RefCounted\n",
+	}), "archive"))
+
+
+func test_application_storage_may_use_file_io() -> void:
+	var source: String = "extends RefCounted\nfunc f():\n\treturn FileAccess.open(\"user://s\", 1)\n"
+	assert_eq(_check({"res://src/application/storage/store.gd": source}).size(), 0)
+	assert_eq(_check({"res://src/application/loaders/loader.gd": source}).size(), 0)
+	assert_true(_has_rule(_check({"res://src/application/other.gd": source}), "environment"))

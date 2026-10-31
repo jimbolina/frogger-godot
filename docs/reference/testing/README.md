@@ -2,29 +2,35 @@
 
 ## Required commit gate
 
-Run both modes before every commit that touches code, tests, goldens, tools or
-project configuration; documentation-only commits need no run.
-Use the wrappers: they import, strictly compile every script, check architecture,
-validate retail input, run GUT, then verify the saved result report against the
-log and process exit.
-Stop on a failed stage; fix it before starting subsequent checks.
+Run the wrapper before every commit that touches code, tests, goldens, assets,
+tools or project configuration; documentation-only commits need no run. It
+checks that `assets/` holds no git LFS pointers, imports, strictly compiles
+every script (including `archive/`), refreshes the checkout's class cache,
+checks architecture, then runs two suites and verifies each saved result report
+against its log and process exit. Stop on a failed stage; fix it before starting
+subsequent checks.
+
+- Game suite (`tests/`, `.gutconfig.json`): always runs, needs no player files
+  and never sees `FROGGER_DATA_DIR`. Every test must pass; a skip or pending
+  test is a failure.
+- Archive suite (`archive/tests/`, `archive/tests/.gutconfig.json`): runs only
+  when `FROGGER_DATA_DIR` is set. The wrapper first checks that the folder holds
+  FROGGER.EXE and FROGPSX.MWD; a set but invalid or empty value fails. Skips
+  and pending tests fail here too. When the variable is unset the wrapper prints
+  `run_tests: archive suite not run (FROGGER_DATA_DIR unset)`.
 
 ```powershell
 $env:GODOT = 'C:\Users\janit\Desktop\Godot.exe'
 $env:FROGGER_DATA_DIR = 'C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER'
 & .\tools\run_tests.ps1
-# Continue only after exit 0.
-Remove-Item Env:FROGGER_DATA_DIR
-& .\tools\run_tests.ps1
-# Expect exit 3 only for named retail-dependent skips, with no failures.
 ```
 
-For Bash, use `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`,
-then run again with `FROGGER_DATA_DIR` unset. Commands run from the repository root.
-Exit codes: 0 = all passed; 1 = test, compile, architecture or result failure;
-2 = setup failure; 3 = only approved asset-free skips. A skip is never a pass.
-Retail mode must have none. A supplied but invalid `FROGGER_DATA_DIR` fails;
-unset the variable explicitly for asset-free mode.
+For Bash: `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`.
+Commands run from the repository root. Before a commit, run with
+`FROGGER_DATA_DIR` set so both suites run. Exit codes: 0 = every stage passed;
+1 = compile, architecture, input, test or result failure; 2 = setup failure
+(Godot missing, run folder, or git LFS pointers under `assets/`: run
+`git lfs pull`).
 
 On macOS, the Bash wrapper also finds `/Applications/Godot.app/Contents/MacOS/Godot`
 when `godot` is not on PATH. After strict compilation it imports the checkout
@@ -253,7 +259,7 @@ scene. Asset-free tests (`tests/unit/inspection/test_sandbox_*.gd`,
 `tests/unit/presentation/test_sandbox_screen.gd` and
 `test_gameplay_mapless_entities.gd`) cover the synthetic arena, data-free
 spawning, path presets, preset application with reported skips, placeholders,
-restart and hotkeys. Retail tests (`tests/golden/test_retail_sandbox_*.gd` and
+restart and hotkeys. Archive-suite tests (`archive/tests/golden/test_retail_sandbox_*.gd` and
 `test_retail_mapless_entities.gd`) cover data-backed templates and forms, real
 model nodes and every preset applying fully with player data. Neither drives a
 route or establishes level behaviour. The effects preset (ice, water, a car,
@@ -281,25 +287,22 @@ scanner and its limits. Its `ARCHITECTURE FAILED` diagnostics identify the
 file, line and dependency rule. New gameplay directories are checked when added;
 no empty gameplay scaffolding is needed now.
 
-Asset-free mode runs everything that needs no player files: unit tests under
-`tests/unit/` and the other `tests/golden/` scripts, which check committed
-synthetic facts.
-Retail mode also runs `tests/golden/test_retail*.gd`, which read the player's
-files. New retail tests live in `tests/golden/test_retail*.gd`.
+Extra wrapper arguments (`-gselect=`, `-gunit_test_name=`, `-gdir=`, `-gtest=`)
+apply to the game suite only; the archive suite always runs whole.
 
-`tests/support/retail_skips.json` is the reviewed manifest of exact test
-identities and their sole allowed reason: `FROGGER_DATA_DIR` is unset. Add every
-new retail test deliberately to this manifest and to its inventory assertion in
-`tests/unit/tools/test_result_policy.gd`; neither inheritance nor residence under
-`tests/golden/` grants skip permission.
-Pending tests and unexpected script skips fail, as do fixture/runner errors.
+The GUT hook saves `user://test_results_game.json` or
+`user://test_results_archive.json` (chosen by `FROGGER_TEST_SUITE`, which the
+wrapper sets) in the isolated profile and prints named failures, skips and the
+summary. The wrapper's independent check (`check_test_results.gd -- <log>
+<exit> [--suite=archive]`) recounts the records and checks the suite, named
+skips, summary and process exit. Missing, duplicate, inconsistent or empty
+reports fail. New tests that read retail files live in `archive/tests/` and
+extend `RetailTest`. Retain the printed run folder for diagnosis. Hosted CI
+remains deferred.
 
-The GUT hook saves `user://test_results.json` in the isolated profile and prints
-the named outcomes and summary. The wrapper's independent validation stage
-recounts those records and checks the environment mode, named skips, summary
-and process exit. Missing, duplicate, inconsistent or empty reports fail.
-Retain the printed run folder for diagnosis; never convert arbitrary exit 3
-results to success in an external runner. Hosted CI remains deferred.
+On macOS each isolated project starts from an APFS clone of the checkout's
+`.godot/imported`, `uid_cache.bin` and `global_script_class_cache.cfg`, so only
+changed sources are re-imported.
 
 Use isolated writable Godot user data, explicit logs, awaited hidden
 processes and `--disable-crash-handler` for automated runs. The wrappers

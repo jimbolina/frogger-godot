@@ -1,8 +1,11 @@
 # Golden data
 
 These are text facts only: names, sizes, flags, counts, IDs and digests.
-Never commit retail bytes or excerpts. Tests load the owner's retail files
-through `FROGGER_DATA_DIR` and compare decoded values with these facts.
+The game suite under `tests/golden/` compares committed synthetic facts and
+keyboard fixtures. The archive suite (`archive/tests/golden/test_retail_*.gd`,
+run only with `FROGGER_DATA_DIR`) loads the owner's retail files and compares
+decoded values with the facts in `pc-retail-v3.0e/`; from S1c the import
+goldens compare the committed assets with the same facts.
 
 `synthetic/.gdignore` keeps raw fixtures out of Godot's asset importer. Tests
 read them with `FileAccess`; CSV columns are not translation locales. Importing

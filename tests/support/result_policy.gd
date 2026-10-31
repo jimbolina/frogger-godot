@@ -1,30 +1,40 @@
 extends RefCounted
 ## Shared result rules used by the GUT hook and the wrapper's independent check.
+##
+## Two suites exist: [code]game[/code] ([code]tests/[/code], always run, asset-free)
+## and [code]archive[/code] ([code]archive/tests/[/code], run only with the player's
+## files). In both, every selected test must pass; a skip or pending test fails.
+## Valid process exits are 0 (all passed) and 1 (any failure or problem).
 
-const MANIFEST_PATH: String = "res://tests/support/retail_skips.json"
-const REPORT_PATH: String = "user://test_results.json"
-const RETAIL_REASON: String = "SKIP: FROGGER_DATA_DIR is not set"
+const SUITE_VARIABLE: String = "FROGGER_TEST_SUITE"
+const SUITES: Array[String] = ["game", "archive"]
+const REPORT_VERSION: int = 2
 
 
-## Loads the reviewed exact identities; inheritance never grants a skip.
-static func approved_skips() -> Dictionary:
-	var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST_PATH))
-	return value if value is Dictionary else {}
+## The suite named by [code]FROGGER_TEST_SUITE[/code]; unset selects the game suite.
+static func current_suite() -> String:
+	if OS.has_environment(SUITE_VARIABLE):
+		return OS.get_environment(SUITE_VARIABLE)
+	return "game"
 
 
-## Checks the supplied folder, including an explicitly empty environment value.
-static func input_error(supplied: bool, directory: String) -> String:
-	if supplied and (directory.is_empty() or not RetailDirSource.looks_like(directory)):
-		return "supplied FROGGER_DATA_DIR lacks FROGGER.EXE + FROGPSX.MWD"
+## The machine report saved by one suite's GUT run.
+static func report_path(suite: String) -> String:
+	return "user://test_results_%s.json" % suite
+
+
+## Describes why a player folder is unusable for the archive suite, or "".
+static func input_error(directory: String) -> String:
+	if directory.is_empty() or not RetailDirSource.looks_like(directory):
+		return "FROGGER_DATA_DIR lacks FROGGER.EXE + FROGPSX.MWD"
 	return ""
 
 
-## Counts records and accepts only reviewed script skips with no supplied assets.
-static func evaluate(records: Array, supplied: bool, initial_problems: Array = []) -> Dictionary:
+## Counts records; any failure, skip, pending test or problem gives exit 1.
+static func evaluate(records: Array, initial_problems: Array = []) -> Dictionary:
 	var result: Dictionary = {"pass": 0, "fail": 0, "skip": 0, "exit": 0,
 		"problems": initial_problems.duplicate()}
 	var problems: Array = result["problems"]
-	var manifest: Dictionary = approved_skips()
 	var seen: Dictionary = {}
 	for value: Variant in records:
 		if not value is Dictionary:
@@ -48,27 +58,22 @@ static func evaluate(records: Array, supplied: bool, initial_problems: Array = [
 				result["fail"] += 1
 			"skip", "pending":
 				result["skip"] += 1
-				if status != "skip" or supplied or not manifest.has(identity) \
-						or manifest.get(identity) != reason or reason != RETAIL_REASON:
-					problems.append("unapproved " + status + ": " + identity + " (" + reason + ")")
+				problems.append("unapproved " + status + ": " + identity + " (" + reason + ")")
 			_:
 				problems.append("unknown test status: " + status)
 	if records.is_empty():
-		problems.append("no tests ran or were validly skipped")
+		problems.append("no tests ran")
 	var failed: int = result["fail"]
-	var skipped: int = result["skip"]
 	if failed > 0 or not problems.is_empty():
 		result["exit"] = 1
-	elif skipped > 0:
-		result["exit"] = 3
 	return result
 
 
-## Creates the machine report from independently inspectable result records.
-static func make_report(records: Array, supplied: bool, problems: Array = []) -> Dictionary:
-	var report: Dictionary = evaluate(records, supplied, problems)
-	report["version"] = 1
-	report["retail_supplied"] = supplied
+## Creates one suite's machine report from independently inspectable records.
+static func make_report(records: Array, suite: String, problems: Array = []) -> Dictionary:
+	var report: Dictionary = evaluate(records, problems)
+	report["version"] = REPORT_VERSION
+	report["suite"] = suite
 	report["records"] = records
 	return report
 
@@ -79,25 +84,26 @@ static func summary(result: Dictionary) -> String:
 		result["pass"], result["fail"], result["skip"], result["exit"]]
 
 
-## Validates the saved report, log summary, named skips and actual process exit.
+## Validates a saved report against its suite, the log summary, named skips and
+## the actual process exit.
 static func validate_report(value: Variant, log_text: String, process_exit: int,
-		supplied: bool) -> PackedStringArray:
+		suite: String) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if not value is Dictionary:
 		return PackedStringArray(["missing or malformed machine report"])
 	var report: Dictionary = value
-	if report.get("version") != 1 or not report.get("records") is Array \
+	if report.get("version") != REPORT_VERSION or not report.get("records") is Array \
 			or not report.get("problems") is Array \
-			or not report.get("retail_supplied") is bool:
+			or not report.get("suite") is String:
 		return PackedStringArray(["incomplete machine report"])
-	if report["retail_supplied"] != supplied:
-		errors.append("report retail mode disagrees with wrapper environment")
+	if report["suite"] != suite or suite not in SUITES:
+		errors.append("report suite disagrees with wrapper suite")
 	var source_problems: Array = report["problems"]
 	for problem: Variant in source_problems:
 		if not problem is String:
 			errors.append("malformed result problem")
 	var records: Array = report["records"]
-	var expected: Dictionary = evaluate(records, supplied)
+	var expected: Dictionary = evaluate(records)
 	if not source_problems.is_empty():
 		expected["exit"] = 1
 	for key: String in ["pass", "fail", "skip", "exit"]:
@@ -131,6 +137,6 @@ static func validate_report(value: Variant, log_text: String, process_exit: int,
 	var expected_exit: int = expected["exit"]
 	if process_exit != expected_exit:
 		errors.append("process exit disagrees with result policy")
-	if process_exit not in [0, 1, 3]:
+	if process_exit not in [0, 1]:
 		errors.append("unexpected test process exit")
 	return errors

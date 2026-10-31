@@ -1,5 +1,8 @@
 extends GutHookScript
-## Saves exact test outcomes and applies the reviewed skip policy after GUT.
+## Saves exact test outcomes after GUT and fails any skip, pending test or problem.
+##
+## The suite comes from [code]FROGGER_TEST_SUITE[/code] (unset means the game
+## suite) and selects the saved report path.
 
 const Policy := preload("res://tests/support/result_policy.gd")
 
@@ -11,11 +14,14 @@ func run() -> void:
 	var scripts: Array = collector.get("scripts")
 	var records: Array = []
 	var problems: Array = []
-	var supplied: bool = OS.has_environment(GameDataLocator.ENV_VAR)
-	var input_problem: String = Policy.input_error(supplied,
-		OS.get_environment(GameDataLocator.ENV_VAR))
-	if not input_problem.is_empty():
-		problems.append(input_problem)
+	var suite: String = Policy.current_suite()
+	if suite not in Policy.SUITES:
+		problems.append("unknown test suite: " + suite)
+	elif suite == "archive":
+		var input_problem: String = Policy.input_error(
+			OS.get_environment(GameDataLocator.ENV_VAR))
+		if not input_problem.is_empty():
+			problems.append(input_problem)
 	var test_filter: String = runner.get("unit_test_name")
 	var class_filter: String = runner.get("inner_class_name")
 	for script: Object in scripts:
@@ -59,14 +65,14 @@ func run() -> void:
 	var logger_errors: Array = logger.call("get_errors")
 	if not logger_errors.is_empty():
 		problems.append("GUT reported %d runner errors" % logger_errors.size())
-	var report: Dictionary = Policy.make_report(records, supplied, problems)
-	var file: FileAccess = FileAccess.open(Policy.REPORT_PATH, FileAccess.WRITE)
+	var report: Dictionary = Policy.make_report(records, suite, problems)
+	var file: FileAccess = FileAccess.open(Policy.report_path(suite), FileAccess.WRITE)
 	if file != null:
 		file.store_string(JSON.stringify(report) + "\n")
 		file.close()
 	else:
 		problems.append("could not save machine report")
-		report = Policy.make_report(records, supplied, problems)
+		report = Policy.make_report(records, suite, problems)
 	var lines := PackedStringArray()
 	for record: Dictionary in records:
 		if record["status"] in ["skip", "pending"]:
