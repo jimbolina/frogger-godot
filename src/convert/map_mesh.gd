@@ -8,7 +8,7 @@ var groups: Array[ArrayMesh] = []
 var surface_specs: Array[Array] = []
 var sky_mesh: ArrayMesh
 ## One immutable page atlas keeps sky tile drawing in source row-major order.
-var sky_atlas: ImageTexture
+var sky_atlas: Texture2D
 var group_count: int = 0
 var triangle_count: int = 0
 var surface_count: int = 0

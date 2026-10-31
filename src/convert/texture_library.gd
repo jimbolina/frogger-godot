@@ -12,12 +12,13 @@ extends RefCounted
 ## Maps and models number their textures locally; a [TextureRemap] turns a
 ## local number into a global id ([method image_for_local]). Tables that point
 ## at texture records directly go through [BmpPointers] ([method image_for_pointer]).
-## Godot textures are built on first use and kept.
+## An imported image brings its own texture; otherwise a Godot texture is built
+## from its pixels on first use and kept.
 
 var _banks: Array[VloFile] = []
 var _bank_names: PackedStringArray = PackedStringArray()
 var _by_texture_id: Dictionary[int, VloImage] = {}
-var _textures: Dictionary[VloImage, ImageTexture] = {}
+var _textures: Dictionary[VloImage, Texture2D] = {}
 
 
 ## Adds [param bank] (called [param bank_name], e.g. "SUB_VRAM.VLO"); its
@@ -72,15 +73,18 @@ func image_for_pointer(pointers: BmpPointers, pointer: int, preferred: VloFile =
 	return image_for_id(texture_id, preferred) if texture_id >= 0 else null
 
 
-## The Godot texture of [param image] (built once, then reused).
-func texture_for(image: VloImage) -> ImageTexture:
+## The Godot texture of [param image]: its imported [member VloImage.texture]
+## when it has one, else built from its pixels once and reused.
+func texture_for(image: VloImage) -> Texture2D:
 	if image == null:
 		return null
+	if image.texture != null:
+		return image.texture
 	if not _textures.has(image):
 		_textures[image] = TextureBuilder.build_texture(image)
 	return _textures[image]
 
 
 ## The Godot texture for global [param texture_id], or null.
-func texture_for_id(texture_id: int, preferred: VloFile = null) -> ImageTexture:
+func texture_for_id(texture_id: int, preferred: VloFile = null) -> Texture2D:
 	return texture_for(image_for_id(texture_id, preferred))

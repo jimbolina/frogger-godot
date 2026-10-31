@@ -13,6 +13,9 @@ var sky_land: SkyLandFile
 var library: TextureLibrary = TextureLibrary.new()
 ## Whole physical texture pages, shared by this scene's cached map materials.
 var texture_pages := MapTexturePages.new()
+## The pages and sky atlas baked by the importer for this scene's two banks;
+## null when the catalog has none and the pages are composed from the banks.
+var page_set: TexturePageSet
 var preferred: VloFile
 var remap: TextureRemap
 var sky_remap: TextureRemap
@@ -63,6 +66,7 @@ static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool
 	scene.preferred = scene._load_bank(data, theme, multiplayer)
 	if not scene.error.is_empty():
 		return scene
+	scene._load_page_set(data, general, theme, multiplayer)
 	if row.environment_texture_pointer != 0:
 		scene.environment_image = scene.library.image_for_pointer(data.tables.bmp_pointers(), row.environment_texture_pointer, scene.preferred)
 	scene.cave_enabled = row.use_cave_lights
@@ -92,10 +96,13 @@ func uses_environment() -> bool:
 	return false
 
 
-func _load_bank(data: AssetCatalog, theme: ThemeBookEntry, multiplayer: bool) -> VloFile:
+func _bank_id(theme: ThemeBookEntry, multiplayer: bool) -> int:
 	var id: int = theme.vlo_id(multiplayer, low_poly)
-	if id == 0:
-		id = theme.vlo_id(false, low_poly)
+	return id if id != 0 else theme.vlo_id(false, low_poly)
+
+
+func _load_bank(data: AssetCatalog, theme: ThemeBookEntry, multiplayer: bool) -> VloFile:
+	var id: int = _bank_id(theme, multiplayer)
 	var bank: VloFile = data.read_texture_bank(id, diagnostics)
 	if bank == null:
 		error = "Texture bank %d could not be read" % id
@@ -103,6 +110,12 @@ func _load_bank(data: AssetCatalog, theme: ThemeBookEntry, multiplayer: bool) ->
 	var entry: MwiEntry = data.mwi.get_entry(id)
 	library.add_bank(bank, entry.display_name() if entry != null else str(id))
 	return bank
+
+
+func _load_page_set(data: AssetCatalog, general: ThemeBookEntry, theme: ThemeBookEntry, multiplayer: bool) -> void:
+	page_set = data.page_set_for_banks(_bank_id(general, multiplayer), _bank_id(theme, multiplayer), diagnostics)
+	if page_set != null:
+		texture_pages.configure_set(page_set)
 
 
 func _measure_bounds() -> void:

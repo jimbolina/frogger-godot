@@ -65,8 +65,8 @@ static func banks_for(for_language: int) -> PackedStringArray:
 	return banks
 
 
-## Loads the front-end banks for [param for_language] without retaining the archive or
-## copying retail pixels to disk.
+## Loads the front-end banks for [param for_language] from either catalog without retaining
+## the archive or copying retail pixels to disk.
 static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.ENGLISH) -> FrontEndAssets:
 	var result := FrontEndAssets.new()
 	result.language = for_language if GameLanguage.is_language(for_language) else GameLanguage.Id.ENGLISH
@@ -128,7 +128,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 		if record == null:
 			result.diagnostics.append("Level-stack background image %s (texture %d) is missing" % [image_name, identity])
 			continue
-		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
+		textures[image_name] = TextureBuilder.unpadded_texture(record)
 		source_names[image_name] = image_name
 	var table: LevelSelectTable = data.tables.level_select()
 	var pointers: BmpPointers = data.tables.bmp_pointers()

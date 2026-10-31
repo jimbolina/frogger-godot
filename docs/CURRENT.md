@@ -11,19 +11,20 @@ and [front end](reference/gameplay/front-end.md). X2's per-part frog lighting
 and P12 audio await the owner's play and by-ear checks.
 
 S1 is in progress ([roadmap](PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)).
-S1a and S1b are done: Git LFS covers `assets/` binaries, the retail goldens
-form the archive suite under `archive/tests/`, the game suite allows no skips,
-and every decoded record is a typed `Resource` in `src/data/` behind the
-abstract `AssetCatalog` ([assets](reference/assets.md)); the readers in
-`src/source/` fill them and `GameData` still serves the game from the retail
-files until S1d. The independent oracles for the import goldens are committed
-([spec](../tests/golden/specs/imported-assets.md)).
+S1a–S1c are done: every retail asset is committed under `assets/` through Git
+LFS (textures and baked pages, model meshes, scenes and preview animations,
+maps, tables, demos, sound effects and the CD music), imported once by
+`archive/import/import_assets.sh` and checked by the import goldens
+([assets](reference/assets.md), [spec](../tests/golden/specs/imported-assets.md)).
+`ImportedAssets` serves them behind the abstract `AssetCatalog`; the shaders
+are files under `src/convert/shaders/`. The scenes still open `GameData` from
+the retail files until S1d.
 
-Next: S1c, the importer under `archive/import/` writing `assets/` (PNG
-textures and baked pages, model meshes and scenes, map and table resources,
-WAV effects, Ogg music, demos) with `ImportedAssets` and the import goldens;
-then S1d (runtime switch, owner play check of every level) and S1e (layout
-audit, domain model documentation, cleanup). S2 follows.
+Next: S1d, the runtime switch: every scene opens `ImportedAssets`, the
+`--data-dir`, `FROGGER_DATA_DIR` and `--disc` inputs leave the game, the
+readers and FrogLord configs move to `archive/`, and the owner play-checks
+every accepted level; then S1e (layout audit, domain model documentation,
+cleanup). S2 follows.
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand

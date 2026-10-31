@@ -275,7 +275,7 @@ func _check_symbols(path: String, origin: String, layer: String, record: Source,
 			into.append(Violation.new(path, token.line, "review",
 				"dynamic dispatch %s requires explicit architecture review" % token.value, origin))
 		if _is_loader(record.tokens, index):
-			if not _is_literal_load(record.tokens, index):
+			if not _is_literal_load(record.tokens, index) and not _is_application_io(path):
 				into.append(Violation.new(path, token.line, "review",
 					"computed resource load requires explicit architecture review", origin))
 			if _is_pure(layer) and token.value == "load":
@@ -313,10 +313,14 @@ func _environment_restricted(path: String, layer: String) -> bool:
 		return true
 	if layer != "application" or not path.begins_with("res://src/application/"):
 		return false
+	return not _is_application_io(path)
+
+
+func _is_application_io(path: String) -> bool:
 	for exempt: String in APPLICATION_IO:
 		if path.begins_with(exempt):
-			return false
-	return true
+			return true
+	return false
 
 
 func _is_pure(layer: String) -> bool:

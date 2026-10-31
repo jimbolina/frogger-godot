@@ -123,7 +123,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 	var missing: Dictionary[int, bool] = {}
 	var first_vertex: bool = true
 	for part: MofPart in model.parts:
-		var tracks: Array[ModelMesh.TextureTrack] = []
+		var tracks: Array[ModelTextureTrack] = []
 		var surfaces: Dictionary[String, _Surface] = {}
 		var order: Array[String] = []
 		var cel: MofPart.Partcel = part.partcels[REST_POSE] if part.partcels.size() > REST_POSE else null
@@ -170,7 +170,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 			var material: ShaderMaterial = ModelShaders.material(texture, surface.blend, linear_filter, two_sided)
 			if surface.target >= 0:
 				_set_pixel_uv(material, surface.image)
-				var track := ModelMesh.TextureTrack.new()
+				var track := ModelTextureTrack.new()
 				track.surface = mesh.get_surface_count() - 1
 				track.target = surface.target
 				track.original = material

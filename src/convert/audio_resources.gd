@@ -8,6 +8,8 @@ extends RefCounted
 ## LOOPED samples loop over the whole sample; REPEAT samples, which the frozen
 ## backend retriggers until killed, loop the same way. A sound that cannot be
 ## built returns [code]null[/code] and adds one entry to [member diagnostics].
+## An imported bank supplies each row's stream, which is copied before its
+## loop is set.
 
 const MIX_RATE: int = 11025
 const OUTPUT_RATE: int = 44100
@@ -77,6 +79,9 @@ func stream_for(sound_id: int) -> AudioStreamWAV:
 			problem = "Sound %d bank %d: %s" % [sound_id, _bank_of[sound_id], bank.error]
 		elif bank.header == null or sound_id >= bank.header.entries.size():
 			problem = "Sound %d is missing from bank %d" % [sound_id, _bank_of[sound_id]]
+	if problem.is_empty() and bank.header.entries[sound_id].stream is AudioStreamWAV:
+		_streams[sound_id] = imported_stream(bank.header.entries[sound_id].stream as AudioStreamWAV, definition.flags)
+		return _streams[sound_id]
 	if problem.is_empty():
 		var pcm: SoundBankPcm = SoundBankPcm.slice(bank.header.entries[sound_id], bank.body)
 		problem = pcm.error
@@ -101,6 +106,18 @@ static func build_stream(pcm: SoundBankPcm, flags: int) -> AudioStreamWAV:
 	else:
 		stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
 	return stream
+
+## A copy of the imported [param stream] at [constant MIX_RATE], looping whole LOOPED and REPEAT samples; the shared import is left unchanged.
+static func imported_stream(stream: AudioStreamWAV, flags: int) -> AudioStreamWAV:
+	var copy: AudioStreamWAV = stream.duplicate() as AudioStreamWAV
+	copy.mix_rate = MIX_RATE
+	if flags == LogicalSoundDefinition.LOOPED or flags == LogicalSoundDefinition.REPEAT:
+		copy.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		copy.loop_begin = 0
+		copy.loop_end = copy.data.size() / 2
+	else:
+		copy.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	return copy
 
 ## Wraps Redbook PCM ([DiscAudio]'s 16-bit stereo 44100 Hz) as a stream, optionally looping the whole track.
 static func music_stream(pcm: PackedByteArray, looping: bool) -> AudioStreamWAV:

@@ -346,7 +346,8 @@ resolve, but they are not restricted themselves.
 environment I/O, runtime loads or dynamic calls. Data may not depend on gameplay,
 application, conversion, presentation, inspection or scenes. Application and
 source code may use data; gameplay may not. Application loaders and storage are
-the only application code allowed file and environment access.
+the only application code allowed file and environment access, including
+computed resource loads.
 
 The scanner also rejects entity-name comparisons, membership tests and match
 dispatch in gameplay, while permitting raw names in diagnostics.

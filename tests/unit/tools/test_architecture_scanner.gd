@@ -380,3 +380,9 @@ func test_application_storage_may_use_file_io() -> void:
 	assert_eq(_check({"res://src/application/storage/store.gd": source}).size(), 0)
 	assert_eq(_check({"res://src/application/loaders/loader.gd": source}).size(), 0)
 	assert_true(_has_rule(_check({"res://src/application/other.gd": source}), "environment"))
+
+
+func test_application_loaders_may_compute_resource_paths() -> void:
+	var source: String = "extends RefCounted\nfunc f(path: String):\n\treturn ResourceLoader.load(path)\n"
+	assert_eq(_check({"res://src/application/loaders/loader.gd": source}).size(), 0)
+	assert_true(_has_rule(_check({"res://src/application/other.gd": source}), "review"))

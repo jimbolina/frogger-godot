@@ -1,5 +1,5 @@
 extends GutTest
-## MusicPlayer reads the level's disc track or a supplied file once, loops it and stays silent with diagnostics otherwise.
+## MusicPlayer plays the imported Ogg, else reads the level's disc track or a supplied file once, loops it and stays silent with diagnostics otherwise.
 
 const ROOT: String = "user://test_music_player"
 
@@ -10,6 +10,7 @@ func before_each() -> void:
 	DirAccess.make_dir_recursive_absolute(ROOT.path_join("data"))
 	_player = MusicPlayer.new()
 	_player.threaded = false
+	_player.imported_dir = ""
 	add_child_autofree(_player)
 
 func after_all() -> void:
@@ -157,3 +158,24 @@ func test_no_track_plays_nothing_and_clear_forgets_the_selection() -> void:
 	assert_eq(_player.track, -1)
 	_player.restart()
 	assert_false(_player.is_playing())
+
+func test_the_imported_ogg_comes_first_and_loops_a_copy() -> void:
+	var path: String = MusicPlayer.imported_track_path(MusicPlayer.IMPORTED_DIR, 2)
+	assert_eq(path, "res://assets/audio/music/track_02.ogg")
+	assert_eq(MusicPlayer.imported_track_path(MusicPlayer.IMPORTED_DIR, 99), "")
+	assert_eq(MusicPlayer.imported_track_path("", 2), "")
+	for threaded: bool in [false, true]:
+		_player.clear()
+		_player.threaded = threaded
+		_player.imported_dir = MusicPlayer.IMPORTED_DIR
+		_player.select(_disc([2, 1]), 2)
+		_player.restart()
+		_player.finish_loading()
+		var stream: AudioStreamOggVorbis = _player.stream() as AudioStreamOggVorbis
+		assert_not_null(stream, "threaded %s" % threaded)
+		assert_true(stream.loop)
+		assert_true(_player.is_playing())
+		var shared: AudioStreamOggVorbis = load(path) as AudioStreamOggVorbis
+		assert_ne(stream, shared)
+		assert_false(shared.loop, "the shared import keeps its settings")
+	assert_eq(_player.diagnostics, PackedStringArray())

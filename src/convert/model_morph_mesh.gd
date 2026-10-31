@@ -1,10 +1,13 @@
 class_name ModelMorphMesh
-extends RefCounted
+extends Resource
 ## Immutable cel atlases and blend-free geometry for direct vertex-shader interpolation.
 
-var mesh: ArrayMesh
-var textures: Array[Texture2D] = []
-var vertex_counts := PackedInt32Array()
+## The part's surfaces in their rest pose, without blend shapes.
+@export var mesh: ArrayMesh
+## One atlas per surface: the position and normal of every vertex in every cel.
+@export var textures: Array[Texture2D] = []
+## Vertices of each surface.
+@export var vertex_counts := PackedInt32Array()
 
 ## Keeps decoded positions/normals for every cel, avoiding a transform-feedback mesh instance.
 static func create(source: ArrayMesh, surface_cels: Array[Array]) -> ModelMorphMesh:

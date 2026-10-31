@@ -20,7 +20,10 @@ func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
 	result.scene = scene
 	result.linear_filter = linear_filter
 	result.diagnostics = scene.diagnostics.duplicate()
-	scene.texture_pages.configure(scene.library)
+	if scene.page_set != null:
+		scene.texture_pages.configure_set(scene.page_set)
+	else:
+		scene.texture_pages.configure(scene.library)
 	_material_cache.clear()
 	var animation := MapAnimationPlayer.new()
 	animation.configure(scene.map.polygons, scene.map.animations, scene.remap, scene.library, scene.preferred)
@@ -194,20 +197,13 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 		var page: int = image.page() if image != null else -1
 		if not pages.has(page):
 			pages[page] = pages.size()
-	var atlas: Image = Image.create(256, 258 * maxi(1, pages.size()), false, Image.FORMAT_RGBA8)
-	atlas.fill(Color.MAGENTA)
-	for page: int in pages:
-		var pixels: Image = scene.texture_pages.image_for_page(page)
-		if pixels != null:
-			var slot_y: int = pages[page] * 258
-			atlas.blit_rect(pixels, Rect2i(0, 0, 256, 256), Vector2i(0, slot_y + 1))
-			atlas.blit_rect(pixels, Rect2i(0, 0, 256, 1), Vector2i(0, slot_y))
-			atlas.blit_rect(pixels, Rect2i(0, 255, 256, 1), Vector2i(0, slot_y + 257))
-	result.sky_atlas = ImageTexture.create_from_image(atlas)
+	result.sky_atlas = _baked_sky_atlas(scene, pages, result)
+	if result.sky_atlas == null:
+		result.sky_atlas = ImageTexture.create_from_image(bake_sky_atlas(scene.texture_pages, pages))
 	var material := ShaderMaterial.new()
 	material.shader = MapShaders.sky_shader(linear_filter)
 	material.set_shader_parameter("image", result.sky_atlas)
-	material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, 1.0 / atlas.get_height()))
+	material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, 1.0 / result.sky_atlas.get_height()))
 	material.set_shader_parameter("far_layer", 0.0)
 	material.render_priority = -127
 	var rotation_orders: Array[PackedInt32Array] = [PackedInt32Array([0, 1, 2, 3]),
@@ -244,6 +240,34 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 	mesh.surface_set_material(0, material)
 	result.surface_count += 1
 	return mesh
+
+
+## The sky atlas: 256 wide and 258 rows per slot of [param slots] (page to
+## slot, first-seen order), magenta, each page in rows 1-256 of its slot with
+## its first and last rows repeated above and below. A page with no pixels
+## (page -1 stands for a missing image) leaves its slot magenta.
+static func bake_sky_atlas(pages: MapTexturePages, slots: Dictionary[int, int]) -> Image:
+	var atlas: Image = Image.create(256, TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, slots.size()), false, Image.FORMAT_RGBA8)
+	atlas.fill(Color.MAGENTA)
+	for page: int in slots:
+		var pixels: Image = pages.image_for_page(page)
+		if pixels != null:
+			var slot_y: int = slots[page] * TexturePageSet.SKY_SLOT_HEIGHT
+			atlas.blit_rect(pixels, Rect2i(0, 0, 256, 256), Vector2i(0, slot_y + 1))
+			atlas.blit_rect(pixels, Rect2i(0, 0, 256, 1), Vector2i(0, slot_y))
+			atlas.blit_rect(pixels, Rect2i(0, 255, 256, 1), Vector2i(0, slot_y + 257))
+	return atlas
+
+
+func _baked_sky_atlas(scene: MapSceneData, slots: Dictionary[int, int], result: MapMesh) -> Texture2D:
+	var baked: Texture2D = scene.texture_pages.baked_sky_atlas()
+	if baked == null or scene.page_set == null:
+		return null
+	var order := PackedInt32Array(slots.keys())
+	if scene.page_set.sky_pages != order or baked.get_height() != TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, order.size()):
+		result.diagnostics.append("The baked sky atlas holds pages %s, not %s; baking it again" % [scene.page_set.sky_pages, order])
+		return null
+	return baked
 
 
 ## Frozen sky backdrop RGB, indexed by the compiled level numbering.

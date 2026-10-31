@@ -28,8 +28,7 @@ static func from_data(data: AssetCatalog) -> TerrainFrogAssets:
 		return assets
 	var library := TextureLibrary.new()
 	library.add_bank(bank, "general")
-	var builder := ModelMeshBuilder.new(library, bank)
-	assets.mesh = builder.build_animated(assets.model)
+	assets.mesh = ModelMeshLibrary.mesh_for(data, entry.index, library, bank)
 	assets.player = ModelAnimationPlayer.new(assets.model)
 	if not assets.player.error.is_empty():
 		assets.error = assets.player.error

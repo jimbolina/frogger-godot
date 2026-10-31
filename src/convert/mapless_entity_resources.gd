@@ -50,7 +50,7 @@ static func resolve(definitions: Array[EntityDefinition], origins: EntityModelOr
 				result.diagnostics.append("Slot %d model %d could not be decoded" % [slot, resource])
 				continue
 			files_by_key[key] = file
-			meshes_by_key[key] = ModelMeshBuilder.new(scene.library, scene.preferred).build_animated(file)
+			meshes_by_key[key] = ModelMeshLibrary.mesh_for(data, resource, scene.library, scene.preferred)
 		result.meshes[slot] = meshes_by_key[key]
 		result.files[slot] = files_by_key[key]
 	return result

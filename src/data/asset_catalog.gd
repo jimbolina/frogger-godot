@@ -156,6 +156,13 @@ func read_model(resource_id: int, problems: PackedStringArray = PackedStringArra
 	return null
 
 
+## The baked texture-page set for general bank [param general_bank_id] and
+## theme bank [param theme_bank_id], or null when pages are built at runtime.
+@warning_ignore("unused_parameter")
+func page_set_for_banks(general_bank_id: int, theme_bank_id: int, problems: PackedStringArray = PackedStringArray()) -> TexturePageSet:
+	return null
+
+
 ## The resource id of the complete model an incomplete model [param
 ## resource_id] takes its shape from, or -1. As in FrogLord, it is the nearest
 ## earlier model in the index that is not itself incomplete. A concrete

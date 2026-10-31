@@ -36,7 +36,7 @@ commands run from the repository root; generated facts live in
 | Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
-| Imported assets: map texture pages, model meshes, sound samples, disc tracks, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
+| Imported assets: texture images and pages, model meshes, sound samples, disc tracks, tables, demos, import settings, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
 | Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |

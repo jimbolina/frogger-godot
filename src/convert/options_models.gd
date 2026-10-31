@@ -46,6 +46,8 @@ const SPLASH_SYMBOLS: PackedStringArray = ["im_ripple_tim3", "im_ripple_tim4", "
 ## The main menu's translucent cloud behind its sprites (im_opt_menu_cloud, tempopt.c:1243), from
 ## the GENERAL theme bank.
 const CLOUD_IMAGE: String = "opt_menu_cloud"
+## The sub-folder of the imported models built with the options page's banks.
+const MESH_FOLDER: String = "options"
 ## MapLight types for the ambient and parallel lights.
 const AMBIENT_LIGHT: int = 1
 const PARALLEL_LIGHT: int = 2
@@ -103,7 +105,6 @@ static func from_data(data: AssetCatalog) -> OptionsModels:
 	if wad_file != null:
 		for child: WadFile.Child in wad_file.children:
 			children.append(child.resource_id)
-	var builder := ModelMeshBuilder.new(result.library, own)
 	for file_name: String in FILE_NAMES:
 		var entry: MwiEntry = data.find_resource(file_name)
 		if entry == null or not children.has(entry.index):
@@ -114,7 +115,7 @@ static func from_data(data: AssetCatalog) -> OptionsModels:
 			result.error = "Options model %s cannot be decoded: %s" % [file_name, "; ".join(problems)]
 			return result
 		result.files.append(file)
-		result.meshes.append(builder.build_animated(file))
+		result.meshes.append(ModelMeshLibrary.mesh_for(data, entry.index, result.library, own, MESH_FOLDER))
 	result.frog = TerrainFrogAssets.from_data(data)
 	if not result.frog.error.is_empty():
 		result.error = result.frog.error
@@ -223,7 +224,7 @@ func _load_entry_frog(data: AssetCatalog, general: ThemeBookEntry, general_bank:
 	entry_frog_library.add_bank(bank, "multiplayer")
 	entry_frog_bank = bank
 	entry_frog = file
-	entry_frog_mesh = ModelMeshBuilder.new(entry_frog_library, bank).build_animated(file)
+	entry_frog_mesh = ModelMeshLibrary.mesh_for(data, entry.index, entry_frog_library, bank, MESH_FOLDER)
 	entry_frog_actions = actions
 
 

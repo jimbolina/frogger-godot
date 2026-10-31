@@ -40,6 +40,20 @@ it.
 
 ## Layout
 
-Decided in S1c: `catalog.tres`, `tables/`, `textures/`, `materials/`,
-`models/`, `maps/`, `audio/` and `demos/`. This reference is completed when
-the importer lands.
+| Path | Content |
+|---|---|
+| `catalog.tres` | `AssetIndex`: build name, SHA-256 of the retail executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts, page sets and the playable level codes. |
+| `tables/<table>.tres`, `tables/game_tables.tres`, `tables/names.tres` | One file per executable table, linked from `game_tables.tres`; FrogLord's name lists. |
+| `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
+| `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
+| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked with the page-wide colour key, plus the sky atlas. |
+| `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness. |
+| `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
+| `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
+| `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
+| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number. |
+| `demos/<NAME>.tres` | The recorded demos. |
+
+Gameplay collision and hilites come from `model.res`; editing a part mesh
+changes only what is drawn. Shared materials are files: runtime code must set
+per-instance parameters on copies.

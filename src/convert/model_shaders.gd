@@ -30,8 +30,8 @@ extends RefCounted
 ## many game units without moving it on screen, standing in for a fixed
 ## ordering-table offset; it is 0 unless a view sets it.
 ##
-## Shaders are written out from one template, one per combination of
-## choices, and kept.
+## Each combination of choices is its own file under
+## [code]src/convert/shaders/[/code] ([method shader_path]), edited directly.
 
 ## How a polygon is combined with what is behind it.
 enum Blend {
@@ -47,80 +47,10 @@ enum Blend {
 	ADD_QUARTER,
 }
 
-## Model-only vertex stage, replaced wholesale by the map shader.
-const VERTEX_CODE: String = """uniform vec2 projection_scale = vec2(1.0);
-uniform float depth_bias = 0.0;
-uniform bool source_lighting = false;
-uniform vec3 source_ambient = vec3(4096.0);
-uniform vec3 source_direction0 = vec3(0.0);
-uniform vec3 source_direction1 = vec3(0.0);
-uniform vec3 source_direction2 = vec3(0.0);
-uniform vec3 source_colour0 = vec3(0.0);
-uniform vec3 source_colour1 = vec3(0.0);
-uniform vec3 source_colour2 = vec3(0.0);
-uniform bool cel_enabled = false;
-uniform sampler2D cel_texture : filter_nearest, repeat_disable;
-uniform int cel_vertex_count = 0;
-uniform ivec2 cel_pair = ivec2(0);
-uniform float cel_weight = 1.0;
-vec3 cel_value(int cel, int vertex_id, int component) {
-	int index = (cel * cel_vertex_count + vertex_id) * 2 + component;
-	int width = textureSize(cel_texture, 0).x;
-	return texelFetch(cel_texture, ivec2(index % width, index / width), 0).xyz;
-}
-void vertex() {
-	if (cel_enabled) {
-		VERTEX = mix(cel_value(cel_pair.x, VERTEX_ID, 0), cel_value(cel_pair.y, VERTEX_ID, 0), cel_weight);
-		vec3 normal = mix(cel_value(cel_pair.x, VERTEX_ID, 1), cel_value(cel_pair.y, VERTEX_ID, 1), cel_weight);
-		NORMAL = length(normal) > 0.000001 ? normalize(normal) : vec3(0.0);
-	}
-	POSITION = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
-	if (depth_bias != 0.0) {
-		vec4 eye = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
-		vec4 nearer = PROJECTION_MATRIX * vec4(eye.xy, eye.z + depth_bias / 256.0, 1.0);
-		if (nearer.w > 0.0) {
-			POSITION.z = nearer.z / nearer.w * POSITION.w;
-		}
-	}
-	POSITION.xy *= projection_scale;
-	if (source_lighting) {
-		vec3 normal = mat3(MODEL_MATRIX) * NORMAL;
-		vec3 light = source_ambient;
-		light += source_colour0 * max(0.0, dot(source_direction0, normal));
-		light += source_colour1 * max(0.0, dot(source_direction1, normal));
-		light += source_colour2 * max(0.0, dot(source_direction2, normal));
-		COLOR.rgb = clamp(floor(COLOR.rgb * 255.0 * light / 4096.0), vec3(0.0), vec3(255.0)) / 255.0;
-	}
-}
-"""
-
-const _TEMPLATE: String = """shader_type spatial;
-render_mode unshaded, %s, %s, %s;
-%s
-%s
-vec3 through_renderer(vec3 wanted) {
-	vec3 linear = pow((wanted + 0.055) / 1.055, vec3(2.4));
-	vec3 a = wanted;
-	for (int i = 0; i < 4; i++) {
-		vec3 value = a * (a * (a * 0.305306011 + 0.682171111) + 0.012522878) - linear;
-		vec3 slope = a * (a * 0.915918033 + 1.364342222) + 0.012522878;
-		a -= value / slope;
-	}
-	return max(a, vec3(0.0));
-}
-
-void fragment() {
-%s
-	ALBEDO = through_renderer(clamp(shown, vec3(0.0), vec3(1.0)));
-%s}
-"""
-const _TEXTURED_UNIFORM: String = "uniform sampler2D image : %s, repeat_disable;\nuniform vec2 uv_scale = vec2(1.0);\nuniform vec2 uv_offset = vec2(0.0);\n"
-const _TEXTURED_BODY: String = """	vec4 texel = texture(image, UV * uv_scale + uv_offset);
-	if (texel.a < 0.5) {
-		discard;
-	}
-	vec3 shown = texel.rgb * min(COLOR.rgb * 2.0, vec3(1.0))%s;"""
-const _UNTEXTURED_BODY: String = "	vec3 shown = COLOR.rgb%s;"
+## Folder of the shader files.
+const SHADER_DIR: String = "res://src/convert/shaders"
+## File-name word for each [enum Blend].
+const BLEND_NAMES: PackedStringArray = ["opaque", "average", "add", "subtract", "add_quarter"]
 
 static var _shaders: Dictionary[String, Shader] = {}
 
@@ -137,37 +67,23 @@ static func blend_for_mode(blend_mode: int) -> Blend:
 	return Blend.AVERAGE
 
 
-## The shader text for one combination of choices.
-static func shader_code(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> String:
-	var blend_mode: String = "blend_mix"
-	if blend == Blend.ADD or blend == Blend.ADD_QUARTER:
-		blend_mode = "blend_add"
-	elif blend == Blend.SUBTRACT:
-		blend_mode = "blend_sub"
-	var depth: String = "depth_draw_opaque" if blend == Blend.OPAQUE else "depth_draw_never"
-	var cull: String = "cull_disabled" if two_sided else "cull_back"
-	var scale: String = " * 0.25" if blend == Blend.ADD_QUARTER else ""
-	var alpha: String = ""
-	if blend == Blend.AVERAGE:
-		alpha = "	ALPHA = 0.5;\n"
-	elif blend != Blend.OPAQUE:
-		alpha = "	ALPHA = 1.0;\n"
-	var uniform: String = ""
-	var body: String = _UNTEXTURED_BODY % scale
-	if textured:
-		uniform = _TEXTURED_UNIFORM % ("filter_linear" if linear_filter else "filter_nearest")
-		body = _TEXTURED_BODY % scale
-	return _TEMPLATE % [blend_mode, depth, cull, uniform, VERTEX_CODE, body, alpha]
+## The shader file for one combination of choices; filtering only matters for a textured one.
+static func shader_path(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> String:
+	return "%s/model_%s_%s%s%s.gdshader" % [SHADER_DIR, "textured" if textured else "flat", BLEND_NAMES[blend],
+		"_linear" if linear_filter and textured else "", "_two_sided" if two_sided else ""]
 
 
-## The shader for one combination of choices (made once, then reused).
+## The shader for one combination of choices, loaded once from its file.
 static func shader(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> Shader:
-	var key: String = "%s/%d/%s/%s" % [textured, blend, linear_filter and textured, two_sided]
-	if not _shaders.has(key):
-		var made := Shader.new()
-		made.code = shader_code(textured, blend, linear_filter, two_sided)
-		_shaders[key] = made
-	return _shaders[key]
+	var path: String = shader_path(textured, blend, linear_filter, two_sided)
+	if not _shaders.has(path):
+		_shaders[path] = load(path) as Shader
+	return _shaders[path]
+
+
+## The text of the shader file for one combination of choices.
+static func shader_code(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> String:
+	return shader(textured, blend, linear_filter, two_sided).code
 
 
 ## A material drawing with [param texture] (null for untextured polygons).

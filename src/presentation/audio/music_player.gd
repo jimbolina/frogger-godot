@@ -1,16 +1,20 @@
 class_name MusicPlayer
 extends Node
-## Plays the level's music track on the [constant BUS] bus, looping, from the player's disc image or a supplied track file.
+## Plays the level's music track on the [constant BUS] bus, looping, from the imported Ogg, the player's disc image or a supplied track file.
 ##
 ## The track number comes from the executable's music list
-## ([method MusicTable.track_for_level]). A readable disc image supplies the
-## Redbook track; otherwise a [MusicFiles] file named after the same track is
-## used. Without either the level is silent and [member diagnostics] says why.
+## ([method MusicTable.track_for_level]). The imported
+## [code]track_NN.ogg[/code] under [member imported_dir] is used when it
+## exists, loaded through Godot's threaded resource loader. Otherwise a
+## readable disc image supplies the Redbook track, and failing that a
+## [MusicFiles] file named after the same track is used. Without either the level is silent and [member diagnostics] says why.
 ## A track is read once per selection, off the main thread unless
 ## [member threaded] is false, and replayed from memory on each restart.
 
 ## Bus the music plays on.
 const BUS: StringName = &"Music"
+## Where the importer writes the level music.
+const IMPORTED_DIR: String = "res://assets/audio/music"
 
 ## Why the selected track is silent, newest last.
 var diagnostics := PackedStringArray()
@@ -18,6 +22,8 @@ var diagnostics := PackedStringArray()
 var threaded: bool = true
 ## Selected disc track number, or -1.
 var track: int = -1
+## Folder of imported [code]track_NN.ogg[/code] files tried first; empty skips them.
+var imported_dir: String = IMPORTED_DIR
 var _player: AudioStreamPlayer = null
 var _disc: DiscAudio = null
 var _files_dir: String = ""
@@ -26,6 +32,7 @@ var _task: int = -1
 var _loaded: AudioStream = null
 var _load_issues := PackedStringArray()
 var _wanted: bool = false
+var _request: String = ""
 
 func _init() -> void:
 	_player = AudioStreamPlayer.new()
@@ -38,6 +45,8 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if _task >= 0 and WorkerThreadPool.is_task_completed(_task):
+		finish_loading()
+	elif not _request.is_empty() and ResourceLoader.load_threaded_get_status(_request) != ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 		finish_loading()
 
 func _exit_tree() -> void:
@@ -61,10 +70,17 @@ func restart() -> void:
 	if _stream != null:
 		_play()
 		return
-	if _task >= 0:
+	if _task >= 0 or not _request.is_empty():
 		return
 	_loaded = null
 	_load_issues = PackedStringArray()
+	var imported: String = imported_track_path(imported_dir, track)
+	if not imported.is_empty():
+		if threaded and ResourceLoader.load_threaded_request(imported) == OK:
+			_request = imported
+			return
+		_accept_imported(imported, ResourceLoader.load(imported))
+		return
 	if threaded:
 		_task = WorkerThreadPool.add_task(_load.bind(_disc, track, _files_dir), false, "Frogger music track")
 	else:
@@ -73,6 +89,11 @@ func restart() -> void:
 
 ## Waits for a pending read, then starts playback if a restart asked for it.
 func finish_loading() -> void:
+	if not _request.is_empty():
+		var requested: String = _request
+		_request = ""
+		_accept_imported(requested, ResourceLoader.load_threaded_get(requested))
+		return
 	if _task < 0:
 		return
 	WorkerThreadPool.wait_for_task_completion(_task)
@@ -81,7 +102,7 @@ func finish_loading() -> void:
 
 ## Whether a track read is still pending.
 func is_loading() -> bool:
-	return _task >= 0
+	return _task >= 0 or not _request.is_empty()
 
 ## Whether the track is audible now.
 func is_playing() -> bool:
@@ -110,6 +131,22 @@ func clear() -> void:
 	_disc = null
 	track = -1
 	_files_dir = ""
+
+## The imported Ogg of track [param number] under [param folder], or "" when there is none.
+static func imported_track_path(folder: String, number: int) -> String:
+	if folder.is_empty() or number < 0 or number > 99:
+		return ""
+	var path: String = folder.path_join("track_%02d.ogg" % number)
+	return path if ResourceLoader.exists(path) else ""
+
+## A looping copy of an imported track, leaving the shared resource unchanged; null when [param loaded] is not Ogg Vorbis.
+static func looping_copy(loaded: Resource) -> AudioStream:
+	var ogg: AudioStreamOggVorbis = loaded as AudioStreamOggVorbis
+	if ogg == null:
+		return null
+	var copy: AudioStreamOggVorbis = ogg.duplicate() as AudioStreamOggVorbis
+	copy.loop = true
+	return copy
 
 ## Reads track [param number] from [param disc], else a supplied file; null with [param issues] appended when neither plays.
 static func load_stream(disc: DiscAudio, number: int, files_dir: String, issues: PackedStringArray) -> AudioStream:
@@ -157,6 +194,13 @@ func _load(disc: DiscAudio, number: int, files_dir: String) -> void:
 	var issues := PackedStringArray()
 	_loaded = load_stream(disc, number, files_dir, issues)
 	_load_issues = issues
+
+func _accept_imported(path: String, loaded: Resource) -> void:
+	_loaded = looping_copy(loaded)
+	_load_issues = PackedStringArray()
+	if _loaded == null:
+		_load_issues.append("Imported music %s could not be loaded" % path)
+	_accept_load()
 
 func _accept_load() -> void:
 	_stream = _loaded

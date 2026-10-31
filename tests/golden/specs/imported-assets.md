@@ -124,6 +124,30 @@ which is lossy. The import test therefore checks only that the decoded
 frame count equals `frames`. The digest applies to a lossless copy checked
 with `tools/hash_asset.py`.
 
+## Import tests
+
+The import goldens are game-suite tests under `tests/golden/assets/`. They
+extend `AssetTest` (`tests/support/asset_test.gd`), which opens `assets/` once
+as an `ImportedAssets` catalog and reads these facts and the reviewed
+overrides. They need no retail files.
+
+| Test | Compares |
+|---|---|
+| `test_asset_textures.gd` | Every `vlo_images.tsv` row with its bank resource's image: texture id, VRAM position, sizes, `u`, `v`, flags, blend mode and page, and that `texture` is `textures/images/tNNNN.png` with no stored pixels. Each PNG, decoded from the file and through its imported texture, is RGBA8 at the padded size with `padded_rgba_sha256`; its in-game region has `rgba_sha256`. Every `texture_pages.tsv` row with the page PNG of its `TexturePageSet` (`rgba_sha256`, `opaque_pixels`) or its sky atlas and `sky_pages`. The front-end and HUD images and `MapTexturePages` load from the catalog. |
+| `test_asset_tables.gd` | Every row of `exe_map_book`, `exe_theme_book`, `exe_forms`, `exe_remaps`, `exe_scripts`, `exe_music`, `exe_level_select`, `exe_demos` and `exe_pickups` built from the imported tables as the archive suite builds them from the executable; the high-score row counts; each table in its own file; the name lists. Every `*.DAT` entry has a demo resource, and each demo of `demos.tsv` has its duration, start square, input count and input digest. |
+| `test_asset_census.gd` | The `asset_census.txt` counts against the files present: MWI entries, map and sky-land resources, bank resources, images, texture PNGs, models by kind with incomplete models and parts, sound banks and WAVs, the demo table and the demos it names, and music tracks. |
+| `test_asset_import_settings.gd` | Every `.png`, `.wav` and `.ogg` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`. |
+| `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
+| `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
+| `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
+| `test_asset_music.gd` | Every `disc_tracks.tsv` audio track has `audio/music/track_NN.ogg` (`oggenc -q 6 --serial NN`, byte-identical on re-encode) whose `get_length()` is within 1 ms of `frames / 44100` with no baked loop, and every `exe_music.tsv` track is present. The PCM digest is checked on the decoded WAV at import time only; no music table resource is written, a track's Ogg is found by its number. |
+
+A bank resource keeps the image headers only: each image's pixels live in
+its PNG, which every bank holding the texture id shares, and `pixels` is
+empty. A page set is `textures/pages/<GENERAL bank>+<theme bank>/` with
+`page_00.png` to `page_13.png`, `sky.png` for a sky set and `page_set.tres`;
+bank names drop `.VLO`.
+
 ## Reviewed overrides
 
 A reviewed hand edit of a committed asset gets one row in
@@ -179,11 +203,22 @@ import test. Then restore the fact and rerun.
   must fail for that set and page only. Then change an `opaque_pixels`.
 - **Model meshes:** change a `triangles` count, then a `uvs_sha256`. The
   test must name the part.
-- **Sound samples:** change a `frames` value, then a `pcm16_sha256`.
+- **Sound samples:** change a `frames` value, then a `pcm16_sha256`; the
+  test must name the WAV.
 - **Disc tracks:** change a `frames` value. The Ogg length check must fail.
+- **Maps:** change a `polygon_count` in `map_facts.tsv`, then one digit of
+  a `sky_land.tsv` digest; the test must name the map and column.
 - **Census:** change one count, e.g. `images`.
+- **Texture images:** change one digit of a `padded_rgba_sha256`; the PNG
+  and imported-texture checks must name that PNG. Then change a `flags`
+  value; the header check must name the bank and image. Adding an override
+  row with the true digest must make the PNG checks pass again.
+- **Tables and demos:** change a map id in `exe_map_book.tsv`, then a
+  duration in `demos.tsv`.
+- **Import settings:** set `mipmaps/generate=true` in one `.png.import`;
+  the test must name the PNG and key.
 
 The generators' `--check` mode was broken and restored in the same way for
-all five files.
+all five files. Each import-test break was restored and the test rerun.
 
 [Golden data index and shared rules](../README.md). Commands above run from the repository root.

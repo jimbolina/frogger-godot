@@ -78,6 +78,34 @@ func test_repeat_samples_loop_like_looped_samples() -> void:
 	assert_eq(stream.loop_mode, AudioStreamWAV.LOOP_FORWARD)
 	assert_eq(stream.loop_end, 3)
 
+func test_imported_streams_are_copied_with_their_loop() -> void:
+	var imported := AudioStreamWAV.new()
+	imported.format = AudioStreamWAV.FORMAT_16_BITS
+	imported.mix_rate = 11025
+	imported.data = PackedByteArray([1, 0, 2, 0, 3, 0])
+	var bank := SoundBankSetup.new()
+	bank.header = SoundBankHeader.new()
+	for sound_id: int in 3:
+		var row: SoundBankEntry = _row(sound_id, true, 0, 6, 16)
+		row.stream = imported
+		bank.header.entries.append(row)
+	var definitions: Array[LogicalSoundDefinition] = [
+		_definition(1, LogicalSoundDefinition.LOOPED),
+		_definition(2, LogicalSoundDefinition.SINGLE),
+	]
+	var bank_of: Dictionary[int, int] = {1: 0, 2: 0}
+	var resources: AudioResources = AudioResources.from_loader(definitions, bank_of,
+		func(_bank_id: int) -> SoundBankSetup: return bank)
+	var looped: AudioStreamWAV = resources.stream_for(1)
+	var single: AudioStreamWAV = resources.stream_for(2)
+	assert_ne(looped, imported)
+	assert_eq(looped.data, imported.data)
+	assert_eq(looped.loop_mode, AudioStreamWAV.LOOP_FORWARD)
+	assert_eq([looped.loop_begin, looped.loop_end], [0, 3])
+	assert_eq(single.loop_mode, AudioStreamWAV.LOOP_DISABLED)
+	assert_eq(imported.loop_mode, AudioStreamWAV.LOOP_DISABLED, "the shared import is unchanged")
+	assert_eq(resources.diagnostics.size(), 0)
+
 func test_missing_samples_report_one_diagnostic_each() -> void:
 	var calls: Array[int] = []
 	var resources: AudioResources = _resources(calls)

@@ -2,7 +2,7 @@
 
 - Renderer: Compatibility (OpenGL), black unlit background, no tone mapping, no fog, no MSAA. It was chosen because it mixes translucent polygons on stored colour values, as the original did.
 - Depth buffer. A texture pixel made transparent by the black-is-transparent rule is discarded. Semi-transparent polygons go in separate surfaces that do not write depth, in four blend variants: average, add, subtract, add a quarter.
-- One family of unshaded shaders written out from one template (`ModelShaders`). A textured pixel is texture colour times lit colour times 2, the lit colour stopping at full brightness. An untextured pixel is the lit colour as it is, not doubled. All of it is computed on stored colour values.
+- One family of unshaded shaders, one file per variant under `src/convert/shaders/` (`ModelShaders` and `MapShaders` select and load them). A textured pixel is texture colour times lit colour times 2, the lit colour stopping at full brightness. An untextured pixel is the lit colour as it is, not doubled. All of it is computed on stored colour values.
 - The optional map model probe computes lit vertex colours from map lights. The standalone model viewer uses the polygon's own colour. Terrain uses stored colours except the cave Gouraud replacement.
 - The renderer converts a shader's colour to linear light and back with two approximations that darken dark colours. The shaders undo this beforehand. `tools/probe_model_shader.gd` measures what reaches the screen; run it after changing the Godot version, the renderer or the environment.
 - The black-is-transparent rule is a colour key over a whole 256x256 texture page in the original, not per image.

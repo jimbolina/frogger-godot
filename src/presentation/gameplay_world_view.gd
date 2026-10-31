@@ -295,7 +295,7 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 			if file == null or not file.error.is_empty() or file.static_models.is_empty():
 				continue
 			files[resource] = file
-			meshes[resource] = ModelMeshBuilder.new(scene_data.library, scene_data.preferred).build_animated(file)
+			meshes[resource] = ModelMeshLibrary.mesh_for(selected_data, resource, scene_data.library, scene_data.preferred)
 		if not meshes.has(resource):
 			continue
 		_entity_meshes[slot] = meshes[resource]
@@ -421,7 +421,7 @@ func _configure_overlay(data: AssetCatalog, scene: MapSceneData, level: int, lig
 	var file: MofFile = data.read_model(resource, diagnostics)
 	var model_mesh: ModelMesh = null
 	if file != null and file.error.is_empty() and not file.static_models.is_empty():
-		model_mesh = ModelMeshBuilder.new(scene.library, scene.preferred).build_animated(file)
+		model_mesh = ModelMeshLibrary.mesh_for(data, resource, scene.library, scene.preferred)
 	var issue: String = _overlay_view.configure(file, model_mesh, lighting)
 	if issue.is_empty():
 		_overlay_view.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
