@@ -42,7 +42,8 @@ func _ready() -> void:
 			selected.error = TerrainScenarioArguments.apply(selected, arguments)
 		open_scenario(selected)
 		if ViewerArguments.uses_assets(arguments):
-			var assets: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+			var assets: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+			assets.note_renderer(RenderingServer.get_current_rendering_method())
 			if assets.is_valid():
 				selected.level_code = ViewerArguments.value(arguments, "--level=")
 				open_data(assets, true)

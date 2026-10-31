@@ -76,6 +76,10 @@ var _frog_lit: bool = false
 var audio_enabled: bool = false
 var _voice_view: SoundVoiceView = null
 var _music_player: MusicPlayer = null
+## How the world is lit and shaded; the screens set it from the opened catalog before building entities.
+var rendering_profile: RenderingProfile = RenderingProfile.retail()
+## The modern profile's lights and environment, created by [method build_world].
+var scene_lighting: SceneLighting = null
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -211,6 +215,8 @@ func build_world() -> void:
 		add_child(_voice_view)
 		_music_player = MusicPlayer.new()
 		add_child(_music_player)
+	scene_lighting = SceneLighting.new()
+	add_child(scene_lighting)
 	_camera = Camera3D.new()
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
@@ -220,6 +226,8 @@ func build_world() -> void:
 	_camera.current = true
 
 func _clear_entity_visuals() -> void:
+	if scene_lighting != null:
+		scene_lighting.clear()
 	if _swarm_view != null:
 		_swarm_view.clear()
 	if _cave_sprite_view != null:
@@ -276,6 +284,7 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 	if use_lighting:
 		_entity_lighting = MapLighting.new()
 		_entity_lighting.configure(scene_data.map.lights)
+	_light_scene(_entity_lighting)
 	for entity: EntityDefinition in definitions.entities:
 		if EntityOverlayModelView.uses_overlay(entity.behavior.kind):
 			var overlay_issue: String = _configure_overlay(selected_data, scene_data, scene_data.level, _entity_lighting, scene_data.diagnostics)
@@ -325,6 +334,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	var swarm_ready: bool = false
 	var sprites_ready: bool = false
 	var overlay_tried: bool = false
+	_light_scene(null)
 	for slot: int in definitions.entities.size():
 		var entity: EntityDefinition = definitions.entities[slot]
 		_entity_models.append(null)
@@ -413,6 +423,16 @@ func _sync_entity_models() -> PackedInt32Array:
 		_entity_generations[slot] = entity.generation
 		created.append(slot)
 	return created
+
+## Under the modern profile, lights the scene from [param lighting], or from
+## the options screen's lights when there are no map lights.
+func _light_scene(lighting: MapLighting) -> void:
+	if scene_lighting == null or not rendering_profile.is_modern():
+		return
+	var source: MapLighting = lighting
+	if source == null or (source.directions.is_empty() and source.ambient.is_zero_approx()):
+		source = OptionsModels.options_lighting()
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(source))
 
 func _configure_overlay(data: AssetCatalog, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
 	if _overlay_view == null:

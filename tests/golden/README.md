@@ -43,6 +43,7 @@ commands run from the repository root; generated facts live in
 | Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
 | Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
+| Modern scene lighting: linear ambient, directional light bases, colours, energies and shadow caster from synthetic map lights | [Scene lighting](specs/rendering.md#scene-lighting) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Animated-part cuboids, decoded primitive matrices and the collision rotation cache | [Animated primitive contacts](specs/entities.md#animated-primitive-contacts) |

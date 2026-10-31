@@ -53,10 +53,13 @@ func _run() -> void:
 	if ticks <= 0 or ticks > 10000:
 		_finish("Capture duration must be 1..10000")
 		return
-	_data = ImportedAssets.open()
+	_data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+	_data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not _data.is_valid():
 		_finish(_data.error)
 		return
+	for warning: String in _data.warnings:
+		push_warning(warning)
 	_screen = GameplayScreen.new()
 	_screen.auto_open = false
 	root.add_child(_screen)

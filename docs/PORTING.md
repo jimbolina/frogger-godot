@@ -39,7 +39,10 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | Done; [audit](#s1e-layout-audit) and [domain model](reference/domain-model.md) await the owner's review |
 | S2a | Upscaled texture set: `images_x4/` committed, a per-launch `TextureSet` (`--texture-set=x4`), scale-aware 2D draws, pages and sky at scale, mipmapped linear sampling for the set, locally baked `pages_x4/` with an independent golden | M | Both suites green with the retail set unchanged; x4 page goldens and deliberate breaks pass; owner play check at x4 | Done; play check 2026-10-31 accepted the mechanics and rejected the ML upscale's look, so the owner will recreate the x4 images by hand over time |
 | S2b | [Native text](#s2b-native-text): a bitmap `FontFile` generated from the `newfont` glyph grid (retail and x4) replaces the hand-rolled glyph draws in the HUD, its ink layer and the level-stack score lines; the vector font is the owner's decision | S | Retail glyph placement pinned by the HUD and stack tests; the committed font matches its generator; both suites green; owner play check | Done; accepted by the owner's play check |
-| S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | Next |
+| S2c | [Modern rendering profile](#s2-modern-rendering-profile): `--rendering=modern` on Forward+ beside the retail look; scene lights and shadows from the map light records, lit model materials with the committed tints, lit terrain sampling per-image textures | L | Both suites green with no retail expectation changed; scene-lighting golden with a deliberate break; modern smoke tests; windowed probes and captures on Forward+ and Compatibility; owner play check | Done; owner play check pending |
+| S2d | Cave omni light instead of the grey ramp, sky tile array, water, continuous environment UVs, the map viewer under modern, asset premise golden | M | Cave-light and modern-UV goldens with breaks; modern smoke tests for CAV1, SKY1 and SWP1; `--rendering=modern --texture-set=x4` without `pages_x4`; owner play check | Next |
+| S2e | Front end, sandbox, viewers and effects under modern; shadow tuning | M | Modern smoke tests for the front end, sandbox and viewers; owner play check and acceptance decision | |
+| S2f | Cleanup after acceptance: retire or keep the retail profile, default profile, golden re-scope, `src/convert/` renamed `src/rendering/` | M/S | Both suites green; no `src/convert` reference left; owner launches ORG1 on the default profile | Gated on the owner's acceptance |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
@@ -85,6 +88,16 @@ replaces texture-page reconstruction and colour keys with ordinary imported
 textures and materials. Goldens that assert C colours are retired or re-scoped
 to what still holds (geometry, animation, gameplay).
 
+### S2: modern rendering profile
+
+Owner decisions of 2026-10-31: the modern pipeline is a per-launch profile
+beside the retail look (`--rendering=modern`, retail default and byte-exact),
+it runs on Forward+ while retail stays on Compatibility, and the stored-colour
+goldens, `probe_model_shader.gd` and the page bake stand until the owner
+accepts the modern look by eye. Sub-phases S2c–S2f are in the status table;
+S2f also renames `src/convert/` to `src/rendering/`. The rules live in the
+[modern profile](reference/rendering/modern-profile.md) reference.
+
 ### S2b: native text
 
 All in-game text is drawn by hand from one bitmap glyph grid, texture
@@ -121,7 +134,7 @@ code that only served runtime decoding of the retail files.
 | Layer-first split under `src/` rather than feature-first | Kept deliberately: the architecture scanner enforces the layers by path prefix. Features are folders inside a layer (`game/entities/`, `game/frontend/`, `presentation/frontend/`, `presentation/sandbox/`). |
 | Scenes beside their scripts | Deferred. The eight scenes in `scenes/` are entry points launched by literal path from `project.godot`, the play and capture wrappers and tests (28 files); views build their nodes in code. Revisit when S2 adds authored scenes. |
 | `tools/` (219 tracked files) | Owner decision. Proposed split: `tools/golden/` (the `make_*` generators), `tools/oracles/` (C oracles, headers and `build_*_oracle.ps1`), `tools/inspection/` (scenario runners, schedule verifiers, captures, comparisons and probes) and `tools/test/` (`check_*.gd`, `support/`, `godot_project.py`, `godot_profile.py`). Each Python test goes beside the tool it tests; `play.*`, `run_tests.*` and `launch_macos.command` stay at the root as entry points. About 100 files name tool paths, so the move is one mechanical commit with a link check. |
-| `src/convert/` renamed `src/rendering/` | Deferred to S2, which rewrites most of the folder. |
+| `src/convert/` renamed `src/rendering/` | Planned for S2f, the cleanup after the owner accepts the modern profile. |
 | Per-corridor inspection presets (`Org1ExplorationSetup`, `Jun1ExplorationSetup`, `Jun1ZoneLifecycleSetup` and five JSON manifests) | Owner decision. Proposed: one preset reader over data keyed by level code, so a new supported scenario is a data file rather than a class. Until then they stay. |
 | `reference/gameplay/entities.md` (1,086 lines) | Deferred documentation work: move route narrative (tick numbers, index ranges) beside the golden specifications and keep the rules. |
 | Viewer sizes | `map_viewer.gd` is 1,319 lines after `MapScenarioRun` took the rendered path and entity scenario runs; `gameplay_world_view.gd` 970, `model_viewer.gd` 907, `terrain_viewer.gd` 646. Deferred: split the map viewer's capture and overlay code when it next changes; S2 reworks the world view's drawing. |
@@ -152,8 +165,10 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 | Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
 | Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
 | Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only; `compare_map_captures.py`, `bake_pages_x4.py` and `make_golden_texture_pages_x4.py` need Pillow. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
-| S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | Before S2 | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
+| S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | After S2 (decided 2026-10-31) | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
 | Hand-made x4 textures | On hold from 2026-10-31 | The ML upscale is the placeholder and the `x4` set stays optional; when the owner resumes, they replace `images_x4/tNNNN.png` by hand, one texture at a time, keeping the layout rules (exact 4x padded size, alpha the nearest 4x of the retail mask, zero RGB under it, no opaque pixel the 5-bit key cuts). Each batch reruns the page bake and `make_golden_texture_pages_x4.py`; a batch that touches `t0310.png` (`newfont`) also reruns `tools/make_font_newfont.py`, which refreshes the font's page copy under `assets/fonts/x4/`; the wrappers stop until it does. |
+| Acceptance of the modern rendering profile | After the S2e play check | Decides S2f: keep the retail profile beside modern (recommended; it costs nothing while green and compatibility is deferred, not discarded) or retire it with its shaders, page sets, bake and probes; and whether modern becomes the default profile and Forward+ the project renderer. |
+| Modern look choices | At the S2c–S2e play checks | `vertex_tint` for baked terrain shading under real light; the cave light curve (exact edge or fitted range); keeping the blob and rock shadow effects beside real shadows; linear or AgX tone mapping; mipmaps on the retail images and `fix_alpha_border` on `images_x4` (both change the pinned import policy). |
 | A vector recreation of the Frogger font | After the x4 play check, before S2 | A pixel-square TTF equals nearest upscaling (sharp, blocky); a smoothed redraw changes the look and needs the owner's eye. Either is retail-derived like `assets/`, which the private-repository decision covers. Until then the x4 bitmap font serves large windows ([S2b](#s2b-native-text)). |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 

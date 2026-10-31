@@ -3,6 +3,7 @@ render_mode unshaded, blend_mix, depth_draw_opaque, cull_back;
 
 
 vec3 through_renderer(vec3 wanted) {
+#if CURRENT_RENDERER == RENDERER_COMPATIBILITY
 	vec3 linear = pow((wanted + 0.055) / 1.055, vec3(2.4));
 	vec3 a = wanted;
 	for (int i = 0; i < 4; i++) {
@@ -11,6 +12,9 @@ vec3 through_renderer(vec3 wanted) {
 		a -= value / slope;
 	}
 	return max(a, vec3(0.0));
+#else
+	return mix(wanted / 12.92, pow((wanted + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), wanted));
+#endif
 }
 
 

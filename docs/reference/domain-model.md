@@ -35,12 +35,13 @@ copy rules; topic references own the rules themselves.
 | Data | `src/data/` | Typed `Resource` records, `AssetCatalog`, `AssetIndex`, `FroggerIds` | Engine resource types only | Every other context |
 | Gameplay | `src/game/` | Definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, rewards, front-end rules (`frontend/`), options (`options/`) | Godot math types | Data, application, conversion, presentation, inspection, scenes; files, input, wall time, nodes |
 | Application | `src/application/` | Setup adapters from records to definitions, `EntityBehaviorCatalog`, `FormCallbackCatalog`, `ImportedAssets` (`loaders/`), `ProgressStore` and `HighScoreStore` (`storage/`) | Data, gameplay | Conversion, presentation, inspection, scenes; I/O outside `loaders/` and `storage/` |
-| Rendering / Conversion | `src/convert/` | Meshes, materials, shaders, texture pages, `GameSpace`, effect rules over committed state | Data, gameplay, application | Presentation, inspection |
-| Presentation | `src/presentation/`, `scenes/` | Screens, `GameplayHost`, views, HUD, audio playback, input, viewers, `FrontEndSession` | Every context above, inspection for the viewers and sandbox | Archive |
+| Rendering / Conversion | `src/convert/` | Meshes, materials, shaders (retail and lit families), texture pages, `GameSpace`, scene-lighting and tint specs, effect rules over committed state | Data, gameplay, application | Presentation, inspection; light and environment nodes |
+| Presentation | `src/presentation/`, `scenes/` | Screens, `GameplayHost`, views, HUD, audio playback, input, viewers, `FrontEndSession`, `SceneLighting` (the only owner of lights and environments) | Every context above, inspection for the viewers and sandbox | Archive |
 | Inspection | `src/inspection/` | Scenarios, `ScenarioOptions`, `ExplorationGuard`, presets and their JSON manifests, the sandbox level, spawner and presets, demo playback | Data, gameplay, application, conversion | Presentation; nothing in gameplay or application may depend on it |
 
 The [architecture scanner](architecture.md#automated-checks) enforces the
-archive isolation and every rule for data, gameplay and application. The
+archive isolation, every rule for data, gameplay and application, and the
+ownership of light and environment nodes by presentation. The other
 conversion and inspection columns are conventions it does not check; today
 `CameraZoneInspection` uses `TerrainTrace` from `src/presentation/tools/`, the
 one inspection-to-presentation dependency.

@@ -110,7 +110,8 @@ func _ready() -> void:
 		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
 		get_tree().quit(1)
 		return
-	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
+	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()), ViewerArguments.rendering_profile(OS.get_cmdline_user_args())), true)
+	data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not data.is_valid():
 		if not screenshot_dir.is_empty():
 			push_error(_status.text)

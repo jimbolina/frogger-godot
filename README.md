@@ -199,6 +199,15 @@ hand-edited assets get reviewed golden overrides. See [assets](docs/reference/as
 `assets/textures/images_x4/` holds every texture upscaled four times. Play
 from it with `--texture-set=x4` after `--`, for example
 `tools/play.sh --level=ORG1 --texture-set=x4`; the default is the retail set.
+`--rendering=modern` draws with the modern rendering profile (Godot lights,
+shadows and lit materials; see [modern profile](docs/reference/rendering/modern-profile.md)):
+the wrapper then starts Godot on the Forward+ renderer (Metal on Apple Silicon,
+Vulkan or Direct3D 12 on Windows, Vulkan on Linux), while the default retail
+profile keeps the original look on Compatibility. A direct launch needs
+`--rendering-method forward_plus` before the scene path; the modern profile on
+Compatibility (for example F5 in the editor) still runs and logs a warning
+that shadows and lighting differ. `frogger/rendering/default_profile` in
+`project.godot` changes the default.
 The first run bakes the matching texture pages into `assets/textures/pages_x4/`
 (about 113 MB, ignored by Git, Pillow required), which the play and test
 wrappers keep current. In-game text draws with the bitmap fonts under

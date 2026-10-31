@@ -56,6 +56,13 @@ if (Test-Path -LiteralPath $fontDirectory -PathType Container) {
     }
 }
 
+$python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
+& $python (Join-Path $projectDirectory "tools\test_capture_tools.py") *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "run_tests: capture tool self-test failed"
+    exit 2
+}
+
 $assetDirectory = Join-Path $projectDirectory "assets"
 if (Test-Path -LiteralPath $assetDirectory -PathType Container) {
     $pointerPrefix = "version https://git-lfs.github.com/spec"

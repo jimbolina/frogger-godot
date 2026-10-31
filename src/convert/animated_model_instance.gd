@@ -2,6 +2,12 @@ class_name AnimatedModelInstance
 extends Node3D
 ## Draws a player's integer pose with reusable meshes and optional motion interpolation.
 ## The owner advances the player at the game tick rate, then renders between ticks.
+##
+## A mesh drawn through the lit shaders of the modern rendering profile
+## ([method ModelShaders.is_lit]) is shaded by the scene's lights: its parts
+## join [constant SceneLightingSpec.SHADOW_CASTER_LAYER], and colour scaling
+## and custom ambient reach it as a [SceneTint] in instance uniforms, so it
+## shares its materials and only flipbook parts get per-instance copies.
 
 ## Unlit tint baseline: the options-screen ambient and parallel light bytes, summing to 4096 after the << 4.
 const TINT_AMBIENT: float = 0x60
@@ -13,6 +19,9 @@ var player: ModelAnimationPlayer
 var model_mesh: ModelMesh
 ## One node per part, including parts without geometry.
 var part_nodes: Array[MeshInstance3D] = []
+## The tint of a lit mesh's last [method set_source_lighting] or [method set_tint];
+## identity for a mesh on the retail shaders.
+var scene_tint: SceneTint = SceneTint.new()
 ## Interpolate only geometry and transforms; textures always use the current tick.
 var smoothing_enabled: bool = false:
 	set(value):
@@ -48,6 +57,8 @@ var _tint_flags: int = 0
 var _tint_scale: Vector3i = Vector3i.ZERO
 var _tint_ambient: Vector3i = Vector3i.ZERO
 var _part_scales: Dictionary[int, float] = {}
+var _scene_lit: bool = false
+var _scene_tint_inputs: Array = []
 
 
 ## Attaches prebuilt resources and samples the player's current state.
@@ -65,6 +76,9 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 	_tinted = false
 	_tint_flags = 0
 	_part_scales.clear()
+	scene_tint = SceneTint.new()
+	_scene_tint_inputs = [Vector3i.ZERO, Vector3i.ZERO, false, false]
+	_scene_lit = has_lit_materials(mesh)
 	model_mesh = mesh
 	if mesh.morph_meshes.is_empty():
 		mesh.morph_meshes.resize(mesh.part_meshes.size())
@@ -78,6 +92,8 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		node.mesh = mesh.morph_meshes[index].mesh if mesh.morph_meshes[index] != null else mesh.part_meshes[index]
 		if index < mesh.part_bounds.size():
 			node.custom_aabb = mesh.part_bounds[index]
+		if _scene_lit:
+			node.layers |= SceneLightingSpec.SHADOW_CASTER_LAYER
 		add_child(node)
 		part_nodes.append(node)
 		var values := PackedFloat32Array()
@@ -86,8 +102,29 @@ func setup(mesh: ModelMesh, animation_player: ModelAnimationPlayer) -> void:
 		_changed_blends.append(PackedInt32Array())
 	apply_exact()
 
+## True when [param mesh] draws any surface through a lit model shader.
+static func has_lit_materials(mesh: ModelMesh) -> bool:
+	if mesh == null:
+		return false
+	for part: ArrayMesh in mesh.part_meshes:
+		if part == null:
+			continue
+		for surface: int in part.get_surface_count():
+			var material: ShaderMaterial = part.surface_get_material(surface) as ShaderMaterial
+			if material != null and ModelShaders.is_lit(material.shader):
+				return true
+	return false
+
+
 ## Applies source colour-matrix scaling and custom ambient to instance-local materials.
+##
+## A lit mesh ignores [param lighting]'s directions and colours, which the
+## scene's lights stand in for, and takes the scale and ambient as its
+## [member scene_tint].
 func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector3i, scaled: bool, custom: bool) -> void:
+	if _scene_lit:
+		_set_scene_tint(scale, ambient, scaled, custom)
+		return
 	if _lighting == lighting and _colour_scale == scale and _ambient == ambient and _scaled == scaled and _custom == custom and _lighting_ambient == lighting.ambient and _lighting_directions == lighting.directions and _lighting_colours == lighting.colours:
 		return
 	var first_lighting: bool = _lighting == null
@@ -124,9 +161,12 @@ func set_source_lighting(lighting: MapLighting, scale: Vector3i, ambient: Vector
 ## exactly as before: its own polygon colours. With them, instance-local
 ## materials light every vertex by [method tint_light], an approximation that
 ## keeps the directional map lights off; it is meant for models drawn without
-## [method set_source_lighting].
+## [method set_source_lighting]. A lit mesh takes them as its [member scene_tint].
 func set_tint(scale: Vector3i, ambient: Vector3i, flags: int) -> void:
 	flags &= FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS
+	if _scene_lit:
+		_set_scene_tint(scale, ambient, (flags & FrogTint.SCALED_COLOURS) != 0, (flags & FrogTint.CUSTOM_AMBIENT) != 0)
+		return
 	if flags == 0 and not _tinted:
 		return
 	if flags == _tint_flags and scale == _tint_scale and ambient == _tint_ambient and _tinted:
@@ -174,6 +214,17 @@ func clear_part_scales() -> void:
 		return
 	_part_scales.clear()
 	_rendered_weight = -1.0
+
+
+func _set_scene_tint(scale: Vector3i, ambient: Vector3i, scaled: bool, custom: bool) -> void:
+	var inputs: Array = [scale if scaled else Vector3i.ZERO, ambient if custom else Vector3i.ZERO, scaled, custom]
+	if inputs == _scene_tint_inputs:
+		return
+	_scene_tint_inputs = inputs
+	scene_tint = SceneTint.of(scale, ambient, scaled, custom)
+	for node: MeshInstance3D in part_nodes:
+		node.set_instance_shader_parameter(ModelShaders.TINT_SCALE, scene_tint.scale)
+		node.set_instance_shader_parameter(ModelShaders.TINT_AMBIENT, scene_tint.ambient)
 
 
 func _apply_tint(material: ShaderMaterial) -> void:

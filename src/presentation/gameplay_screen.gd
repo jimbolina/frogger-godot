@@ -54,7 +54,10 @@ func _ready() -> void:
 		if level_code.is_empty():
 			level_code = "ORG1"
 		FrontEndSession.selected_level = ""
-		var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+		var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+		data.note_renderer(RenderingServer.get_current_rendering_method())
+		for warning: String in data.warnings:
+			push_warning(warning)
 		if data.is_valid():
 			open_data(data, level_code, true)
 		else:
@@ -75,6 +78,7 @@ func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -
 			_owns_data = true
 	_data = data
 	level_code = code
+	rendering_profile = data.rendering_profile() if data != null else RenderingProfile.retail()
 	var level_number: int = FroggerIds.level_from_code(code)
 	if data == null or not data.is_valid():
 		return _show_error("Valid imported assets are required")

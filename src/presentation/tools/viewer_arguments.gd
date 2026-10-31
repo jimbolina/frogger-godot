@@ -6,6 +6,10 @@ extends RefCounted
 const TEXTURE_SET_ARGUMENT: String = "--texture-set="
 ## The project setting holding the default texture set name.
 const TEXTURE_SET_SETTING: String = "frogger/textures/default_set"
+## The launch argument naming the rendering profile.
+const RENDERING_ARGUMENT: String = "--rendering="
+## The project setting holding the default rendering profile name.
+const RENDERING_SETTING: String = "frogger/rendering/default_profile"
 
 
 ## Value following the first argument starting with [param prefix], including an empty value.
@@ -37,6 +41,16 @@ static func texture_set(arguments: PackedStringArray) -> String:
 	if not requested.is_empty():
 		return requested
 	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
+
+
+## The name of the rendering profile a launch asked for:
+## [code]--rendering=[/code] in [param arguments], else the project setting
+## [code]frogger/rendering/default_profile[/code], else the retail profile.
+static func rendering_profile(arguments: PackedStringArray) -> String:
+	var requested: String = value(arguments, RENDERING_ARGUMENT).strip_edges().to_lower()
+	if not requested.is_empty():
+		return requested
+	return str(ProjectSettings.get_setting(RENDERING_SETTING, RenderingProfile.RETAIL))
 
 
 ## Whether a scenario run attaches the imported assets: a map selected with

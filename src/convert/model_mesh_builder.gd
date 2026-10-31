@@ -33,6 +33,10 @@ const REST_POSE: int = 0
 var linear_filter: bool = false
 ## Draw both sides of every polygon.
 var two_sided: bool = false
+## Draw through the lit shaders of the modern rendering profile; starts as
+## the library's catalog asks. A probe prelit by [member lighting] stays on
+## the retail shaders.
+var lit_materials: bool = false
 ## Optional map lighting for a static model probe; standalone viewers stay unlit.
 var lighting: MapLighting
 ## Probe's world orientation when prelighting its normals.
@@ -47,6 +51,7 @@ func _init(library: TextureLibrary, preferred_bank: VloFile = null) -> void:
 	_library = library
 	_preferred = preferred_bank
 	linear_filter = library != null and library.linear_filter()
+	lit_materials = library != null and library.rendering_profile().is_modern()
 
 
 class _Surface:
@@ -124,6 +129,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 	var result := ModelMesh.new()
 	var missing: Dictionary[int, bool] = {}
 	var first_vertex: bool = true
+	var lit_shading: bool = lit_materials and lighting == null
 	for part: MofPart in model.parts:
 		var tracks: Array[ModelTextureTrack] = []
 		var surfaces: Dictionary[String, _Surface] = {}
@@ -169,7 +175,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 			morph_cels.append(cels)
 			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, blends)
 			var texture: Texture2D = _library.texture_for(surface.image) if surface.image != null else null
-			var material: ShaderMaterial = ModelShaders.material(texture, surface.blend, linear_filter, two_sided)
+			var material: ShaderMaterial = ModelShaders.material(texture, surface.blend, linear_filter, two_sided, lit_shading)
 			if surface.target >= 0:
 				_set_pixel_uv(material, surface.image)
 				var track := ModelTextureTrack.new()
@@ -190,7 +196,7 @@ func _build(model: MofStatic, animated: bool) -> ModelMesh:
 						if surface.image != null and surface.image.has_flag(VloImage.FLAG_TRANSLUCENT) and image != null:
 							frame_blend = ModelShaders.blend_for_mode(image.blend_mode())
 						var frame_material: ShaderMaterial = ModelShaders.material(_library.texture_for(image) if image != null else null,
-							frame_blend, linear_filter, two_sided)
+							frame_blend, linear_filter, two_sided, lit_shading)
 						_set_pixel_uv(frame_material, image)
 						track.frames.append(frame_material)
 				tracks.append(track)

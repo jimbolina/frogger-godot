@@ -430,3 +430,48 @@ func test_application_loaders_may_compute_resource_paths() -> void:
 	var source: String = "extends RefCounted\nfunc f(path: String):\n\treturn ResourceLoader.load(path)\n"
 	assert_eq(_check({"res://src/application/loaders/loader.gd": source}).size(), 0)
 	assert_true(_has_rule(_check({"res://src/application/other.gd": source}), "review"))
+
+
+func test_lighting_types_belong_to_presentation() -> void:
+	for type_name: String in Scanner.LIGHTING_TYPES:
+		var source: String = "extends Node\nfunc f():\n\treturn %s.new()\n" % type_name
+		for path: String in ["res://src/convert/x.gd", "res://src/inspection/x.gd"]:
+			var violations: Array[Scanner.Violation] = _check({path: source})
+			assert_eq(violations.size(), 1, path + " " + type_name)
+			assert_true(_has_rule(violations, "lighting-ownership"), path + " " + type_name)
+			assert_eq(violations[0].line, 3)
+		assert_eq(_check({"res://src/presentation/x.gd": source}).size(), 0, type_name)
+
+
+func test_lighting_names_in_text_and_members_are_allowed() -> void:
+	assert_eq(_check({
+		"res://src/convert/x.gd": "extends RefCounted\n## Environment normals and Light3D notes.\n" \
+			+ "# WorldEnvironment\nconst LABEL = \"DirectionalLight3D Environment\"\n" \
+			+ "func f(o):\n\treturn o.Environment\n",
+	}).size(), 0)
+
+
+func test_gameplay_lighting_is_a_tree_and_ownership_violation() -> void:
+	var violations: Array[Scanner.Violation] = _check({
+		GAME: "extends RefCounted\nvar sun: DirectionalLight3D\n",
+	})
+	assert_true(_has_rule(violations, "tree"))
+	assert_true(_has_rule(violations, "lighting-ownership"))
+
+
+func test_lighting_outside_src_is_exempt() -> void:
+	var source: String = "extends Node3D\nfunc f():\n\tvar sun := DirectionalLight3D.new()\n" \
+		+ "\tvar world := WorldEnvironment.new()\n\tworld.environment = Environment.new()\n" \
+		+ "\treturn sun\n"
+	for path: String in ["res://scenes/level.gd", "res://tests/unit/test_x.gd",
+			"res://tools/probe.gd", "res://archive/tools/probe.gd"]:
+		assert_eq(_rule_count(_check({path: source}), "lighting-ownership"), 0, path)
+
+
+func test_every_src_folder_is_classified() -> void:
+	var folders: PackedStringArray = DirAccess.get_directories_at("res://src")
+	assert_gt(folders.size(), 0)
+	var scanner := Scanner.new()
+	assert_false(scanner.classifies("res://src/unclassified/example.gd"))
+	for folder: String in folders:
+		assert_true(scanner.classifies("res://src/%s/example.gd" % folder), folder)

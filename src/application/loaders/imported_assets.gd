@@ -13,7 +13,7 @@ extends AssetCatalog
 ## textures, and [method texture_of], [method texture_counterpart],
 ## [method page_set] and [method font] answer with the chosen set's files,
 ## falling back to the retail file (noted in [member problems]) when the set
-## lacks one.
+## lacks one. It also carries the launch's [RenderingProfile].
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
@@ -21,6 +21,8 @@ var index: AssetIndex
 var root: String = ""
 ## The texture set the catalog draws from.
 var textures: TextureSet = TextureSet.retail()
+## The rendering profile the launch asked for.
+var rendering: RenderingProfile = RenderingProfile.retail()
 ## Records that could not be loaded, one line each.
 var problems: PackedStringArray = PackedStringArray()
 var _counterparts: Dictionary[String, Texture2D] = {}
@@ -28,13 +30,16 @@ var _fonts: Dictionary[String, Font] = {}
 
 
 ## Opens the assets under [param assets_root], drawing from the texture set
-## called [param texture_set_name] ("" for retail). Check
-## [member AssetCatalog.error]; a set that is not installed falls back to
-## retail with a line in [member AssetCatalog.warnings].
-static func open(assets_root: String = "res://assets", texture_set_name: String = "") -> ImportedAssets:
+## called [param texture_set_name] ("" for retail) under the rendering
+## profile called [param rendering_profile_name] ("" for retail). Check
+## [member AssetCatalog.error]; a set that is not installed or an unknown
+## profile falls back to retail with a line in [member AssetCatalog.warnings].
+static func open(assets_root: String = "res://assets", texture_set_name: String = "",
+		rendering_profile_name: String = "") -> ImportedAssets:
 	var catalog := ImportedAssets.new()
 	catalog.root = assets_root
 	catalog.textures = resolve_texture_set(assets_root, texture_set_name, catalog.warnings)
+	catalog.rendering = resolve_rendering_profile(rendering_profile_name, catalog.warnings)
 	var index_path: String = assets_root.path_join("catalog.tres")
 	catalog.index = catalog._load(index_path) as AssetIndex
 	if catalog.index == null:
@@ -74,9 +79,25 @@ static func resolve_texture_set(assets_root: String, texture_set_name: String,
 	return wanted
 
 
+## The rendering profile called [param rendering_profile_name]; the retail
+## profile, with a line appended to [param warnings_out], for an unknown name.
+static func resolve_rendering_profile(rendering_profile_name: String,
+		warnings_out: PackedStringArray) -> RenderingProfile:
+	var wanted: RenderingProfile = RenderingProfile.named(rendering_profile_name)
+	if wanted == null:
+		warnings_out.append("unknown rendering profile %s; drawing the retail profile" % rendering_profile_name)
+		return RenderingProfile.retail()
+	return wanted
+
+
 ## The texture set the catalog draws from.
 func texture_set() -> TextureSet:
 	return textures
+
+
+## The rendering profile the launch asked for.
+func rendering_profile() -> RenderingProfile:
+	return rendering
 
 
 ## The texture of [param image] in the catalog's texture set, or null.

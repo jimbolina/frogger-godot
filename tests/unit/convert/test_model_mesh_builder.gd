@@ -7,6 +7,11 @@ class UpscaledCatalog extends AssetCatalog:
 		return TextureSet.x4()
 
 
+class ModernCatalog extends AssetCatalog:
+	func rendering_profile() -> RenderingProfile:
+		return RenderingProfile.modern()
+
+
 func _bank(flags: int = 0, blend_mode: int = 0) -> VloFile:
 	var pixels: Array[int] = []
 	for _i: int in 10 * 6:
@@ -139,3 +144,29 @@ func test_shader_choices() -> void:
 	assert_eq(ModelShaders.blend_for_mode(3), ModelShaders.Blend.ADD_QUARTER)
 	assert_same(ModelShaders.shader(false, ModelShaders.Blend.OPAQUE, false, false),
 		ModelShaders.shader(false, ModelShaders.Blend.OPAQUE, true, false), "filtering does not matter without a texture")
+
+
+func test_the_modern_profile_builds_lit_materials_except_for_prelit_probes() -> void:
+	var library := TextureLibrary.new()
+	assert_false(ModelMeshBuilder.new(library).lit_materials)
+	assert_false(ModelMeshBuilder.new(null).lit_materials)
+	library.add_bank(_bank(), "bank")
+	library.catalog = ModernCatalog.new()
+	var builder := ModelMeshBuilder.new(library)
+	assert_true(builder.lit_materials)
+	var part: SyntheticMof.Part = SyntheticMof.square(MofPolygonType.FT4, Color8(128, 128, 128), 7)
+	part.polygons.append(SyntheticMof.polygon(MofPolygonType.F3, [0, 1, 2], [0]))
+	var file: MofFile = SyntheticMof.static_file([part])
+	var built: ModelMesh = builder.build(file.static_models[0])
+	assert_eq(built.surface_count, 2)
+	for surface: int in built.part_meshes[0].get_surface_count():
+		var material := built.part_meshes[0].surface_get_material(surface) as ShaderMaterial
+		assert_true(ModelShaders.is_lit(material.shader), material.shader.resource_path)
+	var textured := built.part_meshes[0].surface_get_material(1) as ShaderMaterial
+	var image: Texture2D = textured.get_shader_parameter("image")
+	assert_not_null(image)
+	builder.lighting = MapLighting.new()
+	var prelit: ModelMesh = builder.build(file.static_models[0])
+	for surface: int in prelit.part_meshes[0].get_surface_count():
+		var material := prelit.part_meshes[0].surface_get_material(surface) as ShaderMaterial
+		assert_false(ModelShaders.is_lit(material.shader), "a prelit probe keeps the retail recipe")

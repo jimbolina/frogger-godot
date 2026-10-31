@@ -1,5 +1,6 @@
 extends GutTest
-## The gameplay frog is lit per part from the map's lights with its committed colour scale and custom ambient, and tinted only without map lights.
+## The gameplay frog is lit per part from the map's lights with its committed colour scale and custom ambient, and tinted only without map lights;
+## the modern profile also lights the scene from the map's lights.
 
 const SCALE := Vector3i(0, 64, 192)
 const AMBIENT := Vector3i(32, 64, 64)
@@ -87,3 +88,62 @@ func test_tinted_then_lit_then_unlit_keeps_no_stale_uniforms() -> void:
 	assert_eq(_vector("source_colour0"), Vector3.ZERO, "rebuilding entities without lights re-tints the frog on the same tick")
 	assert_eq(_vector("source_ambient"), AnimatedModelInstance.tint_light(SCALE, AMBIENT, flags))
 	assert_eq(_depth_bias(), GameplayWorldView.FROG_DEPTH_BIAS)
+
+func _lit_map() -> MapSceneData:
+	var ambient := MapLight.new()
+	ambient.light_type = 1
+	ambient.enabled = true
+	ambient.color = Color8(0x30, 0x40, 0x50)
+	var parallel := MapLight.new()
+	parallel.light_type = 2
+	parallel.enabled = true
+	parallel.color = Color8(0xc0, 0xa0, 0x80)
+	parallel.direction = Vector3i(0x400, -0x1000, 0x200)
+	var scene := MapSceneData.new()
+	scene.map = MapFile.new()
+	scene.map.lights = [ambient, parallel]
+	return scene
+
+func _map_lighting(scene: MapSceneData) -> MapLighting:
+	var lighting := MapLighting.new()
+	lighting.configure(scene.map.lights)
+	return lighting
+
+func test_the_modern_profile_lights_the_scene_from_the_map() -> void:
+	var scene: MapSceneData = _lit_map()
+	_view.rendering_profile = RenderingProfile.modern()
+	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
+	var expected: SceneLightingSpec = SceneLightingBuilder.from_lighting(_map_lighting(scene))
+	assert_eq(_view.scene_lighting.light_nodes().size(), expected.lights.size())
+	assert_gt(_view.scene_lighting.light_nodes().size(), 0)
+	assert_almost_eq(_view.scene_lighting.applied_ambient, expected.ambient, Vector3.ONE * 1e-6)
+	assert_not_null(_view.scene_lighting.environment)
+	assert_not_null(_view._entity_lighting, "the source lighting stays for the frog and entities")
+
+func test_the_modern_profile_falls_back_to_the_options_lights_without_map_lighting() -> void:
+	_view.rendering_profile = RenderingProfile.modern()
+	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new(), false)
+	var expected: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting())
+	assert_eq(_view.scene_lighting.light_nodes().size(), expected.lights.size())
+	assert_almost_eq(_view.scene_lighting.applied_ambient, expected.ambient, Vector3.ONE * 1e-6)
+	var unlit := MapSceneData.new()
+	unlit.map = MapFile.new()
+	_view.build_entities(EntityCollisionDefinition.new(), unlit, AssetCatalog.new())
+	assert_almost_eq(_view.scene_lighting.applied_ambient, expected.ambient, Vector3.ONE * 1e-6, "a map without lights also falls back")
+
+func test_clearing_entities_clears_the_scene_lights() -> void:
+	_view.rendering_profile = RenderingProfile.modern()
+	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
+	_view._clear_entity_visuals()
+	assert_eq(_view.scene_lighting.light_nodes().size(), 0)
+	assert_eq(_view.scene_lighting.applied_ambient, Vector3.ONE)
+
+func test_the_retail_profile_applies_no_scene_lighting() -> void:
+	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
+	assert_false(_view.rendering_profile.is_modern())
+	assert_not_null(_view._entity_lighting)
+	assert_eq(_view.scene_lighting.light_nodes().size(), 0)
+	assert_null(_view.scene_lighting.environment)
+	assert_null(_view.scene_lighting.world_environment())
+	assert_null(_view.scene_lighting.applied_spec)
+	assert_eq(_view.scene_lighting.applied_ambient, Vector3.ONE)

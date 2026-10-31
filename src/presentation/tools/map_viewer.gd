@@ -107,7 +107,8 @@ func _ready() -> void:
 	_probe_name = _arg("--probe-model=")
 	if _probe_name.is_empty() and ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--probe-model"):
 		_probe_name = "GEN_CHECKPOINT_1.XMR"
-	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
+	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()), ViewerArguments.rendering_profile(OS.get_cmdline_user_args())), true)
+	data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not data.is_valid():
 		if not folder.is_empty():
 			push_error(_status.text)

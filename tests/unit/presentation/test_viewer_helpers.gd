@@ -30,6 +30,20 @@ func test_arguments_preserve_first_prefix_match_and_exact_flags() -> void:
 
 
 
+func test_the_rendering_argument_wins_over_the_project_setting() -> void:
+	var saved: String = str(ProjectSettings.get_setting(ViewerArguments.RENDERING_SETTING))
+	assert_eq(saved, RenderingProfile.RETAIL)
+	assert_eq(ViewerArguments.rendering_profile(PackedStringArray()), RenderingProfile.RETAIL)
+	assert_eq(ViewerArguments.rendering_profile(PackedStringArray(["--rendering="])), RenderingProfile.RETAIL)
+	assert_eq(ViewerArguments.rendering_profile(PackedStringArray(["--rendering= Modern "])), RenderingProfile.MODERN)
+	ProjectSettings.set_setting(ViewerArguments.RENDERING_SETTING, RenderingProfile.MODERN)
+	var from_setting: String = ViewerArguments.rendering_profile(PackedStringArray())
+	var from_argument: String = ViewerArguments.rendering_profile(PackedStringArray(["--rendering=retail"]))
+	ProjectSettings.set_setting(ViewerArguments.RENDERING_SETTING, saved)
+	assert_eq(from_setting, RenderingProfile.MODERN)
+	assert_eq(from_argument, RenderingProfile.RETAIL)
+
+
 func test_assets_are_used_for_a_level_or_the_frog_only() -> void:
 	assert_false(ViewerArguments.uses_assets(PackedStringArray()))
 	assert_false(ViewerArguments.uses_assets(PackedStringArray(["--level=", "--scenario=normal"])))

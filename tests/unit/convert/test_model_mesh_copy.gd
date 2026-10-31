@@ -178,3 +178,59 @@ func test_the_linear_variant_is_found_from_the_shader_file() -> void:
 	var flat: Shader = ModelShaders.shader(false, ModelShaders.Blend.OPAQUE, false, false)
 	assert_same(ModelShaders.linear_variant(flat), flat)
 	assert_null(ModelShaders.linear_variant(null))
+
+func _assert_lit_copy(shared: ModelMesh, copy: ModelMesh, linear: bool) -> void:
+	var copied: Array[ShaderMaterial] = _surface_materials(copy)
+	var shared_materials: Array[ShaderMaterial] = _surface_materials(shared)
+	assert_eq(copied.size(), shared_materials.size())
+	var textured: int = 0
+	for index: int in copied.size():
+		var retail: ShaderMaterial = shared_materials[index]
+		var lit: ShaderMaterial = copied[index]
+		assert_false(ModelShaders.is_lit(retail.shader), "the shared mesh stays retail")
+		assert_true(ModelShaders.is_lit(lit.shader), lit.shader.resource_path)
+		var expected: Shader = ModelShaders.linear_variant(retail.shader) if linear else retail.shader
+		assert_same(lit.shader, ModelShaders.lit_variant(expected))
+		for parameter: StringName in [&"uv_scale", &"uv_offset", &"depth_bias", &"projection_scale"]:
+			assert_eq(str(lit.get_shader_parameter(parameter)), str(retail.get_shader_parameter(parameter)), "%s carries over" % parameter)
+		var retail_image: Texture2D = retail.get_shader_parameter("image")
+		var image: Texture2D = lit.get_shader_parameter("image")
+		if retail_image == null:
+			assert_null(image)
+			continue
+		textured += 1
+		if linear:
+			assert_eq(image.resource_path, retail_image.resource_path.replace("/images/", "/images_x4/"))
+		else:
+			assert_same(image, retail_image)
+	assert_gt(textured, 0, "the frog has textured surfaces")
+
+func test_a_modern_catalog_draws_the_copy_through_the_lit_shaders() -> void:
+	var shared: ModelMesh = _committed_frog()
+	var modern: ImportedAssets = ImportedAssets.open("res://assets", "", RenderingProfile.MODERN)
+	assert_eq(modern.warnings, PackedStringArray())
+	assert_true(modern.rendering_profile().is_modern())
+	_assert_lit_copy(shared, ModelMeshCopy.of(shared, modern), false)
+	var drawn: ModelMesh = ModelMeshLibrary.mesh_for(modern, _data.find_resource(FROG).index, null, null)
+	assert_same(ModelMeshLibrary.mesh_for(modern, _data.find_resource(FROG).index, null, null), drawn, "the modern mesh loads once per set and profile")
+	assert_ne(drawn, shared)
+	_assert_lit_copy(shared, drawn, false)
+	assert_same(_committed_frog(), shared, "the retail mesh is untouched")
+
+func test_a_modern_x4_catalog_draws_the_lit_linear_shaders() -> void:
+	var shared: ModelMesh = _committed_frog()
+	var modern_x4: ImportedAssets = ImportedAssets.open("res://assets", "x4", RenderingProfile.MODERN)
+	assert_eq(modern_x4.warnings, PackedStringArray())
+	_assert_lit_copy(shared, ModelMeshCopy.of(shared, modern_x4), true)
+	var x4: ImportedAssets = ImportedAssets.open("res://assets", "x4")
+	var index: int = _data.find_resource(FROG).index
+	assert_ne(ModelMeshLibrary.mesh_for(modern_x4, index, null, null), ModelMeshLibrary.mesh_for(x4, index, null, null), "set and profile key the drawing copies")
+
+func test_a_retail_catalog_keeps_the_retail_shaders() -> void:
+	var shared: ModelMesh = _committed_frog()
+	var copied: Array[ShaderMaterial] = _surface_materials(ModelMeshCopy.of(shared, _data))
+	var shared_materials: Array[ShaderMaterial] = _surface_materials(shared)
+	for index: int in copied.size():
+		assert_same(copied[index].shader, shared_materials[index].shader)
+		assert_false(ModelShaders.is_lit(copied[index].shader))
+	assert_same(ModelMeshLibrary.mesh_for(_data, _data.find_resource(FROG).index, null, null), shared)

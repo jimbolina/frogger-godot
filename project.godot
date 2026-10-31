@@ -33,6 +33,7 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 [frogger]
 
+rendering/default_profile="retail"
 textures/default_set="retail"
 
 [importer_defaults]
@@ -76,3 +77,10 @@ renderer/rendering_method.mobile="gl_compatibility"
 anti_aliasing/quality/msaa_3d=0
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 textures/lossless_compression/force_png=true
+
+[shader_globals]
+
+frogger_model_ambient={
+"type": "vec3",
+"value": Vector3(1, 1, 1)
+}

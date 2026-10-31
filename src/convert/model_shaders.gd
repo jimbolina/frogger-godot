@@ -32,6 +32,19 @@ extends RefCounted
 ##
 ## Each combination of choices is its own file under
 ## [code]src/convert/shaders/[/code] ([method shader_path]), edited directly.
+## Their [code]through_renderer[/code] applies the Compatibility correction only
+## on that renderer; elsewhere it is the exact sRGB decode, so an unshaded
+## surface shows the same bytes under a linear tone mapper.
+##
+## The modern rendering profile draws through the lit family under
+## [code]modern/[/code] ([method lit_variant]): one thin file per retail file
+## with the same blend, depth and culling, sharing [code]model_lit.gdshaderinc[/code].
+## Godot's lights shade them; the polygon colour is decoded to linear light, a
+## texture through [code]source_color[/code]. Stored normals point inward, so
+## the shader flips them, and the depth bias and projection scale are skipped
+## in shadow passes. The instance uniforms [constant TINT_SCALE] and
+## [constant TINT_AMBIENT] carry a model's [SceneTint]; the global
+## [constant AMBIENT_GLOBAL] is the scene ambient.
 
 ## How a polygon is combined with what is behind it.
 enum Blend {
@@ -49,6 +62,16 @@ enum Blend {
 
 ## Folder of the shader files.
 const SHADER_DIR: String = "res://src/convert/shaders"
+## Folder of the lit shader files of the modern rendering profile.
+const LIT_SHADER_DIR: String = "res://src/convert/shaders/modern"
+## File-name prefix of a lit shader in place of [code]model_[/code].
+const LIT_PREFIX: String = "model_lit_"
+## Instance uniform: the linear colour multiplier of a lit model.
+const TINT_SCALE: StringName = &"tint_scale"
+## Instance uniform: a lit model's linear custom ambient, alpha one when it replaces the scene ambient.
+const TINT_AMBIENT: StringName = &"tint_ambient"
+## Global uniform: the scene ambient of lit models, in linear light.
+const AMBIENT_GLOBAL: StringName = &"frogger_model_ambient"
 ## File-name word for each [enum Blend].
 const BLEND_NAMES: PackedStringArray = ["opaque", "average", "add", "subtract", "add_quarter"]
 
@@ -98,15 +121,39 @@ static func linear_variant(source: Shader) -> Shader:
 	return _shaders[linear]
 
 
+## The lit variant under [constant LIT_SHADER_DIR] of the retail model shader
+## [param source] (itself for a lit shader or a shader that is not one of the
+## retail model files).
+static func lit_variant(source: Shader) -> Shader:
+	if source == null:
+		return null
+	var path: String = source.resource_path
+	var name: String = path.get_file()
+	if path.get_base_dir() != SHADER_DIR or not name.begins_with("model_"):
+		return source
+	var lit: String = LIT_SHADER_DIR.path_join(LIT_PREFIX + name.trim_prefix("model_"))
+	if not _shaders.has(lit):
+		_shaders[lit] = load(lit) as Shader
+	return _shaders[lit]
+
+
+## True when [param source] is one of the lit model shaders.
+static func is_lit(source: Shader) -> bool:
+	return source != null and source.resource_path.get_base_dir() == LIT_SHADER_DIR \
+		and source.resource_path.get_file().begins_with(LIT_PREFIX)
+
+
 ## The text of the shader file for one combination of choices.
 static func shader_code(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> String:
 	return shader(textured, blend, linear_filter, two_sided).code
 
 
-## A material drawing with [param texture] (null for untextured polygons).
-static func material(texture: Texture2D, blend: Blend, linear_filter: bool, two_sided: bool) -> ShaderMaterial:
+## A material drawing with [param texture] (null for untextured polygons),
+## through the lit variant when [param lit].
+static func material(texture: Texture2D, blend: Blend, linear_filter: bool, two_sided: bool, lit: bool = false) -> ShaderMaterial:
 	var made := ShaderMaterial.new()
-	made.shader = shader(texture != null, blend, linear_filter, two_sided)
+	var chosen: Shader = shader(texture != null, blend, linear_filter, two_sided)
+	made.shader = lit_variant(chosen) if lit else chosen
 	if texture != null:
 		made.set_shader_parameter("image", texture)
 	return made

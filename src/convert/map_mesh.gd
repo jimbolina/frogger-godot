@@ -17,6 +17,8 @@ var bounds := AABB()
 var diagnostics := PackedStringArray()
 ## True when instances start on the linear, mipmapped shader variants.
 var linear_filter: bool = false
+## True when the materials are the modern profile's lit shaders ([MapLitShaders]).
+var modern: bool = false
 
 ## One surface's prepared image variants and identity.
 class Surface extends RefCounted:
@@ -42,6 +44,8 @@ func create_instance() -> Instance:
 
 ## Rendering subtree with no autonomous clock; the viewer calls step/set_tick.
 class Instance extends Node3D:
+	## Diagnostic recorded when the modern profile is asked for the reference projection.
+	const MODERN_REFERENCE_DIAGNOSTIC: String = "The modern rendering profile has no reference projection; the call is ignored"
 	var source: MapMesh
 	var animation := MapAnimationPlayer.new()
 	var water := MapWaterState.new()
@@ -70,6 +74,7 @@ class Instance extends Node3D:
 	var _camera_presentation: Vector3 = Vector3.ZERO
 	var _sky_external: bool = false
 	var _sky_override: Vector3 = Vector3.ZERO
+	var _vertex_tint: float = 1.0
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -88,6 +93,8 @@ class Instance extends Node3D:
 			var node := MeshInstance3D.new()
 			node.name = "Group%d" % index
 			node.mesh = source.groups[index]
+			if source.modern:
+				node.layers |= SceneLightingSpec.SHADOW_CASTER_LAYER
 			_nodes.append(node)
 			add_child(node)
 			for surface_index: int in source.surface_specs[index].size():
@@ -99,6 +106,8 @@ class Instance extends Node3D:
 			_sky_node = MeshInstance3D.new()
 			_sky_node.name = "SkyLand"
 			_sky_node.mesh = source.sky_mesh
+			if source.modern:
+				_sky_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(_sky_node)
 			for index: int in source.sky_mesh.get_surface_count():
 				var material: ShaderMaterial = source.sky_mesh.surface_get_material(index)
@@ -167,7 +176,12 @@ class Instance extends Node3D:
 		_update_materials()
 
 	## Exact frozen map-slice integer projection; custom cameras keep this off.
+	## The modern profile has none: the call only records a diagnostic.
 	func set_reference_projection(value: bool) -> void:
+		if source.modern:
+			if value and not diagnostics.has(MODERN_REFERENCE_DIAGNOSTIC):
+				diagnostics.append(MODERN_REFERENCE_DIAGNOSTIC)
+			return
 		reference_projection = value
 		_camera_materials.clear()
 		_configured.clear()
@@ -193,15 +207,19 @@ class Instance extends Node3D:
 		set_inspection_visibility(value)
 
 	## Moves the cave terrain lamp independently of models and gameplay entities.
+	## The modern profile's terrain has no cave ramp, so its materials are untouched.
 	func set_cave_frog(value: Vector3i) -> void:
-		if cave_frog == value:
+		if source.modern or cave_frog == value:
 			return
 		cave_frog = value
 		for material: ShaderMaterial in _cave_materials:
 			material.set_shader_parameter("cave_frog", Vector3(value))
 
-	## Replaces the live squared cave light radii on cave terrain materials only.
+	## Replaces the live squared cave light radii on cave terrain materials only;
+	## nothing changes under the modern profile.
 	func set_cave_radii(min_r2: int, max_r2: int) -> void:
+		if source.modern:
+			return
 		var minimum: int = min_r2 & 0xffffffff
 		var maximum: int = max_r2 & 0xffffffff
 		if cave_min_r2 == minimum and cave_max_r2 == maximum:
@@ -211,6 +229,23 @@ class Instance extends Node3D:
 		for material: ShaderMaterial in _cave_materials:
 			material.set_shader_parameter("cave_min_r2", float(minimum))
 			material.set_shader_parameter("cave_max_r2", float(maximum))
+
+	## Scales the modern profile's terrain albedo on every surface except cave
+	## Gouraud terrain, which stays black until the cave light exists; retail
+	## materials have no tint.
+	func set_vertex_tint(value: float) -> void:
+		if _vertex_tint == value:
+			return
+		_vertex_tint = value
+		if not source.modern:
+			return
+		for index: int in source.surface_specs.size():
+			for spec: Surface in source.surface_specs[index]:
+				if spec.cave:
+					continue
+				_material_copies[spec.original].set_shader_parameter("vertex_tint", value)
+				for frame: ShaderMaterial in spec.frames.values():
+					_material_copies[frame].set_shader_parameter("vertex_tint", value)
 
 	## Changes cached shader variants; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
@@ -245,7 +280,9 @@ class Instance extends Node3D:
 					image = source.scene.library.image_for_id(id, source.scene.preferred) if spec.textured else null
 					offset = animation.track_offset(spec.animation_index)
 				var material: ShaderMaterial = _material_copies[template]
-				if not _configured.has(material):
+				if not _configured.has(material) and source.modern:
+					_configure_lit(material, spec, image)
+				elif not _configured.has(material):
 					var blend: ModelShaders.Blend = spec.blend
 					if image != null and spec.blend != ModelShaders.Blend.OPAQUE:
 						blend = ModelShaders.blend_for_mode(image.blend_mode())
@@ -280,13 +317,35 @@ class Instance extends Node3D:
 			for index: int in source.sky_mesh.get_surface_count():
 				var original: ShaderMaterial = source.sky_mesh.surface_get_material(index)
 				var material: ShaderMaterial = _material_copies[original]
-				if not _configured.has(material):
+				if not _configured.has(material) and source.modern:
+					material.set_shader_parameter("linear_filter", _linear_filter)
+					material.set_shader_parameter("projection_scale", projection_scale)
+					_configured[material] = true
+				elif not _configured.has(material):
 					material.shader = MapShaders.sky_shader(_linear_filter)
 					material.set_shader_parameter("projection_scale", projection_scale)
 					material.set_shader_parameter("reference_projection", reference_projection)
 					material.set_shader_parameter("sky_backdrop", true)
 					_configured[material] = true
 			_refresh_sky_drift()
+
+	func _configure_lit(material: ShaderMaterial, spec: Surface, image: VloImage) -> void:
+		var blend: ModelShaders.Blend = spec.blend
+		if image != null and spec.blend != ModelShaders.Blend.OPAQUE:
+			blend = ModelShaders.blend_for_mode(image.blend_mode())
+		material.shader = MapLitShaders.shader(blend, spec.layer >= 0)
+		var texture: Texture2D = material.get_shader_parameter("image_nearest") if image != null else null
+		material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
+		material.set_shader_parameter("linear_filter", _linear_filter)
+		material.set_shader_parameter("environment_uv", spec.environment)
+		material.set_shader_parameter("camera_game", _camera_presentation)
+		if spec.environment:
+			_camera_materials[material] = true
+		material.set_shader_parameter("projection_scale", projection_scale)
+		material.set_shader_parameter("water_enabled", water.enabled)
+		material.set_shader_parameter("vertex_tint", 0.0 if spec.cave else _vertex_tint)
+		material.set_shader_parameter("omni_wrap", 1.0 if spec.cave else 0.0)
+		_configured[material] = true
 
 	func _refresh_sky_drift() -> void:
 		if _sky_node == null:

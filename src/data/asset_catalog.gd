@@ -46,6 +46,22 @@ func texture_set() -> TextureSet:
 	return TextureSet.retail()
 
 
+## The rendering profile the launch asked for: the retail profile unless a
+## concrete catalog chose another.
+func rendering_profile() -> RenderingProfile:
+	return RenderingProfile.retail()
+
+
+## Appends the rendering profile's [method RenderingProfile.renderer_note]
+## for a game running on [param current_method] to [member warnings] when
+## there is one, and returns it ("" when the renderer is the profile's own).
+func note_renderer(current_method: String) -> String:
+	var note: String = rendering_profile().renderer_note(current_method)
+	if not note.is_empty():
+		warnings.append(note)
+	return note
+
+
 ## The Godot texture of [param image] in the catalog's texture set: the
 ## record's own texture here, or null for null.
 func texture_of(image: VloImage) -> Texture2D:

@@ -360,6 +360,14 @@ computed resource loads.
 The scanner also rejects entity-name comparisons, membership tests and match
 dispatch in gameplay, while permitting raw names in diagnostics.
 
+Light and environment nodes belong to presentation: under `src/`, the types
+`Light3D`, `DirectionalLight3D`, `OmniLight3D`, `SpotLight3D`,
+`WorldEnvironment` and `Environment` may appear only in `src/presentation/`
+(`lighting-ownership`). `src/convert/` computes node-free lighting and tint
+specifications that `SceneLighting` applies. A scanner test also checks that
+every folder under `src/` is either protected or forbidden to the protected
+layers, so a renamed folder cannot silently leave the rules.
+
 This is a conservative static check, not a complete GDScript parser or proof of
 runtime purity. It does not resolve local type scopes, inner-class aliases or
 dependencies embedded in serialized resources beyond archive path references. Identifier shadowing and reflective

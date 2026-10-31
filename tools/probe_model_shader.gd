@@ -8,6 +8,12 @@ extends SceneTree
 ##
 ##   godot --path . -s res://tools/probe_model_shader.gd -- --out=<file>
 ##
+## It runs under any rendering method; add [code]--rendering-method forward_plus[/code]
+## before [code]-s[/code] to measure the modern renderer. The report names the
+## method it ran under. The expectations are the retail ones: opaque squares must
+## match under every method, while the translucent blends are reported as
+## expected to differ outside gl_compatibility and do not fail the run there.
+##
 ## The report goes to the file and to the log. Expected colour behavior is
 ## documented in docs/reference/rendering/README.md.
 
@@ -15,6 +21,8 @@ extends SceneTree
 const BACKGROUND := Color8(100, 60, 20)
 ## How far a channel may be from the expected value.
 const TOLERANCE: int = 1
+## The rendering method whose blending the translucent expectations describe.
+const BLEND_METHOD: String = "gl_compatibility"
 
 
 func _initialize() -> void:
@@ -62,7 +70,10 @@ func _run() -> void:
 	await RenderingServer.frame_post_draw
 	var screen: Image = root.get_texture().get_image()
 	var lines := PackedStringArray()
-	lines.append("renderer: %s" % ProjectSettings.get_setting("rendering/renderer/rendering_method"))
+	var method: String = RenderingServer.get_current_rendering_method()
+	var blends_differ: bool = method != BLEND_METHOD
+	lines.append("rendering method: %s" % method)
+	lines.append("project rendering method: %s" % ProjectSettings.get_setting("rendering/renderer/rendering_method"))
 	lines.append("video adapter: %s" % RenderingServer.get_video_adapter_name())
 	lines.append("background: %s" % _bytes(BACKGROUND))
 	var failures: int = 0
@@ -72,10 +83,14 @@ func _run() -> void:
 		var want: Color = cases[i][4]
 		var ok: bool = absi(got.r8 - want.r8) <= TOLERANCE and absi(got.g8 - want.g8) <= TOLERANCE \
 			and absi(got.b8 - want.b8) <= TOLERANCE
-		if not ok:
+		var blend: ModelShaders.Blend = cases[i][3]
+		var exempt: bool = blends_differ and blend != ModelShaders.Blend.OPAQUE
+		var status: String = "ok  " if ok else ("diff" if exempt else "FAIL")
+		if not ok and not exempt:
 			failures += 1
 		var case_name: String = cases[i][0]
-		lines.append("%s  %s: expected %s, measured %s" % ["ok  " if ok else "FAIL", case_name, _bytes(want), _bytes(got)])
+		var note: String = " (expected to differ on %s)" % method if exempt else ""
+		lines.append("%s  %s: expected %s, measured %s%s" % [status, case_name, _bytes(want), _bytes(got), note])
 	lines.append("%d of %d as expected (within %d)" % [cases.size() - failures, cases.size(), TOLERANCE])
 	var report: String = "\n".join(lines)
 	print(report)

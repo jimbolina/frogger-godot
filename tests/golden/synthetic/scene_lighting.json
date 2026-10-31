@@ -1,0 +1,686 @@
+{
+  "schema": "scene-lighting-v1",
+  "gamma": 2.2,
+  "lambert_scale": 1.0,
+  "tolerance": 0.0001,
+  "fixtures": [
+    {
+      "name": "org1_like",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            73,
+            73,
+            73
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            255,
+            255,
+            255
+          ],
+          "direction": [
+            -2246,
+            3335,
+            781
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.063267747,
+          0.063267747,
+          0.063267747
+        ],
+        "slots": [
+          {
+            "forward": [
+              -0.548348244,
+              -0.814221457,
+              -0.190676749
+            ],
+            "colour": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "energy": 0.936732253
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "org1_like_without_shadows",
+      "shadows": false,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            73,
+            73,
+            73
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            255,
+            255,
+            255
+          ],
+          "direction": [
+            -2246,
+            3335,
+            781
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.063267747,
+          0.063267747,
+          0.063267747
+        ],
+        "slots": [
+          {
+            "forward": [
+              -0.548348244,
+              -0.814221457,
+              -0.190676749
+            ],
+            "colour": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "energy": 0.936732253
+          }
+        ],
+        "caster": -1
+      }
+    },
+    {
+      "name": "later_record_takes_first_slot",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            64,
+            64,
+            64
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            200,
+            180,
+            40
+          ],
+          "direction": [
+            0,
+            4096,
+            -1000
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            40,
+            80,
+            160
+          ],
+          "direction": [
+            1000,
+            2000,
+            3000
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.047366143,
+          0.047366143,
+          0.047366143
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.267348438,
+              -0.534452722,
+              -0.80180116
+            ],
+            "colour": [
+              0.395287961,
+              0.614829612,
+              1.0
+            ],
+            "energy": 0.69808248
+          },
+          {
+            "forward": [
+              0.0,
+              -0.971491543,
+              0.237074212
+            ],
+            "colour": [
+              1.0,
+              0.952244123,
+              0.340578159
+            ],
+            "energy": 0.952633857
+          }
+        ],
+        "caster": 1
+      }
+    },
+    {
+      "name": "four_parallel_three_slots",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            32,
+            32,
+            48
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            255,
+            0,
+            0
+          ],
+          "direction": [
+            100,
+            4000,
+            100
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            0,
+            120,
+            0
+          ],
+          "direction": [
+            -3000,
+            1000,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            0,
+            0,
+            200
+          ],
+          "direction": [
+            0,
+            1000,
+            3000
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            90,
+            90,
+            90
+          ],
+          "direction": [
+            2000,
+            2000,
+            -2000
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.010308656,
+          0.010308656,
+          0.025153753
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.577350269,
+              -0.577350269,
+              0.577350269
+            ],
+            "colour": [
+              0.906746882,
+              0.906746882,
+              1.0
+            ],
+            "energy": 0.231652779
+          },
+          {
+            "forward": [
+              0.0,
+              -0.316154525,
+              -0.948707709
+            ],
+            "colour": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "energy": 0.907382607
+          },
+          {
+            "forward": [
+              -0.948707709,
+              -0.316154525,
+              0.0
+            ],
+            "colour": [
+              0.0,
+              1.0,
+              0.0
+            ],
+            "energy": 0.307326066
+          }
+        ],
+        "caster": 2
+      }
+    },
+    {
+      "name": "disabled_records_skipped",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            64,
+            64,
+            64
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 1,
+          "category": 0,
+          "colour": [
+            100,
+            0,
+            0
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            128,
+            160,
+            192
+          ],
+          "direction": [
+            500,
+            3000,
+            1500
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 0,
+          "colour": [
+            255,
+            255,
+            255
+          ],
+          "direction": [
+            0,
+            4096,
+            0
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.047366143,
+          0.047366143,
+          0.047366143
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.147441956,
+              -0.884651737,
+              -0.442325868
+            ],
+            "colour": [
+              0.740427,
+              0.871817934,
+              1.0
+            ],
+            "energy": 0.952633857
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "point_light_ignored",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            48,
+            48,
+            48
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 3,
+          "category": 1,
+          "colour": [
+            255,
+            255,
+            0
+          ],
+          "direction": [
+            0,
+            4096,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            160,
+            160,
+            160
+          ],
+          "direction": [
+            -1000,
+            3500,
+            -800
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.025153753,
+          0.025153753,
+          0.025153753
+        ],
+        "slots": [
+          {
+            "forward": [
+              -0.268289479,
+              -0.939135238,
+              0.214582759
+            ],
+            "colour": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "energy": 0.608149054
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "ambient_byte_wrap",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            200,
+            10,
+            128
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            100,
+            10,
+            128
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            64,
+            64,
+            64
+          ],
+          "direction": [
+            0,
+            3000,
+            2000
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.020771505,
+          0.003665541,
+          0.0
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.0,
+              -0.832050294,
+              -0.554700196
+            ],
+            "colour": [
+              1.0,
+              0.820697441,
+              0.639966354
+            ],
+            "energy": 0.128991429
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "saturation",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            192,
+            192,
+            192
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            128,
+            255,
+            32
+          ],
+          "direction": [
+            1200,
+            3600,
+            -900
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.531049225,
+          0.531049225,
+          0.531049225
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.307622963,
+              -0.923113035,
+              0.230717222
+            ],
+            "colour": [
+              1.0,
+              1.0,
+              0.706422874
+            ],
+            "energy": 0.468950775
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "straight_down",
+      "shadows": true,
+      "lights": [
+        {
+          "light_type": 1,
+          "category": 1,
+          "colour": [
+            64,
+            64,
+            64
+          ],
+          "direction": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "light_type": 2,
+          "category": 1,
+          "colour": [
+            255,
+            255,
+            255
+          ],
+          "direction": [
+            0,
+            4096,
+            0
+          ]
+        }
+      ],
+      "expected": {
+        "ambient": [
+          0.047366143,
+          0.047366143,
+          0.047366143
+        ],
+        "slots": [
+          {
+            "forward": [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            "colour": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "energy": 0.952633857
+          }
+        ],
+        "caster": 0
+      }
+    },
+    {
+      "name": "no_lights",
+      "shadows": true,
+      "lights": [],
+      "expected": {
+        "ambient": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "slots": [],
+        "caster": -1
+      }
+    }
+  ]
+}

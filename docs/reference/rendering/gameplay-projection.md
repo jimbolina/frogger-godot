@@ -137,4 +137,7 @@ from the committed `FrogState`, as in `MRCalculateCustomInstanceLights`
 (`API.SRC/MR_LIGHT.C`). The remaining difference is float transforms and
 normals against GTE 4.12 truncation, within one byte per channel; see the
 [golden spec](../../../tests/golden/specs/animation.md#animated-part-lighting)
-and [model lighting](README.md#model-lighting).
+and [model lighting](README.md#model-lighting). Under the
+[modern profile](modern-profile.md) Godot's directional lights light the
+parts instead, and the committed colour scale and custom ambient still apply
+through a per-part tint.

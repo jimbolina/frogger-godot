@@ -330,3 +330,99 @@ func test_animated_texture_keeps_original_pixel_offsets_and_uses_current_blend_r
 	for frame_material: ShaderMaterial in fallback_track.frames:
 		assert_same(frame_material, fallback_track.original)
 		assert_false(frame_material.shader.code.contains("sampler2D image"), "a known replacement cannot recover missing original image dimensions")
+
+
+func _lit_instance(file: MofFile) -> AnimatedModelInstance:
+	var builder := ModelMeshBuilder.new(TextureLibrary.new())
+	builder.lit_materials = true
+	var mesh: ModelMesh = builder.build_animated(file)
+	var instance := AnimatedModelInstance.new()
+	add_child_autofree(instance)
+	instance.setup(mesh, ModelAnimationPlayer.new(file))
+	return instance
+
+
+func _instance_tint(node: MeshInstance3D) -> Array:
+	return [node.get_instance_shader_parameter(ModelShaders.TINT_SCALE), node.get_instance_shader_parameter(ModelShaders.TINT_AMBIENT)]
+
+
+func test_a_lit_mesh_takes_source_lighting_as_a_scene_tint_on_shared_materials() -> void:
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
+	var instance: AnimatedModelInstance = _lit_instance(file)
+	assert_true(AnimatedModelInstance.has_lit_materials(instance.model_mesh))
+	var source: ShaderMaterial = instance.model_mesh.part_meshes[0].surface_get_material(0) as ShaderMaterial
+	assert_true(ModelShaders.is_lit(source.shader))
+	for node: MeshInstance3D in instance.part_nodes:
+		assert_eq(node.layers & SceneLightingSpec.SHADOW_CASTER_LAYER, SceneLightingSpec.SHADOW_CASTER_LAYER, "lit parts cast shadows")
+		assert_eq(node.layers & 1, 1, "lit parts stay on the default layer")
+	assert_eq(instance.scene_tint.scale, Vector3.ONE)
+	assert_eq(instance.scene_tint.ambient, Color(0, 0, 0, 0))
+	var lighting := MapLighting.new()
+	lighting.ambient = Vector3(1024, 1024, 1024)
+	lighting.directions.append(Vector3.RIGHT)
+	lighting.colours.append(Vector3(256, 512, 1024))
+	instance.set_source_lighting(lighting, Vector3i(64, 128, 192), Vector3i(64, 64, 192), true, true)
+	var expected: SceneTint = SceneTint.of(Vector3i(64, 128, 192), Vector3i(64, 64, 192), true, true)
+	assert_eq(instance.scene_tint.scale, expected.scale)
+	assert_eq(instance.scene_tint.ambient, expected.ambient)
+	assert_eq(instance.scene_tint.ambient.a, 1.0, "a custom ambient replaces the scene ambient")
+	assert_eq(_instance_tint(instance.part_nodes[0]), [expected.scale, expected.ambient])
+	assert_null(instance.part_nodes[0].get_surface_override_material(0), "a lit part draws its shared material")
+	assert_true(instance._materials.is_empty(), "no material is duplicated for lighting")
+	var untouched: bool = source.get_shader_parameter("source_lighting") == null
+	assert_true(untouched, "the shared material is untouched")
+	instance.set_source_lighting(lighting, Vector3i(64, 128, 192), Vector3i(64, 64, 192), false, true)
+	assert_eq(instance.scene_tint.scale, Vector3.ONE, "an unscaled tint keeps the colour")
+	assert_eq(instance.scene_tint.ambient, expected.ambient)
+	instance.set_source_lighting(lighting, Vector3i.ZERO, Vector3i.ZERO, false, false)
+	assert_eq(_instance_tint(instance.part_nodes[0]), [Vector3.ONE, Color(0, 0, 0, 0)])
+	instance.advance_tick()
+	assert_null(instance.part_nodes[0].get_surface_override_material(0))
+
+
+func test_a_lit_mesh_takes_a_frog_tint_as_a_scene_tint() -> void:
+	var instance: AnimatedModelInstance = _lit_instance(SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)]))
+	instance.set_tint(Vector3i(24, 0, 0), Vector3i(24, 0, 0), FrogTint.SCALED_COLOURS | FrogTint.CUSTOM_AMBIENT)
+	var expected: SceneTint = SceneTint.of(Vector3i(24, 0, 0), Vector3i(24, 0, 0), true, true)
+	assert_eq(instance.scene_tint.scale, expected.scale)
+	assert_eq(instance.scene_tint.ambient, expected.ambient)
+	assert_eq(_instance_tint(instance.part_nodes[0]), [expected.scale, expected.ambient])
+	instance.set_tint(Vector3i(64, 64, 64), Vector3i.ZERO, FrogTint.SCALED_COLOURS)
+	assert_eq(instance.scene_tint.scale, SceneTint.of(Vector3i(64, 64, 64), Vector3i.ZERO, true, false).scale)
+	assert_eq(instance.scene_tint.ambient.a, 0.0, "no custom ambient keeps the scene ambient")
+	instance.set_tint(Vector3i.ZERO, Vector3i.ZERO, 0)
+	assert_eq(_instance_tint(instance.part_nodes[0]), [Vector3.ONE, Color(0, 0, 0, 0)])
+	assert_true(instance._materials.is_empty())
+	assert_null(instance.part_nodes[0].get_surface_override_material(0))
+
+
+func test_a_lit_flipbook_keeps_only_its_cel_pose_copies() -> void:
+	var instance: AnimatedModelInstance = _lit_instance(_flipbook())
+	var shared: ShaderMaterial = instance.model_mesh.part_meshes[0].surface_get_material(0) as ShaderMaterial
+	var drawn: ShaderMaterial = instance.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
+	assert_not_null(drawn, "a flipbook part needs its own cel pose")
+	assert_ne(drawn, shared)
+	assert_true(ModelShaders.is_lit(drawn.shader))
+	var lighting := MapLighting.new()
+	instance.set_source_lighting(lighting, Vector3i(64, 64, 64), Vector3i.ZERO, true, false)
+	assert_same(instance.part_nodes[0].get_surface_override_material(0), drawn, "tinting a lit flipbook makes no further copies")
+	assert_eq(instance._materials.size(), 1)
+	instance.smoothing_enabled = true
+	instance.advance_tick()
+	instance.render(0.25)
+	assert_eq(_weight(instance, 0), 0.25)
+	assert_eq(instance.scene_tint.scale, SceneTint.of(Vector3i(64, 64, 64), Vector3i.ZERO, true, false).scale)
+
+
+func test_a_retail_mesh_has_no_scene_tint_or_caster_layer() -> void:
+	var instance: AnimatedModelInstance = _instance(SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)]))
+	assert_false(AnimatedModelInstance.has_lit_materials(instance.model_mesh))
+	assert_eq(instance.part_nodes[0].layers & SceneLightingSpec.SHADOW_CASTER_LAYER, 0)
+	var lighting := MapLighting.new()
+	lighting.ambient = Vector3(1024, 1024, 1024)
+	instance.set_source_lighting(lighting, Vector3i(64, 64, 64), Vector3i.ZERO, true, false)
+	assert_eq(instance.scene_tint.scale, Vector3.ONE)
+	var drawn: ShaderMaterial = instance.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
+	assert_not_null(drawn)
+	var ambient: Vector3 = drawn.get_shader_parameter("source_ambient")
+	assert_eq(ambient, Vector3(512, 512, 512))

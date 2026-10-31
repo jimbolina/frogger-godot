@@ -7,6 +7,7 @@ class Collected extends RefCounted:
 	var vertices := PackedVector3Array()
 	var colours := PackedColorArray()
 	var uvs := PackedVector2Array()
+	var normals := PackedVector3Array()
 	var water_ranks := PackedVector2Array()
 	var reference_depths := PackedFloat32Array()
 	var lines: bool = false
@@ -16,10 +17,14 @@ var _material_cache: Dictionary[String, ShaderMaterial] = {}
 
 ## Converts immutable parsed maps and texture dependencies to shared geometry,
 ## filtered as the scene's texture set asks unless [param linear_filter] says otherwise.
+## The library's rendering profile picks the materials: retail samples the
+## scene's PC pages, modern samples each image's own texture under Godot lights.
+## Both profiles share the same arrays, normals included.
 func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filter()) -> MapMesh:
 	var result := MapMesh.new()
 	result.scene = scene
 	result.linear_filter = linear_filter
+	result.modern = scene.library.rendering_profile().is_modern()
 	result.diagnostics = scene.diagnostics.duplicate()
 	scene.texture_pages.configure_set(scene.page_set)
 	_material_cache.clear()
@@ -28,6 +33,8 @@ func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filte
 	result.diagnostics.append_array(animation.diagnostics)
 	var water := MapWaterState.new()
 	water.configure(scene.map.vertices, scene.map.polygons)
+	var normals := MapNormals.new()
+	normals.configure(scene.map.vertices, scene.map.polygons)
 	var ranks: Dictionary[int, int] = {}
 	for rank: int in water.vertex_indices.size():
 		ranks[water.vertex_indices[rank]] = rank & 31
@@ -87,7 +94,7 @@ func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filte
 				surface.spec.animation_index = track
 				surface.spec.polygon_index = index
 				surface.spec.original = _material(scene, image, blend, linear_filter, layer,
-					key)
+					key, result.modern)
 				if surface.spec.textured and image == null:
 					surface.spec.original.set_shader_parameter("missing_image", true)
 				if track >= 0:
@@ -99,13 +106,13 @@ func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filte
 						var frame_blend: ModelShaders.Blend = blend
 						if replacement != null and blend != ModelShaders.Blend.OPAQUE:
 							frame_blend = ModelShaders.blend_for_mode(replacement.blend_mode())
-						surface.spec.frames[global_id] = _material(scene, replacement, frame_blend, linear_filter, layer, "%s/%d" % [key, global_id])
+						surface.spec.frames[global_id] = _material(scene, replacement, frame_blend, linear_filter, layer, "%s/%d" % [key, global_id], result.modern)
 					var initial_id: int = animation.track_image_id(track)
 					var initial_image: VloImage = scene.library.image_for_id(initial_id, scene.preferred) if surface.spec.textured else null
 					var initial_blend: ModelShaders.Blend = blend
 					if initial_image != null and blend != ModelShaders.Blend.OPAQUE:
 						initial_blend = ModelShaders.blend_for_mode(initial_image.blend_mode())
-					surface.spec.frames[initial_id] = _material(scene, initial_image, initial_blend, linear_filter, layer, "%s/initial" % key)
+					surface.spec.frames[initial_id] = _material(scene, initial_image, initial_blend, linear_filter, layer, "%s/initial" % key, result.modern)
 				collected[key] = surface
 				order.append(key)
 			var surface: Collected = collected[key]
@@ -135,6 +142,7 @@ func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filte
 				if corner < base_uv.size():
 					uv = base_uv[corner]
 				surface.uvs.append(uv)
+				surface.normals.append(normals.corner_normal(index, corner))
 				var rank: int = ranks.get(vertex_index, -1)
 				if rank >= 0:
 					surface.spec.water = true
@@ -164,10 +172,14 @@ static func triangle_corners(count: int) -> PackedInt32Array:
 
 
 func _material(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend,
-		linear_filter: bool, layer: int, unique: String) -> ShaderMaterial:
+		linear_filter: bool, layer: int, unique: String, modern: bool) -> ShaderMaterial:
 	var key: String = "%d/%d/%d/%s" % [image.texture_id if image != null else -1, blend, layer, unique]
 	if not _material_cache.has(key):
-		_material_cache[key] = MapShaders.material(image, blend, linear_filter, layer, scene.texture_pages)
+		if modern:
+			_material_cache[key] = MapLitShaders.material(image, scene.library.texture_for(image), blend,
+				linear_filter, layer)
+		else:
+			_material_cache[key] = MapShaders.material(image, blend, linear_filter, layer, scene.texture_pages)
 	return _material_cache[key]
 
 
@@ -177,6 +189,8 @@ func _add_surface(mesh: ArrayMesh, surface: Collected) -> void:
 	arrays[Mesh.ARRAY_VERTEX] = surface.vertices
 	arrays[Mesh.ARRAY_COLOR] = surface.colours
 	arrays[Mesh.ARRAY_TEX_UV] = surface.uvs
+	if not surface.normals.is_empty():
+		arrays[Mesh.ARRAY_NORMAL] = surface.normals
 	arrays[Mesh.ARRAY_TEX_UV2] = surface.water_ranks
 	arrays[Mesh.ARRAY_CUSTOM0] = surface.reference_depths
 	var flags: int = Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT
@@ -198,13 +212,17 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 	result.sky_atlas = _baked_sky_atlas(scene, pages, result)
 	if result.sky_atlas == null:
 		return null
-	var material := ShaderMaterial.new()
-	material.shader = MapShaders.sky_shader(linear_filter)
-	material.set_shader_parameter("image", result.sky_atlas)
-	material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, float(scene.page_set.scale()) / result.sky_atlas.get_height()))
-	material.set_shader_parameter("texel_inset", MapShaders.texel_inset(result.sky_atlas))
-	material.set_shader_parameter("far_layer", 0.0)
-	material.render_priority = -127
+	var material: ShaderMaterial
+	if result.modern:
+		material = MapLitShaders.sky_material(result.sky_atlas, linear_filter)
+	else:
+		material = ShaderMaterial.new()
+		material.shader = MapShaders.sky_shader(linear_filter)
+		material.set_shader_parameter("image", result.sky_atlas)
+		material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, float(scene.page_set.scale()) / result.sky_atlas.get_height()))
+		material.set_shader_parameter("texel_inset", MapShaders.texel_inset(result.sky_atlas))
+		material.set_shader_parameter("far_layer", 0.0)
+		material.render_priority = -127
 	var rotation_orders: Array[PackedInt32Array] = [PackedInt32Array([0, 1, 2, 3]),
 		PackedInt32Array([2, 0, 3, 1]), PackedInt32Array([3, 2, 1, 0]), PackedInt32Array([1, 3, 0, 2])]
 	var colour: Color = sky_colour(scene.level)
@@ -233,7 +251,7 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 			surface.colours.append(colour)
 			surface.uvs.append(pixels[order[corner]] + origin)
 			surface.water_ranks.append(Vector2(atlas_page, 0))
-			surface.reference_depths.append_array(PackedFloat32Array([0, 0, 0, 0]))
+			surface.reference_depths.append_array(PackedFloat32Array([atlas_page, 0, 0, 0]))
 		result.triangle_count += 2
 	_add_surface(mesh, surface)
 	mesh.surface_set_material(0, material)

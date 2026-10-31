@@ -16,7 +16,8 @@ func _run() -> void:
 		return
 	var data: AssetCatalog = null
 	if ViewerArguments.uses_assets(arguments):
-		data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+		data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+		data.note_renderer(RenderingServer.get_current_rendering_method())
 		if not data.is_valid():
 			_fail(data.error)
 			return

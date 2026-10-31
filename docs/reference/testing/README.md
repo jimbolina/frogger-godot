@@ -345,6 +345,21 @@ but normal runtime use and the Godot test suites do not build or load them.
   an external destination into the checkout.
 - After changing Godot, renderer or environment, run `tools/probe_model_shader.gd`
   with a window and inspect the measured colours; see [rendering](../rendering/README.md).
+  It reports its rendering method and, outside `gl_compatibility`, marks the
+  translucent blends as expected to differ. After changing lighting, also run
+  `godot --path . --rendering-method forward_plus --script tools/probe_scene_lighting.gd -- --output=<external-folder>`,
+  which reports the lit, source-facing and ambient-only bytes and the
+  `LAMBERT_SCALE` that makes the lit face exact
+  ([modern profile](../rendering/modern-profile.md)).
+- Captures take `--rendering retail|modern` (retail by default); modern starts
+  Godot with `--rendering-method forward_plus`, and `--rendering-method gl_compatibility`
+  forces the Compatibility fallback, for example
+  `python3 tools/capture_map.py --output-directory <external-folder> --level SUB1 --rendering modern`
+  or `python3 tools/run_gameplay_capture.py --godot <executable> --level ORG1 --rendering modern --output-directory <external-folder>`.
+  The headless suites never compile shaders, so any `SHADER ERROR` in a
+  capture log fails the capture, and a map capture also fails when its image is
+  a single colour. `python3 tools/test_capture_tools.py` checks the command
+  lines without Godot; the wrappers run it.
 - Every new golden family needs an independent generator and a deliberate-break
   check, with the original fact restored. See [golden rules](../../../tests/golden/README.md).
 

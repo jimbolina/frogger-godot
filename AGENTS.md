@@ -5,7 +5,8 @@ Read this and [docs/CURRENT.md](docs/CURRENT.md) at session start.
 ## Project and boundaries
 
 Frogger (1997 PC) rewritten for Windows, Linux and macOS in Godot 4.5.1
-Compatibility, statically typed GDScript, warnings as errors. Verify faithful
+Compatibility (Forward+ for the modern rendering profile), statically typed
+GDScript, warnings as errors. Verify faithful
 feel against references; floats are allowed. Default to high-poly maps/models.
 No PlayStation, web or mobile.
 

@@ -89,6 +89,11 @@ func texture_set() -> TextureSet:
 	return catalog.texture_set() if catalog != null else TextureSet.retail()
 
 
+## The rendering profile of the catalog (the retail profile without one).
+func rendering_profile() -> RenderingProfile:
+	return catalog.rendering_profile() if catalog != null else RenderingProfile.retail()
+
+
 ## True when the texture set samples with linear filtering and mipmaps in 3D.
 func linear_filter() -> bool:
 	return texture_set().linear_filter()

@@ -102,7 +102,10 @@ func _ready() -> void:
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_content)
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+	data.note_renderer(RenderingServer.get_current_rendering_method())
+	for warning: String in data.warnings:
+		push_warning(warning)
 	if not data.is_valid():
 		_show_message("The imported assets cannot be opened: %s" % data.error)
 		return

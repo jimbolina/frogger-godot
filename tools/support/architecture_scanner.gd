@@ -5,6 +5,7 @@ extends RefCounted
 ## It resolves project class names, literal script loads and extends chains. It
 ## cannot prove dynamic dispatch, class-name shadowing or dependencies supplied
 ## from outside this source set; review diagnostics make these gaps explicit.
+## Scene lights and environments under res://src/ belong to res://src/presentation/.
 
 const TREE_CALLS: PackedStringArray = [
 	"get_tree", "get_node", "get_node_or_null", "has_node", "get_main_loop",
@@ -33,6 +34,12 @@ const ARCHIVE_GUARDED: PackedStringArray = [
 	"res://src/", "res://scenes/", "res://assets/", "res://tests/", "res://tools/",
 ]
 const RESOURCE_FILES: PackedStringArray = ["tscn", "tres"]
+const LIGHTING_TYPES: PackedStringArray = [
+	"Light3D", "DirectionalLight3D", "OmniLight3D", "SpotLight3D", "WorldEnvironment", "Environment",
+]
+const LIGHTING_SCOPE: String = "res://src/"
+const LIGHTING_OWNER: String = "res://src/presentation/"
+const PROTECTED_LAYERS: PackedStringArray = ["source", "game", "application", "data"]
 
 
 ## A path and line diagnostic, retaining the protected script being checked.
@@ -130,6 +137,8 @@ func check(sources: Dictionary[String, String]) -> Array[Violation]:
 				"protected script must inherit %s through a resolved base"
 					% " or ".join(allowed), origin))
 		_visit(origin, origin, layer, records, names, {}, result)
+	for path: String in paths:
+		_check_lighting(path, records[path], result)
 	_check_archive(paths, records, result)
 	resources.sort()
 	for path: String in resources:
@@ -149,6 +158,29 @@ static func scan_resource(path: String, text: String) -> Array[Violation]:
 			result.append(Violation.new(path, index + 1, "archive",
 				"shipped resource must not reference archived code", path))
 	return result
+
+
+## Whether a res:// path is a protected layer or forbidden to some protected layer.
+func classifies(path: String) -> bool:
+	if not _protected_layer(path).is_empty():
+		return true
+	for layer: String in PROTECTED_LAYERS:
+		if _forbidden_path(path, layer):
+			return true
+	return false
+
+
+func _check_lighting(path: String, record: Source, into: Array[Violation]) -> void:
+	if not path.begins_with(LIGHTING_SCOPE) or path.begins_with(LIGHTING_OWNER):
+		return
+	for index: int in range(record.tokens.size()):
+		var token: Token = record.tokens[index]
+		if token.is_string or not LIGHTING_TYPES.has(token.value):
+			continue
+		if index > 0 and record.tokens[index - 1].value == ".":
+			continue
+		into.append(Violation.new(path, token.line, "lighting-ownership",
+			"scene lighting %s belongs under %s" % [token.value, LIGHTING_OWNER], path))
 
 
 func _check_archive(paths: Array[String], records: Dictionary[String, Source],

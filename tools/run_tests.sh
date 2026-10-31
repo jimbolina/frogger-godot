@@ -24,6 +24,11 @@ if [ -d assets/fonts ]; then
     fi
 fi
 
+if ! "${PYTHON:-python3}" tools/test_capture_tools.py >/dev/null 2>&1; then
+    echo "run_tests: capture tool self-test failed" >&2
+    exit 2
+fi
+
 if [ -d assets ]; then
     while IFS= read -r -d '' asset; do
         first_line=""

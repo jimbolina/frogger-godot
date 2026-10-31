@@ -3,6 +3,9 @@ extends RefCounted
 ## One level's decoded map and rendering dependencies, owned by its active viewer.
 ## All resource choices come from the executable tables; no retail IDs are baked in.
 
+## Theme of the sky levels, whose sky-land backdrop samples the baked atlas.
+const SKY_THEME: int = 8
+
 ## Selected level and detail.
 var level: int = 0
 var low_poly: bool = false
@@ -15,7 +18,8 @@ var library: TextureLibrary = TextureLibrary.new()
 ## Whole physical texture pages, shared by this scene's cached map materials.
 var texture_pages := MapTexturePages.new()
 ## The pages and sky atlas baked for this scene's two banks; null when the
-## catalog has none, and the textured map draws magenta.
+## catalog has none, and the textured map draws magenta. The modern profile
+## samples per-image textures and loads it only for the sky atlas of a sky level.
 var page_set: TexturePageSet
 var preferred: VloFile
 var remap: TextureRemap
@@ -67,13 +71,14 @@ static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool
 	scene.preferred = scene._load_bank(data, theme, multiplayer)
 	if not scene.error.is_empty():
 		return scene
-	scene._load_page_set(data, general, theme, multiplayer)
+	if not scene.library.rendering_profile().is_modern() or scene.map.general.theme == SKY_THEME:
+		scene._load_page_set(data, general, theme, multiplayer)
 	if row.environment_texture_pointer != 0:
 		scene.environment_image = scene.library.image_for_pointer(data.tables.bmp_pointers(), row.environment_texture_pointer, scene.preferred)
 	scene.cave_enabled = row.use_cave_lights
 	if scene.cave_enabled:
 		scene._read_cave_light(data)
-	if scene.map.general.theme == 8:
+	if scene.map.general.theme == SKY_THEME:
 		scene.sky_land = data.read_sky_land(use_low_poly, scene.diagnostics)
 		scene.sky_remap = data.tables.remaps().find_by_name("txl_sky_land")
 		if scene.sky_land == null or scene.sky_remap == null:

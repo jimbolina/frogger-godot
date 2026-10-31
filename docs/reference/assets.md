@@ -50,10 +50,10 @@ implements it over the retail files for the importer and the archive suite.
 | `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
 | `textures/images_x4/tNNNN.png` | The same images upscaled to exactly four times the padded size, drawn by the `x4` [texture set](#upscaled-textures). |
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
-| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). |
+| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). The retail profile samples them; the [modern profile](rendering/modern-profile.md#terrain) samples `images/` directly and loads a page set only for the sky atlas. |
 | `textures/pages_x4/<SET>/` | The same page sets at four times the size, baked locally and ignored by Git ([upscaled textures](#upscaled-textures)). |
 | `fonts/<set>/newfont.fnt`, `newfont.png` | One BMFont text file per texture set (`retail`, `x4`) over a copy of that set's `t0310.png`, imported as a `FontFile` ([fonts](#fonts)). |
-| `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness. |
+| `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness, on the retail shaders; the modern profile derives lit copies at runtime. |
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |

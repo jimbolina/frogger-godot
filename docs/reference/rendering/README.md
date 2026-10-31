@@ -1,5 +1,9 @@
 # Rendering
 
+This is the retail profile, the default. The [modern profile](modern-profile.md)
+(`--rendering=modern`) replaces the lighting, model materials and terrain
+sampling below with Godot lights, shadows and per-image textures on Forward+.
+
 - Renderer: Compatibility (OpenGL), black unlit background, no tone mapping, no fog, no MSAA. It was chosen because it mixes translucent polygons on stored colour values, as the original did.
 - Depth buffer. A texture pixel made transparent by the black-is-transparent rule is discarded. Semi-transparent polygons go in separate surfaces that do not write depth, in four blend variants: average, add, subtract, add a quarter.
 - One family of unshaded shaders, one file per variant under `src/convert/shaders/` (`ModelShaders` and `MapShaders` select and load them). A textured pixel is texture colour times lit colour times 2, the lit colour stopping at full brightness. An untextured pixel is the lit colour as it is, not doubled. All of it is computed on stored colour values.

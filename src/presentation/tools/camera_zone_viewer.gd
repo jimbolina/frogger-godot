@@ -18,7 +18,8 @@ var _last_tick: int = -1
 func _ready() -> void:
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
 	_automated = ViewerArguments.has_flag(arguments, "--run-scenario")
-	_data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+	_data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+	_data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not _data.is_valid():
 		_fail(_data.error)
 		return
