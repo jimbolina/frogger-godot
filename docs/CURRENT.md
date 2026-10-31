@@ -7,16 +7,16 @@ stack over the animated water, Options sets volumes, rebinds keys and views the
 high scores, and menu images follow the OS language or `--language=`. ORG1–ORG5,
 SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and
 SKY1–SKY4 are accepted by the owner's play check (P9, P10, P11 effects, P13a
-flow, P13b stack, P13g water, P13c options). See the [roadmap](PORTING.md),
+flow, P13b stack, P13g water, P13c options, P13d high scores). See the [roadmap](PORTING.md),
 [front end](reference/gameplay/front-end.md), [entities](reference/gameplay/entities.md)
 and [effects](reference/rendering/effects.md).
 
-P13d is implemented and awaits the owner's play check: a finished game enters
-the name-entry page when its score beats a table, the view page tours the new
-rows and the scrolling main table, Options offers View high scores, and scores
-persist in `user://high_scores.cfg`. See
-[high scores](reference/gameplay/front-end.md#high-scores). The attract cycle
-(P13e) is next.
+P13d is complete and accepted: a finished game enters the name-entry page when
+its score beats a table, the view page tours the new rows and the scrolling main
+table, Options offers View high scores, and scores persist in
+`user://high_scores.cfg`. See [high scores](reference/gameplay/front-end.md#high-scores).
+Next: the attract cycle (P13e), or the cross-cutting X2 animated per-part
+lighting that the owner noticed in play (the gameplay frog is unshaded).
 
 P12 audio playback awaits the owner's by-ear check: sound effects play from
 committed voices and music from the disc image (`--disc=` or `FROGGER_DISC`),
