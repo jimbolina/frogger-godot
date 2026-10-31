@@ -70,10 +70,10 @@ replaces texture-page reconstruction and colour keys with ordinary imported
 textures and materials. Goldens that assert C colours are retired or re-scoped
 to what still holds (geometry, animation, gameplay).
 
-Two decisions gate S1 and are listed below: where imported retail-derived
-assets live, since `AGENTS.md` forbids committing retail bytes, and the
-revised project boundaries that replace the runtime-loading rules once the
-spike starts.
+The owner has decided that imported retail-derived assets are committed to
+the repository (see below); `AGENTS.md`'s retail-bytes rule and runtime-loading
+boundaries are rewritten when S1 starts, not before, so the current goldens
+keep their text-only form until then.
 
 ## Needed from the owner
 
@@ -81,7 +81,7 @@ spike starts.
 |---|---|---|
 | A licence for this project's own code | Before the repository is made public | |
 | A repository host | Before P17's CI | CI needs a runner and retained logs |
-| Where imported assets live | Before S1 | Importing retail models, textures and sounds as project resources puts retail-derived bytes in the project. Either they are committed (the repository stays private and the licence decision covers them) or the import tool writes them to a git-ignored folder on each machine. `AGENTS.md`'s retail-bytes rule and runtime-loading boundaries are revised to match at S1's start. |
+| Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds and maps are committed as project resources; the repository stays private and the licence decision covers them. `AGENTS.md`'s retail-bytes rule and runtime-loading boundaries are revised to match when S1 starts. |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage
