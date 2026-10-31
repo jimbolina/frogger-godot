@@ -7,6 +7,8 @@ func test_missing_data_has_actionable_error() -> void:
 	assert_string_contains(assets.error, "valid player data")
 	assert_null(assets.texture("opt_start"))
 	assert_null(assets.level_texture(24, FrontEndAssets.LevelImage.SCREENSHOT))
+	assert_eq(assets.retail_size("opt_start"), Vector2.ZERO)
+	assert_eq(assets.level_retail_size(24, FrontEndAssets.LevelImage.SCREENSHOT), Vector2.ZERO)
 
 
 func test_invalid_data_has_actionable_error() -> void:

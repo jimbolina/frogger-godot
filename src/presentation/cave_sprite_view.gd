@@ -226,6 +226,7 @@ func _configure_pickups(scene: MapSceneData, data: AssetCatalog, types: Array, p
 
 func _load_resident(data: AssetCatalog, problems: PackedStringArray) -> void:
 	_resident = TextureLibrary.new()
+	_resident.catalog = data
 	for bank_name: String in RESIDENT_BANKS:
 		var entry: MwiEntry = data.find_resource(bank_name) if data.mwi != null else null
 		if entry == null:
@@ -244,7 +245,7 @@ func _image_for_id(scene: MapSceneData, identity: int) -> VloImage:
 	return image
 
 func _sprite(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend, depth_bias: float) -> Sprite:
-	var material: ShaderMaterial = ModelShaders.material(scene.library.texture_for(image), blend, false, true)
+	var material: ShaderMaterial = ModelShaders.material(scene.library.texture_for(image), blend, scene.library.linear_filter(), true)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
 	uv.size.y -= (1.0 / image.padded_height) if image.has_flag(VloImage.FLAG_HIT_Y) else 0.0

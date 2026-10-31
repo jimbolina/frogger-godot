@@ -139,3 +139,42 @@ func test_a_flipbook_copy_draws_its_part_materials_so_the_projection_reaches_its
 			assert_eq(projection, scale, "the view's projection reaches the flipbook cels")
 			checked += 1
 	assert_gt(checked, 0)
+
+func test_an_x4_catalog_retextures_the_copy_and_leaves_the_shared_mesh_retail() -> void:
+	var shared: ModelMesh = _committed_frog()
+	var x4: ImportedAssets = ImportedAssets.open("res://assets", "x4")
+	assert_eq(x4.warnings, PackedStringArray())
+	var copy: ModelMesh = ModelMeshCopy.of(shared, x4)
+	var copied: Array[ShaderMaterial] = _surface_materials(copy)
+	var shared_materials: Array[ShaderMaterial] = _surface_materials(shared)
+	assert_eq(copied.size(), shared_materials.size())
+	var textured: int = 0
+	for index: int in copied.size():
+		var retail: Texture2D = shared_materials[index].get_shader_parameter("image")
+		var image: Texture2D = copied[index].get_shader_parameter("image")
+		if retail == null:
+			assert_null(image)
+			assert_same(copied[index].shader, shared_materials[index].shader, "a flat material keeps its shader")
+			continue
+		textured += 1
+		assert_true(retail.resource_path.begins_with("res://assets/textures/images/"), retail.resource_path)
+		assert_eq(image.resource_path, retail.resource_path.replace("/images/", "/images_x4/"))
+		assert_eq(image.get_size(), retail.get_size() * 4)
+		assert_true(copied[index].shader.resource_path.contains("_linear"), copied[index].shader.resource_path)
+		assert_false(shared_materials[index].shader.resource_path.contains("_linear"))
+	assert_gt(textured, 0, "the frog has textured surfaces")
+	var again: ModelMesh = ModelMeshLibrary.mesh_for(x4, _data.find_resource(FROG).index, null, null)
+	assert_same(ModelMeshLibrary.mesh_for(x4, _data.find_resource(FROG).index, null, null), again, "the x4 mesh loads once per set")
+	assert_ne(again, shared)
+	assert_same(_committed_frog(), shared, "the retail mesh is untouched")
+
+func test_the_linear_variant_is_found_from_the_shader_file() -> void:
+	var opaque: Shader = ModelShaders.shader(true, ModelShaders.Blend.OPAQUE, false, false)
+	assert_same(ModelShaders.linear_variant(opaque), ModelShaders.shader(true, ModelShaders.Blend.OPAQUE, true, false))
+	var two_sided: Shader = ModelShaders.shader(true, ModelShaders.Blend.ADD_QUARTER, false, true)
+	assert_same(ModelShaders.linear_variant(two_sided), ModelShaders.shader(true, ModelShaders.Blend.ADD_QUARTER, true, true))
+	var linear: Shader = ModelShaders.shader(true, ModelShaders.Blend.AVERAGE, true, false)
+	assert_same(ModelShaders.linear_variant(linear), linear)
+	var flat: Shader = ModelShaders.shader(false, ModelShaders.Blend.OPAQUE, false, false)
+	assert_same(ModelShaders.linear_variant(flat), flat)
+	assert_null(ModelShaders.linear_variant(null))

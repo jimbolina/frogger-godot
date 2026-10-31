@@ -1,4 +1,4 @@
-# Imported assets (`pc-retail-v3.0e/texture_pages.tsv`, `model_meshes.tsv`, `sound_samples.tsv`, `disc_tracks.tsv`, `asset_census.txt`)
+# Imported assets (`pc-retail-v3.0e/texture_pages.tsv`, `model_meshes.tsv`, `sound_samples.tsv`, `disc_tracks.tsv`, `asset_census.txt`, `imported/texture_pages_x4.tsv`)
 
 S1c imports every retail asset into `assets/`. These facts say what each
 imported file must hold. They are derived from the retail bytes by
@@ -13,6 +13,7 @@ every texture id has one size and padding in every bank that holds it.
 | `model_meshes.tsv` | part of a static model (1,009, the keys of `mof_parts.tsv`) | resource id, file name, static model inside the file, part, surfaces, triangles, cels, `unresolved_textured_polygons`, `positions_sha256`, `colours_sha256`, `uvs_sha256` |
 | `sound_samples.tsv` | present sound-bank row (174) | sound id, bank, body file name, FrogLord sound name, `source_bits`, `source_rate`, frames, `rate` (always 11025), `pcm16_sha256` |
 | `disc_tracks.tsv` | audio track of the disc image (31) | track, FrogLord music name (`-` if none), first sector (from the table, pregap included), sectors, frames (44.1 kHz stereo), seconds (3 decimals), `pcm_sha256`, the levels whose music-table entry plays it (`-` if none) |
+| `imported/texture_pages_x4.tsv` | page of a map texture set at scale 4 (28 sets x 14 pages), plus one sky-land atlas per sky set | set, page (as `texture_pages.tsv`), width, height, `rgba_sha256`, `opaque_pixels` |
 | `asset_census.txt` | count, `key=value` | MWI entries, maps (FROG and sky land), VLO banks, images, distinct texture ids, models by kind and incomplete models, model parts, sound banks and samples, demo tables, rows and distinct demos, disc tracks, rows of every EXE table (`rows[exe_*]`, as `make_golden_exe_tables.py` writes them, plus the two high-score tables) |
 
 `-` is an empty list. List digests follow the
@@ -64,6 +65,24 @@ The atlas is 256 wide by 258 per page, filled with magenta
 `258*s+256`. Page row 0 is repeated at row `258*s`, and page row 255 at row
 `258*s+257`. A page -1 slot stays magenta. Both sky-land files give the
 same atlas. The generator fails if they ever differ.
+
+### Texture pages at scale
+
+`imported/texture_pages_x4.tsv` pins the pages `tools/bake_pages_x4.py`
+bakes locally into `assets/textures/pages_x4/` from the committed x4 images.
+It lives under `imported/` because it describes derived files, not retail
+bytes. `make_golden_texture_pages_x4.py` composes each page at scale S (4)
+with the rule above multiplied by S: placement, upload order, validity,
+flags, set membership and sky order come from the retail executable and
+banks; only each upload's RGB comes from `assets/textures/images_x4/tNNNN.png`
+(S times the padded size, decoded with Pillow). A keyed page's alpha is the
+nearest S-times enlargement of the retail page's key mask, with RGB 0 under
+alpha 0; other pages are opaque. Each sky slot is 258 x S rows: the scaled
+page's first row repeated S times, the scaled page, then its last row
+repeated S times. `rgba_sha256` hashes the 1024 x 1024 x 4 bytes;
+`opaque_pixels` counts alpha 255. The bake tool reads only `assets/` (the
+bank and page-set resources as text) and composes every set at scale 1
+first, stopping unless that reproduces the committed pages.
 
 ## Model meshes
 
@@ -134,9 +153,10 @@ overrides. They need no retail files.
 | Test | Compares |
 |---|---|
 | `test_asset_textures.gd` | Every `vlo_images.tsv` row with its bank resource's image: texture id, VRAM position, sizes, `u`, `v`, flags, blend mode and page, and that `texture` is `textures/images/tNNNN.png` with no stored pixels. Each PNG, decoded from the file and through its imported texture, is RGBA8 at the padded size with `padded_rgba_sha256`; its in-game region has `rgba_sha256`. Every `texture_pages.tsv` row with the page PNG of its `TexturePageSet` (`rgba_sha256`, `opaque_pixels`) or its sky atlas and `sky_pages`. The front-end and HUD images and `MapTexturePages` load from the catalog. |
+| `test_asset_pages_x4.gd` | Every retail page set has a baked `pages_x4/<SET>/page_set.tres` with the same banks, colour keys and sky order and `scale()` 4; every `imported/texture_pages_x4.tsv` row's PNG at its size with `rgba_sha256` and `opaque_pixels`; x4 pages and images import with mipmaps, retail ones without. The catalog opened with `TextureSet.X4` draws them. |
 | `test_asset_tables.gd` | Every row of `exe_map_book`, `exe_theme_book`, `exe_forms`, `exe_remaps`, `exe_scripts`, `exe_music`, `exe_level_select`, `exe_demos` and `exe_pickups` built from the imported tables as the archive suite builds them from the executable; the high-score row counts; each table in its own file; the name lists. Every `*.DAT` entry has a demo resource, and each demo of `demos.tsv` has its duration, start square, input count and input digest. |
 | `test_asset_census.gd` | The `asset_census.txt` counts against the files present: MWI entries, map and sky-land resources, bank resources, images, texture PNGs, models by kind with incomplete models and parts, sound banks and WAVs, the demo table and the demos it names, and music tracks. |
-| `test_asset_import_settings.gd` | Every `.png`, `.wav` and `.ogg` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`. |
+| `test_asset_import_settings.gd` | Every `.png`, `.wav` and `.ogg` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`images_x4/` and `pages_x4/` generate mipmaps). |
 | `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
 | `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
@@ -156,7 +176,7 @@ A reviewed hand edit of a committed asset gets one row in
 | Column | Meaning |
 |---|---|
 | asset | path under `assets/` |
-| family | `texture_pages`, `model_meshes`, `sound_samples`, `disc_tracks` or `vlo_images` |
+| family | `texture_pages`, `texture_pages_x4`, `model_meshes`, `sound_samples`, `disc_tracks` or `vlo_images` |
 | field | the fact column it replaces, e.g. `rgba_sha256` |
 | value | the new value |
 | reason | why the edit was made; must not be empty |
@@ -175,12 +195,14 @@ python3 tools/make_golden_model_meshes.py --data-dir <retail folder>
 python3 tools/make_golden_sound_samples.py --data-dir <retail folder>
 python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROGGER.mds>
 python3 tools/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
+python3 tools/make_golden_texture_pages_x4.py --data-dir <retail folder>
 ```
 
 `--data-dir` defaults to `FROGGER_DATA_DIR`, and `--disc` to
 `FROGGER_DISC`. `--output` names another file. `--check` compares with the
 committed file, prints a diff and exits 1 on a difference. All generators
-use only the Python standard library. The disc track generator streams the
+use only the Python standard library, except the x4 page generator, which
+decodes the upscaled PNGs with Pillow. The disc track generator streams the
 .mdf in 8 MB chunks.
 
 They share `tools/imported_assets_common.py`, which covers arguments, lazy
@@ -216,7 +238,13 @@ import test. Then restore the fact and rerun.
 - **Tables and demos:** change a map id in `exe_map_book.tsv`, then a
   duration in `demos.tsv`.
 - **Import settings:** set `mipmaps/generate=true` in one `.png.import`;
-  the test must name the PNG and key.
+  the test must name the PNG and key. Set `mipmaps/generate=false` in one
+  `images_x4/*.png.import`; the test must name it.
+- **Texture pages at scale:** change one digit of one `rgba_sha256` in
+  `imported/texture_pages_x4.tsv`, then an `opaque_pixels`; the x4 page
+  test must name the set and page. Punch a transparent pixel into one baked
+  `pages_x4/` PNG: `tools/bake_pages_x4.py --check` must exit 1 naming the
+  file, and the test wrapper's bake step restores it.
 
 The generators' `--check` mode was broken and restored in the same way for
 all five files. Each import-test break was restored and the test rerun.

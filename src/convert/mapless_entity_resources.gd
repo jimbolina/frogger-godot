@@ -60,6 +60,7 @@ func scene_for(data: AssetCatalog, theme: int) -> MapSceneData:
 	if _scenes.has(theme):
 		return _scenes[theme]
 	var scene := MapSceneData.new()
+	scene.library.catalog = data
 	_scenes[theme] = scene
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
 	var owner: ThemeBookEntry = data.theme_book_entry(theme)

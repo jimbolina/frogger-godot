@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_back;
-uniform sampler2D image : filter_linear, repeat_disable;
+uniform sampler2D image : filter_linear_mipmap, repeat_disable;
 uniform vec2 uv_scale = vec2(1.0);
 uniform vec2 uv_offset = vec2(0.0);
 
@@ -18,6 +18,7 @@ vec3 through_renderer(vec3 wanted) {
 
 
 uniform vec2 pixel_scale = vec2(1.0);
+uniform vec2 texel_inset = vec2(0.0);
 uniform vec2 pixel_padding = vec2(0.0);
 uniform vec2 image_origin = vec2(0.0);
 uniform vec2 animation_offset = vec2(0.0);
@@ -126,7 +127,7 @@ void vertex() {
 
 void fragment() {
 	if (reference_visible < 0.5) { discard; }
-	vec4 texel = texture(image, affine_uv / affine_weight - pixel_scale * 0.5);
+	vec4 texel = texture(image, affine_uv / affine_weight - texel_inset);
 	if (texel.a < 0.5 && !missing_image) {
 		discard;
 	}

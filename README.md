@@ -192,9 +192,16 @@ imported once as Godot resources: textures and baked texture pages, model
 meshes, scenes and preview animations, maps, the executable's tables, demos,
 sound effects and the CD music. Binary files are Git LFS objects: run
 `git lfs install` before cloning (or `git lfs pull` afterwards), and expect
-about 120 MB on disk. The test wrapper refuses to run while any asset is still
+about 180 MB on disk. The test wrapper refuses to run while any asset is still
 an LFS pointer. The assets are the source of truth and are edited directly;
 hand-edited assets get reviewed golden overrides. See [assets](docs/reference/assets.md).
+
+`assets/textures/images_x4/` holds every texture upscaled four times. Play
+from it with `--texture-set=x4` after `--`, for example
+`tools/play.sh --level=ORG1 --texture-set=x4`; the default is the retail set.
+The first run bakes the matching texture pages into `assets/textures/pages_x4/`
+(about 113 MB, ignored by Git, Pillow required), which the play and test
+wrappers keep current.
 
 The importer and the retail readers live in `archive/`, which the game never
 loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`

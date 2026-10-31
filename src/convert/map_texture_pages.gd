@@ -1,7 +1,7 @@
 class_name MapTexturePages
 extends RefCounted
-## The PC 256x256 VRAM pages a map samples with byte-wrapped UVs, from the
-## [TexturePageSet] baked for its two banks. A page's colour key applies to
+## The PC VRAM pages a map samples with byte-wrapped retail-pixel UVs, from
+## the [TexturePageSet] baked for its two banks at that set's scale. A page's colour key applies to
 ## all its pixels, including neighbouring images, and is already baked in.
 
 ## Missing page observations; callers may show a visible fallback.

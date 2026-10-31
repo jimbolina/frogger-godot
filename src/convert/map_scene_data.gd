@@ -9,7 +9,8 @@ var low_poly: bool = false
 ## Decoded immutable source records.
 var map: MapFile
 var sky_land: SkyLandFile
-## Texture lookup in the original general-then-theme load order.
+## Texture lookup in the original general-then-theme load order, drawing from
+## the loading catalog's texture set.
 var library: TextureLibrary = TextureLibrary.new()
 ## Whole physical texture pages, shared by this scene's cached map materials.
 var texture_pages := MapTexturePages.new()
@@ -38,6 +39,7 @@ var error: String = ""
 ## Resolves a level from the player's map/theme books and reads only its dependencies.
 static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool = false) -> MapSceneData:
 	var scene := MapSceneData.new()
+	scene.library.catalog = data
 	scene.level = level_number
 	scene.low_poly = use_low_poly
 	var row: MapBookEntry = data.map_book_entry(level_number)

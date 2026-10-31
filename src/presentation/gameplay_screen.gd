@@ -54,7 +54,7 @@ func _ready() -> void:
 		if level_code.is_empty():
 			level_code = "ORG1"
 		FrontEndSession.selected_level = ""
-		var data: ImportedAssets = ImportedAssets.open()
+		var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
 		if data.is_valid():
 			open_data(data, level_code, true)
 		else:

@@ -121,3 +121,36 @@ func test_a_baked_sky_atlas_with_other_pages_is_reported_and_not_drawn() -> void
 	assert_null(built.sky_mesh)
 	assert_null(built.sky_atlas)
 	assert_true(Array(built.diagnostics).any(func(line: String) -> bool: return line.contains("baked sky atlas")))
+
+func test_a_scaled_sky_atlas_keeps_retail_rows_at_the_same_normalised_place() -> void:
+	var scene: MapSceneData = _sky_scene_with_page_set(PackedInt32Array([0]))
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0]), 4)
+	var built: MapMesh = MapMeshBuilder.new().build(scene, true)
+	assert_same(built.sky_atlas, scene.page_set.sky_atlas)
+	assert_eq(built.sky_atlas.get_size(), Vector2(1024, 1032))
+	var material: ShaderMaterial = built.sky_mesh.surface_get_material(0)
+	var scale: Vector2 = material.get_shader_parameter("pixel_scale")
+	var inset: Vector2 = material.get_shader_parameter("texel_inset")
+	assert_eq(scale, Vector2(1.0 / 256.0, 4.0 / 1032.0))
+	assert_eq(inset, Vector2(0.5, 0.5) / Vector2(1024.0, 1032.0))
+	assert_true(material.shader.code.contains("filter_linear_mipmap"))
+
+func test_a_scaled_sky_atlas_of_the_wrong_height_is_reported_and_not_drawn() -> void:
+	var scene: MapSceneData = _sky_scene_with_page_set(PackedInt32Array([0]))
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks, true, PackedInt32Array([0]), 4)
+	var short := Image.create(1024, 258, false, Image.FORMAT_RGBA8)
+	scene.page_set.sky_atlas = ImageTexture.create_from_image(short)
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	assert_null(built.sky_mesh)
+	assert_null(built.sky_atlas)
+	assert_true(Array(built.diagnostics).any(func(line: String) -> bool: return line.contains("baked sky atlas")))
+
+func test_a_retail_sky_atlas_insets_by_the_old_half_texel() -> void:
+	var scene: MapSceneData = _sky_scene_with_page_set(PackedInt32Array([0]))
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	var material: ShaderMaterial = built.sky_mesh.surface_get_material(0)
+	var scale: Vector2 = material.get_shader_parameter("pixel_scale")
+	var inset: Vector2 = material.get_shader_parameter("texel_inset")
+	assert_eq(inset, scale * 0.5)

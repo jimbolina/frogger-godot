@@ -2,6 +2,11 @@ class_name ViewerArguments
 extends RefCounted
 ## Shared tool arguments. Callers supply user arguments, keeping tests independent of OS state.
 
+## The launch argument naming the texture set to draw.
+const TEXTURE_SET_ARGUMENT: String = "--texture-set="
+## The project setting holding the default texture set name.
+const TEXTURE_SET_SETTING: String = "frogger/textures/default_set"
+
 
 ## Value following the first argument starting with [param prefix], including an empty value.
 static func value(arguments: PackedStringArray, prefix: String) -> String:
@@ -22,6 +27,16 @@ static func has_prefix(arguments: PackedStringArray, prefix: String) -> bool:
 ## Whether [param flag] appears exactly, without treating a value argument as a flag.
 static func has_flag(arguments: PackedStringArray, flag: String) -> bool:
 	return arguments.has(flag)
+
+
+## The name of the texture set a launch asked for: [code]--texture-set=[/code]
+## in [param arguments], else the project setting
+## [code]frogger/textures/default_set[/code], else the retail set.
+static func texture_set(arguments: PackedStringArray) -> String:
+	var requested: String = value(arguments, TEXTURE_SET_ARGUMENT).strip_edges().to_lower()
+	if not requested.is_empty():
+		return requested
+	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
 
 
 ## Whether a scenario run attaches the imported assets: a map selected with

@@ -79,12 +79,16 @@ var score_texture_ids: PackedInt32Array = PackedInt32Array()
 ## Resolution problems and fallbacks.
 var diagnostics: PackedStringArray = PackedStringArray()
 
+var _resident: TextureLibrary = TextureLibrary.new()
+
 
 ## Resolves the effect resources of [param scene] from [param data].
 static func from_scene(data: AssetCatalog, scene: MapSceneData) -> EffectResources:
 	var bmp: BmpPointers = data.tables.bmp_pointers()
 	var result: EffectResources = resolve(data.tables.particle_generators(), data.tables.splash_lists(), data.tables.scores(), bmp, data.names.images)
 	var resident := TextureLibrary.new()
+	resident.catalog = data
+	result._resident = resident
 	for bank_name: String in RESIDENT_BANKS:
 		var entry: MwiEntry = data.find_resource(bank_name) if data.mwi != null else null
 		if entry == null:
@@ -174,6 +178,12 @@ func attach_images(libraries: Array[TextureLibrary], preferred: VloFile = null) 
 			images[symbol] = image
 		else:
 			missing.append(symbol)
+
+
+## The texture of [param image] in the catalog's texture set, for drawing [member images] in 2D;
+## the record's own texture when the resources were not resolved from a catalog.
+func texture_of(image: VloImage) -> Texture2D:
+	return _resident.texture_for(image)
 
 
 ## The texture id of [param symbol], or -1.

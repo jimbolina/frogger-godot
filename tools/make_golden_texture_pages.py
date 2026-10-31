@@ -51,28 +51,43 @@ def valid_upload(img):
             and len(img["rgba"]) == img["padded_w"] * img["padded_h"] * 4)
 
 
-def compose_page(banks, page):
-    """RGBA8 bytes of one physical page: black opaque, every valid upload blitted in order, then the colour key."""
-    out = bytearray(b"\0\0\0\xff" * (PAGE * PAGE))
-    top = page * PAGE
-    key = False
+def page_keyed(banks, page):
+    """True when any valid upload on page carries the black-is-transparent flag, so the page gets the colour key."""
+    return any(valid_upload(img) and img["page"] == page and img["flags"] & FLAG_BLACK_IS_TRANSPARENT
+               for images in banks for img in images)
+
+
+def blit_uploads(banks, page, scale=1, pixels_of=None):
+    """RGBA8 bytes of one physical page at scale: black opaque, every valid upload blitted in order, no colour key.
+
+    pixels_of(img) supplies an upload's RGBA bytes at scale (padded_w * scale wide); the retail pixels by default.
+    """
+    size = PAGE * scale
+    out = bytearray(b"\0\0\0\xff" * (size * size))
+    top = page * size
     for images in banks:
         for img in images:
             if not valid_upload(img):
                 continue
-            if img["page"] == page and img["flags"] & FLAG_BLACK_IS_TRANSPARENT:
-                key = True
-            y0 = max(img["vram_y"], top)
-            y1 = min(img["vram_y"] + img["padded_h"], top + PAGE)
+            vram_y = img["vram_y"] * scale
+            y0 = max(vram_y, top)
+            y1 = min(vram_y + img["padded_h"] * scale, top + size)
             if y0 >= y1:
                 continue
-            width = img["padded_w"] * 4
+            pixels = img["rgba"] if pixels_of is None else pixels_of(img)
+            width = img["padded_w"] * scale * 4
             for y in range(y0, y1):
-                src = (y - img["vram_y"]) * width
-                dst = ((y - top) * PAGE + img["vram_x"]) * 4
-                out[dst:dst + width] = img["rgba"][src:src + width]
+                src = (y - vram_y) * width
+                dst = ((y - top) * size + img["vram_x"] * scale) * 4
+                out[dst:dst + width] = pixels[src:src + width]
+    return out
+
+
+def compose_page(banks, page):
+    """RGBA8 bytes of one physical page: black opaque, every valid upload blitted in order, then the colour key."""
+    out = blit_uploads(banks, page)
     count = PAGE * PAGE
-    if key:
+    if page_keyed(banks, page):
         zr = int.from_bytes(bytes(out[0::4]).translate(ZERO), "big")
         zg = int.from_bytes(bytes(out[1::4]).translate(ZERO), "big")
         zb = int.from_bytes(bytes(out[2::4]).translate(ZERO), "big")
@@ -82,19 +97,22 @@ def compose_page(banks, page):
     return bytes(out)
 
 
-def sky_atlas(pages, order):
-    """MapMeshBuilder._build_sky's atlas: 256 x 258 per page slot, magenta, each page with its edge rows repeated."""
+def sky_atlas(pages, order, scale=1):
+    """MapMeshBuilder._build_sky's atlas at scale: 256 x 258 per page slot, magenta, each page between its first
+    and last rows repeated scale times."""
     slots = max(1, len(order))
-    row = PAGE * 4
-    atlas = bytearray(b"\xff\x00\xff\xff" * (PAGE * 258 * slots))
+    size = PAGE * scale
+    row = size * 4
+    slot_rows = 258 * scale
+    atlas = bytearray(b"\xff\x00\xff\xff" * (size * slot_rows * slots))
     for slot, page in enumerate(order):
         if not 0 <= page < PAGES:
             continue
         pixels = pages[page]
-        base = slot * 258 * row
-        atlas[base + row:base + row + PAGE * row] = pixels
-        atlas[base:base + row] = pixels[:row]
-        atlas[base + 257 * row:base + 258 * row] = pixels[255 * row:256 * row]
+        base = slot * slot_rows * row
+        atlas[base + scale * row:base + (scale + size) * row] = pixels
+        atlas[base:base + scale * row] = pixels[:row] * scale
+        atlas[base + (scale + size) * row:base + slot_rows * row] = pixels[(size - 1) * row:size * row] * scale
     return bytes(atlas)
 
 
@@ -106,10 +124,9 @@ def sky_tiles(data):
     return [v & 0x3FFF for v in struct.unpack_from("<%dH" % (width * height), data, 4)]
 
 
-def main():
-    args = arguments(__doc__, "texture_pages.tsv")
-    started = time.time()
-    archive = Archive(args.data_dir)
+def discover_sets(archive):
+    """The bank pairs every map loads, keyed (general bank id, theme bank id), each with the sky-land files its
+    sky levels use; and the sky-land remap."""
     exe, cfg = archive.exe, archive.cfg
     map_rows, _end = read_map_book(exe, cfg["mapBook"], cfg["themeBook"])
     themes = read_theme_book(exe, cfg["themeBook"])
@@ -134,6 +151,33 @@ def main():
             entry = sets.setdefault(pair, {"sky": set()})
             if theme == SKY_THEME:
                 entry["sky"].add("SKY_LAND_WIN95.MAP" if low_poly else "SKY_LAND.MAP")
+    return sets, sky_remap
+
+
+def sky_page_order(archive, banks, sky_name, sky_remap):
+    """The atlas slot order of sky-land file sky_name: each tile's page (theme bank first), first seen first."""
+    order = []
+    for local in sky_tiles(archive.resource(archive.find(sky_name))):
+        texture_id = sky_remap[local] if 0 <= local < len(sky_remap) else -1
+        found = None
+        for images in reversed(banks):
+            for img in images:
+                if img["texture_id"] == texture_id:
+                    found = img
+                    break
+            if found is not None:
+                break
+        page = found["page"] if found is not None else -1
+        if page not in order:
+            order.append(page)
+    return order
+
+
+def main():
+    args = arguments(__doc__, "texture_pages.tsv")
+    started = time.time()
+    archive = Archive(args.data_dir)
+    sets, sky_remap = discover_sets(archive)
 
     rows = []
     for pair in sorted(sets):
@@ -144,20 +188,7 @@ def main():
             rows.append((name, page, hashlib.sha256(pixels).hexdigest(), pixels[3::4].count(255)))
         atlases = set()
         for sky_name in sorted(sets[pair]["sky"]):
-            order = []
-            for local in sky_tiles(archive.resource(archive.find(sky_name))):
-                texture_id = sky_remap[local] if 0 <= local < len(sky_remap) else -1
-                found = None
-                for images in reversed(banks):
-                    for img in images:
-                        if img["texture_id"] == texture_id:
-                            found = img
-                            break
-                    if found is not None:
-                        break
-                page = found["page"] if found is not None else -1
-                if page not in order:
-                    order.append(page)
+            order = sky_page_order(archive, banks, sky_name, sky_remap)
             atlas = sky_atlas(pages, order)
             atlases.add(("sky:" + ",".join(str(p) for p in order), hashlib.sha256(atlas).hexdigest(), atlas[3::4].count(255)))
         if len(atlases) > 1:

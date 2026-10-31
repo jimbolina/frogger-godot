@@ -187,6 +187,16 @@ func test_score_popups_rise_fade_and_expire() -> void:
 		view.step()
 	assert_eq(view.popups().size(), 0)
 
+func test_score_popups_draw_an_upscaled_region_at_retail_size() -> void:
+	var view := ScorePopupView.new()
+	add_child_autofree(view)
+	var texture := ImageTexture.create_from_image(Image.create(80, 48, false, Image.FORMAT_RGBA8))
+	view.add_image(1, texture, Rect2(8, 8, 64, 32), ModelShaders.Blend.OPAQUE, Vector2(16, 8))
+	view.add_image(2, texture, Rect2(8, 8, 64, 32), ModelShaders.Blend.OPAQUE)
+	assert_eq(view._images[1].region, Rect2(8, 8, 64, 32), "crops the upscaled region")
+	assert_eq(view._images[1].size, Vector2(16, 8), "draws it at retail size")
+	assert_eq(view._images[2].size, Vector2(64, 32), "without a size the region's own")
+
 func test_hud_score_slots_follow_add_frog_score_callers() -> void:
 	var before := GameplayState.new()
 	before.entity_environment = EntityEnvironmentState.new()

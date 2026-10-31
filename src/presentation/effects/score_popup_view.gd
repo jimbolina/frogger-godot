@@ -8,10 +8,11 @@ extends Control
 ## image by grey / 0x80. The image's own translucency flag and page rate pick
 ## the blend.
 
-## One prepared score image.
+## One prepared score image: [member region] of [member texture], drawn [member size] big.
 class ScoreImage extends RefCounted:
 	var texture: Texture2D
 	var region := Rect2()
+	var size := Vector2()
 	var blend: ModelShaders.Blend = ModelShaders.Blend.OPAQUE
 
 ## One blend's canvas item and the sprites it draws.
@@ -26,9 +27,9 @@ class Layer extends Control:
 			var image: ScoreImage = images.get(popup.slot)
 			if image == null:
 				continue
-			var at: Vector2i = popup.screen() - Vector2i(int(image.region.size.x) >> 1, int(image.region.size.y) >> 1)
+			var at: Vector2i = popup.screen() - Vector2i(int(image.size.x) >> 1, int(image.size.y) >> 1)
 			var grey: float = float(popup.grey) / ScorePopupState.BASE_GREY * level
-			draw_texture_rect_region(image.texture, Rect2(Vector2(at), image.region.size), image.region, Color(grey, grey, grey, alpha))
+			draw_texture_rect_region(image.texture, Rect2(Vector2(at), image.size), image.region, Color(grey, grey, grey, alpha))
 
 var _images: Dictionary[int, ScoreImage] = {}
 var _popups: Array[ScorePopupState] = []
@@ -52,15 +53,19 @@ func configure(effects: EffectResources) -> String:
 		if image == null:
 			problems.append("Score image %s is unavailable" % symbol)
 			continue
-		add_image(slot, image.texture, Rect2(TextureBuilder.pixel_rect(image)), EffectSpriteMaterial.image_blend(image))
+		var texture: Texture2D = effects.texture_of(image)
+		add_image(slot, texture, TextureBuilder.texture_rect(image, texture), EffectSpriteMaterial.image_blend(image),
+			Vector2(image.width, image.height))
 	return "; ".join(problems)
 
 
-## Prepares one score image directly.
-func add_image(slot: int, texture: Texture2D, region: Rect2, blend: ModelShaders.Blend) -> void:
+## Prepares one score image directly: [param region] of [param texture] drawn [param drawn_size]
+## big on the 640x480 canvas, or the region's own size when that is zero.
+func add_image(slot: int, texture: Texture2D, region: Rect2, blend: ModelShaders.Blend, drawn_size: Vector2 = Vector2.ZERO) -> void:
 	var image := ScoreImage.new()
 	image.texture = texture
 	image.region = region
+	image.size = drawn_size if drawn_size != Vector2.ZERO else region.size
 	image.blend = blend
 	_images[slot] = image
 	for layer_blend: int in _layers:

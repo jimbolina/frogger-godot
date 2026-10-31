@@ -81,6 +81,23 @@ static func shader(textured: bool, blend: Blend, linear_filter: bool, two_sided:
 	return _shaders[path]
 
 
+## The linear, mipmapped variant of the textured model shader [param source]
+## (itself for a flat shader, a variant that already filters linearly, or a
+## shader that is not one of the files).
+static func linear_variant(source: Shader) -> Shader:
+	if source == null:
+		return null
+	var path: String = source.resource_path
+	var name: String = path.get_file()
+	if not path.begins_with(SHADER_DIR) or not name.begins_with("model_textured_") or name.contains("_linear"):
+		return source
+	var two_sided: String = "_two_sided.gdshader"
+	var linear: String = path.trim_suffix(two_sided).trim_suffix(".gdshader") + "_linear" + (two_sided if path.ends_with(two_sided) else ".gdshader")
+	if not _shaders.has(linear):
+		_shaders[linear] = load(linear) as Shader
+	return _shaders[linear]
+
+
 ## The text of the shader file for one combination of choices.
 static func shader_code(textured: bool, blend: Blend, linear_filter: bool, two_sided: bool) -> String:
 	return shader(textured, blend, linear_filter, two_sided).code

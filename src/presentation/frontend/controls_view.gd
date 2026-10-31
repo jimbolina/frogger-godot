@@ -120,7 +120,8 @@ func _draw() -> void:
 	_text("%dUP" % (page.record() + 1), Vector2(DISPLAY_SIZE.x * 0.5, 40.0), 32, TEXT_COLOUR, true)
 	var title: Texture2D = _assets.texture("opt_ctrl_config")
 	if title != null:
-		draw_texture(title, Vector2((DISPLAY_SIZE.x - title.get_width()) * 0.5, 56.0))
+		var title_size: Vector2 = _assets.retail_size("opt_ctrl_config")
+		draw_texture_rect(title, Rect2(Vector2((DISPLAY_SIZE.x - title_size.x) * 0.5, 56.0), title_size), false)
 	var offset: float = _slide_offset(state)
 	if _shows_keys(state):
 		_draw_keys(offset)
@@ -176,9 +177,11 @@ func _draw_chooser(offset: float) -> void:
 	var left: Texture2D = _assets.texture("opt_arrow_small_left")
 	var right: Texture2D = _assets.texture("opt_arrow_small_right")
 	if left != null and page.device_cursor() > 0:
-		draw_texture(left, Vector2(DISPLAY_SIZE.x * 0.5 + offset - left.get_width() - 4.0, DEVICE_Y + 70.0))
+		var left_size: Vector2 = _assets.retail_size("opt_arrow_small_left")
+		draw_texture_rect(left, Rect2(Vector2(DISPLAY_SIZE.x * 0.5 + offset - left_size.x - 4.0, DEVICE_Y + 70.0), left_size), false)
 	if right != null and page.device_cursor() < page.device_cursor_max():
-		draw_texture(right, Vector2(DISPLAY_SIZE.x * 0.5 + offset + 4.0, DEVICE_Y + 70.0))
+		draw_texture_rect(right, Rect2(Vector2(DISPLAY_SIZE.x * 0.5 + offset + 4.0, DEVICE_Y + 70.0),
+			_assets.retail_size("opt_arrow_small_right")), false)
 	_help(CHOOSER_HELP, offset)
 	if not page.bindings().every_record_valid():
 		_text("EVERY PLAYER NEEDS NINE DIFFERENT KEYS", Vector2(DISPLAY_SIZE.x * 0.5 + offset, 320.0), 16, WARNING_COLOUR, true)
@@ -190,9 +193,11 @@ func _draw_device(device: int, centre: Vector2, tint: Color) -> void:
 		draw_line(centre + Vector2(-36.0, -36.0), centre + Vector2(36.0, 36.0), colour, 12.0)
 		draw_line(centre + Vector2(36.0, -36.0), centre + Vector2(-36.0, 36.0), colour, 12.0)
 		return
-	var image: Texture2D = _assets.texture("opt_keyboard" if device == KeyBindings.DEVICE_KEYBOARD else "opt_insert_pad")
+	var image_name: String = "opt_keyboard" if device == KeyBindings.DEVICE_KEYBOARD else "opt_insert_pad"
+	var image: Texture2D = _assets.texture(image_name)
 	if image != null:
-		draw_texture(image, centre - image.get_size() * 0.5, tint)
+		var image_size: Vector2 = _assets.retail_size(image_name)
+		draw_texture_rect(image, Rect2(centre - image_size * 0.5, image_size), false, tint)
 	if device >= KeyBindings.DEVICE_FIRST_JOYSTICK:
 		_text(str(device - KeyBindings.DEVICE_FIRST_JOYSTICK + 1), centre + Vector2(0.0, 40.0), 28, tint, true)
 

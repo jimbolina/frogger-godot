@@ -76,9 +76,12 @@ static func bank(specs: Array[Spec], decode_pixels: bool = true) -> VloFile:
 ## A [TexturePageSet] of [param banks]: each image's texture copied onto
 ## black pages at its VRAM position in bank order, without a colour key; with
 ## [param with_sky] also a magenta sky atlas with a slot per page of
-## [param sky_pages].
-static func page_set(banks: Array[VloFile], with_sky: bool = false, sky_pages: PackedInt32Array = PackedInt32Array()) -> TexturePageSet:
+## [param sky_pages]. A [param scale] above 1 stores every page and the atlas
+## that many times larger on each axis, each retail pixel repeated.
+static func page_set(banks: Array[VloFile], with_sky: bool = false, sky_pages: PackedInt32Array = PackedInt32Array(),
+		scale: int = 1) -> TexturePageSet:
 	var result := TexturePageSet.new()
+	var size: int = TexturePageSet.PAGE_SIZE * scale
 	for page: int in TexturePageSet.PAGE_COUNT:
 		var pixels: Image = Image.create(TexturePageSet.PAGE_SIZE, TexturePageSet.PAGE_SIZE, false, Image.FORMAT_RGBA8)
 		pixels.fill(Color.BLACK)
@@ -90,10 +93,12 @@ static func page_set(banks: Array[VloFile], with_sky: bool = false, sky_pages: P
 				if image.texture != null and overlap.has_area():
 					pixels.blit_rect(image.texture.get_image(), Rect2i(overlap.position - upload.position, overlap.size),
 						overlap.position - page_rect.position)
+		if scale > 1:
+			pixels.resize(size, size, Image.INTERPOLATE_NEAREST)
 		result.pages.append(ImageTexture.create_from_image(pixels))
 		result.colour_keyed.append(false)
 	if with_sky:
-		var atlas: Image = Image.create(TexturePageSet.PAGE_SIZE, TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, sky_pages.size()),
+		var atlas: Image = Image.create(size, TexturePageSet.SKY_SLOT_HEIGHT * scale * maxi(1, sky_pages.size()),
 			false, Image.FORMAT_RGBA8)
 		atlas.fill(Color.MAGENTA)
 		result.sky_atlas = ImageTexture.create_from_image(atlas)

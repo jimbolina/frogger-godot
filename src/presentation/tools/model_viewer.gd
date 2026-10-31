@@ -110,7 +110,7 @@ func _ready() -> void:
 		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
 		get_tree().quit(1)
 		return
-	open_data(ImportedAssets.open(), true)
+	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
 	if not data.is_valid():
 		if not screenshot_dir.is_empty():
 			push_error(_status.text)
@@ -208,6 +208,7 @@ func load_model(model_name: String, model: MofFile, bank: VloFile = null) -> int
 		_status.text = "%s: %s" % [model_name, model.error if model != null else "no model"]
 		return -1
 	_library = TextureLibrary.new()
+	_library.catalog = data
 	_preferred = bank
 	if bank != null:
 		_library.add_bank(bank, "bank")
@@ -482,6 +483,7 @@ func _bank(resource_id: int) -> VloFile:
 
 func _use_banks_of(wad_id: int) -> void:
 	_library = TextureLibrary.new()
+	_library.catalog = data
 	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
 	var general_bank: VloFile = _bank(general.vlo_id()) if general != null else null
 	if general_bank != null:

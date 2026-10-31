@@ -70,8 +70,10 @@ var materials: Dictionary[String, ShaderMaterial] = {}
 
 ## Builds the pieces of [param model] with meshes and materials. Textures are
 ## looked up in [param library], in [param preferred] first; a null library
-## draws every piece untextured.
-static func build(model: MofStatic, library: TextureLibrary, preferred: VloFile, linear_filter: bool = false) -> ModelPolyPieces:
+## draws every piece untextured. Filtering follows the library's texture set
+## unless [param linear_filter] says otherwise.
+static func build(model: MofStatic, library: TextureLibrary, preferred: VloFile,
+		linear_filter: bool = library != null and library.linear_filter()) -> ModelPolyPieces:
 	var result: ModelPolyPieces = split(model)
 	var missing: Dictionary[int, bool] = {}
 	for piece: Piece in result.pieces:

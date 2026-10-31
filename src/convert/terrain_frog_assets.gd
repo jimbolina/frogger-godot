@@ -27,6 +27,7 @@ static func from_data(data: AssetCatalog) -> TerrainFrogAssets:
 		assets.error = "Cannot load frog resources: " + "; ".join(problems)
 		return assets
 	var library := TextureLibrary.new()
+	library.catalog = data
 	library.add_bank(bank, "general")
 	assets.mesh = ModelMeshLibrary.mesh_for(data, entry.index, library, bank)
 	assets.player = ModelAnimationPlayer.new(assets.model)

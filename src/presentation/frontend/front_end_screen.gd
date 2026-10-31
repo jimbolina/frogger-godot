@@ -102,7 +102,7 @@ func _ready() -> void:
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_content)
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
-	var data: ImportedAssets = ImportedAssets.open()
+	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
 	if not data.is_valid():
 		_show_message("The imported assets cannot be opened: %s" % data.error)
 		return
@@ -262,8 +262,8 @@ func _build_main_menu() -> void:
 	var last_height: int = 0
 	for sprite: TextureButton in _menu_sprites:
 		if sprite.texture_normal != null:
-			width = maxi(width, int(sprite.texture_normal.get_width()))
-			last_height = int(sprite.texture_normal.get_height())
+			width = maxi(width, int(sprite.custom_minimum_size.x))
+			last_height = int(sprite.custom_minimum_size.y)
 	width += CLOUD_BORDER << 1
 	var cloud := TextureRect.new()
 	cloud.texture = options_models.image_texture(OptionsModels.CLOUD_IMAGE) if options_models != null else null
@@ -306,7 +306,10 @@ func _build_main_menu() -> void:
 func _menu_sprite(image_name: String, action: Callable) -> TextureButton:
 	var button := TextureButton.new()
 	button.texture_normal = assets.texture(image_name)
-	button.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_SCALE
+	button.custom_minimum_size = assets.retail_size(image_name)
+	button.size = button.custom_minimum_size
 	button.pressed.connect(_play_sound.bind(CROAK_SOUND))
 	button.pressed.connect(action)
 	button.focus_entered.connect(_on_menu_focus.bind(button))
@@ -326,7 +329,7 @@ func _place_menu_sprites() -> void:
 	var slide: int = menu_scores.fly_on * MENU_SLIDE if menu_scores != null else 0
 	for index: int in _menu_sprites.size():
 		var sprite: TextureButton = _menu_sprites[index]
-		var sprite_width: int = int(sprite.texture_normal.get_width()) if sprite.texture_normal != null else 0
+		var sprite_width: int = int(sprite.custom_minimum_size.x) if sprite.texture_normal != null else 0
 		sprite.position = Vector2((StackLayout.DISPLAY_WIDTH - sprite_width) >> 1, MENU_ROW_Y + index * MENU_ROW_PITCH + slide)
 
 
@@ -491,7 +494,9 @@ func _column() -> VBoxContainer:
 func _image_button(image_name: String, action: Callable) -> TextureButton:
 	var button := TextureButton.new()
 	button.texture_normal = assets.texture(image_name)
-	button.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
+	button.ignore_texture_size = true
+	button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	button.custom_minimum_size = assets.retail_size(image_name)
 	button.pressed.connect(action)
 	button.focus_entered.connect(button.set_modulate.bind(Color(1.0, 1.0, 0.6)))
 	button.focus_exited.connect(button.set_modulate.bind(Color.WHITE))

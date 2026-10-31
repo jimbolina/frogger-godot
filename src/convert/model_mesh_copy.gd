@@ -11,12 +11,18 @@ extends RefCounted
 ## surface and a texture track's original use their part surface's copy, so a
 ## parameter set on the part's materials reaches them, and a track's frames are
 ## the track's own. Geometry, cel atlases and textures stay shared.
+##
+## Given a [param catalog] drawing from an upscaled [TextureSet], the copy's
+## materials draw that set's counterpart of each image through the linear,
+## mipmapped shader variant; the shared mesh keeps its retail materials.
 
 
-## A copy of [param shared] with its own materials, or null for null.
-static func of(shared: ModelMesh) -> ModelMesh:
+## A copy of [param shared] with its own materials, or null for null; the
+## materials draw [param catalog]'s texture set when it is not the retail one.
+static func of(shared: ModelMesh, catalog: AssetCatalog = null) -> ModelMesh:
 	if shared == null:
 		return null
+	var retexture: AssetCatalog = catalog if catalog != null and not catalog.texture_set().is_retail() else null
 	var copy := ModelMesh.new()
 	copy.triangle_count = shared.triangle_count
 	copy.surface_count = shared.surface_count
@@ -27,35 +33,35 @@ static func of(shared: ModelMesh) -> ModelMesh:
 	copy.part_bounds = shared.part_bounds.duplicate()
 	copy.action_bounds = shared.action_bounds.duplicate()
 	for mesh: ArrayMesh in shared.part_meshes:
-		copy.part_meshes.append(_mesh(mesh))
+		copy.part_meshes.append(_mesh(mesh, retexture))
 	for part: int in shared.morph_meshes.size():
 		var part_mesh: ArrayMesh = copy.part_meshes[part] if part < copy.part_meshes.size() else null
-		copy.morph_meshes.append(_morph(shared.morph_meshes[part], part_mesh))
+		copy.morph_meshes.append(_morph(shared.morph_meshes[part], part_mesh, retexture))
 	for part: int in shared.texture_tracks.size():
 		var copied: Array = []
 		var part_mesh: ArrayMesh = copy.part_meshes[part] if part < copy.part_meshes.size() else null
 		for track: ModelMesh.TextureTrack in shared.texture_tracks[part]:
-			copied.append(_track(track, part_mesh))
+			copied.append(_track(track, part_mesh, retexture))
 		copy.texture_tracks.append(copied)
 	return copy
 
 
-static func _mesh(mesh: ArrayMesh) -> ArrayMesh:
+static func _mesh(mesh: ArrayMesh, retexture: AssetCatalog) -> ArrayMesh:
 	if mesh == null:
 		return null
 	var copy: ArrayMesh = mesh.duplicate() as ArrayMesh
 	for surface: int in copy.get_surface_count():
 		var material: ShaderMaterial = mesh.surface_get_material(surface) as ShaderMaterial
 		if material != null:
-			copy.surface_set_material(surface, material.duplicate() as ShaderMaterial)
+			copy.surface_set_material(surface, _duplicate(material, retexture))
 	return copy
 
 
-static func _morph(morph: ModelMorphMesh, part_mesh: ArrayMesh) -> ModelMorphMesh:
+static func _morph(morph: ModelMorphMesh, part_mesh: ArrayMesh, retexture: AssetCatalog) -> ModelMorphMesh:
 	if morph == null:
 		return null
 	var copy := ModelMorphMesh.new()
-	copy.mesh = _mesh(morph.mesh)
+	copy.mesh = _mesh(morph.mesh, retexture)
 	if copy.mesh != null and part_mesh != null:
 		for surface: int in mini(copy.mesh.get_surface_count(), part_mesh.get_surface_count()):
 			var material: ShaderMaterial = part_mesh.surface_get_material(surface) as ShaderMaterial
@@ -66,18 +72,26 @@ static func _morph(morph: ModelMorphMesh, part_mesh: ArrayMesh) -> ModelMorphMes
 	return copy
 
 
-static func _track(track: ModelMesh.TextureTrack, part_mesh: ArrayMesh) -> ModelMesh.TextureTrack:
+static func _track(track: ModelMesh.TextureTrack, part_mesh: ArrayMesh, retexture: AssetCatalog) -> ModelMesh.TextureTrack:
 	var copy := ModelMesh.TextureTrack.new()
 	copy.surface = track.surface
 	copy.target = track.target
 	var surface_material: ShaderMaterial = null
 	if part_mesh != null and track.surface >= 0 and track.surface < part_mesh.get_surface_count():
 		surface_material = part_mesh.surface_get_material(track.surface) as ShaderMaterial
-	copy.original = surface_material if surface_material != null else _duplicate(track.original)
+	copy.original = surface_material if surface_material != null else _duplicate(track.original, retexture)
 	for frame: ShaderMaterial in track.frames:
-		copy.frames.append(_duplicate(frame))
+		copy.frames.append(_duplicate(frame, retexture))
 	return copy
 
 
-static func _duplicate(material: ShaderMaterial) -> ShaderMaterial:
-	return material.duplicate() as ShaderMaterial if material != null else null
+static func _duplicate(material: ShaderMaterial, retexture: AssetCatalog) -> ShaderMaterial:
+	if material == null:
+		return null
+	var copy: ShaderMaterial = material.duplicate() as ShaderMaterial
+	if retexture != null:
+		var image: Texture2D = copy.get_shader_parameter("image")
+		if image != null:
+			copy.set_shader_parameter("image", retexture.texture_counterpart(image))
+			copy.shader = ModelShaders.linear_variant(copy.shader)
+	return copy

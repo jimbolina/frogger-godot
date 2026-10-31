@@ -7,6 +7,8 @@ extends GutTest
 
 ## Where the imported assets live.
 const ASSETS: String = AssetTestCache.ASSETS
+## Where the facts about locally derived assets live.
+const IMPORTED_DIR: String = "res://tests/golden/imported"
 
 
 ## The committed assets, opened once and shared by every asset test.
@@ -17,6 +19,16 @@ func catalog() -> ImportedAssets:
 ## Rows of the golden TSV [param file_name] (comment lines dropped).
 func fact_rows(file_name: String) -> Array[PackedStringArray]:
 	return GoldenFiles.rows(file_name)
+
+
+## Rows of the derived-asset golden TSV [param file_name] under
+## [code]tests/golden/imported/[/code] (comment lines dropped).
+func imported_rows(file_name: String) -> Array[PackedStringArray]:
+	var result: Array[PackedStringArray] = []
+	for line: String in FileAccess.get_file_as_string(IMPORTED_DIR.path_join(file_name)).split("\n", false):
+		if not line.begins_with("#"):
+			result.append(line.split("\t"))
+	return result
 
 
 ## The key=value facts of the golden text file [param file_name].

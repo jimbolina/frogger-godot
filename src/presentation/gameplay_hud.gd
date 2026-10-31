@@ -249,7 +249,7 @@ static func checkpoint_motion(origin: Vector2i, destination: Vector2i, remaining
 func _sprite(name: String, at: Vector2, colour: Color = Color.WHITE) -> void:
 	var texture: Texture2D = assets.textures.get(name)
 	if texture != null:
-		draw_texture(texture, at, colour)
+		draw_texture_rect(texture, Rect2(at, assets.retail_size(name)), false, colour)
 
 func _digits(value: int, count: int, prefix: String, at: Vector2, spacing: int, colour: Color = Color.WHITE) -> void:
 	var digits: String = str(maxi(0, value)).pad_zeros(count).right(count)
@@ -259,11 +259,12 @@ func _digits(value: int, count: int, prefix: String, at: Vector2, spacing: int, 
 func _text(value: String, at: Vector2, colour: Color = Color.WHITE) -> void:
 	if _letters == null or _letters.font_texture == null:
 		return
+	var texels: Vector2 = assets.texture_scale("newfont")
 	for index: int in value.length():
 		var code: int = value.unicode_at(index) - 32
 		if code >= 0 and code < 96:
 			var cell := Vector2((code % 32) * 8, PlatformMath.divide(code, 32) * 8)
-			_letters.glyph(at + Vector2(index * 8, 0), Rect2(cell, Vector2(8, 8)), colour)
+			_letters.glyph(Rect2(at + Vector2(index * 8, 0), Vector2(8, 8)), Rect2(cell * texels, Vector2(8, 8) * texels), colour)
 
 func _help(message: String, tick: int, overwrite: bool, once: bool) -> void:
 	if _help_seen.has(message) or (not overwrite and tick - _help_tick < 56):

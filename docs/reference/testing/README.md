@@ -98,6 +98,11 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   `python3 tools/make_golden_frontend.py --check` diffs the committed facts.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
+- [Upscaled texture pages](../../../tests/golden/specs/imported-assets.md#texture-pages-at-scale):
+  both wrappers run `python3 tools/bake_pages_x4.py --quiet` first, which bakes
+  `assets/textures/pages_x4/` when missing and checks it otherwise (Pillow;
+  plain `python3`, not `-I`); `python3 tools/make_golden_texture_pages_x4.py --check`
+  diffs the committed facts against the retail files and the x4 images.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has

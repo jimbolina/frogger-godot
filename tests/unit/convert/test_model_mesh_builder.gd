@@ -2,6 +2,10 @@ extends GutTest
 ## Turning models into Godot meshes: positions, corner order, texture
 ## coordinates, surfaces and shaders. Needs no game files.
 
+class UpscaledCatalog extends AssetCatalog:
+	func texture_set() -> TextureSet:
+		return TextureSet.x4()
+
 
 func _bank(flags: int = 0, blend_mode: int = 0) -> VloFile:
 	var pixels: Array[int] = []
@@ -108,6 +112,14 @@ func test_parts_stay_apart_and_empty_ones_have_no_mesh() -> void:
 	assert_null(built.part_meshes[1])
 	assert_not_null(built.part_meshes[2])
 	assert_false(built.is_empty())
+
+
+func test_filtering_starts_as_the_library_texture_set_asks() -> void:
+	var library := TextureLibrary.new()
+	assert_false(ModelMeshBuilder.new(library).linear_filter)
+	assert_false(ModelMeshBuilder.new(null).linear_filter)
+	library.catalog = UpscaledCatalog.new()
+	assert_true(ModelMeshBuilder.new(library).linear_filter)
 
 
 func test_shader_choices() -> void:

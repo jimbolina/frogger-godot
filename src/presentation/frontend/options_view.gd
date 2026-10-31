@@ -566,4 +566,4 @@ func _draw() -> void:
 		return
 	var at := Vector2((MenuWaterView.DISPLAY_SIZE.x >> 1) - (record.width >> 1),
 		MenuWaterView.DISPLAY_SIZE.y - record.height + _drawn_prompt)
-	draw_texture_rect_region(texture, Rect2(at, Vector2(record.width, record.height)), Rect2(TextureBuilder.pixel_rect(record)))
+	draw_texture_rect_region(texture, Rect2(at, Vector2(record.width, record.height)), TextureBuilder.texture_rect(record, texture))

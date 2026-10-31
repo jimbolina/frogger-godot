@@ -1,6 +1,6 @@
 shader_type spatial;
 render_mode unshaded, blend_add, depth_draw_never, cull_back;
-uniform sampler2D image : filter_linear, repeat_disable;
+uniform sampler2D image : filter_linear_mipmap, repeat_disable;
 uniform vec2 uv_scale = vec2(1.0);
 uniform vec2 uv_offset = vec2(0.0);
 

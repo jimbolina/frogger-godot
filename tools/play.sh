@@ -17,6 +17,10 @@ for argument in "$@"; do
         *) args+=("$argument") ;;
     esac
 done
+if [ -d assets/textures/images_x4 ] && ! "${PYTHON:-python3}" tools/bake_pages_x4.py --quiet; then
+    echo "play: baking the x4 texture pages failed" >&2
+    exit 1
+fi
 if ! "$GODOT" --headless --disable-crash-handler --path . --import >/dev/null 2>&1; then
     echo "play: class-name cache refresh failed; run godot --headless --path . --import to see why" >&2
     exit 1

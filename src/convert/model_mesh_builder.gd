@@ -28,7 +28,8 @@ extends RefCounted
 ## The pose of each part to build: partcel 0, the one the model rests in.
 const REST_POSE: int = 0
 
-## Draw textures smoothed instead of pixel by pixel.
+## Draw textures smoothed and mipmapped instead of pixel by pixel; starts as
+## the library's texture set asks.
 var linear_filter: bool = false
 ## Draw both sides of every polygon.
 var two_sided: bool = false
@@ -45,6 +46,7 @@ var _preferred: VloFile
 func _init(library: TextureLibrary, preferred_bank: VloFile = null) -> void:
 	_library = library
 	_preferred = preferred_bank
+	linear_filter = library != null and library.linear_filter()
 
 
 class _Surface:

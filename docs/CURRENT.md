@@ -12,19 +12,19 @@ and P12 audio await the owner's play and by-ear checks.
 
 S1 is complete pending the owner's checks
 ([roadmap](PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)).
-The game, sandbox, viewers and inspection tools play from the committed
-`assets/` through `ImportedAssets` ([assets](reference/assets.md)); the
-retail readers, importer, retail goldens, format references and FrogLord
-configs live in `archive/`, which nothing in the game may reference. Launch
-`tools/play.sh --level=ORG1`; no data folder is needed. S1e added the
-[domain model](reference/domain-model.md) and the
-[layout audit](PORTING.md#s1e-layout-audit); the owner's review of both, the
-two proposals it raises (`tools/` split, presets as data), and the play check
-of every accepted level, the front end and the sandbox from imported
-resources are pending.
+Everything plays from the committed `assets/` through `ImportedAssets`
+([assets](reference/assets.md)); the retail readers, importer, retail goldens
+and FrogLord configs live in `archive/`, which the game never references.
+Launch `tools/play.sh --level=ORG1`; no data folder is needed. Pending: the
+owner's review of the [domain model](reference/domain-model.md) and
+[layout audit](PORTING.md#s1e-layout-audit) with its two proposals, and the
+play check of every accepted level, the front end and the sandbox.
 
-Next: S2, the modern rendering spike; x4 upscaled textures wait for it
-under `assets/textures/images_x4/` ([assets](reference/assets.md#upscaled-textures)).
+S2a is done pending the owner's play check: `--texture-set=x4` draws the
+upscaled textures ([assets](reference/assets.md#upscaled-textures)), with
+the pages baked locally by the wrappers; the retail set stays the default
+and is unchanged. Check `tools/play.sh --level=ORG1 --texture-set=x4` and
+the front end at x4. Next: S2, the modern rendering spike.
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand

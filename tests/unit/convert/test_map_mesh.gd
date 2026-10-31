@@ -1,6 +1,10 @@
 extends GutTest
 ## Synthetic map group geometry, materials and independent instance playback.
 
+class UpscaledCatalog extends AssetCatalog:
+	func texture_set() -> TextureSet:
+		return TextureSet.x4()
+
 
 func test_reference_projection_updates_camera_on_ordinary_surfaces() -> void:
 	var instance: MapMesh.Instance = MapMeshBuilder.new().build(_scene()).create_instance()
@@ -154,6 +158,49 @@ func test_map_strip_corner_order_uvs_and_polygon_blend_flag() -> void:
 	built = MapMeshBuilder.new().build(scene)
 	material = built.groups[0].surface_get_material(0)
 	assert_true(material.shader.code.contains("ALPHA = 0.5"))
+
+
+func test_retail_pages_inset_linear_samples_by_half_a_retail_texel() -> void:
+	var built: MapMesh = MapMeshBuilder.new().build(_scene())
+	var material: ShaderMaterial = built.groups[0].surface_get_material(0)
+	var inset: Vector2 = material.get_shader_parameter("texel_inset")
+	var pixel_scale: Vector2 = material.get_shader_parameter("pixel_scale")
+	assert_false(built.linear_filter, "the retail set stays nearest")
+	assert_eq(inset, Vector2(0.5, 0.5) / 256.0)
+	assert_eq(inset, pixel_scale * 0.5, "the linear inset is unchanged at retail scale")
+
+
+func test_scaled_pages_keep_retail_pixel_uvs_and_inset_by_a_stored_texel() -> void:
+	var scene: MapSceneData = _scene()
+	var banks: Array[VloFile] = [scene.preferred]
+	scene.page_set = SyntheticVlo.page_set(banks, false, PackedInt32Array(), 4)
+	assert_eq(scene.page_set.scale(), 4)
+	assert_eq(TexturePageSet.new().scale(), 1, "a set without pages is retail scale")
+	assert_eq(scene.page_set.sky_slot_height(), 1032)
+	var built: MapMesh = MapMeshBuilder.new().build(scene, true)
+	var material: ShaderMaterial = built.groups[0].surface_get_material(0)
+	var texture: Texture2D = material.get_shader_parameter("image")
+	var inset: Vector2 = material.get_shader_parameter("texel_inset")
+	var pixel_scale: Vector2 = material.get_shader_parameter("pixel_scale")
+	var pixel_padding: Vector2 = material.get_shader_parameter("pixel_padding")
+	assert_eq(texture.get_width(), 1024)
+	assert_eq(inset, Vector2(0.5, 0.5) / 1024.0)
+	assert_eq(pixel_scale, Vector2.ONE / 256.0)
+	assert_eq(pixel_padding, Vector2.ONE / 256.0)
+	assert_true(material.shader.code.contains("filter_linear_mipmap"))
+
+
+func test_build_filters_as_the_library_texture_set_asks() -> void:
+	var scene: MapSceneData = _scene()
+	scene.library.catalog = UpscaledCatalog.new()
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	var material: ShaderMaterial = built.groups[0].surface_get_material(0)
+	assert_true(built.linear_filter)
+	assert_true(material.shader.code.contains("filter_linear_mipmap"))
+	built = MapMeshBuilder.new().build(scene, false)
+	material = built.groups[0].surface_get_material(0)
+	assert_false(built.linear_filter, "an explicit choice wins")
+	assert_true(material.shader.code.contains("filter_nearest"))
 
 
 func test_animation_updates_materials_without_rebuilding_shared_meshes() -> void:

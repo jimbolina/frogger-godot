@@ -243,4 +243,4 @@ func _sprite(image_name: String, at: Vector2, colour: Color, flipped: bool = fal
 		return
 	var size := Vector2(record.width, record.height)
 	var target := Rect2(at + Vector2(size.x, 0.0), Vector2(-size.x, size.y)) if flipped else Rect2(at, size)
-	_overlay.draw_texture_rect_region(texture, target, Rect2(TextureBuilder.pixel_rect(record)), colour)
+	_overlay.draw_texture_rect_region(texture, target, TextureBuilder.texture_rect(record, texture), colour)

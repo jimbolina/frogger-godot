@@ -43,7 +43,7 @@ func _ready() -> void:
 	_build_sandbox_interface()
 	if not auto_open:
 		return
-	var data: ImportedAssets = ImportedAssets.open()
+	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()))
 	if data.is_valid():
 		open_sandbox(data, true)
 	else:

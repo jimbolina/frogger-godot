@@ -14,8 +14,9 @@ class Collected extends RefCounted:
 var _material_cache: Dictionary[String, ShaderMaterial] = {}
 
 
-## Converts immutable parsed maps and texture dependencies to shared geometry.
-func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
+## Converts immutable parsed maps and texture dependencies to shared geometry,
+## filtered as the scene's texture set asks unless [param linear_filter] says otherwise.
+func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filter()) -> MapMesh:
 	var result := MapMesh.new()
 	result.scene = scene
 	result.linear_filter = linear_filter
@@ -200,7 +201,8 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 	var material := ShaderMaterial.new()
 	material.shader = MapShaders.sky_shader(linear_filter)
 	material.set_shader_parameter("image", result.sky_atlas)
-	material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, 1.0 / result.sky_atlas.get_height()))
+	material.set_shader_parameter("pixel_scale", Vector2(1.0 / 256.0, float(scene.page_set.scale()) / result.sky_atlas.get_height()))
+	material.set_shader_parameter("texel_inset", MapShaders.texel_inset(result.sky_atlas))
 	material.set_shader_parameter("far_layer", 0.0)
 	material.render_priority = -127
 	var rotation_orders: Array[PackedInt32Array] = [PackedInt32Array([0, 1, 2, 3]),
@@ -245,7 +247,7 @@ func _baked_sky_atlas(scene: MapSceneData, slots: Dictionary[int, int], result: 
 		result.diagnostics.append("The page set has no sky atlas; the sky is not drawn")
 		return null
 	var order := PackedInt32Array(slots.keys())
-	if scene.page_set.sky_pages != order or baked.get_height() != TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, order.size()):
+	if scene.page_set.sky_pages != order or baked.get_height() != scene.page_set.sky_slot_height() * maxi(1, order.size()):
 		result.diagnostics.append("The baked sky atlas holds pages %s, not %s; the sky is not drawn" % [scene.page_set.sky_pages, order])
 		return null
 	return baked

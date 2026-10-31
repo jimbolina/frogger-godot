@@ -43,7 +43,10 @@ static func sky_shader(linear_filter: bool) -> Shader:
 	return _load(sky_shader_path(linear_filter))
 
 
-## Material using pixel-space UVs; translucency is a polygon flag for maps.
+## Material using retail pixel-space UVs, so byte wrapping and animation stay in
+## retail pixels at any page scale; [code]texel_inset[/code] is half a stored
+## texel of the bound page, which the linear variants subtract before sampling.
+## Translucency is a polygon flag for maps.
 static func material(image: VloImage, blend: ModelShaders.Blend, linear_filter: bool, layer: int,
 		pages: MapTexturePages) -> ShaderMaterial:
 	var made := ShaderMaterial.new()
@@ -55,10 +58,16 @@ static func material(image: VloImage, blend: ModelShaders.Blend, linear_filter: 
 		made.set_shader_parameter("pixel_scale", Vector2.ONE / 256.0)
 		made.set_shader_parameter("pixel_padding", Vector2(image.u, image.v) / 256.0)
 		made.set_shader_parameter("image_origin", Vector2(image.u, image.v))
+		made.set_shader_parameter("texel_inset", texel_inset(texture))
 	made.set_shader_parameter("far_layer", float(layer))
 	if layer >= 0:
 		made.render_priority = -127 + layer
 	return made
+
+
+## Half a texel of [param texture] in normalised coordinates, or zero without one.
+static func texel_inset(texture: Texture2D) -> Vector2:
+	return Vector2(0.5, 0.5) / texture.get_size() if texture != null else Vector2.ZERO
 
 
 static func _load(path: String) -> Shader:

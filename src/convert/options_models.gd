@@ -98,6 +98,7 @@ static func from_data(data: AssetCatalog) -> OptionsModels:
 	if own == null or general_bank == null:
 		result.error = "Options texture banks cannot be read: " + "; ".join(problems)
 		return result
+	result.library.catalog = data
 	result.library.add_bank(general_bank, "general")
 	result.library.add_bank(own, "options")
 	var children := PackedInt32Array()
@@ -144,12 +145,13 @@ static func from_data(data: AssetCatalog) -> OptionsModels:
 	return result
 
 
-## The unpadded texture of named image [param symbol] from [member images], or null.
+## The unpadded texture of named image [param symbol] from [member images] in the catalog's
+## texture set, or null; it is the texture set's scale times the record's in-game size.
 func image_texture(symbol: String) -> ImageTexture:
 	var record: VloImage = images.get(symbol, null)
 	if record == null:
 		return null
-	return ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
+	return ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record, library.texture_for(record)))
 
 
 ## The options viewport's ambient and parallel lights.
@@ -220,6 +222,7 @@ func _load_entry_frog(data: AssetCatalog, general: ThemeBookEntry, general_bank:
 	for index: int in names.size():
 		actions[StringName(names.name_of(index))] = index
 	entry_frog_library = TextureLibrary.new()
+	entry_frog_library.catalog = data
 	entry_frog_library.add_bank(general_bank, "general")
 	entry_frog_library.add_bank(bank, "multiplayer")
 	entry_frog_bank = bank

@@ -35,6 +35,20 @@ func test_presentation_detaches_snapshot_and_never_advances_it() -> void:
 func test_missing_data_has_actionable_error() -> void:
 	assert_string_contains(GameplayHudAssets.from_data(null).error, "valid player data")
 
+func test_hud_images_draw_at_their_records_retail_size() -> void:
+	var assets := GameplayHudAssets.new()
+	var image := VloImage.new()
+	image.padded_width = 16
+	image.padded_height = 8
+	image.width = 14
+	image.height = 6
+	assets.images["bonus"] = image
+	assets.textures["bonus"] = ImageTexture.create_from_image(Image.create(64, 32, false, Image.FORMAT_RGBA8))
+	assert_eq(assets.retail_size("bonus"), Vector2(16, 8))
+	assert_eq(assets.texture_scale("bonus"), Vector2(4, 4))
+	assert_eq(assets.retail_size("missing"), Vector2.ZERO)
+	assert_eq(assets.texture_scale("missing"), Vector2.ONE)
+
 func test_help_is_once_per_run_and_powerups_can_replace_it() -> void:
 	var hud := GameplayHud.new()
 	add_child_autofree(hud)

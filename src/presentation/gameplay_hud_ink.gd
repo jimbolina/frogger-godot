@@ -4,7 +4,7 @@ extends Control
 
 class Glyph extends RefCounted:
 	## One atlas glyph with a source-space destination and source tint.
-	var at: Vector2
+	var target: Rect2
 	var region: Rect2
 	var colour: Color
 
@@ -20,10 +20,11 @@ func configure(blending: CanvasItemMaterial.BlendMode) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-## Appends one font atlas sample; draw submission remains on this canvas item.
-func glyph(at: Vector2, region: Rect2, colour: Color) -> void:
+## Appends one font atlas sample: [param region] of the font texture drawn into canvas
+## [param target]; draw submission remains on this canvas item.
+func glyph(target: Rect2, region: Rect2, colour: Color) -> void:
 	var sample := Glyph.new()
-	sample.at = at
+	sample.target = target
 	sample.region = region
 	sample.colour = colour
 	glyphs.append(sample)
@@ -33,4 +34,4 @@ func _draw() -> void:
 		draw_rect(panel, Color(64.0 / 255.0, 64.0 / 255.0, 64.0 / 255.0, 0.5))
 	if font_texture != null:
 		for sample: Glyph in glyphs:
-			draw_texture_rect_region(font_texture, Rect2(sample.at, sample.region.size), sample.region, sample.colour)
+			draw_texture_rect_region(font_texture, sample.target, sample.region, sample.colour)

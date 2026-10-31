@@ -5,10 +5,14 @@ extends RefCounted
 ## model record with [ModelMeshBuilder].
 ##
 ## A committed mesh is the shared loaded resource, so every caller asking for
-## the same model gets the same [ModelMesh] and the same materials.
+## the same model gets the same [ModelMesh] and the same materials. When the
+## catalog draws from an upscaled [TextureSet], the shared mesh is one
+## retextured [ModelMeshCopy] per model and set, kept here.
 
 ## The file of each model's mesh inside its folder under [code]models/[/code].
 const MESH_FILE: String = "mesh.res"
+
+static var _retextured: Dictionary[String, ModelMesh] = {}
 
 
 ## The committed mesh path of model [param resource_id] under [param assets_root],
@@ -36,10 +40,20 @@ static func mesh_for(catalog: AssetCatalog, resource_id: int, library: TextureLi
 		if not path.is_empty() and ResourceLoader.exists(path):
 			var loaded: ModelMesh = ResourceLoader.load(path) as ModelMesh
 			if loaded != null:
-				return loaded
+				return _for_texture_set(loaded, path, imported)
 	if catalog == null:
 		return null
 	var file: MofFile = catalog.read_model(resource_id)
 	if file == null or not file.error.is_empty() or file.static_models.is_empty():
 		return null
 	return ModelMeshBuilder.new(library, preferred).build_animated(file)
+
+
+static func _for_texture_set(loaded: ModelMesh, path: String, imported: ImportedAssets) -> ModelMesh:
+	var set: TextureSet = imported.texture_set()
+	if set.is_retail():
+		return loaded
+	var key: String = "%s|%s" % [path, set.set_name]
+	if not _retextured.has(key):
+		_retextured[key] = ModelMeshCopy.of(loaded, imported)
+	return _retextured[key]

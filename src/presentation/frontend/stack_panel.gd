@@ -7,7 +7,8 @@ extends Control
 ## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. The
 ## high-score view adds up to three score lines in [code]newfont[/code]'s 8x8 cells, white,
 ## centred in a box [constant StackLayout.SCORE_BOX_WIDTH] wide whose left edge is
-## [member Placement.panel_x].
+## [member Placement.panel_x]. Each sprite is sized to its image's retail size, whatever the
+## texture set's scale.
 
 ## One frame's sprite state, interpolated between two ticks.
 class Placement:
@@ -119,23 +120,23 @@ func setup(assets: FrontEndAssets) -> void:
 	fade.material = subtract
 	fade.visible = false
 	add_child(fade)
-	title = _sprite(assets.texture("select_level"), DIM_COLOUR)
-	prompt = _sprite(assets.texture("select1"), NEUTRAL_COLOUR)
-	level_name = _sprite(null, DIM_COLOUR)
+	title = _sprite(assets.texture("select_level"), assets.retail_size("select_level"), DIM_COLOUR)
+	prompt = _sprite(assets.texture("select1"), assets.retail_size("select1"), NEUTRAL_COLOUR)
+	level_name = _sprite(null, Vector2.ZERO, DIM_COLOUR)
 	level_name.visible = false
-	loading = _sprite(assets.texture("sel_loading"), 0)
+	loading = _sprite(assets.texture("sel_loading"), assets.retail_size("sel_loading"), 0)
 	loading.visible = false
 	if loading.texture != null:
-		loading.position = Vector2((StackLayout.DISPLAY_WIDTH >> 1) - (loading.texture.get_width() >> 1),
-			(StackLayout.DISPLAY_HEIGHT >> 1) - (loading.texture.get_height() >> 1))
+		loading.position = Vector2((StackLayout.DISPLAY_WIDTH >> 1) - (_width(loading) >> 1),
+			(StackLayout.DISPLAY_HEIGHT >> 1) - (int(loading.size.y) >> 1))
 	title.position.x = (StackLayout.DISPLAY_WIDTH >> 1) - (_width(title) >> 1)
 	apply(Placement.new())
 
 
-## Shows [param texture] as the level name.
-func set_level_name(texture: Texture2D) -> void:
+## Shows [param texture] as the level name, [param retail_size] big on the 640x480 display.
+func set_level_name(texture: Texture2D, retail_size: Vector2) -> void:
 	level_name.texture = texture
-	level_name.size = Vector2.ZERO
+	_resize(level_name, retail_size)
 
 
 ## Moves and recolours the sprites to [param state].
@@ -144,7 +145,7 @@ func apply(state: Placement) -> void:
 	var prompt_texture: Texture2D = _assets.texture(state.prompt) if _assets != null else null
 	if prompt.texture != prompt_texture:
 		prompt.texture = prompt_texture
-		prompt.size = Vector2.ZERO
+		_resize(prompt, _assets.retail_size(state.prompt))
 	prompt.position = Vector2(PROMPT_RIGHT - _width(prompt), state.prompt_y)
 	level_name.visible = state.name_visible
 	level_name.position = Vector2(state.name_x, StackLayout.LEVEL_TITLE_Y)
@@ -170,7 +171,8 @@ func _draw() -> void:
 	var record: VloImage = _assets.image_record("newfont") if _assets != null else null
 	if font == null or record == null:
 		return
-	var origin := Vector2(TextureBuilder.pixel_rect(record).position)
+	var source: Rect2 = TextureBuilder.texture_rect(record, font)
+	var texels: Vector2 = TextureBuilder.texture_scale(record, font)
 	for index: int in mini(_score_lines.size(), StackLayout.SCORE_LINE_Y.size()):
 		var line: String = _score_lines[index]
 		var at := Vector2(score_line_x(line, _score_x), StackLayout.SCORE_LINE_Y[index])
@@ -180,20 +182,28 @@ func _draw() -> void:
 				continue
 			var cell := Vector2((code % GLYPHS_PER_ROW) * GLYPH_SIZE, (code / GLYPHS_PER_ROW) * GLYPH_SIZE)
 			draw_texture_rect_region(font, Rect2(at + Vector2(character * GLYPH_SIZE, 0), Vector2(GLYPH_SIZE, GLYPH_SIZE)),
-				Rect2(origin + cell, Vector2(GLYPH_SIZE, GLYPH_SIZE)))
+				Rect2(source.position + cell * texels, Vector2(GLYPH_SIZE, GLYPH_SIZE) * texels))
 
 
-func _sprite(texture: Texture2D, colour: int) -> TextureRect:
+func _sprite(texture: Texture2D, retail_size: Vector2, colour: int) -> TextureRect:
 	var sprite := TextureRect.new()
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprite.stretch_mode = TextureRect.STRETCH_SCALE
 	sprite.texture = texture
 	sprite.modulate = _colour(colour)
+	_resize(sprite, retail_size)
 	add_child(sprite)
 	return sprite
 
 
+static func _resize(sprite: TextureRect, retail_size: Vector2) -> void:
+	sprite.custom_minimum_size = retail_size
+	sprite.size = retail_size
+
+
 static func _width(sprite: TextureRect) -> int:
-	return sprite.texture.get_width() if sprite.texture != null else 0
+	return int(sprite.size.x) if sprite.texture != null else 0
 
 
 static func _colour(colour: int) -> Color:

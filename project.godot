@@ -31,6 +31,10 @@ window/stretch/aspect="keep"
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
+[frogger]
+
+textures/default_set="retail"
+
 [importer_defaults]
 
 texture={

@@ -31,7 +31,7 @@ func _ready() -> void:
 	add_child(layout)
 	var menu := HBoxContainer.new()
 	layout.add_child(menu)
-	var data: ImportedAssets = ImportedAssets.open()
+	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()))
 	var codes: PackedStringArray = data.playable_level_codes() if data.is_valid() else PackedStringArray()
 	_level_picker = OptionButton.new()
 	for code: String in codes:

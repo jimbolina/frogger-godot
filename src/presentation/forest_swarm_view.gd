@@ -15,7 +15,7 @@ func configure(scene: MapSceneData, data: AssetCatalog) -> String:
 	var image: VloImage = scene.library.image_for_id(identity, scene.preferred)
 	if image == null:
 		return "Forest swarm image for_swarm is missing from the supplied banks"
-	_material = ModelShaders.material(scene.library.texture_for(image), ModelShaders.Blend.OPAQUE, false, true)
+	_material = ModelShaders.material(scene.library.texture_for(image), ModelShaders.Blend.OPAQUE, scene.library.linear_filter(), true)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
 	uv.size.y -= (1.0 / image.padded_height) if image.has_flag(VloImage.FLAG_HIT_Y) else 0.0

@@ -6,7 +6,7 @@
 - The optional map model probe computes lit vertex colours from map lights. The standalone model viewer uses the polygon's own colour. Terrain uses stored colours except the cave Gouraud replacement.
 - The renderer converts a shader's colour to linear light and back with two approximations that darken dark colours. The shaders undo this beforehand. `tools/probe_model_shader.gd` measures what reaches the screen; run it after changing the Godot version, the renderer or the environment.
 - The black-is-transparent rule is a colour key over a whole 256x256 texture page in the original, not per image.
-- Models use one clamped texture per VLO image; maps reconstruct physical PC pages for byte-wrapped UVs. No mipmaps. Filtering is a user option; the font is always nearest.
+- Models use one clamped texture per VLO image; maps reconstruct physical PC pages for byte-wrapped UVs, which stay in retail pixels whatever the page scale (`texel_inset` is half a stored texel). The retail texture set samples nearest without mipmaps; the upscaled `x4` set samples through the `_linear` variants with mipmaps, and 2D draws scale it back to retail pixels. Filtering is a viewer option; the font is always nearest.
 - One mesh per map group, split by material. Polygons with animated textures get their own surfaces.
 - Map captures use a fixed 640x480 viewport; projection is explicit. The dedicated game scene adds the single-player HUD; the terrain viewer retains its inspection status overlay.
 

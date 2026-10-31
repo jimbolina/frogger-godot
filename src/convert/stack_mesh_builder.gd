@@ -80,9 +80,11 @@ static func quad_mesh(corners: Array[Vector3i]) -> ArrayMesh:
 
 
 ## A lit, opaque, back-face-culled material for a box surface showing [param texture]
-## (untextured when null), tinted by [param tint].
-static func box_material(texture: Texture2D, tint: int, projection_scale: Vector2 = Vector2.ONE) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, false, false)
+## (untextured when null), tinted by [param tint]; [param linear_filter] samples
+## with the linear, mipmapped shader.
+static func box_material(texture: Texture2D, tint: int, projection_scale: Vector2 = Vector2.ONE,
+		linear_filter: bool = false) -> ShaderMaterial:
+	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, linear_filter, false)
 	material.set_shader_parameter("projection_scale", projection_scale)
 	material.set_shader_parameter("source_lighting", true)
 	for index: int in StackLayout.LIGHT_COLOURS.size():
@@ -93,9 +95,11 @@ static func box_material(texture: Texture2D, tint: int, projection_scale: Vector
 
 
 ## An unlit, two-sided material for a raw polygon showing [param texture], drawn
-## [constant GOLD_FROG_DEPTH_BIAS] units nearer the camera.
-static func quad_material(texture: Texture2D, projection_scale: Vector2 = Vector2.ONE) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, false, true)
+## [constant GOLD_FROG_DEPTH_BIAS] units nearer the camera; [param linear_filter]
+## samples with the linear, mipmapped shader.
+static func quad_material(texture: Texture2D, projection_scale: Vector2 = Vector2.ONE,
+		linear_filter: bool = false) -> ShaderMaterial:
+	var material: ShaderMaterial = ModelShaders.material(texture, ModelShaders.Blend.OPAQUE, linear_filter, true)
 	material.set_shader_parameter("projection_scale", projection_scale)
 	material.set_shader_parameter("depth_bias", GOLD_FROG_DEPTH_BIAS)
 	return material

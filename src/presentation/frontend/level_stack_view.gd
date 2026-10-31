@@ -150,12 +150,12 @@ static func create_for_scores(assets: FrontEndAssets, stack: LevelStack, progres
 	return view
 
 
-## Each arcade row's level-name image width in [param stack], zero where missing.
+## Each arcade row's level-name image width in [param stack] on the 640x480 display, zero
+## where missing.
 static func name_widths(assets: FrontEndAssets, stack: LevelStack) -> PackedInt32Array:
 	var widths := PackedInt32Array()
 	for row: int in stack.arcade_count():
-		var name_image: Texture2D = assets.level_texture(stack.arcade_row(row).level, FrontEndAssets.LevelImage.STACK_NAME)
-		widths.append(name_image.get_width() if name_image != null else 0)
+		widths.append(int(assets.level_retail_size(stack.arcade_row(row).level, FrontEndAssets.LevelImage.STACK_NAME).x))
 	return widths
 
 
@@ -337,9 +337,9 @@ func _build() -> void:
 		var image: Texture2D = _world_image(row)
 		var box := MeshInstance3D.new()
 		box.name = "Row%d" % row
-		box.mesh = StackMeshBuilder.row_mesh(layout, row, image.get_height() if image != null else 0,
-			stack_row.local_level, stack_row.levels_in_world)
-		var material: ShaderMaterial = StackMeshBuilder.box_material(image, selector.tint(row), scale)
+		box.mesh = StackMeshBuilder.row_mesh(layout, row, _world_image_height(row), stack_row.local_level,
+			stack_row.levels_in_world)
+		var material: ShaderMaterial = StackMeshBuilder.box_material(image, selector.tint(row), scale, _assets.texture_library.linear_filter())
 		box.set_surface_override_material(0, material)
 		box.set_surface_override_material(1, material)
 		_box_materials.append(material)
@@ -358,7 +358,7 @@ func _build() -> void:
 		var quad := MeshInstance3D.new()
 		quad.name = "GoldFrog%d" % slot
 		quad.mesh = StackMeshBuilder.quad_mesh(corners)
-		quad.set_surface_override_material(0, StackMeshBuilder.quad_material(gold, scale))
+		quad.set_surface_override_material(0, StackMeshBuilder.quad_material(gold, scale, _assets.texture_library.linear_filter()))
 		quad.visible = _progress.gold_frogs & (1 << (slot + 1)) != 0
 		_world.add_child(quad)
 		gold_frogs.append(quad)
@@ -371,10 +371,17 @@ func _build() -> void:
 
 
 func _world_image(row: int) -> Texture2D:
-	var kind: FrontEndAssets.LevelImage = FrontEndAssets.LevelImage.WORLD_NOT_TRIED
+	return _assets.level_texture(_stack.arcade_row(row).level, _world_kind(row))
+
+
+func _world_image_height(row: int) -> int:
+	return int(_assets.level_retail_size(_stack.arcade_row(row).level, _world_kind(row)).y)
+
+
+func _world_kind(row: int) -> FrontEndAssets.LevelImage:
 	if row < _progress.arcade_flags.size() and StackLayout.shows_unlocked_image(_progress.arcade_flags[row]):
-		kind = FrontEndAssets.LevelImage.WORLD_UNLOCKED
-	return _assets.level_texture(_stack.arcade_row(row).level, kind)
+		return FrontEndAssets.LevelImage.WORLD_UNLOCKED
+	return FrontEndAssets.LevelImage.WORLD_NOT_TRIED
 
 
 func _capture() -> _Frame:
@@ -419,15 +426,16 @@ func _build_spin(row: int) -> void:
 	_spin_row = row
 	var stack_row: LevelStack.Row = _stack.arcade_row(row)
 	var image: Texture2D = _world_image(row)
-	spin_box.mesh = StackMeshBuilder.spin_mesh(layout, row, image.get_height() if image != null else 0,
-		stack_row.local_level, stack_row.levels_in_world)
+	spin_box.mesh = StackMeshBuilder.spin_mesh(layout, row, _world_image_height(row), stack_row.local_level,
+		stack_row.levels_in_world)
 	var scale: Vector2 = GameplayProjection.clip_scale(DISPLAY_SIZE)
 	var screenshot: Texture2D = _assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.SCREENSHOT)
-	_spin_materials = [StackMeshBuilder.box_material(image, selector.tint(row), scale),
-		StackMeshBuilder.box_material(screenshot, StackSelector.SPIN_IMAGE_COLOUR, scale)]
+	_spin_materials = [StackMeshBuilder.box_material(image, selector.tint(row), scale, _assets.texture_library.linear_filter()),
+		StackMeshBuilder.box_material(screenshot, StackSelector.SPIN_IMAGE_COLOUR, scale, _assets.texture_library.linear_filter())]
 	spin_box.set_surface_override_material(0, _spin_materials[0])
 	spin_box.set_surface_override_material(1, _spin_materials[1])
-	panel.set_level_name(_assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME))
+	panel.set_level_name(_assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME),
+		_assets.level_retail_size(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME))
 
 
 func _apply_tints() -> void:

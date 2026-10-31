@@ -15,6 +15,7 @@ var surface_count: int = 0
 var missing_texture_ids := PackedInt32Array()
 var bounds := AABB()
 var diagnostics := PackedStringArray()
+## True when instances start on the linear, mipmapped shader variants.
 var linear_filter: bool = false
 
 ## One surface's prepared image variants and identity.

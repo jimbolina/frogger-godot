@@ -40,6 +40,23 @@ func close() -> void:
 	pass
 
 
+## The texture set the catalog draws from: the retail set unless a concrete
+## catalog chose another.
+func texture_set() -> TextureSet:
+	return TextureSet.retail()
+
+
+## The Godot texture of [param image] in the catalog's texture set: the
+## record's own texture here, or null for null.
+func texture_of(image: VloImage) -> Texture2D:
+	return image.texture if image != null else null
+
+
+## The texture set's counterpart of the retail [param texture]: unchanged here.
+func texture_counterpart(texture: Texture2D) -> Texture2D:
+	return texture
+
+
 ## The level list row of level [param level] (see [FroggerIds]), or null.
 func map_book_entry(level: int) -> MapBookEntry:
 	return tables.map_book().get_entry(level)

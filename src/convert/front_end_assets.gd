@@ -14,6 +14,10 @@ extends RefCounted
 ## The water images come from the options bank [code]OPT_VRAM.VLO[/code]
 ## (HSInitialiseWater's textures), which [code]LS_ALL.VLO[/code] also carries, without
 ## their padding because the water maps texture coordinates over the in-game image.
+##
+## Textures come from the catalog's [TextureSet], so they may be larger than the records;
+## [method retail_size] and [method level_retail_size] give the size each is drawn at on the
+## 640x480 canvas.
 
 ## World and level images of one level-select row, in the row's record order.
 enum LevelImage { WORLD_UNLOCKED, WORLD_VISITED, WORLD_NOT_TRIED, SCREENSHOT, STACK_NAME, GAME_NAME }
@@ -52,6 +56,8 @@ var _textures: Dictionary[String, Texture2D] = {}
 var _images: Dictionary[String, VloImage] = {}
 var _source_names: Dictionary[String, String] = {}
 var _level_textures: Dictionary[Vector2i, Texture2D] = {}
+var _sizes: Dictionary[String, Vector2] = {}
+var _level_sizes: Dictionary[Vector2i, Vector2] = {}
 
 
 ## The banks loaded for [param for_language], in upload order.
@@ -75,6 +81,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 		result.error = "Front end requires valid player data and named images"
 		return result
 	var library := TextureLibrary.new()
+	library.catalog = data
 	var problems := PackedStringArray()
 	for bank_name: String in banks_for(result.language):
 		var entry: MwiEntry = data.find_resource(bank_name)
@@ -93,6 +100,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 	var textures: Dictionary[String, Texture2D] = {}
 	var images: Dictionary[String, VloImage] = {}
 	var source_names: Dictionary[String, String] = {}
+	var sizes: Dictionary[String, Vector2] = {}
 	for image_name: String in NAMES:
 		var drawn_name: String = GameLanguage.image_name(image_name, result.language, data.names.images)
 		if drawn_name != image_name:
@@ -101,6 +109,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 			if localized_image != null:
 				textures[image_name] = localized_image
 				images[image_name] = library.image_for_id(localized)
+				sizes[image_name] = TextureBuilder.retail_size(images[image_name], localized_image)
 				source_names[image_name] = drawn_name
 				continue
 			result.diagnostics.append("%s image %s (texture %d) is missing; using %s" % [
@@ -112,6 +121,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 			return result
 		textures[image_name] = image
 		images[image_name] = library.image_for_id(identity)
+		sizes[image_name] = TextureBuilder.retail_size(images[image_name], image)
 		source_names[image_name] = image_name
 	for image_name: String in WATER_NAMES:
 		var identity: int = data.names.images.index_of(image_name)
@@ -119,7 +129,8 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 		if record == null:
 			result.error = "Front-end image %s (texture %d) is missing from %s" % [image_name, identity, WATER_BANK]
 			return result
-		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
+		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record, library.texture_for(record)))
+		sizes[image_name] = Vector2(record.width, record.height)
 		source_names[image_name] = image_name
 	for image_name: String in BACKGROUND_NAMES:
 		var identity: int = data.names.images.index_of(image_name)
@@ -127,7 +138,8 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 		if record == null:
 			result.diagnostics.append("Level-stack background image %s (texture %d) is missing" % [image_name, identity])
 			continue
-		textures[image_name] = TextureBuilder.unpadded_texture(record)
+		textures[image_name] = TextureBuilder.unpadded_texture(record, library.texture_for(record))
+		sizes[image_name] = Vector2(record.width, record.height)
 		source_names[image_name] = image_name
 	var table: LevelSelectTable = data.tables.level_select()
 	var pointers: BmpPointers = data.tables.bmp_pointers()
@@ -135,6 +147,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 		result.error = "Front-end level images need the level-select table: %s" % (table.error + pointers.error)
 		return result
 	var level_textures: Dictionary[Vector2i, Texture2D] = {}
+	var level_sizes: Dictionary[Vector2i, Vector2] = {}
 	for row: LevelSelectEntry in table.arcade:
 		for kind: LevelImage in LEVEL_IMAGES:
 			var identity: int = pointers.texture_id_for_pointer(row.image_pointers[kind])
@@ -144,11 +157,14 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 					LevelImage.keys()[kind], row.level, identity]
 				return result
 			level_textures[Vector2i(row.level, kind)] = image
+			level_sizes[Vector2i(row.level, kind)] = TextureBuilder.retail_size(library.image_for_id(identity), image)
 	result._textures = textures
 	result._images = images
 	result.texture_library = library
 	result._source_names = source_names
 	result._level_textures = level_textures
+	result._sizes = sizes
+	result._level_sizes = level_sizes
 	return result
 
 
@@ -156,6 +172,13 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 ## [constant BACKGROUND_NAMES]), or null.
 func texture(image_name: String) -> Texture2D:
 	return _textures.get(image_name, null)
+
+
+## The size [method texture] of [param image_name] is drawn at on the 640x480 canvas: the
+## record's padded size for [constant NAMES], its in-game size for the unpadded
+## [constant WATER_NAMES] and [constant BACKGROUND_NAMES]; zero when not loaded.
+func retail_size(image_name: String) -> Vector2:
+	return _sizes.get(image_name, Vector2.ZERO)
 
 
 ## The texture record drawn for [param image_name] (one of [constant NAMES]), or null.
@@ -171,3 +194,9 @@ func source_name(image_name: String) -> String:
 ## The [param kind] image of arcade level [param level] (one of [constant LEVEL_IMAGES]), or null.
 func level_texture(level: int, kind: LevelImage) -> Texture2D:
 	return _level_textures.get(Vector2i(level, kind), null)
+
+
+## The size [method level_texture] of [param level] and [param kind] is drawn at on the 640x480
+## canvas (the record's padded size), or zero when not loaded.
+func level_retail_size(level: int, kind: LevelImage) -> Vector2:
+	return _level_sizes.get(Vector2i(level, kind), Vector2.ZERO)

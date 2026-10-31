@@ -12,8 +12,13 @@ extends RefCounted
 ## Maps and models number their textures locally; a [TextureRemap] turns a
 ## local number into a global id ([method image_for_local]). Tables that point
 ## at texture records directly go through [BmpPointers] ([method image_for_pointer]).
-## Each image brings its own [member VloImage.texture].
+## Each image brings its own [member VloImage.texture]; a [member catalog]
+## that chose another [TextureSet] answers [method texture_for] with that
+## set's counterpart instead.
 
+## The catalog whose texture set the textures come from, or null for the
+## records' own textures.
+var catalog: AssetCatalog
 var _banks: Array[VloFile] = []
 var _bank_names: PackedStringArray = PackedStringArray()
 var _by_texture_id: Dictionary[int, VloImage] = {}
@@ -71,9 +76,22 @@ func image_for_pointer(pointers: BmpPointers, pointer: int, preferred: VloFile =
 	return image_for_id(texture_id, preferred) if texture_id >= 0 else null
 
 
-## The Godot texture of [param image], its [member VloImage.texture], or null.
+## The Godot texture of [param image] in the catalog's texture set (its
+## [member VloImage.texture] without a catalog), or null.
 func texture_for(image: VloImage) -> Texture2D:
-	return image.texture if image != null else null
+	if image == null:
+		return null
+	return catalog.texture_of(image) if catalog != null else image.texture
+
+
+## The texture set the textures come from.
+func texture_set() -> TextureSet:
+	return catalog.texture_set() if catalog != null else TextureSet.retail()
+
+
+## True when the texture set samples with linear filtering and mipmaps in 3D.
+func linear_filter() -> bool:
+	return texture_set().linear_filter()
 
 
 ## The Godot texture for global [param texture_id], or null.

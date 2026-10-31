@@ -2,6 +2,10 @@ extends GutTest
 ## Splitting a static model's first part into poly-pop pieces: centroids,
 ## relative corners, skipped kinds, meshes and material keys. Needs no game files.
 
+class UpscaledCatalog extends AssetCatalog:
+	func texture_set() -> TextureSet:
+		return TextureSet.x4()
+
 const VERTICES: Array[int] = [-64, -32, 48, 64, -32, 48, -64, -96, 48, 64, -96, 48, -1, -1, -1, -2, -2, -2, -2, -1, 0]
 
 
@@ -121,6 +125,19 @@ func test_textured_pieces_use_the_model_builder_keys() -> void:
 	var blended: ModelPolyPieces = ModelPolyPieces.build(model, _library(translucent), translucent)
 	assert_eq(blended.pieces[0].blend, ModelShaders.Blend.ADD)
 	assert_eq(blended.pieces[0].material_key, "texture 7 blend %d" % ModelShaders.Blend.ADD)
+
+
+func test_textured_pieces_filter_as_the_library_texture_set_asks() -> void:
+	var model: MofStatic = _model([_polygon(MofPolygonType.FT3, PackedInt32Array([4, 5, 6]), Color8(128, 128, 128), 7)])
+	var bank: VloFile = _bank()
+	var library: TextureLibrary = _library(bank)
+	var retail: ShaderMaterial = ModelPolyPieces.build(model, library, bank).materials["texture 7"]
+	assert_true(retail.shader.code.contains("filter_nearest"))
+	library.catalog = UpscaledCatalog.new()
+	var upscaled: ShaderMaterial = ModelPolyPieces.build(model, library, bank).materials["texture 7"]
+	assert_true(upscaled.shader.code.contains("filter_linear_mipmap"))
+	var chosen: ShaderMaterial = ModelPolyPieces.build(model, library, bank, false).materials["texture 7"]
+	assert_true(chosen.shader.code.contains("filter_nearest"), "an explicit choice wins")
 
 
 func test_missing_images_draw_plain_and_are_reported() -> void:
