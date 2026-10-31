@@ -56,13 +56,13 @@ function Test-Suite([string] $suite, [string[]] $suiteArguments) {
     $tests = Invoke-GodotStage $suite (@("-s", "res://addons/gut/gut_cmdln.gd") + $suiteArguments)
     Write-Output $tests.Output
     $passed = $tests.ExitCode -eq 0
-    if ($tests.Output -match $scriptErrorPattern) {
+    if ($tests.Output -cmatch $scriptErrorPattern) {
         Write-Output "run_tests: script errors found in the $suite suite; see $($tests.LogPath)"
         $passed = $false
     }
     $validation = Invoke-GodotStage "$suite-results" @("-s", "res://tools/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode, "--suite=$suite")
-    $validation.Output -split "`n" | Where-Object { $_ -match "RESULT ERROR|test_results:" }
-    if ($validation.ExitCode -ne 0 -or $validation.Output -match $scriptErrorPattern -or $validation.Output -notmatch "(?m)^test_results: valid $suite suite, exit [01]\s*$") {
+    $validation.Output -split "`n" | Where-Object { $_ -cmatch "RESULT ERROR|test_results:" }
+    if ($validation.ExitCode -ne 0 -or $validation.Output -cmatch $scriptErrorPattern -or $validation.Output -cnotmatch "(?m)^test_results: valid $suite suite, exit [01]\s*$") {
         Write-Output "run_tests: $suite suite result validation failed; see $($validation.LogPath)"
         $passed = $false
     }
@@ -88,23 +88,23 @@ try {
     Write-Output "run_tests: logs and isolated profile: $runDirectory"
 
     $import = Invoke-GodotStage "import" @("--import")
-    if ($import.ExitCode -ne 0 -or -not $import.Output -or $import.Output -match $scriptErrorPattern) {
+    if ($import.ExitCode -ne 0 -or -not $import.Output -or $import.Output -cmatch $scriptErrorPattern) {
         Write-Output $import.Output
         Write-Output "run_tests: import failed; see $($import.LogPath)"
         exit 1
     }
 
     $check = Invoke-GodotStage "check" @("-s", "res://tools/check_scripts.gd")
-    $check.Output -split "`n" | Where-Object { $_ -match "SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:" }
-    if ($check.ExitCode -ne 0 -or $check.Output -match $scriptErrorPattern -or $check.Output -notmatch "(?m)^check_scripts: \d+ scripts, 0 failed\s*$") {
+    $check.Output -split "`n" | Where-Object { $_ -cmatch "SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:" }
+    if ($check.ExitCode -ne 0 -or $check.Output -cmatch $scriptErrorPattern -or $check.Output -cnotmatch "(?m)^check_scripts: \d+ scripts, 0 failed\s*$") {
         Write-Output $check.Output
         Write-Output "run_tests: strict compilation failed; see $($check.LogPath)"
         exit 1
     }
 
     $architecture = Invoke-GodotStage "architecture" @("-s", "res://tools/check_architecture.gd")
-    $architecture.Output -split "`n" | Where-Object { $_ -match "ARCHITECTURE|architecture_check:" }
-    if ($architecture.ExitCode -ne 0 -or $architecture.Output -match $scriptErrorPattern -or $architecture.Output -notmatch "(?m)^architecture_check: \d+ scripts, 0 failed\s*$") {
+    $architecture.Output -split "`n" | Where-Object { $_ -cmatch "ARCHITECTURE|architecture_check:" }
+    if ($architecture.ExitCode -ne 0 -or $architecture.Output -cmatch $scriptErrorPattern -or $architecture.Output -cnotmatch "(?m)^architecture_check: \d+ scripts, 0 failed\s*$") {
         Write-Output $architecture.Output
         Write-Output "run_tests: architecture check failed; see $($architecture.LogPath)"
         exit 1
@@ -116,7 +116,7 @@ try {
     if ($archiveRequested) {
         $env:FROGGER_DATA_DIR = $archiveDataDirectory
         $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
-        if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -match $scriptErrorPattern -or $inputCheck.Output -notmatch "(?m)^test_input: valid\s*$") {
+        if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -cmatch $scriptErrorPattern -or $inputCheck.Output -cnotmatch "(?m)^test_input: valid\s*$") {
             Write-Output $inputCheck.Output
             Write-Output "run_tests: invalid archive input; see $($inputCheck.LogPath)"
             exit 1

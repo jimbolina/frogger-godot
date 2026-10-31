@@ -307,7 +307,14 @@ Use isolated writable Godot user data, explicit logs, awaited hidden
 processes and `--disable-crash-handler` for automated runs. The wrappers
 already enforce this and retain log paths in their output. Do not bypass
 them with a bare automated Godot launch; determine success from
-compilation/tests and exit status.
+compilation/tests and exit status. The wrappers match error patterns
+case-sensitively, so expected engine messages such as `ConfigFile parse error`
+do not fail a run.
+
+Godot 4.5.1 on Windows segfaults at exit once a loaded script inherits a
+script that declares `static var` (strict compilation loads every script,
+so it crashed on every run). Keep static state in classes nothing extends,
+as `AssetTestCache` and `FrontEndSession` do.
 
 ## Tools and visual verification
 

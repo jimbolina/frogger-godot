@@ -563,7 +563,7 @@ func _start_game() -> void:
 
 func _select_level(level: int) -> void:
 	FrontEndSession.level = level
-	GameplayScreen.selected_level = FroggerIds.level_code(level)
+	FrontEndSession.selected_level = FroggerIds.level_code(level)
 	_send(FrontEndFlow.Event.SELECT_LEVEL)
 
 

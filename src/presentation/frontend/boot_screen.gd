@@ -76,7 +76,7 @@ func _ready() -> void:
 func open_game() -> void:
 	if _level_picker.selected < 0:
 		return
-	GameplayScreen.selected_level = _level_picker.get_item_text(_level_picker.selected)
+	FrontEndSession.selected_level = _level_picker.get_item_text(_level_picker.selected)
 	get_tree().change_scene_to_file("res://scenes/game/gameplay.tscn")
 
 

@@ -10,7 +10,6 @@ extends GameplayWorldView
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
 
-static var selected_level: String = ""
 var auto_open: bool = true
 var level_code: String = "ORG1"
 var run: GameplayRun
@@ -51,10 +50,10 @@ func _ready() -> void:
 			AudioLevels.apply(settings.music_volume, settings.sound_volume, voice_view())
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
 		recorder = InputRecorder.from_arguments(arguments)
-		level_code = selected_level if not selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
+		level_code = FrontEndSession.selected_level if not FrontEndSession.selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
 		if level_code.is_empty():
 			level_code = "ORG1"
-		selected_level = ""
+		FrontEndSession.selected_level = ""
 		var data: ImportedAssets = ImportedAssets.open()
 		if data.is_valid():
 			open_data(data, level_code, true)
@@ -413,7 +412,7 @@ func _advance_front_end() -> void:
 		FrontEndSession.progress.open_level(_next_level)
 		FrontEndSession.save()
 		FrontEndSession.level = _next_level
-		selected_level = FroggerIds.level_code(_next_level)
+		FrontEndSession.selected_level = FroggerIds.level_code(_next_level)
 		close_data()
 		get_tree().reload_current_scene()
 		return

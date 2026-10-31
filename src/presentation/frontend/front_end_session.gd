@@ -14,6 +14,8 @@ static var active: bool = false
 static var store_path: String = ProgressStore.DEFAULT_PATH
 ## Page the front-end scene shows when it opens.
 static var start_page: int = FrontEndPage.Page.MAIN_MENU
+## Level code the next gameplay scene opens and clears; empty defers to [code]--level=[/code].
+static var selected_level: String = ""
 ## The level being played, or -1.
 static var level: int = -1
 ## Whether a level was chosen since the game began; the level list can go back only before that.
