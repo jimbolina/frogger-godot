@@ -17,6 +17,13 @@ if [ -d assets/textures/images_x4 ]; then
     fi
 fi
 
+if [ -d assets/fonts ]; then
+    if ! "${PYTHON:-python3}" tools/make_font_newfont.py --check --quiet; then
+        echo "run_tests: the committed newfont fonts differ from their generator" >&2
+        exit 2
+    fi
+fi
+
 if [ -d assets ]; then
     while IFS= read -r -d '' asset; do
         first_line=""

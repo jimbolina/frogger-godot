@@ -103,6 +103,10 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   `assets/textures/pages_x4/` when missing and checks it otherwise (Pillow;
   plain `python3`, not `-I`); `python3 tools/make_golden_texture_pages_x4.py --check`
   diffs the committed facts against the retail files and the x4 images.
+- [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts):
+  both wrappers run `python3 tools/make_font_newfont.py --check --quiet`, which
+  compares the committed `assets/fonts/*/newfont.fnt` with the generator;
+  `tests/golden/assets/test_asset_fonts.gd` checks the imported fonts.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has

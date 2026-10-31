@@ -57,6 +57,13 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 	return texture
 
 
+## The bitmap font called [param _name] in the catalog's texture set, or null
+## when the catalog has no font files (only catalogs over committed assets
+## serve one).
+func font(_name: String) -> Font:
+	return null
+
+
 ## The level list row of level [param level] (see [FroggerIds]), or null.
 func map_book_entry(level: int) -> MapBookEntry:
 	return tables.map_book().get_entry(level)

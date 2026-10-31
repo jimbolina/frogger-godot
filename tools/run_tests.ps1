@@ -46,6 +46,16 @@ if (Test-Path -LiteralPath $upscaledImages -PathType Container) {
     }
 }
 
+$fontDirectory = Join-Path $projectDirectory "assets\fonts"
+if (Test-Path -LiteralPath $fontDirectory -PathType Container) {
+    $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
+    & $python (Join-Path $projectDirectory "tools\make_font_newfont.py") --check --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "run_tests: the committed newfont fonts differ from their generator"
+        exit 2
+    }
+}
+
 $assetDirectory = Join-Path $projectDirectory "assets"
 if (Test-Path -LiteralPath $assetDirectory -PathType Container) {
     $pointerPrefix = "version https://git-lfs.github.com/spec"

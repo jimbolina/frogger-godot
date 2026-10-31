@@ -17,7 +17,8 @@ extends RefCounted
 ##
 ## Textures come from the catalog's [TextureSet], so they may be larger than the records;
 ## [method retail_size] and [method level_retail_size] give the size each is drawn at on the
-## 640x480 canvas.
+## 640x480 canvas. The bundle also holds that texture set's [code]newfont[/code] bitmap font
+## ([member font]) for text drawn with [method CanvasItem.draw_string].
 
 ## World and level images of one level-select row, in the row's record order.
 enum LevelImage { WORLD_UNLOCKED, WORLD_VISITED, WORLD_NOT_TRIED, SCREENSHOT, STACK_NAME, GAME_NAME }
@@ -51,6 +52,8 @@ var language: int = GameLanguage.Id.ENGLISH
 var diagnostics: PackedStringArray = PackedStringArray()
 ## The loaded banks, for drawing [method image_record] images as sprites; empty when loading failed.
 var texture_library: TextureLibrary = TextureLibrary.new()
+## The newfont bitmap font of the catalog's texture set, or null when the catalog serves none.
+var font: Font
 
 var _textures: Dictionary[String, Texture2D] = {}
 var _images: Dictionary[String, VloImage] = {}
@@ -165,6 +168,7 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 	result._level_textures = level_textures
 	result._sizes = sizes
 	result._level_sizes = level_sizes
+	result.font = data.font("newfont")
 	return result
 
 

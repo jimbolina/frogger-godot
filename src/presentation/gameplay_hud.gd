@@ -33,8 +33,8 @@ func clear() -> void:
 	if _panels != null:
 		_panels.hide()
 		_letters.hide()
-		_letters.font_texture = null
-		_letters.glyphs.clear()
+		_letters.font = null
+		_letters.lines.clear()
 	queue_redraw()
 
 ## Resolves retail sprites; a missing dependency prevents a partially drawn HUD.
@@ -169,8 +169,8 @@ func _draw() -> void:
 	var popups: ScorePopupView = _popup_view()
 	popups.position = (size - CANVAS * factor) * 0.5
 	popups.scale = Vector2.ONE * factor
-	_letters.font_texture = assets.textures.get("newfont")
-	_letters.glyphs.clear()
+	_letters.font = assets.font
+	_letters.lines.clear()
 	draw_set_transform((size - CANVAS * factor) * 0.5, 0.0, Vector2.ONE * factor)
 	var flow: LevelFlowState = _state.flow
 	_text("1 UP", Vector2(592, 16))
@@ -180,7 +180,7 @@ func _draw() -> void:
 	var help_age: int = _tick - _help_tick
 	if help_age >= 0 and help_age < 56:
 		var brightness: float = float(help_age) / 16.0 if help_age < 16 else 1.0 if help_age < 40 else float(56 - help_age) / 16.0
-		_text(_help_text, Vector2(320 - _help_text.length() * 4, 436), Color(brightness, brightness, brightness))
+		_text(_help_text, Vector2(320 - NewfontText.width(_help_text) / 2, 436), Color(brightness, brightness, brightness))
 	var icons: Vector2i = life_icons(_state.frog.lives)
 	var frame: int = PlatformMath.divide(_tick, 2) % 5 + 1
 	for index: int in icons.x:
@@ -257,14 +257,8 @@ func _digits(value: int, count: int, prefix: String, at: Vector2, spacing: int, 
 		_sprite(prefix + digits[index], at + Vector2(index * spacing, 0), colour)
 
 func _text(value: String, at: Vector2, colour: Color = Color.WHITE) -> void:
-	if _letters == null or _letters.font_texture == null:
-		return
-	var texels: Vector2 = assets.texture_scale("newfont")
-	for index: int in value.length():
-		var code: int = value.unicode_at(index) - 32
-		if code >= 0 and code < 96:
-			var cell := Vector2((code % 32) * 8, PlatformMath.divide(code, 32) * 8)
-			_letters.glyph(Rect2(at + Vector2(index * 8, 0), Vector2(8, 8)), Rect2(cell * texels, Vector2(8, 8) * texels), colour)
+	if _letters != null and _letters.font != null:
+		_letters.text(at, value, colour)
 
 func _help(message: String, tick: int, overwrite: bool, once: bool) -> void:
 	if _help_seen.has(message) or (not overwrite and tick - _help_tick < 56):

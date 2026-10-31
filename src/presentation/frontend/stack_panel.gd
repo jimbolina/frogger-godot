@@ -5,10 +5,11 @@ extends Control
 ##
 ## Sprite colours follow the source's base colours, 0x80 being the image as stored. The fade
 ## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. The
-## high-score view adds up to three score lines in [code]newfont[/code]'s 8x8 cells, white,
-## centred in a box [constant StackLayout.SCORE_BOX_WIDTH] wide whose left edge is
-## [member Placement.panel_x]. Each sprite is sized to its image's retail size, whatever the
-## texture set's scale.
+## high-score view adds up to three score lines drawn white with the texture set's
+## [code]newfont[/code] bitmap font ([member FrontEndAssets.font]), nearest filtered and
+## centred by [method NewfontText.width] in a box [constant StackLayout.SCORE_BOX_WIDTH] wide
+## whose left edge is [member Placement.panel_x]. Each sprite is sized to its image's retail
+## size, whatever the texture set's scale.
 
 ## One frame's sprite state, interpolated between two ticks.
 class Placement:
@@ -56,9 +57,6 @@ const DIM_COLOUR: int = StackLayout.SPRITE_DIM_COLOUR
 const NEUTRAL_COLOUR: int = 0x80
 ## Right edge of the prompt sprite.
 const PROMPT_RIGHT: int = StackLayout.STATUS_END_X + StackLayout.STATUS_WIDTH
-## Width and height of one [code]newfont[/code] cell, and cells per row of the image.
-const GLYPH_SIZE: int = 8
-const GLYPHS_PER_ROW: int = 32
 
 ## Fade rectangle over the 3D stack.
 var fade: ColorRect
@@ -104,13 +102,14 @@ static func placement(selector: StackSelector) -> Placement:
 
 ## The left X of [param line] centred in the score box whose left edge is [param box_x].
 static func score_line_x(line: String, box_x: float) -> float:
-	return box_x + (StackLayout.SCORE_BOX_WIDTH - line.length() * GLYPH_SIZE) / 2
+	return box_x + (StackLayout.SCORE_BOX_WIDTH - NewfontText.width(line)) / 2
 
 
 ## Builds the sprites from [param assets]; the level name is set per level with [method set_level_name].
 func setup(assets: FrontEndAssets) -> void:
 	_assets = assets
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	fade = ColorRect.new()
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade.position = Vector2.ZERO
@@ -167,22 +166,13 @@ func score_lines() -> PackedStringArray:
 
 
 func _draw() -> void:
-	var font: Texture2D = _assets.texture("newfont") if _assets != null else null
-	var record: VloImage = _assets.image_record("newfont") if _assets != null else null
-	if font == null or record == null:
+	var font: Font = _assets.font if _assets != null else null
+	if font == null:
 		return
-	var source: Rect2 = TextureBuilder.texture_rect(record, font)
-	var texels: Vector2 = TextureBuilder.texture_scale(record, font)
 	for index: int in mini(_score_lines.size(), StackLayout.SCORE_LINE_Y.size()):
 		var line: String = _score_lines[index]
-		var at := Vector2(score_line_x(line, _score_x), StackLayout.SCORE_LINE_Y[index])
-		for character: int in line.length():
-			var code: int = line.unicode_at(character) - 32
-			if code <= 0 or code >= GLYPHS_PER_ROW * 3:
-				continue
-			var cell := Vector2((code % GLYPHS_PER_ROW) * GLYPH_SIZE, (code / GLYPHS_PER_ROW) * GLYPH_SIZE)
-			draw_texture_rect_region(font, Rect2(at + Vector2(character * GLYPH_SIZE, 0), Vector2(GLYPH_SIZE, GLYPH_SIZE)),
-				Rect2(source.position + cell * texels, Vector2(GLYPH_SIZE, GLYPH_SIZE) * texels))
+		draw_string(font, NewfontText.baseline(Vector2(score_line_x(line, _score_x), StackLayout.SCORE_LINE_Y[index])),
+			line, HORIZONTAL_ALIGNMENT_LEFT, -1, NewfontText.DRAW_SIZE, Color.WHITE)
 
 
 func _sprite(texture: Texture2D, retail_size: Vector2, colour: int) -> TextureRect:

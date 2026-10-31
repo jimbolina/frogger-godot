@@ -151,8 +151,10 @@ scrolling table: ten turtles numbered by rank, the initials on letter lilies, th
 scores on eight-digit logs with leading zeros blank, five extras and the frog that
 hops from turtle to turtle (18 ticks' wait, 12 ticks' hop) with hop and splash sounds.
 `HighScoreTableView` draws it; `LevelStackView` and `StackPanel` draw the stack mode
-with the checker background and the three score lines (`HighScoreText`) in `newfont`
-beside the spun-out picture. After name entry the tour spins out ORG1 first, then every
+with the checker background and the three score lines (`HighScoreText`) beside the
+spun-out picture, drawn white with `draw_string` from the texture set's `newfont`
+[bitmap font](../assets.md#fonts), centred in the score box by `NewfontText.width` and
+nearest filtered. After name entry the tour spins out ORG1 first, then every
 level with a new row (camera creeping 20 a tick, a ten-tick wait, a 90-tick hold), then
 the main table with the static camera when it has a new row, and times out to the main
 menu after 120 ticks; Escape leaves at once. From Options the view opens on the stack:

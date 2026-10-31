@@ -1,16 +1,16 @@
 class_name GameplayHudInk
 extends Control
-## Separate frozen-port averaged panels and opaque font glyphs for the HUD canvas.
+## Separate frozen-port averaged panels and lines of newfont text for the HUD canvas.
 
-class Glyph extends RefCounted:
-	## One atlas glyph with a source-space destination and source tint.
-	var target: Rect2
-	var region: Rect2
+class Line extends RefCounted:
+	## One line of text with its top-left canvas corner and colour.
+	var at: Vector2
+	var text: String
 	var colour: Color
 
 var panels: Array[Rect2] = []
-var glyphs: Array[Glyph] = []
-var font_texture: Texture2D
+var lines: Array[Line] = []
+var font: Font
 
 ## Selects source compositing without changing sibling sprite blending.
 func configure(blending: CanvasItemMaterial.BlendMode) -> void:
@@ -20,18 +20,18 @@ func configure(blending: CanvasItemMaterial.BlendMode) -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-## Appends one font atlas sample: [param region] of the font texture drawn into canvas
-## [param target]; draw submission remains on this canvas item.
-func glyph(target: Rect2, region: Rect2, colour: Color) -> void:
-	var sample := Glyph.new()
-	sample.target = target
-	sample.region = region
-	sample.colour = colour
-	glyphs.append(sample)
+## Appends one line of [param value] whose top-left canvas corner is [param at], drawn in
+## [param colour] with [member font]; draw submission remains on this canvas item.
+func text(at: Vector2, value: String, colour: Color) -> void:
+	var line := Line.new()
+	line.at = at
+	line.text = value
+	line.colour = colour
+	lines.append(line)
 
 func _draw() -> void:
 	for panel: Rect2 in panels:
 		draw_rect(panel, Color(64.0 / 255.0, 64.0 / 255.0, 64.0 / 255.0, 0.5))
-	if font_texture != null:
-		for sample: Glyph in glyphs:
-			draw_texture_rect_region(font_texture, sample.target, sample.region, sample.colour)
+	if font != null:
+		for line: Line in lines:
+			draw_string(font, NewfontText.baseline(line.at), line.text, HORIZONTAL_ALIGNMENT_LEFT, -1, NewfontText.DRAW_SIZE, line.colour)

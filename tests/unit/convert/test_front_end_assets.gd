@@ -1,5 +1,6 @@
 extends GutTest
-## FrontEndAssets refuses unusable data with an actionable error and no textures.
+## FrontEndAssets refuses unusable data with an actionable error and no textures, and carries
+## the imported texture set's newfont bitmap font.
 
 
 func test_missing_data_has_actionable_error() -> void:
@@ -17,6 +18,14 @@ func test_invalid_data_has_actionable_error() -> void:
 	var assets: FrontEndAssets = FrontEndAssets.from_data(data)
 	assert_string_contains(assets.error, "valid player data")
 	assert_null(assets.texture("newfont"))
+	assert_null(assets.font)
+
+
+func test_the_imported_catalog_serves_the_newfont_bitmap_font() -> void:
+	var assets: FrontEndAssets = FrontEndAssets.from_data(ImportedAssets.open())
+	assert_eq(assets.error, "")
+	var font: Font = assets.font
+	assert_true(font is FontFile, "the bundle carries the texture set's newfont FontFile")
 
 
 func test_names_are_the_english_front_end_set() -> void:

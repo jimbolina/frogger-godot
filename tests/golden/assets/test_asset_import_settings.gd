@@ -1,20 +1,38 @@
 extends AssetTest
-## Every imported texture, WAV and Ogg under assets/ uses the import policy in
-## project.godot's [code]importer_defaults[/code]: the importer and each policy
-## key in its sidecar's [code][params][/code] equal the project default, except
-## the keys an upscaled texture folder overrides (its textures carry mipmaps).
+## Every imported texture, WAV, Ogg and bitmap font under assets/ uses the
+## import policy in project.godot's [code]importer_defaults[/code]: the
+## importer and each policy key in its sidecar's [code][params][/code] equal
+## the project default, except the keys an upscaled texture folder overrides
+## (its textures carry mipmaps) and the font pages, which the font importer
+## marks as not imported.
 
 ## Importer name and project default section by source extension.
 const POLICIES: Dictionary[String, Array] = {
 	".png": ["texture", "texture"],
 	".wav": ["wav", "wav"],
 	".ogg": ["oggvorbisstr", "oggvorbisstr"],
+	".fnt": ["font_data_bmfont", "font_data_bmfont"],
 }
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
 	"res://assets/textures/images_x4/": {"mipmaps/generate": true},
 	"res://assets/textures/pages_x4/": {"mipmaps/generate": true},
 }
+
+## Importers a folder (by path prefix) uses instead of an extension's: the
+## bitmap font importer sets each font's page image to [code]skip[/code].
+const FOLDER_IMPORTERS: Dictionary[String, Dictionary] = {
+	"res://assets/fonts/": {".png": "skip"},
+}
+
+
+## The importer of [param source], whose extension is [param extension]: its
+## folder's from [constant FOLDER_IMPORTERS], else [param importer].
+static func importer_for(source: String, extension: String, importer: String) -> String:
+	for prefix: String in FOLDER_IMPORTERS:
+		if source.begins_with(prefix) and FOLDER_IMPORTERS[prefix].has(extension):
+			return FOLDER_IMPORTERS[prefix][extension]
+	return importer
 
 
 ## The project policy [param policy] with the overrides of the folder holding [param source].
@@ -42,14 +60,18 @@ func test_sidecars_follow_the_project_policy() -> void:
 			if sidecar.load(source + ".import") != OK:
 				mismatches.append("%s has no .import sidecar" % source)
 				continue
-			if sidecar.get_value("remap", "importer", "") != importer:
-				mismatches.append("%s is imported by %s" % [source, sidecar.get_value("remap", "importer", "")])
+			var wanted: String = importer_for(source, extension, importer)
+			var got_importer: String = sidecar.get_value("remap", "importer", "")
+			if got_importer != wanted:
+				mismatches.append("%s is imported by %s, not %s" % [source, got_importer, wanted])
+			checked += 1
+			if wanted != importer:
+				continue
 			var expected_policy: Dictionary = policy_for(source, policy)
 			for key: String in expected_policy:
 				var got: Variant = sidecar.get_value("params", key, null)
 				if got != expected_policy[key]:
 					mismatches.append("%s: %s is %s, the policy says %s" % [source, key, got, expected_policy[key]])
-			checked += 1
 		for mismatch: String in mismatches.slice(0, 10):
 			fail_test(mismatch)
 		assert_eq(mismatches.size(), 0, "%d %s files follow the policy" % [sources.size(), extension])

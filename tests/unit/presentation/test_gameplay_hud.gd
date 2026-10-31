@@ -73,3 +73,28 @@ func test_help_is_once_per_run_and_powerups_can_replace_it() -> void:
 func test_checkpoint_motion_keeps_source_first_step_and_fixed_point_truncation() -> void:
 	assert_eq(GameplayHud.checkpoint_motion(Vector2i(250, -20), Vector2i(250, 215), 30), Vector2(250, -13))
 	assert_eq(GameplayHud.checkpoint_motion(Vector2i(250, -20), Vector2i(250, 215), 1), Vector2(250, 214))
+
+func test_newfont_text_keeps_the_retail_placement() -> void:
+	var score_baseline: Vector2 = NewfontText.baseline(Vector2(592, 16))
+	assert_eq(score_baseline, Vector2(592, 24))
+	var score_width: int = NewfontText.width("%8d" % 123)
+	assert_eq(score_width, 64)
+	var help_left: int = 320 - NewfontText.width("SUPERHOP") / 2
+	assert_eq(help_left, 288)
+
+func test_ink_records_text_lines_in_order_without_a_font() -> void:
+	var ink := GameplayHudInk.new()
+	add_child_autofree(ink)
+	ink.configure(CanvasItemMaterial.BLEND_MODE_MIX)
+	ink.text(Vector2(592, 16), "1 UP", Color.WHITE)
+	ink.text(Vector2(288, 436), "SUPERHOP", Color(0.5, 0.5, 0.5))
+	assert_null(ink.font)
+	assert_eq(ink.lines.size(), 2)
+	var first: GameplayHudInk.Line = ink.lines[0]
+	var second: GameplayHudInk.Line = ink.lines[1]
+	assert_eq(first.at, Vector2(592, 16))
+	assert_eq(first.text, "1 UP")
+	assert_eq(first.colour, Color.WHITE)
+	assert_eq(second.at, Vector2(288, 436))
+	assert_eq(second.text, "SUPERHOP")
+	assert_eq(second.colour, Color(0.5, 0.5, 0.5))

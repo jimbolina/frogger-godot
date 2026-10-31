@@ -121,7 +121,10 @@ Restart clears presentation history; source replacement releases HUD textures.
 The shared world view keeps interpolation separate from the 30 Hz rules clock.
 
 HUD textures resolve by FrogLord image names from the player's GENERAL, English
-fixed-UI and level-select banks. The font uses its source 8×8 atlas with opaque glyph colours. Grey panels
+fixed-UI and level-select banks. Text draws with `draw_string` from the
+texture set's `newfont` bitmap font ([fonts](../assets.md#fonts));
+`NewfontText` fixes the cell size and baseline, so retail glyphs land where the
+hand-drawn cells did. Grey panels
 average with the background; the timer panel draws over its coloured fill. Timers, spare-life groups,
 checkpoint gather/return and bonus displays follow `HUD.C`; start release and
 bonus awards remain owned by gameplay. Rendering consumes the existing checkpoint

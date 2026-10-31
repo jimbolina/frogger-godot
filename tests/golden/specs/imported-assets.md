@@ -84,6 +84,41 @@ repeated S times. `rgba_sha256` hashes the 1024 x 1024 x 4 bytes;
 bank and page-set resources as text) and composes every set at scale 1
 first, stopping unless that reproduces the committed pages.
 
+### Bitmap fonts
+
+`newfont` is texture 310, 96 glyphs of ASCII 32 to 127 in square cells, 32
+to a row in three rows, with no padding: `textures/images/t0310.png` is
+256 x 24 (8-pixel cells), `textures/images_x4/t0310.png` 1024 x 96. Its
+scale S is the PNG width divided by 256, and the height must be 24 x S.
+`tools/make_font_newfont.py` writes, for each set whose PNG exists,
+`fonts/retail/` and `fonts/x4/` holding `newfont.fnt`, a BMFont v3 text file,
+and `newfont.png`, a byte copy of the set's `t0310.png` that the font names
+as its only page. The font's `size`, `lineHeight` and `base` are 8 x S,
+`scaleW` and `scaleH` the PNG size, and `alphaChnl=0` with the colour
+channels at 4, so the importer keeps the RGBA pixels (the glyphs are eight
+grey levels; `alphaChnl=1` would turn them white on alpha). Glyph `id` sits
+at `x = ((id - 32) % 32) * 8S`, `y = ((id - 32) / 32) * 8S` with width,
+height and `xadvance` 8 x S and no offsets. The page is a copy because the
+font importer sets the importer of every page image it reads to `skip`,
+which would take `t0310.png` away from the texture banks.
+
+The `.fnt` and the page copy are the generated artefacts, not facts: the
+generator's `--check` is the comparison. It writes nothing, prints a diff
+for each differing `.fnt`, names each differing or missing file and exits 1;
+both test wrappers run it before importing and stop with exit 2 on a
+difference. Without `images_x4/t0310.png` the x4 font is skipped. A hand
+edit of a set's `t0310.png` is carried into its font by rerunning the
+generator.
+
+Each `.fnt` is imported by `font_data_bmfont` with the `importer_defaults`
+entry in `project.godot`: `compress` true, no `fallbacks` and
+`scaling_mode` 2 (fractional), so the x4 font, whose fixed size is 32,
+draws at size 8 scaled by a quarter. Its page `newfont.png` has the
+`skip` importer. The catalog's texture set chooses the font:
+`ImportedAssets.font(name)` loads `fonts/<set>/<name>.fnt`, falls back to
+the retail set's file with a line in `problems` when the set has none, and
+returns null with a problem line when neither exists.
+
 ## Model meshes
 
 Each part is built from its rest pose, partcel 0. An incomplete model
@@ -154,9 +189,10 @@ overrides. They need no retail files.
 |---|---|
 | `test_asset_textures.gd` | Every `vlo_images.tsv` row with its bank resource's image: texture id, VRAM position, sizes, `u`, `v`, flags, blend mode and page, and that `texture` is `textures/images/tNNNN.png` with no stored pixels. Each PNG, decoded from the file and through its imported texture, is RGBA8 at the padded size with `padded_rgba_sha256`; its in-game region has `rgba_sha256`. Every `texture_pages.tsv` row with the page PNG of its `TexturePageSet` (`rgba_sha256`, `opaque_pixels`) or its sky atlas and `sky_pages`. The front-end and HUD images and `MapTexturePages` load from the catalog. |
 | `test_asset_pages_x4.gd` | Every retail page set has a baked `pages_x4/<SET>/page_set.tres` with the same banks, colour keys and sky order and `scale()` 4; every `imported/texture_pages_x4.tsv` row's PNG at its size with `rgba_sha256` and `opaque_pixels`; x4 pages and images import with mipmaps, retail ones without. The catalog opened with `TextureSet.X4` draws them. |
+| `test_asset_fonts.gd` | For the retail and x4 catalogs, `font("newfont")` is a `FontFile` under `fonts/<set>/` with fixed size, ascent 8 x S, descent 0 and fractional fixed-size scaling; every glyph 32 to 127 has the grid rule's UV rect, size, advance and offset (0, -8S); texture image 0 is 256S x 24S RGBA8 without mipmaps and equals `textures/images[_x4]/t0310.png`, and the retail one has texture 310's `padded_rgba_sha256` from `vlo_images.tsv`; `"1 UP"` measures 32 x 8 at size 8 in both sets. The x4 catalog opens without problems, and an unknown font name gives null and a problem line. |
 | `test_asset_tables.gd` | Every row of `exe_map_book`, `exe_theme_book`, `exe_forms`, `exe_remaps`, `exe_scripts`, `exe_music`, `exe_level_select`, `exe_demos` and `exe_pickups` built from the imported tables as the archive suite builds them from the executable; the high-score row counts; each table in its own file; the name lists. Every `*.DAT` entry has a demo resource, and each demo of `demos.tsv` has its duration, start square, input count and input digest. |
 | `test_asset_census.gd` | The `asset_census.txt` counts against the files present: MWI entries, map and sky-land resources, bank resources, images, texture PNGs, models by kind with incomplete models and parts, sound banks and WAVs, the demo table and the demos it names, and music tracks. |
-| `test_asset_import_settings.gd` | Every `.png`, `.wav` and `.ogg` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`images_x4/` and `pages_x4/` generate mipmaps). |
+| `test_asset_import_settings.gd` | Every `.png`, `.wav`, `.ogg` and `.fnt` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`images_x4/` and `pages_x4/` generate mipmaps). A font page `fonts/*/newfont.png` must have the `skip` importer (`FOLDER_IMPORTERS`). |
 | `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
 | `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
@@ -197,6 +233,9 @@ python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROG
 python3 tools/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
 python3 tools/make_golden_texture_pages_x4.py --data-dir <retail folder>
 ```
+
+The bitmap fonts are written from the committed PNGs with
+`python3 tools/make_font_newfont.py`; it needs no retail folder.
 
 `--data-dir` defaults to `FROGGER_DATA_DIR`, and `--disc` to
 `FROGGER_DISC`. `--output` names another file. `--check` compares with the
@@ -245,6 +284,13 @@ import test. Then restore the fact and rerun.
   test must name the set and page. Punch a transparent pixel into one baked
   `pages_x4/` PNG: `tools/bake_pages_x4.py --check` must exit 1 naming the
   file, and the test wrapper's bake step restores it.
+- **Bitmap fonts:** change one `x=` in `fonts/retail/newfont.fnt`:
+  `tools/make_font_newfont.py --check` must exit 1 with a diff, and the font
+  test must name the set and glyph. Set `scaling_mode=0` in
+  `fonts/x4/newfont.fnt.import`: the x4 string-size check must fail and the
+  import-settings test must name the file and key. Change one digit of
+  texture 310's `padded_rgba_sha256` in `vlo_images.tsv`: the retail font
+  texture check must name the font.
 
 The generators' `--check` mode was broken and restored in the same way for
 all five files. Each import-test break was restored and the test rerun.

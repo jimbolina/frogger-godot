@@ -25,6 +25,8 @@ var set_name: String = RETAIL
 var images_dir: String = IMAGES_DIR
 ## The set's baked pages folder under [code]textures/[/code].
 var pages_dir: String = PAGES_DIR
+## The set's font folder under [code]fonts/[/code].
+var fonts_dir: String = "retail"
 ## Pixels per retail pixel on each axis.
 var scale: int = 1
 
@@ -40,6 +42,7 @@ static func x4() -> TextureSet:
 	made.set_name = X4
 	made.images_dir = "images_x4"
 	made.pages_dir = "pages_x4"
+	made.fonts_dir = "x4"
 	made.scale = 4
 	return made
 
@@ -76,3 +79,8 @@ func counterpart_path(path: String) -> String:
 		if at >= 0:
 			return path.substr(0, at) + "/textures/%s/" % pair[1] + path.substr(at + retail_folder.length())
 	return path
+
+
+## The path under the assets root of the set's bitmap font called [param name].
+func font_path(name: String) -> String:
+	return "fonts/%s/%s.fnt" % [fonts_dir, name]

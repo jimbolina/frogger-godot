@@ -57,6 +57,11 @@ wav={
 oggvorbisstr={
 "loop": false
 }
+font_data_bmfont={
+"compress": true,
+"fallbacks": [],
+"scaling_mode": 2
+}
 
 [physics]
 

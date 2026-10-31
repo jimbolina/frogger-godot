@@ -16,7 +16,7 @@ needs `git lfs install` before checkout, or `git lfs pull` afterwards; the test
 wrapper refuses to run while any asset is still an LFS pointer.
 
 Import settings are fixed in `project.godot` under `importer_defaults`:
-lossless textures without mipmaps, alpha-border fixing or premultiplied alpha,
+lossless textures without mipmaps, fractional fixed-size scaling for the bitmap fonts, alpha-border fixing or premultiplied alpha,
 and uncompressed WAV without trimming, normalisation or baked loops. The
 upscaled texture folders (`images_x4/`, `pages_x4/`) are the one exception:
 their sidecars generate mipmaps. Loop modes are applied at runtime from the
@@ -52,6 +52,7 @@ implements it over the retail files for the importer and the archive suite.
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
 | `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). |
 | `textures/pages_x4/<SET>/` | The same page sets at four times the size, baked locally and ignored by Git ([upscaled textures](#upscaled-textures)). |
+| `fonts/<set>/newfont.fnt`, `newfont.png` | One BMFont text file per texture set (`retail`, `x4`) over a copy of that set's `t0310.png`, imported as a `FontFile` ([fonts](#fonts)). |
 | `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness. |
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
@@ -95,3 +96,23 @@ placement, with the retail page's colour key enlarged, into `pages_x4/`;
 the test and play wrappers bake it when it is missing and `--check` it
 otherwise, and `tests/golden/assets/test_asset_pages_x4.gd` compares the bake
 with an [independent oracle](../../tests/golden/specs/imported-assets.md#texture-pages-at-scale).
+
+## Fonts
+
+All in-game text (the gameplay HUD, its ink layer and the level-stack score
+lines) is drawn with `draw_string` from one bitmap font, `newfont`: texture
+id 310, 96 ASCII glyphs in 8x8 cells, 32 per row. `tools/make_font_newfont.py`
+writes `fonts/retail/newfont.fnt` and `fonts/x4/newfont.fnt`, BMFont text
+files whose glyph rectangles follow the grid at the PNG's scale, each with a
+byte copy of its set's `t0310.png` beside it as `newfont.png`: Godot's BMFont
+importer marks a font's page image as not imported (`importer="skip"`), which
+would take texture 310 away from the banks. `--check` diffs the text files and
+compares the page bytes, and the test wrappers run it. Godot imports each as a `FontFile` with fixed
+size 8 (x4: 32) and fractional scaling, so both are drawn at size 8 and the
+x4 glyphs land one to one on screen pixels in a window four times the canvas.
+`AssetCatalog.font("newfont")` returns the set's font, falling back to retail
+with a problem line; `NewfontText` (`src/convert/`) owns the cell size and the
+baseline. The import golden is
+[bitmap fonts](../../tests/golden/specs/imported-assets.md#bitmap-fonts).
+After a hand edit of a set's `t0310.png`, rerun the generator to refresh the
+page copy; until then the wrappers stop at the font check.

@@ -23,6 +23,8 @@ func test_front_end_hud_and_options_assets_load() -> void:
 	var hud: GameplayHudAssets = GameplayHudAssets.from_data(_data)
 	assert_eq(hud.error, "")
 	assert_true(hud.textures.has("newfont"))
+	assert_not_null(hud.font)
+	assert_true(hud.font is FontFile)
 	var options: OptionsModels = OptionsModels.from_data(_data)
 	assert_eq(options.error, "")
 	assert_not_null(options.frog.mesh)

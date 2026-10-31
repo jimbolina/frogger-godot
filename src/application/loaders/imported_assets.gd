@@ -10,9 +10,10 @@ extends AssetCatalog
 ## is not kept, so no raw resource bytes are available.
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
-## textures, and [method texture_of], [method texture_counterpart] and
-## [method page_set] answer with the chosen set's files, falling back to the
-## retail file (noted in [member problems]) when the set lacks one.
+## textures, and [method texture_of], [method texture_counterpart],
+## [method page_set] and [method font] answer with the chosen set's files,
+## falling back to the retail file (noted in [member problems]) when the set
+## lacks one.
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
@@ -23,6 +24,7 @@ var textures: TextureSet = TextureSet.retail()
 ## Records that could not be loaded, one line each.
 var problems: PackedStringArray = PackedStringArray()
 var _counterparts: Dictionary[String, Texture2D] = {}
+var _fonts: Dictionary[String, Font] = {}
 
 
 ## Opens the assets under [param assets_root], drawing from the texture set
@@ -99,6 +101,26 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
 		found = texture
 	_counterparts[path] = found
+	return found
+
+
+## The bitmap font called [param name] under [code]fonts/<set>/[/code], the
+## retail set's font when the chosen set lacks it (noted once in
+## [member problems]), or null with a line in [member problems] when neither
+## exists. The answer is cached per name.
+func font(name: String) -> Font:
+	if _fonts.has(name):
+		return _fonts[name]
+	var path: String = root.path_join(textures.font_path(name))
+	var found: Font = _load(path) as Font
+	if found == null and not textures.is_retail():
+		var retail_path: String = root.path_join(TextureSet.retail().font_path(name))
+		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
+		path = retail_path
+		found = _load(path) as Font
+	if found == null:
+		problems.append("no font %s at %s" % [name, path])
+	_fonts[name] = found
 	return found
 
 

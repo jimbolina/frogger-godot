@@ -1,9 +1,11 @@
 class_name GameplayHudAssets
 extends RefCounted
-## Runtime single-player HUD textures resolved by FrogLord names from the catalog's texture banks.
+## Runtime single-player HUD textures resolved by FrogLord names from the catalog's texture banks,
+## and the [code]newfont[/code] bitmap font the HUD text draws with.
 ##
 ## Textures come from the catalog's [TextureSet] and may be larger than their records; each
-## keeps its record, so draws crop and size by retail pixels ([method retail_size]).
+## keeps its record, so draws crop and size by retail pixels ([method retail_size]). The font
+## is the same set's, drawn at [constant NewfontText.DRAW_SIZE].
 
 const PHRASES: PackedStringArray = ["hop_to_it", "go_frogger", "go", "go_get_em", "jump_to_it", "croak"]
 var error: String = ""
@@ -11,6 +13,8 @@ var error: String = ""
 var textures: Dictionary[String, Texture2D] = {}
 ## Texture record by FrogLord name.
 var images: Dictionary[String, VloImage] = {}
+## The newfont bitmap font of the catalog's texture set, or null when the catalog serves none.
+var font: Font
 
 ## Loads the HUD banks from [param data].
 static func from_data(data: AssetCatalog) -> GameplayHudAssets:
@@ -31,6 +35,7 @@ static func from_data(data: AssetCatalog) -> GameplayHudAssets:
 			result.error = "HUD bank %s: %s" % [name, "; ".join(problems)]
 			return result
 		library.add_bank(bank, name)
+	result.font = data.font("newfont")
 	var required := PackedStringArray(["newfont", "bonus", "opt_sec"])
 	required.append_array(PHRASES)
 	for digit: int in 10:

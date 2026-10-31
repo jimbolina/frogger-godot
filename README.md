@@ -201,7 +201,9 @@ from it with `--texture-set=x4` after `--`, for example
 `tools/play.sh --level=ORG1 --texture-set=x4`; the default is the retail set.
 The first run bakes the matching texture pages into `assets/textures/pages_x4/`
 (about 113 MB, ignored by Git, Pillow required), which the play and test
-wrappers keep current.
+wrappers keep current. In-game text draws with the bitmap fonts under
+`assets/fonts/`, one per texture set, generated from the `newfont` glyph
+texture by `tools/make_font_newfont.py`.
 
 The importer and the retail readers live in `archive/`, which the game never
 loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`
