@@ -125,5 +125,7 @@
   "res://tests/golden/test_retail_options_models.gd::test_scrolly_table_shows_ranks_initials_scores_and_the_hopping_frog": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_high_scores.gd::test_every_row_matches_independent_facts": "SKIP: FROGGER_DATA_DIR is not set",
   "res://tests/golden/test_retail_high_scores.gd::test_layout_facts_match_the_reader": "SKIP: FROGGER_DATA_DIR is not set",
-  "res://tests/golden/test_retail_high_scores.gd::test_retail_rows_that_differ_from_the_c_are_read_as_retail": "SKIP: FROGGER_DATA_DIR is not set"
+  "res://tests/golden/test_retail_high_scores.gd::test_retail_rows_that_differ_from_the_c_are_read_as_retail": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_animated_lighting.gd::test_map_light_inputs": "SKIP: FROGGER_DATA_DIR is not set",
+  "res://tests/golden/test_retail_animated_lighting.gd::test_posed_part_lighting": "SKIP: FROGGER_DATA_DIR is not set"
 }

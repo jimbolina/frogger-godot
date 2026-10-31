@@ -39,7 +39,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted asset-free CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs and named skips | Mac source setup and isolated verification available; packaged exports and CI pending |
 | X1 | Performance acceptance gate | S each | Measured on an idle system at each playable milestone (P8c, P10, end of P9); see [inspection](reference/testing/terrain-inspection.md) | Original-hardware target remains unverified; further tuning deferred at the owner’s request |
-| X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md) | M | Independent colour samples after each part's animation transform | Any time after P8a |
+| X2 | [Animated per-part lighting](reference/rendering/gameplay-projection.md#animated-part-lighting) | M | Independent colour samples after each part's animation transform ([animated lighting golden](../tests/golden/specs/animation.md#animated-part-lighting)); owner play check | Done; the gameplay frog takes the map's lights, custom ambient and colour scale like every entity model (owner's play check pending) |
 | X3 | Owner decisions | | | See below |
 | X4 | [Sandbox](reference/architecture.md#sandbox): flat zone arena with entity spawning, presets, teleport and real models without a map | M | Asset-free and retail unit tests; owner play check | Done; a play-check tool, not level acceptance |
 

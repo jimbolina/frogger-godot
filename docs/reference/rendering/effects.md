@@ -68,8 +68,9 @@ gold-frog glows use the grey mask 1727, and the gold glow is (255, 255, 16).
   eight times the image size, `ripple_tim1..6` every two ticks, three fades,
   lit by the map's lights like a 3D sprite, removed on update 23.
 - **Tints**: the committed `FrogState.colour_scale` and `custom_ambient`
-  apply through `AnimatedModelInstance.set_tint` without directional lights;
-  the frog otherwise renders as before.
+  apply through `AnimatedModelInstance.set_source_lighting` with the map's
+  lights, scaling colours and replacing the ambient as the C does;
+  `set_tint` serves only where no map lights exist (sandbox, mapless models).
 - **Score popups** (`score.C:107-226`): the score image rises 0x8000 per
   tick on the HUD canvas from the projected frog origin, fading up for three
   updates and down to its removal on update 45. The HUD derives the

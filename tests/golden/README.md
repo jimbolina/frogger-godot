@@ -34,6 +34,7 @@ commands run from the repository root; generated facts live in
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
+| Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
 | Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
 | Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |

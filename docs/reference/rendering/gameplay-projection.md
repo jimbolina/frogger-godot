@@ -128,15 +128,13 @@ environment UVs and sky translation receive floating source coordinates from
 this rendered camera. Projection and aspect scaling are unchanged. Interactive
 smoothing defaults on; reference capture launchers explicitly select exact mode.
 
-## Animated lighting limitation
+## Animated part lighting
 
-The current frog renderer appears brighter and more uniformly green than the
-frozen source because animated part lighting is missing.
-The source isolation copies the live viewport lighting/color matrices; the
-candidate uses the existing model shaders without those source lighting
-matrices. The existing `ModelMeshBuilder.lighting` path prelights static probes once with
-a single build-time basis. Animated frog parts move afterward, so supplying
-map lights there would freeze lighting against undeformed normals. Exact
-animated part lighting needs a dedicated rendering change and independent
-color samples; see the [roadmap](../../PORTING.md). Geometry and silhouette comparisons do not
-establish lighting equivalence.
+The gameplay frog and entity models are lit per part in the vertex shader
+from each part node's world matrix, the C's `MRLight_matrix * lw_transform`
+(`API.SRC/MR_ANIM.C:904-907`). The frog's custom ambient and colour scale come
+from the committed `FrogState`, as in `MRCalculateCustomInstanceLights`
+(`API.SRC/MR_LIGHT.C`). The remaining difference is float transforms and
+normals against GTE 4.12 truncation, within one byte per channel; see the
+[golden spec](../../../tests/golden/specs/animation.md#animated-part-lighting)
+and [model lighting](README.md#model-lighting).

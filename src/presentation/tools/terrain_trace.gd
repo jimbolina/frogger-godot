@@ -58,7 +58,7 @@ func configure(scenario: TerrainScenario) -> void:
 		active_omissions.erase("active_camera_zones")
 	if scenario.level.flow_enabled:
 		metadata["schema"] = "org1-gameplay-v1"
-		metadata["omitted"] = ["audio_playback", "rendered_particles", "animated_part_lighting", "multiplayer"]
+		metadata["omitted"] = ["audio_playback", "rendered_particles", "multiplayer"]
 	full_rows = PackedStringArray([JSON.stringify(metadata)])
 
 ## Records actual rule phase observations; never advances or edits a run.

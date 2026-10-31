@@ -34,7 +34,7 @@ Models are lit while the game runs; nothing is baked into the files. From the or
 - A flat polygon is lit once from its one normal; a gouraud polygon once per corner.
 - A level's lights are stored in its map file. The options screens use an ambient light of 0x606060 and one parallel light 0xA0A0C0, words whose low byte is red (so red 0xC0, green and blue 0xA0), shining from (0x800, -0x1000, -0x1000) toward the origin (`OptionsModels.options_lighting`).
 - Lit values can exceed 128, so the stop at full brightness in `min(2 * lit, 255)` matters.
-- Cave levels scale every live entity's colour by XZ distance from the frog's light: models unconditionally, model-free sprite forms unless the form's "don't fade colour" flag is set. Gameplay commits the scale and the live radii each tick ([entity contract](../gameplay/entities.md#cave-whole-map-behavior)); presentation applies committed scales, including an applied black, and feeds the committed radii to the terrain ramp uniforms. The non-cave edge fade remains unimplemented. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
+- Cave levels scale every live entity's colour by XZ distance from the frog's light: models unconditionally, model-free sprite forms unless the form's "don't fade colour" flag is set. Gameplay commits the scale and the live radii each tick ([entity contract](../gameplay/entities.md#cave-whole-map-behavior)); presentation applies committed scales, including an applied black, and feeds the committed radii to the terrain ramp uniforms. Outside caves only the frog has an edge fade; its committed colour scale reaches its mesh through the same lighting path. Cave terrain is separate: C replaces Gouraud terrain colours with a squared-distance grey ramp. See [map lighting](../data/maps.md#rendering).
 
 Fireflies draw as unlit two-image sprites in the entity's local XY plane at twice the image size; pickups draw the source glow and image quads from the pickup table with fixed colours, and both resolve images from the general and theme banks, then the resident `FIXE_VRAM`/`GEN_VRAM` banks. Sprite animation phases use the committed tick rather than a per-instance creation tick.
 
@@ -44,8 +44,8 @@ per instance, preparing every texture-frame variant during initial lighting setu
 so playback never allocates those materials. Shared meshes and materials remain
 unchanged. The shader applies
 map parallel lights to transformed normals, source colour-matrix scaling and
-custom ambient narrowing before polygon modulation. Animated frog per-part
-lighting remains deferred; this path does not establish full retail pixel equality.
+custom ambient narrowing before polygon modulation. The gameplay frog uses the
+same `set_source_lighting` path as entities ([animated part lighting](gameplay-projection.md#animated-part-lighting)).
 The terrain viewer samples entity poses once per committed tick, then interpolates
 continuous transforms and cel geometry per rendered frame.
 [Cel atlases](../data/animation.md) move flipbook interpolation into the existing

@@ -69,7 +69,8 @@ var _rings: Array[PopRingGeometry] = []
 var _splashes: Array[SplashView.Splash] = []
 var _effect_tick: int = -1
 var _effect_drawn_tick: int = -1
-var _tint_tick: int = -1
+var _frog_light_tick: int = -1
+var _frog_lit: bool = false
 ## Whether [method build_world] creates the sound-effect and music players.
 var audio_enabled: bool = false
 var _voice_view: SoundVoiceView = null
@@ -122,10 +123,10 @@ func draw_state(fraction: float) -> void:
 			player.frame = _current.animation.cel
 			_frog_model.capture_pose(not playing)
 			_frog_pose_tick = _current.tick_index
-		if _tint_tick != _current.tick_index:
-			_frog_model.set_tint(_current.frog.colour_scale, _current.frog.custom_ambient, _current.frog.tint_flags)
+		if _frog_light_tick != _current.tick_index:
+			_light_frog(_current.frog)
 			_apply_throat(_current.frog)
-			_tint_tick = _current.tick_index
+			_frog_light_tick = _current.tick_index
 		_frog_model.render(weight)
 	_draw_effects(frog_transform, weight)
 	if _current.camera != null:
@@ -246,6 +247,7 @@ func build_entities(definitions: EntityCollisionDefinition, scene_data: MapScene
 	_clear_entity_visuals()
 	_entity_pose_tick = -1
 	_entity_lighting = null
+	_frog_light_tick = -1
 	if definitions == null:
 		return
 	_definitions = definitions.entities
@@ -311,6 +313,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	_clear_entity_visuals()
 	_entity_pose_tick = -1
 	_entity_lighting = null
+	_frog_light_tick = -1
 	if definitions == null:
 		return PackedStringArray()
 	_definitions = definitions.entities
@@ -506,7 +509,8 @@ func _apply_frog_depth_bias() -> void:
 func build_frog(assets: TerrainFrogAssets) -> void:
 	frog_assets = assets
 	_apply_frog_depth_bias()
-	_tint_tick = -1
+	_frog_light_tick = -1
+	_frog_lit = false
 	_frog_model = AnimatedModelInstance.new()
 	add_child(_frog_model)
 	_frog_model.setup(frog_assets.mesh, frog_assets.player)
@@ -518,9 +522,30 @@ func build_frog(assets: TerrainFrogAssets) -> void:
 				if material != null:
 					material.set_shader_parameter("projection_scale", GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
 	_apply_frog_depth_bias()
+	_show_frog_parts()
+	_frog.visible = false
+
+func _show_frog_parts() -> void:
 	for index: int in _frog_model.part_nodes.size():
 		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
-	_frog.visible = false
+
+## Lights the frog per part from the map's lights with its committed colour
+## scale and custom ambient, as entities are (MR_LIGHT.C
+## MRCalculateCustomInstanceLights); without map lights it falls back to
+## [method AnimatedModelInstance.set_tint], resetting materials a previous map lit.
+func _light_frog(frog: FrogState) -> void:
+	if _entity_lighting != null:
+		_frog_model.set_source_lighting(_entity_lighting, frog.colour_scale, frog.custom_ambient, (frog.tint_flags & FrogTint.SCALED_COLOURS) != 0, (frog.tint_flags & FrogTint.CUSTOM_AMBIENT) != 0)
+		if not _frog_lit:
+			_frog_lit = true
+			_apply_frog_depth_bias()
+		return
+	if _frog_lit:
+		_frog_lit = false
+		_frog_model.setup(frog_assets.mesh, frog_assets.player)
+		_apply_frog_depth_bias()
+		_show_frog_parts()
+	_frog_model.set_tint(frog.colour_scale, frog.custom_ambient, frog.tint_flags)
 
 ## Captures a committed state and reconciles authored entity lifetimes; the
 ## tick's [param events] start and stop presentation effects.
@@ -588,7 +613,7 @@ func collapse_effects() -> void:
 	_splashes.clear()
 	_effect_tick = -1
 	_effect_drawn_tick = -1
-	_tint_tick = -1
+	_frog_light_tick = -1
 	_field_generations.clear()
 	if _entity_fields != null:
 		_entity_fields.collapse()
