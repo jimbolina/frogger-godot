@@ -46,6 +46,7 @@ implements it over the retail files for the importer and the archive suite.
 | `catalog.tres` | `AssetIndex`: build name, SHA-256 of the retail executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts, page sets and the playable level codes. |
 | `tables/<table>.tres`, `tables/game_tables.tres`, `tables/names.tres` | One file per executable table, linked from `game_tables.tres`; FrogLord's name lists. |
 | `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
+| `textures/images_x4/tNNNN.png` | The same images upscaled to exactly four times the padded size ([upscaled textures](#upscaled-textures)); nothing loads them yet. |
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
 | `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). |
 | `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness. |
@@ -61,3 +62,16 @@ committed mesh through `ModelMeshCopy`, which gives every surface its own
 material copy (a flipbook part's morph surface shares its part's copy, so the
 view's projection reaches it) and leaves geometry, cel atlases and textures
 shared.
+
+## Upscaled textures
+
+`textures/images_x4/` holds an ML-upscaled counterpart of every image, made
+outside the repository for S2. Each core is upscaled with its RGB filled
+under transparent pixels, padded by wrapping on axes that tile and by edge
+repeat otherwise, run through ffmpeg's `xbr` x2, a model at x4 and Lanczos
+back down by two, then cropped and re-padded by edge repeat. Terrain,
+sprites, effects and fonts use 4x-PBRify_UpscalerV4 (CC0); HUD and menu
+images use Real-ESRGAN x4plus (BSD-3-Clause). Alpha is the nearest x4 of the
+source mask, RGB is zero under alpha 0, and opaque pixels of colour-keyed
+images are raised to at least 8 per channel so the 5-bit key cannot cut
+them. `test_asset_textures_x4.gd` checks the file set, size and alpha.

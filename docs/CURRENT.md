@@ -23,7 +23,8 @@ two proposals it raises (`tools/` split, presets as data), and the play check
 of every accepted level, the front end and the sandbox from imported
 resources are pending.
 
-Next: S2, the modern rendering spike.
+Next: S2, the modern rendering spike; x4 upscaled textures wait for it
+under `assets/textures/images_x4/` ([assets](reference/assets.md#upscaled-textures)).
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand
