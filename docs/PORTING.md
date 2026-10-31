@@ -38,6 +38,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S1d | Runtime switch: every scene opens `ImportedAssets`; `--data-dir`, `FROGGER_DATA_DIR` and `--disc` leave the game; readers and FrogLord configs move to `archive/` | L | Both suites green; every accepted level, the front end and the sandbox play from imported resources (owner play check); captures compared with pre-S1 captures | Done; owner's play check pending |
 | S1e | Layout audit, domain model documentation and cleanup of runtime-decoding code | M | The audit and documentation are reviewed by the owner; both suites green | Done; [audit](#s1e-layout-audit) and [domain model](reference/domain-model.md) await the owner's review |
 | S2a | Upscaled texture set: `images_x4/` committed, a per-launch `TextureSet` (`--texture-set=x4`), scale-aware 2D draws, pages and sky at scale, mipmapped linear sampling for the set, locally baked `pages_x4/` with an independent golden | M | Both suites green with the retail set unchanged; x4 page goldens and deliberate breaks pass; owner play check at x4 | Done; owner's play check pending |
+| S2b | [Native text](#s2b-native-text): a bitmap `FontFile` generated from the `newfont` glyph grid (retail and x4) replaces the hand-rolled glyph draws in the HUD, its ink layer and the level-stack score lines; the vector font is the owner's decision | S | Retail glyph placement pinned by the HUD and stack tests; the committed font matches its generator; both suites green; owner play check | Planned |
 | S2 | [Modern rendering spike](#s1-and-s2-native-asset-and-modern-rendering-spikes): Godot lights, shadows and material pipeline replace the C lighting recipe, with textures as ordinary imported resources | L | Owner play check by eye; the stored-colour goldens are retired or re-scoped | Next |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
@@ -83,6 +84,22 @@ map's light records with Godot's lights, shadows and material pipeline, and
 replaces texture-page reconstruction and colour keys with ordinary imported
 textures and materials. Goldens that assert C colours are retired or re-scoped
 to what still holds (geometry, animation, gameplay).
+
+### S2b: native text
+
+All in-game text is drawn by hand from one bitmap glyph grid, texture
+`newfont`: 96 ASCII glyphs in 8x8 cells, 32 per row, monospace, coloured by
+modulate, at three sites (the gameplay HUD, its ink layer and the
+level-stack score lines). S2b generates a Godot bitmap font from that grid
+with a small generator under `tools/` (a BMFont `.fnt` or `FontFile`, one
+for the retail texture and one for the x4 texture with 32-pixel cells drawn
+at size 8, chosen by the texture set) and draws the three sites with
+`draw_string` or `Label` nodes, pixel-identical at retail. Text then takes
+theme colours, outlines, authored scenes and later localisation without new
+draw code. A vector recreation of the Frogger font is the only way text stays
+crisp at any window size; it is a design task (automatic vectorising of 8x8
+glyphs gives blobs), so it waits for the owner's decision after the x4 play
+check and would supersede the x4 font image.
 
 ### S1e layout audit
 
@@ -132,6 +149,7 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 | Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
 | Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only; `compare_map_captures.py`, `bake_pages_x4.py` and `make_golden_texture_pages_x4.py` need Pillow. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
 | S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | Before S2 | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
+| A vector recreation of the Frogger font | After the x4 play check, before S2 | A pixel-square TTF equals nearest upscaling (sharp, blocky); a smoothed redraw changes the look and needs the owner's eye. Either is retail-derived like `assets/`, which the private-repository decision covers. Until then the x4 bitmap font serves large windows ([S2b](#s2b-native-text)). |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage

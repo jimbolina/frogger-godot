@@ -15,7 +15,7 @@ S1 is complete pending the owner's checks
 Everything plays from the committed `assets/` through `ImportedAssets`
 ([assets](reference/assets.md)); the retail readers, importer, retail goldens
 and FrogLord configs live in `archive/`, which the game never references.
-Launch `tools/play.sh --level=ORG1`; no data folder is needed. Pending: the
+Launch `tools/play.sh --level=ORG1` without a data folder. Pending: the
 owner's review of the [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) with its two proposals, and the
 play check of every accepted level, the front end and the sandbox.
@@ -24,7 +24,8 @@ S2a is done pending the owner's play check: `--texture-set=x4` draws the
 upscaled textures ([assets](reference/assets.md#upscaled-textures)), with
 the pages baked locally by the wrappers; the retail set stays the default
 and is unchanged. Check `tools/play.sh --level=ORG1 --texture-set=x4` and
-the front end at x4. Next: S2, the modern rendering spike.
+the front end at x4. Next: S2b, native text from the `newfont` grid
+([roadmap](PORTING.md#s2b-native-text)), then S2, the modern rendering spike.
 
 Effects never reproduce the frozen generators' random draws (owner decision).
 Keyboard replays and native attract comparisons are on-demand
