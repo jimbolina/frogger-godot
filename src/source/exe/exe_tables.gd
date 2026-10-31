@@ -21,6 +21,7 @@ var _bmp_pointers: BmpPointers
 var _remaps: TextureRemapList
 var _scripts: ScriptTable
 var _scores: ScoreTable
+var _high_scores: HighScoreTable
 var _music: MusicTable
 var _level_select: LevelSelectTable
 var _demo_table: DemoTable
@@ -76,6 +77,13 @@ func scores() -> ScoreTable:
 	if _scores == null:
 		_scores = ScoreTable.read(exe)
 	return _scores
+
+
+## The default main and per-level high-score tables.
+func high_scores() -> HighScoreTable:
+	if _high_scores == null:
+		_high_scores = HighScoreTable.read(exe)
+	return _high_scores
 
 
 ## The per-level music list.

@@ -11,6 +11,12 @@ extends Control
 ## vertical focal length applied as a clip-space scale. With a [MenuWater] the stack's world
 ## also draws the front-end water through the stack camera, behind every box (SelectLevelUpdate
 ## calls HSUpdateWater).
+##
+## [method create_for_scores] draws the high-score view's stack instead: a [StackSelector] the
+## [HighScoreTour] steps, followed with [method follow] after each tour tick, with no input or
+## clock of its own. It shows the tour's prompt and title, the three score lines of the level
+## being shown and, behind the stack, SelectLevelCreateBG's checker of two theme tiles tinted
+## 0x202020, scrolled by the tour's background counter in a direction chosen at random.
 
 ## A selector event of [enum StackSelector.EventKind] [param kind]; [param level] is the level
 ## to play for ENTER_GAME, otherwise -1.
@@ -26,6 +32,14 @@ const ASPECT_WIDTH: int = 320
 const FIRST_LEVEL: String = "ORG1"
 ## Near clip distance in Godot units.
 const CAMERA_NEAR: float = 0.05
+## SelectLevelCreateBG's tile grid (SELECT_BG_ONSCREEN_TILES_X and _Y plus one), tile size and tint.
+const BACKGROUND_TILES: Vector2i = Vector2i(9, 7)
+const BACKGROUND_TILE_SIZE: Vector2i = Vector2i(96, 96)
+const BACKGROUND_TINT: int = 0x20
+## SELECT_BG_TILE_MOVE_SPEED.
+const BACKGROUND_PERIOD: int = 24
+## The checker's four texture pairs, two names each; SelectLevelCreateBG picks one with rand() & 3.
+const BACKGROUND_PAIRS: PackedStringArray = ["jun_col", "des_col", "cav_col", "vol_col", "sky_col", "org_col", "for_col", "sub_col"]
 ## Far clip distance in Godot units.
 const CAMERA_FAR: float = 256.0
 
@@ -49,6 +63,14 @@ var water: MenuWaterView
 var input: BindingInput = BindingInput.new()
 ## Interpolate between the last two ticks; off draws each tick as committed.
 var smoothing_enabled: bool = true
+## True for the high-score view's stack (see [method create_for_scores]).
+var score_mode: bool = false
+## The checker behind the high-score view's stack, or null.
+var checker: Control
+## The checker's texture pair index and its BG_LEFT and BG_UP directions.
+var background_pair: int = 0
+var background_left: bool = true
+var background_up: bool = true
 ## Time since the last tick.
 var elapsed: float = 0.0
 
@@ -69,6 +91,11 @@ var _up_tapped: bool = false
 var _down_tapped: bool = false
 var _go_pressed: bool = false
 var _back_pressed: bool = false
+var _board: HighScoreBoard
+var _prompt: String = ""
+var _title_visible: bool = true
+var _shown_level: int = -1
+var _background_counter: int = 0
 
 
 class _Frame:
@@ -78,6 +105,7 @@ class _Frame:
 	var spin_row: int = -1
 	var spin_transform: Transform3D = Transform3D.IDENTITY
 	var placement: StackPanel.Placement
+	var background_counter: int = 0
 
 
 ## A view of [param stack]'s arcade rows under [param progress], focused on [param focus_level]
@@ -92,14 +120,50 @@ static func create(assets: FrontEndAssets, stack: LevelStack, progress: LevelPro
 	view._background = background
 	view._water = water_animation
 	view.layout = StackLayout.create(stack)
+	var focus: int = focus_level if focus_level >= 0 else FroggerIds.level_from_code(FIRST_LEVEL)
+	view.selector = StackSelector.create(view.layout, progress, focus, first_time, name_widths(assets, stack))
+	view._build()
+	return view
+
+
+## The high-score view's stack over [param stack]'s arcade rows under [param progress], drawing
+## [param scores_selector] (the tour's) and [param board]'s level rows; the checker pair and
+## direction are chosen with [param random].
+static func create_for_scores(assets: FrontEndAssets, stack: LevelStack, progress: LevelProgress,
+		scores_selector: StackSelector, board: HighScoreBoard, random: RandomNumberGenerator = null) -> LevelStackView:
+	var view := LevelStackView.new()
+	view._assets = assets
+	view._stack = stack
+	view._progress = progress
+	view._board = board
+	view.score_mode = true
+	view.layout = StackLayout.create(stack)
+	view.selector = scores_selector
+	var chance: RandomNumberGenerator = random
+	if chance == null:
+		chance = RandomNumberGenerator.new()
+		chance.randomize()
+	view.background_pair = chance.randi() & 3
+	view.background_left = chance.randi() & 1 == 0
+	view.background_up = chance.randi() & 1 != 0
+	view._build()
+	return view
+
+
+## Each arcade row's level-name image width in [param stack], zero where missing.
+static func name_widths(assets: FrontEndAssets, stack: LevelStack) -> PackedInt32Array:
 	var widths := PackedInt32Array()
 	for row: int in stack.arcade_count():
 		var name_image: Texture2D = assets.level_texture(stack.arcade_row(row).level, FrontEndAssets.LevelImage.STACK_NAME)
 		widths.append(name_image.get_width() if name_image != null else 0)
-	var focus: int = focus_level if focus_level >= 0 else FroggerIds.level_from_code(FIRST_LEVEL)
-	view.selector = StackSelector.create(view.layout, progress, focus, first_time, widths)
-	view._build()
-	return view
+	return widths
+
+
+## The checker's scroll along one axis at [param counter] (Select_bg_counter) for tiles
+## [param length] long: toward the left or up, or else the other way (SelectLevelUpdateBG).
+static func background_offset(counter: int, length: int, left_or_up: bool) -> int:
+	var moved: int = (counter * length) / BACKGROUND_PERIOD
+	return moved if left_or_up else length - moved
 
 
 ## Vertical field of view of a symmetric camera whose X focal length is the source's
@@ -146,6 +210,20 @@ func tick(buttons: StackSelector.Buttons) -> Array[StackSelector.Event]:
 	return events
 
 
+## Takes the tour's last tick in the high-score view: its prompt image [param prompt], whether
+## the title shows ([param title_visible]), the level whose rows show ([param shown_level], -1
+## for none) and the checker's [param background_counter].
+func follow(prompt: String, title_visible: bool, shown_level: int, background_counter: int) -> void:
+	_prompt = prompt
+	_title_visible = title_visible
+	_shown_level = shown_level
+	_background_counter = background_counter
+	_previous = _current
+	_current = _capture()
+	_apply_tints()
+	render(0.0 if smoothing_enabled else 1.0)
+
+
 ## Draws [param fraction] of the way from the previous tick to the last one.
 func render(fraction: float) -> void:
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing_enabled else 1.0
@@ -161,6 +239,8 @@ func render(fraction: float) -> void:
 		else:
 			spin_box.transform = _current.spin_transform
 	panel.apply(before.placement.toward(_current.placement, weight) if before != _current else _current.placement)
+	if checker != null:
+		checker.queue_redraw()
 
 
 ## The selector buttons for the next tick from the keys since the last one.
@@ -178,7 +258,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if selector.finished:
+	if selector.finished or score_mode:
 		return
 	elapsed += delta
 	if elapsed >= PERIOD:
@@ -190,7 +270,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key == null or key.echo:
+	if key == null or key.echo or score_mode:
 		return
 	match input.action(key):
 		KeyBindings.Action.UP:
@@ -229,6 +309,18 @@ func _build() -> void:
 	environment.environment.background_mode = Environment.BG_COLOR
 	environment.environment.background_color = _background
 	_world.add_child(environment)
+	if score_mode:
+		environment.environment.background_mode = Environment.BG_CANVAS
+		environment.environment.background_canvas_max_layer = -1
+		var layer := CanvasLayer.new()
+		layer.name = "Checker"
+		layer.layer = -1
+		add_child(layer)
+		checker = Control.new()
+		checker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		checker.size = Vector2(DISPLAY_SIZE)
+		checker.draw.connect(_draw_background)
+		layer.add_child(checker)
 	camera = Camera3D.new()
 	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	camera.keep_aspect = Camera3D.KEEP_HEIGHT
@@ -298,7 +390,29 @@ func _capture() -> _Frame:
 	else:
 		_spin_row = -1
 	frame.placement = StackPanel.placement(selector)
+	if score_mode:
+		frame.placement.prompt = _prompt
+		frame.placement.title_visible = _title_visible
+		if _shown_level >= 0 and _board != null:
+			frame.placement.score_lines = HighScoreText.lines(_board.level_rows(_shown_level))
+		frame.background_counter = _background_counter
 	return frame
+
+
+func _draw_background() -> void:
+	var tiles: Array[Texture2D] = [_assets.texture(BACKGROUND_PAIRS[background_pair * 2]), _assets.texture(BACKGROUND_PAIRS[background_pair * 2 + 1])]
+	var counter: int = _current.background_counter if _current != null else 0
+	var offset := Vector2(background_offset(counter, BACKGROUND_TILE_SIZE.x, background_left),
+		background_offset(counter, BACKGROUND_TILE_SIZE.y, background_up))
+	var tint: float = float(BACKGROUND_TINT) / StackPanel.NEUTRAL_COLOUR
+	for row: int in BACKGROUND_TILES.y:
+		for column: int in BACKGROUND_TILES.x:
+			var at := Vector2(column * BACKGROUND_TILE_SIZE.x, row * BACKGROUND_TILE_SIZE.y) - offset
+			var texture: Texture2D = tiles[(column + row) & 1]
+			if texture == null:
+				checker.draw_rect(Rect2(at, Vector2(BACKGROUND_TILE_SIZE)), Color(tint, tint, tint))
+			else:
+				checker.draw_texture_rect(texture, Rect2(at, Vector2(BACKGROUND_TILE_SIZE)), false, Color(tint, tint, tint))
 
 
 func _build_spin(row: int) -> void:

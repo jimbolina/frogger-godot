@@ -5,9 +5,10 @@ extends RefCounted
 ## BOOT covers the version, logo, language and intro pages the port skips; MAIN_MENU is
 ## OPTIONS_PAGE_MAIN_OPTIONS; ENDING covers the jungle end-of-game sequence with the outro
 ## or credits pages that follow it. OPTIONS is OPTIONS_PAGE_OPTIONS and CONTROLS is the PC
-## controller page OPTIONS_PAGE_CHOOSE_WIN_CONTROLLER (retail page 25).
+## controller page OPTIONS_PAGE_CHOOSE_WIN_CONTROLLER (retail page 25). HIGH_SCORE_INPUT and
+## HIGH_SCORE_VIEW are OPTIONS_PAGE_HIGH_SCORE_INPUT and OPTIONS_PAGE_HIGH_SCORE_VIEW.
 
-enum Page { BOOT, MAIN_MENU, LEVEL_SELECT, GAME, LEVEL_COMPLETE, GAME_OVER, CONTINUE, ENDING, OPTIONS, CONTROLS }
+enum Page { BOOT, MAIN_MENU, LEVEL_SELECT, GAME, LEVEL_COMPLETE, GAME_OVER, CONTINUE, ENDING, OPTIONS, CONTROLS, HIGH_SCORE_INPUT, HIGH_SCORE_VIEW }
 
 
 ## The upper-case name of [param page], or "" when it is not a page.

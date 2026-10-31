@@ -39,6 +39,9 @@ const DISPLAY_HEIGHT: int = 480
 const STATUS_START_X: int = DISPLAY_WIDTH + 32
 const STATUS_END_X: int = 400
 const STATUS_WIDTH: int = 160
+## Width of the high-score view's score-line text boxes on retail PC: the boxes take at_box_w
+## from the global 0x498498, written only as 0xC0, not SEL_STATUS_WIDTH (KEY_FACTS KF-407).
+const SCORE_BOX_WIDTH: int = 192
 const LEVEL_TITLE_Y: int = 300
 const SCORE_LINE_Y: PackedInt32Array = [320, 336, 352]
 const PROMPT_Y: int = 400

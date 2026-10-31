@@ -406,7 +406,7 @@ func _step_splashes() -> void:
 	for lily: int in scene.splashes:
 		var splash := _Splash.new()
 		splash.lily = lily
-		splash.timeline = SplashTimeline.new(_splash_list())
+		splash.timeline = SplashTimeline.new(WaterModelSet.splash_commands())
 		splash.timeline.scale = OptionsScene.SPRITE_SCALE
 		_splashes.append(splash)
 	var kept: Array[_Splash] = []
@@ -415,23 +415,6 @@ func _step_splashes() -> void:
 		if not splash.timeline.killed:
 			kept.append(splash)
 	_splashes = kept
-
-
-static func _splash_list() -> Array[SplashTimeline.Command]:
-	var images: PackedStringArray = OptionsModels.SPLASH_SYMBOLS
-	var list: Array[SplashTimeline.Command] = [
-		SplashTimeline.Command.new(SplashTimeline.Op.SETSPEED, 3),
-		SplashTimeline.Command.new(SplashTimeline.Op.SETIMAGE, 0, images[0]),
-		SplashTimeline.Command.new(SplashTimeline.Op.SETIMAGE, 0, images[1]),
-		SplashTimeline.Command.new(SplashTimeline.Op.SETIMAGE, 0, images[2]),
-		SplashTimeline.Command.new(SplashTimeline.Op.SETSPEED, 2),
-		SplashTimeline.Command.new(SplashTimeline.Op.SETIMAGE, 0, images[3]),
-	]
-	for grey: int in [0x606060, 0x404040, 0x202020]:
-		list.append(SplashTimeline.Command.new(SplashTimeline.Op.SETCOLOUR, grey))
-		list.append(SplashTimeline.Command.new(SplashTimeline.Op.SETIMAGE, 0, images[3]))
-	list.append(SplashTimeline.Command.new(SplashTimeline.Op.KILL))
-	return list
 
 
 func _capture() -> _Frame:

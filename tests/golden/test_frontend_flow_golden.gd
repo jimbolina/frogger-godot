@@ -25,8 +25,13 @@ const EVENT_ALIASES: Dictionary = {
 	"ENDING_DONE": ["finished"],
 	"OPTIONS": ["options"],
 	"CONTROLS": ["controller_config"],
+	"ENTERED": ["entered"],
+	"NO_HIGH_SCORE": ["no_high_score"],
+	"GAME_QUIT": ["game_quit"],
+	"TIMEOUT": ["timeout", "levels_shown"],
+	"VIEW_HIGH_SCORES": ["view_high_scores"],
+	"BACK_TO_OPTIONS": ["back_to_options", "back_to_options_from_scores"],
 }
-const SKIPPED_PAGES: Dictionary = {"HIGH_SCORE_INPUT": "no_high_score"}
 
 var _transitions: Array[Dictionary] = []
 
@@ -54,18 +59,13 @@ func _golden_next(page: String, event: String) -> String:
 	return ""
 
 
-## Follows golden rows through pages the port skips or folds into the page it left.
+## Follows golden rows through pages the port folds into the page it left.
 func _resolve(page: String, wanted: Array, folded: Array, event: String) -> String:
 	var current: String = page
 	for _guard: int in 8:
-		if wanted.has(current):
+		if wanted.has(current) or not folded.has(current):
 			break
-		if SKIPPED_PAGES.has(current):
-			current = _golden_next(current, str(SKIPPED_PAGES[current]))
-		elif folded.has(current):
-			current = _golden_next(current, event)
-		else:
-			break
+		current = _golden_next(current, event)
 	return current
 
 
@@ -110,15 +110,30 @@ func test_every_p13c_request_is_ported() -> void:
 	_check_phase_is_ported("P13c")
 
 
+func test_every_p13d_request_is_ported() -> void:
+	_check_phase_is_ported("P13d")
+
+
+func test_high_score_rows_reach_their_pages() -> void:
+	assert_eq(_golden_next("CONTINUE", "arcade"), "HIGH_SCORE_INPUT")
+	assert_eq(_golden_next("CREDITS", "finished"), "HIGH_SCORE_INPUT")
+	assert_eq(_golden_next("HIGH_SCORE_INPUT", "entered"), "HIGH_SCORE_VIEW")
+	assert_eq(_golden_next("HIGH_SCORE_VIEW", "back_to_options"), "OPTIONS")
+	assert_eq(_golden_next("OPTIONS", "view_high_scores"), "HIGH_SCORE_VIEW")
+
+
 func _check_phase_is_ported(phase: String) -> void:
+	var checked: int = 0
 	for item: Dictionary in _transitions:
-		if item.phase != phase or SKIPPED_PAGES.has(item.page):
+		if item.phase != phase:
 			continue
+		checked += 1
 		var row: PackedStringArray = _port_row_for(str(item.page), str(item.event))
 		assert_eq(row.size(), 3, "%s %s is in the port table" % [item.page, item.event])
 		if row.size() == 3:
 			var reached: String = _resolve(str(item.next), _pages(row[2]), _pages(row[0]), str(item.event))
 			assert_true(_pages(row[2]).has(reached), "%s %s leads to %s" % [item.page, item.event, row[2]])
+	assert_gt(checked, 0, "%s has golden rows" % phase)
 
 
 func test_retail_boot_order_is_recorded_over_the_vendored_one() -> void:

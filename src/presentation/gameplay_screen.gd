@@ -283,7 +283,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	elif key.pressed:
 		match key.physical_keycode:
 			KEY_SPACE: set_paused(playing)
-			KEY_R: restart()
+			KEY_R:
+				if not FrontEndSession.active:
+					restart()
 			KEY_ESCAPE: _return_to_menu()
 
 func _build_interface() -> void:
@@ -343,16 +345,27 @@ func _show_error(message: String) -> String:
 	return message
 
 func _return_to_menu() -> void:
+	var in_game: bool = FrontEndSession.active
+	leave_front_end_level()
 	close_data()
-	if FrontEndSession.active:
-		var finished: bool = _session_finished and _current != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE
-		if finished:
-			FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
-		else:
-			FrontEndSession.end_game()
-		get_tree().change_scene_to_file(FrontEndScreen.SCENE)
+	get_tree().change_scene_to_file(FrontEndScreen.SCENE if in_game else "res://scenes/boot.tscn")
+
+## Settles the front-end game when the player leaves the level: a completed level returns to the
+## level select; a game over still reaches name entry, and only leaving an unfinished level is a
+## quit that skips it (hsinput.c:189-193). Does nothing outside a front-end game.
+func leave_front_end_level() -> void:
+	if not FrontEndSession.active:
 		return
-	get_tree().change_scene_to_file("res://scenes/boot.tscn")
+	var completed: bool = _current != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE
+	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
+	if _session_finished and completed:
+		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+	else:
+		_warn(FrontEndSession.end_game(not _session_finished, ending))
+
+func _warn(issue: String) -> void:
+	if not issue.is_empty():
+		push_warning(issue)
 
 ## Applies the finished level to the front-end progress and saves it.
 func _finish_front_end_level() -> void:
@@ -367,6 +380,7 @@ func _finish_front_end_level() -> void:
 	_advance_events = PackedInt32Array()
 	_next_level = -1
 	if flow.phase == LevelFlowState.Phase.COMPLETE:
+		FrontEndSession.record_level(number, flow.score - FrontEndSession.score, flow.checkpoint_times)
 		FrontEndSession.carry(_current)
 		if number == LevelProgress.LEVEL_JUNGLE1:
 			progress.reach_jungle_statue()
@@ -407,9 +421,10 @@ func _advance_front_end() -> void:
 		close_data()
 		get_tree().reload_current_scene()
 		return
+	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
 	close_data()
 	if page == FrontEndPage.Page.LEVEL_SELECT:
 		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
 	else:
-		FrontEndSession.end_game()
+		_warn(FrontEndSession.end_game(false, ending))
 	get_tree().change_scene_to_file(FrontEndScreen.SCENE)

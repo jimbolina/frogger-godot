@@ -4,7 +4,10 @@ extends Control
 ## the subtractive fade and the LOADING image (SelectLevelStartup, SelectLevelUpdate).
 ##
 ## Sprite colours follow the source's base colours, 0x80 being the image as stored. The fade
-## rectangle subtracts its shade from everything drawn before it; the sprites draw over it.
+## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. The
+## high-score view adds up to three score lines in [code]newfont[/code]'s 8x8 cells, white,
+## centred in a box [constant StackLayout.SCORE_BOX_WIDTH] wide whose left edge is
+## [member Placement.panel_x].
 
 ## One frame's sprite state, interpolated between two ticks.
 class Placement:
@@ -23,6 +26,12 @@ class Placement:
 	var shade: int = 0
 	## LOADING sprite colour, 0 hiding it.
 	var loading_colour: int = 0
+	## Whether the title sprite shows.
+	var title_visible: bool = true
+	## Left edge of the status box (Sel_status_temp_x).
+	var panel_x: float = StackLayout.STATUS_START_X
+	## Score lines drawn at [constant StackLayout.SCORE_LINE_Y], none outside the high-score view.
+	var score_lines: PackedStringArray = PackedStringArray()
 
 	## This placement moved toward [param later] by [param weight]; discrete fields take [param later]'s.
 	func toward(later: Placement, weight: float) -> Placement:
@@ -34,6 +43,9 @@ class Placement:
 		result.prompt = later.prompt
 		result.shade = later.shade
 		result.loading_colour = later.loading_colour
+		result.title_visible = later.title_visible
+		result.panel_x = lerpf(panel_x, later.panel_x, weight)
+		result.score_lines = later.score_lines
 		return result
 
 
@@ -43,6 +55,9 @@ const DIM_COLOUR: int = StackLayout.SPRITE_DIM_COLOUR
 const NEUTRAL_COLOUR: int = 0x80
 ## Right edge of the prompt sprite.
 const PROMPT_RIGHT: int = StackLayout.STATUS_END_X + StackLayout.STATUS_WIDTH
+## Width and height of one [code]newfont[/code] cell, and cells per row of the image.
+const GLYPH_SIZE: int = 8
+const GLYPHS_PER_ROW: int = 32
 
 ## Fade rectangle over the 3D stack.
 var fade: ColorRect
@@ -56,6 +71,8 @@ var level_name: TextureRect
 var loading: TextureRect
 
 var _assets: FrontEndAssets
+var _score_lines: PackedStringArray = PackedStringArray()
+var _score_x: float = 0.0
 
 
 ## The prompt image while in selector [param mode]: SELECT2 in the info view and fade, otherwise
@@ -80,7 +97,13 @@ static func placement(selector: StackSelector) -> Placement:
 	else:
 		result.name_x = selector.title_x
 	result.shade = selector.fade_shade()
+	result.panel_x = selector.panel_x
 	return result
+
+
+## The left X of [param line] centred in the score box whose left edge is [param box_x].
+static func score_line_x(line: String, box_x: float) -> float:
+	return box_x + (StackLayout.SCORE_BOX_WIDTH - line.length() * GLYPH_SIZE) / 2
 
 
 ## Builds the sprites from [param assets]; the level name is set per level with [method set_level_name].
@@ -130,6 +153,34 @@ func apply(state: Placement) -> void:
 	fade.color = Color(shade, shade, shade)
 	loading.visible = state.loading_colour > 0
 	loading.modulate = _colour(state.loading_colour)
+	title.visible = state.title_visible
+	if state.score_lines != _score_lines or state.panel_x != _score_x:
+		_score_lines = state.score_lines
+		_score_x = state.panel_x
+		queue_redraw()
+
+
+## The score lines drawn.
+func score_lines() -> PackedStringArray:
+	return _score_lines.duplicate()
+
+
+func _draw() -> void:
+	var font: Texture2D = _assets.texture("newfont") if _assets != null else null
+	var record: VloImage = _assets.image_record("newfont") if _assets != null else null
+	if font == null or record == null:
+		return
+	var origin := Vector2(TextureBuilder.pixel_rect(record).position)
+	for index: int in mini(_score_lines.size(), StackLayout.SCORE_LINE_Y.size()):
+		var line: String = _score_lines[index]
+		var at := Vector2(score_line_x(line, _score_x), StackLayout.SCORE_LINE_Y[index])
+		for character: int in line.length():
+			var code: int = line.unicode_at(character) - 32
+			if code <= 0 or code >= GLYPHS_PER_ROW * 3:
+				continue
+			var cell := Vector2((code % GLYPHS_PER_ROW) * GLYPH_SIZE, (code / GLYPHS_PER_ROW) * GLYPH_SIZE)
+			draw_texture_rect_region(font, Rect2(at + Vector2(character * GLYPH_SIZE, 0), Vector2(GLYPH_SIZE, GLYPH_SIZE)),
+				Rect2(origin + cell, Vector2(GLYPH_SIZE, GLYPH_SIZE)))
 
 
 func _sprite(texture: Texture2D, colour: int) -> TextureRect:

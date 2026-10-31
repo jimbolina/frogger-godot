@@ -56,6 +56,10 @@ commands run from the repository root; generated facts live in
 | Options page layout, volume steps and levels, log cels, hop, fly and camera timing and scripted page traces | [Options page](specs/frontend.md#options-page) |
 | Options page model matrices on the water surface, title sprites, frog motion, actions and shadow, log polygon cels | [Options page models](specs/frontend.md#options-page-models) |
 | Controller-page records, defaults, bindable scancodes, Godot key mapping, capture rules and scripted page traces | [Controller page](specs/frontend.md#controller-page) |
+| Default main and per-level high-score tables read from the executable, with the retail-versus-source rows | [Default high scores](specs/frontend.md#default-high-scores) |
+| High-score recording, checkpoint seconds, qualification, insertion and the per-level score lines | [High-score tables](specs/frontend.md#high-score-tables) |
+| Name-entry page layout, frog hops, pad flips, letters, BACK and END and scripted page traces | [High-score entry](specs/frontend.md#high-score-entry) |
+| High-score view layout, log digit cels, scrolly frog, camera follow, manual and automatic stack tours and scripted traces | [High-score view](specs/frontend.md#high-score-view) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

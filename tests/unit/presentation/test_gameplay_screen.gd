@@ -140,3 +140,147 @@ func test_front_end_session_offers_next_level_after_completion_and_unlocks_it() 
 	assert_true(_screen._advance.visible)
 	assert_eq(_screen._advance.text, "Next level")
 	assert_true(FrontEndSession.progress.is_selectable(25))
+
+func test_front_end_completion_records_the_level_score_for_the_high_scores() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	var none: Array[HighScoreRow] = []
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = HighScoreBoard.create(none, none)
+	FrontEndSession.score = 300
+	FrontEndSession.active = true
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(24)
+	var finished: GameplayState = _screen.run.snapshot()
+	finished.completed = true
+	finished.flow.phase = LevelFlowState.Phase.COMPLETE
+	finished.flow.score = 1300
+	finished.flow.checkpoint_times = PackedInt32Array([30, 60, 90, 120, 150])
+	var result := TickResult.new()
+	result.final_snapshot = finished
+	_screen._accept(result)
+	FrontEndSession.active = false
+	var board: HighScoreBoard = FrontEndSession.board
+	FrontEndSession.board = null
+	FrontEndSession.score = 0
+	assert_eq(board.recorded[24], 1)
+	assert_eq(board.run_scores[24], 1000, "the score made in the level")
+	assert_eq(board.run_times_of(24), PackedInt32Array([1, 2, 3, 4, 5]))
+
+func test_front_end_game_over_leads_to_name_entry() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.active = true
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(24)
+	var finished: GameplayState = _screen.run.snapshot()
+	finished.completed = true
+	finished.flow.phase = LevelFlowState.Phase.GAME_OVER
+	var result := TickResult.new()
+	result.final_snapshot = finished
+	_screen._accept(result)
+	FrontEndSession.active = false
+	var page: int = FrontEndPage.Page.GAME
+	for event: int in _screen._advance_events:
+		page = FrontEndFlow.next_page(page, event, PackedStringArray())
+	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_eq(_screen._advance.text, "Continue")
+
+func _finish_level(level: int, phase: LevelFlowState.Phase, score: int = 0) -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(level)
+	var finished: GameplayState = _screen.run.snapshot()
+	finished.completed = true
+	finished.flow.phase = phase
+	finished.flow.score = score
+	finished.flow.checkpoint_times = PackedInt32Array([30, 60, 90, 120, 150])
+	var result := TickResult.new()
+	result.final_snapshot = finished
+	_screen._accept(result)
+
+func _reset_front_end_session() -> void:
+	FrontEndSession.active = false
+	FrontEndSession.board = null
+	FrontEndSession.score = 0
+	FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
+	FrontEndSession.final_score = 0
+	FrontEndSession.game_quit = false
+
+func test_front_end_jungle1_completion_is_recorded_like_any_level() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(LevelProgress.LEVEL_JUNGLE1, 7, 0, 4, 0, 1)]
+	var none: Array[HighScoreRow] = []
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = HighScoreBoard.create(none, none)
+	FrontEndSession.score = 200
+	FrontEndSession.active = true
+	_finish_level(LevelProgress.LEVEL_JUNGLE1, LevelFlowState.Phase.COMPLETE, 900)
+	var board: HighScoreBoard = FrontEndSession.board
+	_reset_front_end_session()
+	assert_eq(board.run_scores[LevelProgress.LEVEL_JUNGLE1], 700)
+	assert_eq(board.run_times_of(LevelProgress.LEVEL_JUNGLE1), PackedInt32Array([1, 2, 3, 4, 5]),
+		"the checkpoint times are kept, not the statue's zeros")
+	assert_eq(_screen._advance.text, "Finish")
+
+func test_leaving_after_game_over_still_reaches_name_entry() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER, 4321)
+	_screen.leave_front_end_level()
+	var page: int = FrontEndSession.start_page
+	var quit: bool = FrontEndSession.game_quit
+	var ending: int = FrontEndSession.final_score
+	var still_active: bool = FrontEndSession.active
+	_reset_front_end_session()
+	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_false(quit, "a game over is not a quit")
+	assert_eq(ending, 4321)
+	assert_false(still_active)
+
+func test_leaving_an_unfinished_level_is_a_quit() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.leave_front_end_level()
+	var page: int = FrontEndSession.start_page
+	var quit: bool = FrontEndSession.game_quit
+	_reset_front_end_session()
+	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_true(quit)
+
+func test_leaving_a_completed_level_returns_to_the_level_select() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	_screen.leave_front_end_level()
+	var page: int = FrontEndSession.start_page
+	var still_active: bool = FrontEndSession.active
+	_reset_front_end_session()
+	assert_eq(page, FrontEndPage.Page.LEVEL_SELECT)
+	assert_true(still_active)
+
+func test_restart_key_is_ignored_in_a_front_end_game() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	var before: GameplayRun = _screen.run
+	FrontEndSession.active = true
+	_key(KEY_R, true)
+	var during: GameplayRun = _screen.run
+	_reset_front_end_session()
+	assert_same(during, before, "R does not restart a front-end level")
+	_key(KEY_R, true)
+	assert_ne(_screen.run, before, "a direct launch still restarts")

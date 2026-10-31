@@ -22,18 +22,26 @@ Terrain movement, collision/deaths, gameplay camera and animation control
 follow the frozen C port's 30 Hz target; see the
 [terrain contract](docs/reference/gameplay/terrain-movement.md).
 
-The game opens on the main menu: choose **Start**, then a level on the 3D stack
+The game opens on the main menu, the scrolling high-score table with **Start**,
+**Options** and **Exit** below it (the top-right **Inspection tools** button opens the
+older start screen): choose **Start**, then a level on the 3D stack
 (Up/Down move, Enter or Space shows the level and then starts it, Escape backs
 out of the picture or, before the first level, to the menu);
 only unlocked levels can be picked, and score, lives and unlocks carry from level
-to level and are saved to `user://progress.cfg`. **Inspection tools** opens the
-older start screen, where a level can be played fresh without the menu. In a level the retail keys apply: arrow keys hop; Return super-hops in the current facing
+to level and are saved to `user://progress.cfg`. When a game ends with a score
+that beats the main table or a level's table, the name-entry page opens: hop the
+frog over the letter lilies with the arrow keys, Enter picks a letter (BACK rubs
+one out, END finishes), then the tour shows the new rows and the scrolling table
+(Escape skips it); scores are saved to `user://high_scores.cfg`. Escape during a
+level returns to the menu without name entry. The older start screen lets a level be played fresh without the menu. In a level the retail keys apply: arrow keys hop; Return super-hops in the current facing
 direction (or skips the current checkpoint bonus stage). Right Ctrl uses the tongue,
 right Shift croaks (the throat swells, in Cave levels the light swells, and the nearest
 baby frog or gold frog within sixteen squares answers), and `'` and `;` turn the
 camera. **Options** on the main menu sets the music and effects volume and, under
-control configuration, rebinds these keys (F1 redefine, F3 key list, Esc back); menu
-images follow your system language, or pass `--language=en|it|de|fr|es`. The inspection
+control configuration, rebinds these keys (F1 redefine, F3 key list, Esc back), and
+**View high scores** shows the level stack (Enter spins a level out to its three
+rows, Left shows the main table, Escape backs out); the main menu scrolls the main
+table behind its buttons. Menu images follow your system language, or pass `--language=en|it|de|fr|es`. The inspection
 tools and sandbox keep their own keys. Space pauses/resumes,
 R restarts, and Escape returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
 **Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.
@@ -59,7 +67,7 @@ launcher replays such files through real key events with per-tick parity checks;
 recording is optional diagnostic material, not a requirement. The HUD uses the player's English retail UI
 assets. The frog's shadow, hop trail, slide, bubble and fire particles, death
 ring, splash, drowning tints and score popups are drawn from the player's
-data; entity particles, pops and glows follow. High scores remain future work. Forest bee swarms are visible gameplay hazards.
+data; entity particles, pops and glows follow. Forest bee swarms are visible gameplay hazards.
 
 ### Audio
 

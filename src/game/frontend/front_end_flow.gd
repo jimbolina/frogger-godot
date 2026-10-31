@@ -3,8 +3,11 @@ extends RefCounted
 ## Pure single-player page transitions after the frozen options page requests, retail order first.
 ##
 ## Each row cites the request it follows. Retail build 71 compiles the continue choice out
-## (tempopt.c:3831-3996), so CONTINUE always moves on; with high scores not yet ported, the
-## name-entry page's no-score exit to the main menu (hsinput.c:222-226) is taken directly.
+## (tempopt.c:3831-3996), so CONTINUE always moves on to name entry, as the ending does.
+## HIGH_SCORE_INPUT leaves at once for the main menu after a pause-menu quit or when nothing
+## qualifies (HighScoreBoard.input_startup), else for HIGH_SCORE_VIEW once initials are entered.
+## HIGH_SCORE_VIEW goes back to the main menu after name entry (BACK or TIMEOUT) and to OPTIONS
+## when the options page opened it (BACK_TO_OPTIONS); the host sends the event that applies.
 ## LEVEL_SELECT accepts BACK only before the first level of a game is chosen
 ## (SELECT.C:2036-2046, Sel_first_time); the host decides when to offer it. The options pages
 ## leave once their fly-off ends (HSView.c:2991); BACK on OPTIONS covers both the back key and
@@ -26,6 +29,12 @@ enum Event {
 	ENDING_DONE,
 	OPTIONS,
 	CONTROLS,
+	ENTERED,
+	NO_HIGH_SCORE,
+	GAME_QUIT,
+	TIMEOUT,
+	VIEW_HIGH_SCORES,
+	BACK_TO_OPTIONS,
 }
 
 ## Page of each transition, parallel to [constant EVENTS] and [constant TO_PAGES].
@@ -48,6 +57,13 @@ const FROM_PAGES: PackedInt32Array = [
 	FrontEndPage.Page.OPTIONS,
 	FrontEndPage.Page.OPTIONS,
 	FrontEndPage.Page.CONTROLS,
+	FrontEndPage.Page.HIGH_SCORE_INPUT,
+	FrontEndPage.Page.HIGH_SCORE_INPUT,
+	FrontEndPage.Page.HIGH_SCORE_INPUT,
+	FrontEndPage.Page.HIGH_SCORE_VIEW,
+	FrontEndPage.Page.HIGH_SCORE_VIEW,
+	FrontEndPage.Page.HIGH_SCORE_VIEW,
+	FrontEndPage.Page.OPTIONS,
 ]
 ## Event of each transition.
 const EVENTS: PackedInt32Array = [
@@ -69,6 +85,13 @@ const EVENTS: PackedInt32Array = [
 	Event.CONTROLS,
 	Event.BACK,
 	Event.BACK,
+	Event.ENTERED,
+	Event.NO_HIGH_SCORE,
+	Event.GAME_QUIT,
+	Event.BACK,
+	Event.TIMEOUT,
+	Event.BACK_TO_OPTIONS,
+	Event.VIEW_HIGH_SCORES,
 ]
 ## Next page of each transition.
 const TO_PAGES: PackedInt32Array = [
@@ -84,12 +107,19 @@ const TO_PAGES: PackedInt32Array = [
 	FrontEndPage.Page.LEVEL_SELECT,
 	FrontEndPage.Page.LEVEL_SELECT,
 	FrontEndPage.Page.CONTINUE,
-	FrontEndPage.Page.MAIN_MENU,
-	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.HIGH_SCORE_INPUT,
+	FrontEndPage.Page.HIGH_SCORE_INPUT,
 	FrontEndPage.Page.OPTIONS,
 	FrontEndPage.Page.CONTROLS,
 	FrontEndPage.Page.MAIN_MENU,
 	FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.HIGH_SCORE_VIEW,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.MAIN_MENU,
+	FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.HIGH_SCORE_VIEW,
 ]
 
 ## The frozen request each transition follows.
@@ -106,12 +136,19 @@ const SOURCES: PackedStringArray = [
 	"tempopt.c:6052-6055 LevelCompleteUpdate count-down without a next level",
 	"tempopt.c:6031-6041 LevelCompleteUpdate triangle",
 	"tempopt.c:4124 and 4131 GameOverUpdate count-down or fire",
-	"tempopt.c:3993 ContinueUpdate, hsinput.c:222-226 no score to enter",
-	"credits.c:882 CreditsUpdate, hsinput.c:222-226 no score to enter",
+	"tempopt.c:3993 ContinueUpdate",
+	"credits.c:882 CreditsUpdate",
 	"tempopt.c:1950 MainOptionsUpdate OPTIONS, after the fly-off",
 	"tempopt.c:4833 OptionsUpdate fire on controller config, after the fly-off",
 	"tempopt.c:4662 OptionsUpdate triangle, start or retail Escape; tempopt.c:4782 fire on exit",
 	"tempopt.c:5744 ChooseWINControllerUpdate; retail page 25 shuts down toward the options camera (KF-482)",
+	"hsinput.c:538 HighScoreInputUpdate once every frog has entered its initials",
+	"hsinput.c:224 HighScoreInputStartup, no qualifying score or arcade time",
+	"hsinput.c:191 HighScoreInputStartup after a pause-menu quit",
+	"HSView.c:868 HSViewUpdate triangle after name entry",
+	"HSView.c:928 scrolly count-down after name entry; HSView.c:1072 level tables shown without a main-table score",
+	"HSView.c:1463 level tables triangle or start from options; HSView.c:912 scrolly triangle from options",
+	"tempopt.c:4801 OptionsUpdate fire on view high scores",
 ]
 
 

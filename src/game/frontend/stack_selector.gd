@@ -309,7 +309,7 @@ func step(buttons: Buttons) -> Array[Event]:
 	var events: Array[Event] = []
 	if _finished or row_count() == 0:
 		return events
-	_update_slide()
+	update_slide()
 	match _mode:
 		Mode.SELECTING:
 			if _glow_enabled:
@@ -332,7 +332,8 @@ func _name_width() -> int:
 	return _name_widths[_work_row]
 
 
-func _update_slide() -> void:
+## SelectUpdateLevelSlide: slides the rows in view out and the others back, and picks the glowy row.
+func update_slide() -> void:
 	var viewed_y: int = _camera_frame_y - StackLayout.CAMERA_Y_OFFSET
 	_glowy_row = _work_row
 	var max_z: int = _current_z[_work_row]
@@ -367,55 +368,76 @@ func _update_glow() -> void:
 
 
 func _update_selecting(buttons: Buttons, events: Array[Event]) -> void:
+	var reached: bool = advance_camera()
+	if _camera_flag & CAMERA_STATIONARY != 0:
+		if buttons.down_held:
+			if start_travel(1):
+				events.append(Event.new(EventKind.HOP))
+				reached = false
+		elif buttons.up_held:
+			if start_travel(-1):
+				events.append(Event.new(EventKind.HOP))
+				reached = false
+		elif buttons.go_pressed:
+			if _current_z[_work_row] == SLIDE_DIST:
+				events.append(Event.new(EventKind.HOP))
+				spin_out()
+				return
+		elif _first_time and buttons.back_pressed:
+			events.append(Event.new(EventKind.BACK))
+			_finished = true
+	continue_travel(buttons.down_held, buttons.up_held, reached)
+
+
+## The camera half of a selecting tick (SELECT.C:1916-1940): applies the acceleration and velocity
+## and returns whether the target was reached. [param mark_glow] darkens the glow on arrival, as
+## SelectUpdate_MODE_SELECTING does; the high-score view's copy leaves it.
+func advance_camera(mark_glow: bool = true) -> bool:
 	_camera_vel = clampi(_camera_vel + _camera_acc, -CAMERA_MAX_VEL, CAMERA_MAX_VEL)
 	_camera_y += _camera_vel
 	var reached: bool = false
 	if _camera_flag & CAMERA_GOING_DOWN != 0:
 		if _camera_frame_y <= _target_y and _camera_y >= _target_y:
 			reached = true
-			_glow = DARK_COLOUR
+			if mark_glow:
+				_glow = DARK_COLOUR
 	elif _camera_flag & CAMERA_GOING_UP != 0:
 		if _camera_frame_y >= _target_y and _camera_y <= _target_y:
 			reached = true
-			_glow = DARK_COLOUR
+			if mark_glow:
+				_glow = DARK_COLOUR
 	elif _camera_flag == CAMERA_STATIONARY:
 		reached = true
 	_camera_frame_y = _camera_y
-	if _camera_flag & CAMERA_STATIONARY != 0:
-		if buttons.down_held:
-			if _find_target(1):
-				events.append(Event.new(EventKind.HOP))
-				_camera_flag = CAMERA_GOING_DOWN
-				_camera_acc = CAMERA_ACC
-				reached = false
-		elif buttons.up_held:
-			if _find_target(-1):
-				events.append(Event.new(EventKind.HOP))
-				_camera_flag = CAMERA_GOING_UP
-				_camera_acc = -CAMERA_ACC
-				reached = false
-		elif buttons.go_pressed:
-			if _current_z[_work_row] == SLIDE_DIST:
-				events.append(Event.new(EventKind.HOP))
-				_mode = Mode.SHOW_LEVEL_INFO
-				_enable_spin()
-				return
-		elif _first_time and buttons.back_pressed:
-			events.append(Event.new(EventKind.BACK))
-			_finished = true
+	return reached
+
+
+## Starts moving towards the next selectable row in [param direction] (+1 down, -1 up); false and
+## no change when there is none.
+func start_travel(direction: int) -> bool:
+	if not find_target(direction):
+		return false
+	_camera_flag = CAMERA_GOING_DOWN if direction > 0 else CAMERA_GOING_UP
+	_camera_acc = CAMERA_ACC if direction > 0 else -CAMERA_ACC
+	return true
+
+
+## The tail of a selecting tick (SELECT.C:2054-2100): keeps chaining while the direction is held,
+## stops on release, and snaps to the target once stopping and [param reached].
+func continue_travel(down_held: bool, up_held: bool, reached: bool) -> void:
 	if _camera_flag == CAMERA_GOING_DOWN:
-		if not buttons.down_held:
+		if not down_held:
 			_camera_flag |= CAMERA_STOPPING
 		elif reached:
-			if _find_target(1):
+			if find_target(1):
 				reached = false
 			else:
 				_camera_flag |= CAMERA_STOPPING
 	if _camera_flag == CAMERA_GOING_UP:
-		if not buttons.up_held:
+		if not up_held:
 			_camera_flag |= CAMERA_STOPPING
 		elif reached:
-			if _find_target(-1):
+			if find_target(-1):
 				reached = false
 			else:
 				_camera_flag |= CAMERA_STOPPING
@@ -427,7 +449,9 @@ func _update_selecting(buttons: Buttons, events: Array[Event]) -> void:
 		_camera_frame_y = _camera_y
 
 
-func _find_target(direction: int) -> bool:
+## SelectFindTarget: focuses the next selectable row in [param direction] (+1 down, -1 up) and
+## aims the camera at it; false when the stack ends first.
+func find_target(direction: int) -> bool:
 	var row: int = _work_row + direction
 	while row >= 0 and row < row_count():
 		if _flags(row) & LevelProgress.SELECTABLE != 0:
@@ -436,6 +460,30 @@ func _find_target(direction: int) -> bool:
 			return true
 		row += direction
 	return false
+
+
+## Moves the camera [param distance] down towards the target without easing (the automatic
+## high-score tour, HSView.c:1093-1098); false once the camera is at or past the target.
+func creep_camera(distance: int) -> bool:
+	if _target_y <= _camera_y:
+		return false
+	_camera_y += distance
+	_camera_frame_y = _camera_y
+	return true
+
+
+## Spins the focused row out to the info position (SHOW_LEVEL_INFO with SelectEnableSpinMOF).
+## [param slide_out] first sets the row fully out, as the automatic high-score tour does.
+func spin_out(slide_out: bool = false) -> void:
+	if slide_out:
+		_current_z[_work_row] = SLIDE_DIST
+	_mode = Mode.SHOW_LEVEL_INFO
+	_enable_spin()
+
+
+## Starts the spin back into the stack (SEL_SPIN_IN).
+func spin_in() -> void:
+	_spin_mode = SPIN_IN
 
 
 func _enable_spin() -> void:
@@ -451,31 +499,41 @@ func _enable_spin() -> void:
 
 
 func _update_show_info(buttons: Buttons, events: Array[Event]) -> void:
-	if _spin_mode == SPIN_OUT or _spin_mode == SPIN_IN:
-		_interpolate_spin()
-		if _spin_mode == SPIN_OUT:
-			_spin_time += 1
-			if _spin_time > SPIN_TIME:
-				_spin_time = SPIN_TIME
-				_spin_mode = SPIN_HOLD
-		else:
-			_spin_time -= 1
-			if _spin_time < 0:
-				_mode = Mode.SELECTING
-				_spin_row = -1
-		var local_y: Vector3i = StackLayout.normalise(_spin_vec_y)
-		var local_x: Vector3i = StackLayout.normalise(StackLayout.outer12(local_y, _spin_vec_roll))
-		var local_z: Vector3i = StackLayout.outer12(local_x, local_y)
-		_spin_axes = [_s16_vector(local_x), _s16_vector(local_y), _s16_vector(local_z)]
-		_title_x = _panel_x + (StackLayout.STATUS_WIDTH >> 1) - (_name_width() >> 1)
-	elif buttons.back_pressed:
+	if advance_spin():
+		return
+	if buttons.back_pressed:
 		events.append(Event.new(EventKind.HOP))
-		_spin_mode = SPIN_IN
+		spin_in()
 	elif buttons.go_pressed:
 		events.append(Event.new(EventKind.CROAK))
 		_mode = Mode.START_FADE
 		_fade_count = 0
 		_first_time = false
+
+
+## One spin step while spinning out or in (SELECT.C:2296-2352): interpolates the box, panel and
+## title, holds at the end of the way out and returns to SELECTING at the end of the way in.
+## False, changing nothing, while held or before a spin.
+func advance_spin() -> bool:
+	if _spin_mode != SPIN_OUT and _spin_mode != SPIN_IN:
+		return false
+	_interpolate_spin()
+	if _spin_mode == SPIN_OUT:
+		_spin_time += 1
+		if _spin_time > SPIN_TIME:
+			_spin_time = SPIN_TIME
+			_spin_mode = SPIN_HOLD
+	else:
+		_spin_time -= 1
+		if _spin_time < 0:
+			_mode = Mode.SELECTING
+			_spin_row = -1
+	var local_y: Vector3i = StackLayout.normalise(_spin_vec_y)
+	var local_x: Vector3i = StackLayout.normalise(StackLayout.outer12(local_y, _spin_vec_roll))
+	var local_z: Vector3i = StackLayout.outer12(local_x, local_y)
+	_spin_axes = [_s16_vector(local_x), _s16_vector(local_y), _s16_vector(local_z)]
+	_title_x = _panel_x + (StackLayout.STATUS_WIDTH >> 1) - (_name_width() >> 1)
+	return true
 
 
 func _interpolate_spin() -> void:

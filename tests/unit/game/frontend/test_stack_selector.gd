@@ -247,3 +247,56 @@ func test_glow_disabled_keeps_creation_tints() -> void:
 	assert_eq(selector.tint(ORG1_ROW), StackSelector.DARK_COLOUR)
 	assert_eq(selector.tint(15), StackSelector.DARK_COLOUR, "SelectCreateMOF only lights completed rows")
 	assert_eq(StackSelector.creation_tint(LevelProgress.COMPLETED), StackSelector.LIGHT_COLOUR)
+
+
+func test_find_target_and_creep_camera() -> void:
+	var selector: StackSelector = _selector()
+	assert_true(selector.find_target(1))
+	assert_eq(selector.focused_row, SUB1_ROW)
+	assert_eq(selector.target_y, SUB1_CAMERA)
+	assert_eq(selector.camera_y, ORG1_CAMERA, "SelectFindTarget only aims the camera")
+	assert_true(selector.creep_camera(20))
+	assert_eq(selector.camera_y, ORG1_CAMERA + 20)
+	for _tick: int in 30:
+		selector.creep_camera(20)
+	assert_eq(selector.camera_y, ORG1_CAMERA + 480, "the camera stops at or past the target")
+	assert_false(selector.creep_camera(20))
+	assert_true(selector.find_target(-1))
+	assert_false(selector.find_target(-1), "nothing above ORIGINAL1")
+	assert_eq(selector.focused_row, ORG1_ROW)
+
+
+func test_spin_out_with_slide_out_and_spin_in() -> void:
+	var selector: StackSelector = _selector()
+	selector.update_slide()
+	selector.spin_out(true)
+	assert_eq(selector.current_z(ORG1_ROW), StackSelector.SLIDE_DIST)
+	assert_eq(selector.mode, StackSelector.Mode.SHOW_LEVEL_INFO)
+	assert_true(selector.spin_visible())
+	for _tick: int in 11:
+		assert_true(selector.advance_spin())
+	assert_eq(selector.spin_mode, StackSelector.SPIN_HOLD)
+	assert_false(selector.advance_spin(), "nothing moves while held")
+	selector.spin_in()
+	for _tick: int in 11:
+		assert_true(selector.advance_spin())
+	assert_eq(selector.mode, StackSelector.Mode.SELECTING)
+	assert_false(selector.spin_visible())
+
+
+func test_travel_pieces_match_a_held_down_tick() -> void:
+	var selector: StackSelector = _selector()
+	var reached: bool = selector.advance_camera(false)
+	assert_true(reached, "a stationary camera has arrived")
+	assert_true(selector.start_travel(1))
+	assert_eq(selector.camera_flag, StackSelector.CAMERA_GOING_DOWN)
+	assert_eq(selector.camera_acceleration, StackSelector.CAMERA_ACC)
+	selector.continue_travel(false, false, false)
+	assert_eq(selector.camera_flag, StackSelector.CAMERA_GOING_DOWN | StackSelector.CAMERA_STOPPING,
+		"releasing DOWN stops at the next target")
+	var glow: int = selector.glow_value
+	while selector.camera_flag != StackSelector.CAMERA_STATIONARY:
+		selector.update_slide()
+		selector.continue_travel(false, false, selector.advance_camera(false))
+	assert_eq(selector.camera_y, SUB1_CAMERA)
+	assert_eq(selector.glow_value, glow, "the high-score view's copy leaves the glow")

@@ -213,6 +213,21 @@
    "name": "opt_arrow_small_right",
    "localized": [null, null, null, null],
    "shared": true
+  },
+  {
+   "name": "select3",
+   "localized": ["select3_i", "select3_g", "select3_f", "select3_s"],
+   "shared": false
+  },
+  {
+   "name": "skip_hi_score",
+   "localized": ["skip_hi_score_i", "skip_hi_score_g", "skip_hi_score_f", "skip_hi_score_s"],
+   "shared": false
+  },
+  {
+   "name": "opt_arrow",
+   "localized": [null, null, null, null],
+   "shared": true
   }
  ]
 }

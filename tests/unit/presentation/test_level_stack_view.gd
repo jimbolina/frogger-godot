@@ -150,3 +150,61 @@ func _key(keycode: Key, pressed: bool) -> InputEventKey:
 	event.physical_keycode = keycode
 	event.pressed = pressed
 	return event
+
+
+func test_high_score_checker_scrolls_as_the_layout_golden_records() -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/frontend_stack_layout.json"))
+	var document: Dictionary = parsed
+	var facts: Dictionary = document["high_score_background"]
+	var tiles: Array = facts["tiles"]
+	var size: Array = facts["tile_size"]
+	assert_eq(LevelStackView.BACKGROUND_TILES, Vector2i(_number(tiles[0]), _number(tiles[1])))
+	assert_eq(LevelStackView.BACKGROUND_TILE_SIZE, Vector2i(_number(size[0]), _number(size[1])))
+	assert_eq(LevelStackView.BACKGROUND_PERIOD, _number(facts["counter_period"]))
+	var colour: Array = facts["colour"]
+	assert_eq(LevelStackView.BACKGROUND_TINT, _number(colour[0]))
+	var pairs: Array = facts["texture_pairs"]
+	for pair: int in pairs.size():
+		var names: Array = pairs[pair]
+		for side: int in 2:
+			var name_text: String = names[side]
+			assert_eq("im_" + LevelStackView.BACKGROUND_PAIRS[pair * 2 + side], name_text)
+	var sequence: Array = facts["counter_sequence"]
+	var near: Array = facts["offset_left_or_up"]
+	var far: Array = facts["offset_right_or_down"]
+	for index: int in sequence.size():
+		var counter: int = _number(sequence[index])
+		var left_up: Array = near[index]
+		var right_down: Array = far[index]
+		assert_eq(LevelStackView.background_offset(counter, LevelStackView.BACKGROUND_TILE_SIZE.x, true), _number(left_up[0]), "counter %d" % counter)
+		assert_eq(LevelStackView.background_offset(counter, LevelStackView.BACKGROUND_TILE_SIZE.y, true), _number(left_up[1]))
+		assert_eq(LevelStackView.background_offset(counter, LevelStackView.BACKGROUND_TILE_SIZE.x, false), _number(right_down[0]))
+		assert_eq(LevelStackView.background_offset(counter, LevelStackView.BACKGROUND_TILE_SIZE.y, false), _number(right_down[1]))
+
+
+func test_score_mode_draws_the_tour_selector_without_input() -> void:
+	var stack: LevelStack = StackLayoutTest.retail_stack()
+	var progress: LevelProgress = LevelProgress.create(stack)
+	var selector: StackSelector = StackSelector.create(StackLayout.create(stack), progress, ORG1, true, PackedInt32Array(), false)
+	var none: Array[HighScoreRow] = []
+	var random := RandomNumberGenerator.new()
+	random.seed = 7
+	var view: LevelStackView = LevelStackView.create_for_scores(FrontEndAssets.new(), stack, progress, selector,
+		HighScoreBoard.create(none, none), random)
+	autofree(view)
+	assert_true(view.score_mode)
+	assert_eq(view.selector, selector)
+	view._unhandled_key_input(_key(KEY_DOWN, true))
+	assert_false(view.sample_buttons().down_held, "the tour reads the keys, not the stack")
+	view.follow("skip_hi_score", false, -1, 12)
+	assert_false(view.panel.title.visible)
+	assert_eq(view.panel.score_lines(), PackedStringArray())
+	view.follow("select3", true, ORG1, 13)
+	view.render(1.0)
+	assert_true(view.panel.title.visible)
+	assert_eq(view.panel.score_lines().size(), 3, "the shown level's three rows")
+
+
+static func _number(value: Variant) -> int:
+	var number: float = value
+	return int(number)

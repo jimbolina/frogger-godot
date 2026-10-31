@@ -3,7 +3,10 @@ extends RefCounted
 ## One game across the front-end pages: unlock progress, saved options and the values carried between levels.
 ##
 ## The options (volumes, key bindings and language setting) are read from the store with the
-## progress and written back by [method save].
+## progress and written back by [method save]. The high-score tables come from the port's own
+## high-score file, else from the executable's default tables; they are loaded once and kept with
+## the run's recorded levels across the game and front-end scenes, and written by
+## [method save_scores] after initials are entered and when a game ends (retail saves at GameEnd).
 
 ## Whether a game started from the front end is under way; direct level launches leave it false.
 static var active: bool = false
@@ -34,6 +37,14 @@ static var bindings: KeyBindings = KeyBindings.create_default()
 static var language: int = GameLanguage.AUTO
 ## Problems found while loading, shown in the menu.
 static var diagnostics: PackedStringArray = PackedStringArray()
+## The high-score tables and the run's recorded levels, or null before loading.
+static var board: HighScoreBoard = null
+## Where the high-score tables are read and written.
+static var scores_store_path: String = HighScoreStore.DEFAULT_PATH
+## The score the last game ended on, checked by the name-entry page.
+static var final_score: int = 0
+## True when the last game was quit from the game rather than played out.
+static var game_quit: bool = false
 
 
 ## Builds the stack and the saved progress from the executable's level-select table.
@@ -49,6 +60,7 @@ static func load_progress(data: GameData) -> String:
 	read_options(store)
 	if not bindings.error.is_empty():
 		diagnostics.append(bindings.error)
+	load_scores(data)
 	if store.level_flags.is_empty():
 		progress = LevelProgress.create(stack)
 	else:
@@ -60,6 +72,66 @@ static func load_progress(data: GameData) -> String:
 			LevelProgressSetup.GOLD_FROGS_KEY: store.gold_frogs,
 		}, diagnostics)
 	return ""
+
+
+## Builds [member board] once: from the high-score file when it is present, else from
+## [param data]'s default tables, else empty with a diagnostic. A board already built is kept.
+static func load_scores(data: GameData) -> void:
+	if board != null:
+		return
+	var saved: HighScoreStore = HighScoreStore.load_from(scores_store_path)
+	if not saved.error.is_empty():
+		diagnostics.append(saved.error)
+	if saved.present:
+		board = HighScoreBoard.create(rows_of(saved.main_initials, saved.main_scores, saved.main_times),
+			rows_of(saved.level_initials, saved.level_scores, saved.level_times))
+		return
+	var table: HighScoreTable = data.tables.high_scores() if data != null and data.tables != null else null
+	if table != null and table.error.is_empty():
+		board = HighScoreBoard.create(rows_of(table.main_initials, table.main_scores, table.main_times),
+			rows_of(table.level_initials, table.level_scores, table.level_times))
+		return
+	diagnostics.append("High scores are unavailable (%s); the tables start empty" % (table.error if table != null else "no tables"))
+	var none: Array[HighScoreRow] = []
+	board = HighScoreBoard.create(none, none)
+
+
+## Rows from parallel [param initials], [param scores] and five [param times] per row.
+static func rows_of(initials: PackedStringArray, scores: PackedInt32Array, times: PackedInt32Array) -> Array[HighScoreRow]:
+	var result: Array[HighScoreRow] = []
+	for index: int in mini(initials.size(), scores.size()):
+		var start: int = index * HighScoreRow.CHECKPOINT_COUNT
+		result.append(HighScoreRow.create(initials[index], scores[index], times.slice(start, start + HighScoreRow.CHECKPOINT_COUNT)))
+	return result
+
+
+## Writes [member board]'s tables to the high-score file; returns the problem or "".
+static func save_scores() -> String:
+	if board == null:
+		return ""
+	var saved := HighScoreStore.new()
+	for row: HighScoreRow in board.main:
+		saved.main_initials.append(row.initials)
+		saved.main_scores.append(row.score)
+		saved.main_times.append_array(row.times)
+	for row: HighScoreRow in board.levels:
+		saved.level_initials.append(row.initials)
+		saved.level_scores.append(row.score)
+		saved.level_times.append_array(row.times)
+	return saved.save(scores_store_path)
+
+
+## Records a completed [param level_number] with [param level_score] and the level's
+## [param checkpoint_ticks] for the run (gamesys.C:2733-2766).
+static func record_level(level_number: int, level_score: int, checkpoint_ticks: PackedInt32Array) -> void:
+	if board != null:
+		board.record_level(level_number, level_score, checkpoint_ticks)
+
+
+## Records the jungle statue's [param level_score] with zero times (gamesys.C:3493-3513).
+static func record_jungle_statue(level_score: int) -> void:
+	if board != null:
+		board.record_jungle_statue(level_score)
 
 
 ## Copies the volumes, bindings and language setting from [param from_store].
@@ -85,13 +157,32 @@ static func begin_game() -> void:
 	old_score = 0
 	life_bonus_score = 10000
 	level = -1
+	final_score = 0
+	game_quit = false
+	if board != null:
+		board.reset_run()
 
 
-## Ends the game and returns to the main menu on the next front-end scene.
-static func end_game() -> void:
+## Ends the game on [param ending_score]: the next front-end scene opens name entry, which leaves
+## at once when [param quit] (a quit from the game) or nothing qualifies. Saves the high scores;
+## returns the problem or "".
+static func end_game(quit: bool, ending_score: int) -> String:
 	active = false
 	level = -1
-	start_page = FrontEndPage.Page.MAIN_MENU
+	final_score = ending_score
+	game_quit = quit
+	start_page = FrontEndPage.Page.HIGH_SCORE_INPUT
+	return save_scores()
+
+
+## Clears the name-entry request once the entry page has read [member start_page],
+## [member final_score] and [member game_quit], so opening the front end again cannot enter the
+## same score twice.
+static func consume_entry_request() -> void:
+	if start_page == FrontEndPage.Page.HIGH_SCORE_INPUT:
+		start_page = FrontEndPage.Page.MAIN_MENU
+	final_score = 0
+	game_quit = false
 
 
 ## Writes the progress and options; returns the problem or "".

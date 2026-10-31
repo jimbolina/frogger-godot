@@ -64,3 +64,21 @@ func test_menu_driven_moves_follow_the_menu_timer_and_stop_at_zero() -> void:
 	assert_eq(rig.target, OptionsCamera.OPTIONS_TARGET)
 	rig.move(OptionsMenu.Camera.CONTROLS, 0)
 	assert_eq(rig.source, OptionsCamera.OPTIONS_SOURCE, "a zero timer does not move")
+
+
+func test_high_score_presets_snap_and_the_scrolly_follow_keeps_x_and_y() -> void:
+	var rig := OptionsCamera.new()
+	rig.aim(OptionsMenu.Camera.OPTIONS, OptionsMenu.CAMERA_MOVE_TIME)
+	rig.snap(OptionsCamera.HS_STATIC)
+	assert_eq(rig.timer, 0)
+	assert_eq(rig.source, Vector3i(0, -3200, -200))
+	assert_eq(rig.target, Vector3i(0, 1024, 50))
+	rig.snap(OptionsCamera.HS_INPUT)
+	assert_eq(rig.source, HighScoreEntry.CAMERA_SOURCE)
+	assert_eq(rig.target, HighScoreEntry.CAMERA_TARGET)
+	rig.snap(OptionsMenu.Camera.MAIN)
+	rig.follow_z(-1000, -520)
+	assert_eq(rig.source, Vector3i(MenuWaterView.MAIN_SOURCE.x, MenuWaterView.MAIN_SOURCE.y, -1000))
+	assert_eq(rig.target, Vector3i(MenuWaterView.MAIN_TARGET.x, MenuWaterView.MAIN_TARGET.y, -520))
+	rig.tick()
+	assert_eq(rig.source.z, -1000, "a camera at rest stays where the follow put it")

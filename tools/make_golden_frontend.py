@@ -76,8 +76,11 @@ FLOW = [
     ('HIGH_SCORE_INPUT', 'entered', 'HIGH_SCORE_VIEW', LATER_SCORES, 'hsinput.c:538', None),
     ('HIGH_SCORE_VIEW', 'back', 'MAIN_OPTIONS', LATER_SCORES, 'HSView.c:868', None),
     ('HIGH_SCORE_VIEW', 'timeout', 'MAIN_OPTIONS', LATER_SCORES, 'HSView.c:928', None),
+    ('HIGH_SCORE_VIEW', 'levels_shown', 'MAIN_OPTIONS', LATER_SCORES, 'HSView.c:1072', None),
+    ('HIGH_SCORE_VIEW', 'back_to_options', 'OPTIONS', LATER_SCORES, 'HSView.c:1463', None),
+    ('HIGH_SCORE_VIEW', 'back_to_options_from_scores', 'OPTIONS', LATER_SCORES, 'HSView.c:912', None),
     ('OUTRO', 'finished', 'CREDITS', LATER_FMV, 'tempopt.c:4252', None),
-    ('CREDITS', 'finished', 'HIGH_SCORE_INPUT', LATER_FMV, 'credits.c:882', None),
+    ('CREDITS', 'finished', 'HIGH_SCORE_INPUT', LATER_SCORES, 'credits.c:882', None),
 ]
 RETAIL_NOTES = {
     'HASBRO_LOGO': 'KF-288: retail HasbroLogoUpdate requests the language page, never INTRO',

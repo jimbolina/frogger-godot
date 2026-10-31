@@ -25,6 +25,9 @@
 0	opt_keyboard	opt_keyboard	1793	OPT_VRAM.VLO
 0	opt_arrow_small_left	opt_arrow_small_left	1034	OPT_VRAM.VLO
 0	opt_arrow_small_right	opt_arrow_small_right	1033	OPT_VRAM.VLO
+0	select3	select3	1125	OPTE_RAM.VLO
+0	skip_hi_score	skip_hi_score	806	OPTE_RAM.VLO
+0	opt_arrow	opt_arrow	311	OPTE_RAM.VLO
 1	opt_start	opti_start	562	FIXI_VRAM.VLO
 1	opt_options	opti_options	560	FIXI_VRAM.VLO
 1	opt_exit	opti_exit	591	FIXI_VRAM.VLO
@@ -50,6 +53,9 @@
 1	opt_keyboard	opt_keyboard	1793	OPT_VRAM.VLO
 1	opt_arrow_small_left	opt_arrow_small_left	1034	OPT_VRAM.VLO
 1	opt_arrow_small_right	opt_arrow_small_right	1033	OPT_VRAM.VLO
+1	select3	select3_i	1128	OPTI_RAM.VLO
+1	skip_hi_score	skip_hi_score_i	593	OPTI_RAM.VLO
+1	opt_arrow	opt_arrow	311	OPTI_RAM.VLO
 2	opt_start	optg_start	559	FIXG_VRAM.VLO
 2	opt_options	optg_options	557	FIXG_VRAM.VLO
 2	opt_exit	optg_exit	586	FIXG_VRAM.VLO
@@ -75,6 +81,9 @@
 2	opt_keyboard	opt_keyboard	1793	OPT_VRAM.VLO
 2	opt_arrow_small_left	opt_arrow_small_left	1034	OPT_VRAM.VLO
 2	opt_arrow_small_right	opt_arrow_small_right	1033	OPT_VRAM.VLO
+2	select3	select3_g	1127	OPTG_RAM.VLO
+2	skip_hi_score	skip_hi_score_g	588	OPTG_RAM.VLO
+2	opt_arrow	opt_arrow	311	OPTG_RAM.VLO
 3	opt_start	optf_start	556	FIXF_VRAM.VLO
 3	opt_options	optf_options	565	FIXF_VRAM.VLO
 3	opt_exit	optf_exit	582	FIXF_VRAM.VLO
@@ -100,6 +109,9 @@
 3	opt_keyboard	opt_keyboard	1793	OPT_VRAM.VLO
 3	opt_arrow_small_left	opt_arrow_small_left	1034	OPT_VRAM.VLO
 3	opt_arrow_small_right	opt_arrow_small_right	1033	OPT_VRAM.VLO
+3	select3	select3_f	1126	OPTF_RAM.VLO
+3	skip_hi_score	skip_hi_score_f	576	OPTF_RAM.VLO
+3	opt_arrow	opt_arrow	311	OPTF_RAM.VLO
 4	opt_start	opts_start	554	FIXS_VRAM.VLO
 4	opt_options	opts_options	563	FIXS_VRAM.VLO
 4	opt_exit	opts_exit	596	FIXS_VRAM.VLO
@@ -125,3 +137,6 @@
 4	opt_keyboard	opt_keyboard	1793	OPT_VRAM.VLO
 4	opt_arrow_small_left	opt_arrow_small_left	1034	OPT_VRAM.VLO
 4	opt_arrow_small_right	opt_arrow_small_right	1033	OPT_VRAM.VLO
+4	select3	select3_s	1129	OPTS_RAM.VLO
+4	skip_hi_score	skip_hi_score_s	598	OPTS_RAM.VLO
+4	opt_arrow	opt_arrow	311	OPTS_RAM.VLO

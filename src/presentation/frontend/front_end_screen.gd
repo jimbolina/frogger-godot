@@ -1,7 +1,7 @@
 class_name FrontEndScreen
 extends Control
-## Single-player main menu, options and controller pages and 3D level-select stack driven by
-## [FrontEndFlow], drawn from the player's menu images in the chosen language.
+## Single-player main menu, options and controller pages, 3D level-select stack and high-score
+## pages driven by [FrontEndFlow], drawn from the player's menu images in the chosen language.
 ##
 ## The pages play the generic menu sounds unless audio is turned off, at the saved effects
 ## volume; the saved music volume sets the music bus. Every page draws the front-end water: the
@@ -10,6 +10,13 @@ extends Control
 ## pages, and a camera sweep begun on one options page continues on the next. The language is
 ## the saved setting or, when it follows the locale, the operating system's; [code]--language=[/code]
 ## with en, it, de, fr or es overrides it for the session without saving.
+##
+## The main menu runs the scrolly high-score table behind its buttons, the camera's Z following
+## the frog once any sweep has ended. A finished game opens name entry, which leaves at once when
+## nothing qualifies or the game was quit; entered initials go into the main and level tables,
+## are saved and lead to the high-score view's tour. The options page's high-score row opens the
+## view by hand. The high-score pages use their own static cameras; leaving them places the shared
+## camera on the main or options preset.
 
 ## The front-end scene.
 const SCENE: String = "res://scenes/front_end.tscn"
@@ -19,6 +26,14 @@ const TOOLS_SCENE: String = "res://scenes/boot.tscn"
 const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 ## Side margin of the page content.
 const MARGIN: int = 24
+## Main-menu sprite rows: the first sits MAIN_MENU_Y_OFFSET above the bottom once the fly-on has
+## lifted it 8 a tick for 10 ticks (tempopt.c:1222-1226, :1486-1488); the rows are 16 apart.
+const MENU_ROW_Y: int = StackLayout.DISPLAY_HEIGHT - 80
+const MENU_ROW_PITCH: int = 16
+const MENU_SLIDE: int = 8
+## The cloud poly's border around the widest sprite and its subtractive colour (tempopt.c:1237-1266).
+const CLOUD_BORDER: int = 8
+const CLOUD_COLOUR: Color = Color(0.25, 0.25, 0.25)
 ## CD track played on the menu pages (LEVEL_SELECT in the music table).
 const MENU_TRACK: int = 13
 ## Colour behind the messages shown when the player's files cannot be used.
@@ -31,6 +46,13 @@ const CROAK_SOUND: String = "GEN_FROG_CROAK"
 const SPLASH_SOUND: String = "GEN_SPLASH01"
 ## FrogLord name of the repeating croak that tests the effects volume.
 const TEST_SOUND: String = "GEN_FROG_CROAK_REPEAT"
+## FrogLord names of the name-entry page's rub-out and end sounds.
+const GULP_SOUND: String = "GEN_FROG_FLY_GULP"
+const EXPLODE_SOUND: String = "GEN_FROG_EXPLODE"
+## Sound of each [enum HighScoreEntry.EventKind], or "" for none.
+const ENTRY_SOUNDS: PackedStringArray = [HOP_SOUND, SPLASH_SOUND, CROAK_SOUND, GULP_SOUND, EXPLODE_SOUND, "", "", ""]
+## Sound of each [enum HighScoreTour.EventKind], or "" for none.
+const TOUR_SOUNDS: PackedStringArray = [HOP_SOUND, CROAK_SOUND, SPLASH_SOUND, "", "", "", "", "", "", ""]
 ## Command-line argument choosing the language for the session.
 const LANGUAGE_ARGUMENT: String = "--language="
 ## Sound of each [enum OptionsMenu.EventKind], or "" for none.
@@ -48,6 +70,10 @@ var camera_rig: OptionsCamera = OptionsCamera.new()
 var _background: ColorRect
 var _content: Control
 var _first_focus: Control
+## The main menu's sprites top to bottom, slid by the scrolly table's fly-on.
+var _menu_sprites: Array[TextureButton] = []
+## False until the menu's first sprite has taken focus, so only later moves hop.
+var _menu_focused: bool = false
 var _music: MusicPlayer
 var _sounds: Dictionary[String, AudioStreamPlayer] = {}
 var _sound_definitions: Dictionary[String, LogicalSoundDefinition] = {}
@@ -56,6 +82,15 @@ var _options: OptionsView
 var _controls: ControlsView
 var _options_row: int = OptionsMenu.Row.EXIT
 var _camera_elapsed: float = 0.0
+var _camera_before_source: Vector3i = MenuWaterView.MAIN_SOURCE
+var _camera_before_target: Vector3i = MenuWaterView.MAIN_TARGET
+var _entry: HighScoreEntryView
+var _table: HighScoreTableView
+var _scores_from_options: bool = false
+var _entry_score: int = 0
+## The main menu's scrolly high-score table and its drawing, while the main menu shows.
+var menu_scores: HighScoreScene
+var menu_scores_view: HighScoreSceneView
 
 
 func _ready() -> void:
@@ -117,20 +152,58 @@ static func session_language(arguments: PackedStringArray) -> int:
 
 
 func _process(delta: float) -> void:
-	if page != FrontEndPage.Page.MAIN_MENU or _main_water == null or camera_rig.timer == 0:
+	if page != FrontEndPage.Page.MAIN_MENU or _main_water == null:
 		return
 	_camera_elapsed += delta
 	if _camera_elapsed >= MenuWaterView.PERIOD:
 		_camera_elapsed = 0.0 if _camera_elapsed > MenuWaterView.PERIOD * 2.0 else _camera_elapsed - MenuWaterView.PERIOD
+		tick_main_menu()
+	_draw_main_menu(_camera_elapsed / MenuWaterView.PERIOD)
+
+
+## Runs one main-menu tick: the water, any camera sweep, the scrolly table and its sounds, then
+## the camera's follow of the frog.
+func tick_main_menu() -> void:
+	if _main_water == null:
+		return
+	_camera_before_source = camera_rig.source
+	_camera_before_target = camera_rig.target
+	_main_water.tick()
+	if camera_rig.timer != 0:
 		camera_rig.tick()
-		_main_water.camera.transform = camera_rig.transform()
+	if menu_scores != null:
+		for kind: int in menu_scores.tick(water, true):
+			_play_sound(TOUR_SOUNDS[kind])
+		menu_scores_view.step()
+		if camera_rig.timer == 0 and menu_scores.camera_followed:
+			camera_rig.follow_z(menu_scores.camera_source_z, menu_scores.camera_target_z)
+		_place_menu_sprites()
+	_draw_main_menu(0.0)
+
+
+## Draws the main menu [param fraction] of the way from the previous tick to the last one, the
+## camera blended between the two ticks' eye and target as [OptionsView] blends its frames.
+func _draw_main_menu(fraction: float) -> void:
+	var weight: float = clampf(fraction, 0.0, 1.0)
+	var source := Vector3i(Vector3(_camera_before_source).lerp(Vector3(camera_rig.source), weight).round())
+	var target := Vector3i(Vector3(_camera_before_target).lerp(Vector3(camera_rig.target), weight).round())
+	_main_water.camera.transform = MenuWaterView.camera_transform(source, target)
+	_main_water.render(weight)
+	if menu_scores_view != null:
+		menu_scores_view.draw(weight, source, target)
 
 
 ## Applies [param event] to the current page and shows the result.
 func _send(event: int) -> void:
 	var problems := PackedStringArray()
 	var next: int = FrontEndFlow.next_page(page, event, problems)
-	_options_row = OptionsMenu.Row.CONTROLS if page == FrontEndPage.Page.CONTROLS else OptionsMenu.Row.EXIT
+	_options_row = OptionsMenu.Row.EXIT
+	if page == FrontEndPage.Page.CONTROLS:
+		_options_row = OptionsMenu.Row.CONTROLS
+	elif page == FrontEndPage.Page.HIGH_SCORE_VIEW:
+		_options_row = OptionsMenu.Row.VIEW_SCORES
+	if next == FrontEndPage.Page.HIGH_SCORE_VIEW:
+		_scores_from_options = page == FrontEndPage.Page.OPTIONS
 	for problem: String in problems:
 		push_warning(problem)
 	if next == FrontEndPage.Page.GAME:
@@ -149,10 +222,19 @@ func _show_page() -> void:
 	_main_water = null
 	_options = null
 	_controls = null
+	_entry = null
+	_table = null
+	menu_scores = null
+	menu_scores_view = null
 	_background.visible = false
 	match page:
 		FrontEndPage.Page.LEVEL_SELECT:
 			_build_level_select()
+		FrontEndPage.Page.HIGH_SCORE_INPUT:
+			_build_high_score_input()
+			return
+		FrontEndPage.Page.HIGH_SCORE_VIEW:
+			_build_high_score_view()
 		FrontEndPage.Page.OPTIONS:
 			_build_options()
 		FrontEndPage.Page.CONTROLS:
@@ -165,28 +247,92 @@ func _show_page() -> void:
 
 
 func _build_main_menu() -> void:
+	_camera_before_source = camera_rig.source
+	_camera_before_target = camera_rig.target
 	_main_water = MenuWaterView.create_with_camera(water, assets.texture("opt_env_sky"), assets.texture("opt_bank3"))
 	_main_water.camera.transform = camera_rig.transform()
 	_content.add_child(_main_water)
-	var column := _column()
-	var logo := TextureRect.new()
-	logo.texture = assets.texture("froglogo")
-	logo.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
-	column.add_child(logo)
-	var start := _image_button("opt_start", _start_game)
-	column.add_child(start)
-	_first_focus = start
-	column.add_child(_image_button("opt_options", _send.bind(FrontEndFlow.Event.OPTIONS)))
-	column.add_child(_image_button("opt_exit", get_tree().quit))
+	_main_water.set_process(false)
+	if FrontEndSession.board != null:
+		menu_scores = HighScoreScene.create(FrontEndSession.board.main)
+		menu_scores_view = HighScoreSceneView.create_for(menu_scores, options_models)
+		_main_water.add_child(menu_scores_view)
+		_draw_main_menu(1.0)
+	var panel := Control.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_content.add_child(panel)
+	_menu_sprites = [_menu_sprite("opt_start", _start_game),
+		_menu_sprite("opt_options", _send.bind(FrontEndFlow.Event.OPTIONS)), _menu_sprite("opt_exit", get_tree().quit)]
+	var width: int = 0
+	var last_height: int = 0
+	for sprite: TextureButton in _menu_sprites:
+		if sprite.texture_normal != null:
+			width = maxi(width, int(sprite.texture_normal.get_width()))
+			last_height = int(sprite.texture_normal.get_height())
+	width += CLOUD_BORDER << 1
+	var cloud := TextureRect.new()
+	cloud.texture = options_models.image_texture(OptionsModels.CLOUD_IMAGE) if options_models != null else null
+	cloud.stretch_mode = TextureRect.STRETCH_SCALE
+	cloud.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cloud.modulate = CLOUD_COLOUR
+	var cloud_material := CanvasItemMaterial.new()
+	cloud_material.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+	cloud.material = cloud_material
+	cloud.position = Vector2((StackLayout.DISPLAY_WIDTH - width) >> 1, MENU_ROW_Y - CLOUD_BORDER)
+	cloud.size = Vector2(width, MENU_ROW_PITCH * 2 + last_height + 16 + CLOUD_BORDER)
+	panel.add_child(cloud)
+	for sprite: TextureButton in _menu_sprites:
+		panel.add_child(sprite)
+	var count: int = _menu_sprites.size()
+	for index: int in count:
+		var sprite: TextureButton = _menu_sprites[index]
+		sprite.focus_neighbor_top = sprite.get_path_to(_menu_sprites[(index + count - 1) % count])
+		sprite.focus_neighbor_bottom = sprite.get_path_to(_menu_sprites[(index + 1) % count])
+	_place_menu_sprites()
+	_first_focus = _menu_sprites[0]
+	_menu_focused = false
 	var tools := Button.new()
 	tools.text = "Inspection tools"
+	tools.focus_mode = Control.FOCUS_CLICK
 	tools.pressed.connect(open_tools)
-	column.add_child(tools)
+	tools.position = Vector2(StackLayout.DISPLAY_WIDTH - 160, 8)
+	panel.add_child(tools)
 	if not FrontEndSession.diagnostics.is_empty():
 		var notes := Label.new()
 		notes.text = "\n".join(FrontEndSession.diagnostics)
 		notes.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		column.add_child(notes)
+		notes.position = Vector2(MARGIN, MARGIN)
+		notes.size = Vector2(StackLayout.DISPLAY_WIDTH - 2 * MARGIN - 160, 120)
+		panel.add_child(notes)
+
+
+## A main-menu sprite: Up and Down hop between rows and wrap (tempopt.c:1712-1744), fire croaks
+## before [param action] runs (:1820).
+func _menu_sprite(image_name: String, action: Callable) -> TextureButton:
+	var button := TextureButton.new()
+	button.texture_normal = assets.texture(image_name)
+	button.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
+	button.pressed.connect(_play_sound.bind(CROAK_SOUND))
+	button.pressed.connect(action)
+	button.focus_entered.connect(_on_menu_focus.bind(button))
+	button.focus_exited.connect(button.set_modulate.bind(Color.WHITE))
+	return button
+
+
+func _on_menu_focus(button: TextureButton) -> void:
+	button.modulate = Color(1.0, 1.0, 0.6)
+	if _menu_focused:
+		_play_sound(HOP_SOUND)
+	_menu_focused = true
+
+
+## Centres each menu sprite on its row, slid down 8 for every fly-on tick still to run.
+func _place_menu_sprites() -> void:
+	var slide: int = menu_scores.fly_on * MENU_SLIDE if menu_scores != null else 0
+	for index: int in _menu_sprites.size():
+		var sprite: TextureButton = _menu_sprites[index]
+		var sprite_width: int = int(sprite.texture_normal.get_width()) if sprite.texture_normal != null else 0
+		sprite.position = Vector2((StackLayout.DISPLAY_WIDTH - sprite_width) >> 1, MENU_ROW_Y + index * MENU_ROW_PITCH + slide)
 
 
 func _build_level_select() -> void:
@@ -200,7 +346,7 @@ func _build_level_select() -> void:
 
 func _build_options() -> void:
 	_options = OptionsView.create(assets, water, camera_rig, FrontEndSession.music_volume, FrontEndSession.sound_volume,
-		_options_row, false, options_models)
+		_options_row, true, options_models)
 	_options.menu_event.connect(_on_options_event, CONNECT_DEFERRED)
 	_content.add_child(_options)
 
@@ -234,6 +380,77 @@ func _on_options_event(kind: int) -> void:
 					_send(FrontEndFlow.Event.CONTROLS)
 				OptionsMenu.Request.MAIN_MENU:
 					_send(FrontEndFlow.Event.BACK)
+				OptionsMenu.Request.VIEW_SCORES:
+					_send(FrontEndFlow.Event.VIEW_HIGH_SCORES)
+
+
+func _build_high_score_input() -> void:
+	var board: HighScoreBoard = FrontEndSession.board
+	var startup: int = HighScoreBoard.Startup.NO_HIGH_SCORE
+	_entry_score = FrontEndSession.final_score
+	var quit: bool = FrontEndSession.game_quit
+	FrontEndSession.consume_entry_request()
+	if board != null:
+		startup = board.input_startup(_entry_score, quit)
+	match startup:
+		HighScoreBoard.Startup.GAME_QUIT:
+			camera_rig.snap(OptionsMenu.Camera.MAIN)
+			_send(FrontEndFlow.Event.GAME_QUIT)
+		HighScoreBoard.Startup.NO_HIGH_SCORE:
+			camera_rig.snap(OptionsMenu.Camera.MAIN)
+			_send(FrontEndFlow.Event.NO_HIGH_SCORE)
+		_:
+			_entry = HighScoreEntryView.create(assets, water, HighScoreEntry.create(true, false), options_models)
+			_entry.input = BindingInput.new(FrontEndSession.bindings)
+			_entry.page_event.connect(_on_entry_event.bind(_entry), CONNECT_DEFERRED)
+			_content.add_child(_entry)
+
+
+func _build_high_score_view() -> void:
+	var board: HighScoreBoard = FrontEndSession.board
+	if board == null:
+		var none: Array[HighScoreRow] = []
+		board = HighScoreBoard.create(none, none)
+	var stack: LevelStack = FrontEndSession.stack
+	var tour: HighScoreTour = HighScoreTour.create(StackLayout.create(stack), FrontEndSession.progress, board.main,
+		_scores_from_options, not _scores_from_options, board.new_main, board.new_levels, not FrontEndSession.level_chosen,
+		LevelStackView.name_widths(assets, stack))
+	_table = HighScoreTableView.create(assets, water, tour, stack, FrontEndSession.progress, board, options_models)
+	_table.input = BindingInput.new(FrontEndSession.bindings)
+	_table.page_event.connect(_on_table_event.bind(_table), CONNECT_DEFERRED)
+	_content.add_child(_table)
+
+
+func _on_entry_event(kind: int, view: HighScoreEntryView) -> void:
+	if view != _entry:
+		return
+	_play_sound(ENTRY_SOUNDS[kind])
+	if kind != HighScoreEntry.EventKind.ENTERED:
+		return
+	var board: HighScoreBoard = FrontEndSession.board
+	var initials: String = view.entry.initials
+	board.enter(initials, _entry_score)
+	board.enter_arcade_times(initials)
+	var issue: String = FrontEndSession.save_scores()
+	if not issue.is_empty():
+		push_warning(issue)
+	_send(FrontEndFlow.Event.ENTERED)
+
+
+func _on_table_event(kind: int, view: HighScoreTableView) -> void:
+	if view != _table:
+		return
+	_play_sound(TOUR_SOUNDS[kind])
+	match kind:
+		HighScoreTour.EventKind.BACK:
+			camera_rig.snap(OptionsMenu.Camera.MAIN)
+			_send(FrontEndFlow.Event.BACK)
+		HighScoreTour.EventKind.TIMEOUT:
+			camera_rig.snap(OptionsMenu.Camera.MAIN)
+			_send(FrontEndFlow.Event.TIMEOUT)
+		HighScoreTour.EventKind.BACK_TO_OPTIONS:
+			camera_rig.snap(OptionsMenu.Camera.OPTIONS)
+			_send(FrontEndFlow.Event.BACK_TO_OPTIONS)
 
 
 func _on_controls_event(kind: int) -> void:
@@ -293,7 +510,7 @@ func _load_sounds(data: GameData) -> void:
 		return
 	var resources: AudioResources = AudioResources.from_data(data, setup.definitions)
 	SoundVoiceView.ensure_bus(SoundVoiceView.BUS, &"Master")
-	var names := PackedStringArray([HOP_SOUND, CROAK_SOUND, SPLASH_SOUND, TEST_SOUND])
+	var names := PackedStringArray([HOP_SOUND, CROAK_SOUND, SPLASH_SOUND, TEST_SOUND, GULP_SOUND, EXPLODE_SOUND])
 	for kind: int in ControlsPage.EventKind.values():
 		if not ControlsPage.sound_name(kind).is_empty() and not names.has(ControlsPage.sound_name(kind)):
 			names.append(ControlsPage.sound_name(kind))

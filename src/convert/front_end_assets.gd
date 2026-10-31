@@ -26,12 +26,14 @@ const NAMES: PackedStringArray = [
 	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused",
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 	"opt_view_hs", "opt_ctrl_config", "opt_insert_pad", "select7", "opt_keyboard",
-	"opt_arrow_small_left", "opt_arrow_small_right",
+	"opt_arrow_small_left", "opt_arrow_small_right", "select3", "skip_hi_score", "opt_arrow",
 ]
 ## The bank the water images are read from.
 const WATER_BANK: String = "OPT_VRAM.VLO"
 ## The water surface and riverbed images (im_opt_env_sky, im_opt_bank3).
 const WATER_NAMES: PackedStringArray = ["opt_env_sky", "opt_bank3"]
+## The high-score level stack's checker tiles (SelectLevelCreateBG's im_*_col pairs), unpadded.
+const BACKGROUND_NAMES: PackedStringArray = ["jun_col", "des_col", "cav_col", "vol_col", "sky_col", "org_col", "for_col", "sub_col"]
 ## Level images resolved for every arcade row.
 const LEVEL_IMAGES: Array[LevelImage] = [
 	LevelImage.WORLD_UNLOCKED, LevelImage.WORLD_NOT_TRIED, LevelImage.SCREENSHOT, LevelImage.STACK_NAME,
@@ -120,6 +122,14 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 			return result
 		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
 		source_names[image_name] = image_name
+	for image_name: String in BACKGROUND_NAMES:
+		var identity: int = data.tables.names.images.index_of(image_name)
+		var record: VloImage = library.image_for_id(identity) if identity >= 0 else null
+		if record == null:
+			result.diagnostics.append("Level-stack background image %s (texture %d) is missing" % [image_name, identity])
+			continue
+		textures[image_name] = ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record))
+		source_names[image_name] = image_name
 	var table: LevelSelectTable = data.tables.level_select()
 	var pointers: BmpPointers = data.tables.bmp_pointers()
 	if not table.error.is_empty() or not pointers.error.is_empty():
@@ -143,7 +153,8 @@ static func from_data(data: GameData, for_language: int = GameLanguage.Id.ENGLIS
 	return result
 
 
-## The image called [param image_name] (one of [constant NAMES] or [constant WATER_NAMES]), or null.
+## The image called [param image_name] (one of [constant NAMES], [constant WATER_NAMES] or
+## [constant BACKGROUND_NAMES]), or null.
 func texture(image_name: String) -> Texture2D:
 	return _textures.get(image_name, null)
 

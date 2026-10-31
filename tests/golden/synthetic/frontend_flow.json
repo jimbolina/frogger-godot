@@ -251,6 +251,27 @@
    "source": "HSView.c:928"
   },
   {
+   "page": "HIGH_SCORE_VIEW",
+   "event": "levels_shown",
+   "next": "MAIN_OPTIONS",
+   "phase": "P13d",
+   "source": "HSView.c:1072"
+  },
+  {
+   "page": "HIGH_SCORE_VIEW",
+   "event": "back_to_options",
+   "next": "OPTIONS",
+   "phase": "P13d",
+   "source": "HSView.c:1463"
+  },
+  {
+   "page": "HIGH_SCORE_VIEW",
+   "event": "back_to_options_from_scores",
+   "next": "OPTIONS",
+   "phase": "P13d",
+   "source": "HSView.c:912"
+  },
+  {
    "page": "OUTRO",
    "event": "finished",
    "next": "CREDITS",
@@ -261,7 +282,7 @@
    "page": "CREDITS",
    "event": "finished",
    "next": "HIGH_SCORE_INPUT",
-   "phase": "P16",
+   "phase": "P13d",
    "source": "credits.c:882"
   }
  ],
