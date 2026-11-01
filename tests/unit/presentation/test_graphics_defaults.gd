@@ -20,6 +20,10 @@ func test_water_and_tint_defaults_match_the_map_mesh() -> void:
 	assert_eq(_defaults.vertex_tint, 1.0)
 
 
+func test_halo_strength_matches_the_halo_material() -> void:
+	assert_eq(_defaults.glow_halo_strength, GlowHaloMaterial.DEFAULT_STRENGTH)
+
+
 func test_cave_mode_matches_the_cave_light_shape() -> void:
 	assert_eq(int(_defaults.cave_light_mode), int(CaveLightShape.DEFAULT_MODE))
 	assert_eq(GraphicsSettings.CaveMode.size(), CaveLightShape.Mode.size())

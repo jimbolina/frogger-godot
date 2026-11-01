@@ -34,7 +34,7 @@ func test_defaults() -> void:
 	assert_eq(settings.tonemapper, GraphicsSettings.Tonemapper.LINEAR)
 	assert_eq(settings.exposure, 1.0)
 	assert_false(settings.ssao)
-	assert_eq(settings.glow_halo_strength, 3.0)
+	assert_eq(settings.glow_halo_strength, 2.0)
 	assert_true(settings.glow_lights)
 	assert_false(settings.glow_lights_in_caves)
 	assert_eq(settings.glow_light_energy, 1.0)

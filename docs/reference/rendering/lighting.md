@@ -243,6 +243,29 @@ nor multiplies script colours nor is hidden); fireflies and pickups are
 sprites and keep the committed fade, as does everything outside caves. The
 golden is [cave light](../../../tests/golden/specs/rendering.md#cave-light).
 
+## Glow
+
+Pickup glows (bonus flies, fat fire flies) and gold-frog glows draw a soft
+halo instead of the retail grey mask 1727, whose image now sets only the
+quad's size; position, pulse, colour and depth bias are unchanged
+([effects](effects.md)). `GlowHaloMaterial` (`glow_halo.gdshader`) is unlit
+and additive without depth writes, with the unlit sprites' depth bias and
+projection lines; its brightness is
+`to_linear(min(2 × colour, 1)) × (1 − r)^3 × halo_strength`, `r` being the
+distance from the centre in half-quad units, so the core exceeds the bloom
+threshold (inside about a fifth of the radius at the default strength 2)
+and blooms while the rim stays soft.
+
+Each drawn glow also gives a `GlowLightSpec.Point` (`src/rendering/effects/`):
+its centre, the halo colour, a range of `RANGE_SQUARES` (1.5 squares) and an
+energy of `ENERGY` times the pulse magnitude over its peak, so the light
+pulses with the halo; `glow_light_energy` scales it. `SceneLighting.place_glow_lights` keeps the 16 nearest
+the camera (stable on ties) and places them in a `GlowLightPool` of
+shadowless, specular-free `OmniLight3D`s (attenuation 1) that are reused and
+hidden, never freed per frame. In cave mode the glow lights stay hidden unless
+`glow_lights_in_caves` is set, because cave terrain would lose its darkness;
+the halos still draw.
+
 ## Map viewer
 
 The map viewer lights each map like gameplay: a `SceneLighting` child in its
@@ -327,6 +350,9 @@ and keep what reads best. None affects gameplay.
 | Real shadows | The directional light's shadow and its constants. | On: settings `real_shadows`, below the ceiling `frogger/rendering/shadows="on"` and `--shadows=off` for one launch; `shadow_splits` 2, `shadow_split_1` 0.25, `shadow_max_distance` 32, `shadow_bias` 0.05, `shadow_normal_bias` 1.0; fade and blur on `SceneLightingSpec` ([scene lighting](#scene-lighting)) | ORG1, JUN1, VOL1: acne, gaps under casters, shimmer while the camera follows |
 | Tone mapper | Converts the linear scene for the screen. Linear puts stored sprite and HUD colours on screen exactly; AgX or Filmic compress highlights and desaturate, shifting every stored colour. | Settings `tonemapper` Linear, `exposure` 1 | Lava and the water glint if highlights read too harsh |
 | Bloom | A soft halo around light above 1.0; stored colours of 1.0 or less are unchanged. | On: settings `bloom`, `bloom_intensity` 0.8, `bloom_threshold` 1.0; additive, HDR scale 2.0 ([scene lighting](#scene-lighting)) | SUB1 water glint, DES1 crack tint: a halo, not a wash |
+| Glow halo | The soft additive halo around pickups and gold frogs that replaces the grey mask 1727. | Settings `glow_halo_strength` 2.0, matching `GlowHaloMaterial.DEFAULT_STRENGTH`; falloff `DEFAULT_FALLOFF` 3 ([glow](#glow)); 3.0 with falloff 2 clipped to a flat disc | ORG1 home flies, CAV1 fat fire flies, the ORG gold baby frog: a soft halo with a bright core, not a disc |
+| Glow lights | Small coloured lights at each glow that tint the nearby ground and pulse with the halo. | On: settings `glow_lights`, `glow_light_energy` 1.0; `GlowLightSpec.ENERGY` 0.75 and `RANGE_SQUARES` 1.5 ([glow](#glow)); energy 2 washed the grass | ORG1, ORG gold frog: a visible tint under the glow without washing out the ground |
+| Glow lights in caves | Whether cave glows also light the ground. | Off: settings `glow_lights_in_caves` ([glow](#glow)) | CAV1: whether the fat fire flies' light breaks the cave darkness |
 | Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | Settings `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
 | Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
 

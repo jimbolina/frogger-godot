@@ -215,11 +215,16 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_EXIT_TREE and connected:
 		profile.changed.disconnect(_apply_look)
 
-## Gives the map the water look and vertex tint of the live graphics profile.
+## Gives the glow halos their strength and the map the water look and vertex
+## tint of the live graphics profile.
 func _apply_look() -> void:
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	if _cave_sprite_view != null:
+		_cave_sprite_view.set_halo_strength(settings.glow_halo_strength)
+	if _glow_view != null:
+		_glow_view.set_halo_strength(settings.glow_halo_strength)
 	if _map_instance == null:
 		return
-	var settings: GraphicsSettings = GraphicsProfile.current()
 	_map_instance.set_water_look(settings.water_reflection, settings.water_specular, settings.water_shininess)
 	_map_instance.set_vertex_tint(settings.vertex_tint)
 
@@ -275,6 +280,7 @@ func build_world() -> void:
 	add_child(_camera)
 	_camera.look_at(Vector3.ZERO)
 	_camera.current = true
+	_apply_look()
 
 func _clear_entity_visuals() -> void:
 	if scene_lighting != null:
@@ -911,6 +917,11 @@ func _draw_effects(frog_transform: Transform3D, weight: float) -> void:
 		fields.append_array(_entity_fields.fields())
 	_particle_view.draw_fields(fields, _current.camera, weight)
 	_glow_view.draw_glows(_current.camera, weight)
+	if scene_lighting != null:
+		var points: Array[GlowLightSpec.Point] = []
+		points.append_array(_cave_sprite_view.glow_points())
+		points.append_array(_glow_view.glow_points())
+		scene_lighting.place_glow_lights(points, _camera.position)
 	var origin: Vector3 = Vector3(frog_transform.origin.x, -frog_transform.origin.y, -frog_transform.origin.z) * GameSpace.UNITS_PER_SQUARE
 	_pop_view.draw_rings(_rings, origin, _current.camera, _current.game_timer)
 	if _effect_drawn_tick != _current.tick_index:

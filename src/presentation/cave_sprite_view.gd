@@ -7,6 +7,8 @@ extends MeshInstance3D
 ## Animlist_fire_fly (ENTITY.C:85). Bonus flies and fat fire flies follow PGIN_pickup
 ## (PARTICLE.C:67): a screen-aligned glow quad under a screen-aligned image quad whose
 ## screen size is inversely proportional to depth, so constant world extents reproduce it.
+## The glow quad draws a [GlowHaloMaterial] halo sized by the retail glow image and gives
+## a [GlowLightSpec] point per drawn glow for the scene's glow lights.
 ## Animation phases use the committed tick because snapshots carry no creation tick.
 
 ## Resident English fixed and generic banks holding firefly, pickup and glow images, in load order.
@@ -17,7 +19,7 @@ const FIREFLY_IMAGES: PackedStringArray = ["fire_fly", "fire_flya"]
 const SPRITE_3D_SCALE: int = 4 << 16
 ## Pickup row hard-coded by ENTSTRCavCreateFatFireFly (GEN_FAT_FIRE_FLY).
 const FAT_FIRE_FLY_PICKUP: int = 9
-## Retail PC PGIN_pickup glow image (bmp_pointers[1727]); the PSX source names im_tongue_tip.
+## Retail PC PGIN_pickup glow image (bmp_pointers[1727]), resolved for its size; the PSX source names im_tongue_tip.
 const GLOW_TEXTURE_ID: int = 1727
 ## Source units the glow sits behind its image so depth testing keeps the image on top.
 const GLOW_DEPTH: float = 4.0
@@ -60,6 +62,8 @@ var _glow: Sprite = null
 var _materials: Array[ShaderMaterial] = []
 var _resident: TextureLibrary = null
 var _projection_scale := Vector2.ONE
+var _halo_strength: float = GlowHaloMaterial.DEFAULT_STRENGTH
+var _glow_points: Array[GlowLightSpec.Point] = []
 var _state: GameplayState
 
 ## Resolves the images the supplied definitions draw; missing images are returned as diagnostics.
@@ -91,6 +95,7 @@ func configure(scene: MapSceneData, data: AssetCatalog, definitions: Array[Entit
 ## Releases prepared materials and any retained snapshot.
 func clear() -> void:
 	_state = null
+	_glow_points = []
 	_firefly.clear()
 	_pickups.clear()
 	_glow = null
@@ -105,11 +110,22 @@ func set_projection_scale(scale: Vector2) -> void:
 	for material: ShaderMaterial in _materials:
 		material.set_shader_parameter("projection_scale", scale)
 
+## Sets the brightness of the pickup glow halos.
+func set_halo_strength(value: float) -> void:
+	_halo_strength = value
+	if _glow != null:
+		_glow.material.set_shader_parameter("halo_strength", value)
+
+## The glow lights of the glows drawn for the current committed state.
+func glow_points() -> Array[GlowLightSpec.Point]:
+	return _glow_points
+
 ## Rebuilds sprites only for a new committed state; repeated rendering is inert.
 func draw_state(state: GameplayState, definitions: Array[EntityDefinition]) -> void:
 	if state == _state:
 		return
 	_state = state
+	_glow_points = []
 	_sprites.clear_surfaces()
 	visible = false
 	if state == null or state.entities == null:
@@ -208,7 +224,7 @@ func _configure_pickups(scene: MapSceneData, data: AssetCatalog, types: Array, p
 		var row: PickupData = rows[type]
 		var look := PickupLook.new()
 		look.size = row.sprite_size
-		look.glow = Color((row.glow_colour & 255) / 255.0, ((row.glow_colour >> 8) & 255) / 255.0, ((row.glow_colour >> 16) & 255) / 255.0)
+		look.glow = GlowLightSpec.colour_of(row.glow_colour)
 		for pointer: int in row.frame_pointers:
 			var image: VloImage = _image_for_id(scene, pointers.texture_id_for_pointer(pointer)) if pointers != null else null
 			if image == null:
@@ -222,7 +238,9 @@ func _configure_pickups(scene: MapSceneData, data: AssetCatalog, types: Array, p
 	if glow == null:
 		problems.append("Pickup glow texture %d is missing from the supplied banks" % GLOW_TEXTURE_ID)
 	else:
-		_glow = _sprite(scene, glow, ModelShaders.blend_for_mode(glow.blend_mode()), PICKUP_DEPTH_BIAS)
+		var material: ShaderMaterial = GlowHaloMaterial.create(PICKUP_DEPTH_BIAS, _projection_scale, _halo_strength)
+		_materials.append(material)
+		_glow = Sprite.new(material, glow.width, glow.height)
 
 func _load_resident(data: AssetCatalog, problems: PackedStringArray) -> void:
 	_resident = TextureLibrary.new()
@@ -276,8 +294,10 @@ func _add_pickup(batches: Dictionary[ShaderMaterial, Batch], entity: EntitySnaps
 	var centre := Vector3(entity.matrix12[9], entity.matrix12[10], entity.matrix12[11])
 	if _glow != null:
 		var behind: Vector3 = centre + Vector3(state.camera.axis_z_12) * (GLOW_DEPTH / 4096.0)
-		var glow_half: Vector2 = pickup_half_extents(_glow.width, _glow.height, glow_magnitude(state.tick_index))
+		var magnitude: int = glow_magnitude(state.tick_index)
+		var glow_half: Vector2 = pickup_half_extents(_glow.width, _glow.height, magnitude)
 		_add_quad(batches, _glow.material, _screen_corners(behind, screen_offsets(state.camera, glow_half)), look.glow)
+		_glow_points.append(GlowLightSpec.point(Vector3(centre.x, -centre.y, -centre.z) / GameSpace.UNITS_PER_SQUARE, look.glow, magnitude))
 	var sprite: Sprite = look.frames[pickup_frame(state.tick_index, look.frames.size())]
 	var half: Vector2 = pickup_half_extents(sprite.width, sprite.height, look.size)
 	_add_quad(batches, sprite.material, _screen_corners(centre, screen_offsets(state.camera, half)), Color(128.0 / 255.0, 128.0 / 255.0, 128.0 / 255.0))

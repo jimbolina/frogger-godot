@@ -320,3 +320,65 @@ func test_leaving_the_tree_stops_following_the_profile() -> void:
 	add_child(_lighting)
 	_change("bloom", false)
 	assert_false(_lighting.environment.glow_enabled, "re-entering subscribes again")
+
+
+func _glow_points(count: int) -> Array[GlowLightSpec.Point]:
+	var points: Array[GlowLightSpec.Point] = []
+	for index: int in count:
+		points.append(GlowLightSpec.Point.new(Vector3(index * 2.0, 0, 0), Color(1.0, 1.0, 0.5), 1.0, 1.5))
+	return points
+
+
+func test_glow_lights_are_placed_nearest_the_camera_and_scaled_by_the_settings() -> void:
+	_lighting.apply(_spec())
+	_lighting.place_glow_lights(_glow_points(GlowLightPool.MAX_LIGHTS + 2), Vector3(100, 0, 0))
+	var pool: GlowLightPool = _lighting.glow_light_pool()
+	assert_not_null(pool)
+	assert_eq(pool.shown_count(), GlowLightPool.MAX_LIGHTS)
+	assert_eq(pool.lights()[0].position, Vector3((GlowLightPool.MAX_LIGHTS + 1) * 2.0, 0, 0), "nearest the camera first")
+	_change("glow_light_energy", 2.5)
+	assert_eq(pool.lights()[0].light_energy, 2.5, "a profile change rescales in place")
+	assert_eq(_lighting.glow_light_pool(), pool)
+	_change("glow_lights", false)
+	assert_eq(pool.shown_count(), 0, "switched off hides every glow light")
+	_lighting.place_glow_lights(_glow_points(2))
+	assert_eq(pool.shown_count(), 0)
+	_change("glow_lights", true)
+	assert_eq(pool.shown_count(), 2)
+
+
+func test_no_pool_is_made_without_glow_points_or_while_glow_lights_are_off() -> void:
+	_lighting.apply(_spec())
+	_lighting.place_glow_lights(_glow_points(0))
+	assert_null(_lighting.glow_light_pool())
+	_change("glow_lights", false)
+	_lighting.place_glow_lights(_glow_points(3))
+	assert_null(_lighting.glow_light_pool())
+
+
+func test_glow_lights_hide_in_caves_unless_allowed() -> void:
+	_lighting.apply(_spec())
+	_lighting.place_glow_lights(_glow_points(3))
+	var pool: GlowLightPool = _lighting.glow_light_pool()
+	assert_eq(pool.shown_count(), 3)
+	_lighting.set_cave_light(Vector3.ZERO, 1, 65536)
+	assert_eq(pool.shown_count(), 0, "entering cave mode hides them")
+	_lighting.place_glow_lights(_glow_points(3))
+	assert_eq(pool.shown_count(), 0)
+	_change("glow_lights_in_caves", true)
+	assert_eq(pool.shown_count(), 3)
+	_change("glow_lights_in_caves", false)
+	assert_eq(pool.shown_count(), 0)
+	_lighting.clear_cave_light()
+	assert_eq(pool.shown_count(), 3, "leaving the cave shows them again")
+
+
+func test_clear_frees_the_glow_lights() -> void:
+	_lighting.apply(_spec())
+	_lighting.place_glow_lights(_glow_points(2))
+	_lighting.clear()
+	assert_null(_lighting.glow_light_pool())
+	for child: Node in _lighting.get_children():
+		assert_false(child is GlowLightPool, "the pool is freed")
+	_lighting.place_glow_lights(_glow_points(1))
+	assert_eq(_lighting.glow_light_pool().shown_count(), 1)

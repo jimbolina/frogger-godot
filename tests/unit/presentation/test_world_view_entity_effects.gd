@@ -1,5 +1,5 @@
 extends GutTest
-## The world view feeds entity shadows, splashes, pops, glows, hilite particles and the croak throat from committed state.
+## The world view feeds entity shadows, splashes, pops, glows and their lights, hilite particles and the croak throat from committed state.
 
 class RecordingFields extends EntityParticleFields:
 	var calls: Array = []
@@ -27,6 +27,9 @@ func before_each() -> void:
 	var scene := MapSceneData.new()
 	scene.effects = EffectResources.resolve(null, null, null, null, null)
 	_view._configure_effects(scene)
+
+func after_each() -> void:
+	GraphicsProfile.reset()
 
 func _definition(kind: EntityBehavior.Kind) -> EntityDefinition:
 	var definition := EntityDefinition.new()
@@ -114,6 +117,26 @@ func test_pops_and_glows_step_with_committed_entities() -> void:
 	_view.collapse_effects()
 	assert_eq(_view._piece_view.piece_count(), 0)
 	assert_eq(_view._glow_view.glows().size(), 0)
+
+func test_drawn_glows_light_the_scene_and_follow_the_halo_strength() -> void:
+	var definitions: Array[EntityDefinition] = [_definition(EntityBehavior.Kind.GOLD_FROG)]
+	_view._definitions = definitions
+	_view._glow_view.set_image(EffectSpriteMaterial.Sprite.new(GlowHaloMaterial.create(GoldGlowView.DEPTH_BIAS, Vector2.ONE)))
+	var entities: Array[EntitySnapshot] = [_entity()]
+	var state: GameplayState = _state(0, entities)
+	state.camera = GameplayCameraSnapshot.new()
+	_view.accept_state(state)
+	_view.draw_state(1.0)
+	var pool: GlowLightPool = _view.scene_lighting.glow_light_pool()
+	assert_not_null(pool)
+	assert_eq(pool.shown_count(), 1)
+	assert_eq(pool.lights()[0].position, EffectSpriteMaterial.world(Vector3(1000, -50, 2000)) + Vector3.UP * GlowLightSpec.LIFT)
+	var values: GraphicsSettings = GraphicsProfile.current().copy()
+	values.glow_halo_strength = 6.0
+	GraphicsProfile.replace(values)
+	var gold: float = _view._glow_view._sprite.material.get_shader_parameter("halo_strength")
+	assert_eq(gold, 6.0)
+	assert_eq(_view._cave_sprite_view._halo_strength, 6.0)
 
 func test_hilites_are_ensured_stepped_and_released_per_generation() -> void:
 	var fields := RecordingFields.new()

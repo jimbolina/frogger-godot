@@ -42,7 +42,9 @@ view-depth units per slot, beside the table in [rendering](README.md#depth-order
 PC blend rates live in texture-page bits 8–9. The engine follows retail PC
 (KEY_FACTS 362–364, 378, 388, 493): the hop trail is additive, the tongue
 averages, exhaust, smoke and fire use `im_frog_smoke1`, the pickup and
-gold-frog glows use the grey mask 1727, and the gold glow is (255, 255, 16).
+gold-frog glows take their size from the grey mask 1727, and the gold glow is
+(255, 255, 16). The port draws both glows as a soft additive halo with small
+coloured lights instead of the mask ([glow](lighting.md#glow)).
 
 ## Frog effects (P11b)
 
@@ -94,11 +96,12 @@ gold-frog glows use the grey mask 1727, and the gold glow is (255, 255, 16).
   [shadows](lighting.md#shadows)); rocks keep
   `NO_ROTATION`, a tumbleweed inside the grid border rotates with its
   matrix. Rolling rocks cast none, as in C.
-- **Gold-frog glow** (`PARTICLE.C:2607-2724`): a camera-plane quad of the
-  grey mask 1727 in (255, 255, 16) at the entity origin of the GEN gold frog,
-  the ORG gold baby frog and the Jungle statue (`op_id` 8), pulsing with
-  `GlowPulse` (shared with the pickup glow), blended at the image's page
-  rate, 96 nearer, shown while the model is shown and killed with the pop.
+- **Gold-frog glow** (`PARTICLE.C:2607-2724`): a camera-plane quad the size
+  of the grey mask 1727 in (255, 255, 16) at the entity origin of the GEN
+  gold frog, the ORG gold baby frog and the Jungle statue (`op_id` 8),
+  pulsing with `GlowPulse` (shared with the pickup glow), 96 nearer, shown
+  while the model is shown and killed with the pop; it draws the
+  [glow halo and light](lighting.md#glow).
 - **Entity splashes** (`scripter.c:1411-1453`, `ent_swp.c:1178-1218`):
   every `SPRITE` event (turtles, hippos, one per ORG offset) and `SPLASH`
   event (rats) opens a splash at the owning entity's live matrix plus the

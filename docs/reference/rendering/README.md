@@ -59,7 +59,8 @@ scale and the live radii each tick
 models and terrain take their fade from the [cave light](lighting.md#cave-light).
 Fireflies draw as unlit two-image sprites in the entity's local XY plane at
 twice the image size; pickups draw the source glow and image quads from the
-pickup table with fixed colours, and both resolve images from the general and
+pickup table with fixed colours (the glow as the [glow halo](lighting.md#glow)
+sized by image 1727), and both resolve images from the general and
 theme banks, then the resident `FIXE_VRAM`/`GEN_VRAM` banks. Sprite animation
 phases use the committed tick rather than a per-instance creation tick.
 [Cel atlases](../../../archive/docs/formats/animation.md) move flipbook

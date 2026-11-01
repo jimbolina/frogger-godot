@@ -54,7 +54,7 @@ func test_rotated_firefly_lies_in_its_entity_plane() -> void:
 
 func test_glow_sits_behind_image_with_table_colour() -> void:
 	var view: CaveSpriteView = _view()
-	var glow_material: ShaderMaterial = ModelShaders.material(null, ModelShaders.Blend.AVERAGE, false, true)
+	var glow_material: ShaderMaterial = GlowHaloMaterial.create(CaveSpriteView.PICKUP_DEPTH_BIAS, Vector2.ONE)
 	view._glow = CaveSpriteView.Sprite.new(glow_material, 30, 30)
 	var state: GameplayState = _state()
 	state.entities.entities.append(_entity(Vector3i.ZERO))
@@ -66,6 +66,39 @@ func test_glow_sits_behind_image_with_table_colour() -> void:
 	assert_almost_eq(glow[0], Vector3(-half.x, half.y, -CaveSpriteView.GLOW_DEPTH) / 256.0, Vector3.ONE * 0.00001)
 	var colours: PackedColorArray = view.mesh.surface_get_arrays(0)[Mesh.ARRAY_COLOR]
 	assert_eq(colours[0], Color(0x84 / 255.0, 0x84 / 255.0, 0x50 / 255.0))
+	var uvs: PackedVector2Array = view.mesh.surface_get_arrays(0)[Mesh.ARRAY_TEX_UV]
+	assert_eq([uvs[0], uvs[1], uvs[2], uvs[5]], [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 1)], "the halo spans the whole quad")
+	assert_string_contains(glow_material.shader.code, "blend_add")
+
+func test_each_drawn_glow_gives_a_pulsing_light_at_the_pickup() -> void:
+	var view: CaveSpriteView = _view()
+	view._glow = CaveSpriteView.Sprite.new(GlowHaloMaterial.create(CaveSpriteView.PICKUP_DEPTH_BIAS, Vector2.ONE), 30, 30)
+	var state: GameplayState = _state()
+	state.tick_index = 4
+	state.entities.entities.append(_entity(Vector3i(256, -64, 512)))
+	state.entities.entities.append(_entity(Vector3i.ZERO))
+	view.draw_state(state, _definitions([_definition(EntityBehavior.Kind.FAT_FIRE_FLY), _definition(EntityBehavior.Kind.FIREFLY)]))
+	var points: Array[GlowLightSpec.Point] = view.glow_points()
+	assert_eq(points.size(), 1, "fireflies have no glow")
+	assert_eq(points[0].position, GameSpace.position(256, -64, 512) + Vector3.UP * GlowLightSpec.LIFT)
+	assert_eq(points[0].colour, GlowLightSpec.light_colour(Color(0x84 / 255.0, 0x84 / 255.0, 0x50 / 255.0)))
+	assert_almost_eq(points[0].energy, GlowLightSpec.ENERGY, 0.00001, "tick 4 is the largest pulse")
+	assert_same(view.glow_points(), points, "repeated drawing keeps the points")
+	view.draw_state(state, _definitions([_definition(EntityBehavior.Kind.FAT_FIRE_FLY), _definition(EntityBehavior.Kind.FIREFLY)]))
+	assert_same(view.glow_points(), points)
+	var hidden: GameplayState = state.copy()
+	hidden.entities.entities[0].live = false
+	view.draw_state(hidden, _definitions([_definition(EntityBehavior.Kind.FAT_FIRE_FLY)]))
+	assert_true(view.glow_points().is_empty())
+	view.clear()
+	assert_true(view.glow_points().is_empty())
+
+func test_halo_strength_reaches_the_glow_material() -> void:
+	var view: CaveSpriteView = _view()
+	view._glow = CaveSpriteView.Sprite.new(GlowHaloMaterial.create(CaveSpriteView.PICKUP_DEPTH_BIAS, Vector2.ONE), 30, 30)
+	view.set_halo_strength(5.5)
+	var strength: float = view._glow.material.get_shader_parameter("halo_strength")
+	assert_eq(strength, 5.5)
 
 func test_firefly_colour_follows_applied_scale_and_pickup_image_stays_neutral() -> void:
 	var view: CaveSpriteView = _view()

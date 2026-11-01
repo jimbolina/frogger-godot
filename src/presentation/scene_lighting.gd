@@ -19,6 +19,11 @@ extends Node3D
 ## ceiling. While in the tree a profile change updates those properties on the
 ## existing environment and lights in place, so backgrounds set by the owning
 ## view after [method apply] and cave mode are kept.
+##
+## [method place_glow_lights] lights the ground around glowing sprites with a
+## [GlowLightPool], created on first use, following the profile's glow-light
+## switch and energy; in cave mode the glow lights stay hidden unless the
+## profile allows them in caves.
 
 ## Shader global carrying the linear ambient to the lit model shaders.
 const AMBIENT_GLOBAL: StringName = &"frogger_model_ambient"
@@ -38,6 +43,8 @@ var _world_environment: WorldEnvironment = null
 var _lights: Array[DirectionalLight3D] = []
 var _cave_light: OmniLight3D = null
 var _cave_key: PackedInt64Array = PackedInt64Array()
+var _glow_pool: GlowLightPool = null
+var _glow_points: Array[GlowLightSpec.Point] = []
 
 
 ## Replaces the lights with those of [param spec] and sets the environment and
@@ -57,10 +64,11 @@ func apply(spec: SceneLightingSpec) -> void:
 	_set_ambient(spec.ambient)
 
 
-## Frees the lights and the cave light and resets the ambient global to one; the environment stays.
+## Frees the lights, the cave light and the glow lights and resets the ambient global to one; the environment stays.
 func clear() -> void:
 	_free_cave_light()
 	_free_lights()
+	_free_glow_pool()
 	_set_ambient(Vector3.ONE)
 	if environment != null:
 		environment.ambient_light_energy = 1.0
@@ -82,6 +90,7 @@ func set_cave_light(position: Vector3, min_r2: int, max_r2: int, mode: CaveLight
 		_cave_key = PackedInt64Array()
 		_free_lights()
 		_enter_cave_mode()
+		_place_glow()
 	_cave_light.position = position + Vector3.UP * CaveLightShape.HEIGHT
 	var key := PackedInt64Array([min_r2, max_r2, mode])
 	if key == _cave_key:
@@ -101,6 +110,20 @@ func clear_cave_light() -> void:
 	elif environment != null:
 		environment.ambient_light_energy = 1.0
 		_set_ambient(Vector3.ONE)
+	_place_glow()
+
+
+## Lights the glows of [param points] nearest [param camera_position], up to
+## [constant GlowLightPool.MAX_LIGHTS], or hides the glow lights when the
+## profile turns them off or the scene is a cave that does not allow them.
+func place_glow_lights(points: Array[GlowLightSpec.Point], camera_position: Vector3 = Vector3.ZERO) -> void:
+	_glow_points = GlowLightSpec.nearest(points, camera_position, GlowLightPool.MAX_LIGHTS)
+	_place_glow()
+
+
+## The glow light pool, or null before glow lights were first shown.
+func glow_light_pool() -> GlowLightPool:
+	return _glow_pool
 
 
 ## The cave light, or null outside cave mode.
@@ -135,6 +158,7 @@ func _on_profile_changed() -> void:
 	var settings: GraphicsSettings = GraphicsProfile.current()
 	if environment != null:
 		_apply_post(settings)
+	_place_glow()
 	if applied_spec == null:
 		return
 	for index: int in _lights.size():
@@ -213,6 +237,29 @@ func _free_cave_light() -> void:
 	_cave_light.free()
 	_cave_light = null
 	_cave_key = PackedInt64Array()
+
+
+func _place_glow() -> void:
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	var allowed: bool = settings.glow_lights and (_cave_light == null or settings.glow_lights_in_caves)
+	if not allowed or _glow_points.is_empty():
+		if _glow_pool != null:
+			_glow_pool.hide_all()
+		return
+	if _glow_pool == null:
+		_glow_pool = GlowLightPool.new()
+		_glow_pool.name = "GlowLights"
+		add_child(_glow_pool)
+	_glow_pool.place(_glow_points, settings.glow_light_energy)
+
+
+func _free_glow_pool() -> void:
+	_glow_points = []
+	if _glow_pool == null:
+		return
+	remove_child(_glow_pool)
+	_glow_pool.free()
+	_glow_pool = null
 
 
 func _free_lights() -> void:

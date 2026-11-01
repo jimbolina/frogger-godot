@@ -76,7 +76,34 @@ func test_glow_quad_pulses_at_the_entity_origin_with_colour_and_bias() -> void:
 	var bias: float = material.get_shader_parameter("depth_bias")
 	assert_eq(bias, GoldGlowView.DEPTH_BIAS)
 	assert_eq(GoldGlowView.DEPTH_BIAS, EffectSpriteMaterial.slots_bias(GoldGlowView.OT_OFFSET))
-	assert_string_contains(material.shader.code, "blend_add", "the image page's rate")
+	assert_eq(material.shader.resource_path, GlowHaloMaterial.SHADER_PATH, "the halo replaces the retail image")
+	assert_string_contains(material.shader.code, "blend_add")
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	assert_eq([uvs[0], uvs[5]], [Vector2(0, 0), Vector2(1, 1)], "the halo spans the whole quad")
+	var points: Array[GlowLightSpec.Point] = _view.glow_points()
+	assert_eq(points.size(), 1)
+	assert_eq(points[0].position, EffectSpriteMaterial.world(Vector3(64, 0, 400)) + Vector3.UP * GlowLightSpec.LIFT)
+	assert_eq(points[0].colour, Color(1.0, 1.0, 32 / 255.0))
+	assert_almost_eq(points[0].energy, GlowLightSpec.ENERGY * GlowLightSpec.energy_ratio(GlowPulse.magnitude(0x200)), 0.00001)
+	_view.set_halo_strength(4.5)
+	var strength: float = material.get_shader_parameter("halo_strength")
+	assert_eq(strength, 4.5)
+
+func test_glow_points_follow_the_interpolated_origin_and_clear_with_the_glows() -> void:
+	assert_eq(_view.configure(_scene()), "")
+	var definitions: Array[EntityDefinition] = [_definition(EntityBehavior.Kind.GOLD_FROG)]
+	var entities: Array[EntitySnapshot] = [_entity(Vector3i(0, 0, 400))]
+	_view.accept(definitions, entities)
+	entities = [_entity(Vector3i(128, 0, 400))]
+	_view.accept(definitions, entities)
+	var camera := GameplayCameraSnapshot.new()
+	_view.draw_glows(camera, 0.5)
+	assert_eq(_view.glow_points()[0].position, EffectSpriteMaterial.world(Vector3(64, 0, 400)) + Vector3.UP * GlowLightSpec.LIFT)
+	_view.draw_glows(null, 1.0)
+	assert_true(_view.glow_points().is_empty())
+	_view.draw_glows(camera, 1.0)
+	_view.collapse()
+	assert_true(_view.glow_points().is_empty())
 
 func test_glows_hide_with_their_frog_and_restart_with_a_new_generation() -> void:
 	assert_eq(_view.configure(_scene()), "")

@@ -11,9 +11,10 @@ extends MeshInstance3D
 ## not the creation offset, so the quad is centred on the entity origin. Its
 ## ordering entry is the origin's depth >> 1 minus 0x30, drawn only inside
 ## the table and while the screen Y is within 0x300; the half size follows
-## [GlowPulse] at that entry. The quad is FT4 in colour (255, 255, 16) with
-## the PC glow image 1727, semi-transparent at the image page's rate, and
-## sorts 0x30 slots (96 units) nearer.
+## [GlowPulse] at that entry for the size of the PC glow image 1727. The quad
+## is coloured (255, 255, 16) and sorts 0x30 slots (96 units) nearer; it draws
+## a [GlowHaloMaterial] halo in place of the retail image and gives a
+## [GlowLightSpec] point per drawn glow for the scene's glow lights.
 
 ## Source ordering offset of the glow.
 const OT_OFFSET: int = -0x30
@@ -42,9 +43,11 @@ var _glows: Dictionary[int, Glow] = {}
 var _sprite: EffectSpriteMaterial.Sprite = null
 var _mesh := ImmediateMesh.new()
 var _projection_scale := Vector2.ONE
+var _halo_strength: float = GlowHaloMaterial.DEFAULT_STRENGTH
+var _glow_points: Array[GlowLightSpec.Point] = []
 
 
-## Prepares the PC glow image from [param scene]'s effect resources.
+## Prepares the halo at the size of the PC glow image from [param scene]'s effect resources.
 func configure(scene: MapSceneData) -> String:
 	clear()
 	if scene == null or scene.effects == null:
@@ -52,12 +55,11 @@ func configure(scene: MapSceneData) -> String:
 	var image: VloImage = scene.effects.images.get(EffectResources.GLOW_SYMBOL)
 	if image == null:
 		return "Gold-frog glow image %s is unavailable" % EffectResources.GLOW_SYMBOL
-	var material: ShaderMaterial = EffectSpriteMaterial.textured(scene.library, image, EffectSpriteMaterial.semi_transparent_blend(image), DEPTH_BIAS, _projection_scale)
-	_sprite = EffectSpriteMaterial.Sprite.new(material, image)
+	_sprite = EffectSpriteMaterial.Sprite.new(GlowHaloMaterial.create(DEPTH_BIAS, _projection_scale, _halo_strength), image)
 	return ""
 
 
-## Prepares the glow image directly, for scenes assembled without effect resources.
+## Prepares the glow material and size directly, for scenes assembled without effect resources.
 func set_image(sprite: EffectSpriteMaterial.Sprite) -> void:
 	_sprite = sprite
 
@@ -71,6 +73,7 @@ func clear() -> void:
 ## Forgets every glow.
 func collapse() -> void:
 	_glows.clear()
+	_glow_points = []
 	_mesh.clear_surfaces()
 	visible = false
 
@@ -80,6 +83,18 @@ func set_projection_scale(scale: Vector2) -> void:
 	_projection_scale = scale
 	if _sprite != null:
 		_sprite.material.set_shader_parameter("projection_scale", scale)
+
+
+## Sets the brightness of the glow halo.
+func set_halo_strength(value: float) -> void:
+	_halo_strength = value
+	if _sprite != null:
+		_sprite.material.set_shader_parameter("halo_strength", value)
+
+
+## The glow lights of the glows last drawn by [method draw_glows].
+func glow_points() -> Array[GlowLightSpec.Point]:
+	return _glow_points
 
 
 ## Whether [param definition] creates a gold-frog glow.
@@ -126,6 +141,7 @@ func glows() -> Dictionary[int, Glow]:
 func draw_glows(camera: GameplayCameraSnapshot, fraction: float) -> int:
 	var batches: Dictionary[ShaderMaterial, EffectSpriteMaterial.Batch] = {}
 	var drawn: int = 0
+	_glow_points = []
 	if camera != null and _sprite != null:
 		var tint: Color = EffectSpriteMaterial.colour(COLOUR)
 		for slot: int in _glows:
@@ -140,6 +156,7 @@ func draw_glows(camera: GameplayCameraSnapshot, fraction: float) -> int:
 			for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(-1, 1), Vector2(1, 1)]:
 				corners.append(EffectSpriteMaterial.world(centre + EffectSpriteMaterial.screen_offset(camera, corner.x * half.x, corner.y * half.y)))
 			EffectSpriteMaterial.batch_for(batches, _sprite.material).quad(corners, [tint, tint, tint, tint])
+			_glow_points.append(GlowLightSpec.point(EffectSpriteMaterial.world(centre), tint, GlowPulse.magnitude(glow.angle())))
 			drawn += 1
 	visible = EffectSpriteMaterial.commit(_mesh, batches)
 	mesh = _mesh

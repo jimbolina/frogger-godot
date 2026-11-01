@@ -85,7 +85,7 @@ const MAX_SHADOW_ATLAS: int = 16384
 ## Screen-space ambient occlusion.
 @export var ssao: bool = false
 ## Brightness of the glow halos around bugs and gold frogs.
-@export var glow_halo_strength: float = 3.0
+@export var glow_halo_strength: float = 2.0
 ## Whether glowing sprites also light their surroundings.
 @export var glow_lights: bool = true
 ## Whether glow lights are also placed in caves.
