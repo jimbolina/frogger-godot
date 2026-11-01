@@ -215,8 +215,8 @@ func _notification(what: int) -> void:
 	elif what == NOTIFICATION_EXIT_TREE and connected:
 		profile.changed.disconnect(_apply_look)
 
-## Gives the glow halos their strength and the map the water look and vertex
-## tint of the live graphics profile.
+## Gives the glow halos their strength and the map the water look, vertex
+## tint and lava emission of the live graphics profile.
 func _apply_look() -> void:
 	var settings: GraphicsSettings = GraphicsProfile.current()
 	if _cave_sprite_view != null:
@@ -227,6 +227,7 @@ func _apply_look() -> void:
 		return
 	_map_instance.set_water_look(settings.water_reflection, settings.water_specular, settings.water_shininess)
 	_map_instance.set_vertex_tint(settings.vertex_tint)
+	_map_instance.set_emission_scale(settings.lava_emission)
 
 func _cave_lit() -> bool:
 	return scene_lighting != null and _map_instance != null and _map_instance.source.scene.cave_enabled

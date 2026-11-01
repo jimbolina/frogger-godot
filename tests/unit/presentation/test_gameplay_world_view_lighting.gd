@@ -303,6 +303,7 @@ func _look(reflection: float, specular: float, shininess: float, tint: float) ->
 	values.water_specular = specular
 	values.water_shininess = shininess
 	values.vertex_tint = tint
+	values.lava_emission = tint * 2.0
 	return values
 
 func test_the_map_takes_the_profile_look_when_built_and_when_it_changes() -> void:
@@ -310,9 +311,11 @@ func test_the_map_takes_the_profile_look_when_built_and_when_it_changes() -> voi
 	_view.build_map(_cave_map())
 	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([0.5, 0.3, 256.0]))
 	assert_almost_eq(_view._map_instance._vertex_tint, 0.6, 1e-6)
+	assert_almost_eq(_view._map_instance.emission_scale(), 1.2, 1e-6)
 	GraphicsProfile.replace(_look(0.1, 0.0, 128.0, 0.0))
 	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([0.1, 0.0, 128.0]))
 	assert_eq(_view._map_instance._vertex_tint, 0.0)
+	assert_eq(_view._map_instance.emission_scale(), 0.0)
 
 func test_a_view_outside_the_tree_ignores_profile_changes() -> void:
 	_view.build_map(_cave_map())

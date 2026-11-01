@@ -78,6 +78,12 @@ func font(_name: String) -> Font:
 	return null
 
 
+## The table of glowing texture images: empty here, so nothing glows; a
+## concrete catalog over committed assets serves its own.
+func emissive_images() -> EmissiveImageTable:
+	return EmissiveImageTable.new()
+
+
 ## The level list row of level [param level] (see [FroggerIds]), or null.
 func map_book_entry(level: int) -> MapBookEntry:
 	return tables.map_book().get_entry(level)

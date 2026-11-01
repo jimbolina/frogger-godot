@@ -130,6 +130,12 @@ overrides. They need no retail files.
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
 | `test_asset_music.gd` | Every `disc_tracks.tsv` audio track has `audio/music/track_NN.ogg` (`oggenc -q 6 --serial NN`, byte-identical on re-encode) whose `get_length()` is within 1 ms of `frames / 44100` with no baked loop, and every `exe_music.tsv` track is present. The PCM digest is checked on the decoded WAV at import time only; no music table resource is written, a track's Ogg is found by its number. |
 
+`test_asset_emissive_images.gd` sits beside them as a consistency check of
+the hand-authored `rendering/emissive_images.tres`, not a retail-fact golden:
+the table loads without problems and validates, every image name resolves in
+the committed name list, and VOL1, VOL2 and VOL3 each draw at least one
+listed image.
+
 A bank resource keeps the image headers only: each image's pixels live in
 its PNG, which every bank holding the texture id shares, and `pixels` is
 empty.

@@ -15,6 +15,9 @@ extends AssetCatalog
 ## falling back to the retail file (noted in [member problems]) when the set
 ## lacks one.
 
+## The hand-authored glowing-image table under the assets root.
+const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
+
 ## The asset index the catalog answers from.
 var index: AssetIndex
 ## The folder the assets were opened from.
@@ -25,6 +28,7 @@ var textures: TextureSet = TextureSet.retail()
 var problems: PackedStringArray = PackedStringArray()
 var _counterparts: Dictionary[String, Texture2D] = {}
 var _fonts: Dictionary[String, Font] = {}
+var _emissive: EmissiveImageTable
 
 
 ## Opens the assets under [param assets_root], drawing from the texture set
@@ -122,6 +126,19 @@ func font(name: String) -> Font:
 		problems.append("no font %s at %s" % [name, path])
 	_fonts[name] = found
 	return found
+
+
+## The glowing-image table at [constant EMISSIVE_IMAGES_PATH], loaded once;
+## an empty table, with a line in [member problems], when it is missing.
+func emissive_images() -> EmissiveImageTable:
+	if _emissive != null:
+		return _emissive
+	var path: String = root.path_join(EMISSIVE_IMAGES_PATH)
+	_emissive = _load(path) as EmissiveImageTable
+	if _emissive == null:
+		problems.append("no emissive image table at %s" % path)
+		_emissive = EmissiveImageTable.new()
+	return _emissive
 
 
 ## The SHA-256 of the executable and archive the assets were imported from.

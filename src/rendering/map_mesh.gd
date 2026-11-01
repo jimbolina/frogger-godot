@@ -75,6 +75,8 @@ class Instance extends Node3D:
 	var _water_reflection: float = WATER_REFLECTION
 	var _water_specular: float = WATER_SPECULAR
 	var _water_shininess: float = WATER_SHININESS
+	var _emission_scale: float = 1.0
+	var _emissive_materials: Dictionary[ShaderMaterial, EmissiveImage] = {}
 
 	## Prepares overrides once; no mesh/material allocation during playback.
 	func configure(mesh: MapMesh) -> void:
@@ -204,6 +206,18 @@ class Instance extends Node3D:
 	func water_look() -> PackedFloat32Array:
 		return PackedFloat32Array([_water_reflection, _water_specular, _water_shininess])
 
+	## Scales the glow of every surface drawing an emissive image
+	## ([member MapSceneData.emissive]): each draws its entry's strength times
+	## [param value]; 0 turns the glow off.
+	func set_emission_scale(value: float) -> void:
+		_emission_scale = value
+		for material: ShaderMaterial in _emissive_materials:
+			_set_emission(material, _emissive_materials[material])
+
+	## The scale [method set_emission_scale] last set (1 by default).
+	func emission_scale() -> float:
+		return _emission_scale
+
 	## Switches nearest or linear, mipmapped sampling; textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
 		_linear_filter = value
@@ -277,12 +291,20 @@ class Instance extends Node3D:
 		material.set_shader_parameter("omni_wrap", 1.0 if spec.cave else 0.0)
 		if spec.environment:
 			_set_water_look(material)
+		var glowing: EmissiveImage = source.scene.emissive.get(image.texture_id, null) if image != null else null
+		if glowing != null:
+			_emissive_materials[material] = glowing
+			_set_emission(material, glowing)
 		_configured[material] = true
 
 	func _set_water_look(material: ShaderMaterial) -> void:
 		material.set_shader_parameter("reflection_emission", _water_reflection)
 		material.set_shader_parameter("specular_strength", _water_specular)
 		material.set_shader_parameter("shininess", _water_shininess)
+
+	func _set_emission(material: ShaderMaterial, glowing: EmissiveImage) -> void:
+		material.set_shader_parameter("emission_strength", glowing.strength * _emission_scale)
+		material.set_shader_parameter("emission_colour", glowing.colour)
 
 	func _refresh_sky_drift() -> void:
 		if _sky_node == null:

@@ -202,6 +202,36 @@ was about 16% near-white), while 512 gives a compact glint. No
 energy-conserving factor is applied, which keeps brightness and size
 independent. The MAX_OT riverbed stays plain lit terrain.
 
+## Lava
+
+Lava and hot rock glow: map surfaces drawing an image listed in the
+hand-authored `assets/rendering/emissive_images.tres`
+([assets](../assets.md#layout)) add emission on top of their lit colour.
+`EmissiveSurfaces.resolve` turns the table's image names into texture ids
+through FrogLord's image names for `MapSceneData.emissive`; an unknown name
+becomes a scene diagnostic. `MapMesh.Instance` sets `emission_strength`
+(the entry's strength times the scale) and `emission_colour` on every
+material it configures with such an image, so each frame of an animated
+track glows by its own image. The shader adds `texel × colour × strength`
+(the vertex colour on untextured surfaces, a quarter on add-quarter ones),
+independent of the baked vertex shading and the lights, so lava in baked
+shadow still glows; a missing image still shows plain magenta.
+`set_emission_scale` takes the profile's `lava_emission`, which the world view
+and the map viewer pass after building the map and on every change.
+
+| Family | Images | Strength | Colour |
+|---|---|---|---|
+| Molten lava | `vol_lava2/3/5/5a`, `vol_lavacent`, `vol_lavacent2`, `vol_lavani1`–`9` | 1.2 | (1, 0.6, 0.4) |
+| Lava edges | `vol_lavaedge`, `vol_lava6`, `vol_lava7` | 1.0 | (1, 0.6, 0.4) |
+| Cracked hot rock | `vol_hotrocka/b/c1`–`6`, `vol_hhotrock1` | 1.8 | (1, 0.5, 0.3) |
+| Plain hot rock | `vol_hotrock1`, `vol_hotrock3` | 0.5 | (1, 0.5, 0.3) |
+
+The red channel of bright molten texels passes the bloom threshold, so lava
+blooms softly red-orange onto nearby walls; the cracked rock's dark stone
+emits almost nothing, so only its cracks glow. Every family is drawn on
+VOL1, VOL2 or VOL3. Each entry's `light` and `light_energy` are kept for lava
+lights.
+
 ## Cave light
 
 A cave map (`MapSceneData.cave_enabled`) is lit by one `OmniLight3D` instead
@@ -353,6 +383,7 @@ and keep what reads best. None affects gameplay.
 | Glow halo | The soft additive halo around pickups and gold frogs that replaces the grey mask 1727. | Settings `glow_halo_strength` 2.0, matching `GlowHaloMaterial.DEFAULT_STRENGTH`; falloff `DEFAULT_FALLOFF` 3 ([glow](#glow)); 3.0 with falloff 2 clipped to a flat disc | ORG1 home flies, CAV1 fat fire flies, the ORG gold baby frog: a soft halo with a bright core, not a disc |
 | Glow lights | Small coloured lights at each glow that tint the nearby ground and pulse with the halo. | On: settings `glow_lights`, `glow_light_energy` 1.0; `GlowLightSpec.ENERGY` 0.75 and `RANGE_SQUARES` 1.5 ([glow](#glow)); energy 2 washed the grass | ORG1, ORG gold frog: a visible tint under the glow without washing out the ground |
 | Glow lights in caves | Whether cave glows also light the ground. | Off: settings `glow_lights_in_caves` ([glow](#glow)) | CAV1: whether the fat fire flies' light breaks the cave darkness |
+| Lava emission | How strongly lava and hot rock glow and bloom. | Settings `lava_emission` 1.0, scaling each entry of `emissive_images.tres` ([lava](#lava)); molten lava at 1.5 saturated the red channel over about 30% of the VOL2 overview and flattened its texture | VOL1 cracks, VOL2 lava lake, VOL3 lava pit: a red-orange glow with visible texture, not a flat sheet |
 | Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | Settings `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
 | Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
 

@@ -297,13 +297,15 @@ func _place_cave_light() -> void:
 	scene_lighting.set_cave_light(GameSpace.position(scene_data.midpoint.x, scene_data.midpoint.y, scene_data.midpoint.z),
 		scene_data.cave_min_r2, scene_data.cave_max_r2, GraphicsMapping.cave_mode(GraphicsProfile.current().cave_light_mode))
 
-## Gives the map the water look and vertex tint of the live graphics profile.
+## Gives the map the water look, vertex tint and lava emission of the live
+## graphics profile.
 func _apply_map_look() -> void:
 	if map_instance == null:
 		return
 	var settings: GraphicsSettings = GraphicsProfile.current()
 	map_instance.set_water_look(settings.water_reflection, settings.water_specular, settings.water_shininess)
 	map_instance.set_vertex_tint(settings.vertex_tint)
+	map_instance.set_emission_scale(settings.lava_emission)
 
 func _on_profile_changed() -> void:
 	_apply_map_look()

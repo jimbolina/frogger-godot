@@ -120,3 +120,22 @@ func test_unknown_ids_report_problems() -> void:
 	assert_string_contains(SoundBankSetup.from_catalog(_assets, UNKNOWN).error, str(UNKNOWN))
 	assert_null(_assets.read_wad(UNKNOWN))
 	assert_eq(_assets.counterpart_of(UNKNOWN), -1)
+
+
+func test_the_emissive_image_table_loads_and_the_base_catalog_has_none() -> void:
+	var table: EmissiveImageTable = _assets.emissive_images()
+	assert_not_null(table)
+	assert_gt(table.entries.size(), 0)
+	assert_same(_assets.emissive_images(), table, "loaded once")
+	assert_not_null(table.find("vol_lava6"))
+	var base: EmissiveImageTable = AssetCatalog.new().emissive_images()
+	assert_not_null(base)
+	assert_eq(base.entries.size(), 0)
+
+
+func test_a_missing_emissive_image_table_is_empty_and_noted() -> void:
+	var catalog := ImportedAssets.new()
+	catalog.root = "res://no_such_assets"
+	assert_eq(catalog.emissive_images().entries.size(), 0)
+	assert_eq(catalog.problems.size(), 1)
+	assert_string_contains(catalog.problems[0], "res://no_such_assets/rendering/emissive_images.tres")

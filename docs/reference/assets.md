@@ -26,7 +26,8 @@ sound definitions.
 
 `src/data/` holds one statically typed `Resource` class per record kind, with
 every public field exported: `archive/` (`MwiIndex`, `MwiEntry`, `WadFile`,
-`WadChild`), `textures/` (`VloFile`, `VloImage` with its `texture`), `models/`
+`WadChild`), `textures/` (`VloFile`, `VloImage` with its `texture`, and the hand-authored
+`EmissiveImageTable` of `EmissiveImage` entries), `models/`
 (`MofFile`, `MofStatic`, `MofPart`, `MofAnimated` and their promoted part
 records), `maps/` (`MapFile` and its sections), `tables/` (`GameTables` and
 every executable table), `sound/` (`SoundBankHeader`, `SoundBankEntry` with its
@@ -57,6 +58,7 @@ implements it over the retail files for the importer and the archive suite.
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
 | `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number. |
 | `demos/<NAME>.tres` | The recorded demos. |
+| `rendering/emissive_images.tres` | Hand-authored, not imported: the `EmissiveImageTable` of texture images that glow, by FrogLord image name, each with a colour, strength and light settings ([lava](rendering/lighting.md#lava)). Edit it as text; `test_asset_emissive_images` checks that it validates and every name resolves. |
 
 Gameplay collision and hilites come from `model.res`; editing a part mesh
 changes only what is drawn. Shared materials are files: a view draws a

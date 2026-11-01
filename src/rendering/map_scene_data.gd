@@ -27,6 +27,8 @@ var cave_max_r2: int = 1
 var bounds_min: Vector3i = Vector3i.ZERO
 var bounds_max: Vector3i = Vector3i.ZERO
 var midpoint: Vector3i = Vector3i.ZERO
+## The catalog's glowing images by global texture id ([EmissiveSurfaces]).
+var emissive: Dictionary[int, EmissiveImage] = {}
 ## Effect images, particle generator parameters and pop colours; null until the level loads.
 var effects: EffectResources
 ## Resource and source diagnostics, displayed by the viewer.
@@ -67,6 +69,8 @@ static func load_level(data: AssetCatalog, level_number: int, use_low_poly: bool
 		return scene
 	if row.environment_texture_pointer != 0:
 		scene.environment_image = scene.library.image_for_pointer(data.tables.bmp_pointers(), row.environment_texture_pointer, scene.preferred)
+	scene.emissive = EmissiveSurfaces.resolve(data.emissive_images(),
+		data.names.images if data.names != null else null, scene.diagnostics)
 	scene.cave_enabled = row.use_cave_lights
 	if scene.cave_enabled:
 		scene._read_cave_light(data)

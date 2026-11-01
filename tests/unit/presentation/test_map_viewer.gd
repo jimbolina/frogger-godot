@@ -275,17 +275,21 @@ func test_the_map_look_and_cave_mode_follow_the_profile() -> void:
 	var values: GraphicsSettings = GraphicsProfile.current().copy()
 	values.water_reflection = 0.5
 	values.vertex_tint = 0.4
+	values.lava_emission = 2.5
 	GraphicsProfile.replace(values)
 	assert_true(_viewer.show_scene(source))
 	assert_almost_eq(_viewer.map_instance.water_look()[0], 0.5, 1e-6)
 	assert_almost_eq(_viewer.map_instance._vertex_tint, 0.4, 1e-6)
+	assert_eq(_viewer.map_instance.emission_scale(), 2.5)
 	var light: OmniLight3D = _viewer.scene_lighting.cave_light_node()
 	assert_almost_eq(light.omni_range, CaveLightShape.range_of(0x200000, CaveLightShape.Mode.EXACT_EDGE), 1e-5)
 	values.water_reflection = 0.2
 	values.vertex_tint = 1.0
+	values.lava_emission = 0.5
 	values.cave_light_mode = GraphicsSettings.CaveMode.FITTED_RANGE
 	GraphicsProfile.replace(values)
 	assert_almost_eq(_viewer.map_instance.water_look()[0], 0.2, 1e-6)
+	assert_eq(_viewer.map_instance.emission_scale(), 0.5)
 	assert_eq(_viewer.map_instance._vertex_tint, 1.0)
 	assert_eq(_viewer.scene_lighting.cave_light_node(), light, "the same cave light")
 	assert_almost_eq(light.omni_range, CaveLightShape.range_of(0x200000, CaveLightShape.Mode.FITTED_RANGE), 1e-5)
