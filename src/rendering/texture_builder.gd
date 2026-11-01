@@ -8,13 +8,14 @@ extends RefCounted
 ## size. Filtering and mipmaps are chosen by the texture set. [method uv_rect]
 ## says where the in-game image sits inside it, for mapping game UVs;
 ## [method texture_rect] says the same in a given texture's pixels, and 2D
-## draws crop that region and draw it at the record's retail size.
+## draws crop that region and draw it at the record's retail size. A
+## [CanvasTexture] stands for its [member CanvasTexture.diffuse_texture].
 
 
 ## An [Image] (RGBA8, the texture's size, no mipmaps) of [param texture], or
 ## of [param image]'s own texture without one; null when there is none.
 static func build_image(image: VloImage, texture: Texture2D = null) -> Image:
-	var source: Texture2D = texture if texture != null else image.texture
+	var source: Texture2D = source_texture(texture if texture != null else image.texture)
 	var pixels: Image = source.get_image() if source != null else null
 	if pixels == null:
 		return null
@@ -24,6 +25,14 @@ static func build_image(image: VloImage, texture: Texture2D = null) -> Image:
 		pixels.clear_mipmaps()
 	pixels.convert(Image.FORMAT_RGBA8)
 	return pixels
+
+
+## The texture whose pixels [param texture] draws: the
+## [member CanvasTexture.diffuse_texture] of a [CanvasTexture], otherwise
+## [param texture] itself (null for null).
+static func source_texture(texture: Texture2D) -> Texture2D:
+	var canvas: CanvasTexture = texture as CanvasTexture
+	return canvas.diffuse_texture if canvas != null else texture
 
 
 ## An [Image] of only the in-game region (padding removed) of [param texture],

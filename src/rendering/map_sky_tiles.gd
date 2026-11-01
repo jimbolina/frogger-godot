@@ -55,7 +55,7 @@ static func layers(images: Array[VloImage], library: TextureLibrary, linear: boo
 					% [layer, image.texture_id, texture.get_width(), texture.get_height(), image.padded_width,
 					image.padded_height, size.x, size.y, reference.padded_width, reference.padded_height])
 			else:
-				pixels = texture.get_image()
+				pixels = TextureBuilder.source_texture(texture).get_image()
 				if pixels.is_compressed():
 					pixels.decompress()
 				pixels.clear_mipmaps()

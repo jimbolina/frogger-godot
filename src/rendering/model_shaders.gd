@@ -123,10 +123,12 @@ static func shader_code(textured: bool, blend: Blend, linear_filter: bool) -> St
 
 
 ## A material drawing with [param texture] (null for untextured polygons),
-## through the lit family when [param lit] and the unlit one otherwise.
+## through the lit family when [param lit] and the unlit one otherwise. A
+## lettering [CanvasTexture] draws its image filtered linearly with mipmaps.
 static func material(texture: Texture2D, blend: Blend, linear_filter: bool, two_sided: bool, lit: bool = true) -> ShaderMaterial:
+	var drawn: Texture2D = TextureBuilder.source_texture(texture)
 	var made := ShaderMaterial.new()
-	made.shader = shader(texture != null, blend, linear_filter, two_sided, lit)
-	if texture != null:
-		made.set_shader_parameter("image", texture)
+	made.shader = shader(drawn != null, blend, linear_filter or drawn != texture, two_sided, lit)
+	if drawn != null:
+		made.set_shader_parameter("image", drawn)
 	return made

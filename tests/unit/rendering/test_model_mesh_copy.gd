@@ -3,6 +3,9 @@ extends GutTest
 
 const FROG: String = "GEN_FROG.XAR"
 const FISH: String = "SUB_FISH.XMR"
+const HI_A_MESH: String = "res://assets/models/options/HI_A/mesh.res"
+const LETTERING_ROOT: String = "res://tests/fixtures/lettering"
+const LETTERED: String = "res://assets/textures/images/t0263.png"
 
 var _data: ImportedAssets
 
@@ -203,3 +206,48 @@ func test_the_retail_set_keeps_the_shared_mesh_and_its_shaders() -> void:
 		var shared_image: Texture2D = shared_materials[index].get_shader_parameter("image")
 		assert_same(image, shared_image)
 	assert_same(ModelMeshLibrary.mesh_for(_data, _data.find_resource(FROG).index, null, null), shared)
+
+func _lettered() -> ImportedAssets:
+	var catalog := ImportedAssets.new()
+	catalog.root = LETTERING_ROOT
+	return catalog
+
+func _all_materials(mesh: ModelMesh) -> Array[ShaderMaterial]:
+	var found: Array[ShaderMaterial] = _surface_materials(mesh)
+	for tracks: Array in mesh.texture_tracks:
+		for track: ModelMesh.TextureTrack in tracks:
+			found.append(track.original)
+			found.append_array(track.frames)
+	return found
+
+func test_a_retail_mesh_with_lettering_draws_it_through_the_linear_shader() -> void:
+	var shared: ModelMesh = load(HI_A_MESH) as ModelMesh
+	var lettered: ImportedAssets = _lettered()
+	var key: String = LETTERING_ROOT.path_join("models/options/HI_A/mesh.res")
+	var drawn: ModelMesh = ModelMeshLibrary._for_drawing(shared, key, lettered)
+	assert_ne(drawn, shared)
+	assert_same(ModelMeshLibrary._for_drawing(shared, key, lettered), drawn, "one copy per path and set")
+	var copied: Array[ShaderMaterial] = _all_materials(drawn)
+	var shared_materials: Array[ShaderMaterial] = _all_materials(shared)
+	assert_eq(copied.size(), shared_materials.size())
+	var swapped: int = 0
+	for index: int in copied.size():
+		var retail: Texture2D = shared_materials[index].get_shader_parameter("image")
+		var image: Texture2D = copied[index].get_shader_parameter("image")
+		if retail == null or retail.resource_path != LETTERED:
+			assert_same(image, retail)
+			assert_same(copied[index].shader, shared_materials[index].shader, "other images keep their shader")
+			continue
+		swapped += 1
+		assert_eq(image.resource_path, LETTERING_ROOT.path_join("textures/lettering/t0263.png"))
+		assert_same(copied[index].shader, ModelShaders.linear_variant(shared_materials[index].shader))
+		assert_true(copied[index].shader.resource_path.contains("_linear"), copied[index].shader.resource_path)
+		assert_false(shared_materials[index].shader.resource_path.contains("_linear"))
+	assert_gt(swapped, 0, "HI_A draws its lettered lily pad")
+	assert_same(load(HI_A_MESH) as ModelMesh, shared, "the shared mesh keeps its retail textures")
+
+func test_a_retail_mesh_without_lettering_is_drawn_shared() -> void:
+	var shared: ModelMesh = _committed_frog()
+	var key: String = LETTERING_ROOT.path_join("models/GEN_FROG/mesh.res")
+	assert_same(ModelMeshLibrary._for_drawing(shared, key, _lettered()), shared)
+	assert_same(ModelMeshLibrary._for_drawing(shared, key, _lettered()), shared)

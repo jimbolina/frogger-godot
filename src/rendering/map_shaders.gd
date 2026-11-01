@@ -54,18 +54,20 @@ static func sky_shader() -> Shader:
 
 ## Material sampling [param texture], the padded per-image texture of
 ## [param image] (null for an untextured polygon), filtered linearly with
-## mipmaps when [param linear]. A [param layer] of zero or more draws behind
-## ordinary terrain in that far layer.
+## mipmaps when [param linear] or when it is a lettering [CanvasTexture]. A
+## [param layer] of zero or more draws behind ordinary terrain in that far
+## layer.
 static func material(image: VloImage, texture: Texture2D, blend: ModelShaders.Blend, linear: bool,
 		layer: int) -> ShaderMaterial:
+	var drawn: Texture2D = TextureBuilder.source_texture(texture)
 	var made := ShaderMaterial.new()
 	made.shader = shader(blend, layer >= 0)
 	made.set_shader_parameter("textured", image != null)
-	made.set_shader_parameter("linear_filter", linear)
+	made.set_shader_parameter("linear_filter", linear or drawn != texture)
 	if image != null:
-		made.set_shader_parameter("image_nearest", texture)
-		made.set_shader_parameter("image_linear", texture)
-		made.set_shader_parameter("missing_image", texture == null)
+		made.set_shader_parameter("image_nearest", drawn)
+		made.set_shader_parameter("image_linear", drawn)
+		made.set_shader_parameter("missing_image", drawn == null)
 		made.set_shader_parameter("image_origin", Vector2(image.u, image.v))
 		made.set_shader_parameter("image_padding", Vector2(image.left_padding(), image.top_padding()))
 		made.set_shader_parameter("image_padded_size", Vector2(image.padded_width, image.padded_height))

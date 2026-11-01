@@ -6,8 +6,9 @@ extends RefCounted
 ##
 ## A committed mesh is the shared loaded resource, so every caller asking for
 ## the same model gets the same [ModelMesh] and the same materials. When the
-## catalog draws from an upscaled [TextureSet], the shared mesh is one
-## converted [ModelMeshCopy] per model and set, kept here.
+## catalog draws from an upscaled [TextureSet], or a retail-set mesh draws a
+## lettering image, the shared mesh is one converted [ModelMeshCopy] per model
+## and set, kept here.
 
 ## The file of each model's mesh inside its folder under [code]models/[/code].
 const MESH_FILE: String = "mesh.res"
@@ -51,9 +52,34 @@ static func mesh_for(catalog: AssetCatalog, resource_id: int, library: TextureLi
 
 static func _for_drawing(loaded: ModelMesh, path: String, imported: ImportedAssets) -> ModelMesh:
 	var set: TextureSet = imported.texture_set()
-	if set.is_retail():
-		return loaded
 	var key: String = "%s|%s" % [path, set.set_name]
 	if not _converted.has(key):
-		_converted[key] = ModelMeshCopy.of(loaded, imported)
-	return _converted[key]
+		var converts: bool = not set.is_retail() or _draws_lettering(loaded, imported)
+		_converted[key] = ModelMeshCopy.of(loaded, imported) if converts else null
+	var converted: ModelMesh = _converted[key]
+	return converted if converted != null else loaded
+
+
+static func _draws_lettering(mesh: ModelMesh, imported: ImportedAssets) -> bool:
+	var materials: Array[ShaderMaterial] = []
+	for part: ArrayMesh in mesh.part_meshes:
+		_add_materials(part, materials)
+	for morph: ModelMorphMesh in mesh.morph_meshes:
+		if morph != null:
+			_add_materials(morph.mesh, materials)
+	for tracks: Array in mesh.texture_tracks:
+		for track: ModelMesh.TextureTrack in tracks:
+			materials.append(track.original)
+			materials.append_array(track.frames)
+	for material: ShaderMaterial in materials:
+		var image: Texture2D = material.get_shader_parameter("image") if material != null else null
+		if image != null and imported.texture_counterpart(image) != image:
+			return true
+	return false
+
+
+static func _add_materials(mesh: ArrayMesh, materials: Array[ShaderMaterial]) -> void:
+	if mesh == null:
+		return
+	for surface: int in mesh.get_surface_count():
+		materials.append(mesh.surface_get_material(surface) as ShaderMaterial)

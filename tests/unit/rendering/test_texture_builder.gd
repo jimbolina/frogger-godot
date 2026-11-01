@@ -40,6 +40,25 @@ func test_upscaled_texture_scales_the_region_but_not_the_retail_size() -> void:
 	assert_eq(TextureBuilder.texture_rect(record, texture), Rect2(uv.position * texture.get_size(), uv.size * texture.get_size()))
 
 
+func test_a_wrapped_8x_texture_scales_the_region_but_not_the_retail_size() -> void:
+	var record: VloImage = _record()
+	var pixels: Image = record.texture.get_image()
+	pixels.resize(record.padded_width * 8, record.padded_height * 8, Image.INTERPOLATE_NEAREST)
+	var wrapped := CanvasTexture.new()
+	wrapped.diffuse_texture = ImageTexture.create_from_image(pixels)
+	assert_same(TextureBuilder.source_texture(wrapped), wrapped.diffuse_texture)
+	assert_same(TextureBuilder.source_texture(record.texture), record.texture)
+	assert_null(TextureBuilder.source_texture(null))
+	assert_eq(TextureBuilder.texture_scale(record, wrapped), Vector2(8, 8))
+	assert_eq(TextureBuilder.texture_rect(record, wrapped), Rect2(8, 8, 32, 16))
+	assert_eq(TextureBuilder.retail_size(record, wrapped), Vector2(6, 4), "drawn at the padded size")
+	assert_eq(TextureBuilder.build_image(record, wrapped).get_size(), Vector2i(48, 32))
+	assert_eq(TextureBuilder.build_unpadded_image(record, wrapped).get_size(), Vector2i(32, 16))
+	var clipped: AtlasTexture = TextureBuilder.unpadded_texture(record, wrapped) as AtlasTexture
+	assert_same(clipped.atlas, wrapped)
+	assert_eq(clipped.region, Rect2(8, 8, 32, 16))
+
+
 func test_unpadded_texture_clips_the_given_texture() -> void:
 	var record: VloImage = _record()
 	var retail: AtlasTexture = TextureBuilder.unpadded_texture(record) as AtlasTexture

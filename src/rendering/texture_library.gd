@@ -14,7 +14,11 @@ extends RefCounted
 ## at texture records directly go through [BmpPointers] ([method image_for_pointer]).
 ## Each image brings its own [member VloImage.texture]; a [member catalog]
 ## that chose another [TextureSet] answers [method texture_for] with that
-## set's counterpart instead.
+## set's counterpart instead. A lettering image comes wrapped in a
+## [CanvasTexture] that filters linearly with mipmaps, so a 2D node that draws
+## pixel art with nearest filtering still shrinks the lettering smoothly; 3D
+## materials draw its [member CanvasTexture.diffuse_texture]
+## ([method TextureBuilder.source_texture]).
 
 ## The catalog whose texture set the textures come from, or null for the
 ## records' own textures.
@@ -22,6 +26,7 @@ var catalog: AssetCatalog
 var _banks: Array[VloFile] = []
 var _bank_names: PackedStringArray = PackedStringArray()
 var _by_texture_id: Dictionary[int, VloImage] = {}
+var _lettering: Dictionary[Texture2D, CanvasTexture] = {}
 
 
 ## Adds [param bank] (called [param bank_name], e.g. "SUB_VRAM.VLO"); its
@@ -77,11 +82,20 @@ func image_for_pointer(pointers: BmpPointers, pointer: int, preferred: VloFile =
 
 
 ## The Godot texture of [param image] in the catalog's texture set (its
-## [member VloImage.texture] without a catalog), or null.
+## [member VloImage.texture] without a catalog), or null. A lettering image
+## comes as one linear, mipmapped [CanvasTexture] over it.
 func texture_for(image: VloImage) -> Texture2D:
 	if image == null:
 		return null
-	return catalog.texture_of(image) if catalog != null else image.texture
+	var found: Texture2D = catalog.texture_of(image) if catalog != null else image.texture
+	if found == null or not TextureSet.is_lettering_path(found.resource_path):
+		return found
+	if not _lettering.has(found):
+		var wrapped := CanvasTexture.new()
+		wrapped.diffuse_texture = found
+		wrapped.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		_lettering[found] = wrapped
+	return _lettering[found]
 
 
 ## The texture set the textures come from.

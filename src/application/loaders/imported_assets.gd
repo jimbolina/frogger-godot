@@ -13,7 +13,8 @@ extends AssetCatalog
 ## textures, and [method texture_of], [method texture_counterpart] and
 ## [method font] answer with the chosen set's files,
 ## falling back to the retail file (noted in [member problems]) when the set
-## lacks one.
+## lacks one. A lettering image ([method TextureSet.lettering_path]) replaces
+## its retail texture in every set.
 
 ## The hand-authored glowing-image table under the assets root.
 const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
@@ -88,23 +89,22 @@ func texture_of(image: VloImage) -> Texture2D:
 	return texture_counterpart(image.texture) if image != null else null
 
 
-## The texture set's file for the retail [param texture]: the same texture for
-## the retail set, a texture outside the retail folders, or a set file that is
-## missing (noted once in [member problems]).
+## The file the catalog draws for the retail [param texture]: its lettering
+## image under the assets root when one exists, in every set; otherwise the
+## texture set's file, which is the same texture for the retail set, a texture
+## outside the retail folders, or a set file that is missing (noted once in
+## [member problems]). The answer is cached per retail path.
 func texture_counterpart(texture: Texture2D) -> Texture2D:
-	if texture == null or textures.is_retail():
+	if texture == null or texture.resource_path.is_empty():
 		return texture
 	var retail_path: String = texture.resource_path
-	var path: String = textures.counterpart_path(retail_path)
-	if path == retail_path:
-		return texture
-	if _counterparts.has(path):
-		return _counterparts[path]
-	var found: Texture2D = _load(path) as Texture2D
+	if _counterparts.has(retail_path):
+		return _counterparts[retail_path]
+	var lettering: String = TextureSet.lettering_path(retail_path)
+	var found: Texture2D = _load(root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
 	if found == null:
-		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
-		found = texture
-	_counterparts[path] = found
+		found = _set_counterpart(texture)
+	_counterparts[retail_path] = found
 	return found
 
 
@@ -125,6 +125,18 @@ func font(name: String) -> Font:
 	if found == null:
 		problems.append("no font %s at %s" % [name, path])
 	_fonts[name] = found
+	return found
+
+
+func _set_counterpart(texture: Texture2D) -> Texture2D:
+	var retail_path: String = texture.resource_path
+	var path: String = textures.counterpart_path(retail_path)
+	if path == retail_path:
+		return texture
+	var found: Texture2D = _load(path) as Texture2D
+	if found == null:
+		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
+		return texture
 	return found
 
 
