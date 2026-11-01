@@ -352,7 +352,7 @@ keeps them, and `--effect-shadows=retail|off` overrides it for one launch.
 `GameplayWorldView.shadow_requests` returns no requests when it says no, so
 nothing reaches `FrogShadowView`. The shadow colours golden still pins the
 effect's geometry and colours. The sandbox's zone faces
-are unshaded, so real shadows have no surface to fall on there.
+are lit terrain, so real shadows fall on them.
 
 ## Front end
 
@@ -381,8 +381,11 @@ applied again when it returns.
 
 ## Sandbox and viewers
 
-The sandbox lights its frog and entities through `GameplayWorldView`'s
-options-light fallback; its zone faces stay unshaded `terrain_debug` tints.
+The sandbox lights its frog, entities and zone faces through
+`GameplayWorldView`'s options-light fallback. The zone faces draw through the
+opaque terrain shader (`MapShaders`), coloured per vertex with up-facing
+normals, and join the shadow-caster layer, so they take shadows and glow lights
+like map terrain.
 The model viewer shows lit models under a `SceneLighting` holding the options
 lights without shadows, in front of its grey backdrop. The camera-zone viewer lights its map from the light
 records like the map viewer (options lights when the map has none, cave light

@@ -1,7 +1,7 @@
 extends GutTest
 ## A level draws its terrain, frog and entities with the lit shaders under scene lights; a cave
 ## level draws under the cave omni light instead of the directional lights. The mapless sandbox
-## draws its frog and entities under the options lights and keeps its unshaded zone faces.
+## draws its frog, entities and zone faces under the options lights.
 
 var _data: ImportedAssets
 
@@ -143,7 +143,7 @@ func _sandbox(data: ImportedAssets) -> SandboxScreen:
 	return screen
 
 
-func _assert_zone_faces_unshaded(screen: SandboxScreen) -> void:
+func _assert_zone_faces_lit(screen: SandboxScreen) -> void:
 	var faces: int = 0
 	for child: Node in screen._ground.get_children():
 		var face: MeshInstance3D = child as MeshInstance3D
@@ -152,7 +152,18 @@ func _assert_zone_faces_unshaded(screen: SandboxScreen) -> void:
 		var material: ShaderMaterial = face.material_override as ShaderMaterial
 		assert_not_null(material, String(face.name))
 		if material != null:
-			assert_eq(material.shader.resource_path, "res://src/presentation/tools/terrain_debug.gdshader", String(face.name))
+			assert_eq(material.shader.resource_path, MapShaders.shader_path(ModelShaders.Blend.OPAQUE, false), String(face.name))
+		assert_ne(face.layers & SceneLightingSpec.SHADOW_CASTER_LAYER, 0, String(face.name))
+		var arrays: Array = face.mesh.surface_get_arrays(0)
+		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+		var colours: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		assert_eq(normals.size(), vertices.size(), String(face.name))
+		assert_eq(colours.size(), vertices.size(), String(face.name))
+		for index: int in range(0, vertices.size(), 3):
+			var front: Vector3 = (vertices[index + 2] - vertices[index]).cross(vertices[index + 1] - vertices[index])
+			assert_gt(front.y, 0.0, "%s corner %d faces up" % [face.name, index])
+			assert_gt(normals[index].y, 0.0, "%s normal %d" % [face.name, index])
 		faces += 1
 	assert_gt(faces, 0)
 
@@ -167,5 +178,5 @@ func test_sandbox_is_lit_by_the_options_lights() -> void:
 	assert_eq(screen.scene_lighting.applied_ambient, expected.ambient)
 	assert_gt(screen.entity_model_count(), 0, "the effects preset places entity models")
 	_assert_all_lit(_shader_paths(_model_nodes(screen)), "model_", "frog and entity part")
-	_assert_zone_faces_unshaded(screen)
+	_assert_zone_faces_lit(screen)
 	screen.close_data()

@@ -1,6 +1,7 @@
 class_name SandboxScreen
 extends GameplayScreen
 ## Owner play-check scene: the flat sandbox arena with live entity spawning, teleport and reset that never ends.
+## Its zone faces draw through the lit terrain shader, coloured per vertex, so they take the scene's lights and shadows.
 
 const LEVEL_CODE: String = "SANDBOX"
 const FACING_STEPS: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0)]
@@ -19,6 +20,8 @@ const ZONE_COLOURS: Dictionary[StringName, Color] = {
 }
 const UNKNOWN_ZONE_COLOUR := Color(0.5, 0.5, 0.5)
 const CHECKER_LIGHTEN: float = 0.1
+## A grid square's two triangles in strip order, turned clockwise from above when built so Godot shows their fronts.
+const SQUARE_CORNERS: PackedInt32Array = [0, 1, 2, 2, 1, 3]
 
 var sandbox: SandboxLevel = null
 var spawner: SandboxSpawner = null
@@ -363,6 +366,7 @@ func _build_arena() -> void:
 		_ground.remove_child(child)
 		child.queue_free()
 	var groups: Dictionary[String, PackedVector3Array] = {}
+	var normals: Dictionary[String, PackedVector3Array] = {}
 	var colours: Dictionary[String, Color] = {}
 	var grid: GridDefinition = sandbox.level.grid
 	for z: int in SandboxLevel.DIMENSIONS.y:
@@ -373,22 +377,46 @@ func _build_arena() -> void:
 			var key: String = "%s:%d" % [zone.name, (x + z) & 1]
 			if not groups.has(key):
 				groups[key] = PackedVector3Array()
+				normals[key] = PackedVector3Array()
 				var colour: Color = ZONE_COLOURS.get(zone.name, UNKNOWN_ZONE_COLOUR)
 				colours[key] = colour.lightened(CHECKER_LIGHTEN) if (x + z) & 1 else colour
 			var vertices: PackedVector3Array = groups[key]
-			for index: int in [0, 1, 2, 2, 1, 3]:
-				var vertex: Vector3i = square.vertices[index]
-				vertices.append(GameSpace.position(vertex.x, vertex.y, vertex.z))
+			var facing: PackedVector3Array = normals[key]
+			for start: int in range(0, SQUARE_CORNERS.size(), 3):
+				var corners := PackedVector3Array()
+				for offset: int in 3:
+					var vertex: Vector3i = square.vertices[SQUARE_CORNERS[start + offset]]
+					corners.append(GameSpace.position(vertex.x, vertex.y, vertex.z))
+				var normal: Vector3 = (corners[2] - corners[0]).cross(corners[1] - corners[0])
+				if normal.y < 0.0:
+					corners = PackedVector3Array([corners[0], corners[2], corners[1]])
+					normal = -normal
+				normal = normal.normalized() if not normal.is_zero_approx() else Vector3.UP
+				for corner: Vector3 in corners:
+					vertices.append(corner)
+					facing.append(normal)
 			groups[key] = vertices
+			normals[key] = facing
 	for key: String in groups:
 		var arrays: Array = []
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = groups[key]
+		arrays[Mesh.ARRAY_NORMAL] = normals[key]
+		var tint := PackedColorArray()
+		tint.resize(groups[key].size())
+		tint.fill(colours[key])
+		arrays[Mesh.ARRAY_COLOR] = tint
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		var face := MeshInstance3D.new()
 		face.name = key.replace(":", "_")
 		face.mesh = mesh
-		face.material_override = _material(colours[key])
+		face.layers |= SceneLightingSpec.SHADOW_CASTER_LAYER
+		face.material_override = _zone_material()
 		_ground.add_child(face)
 	_projection_size = Vector2i.ZERO
+
+func _zone_material() -> ShaderMaterial:
+	var material: ShaderMaterial = MapShaders.material(null, null, ModelShaders.Blend.OPAQUE, false, -1)
+	material.set_shader_parameter("projection_scale", GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	return material
