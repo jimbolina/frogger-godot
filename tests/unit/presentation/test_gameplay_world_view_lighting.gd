@@ -1,7 +1,8 @@
 extends GutTest
 ## The gameplay frog takes its committed colour scale and custom ambient as its tint under the map's
 ## lights or the options lights; the scene is lit from the map's lights, casts real shadows unless
-## switched off and draws the blob shadow effects only when the shadow-effect setting keeps them.
+## switched off and draws the blob shadow effects only when the shadow-effect setting keeps them; the map's
+## water look, vertex tint and cave light mode follow the live graphics profile.
 
 const SCALE := Vector3i(0, 64, 192)
 const AMBIENT := Vector3i(32, 64, 64)
@@ -21,6 +22,9 @@ func before_each() -> void:
 	_view.build_frog(assets)
 	_lighting = OptionsModels.options_lighting()
 	_tick = 0
+
+func after_each() -> void:
+	GraphicsProfile.reset()
 
 func _draw(flags: int) -> void:
 	_tick += 1
@@ -292,3 +296,45 @@ func test_real_shadows_off_leaves_the_lights_without_a_caster() -> void:
 	assert_gt(_view.scene_lighting.light_nodes().size(), 0)
 	assert_eq(_casters(), 0, "no light casts")
 	assert_false(_view.scene_lighting.applied_spec.shadows)
+
+func _look(reflection: float, specular: float, shininess: float, tint: float) -> GraphicsSettings:
+	var values: GraphicsSettings = GraphicsProfile.current().copy()
+	values.water_reflection = reflection
+	values.water_specular = specular
+	values.water_shininess = shininess
+	values.vertex_tint = tint
+	return values
+
+func test_the_map_takes_the_profile_look_when_built_and_when_it_changes() -> void:
+	GraphicsProfile.replace(_look(0.5, 0.3, 256.0, 0.6))
+	_view.build_map(_cave_map())
+	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([0.5, 0.3, 256.0]))
+	assert_almost_eq(_view._map_instance._vertex_tint, 0.6, 1e-6)
+	GraphicsProfile.replace(_look(0.1, 0.0, 128.0, 0.0))
+	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([0.1, 0.0, 128.0]))
+	assert_eq(_view._map_instance._vertex_tint, 0.0)
+
+func test_a_view_outside_the_tree_ignores_profile_changes() -> void:
+	_view.build_map(_cave_map())
+	remove_child(_view)
+	GraphicsProfile.replace(_look(0.5, 0.3, 256.0, 0.6))
+	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([MapMesh.Instance.WATER_REFLECTION, MapMesh.Instance.WATER_SPECULAR, MapMesh.Instance.WATER_SHININESS]))
+	add_child(_view)
+	GraphicsProfile.replace(_look(0.5, 0.3, 256.0, 0.6))
+	assert_eq(_view._map_instance.water_look(), PackedFloat32Array([0.5, 0.3, 256.0]))
+
+func test_the_cave_light_follows_the_profile_mode() -> void:
+	_build_cave()
+	_view.accept_state(_cave_state(1, Vector3i.ZERO, 8))
+	_view.draw_state(1.0)
+	var light: OmniLight3D = _view.scene_lighting.cave_light_node()
+	var radii: PackedInt64Array = MapLighting.initial_cave_radii(8)
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(radii[1], CaveLightShape.Mode.EXACT_EDGE), 1e-5)
+	var values: GraphicsSettings = GraphicsProfile.current().copy()
+	values.cave_light_mode = GraphicsSettings.CaveMode.FITTED_RANGE
+	GraphicsProfile.replace(values)
+	_view.draw_state(1.0)
+	assert_eq(_view.scene_lighting.cave_light_node(), light, "the same cave light")
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(radii[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
+	assert_almost_eq(light.light_energy, CaveLightShape.energy_of(radii[0], radii[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
+	assert_eq(_view.scene_lighting.light_nodes().size(), 0, "cave mode survives the change")

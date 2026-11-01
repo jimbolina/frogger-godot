@@ -192,6 +192,7 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	_world.add_child(map_instance)
 	instance_build_ms = float(Time.get_ticks_usec() - instance_started) / 1000.0
 	map_instance.set_inspection_visibility(_inspection.button_pressed)
+	_apply_map_look()
 	_light_scene(source)
 	_setup_paths()
 	_setup_entities()
@@ -288,9 +289,25 @@ func _light_scene(source: MapSceneData) -> void:
 	if lighting.directions.is_empty() and lighting.ambient.is_zero_approx():
 		lighting = OptionsModels.options_lighting()
 	scene_lighting.apply(SceneLightingBuilder.from_lighting(lighting))
-	if source.cave_enabled:
-		scene_lighting.set_cave_light(GameSpace.position(source.midpoint.x, source.midpoint.y, source.midpoint.z),
-			source.cave_min_r2, source.cave_max_r2)
+	_place_cave_light()
+
+func _place_cave_light() -> void:
+	if scene_lighting == null or scene_data == null or not scene_data.cave_enabled:
+		return
+	scene_lighting.set_cave_light(GameSpace.position(scene_data.midpoint.x, scene_data.midpoint.y, scene_data.midpoint.z),
+		scene_data.cave_min_r2, scene_data.cave_max_r2, GraphicsMapping.cave_mode(GraphicsProfile.current().cave_light_mode))
+
+## Gives the map the water look and vertex tint of the live graphics profile.
+func _apply_map_look() -> void:
+	if map_instance == null:
+		return
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	map_instance.set_water_look(settings.water_reflection, settings.water_specular, settings.water_shininess)
+	map_instance.set_vertex_tint(settings.vertex_tint)
+
+func _on_profile_changed() -> void:
+	_apply_map_look()
+	_place_cave_light()
 
 func _release_scene_lighting(detach: bool = true) -> void:
 	if scene_lighting != null:
@@ -1126,7 +1143,15 @@ func set_inspection_visibility(value: bool) -> void:
 		map_instance.set_inspection_visibility(value)
 	_refresh_status()
 
+func _enter_tree() -> void:
+	var profile: GraphicsSettings = GraphicsProfile.current()
+	if not profile.changed.is_connected(_on_profile_changed):
+		profile.changed.connect(_on_profile_changed)
+
 func _exit_tree() -> void:
+	var profile: GraphicsSettings = GraphicsProfile.current()
+	if profile.changed.is_connected(_on_profile_changed):
+		profile.changed.disconnect(_on_profile_changed)
 	_release_scene(false)
 	if _owns_data and data != null:
 		data.close()

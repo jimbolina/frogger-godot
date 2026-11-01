@@ -1,9 +1,9 @@
 extends SceneTree
 ## Measures how the renderer turns scene lighting into screen bytes.
 ##
-## Builds a [WorldEnvironment] and [DirectionalLight3D]s from
-## [method SceneLightingBuilder.from_lighting] on synthetic [MapLighting]
-## records, draws a lit quad with a minimal Lambert material, reads back the
+## Lights a scene through [SceneLighting], with the live graphics profile's
+## bloom and tone mapping, from [method SceneLightingBuilder.from_lighting] on
+## synthetic [MapLighting] records, draws a lit quad with a minimal Lambert material, reads back the
 ## centre pixel and compares it with the byte the lighting recipe asks for.
 ## The lit case yields the renderer's direct light per unit energy, whose
 ## reciprocal is the [constant SceneLightingBuilder.LAMBERT_SCALE] that makes
@@ -92,6 +92,9 @@ func _run() -> void:
 	lines.append("video adapter: %s" % RenderingServer.get_video_adapter_name())
 	lines.append("albedo byte: %d, stored ambient: %d, stored parallel: %d" % [ALBEDO, int(AMBIENT), int(PARALLEL)])
 	lines.append("LAMBERT_SCALE in use: %s" % SceneLightingBuilder.LAMBERT_SCALE)
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	lines.append("bloom: %s, intensity %s, threshold %s; tone mapper %d, exposure %s" % [
+		settings.bloom, settings.bloom_intensity, settings.bloom_threshold, settings.tonemapper, settings.exposure])
 	var failures: int = 0
 	for item: Case in cases:
 		var spec: SceneLightingSpec = SceneLightingBuilder.from_lighting(item.lighting, false)
@@ -142,26 +145,9 @@ func _build(spec: SceneLightingSpec, normal: Vector3) -> void:
 		_scene.free()
 	_scene = Node3D.new()
 	root.add_child(_scene)
-	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color.BLACK
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(spec.ambient.x, spec.ambient.y, spec.ambient.z).linear_to_srgb()
-	environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
-	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-	environment.tonemap_exposure = 1.0
-	environment.tonemap_white = 1.0
-	var world := WorldEnvironment.new()
-	world.environment = environment
-	_scene.add_child(world)
-	for light: SceneLightingSpec.Light in spec.lights:
-		var node := DirectionalLight3D.new()
-		node.transform = Transform3D(light.basis, Vector3.ZERO)
-		node.light_color = light.colour
-		node.light_energy = light.energy
-		node.light_specular = 0.0
-		node.shadow_enabled = false
-		_scene.add_child(node)
+	var lighting := SceneLighting.new()
+	_scene.add_child(lighting)
+	lighting.apply(spec)
 	var shader := Shader.new()
 	shader.code = SHADER
 	var material := ShaderMaterial.new()

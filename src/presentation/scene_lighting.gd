@@ -13,11 +13,19 @@ extends Node3D
 ## lights go, the ambient dims to [constant CaveLightShape.CAVE_AMBIENT] and
 ## the omni light shaped by [CaveLightShape] follows the frog;
 ## [method clear_cave_light] restores the applied spec.
+##
+## Bloom, tone mapping, SSAO and the shadow constants come from
+## [method GraphicsProfile.current]; the spec's shadows stay the per-launch
+## ceiling. While in the tree a profile change updates those properties on the
+## existing environment and lights in place, so backgrounds set by the owning
+## view after [method apply] and cave mode are kept.
 
 ## Shader global carrying the linear ambient to the lit model shaders.
 const AMBIENT_GLOBAL: StringName = &"frogger_model_ambient"
 ## Largest number of directional lights applied.
 const MAX_LIGHTS: int = 3
+## Brightness range above the bloom threshold over which bloom fades in.
+const BLOOM_HDR_SCALE: float = 2.0
 
 ## The environment applied with the first spec, or null before one; later
 ## features extend it rather than adding a second [WorldEnvironment].
@@ -110,8 +118,27 @@ func world_environment() -> WorldEnvironment:
 	return _world_environment
 
 
+func _enter_tree() -> void:
+	var profile: GraphicsSettings = GraphicsProfile.current()
+	if not profile.changed.is_connected(_on_profile_changed):
+		profile.changed.connect(_on_profile_changed)
+
+
 func _exit_tree() -> void:
+	var profile: GraphicsSettings = GraphicsProfile.current()
+	if profile.changed.is_connected(_on_profile_changed):
+		profile.changed.disconnect(_on_profile_changed)
 	_set_ambient(Vector3.ONE)
+
+
+func _on_profile_changed() -> void:
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	if environment != null:
+		_apply_post(settings)
+	if applied_spec == null:
+		return
+	for index: int in _lights.size():
+		_apply_shadows(_lights[index], applied_spec, applied_spec.lights[index].casts_shadow, settings)
 
 
 func _light(spec: SceneLightingSpec, source: SceneLightingSpec.Light) -> DirectionalLight3D:
@@ -120,25 +147,20 @@ func _light(spec: SceneLightingSpec, source: SceneLightingSpec.Light) -> Directi
 	light.light_color = source.colour
 	light.light_energy = source.energy
 	light.light_angular_distance = 0.0
-	light.shadow_enabled = source.casts_shadow and spec.shadows
-	light.directional_shadow_mode = _shadow_mode(spec.shadow_splits)
-	light.directional_shadow_split_1 = spec.split_1
-	light.directional_shadow_max_distance = spec.max_distance
 	light.directional_shadow_fade_start = spec.fade_start
-	light.shadow_bias = spec.bias
-	light.shadow_normal_bias = spec.normal_bias
 	light.shadow_blur = spec.blur
 	light.shadow_caster_mask = SceneLightingSpec.SHADOW_CASTER_LAYER
+	_apply_shadows(light, spec, source.casts_shadow, GraphicsProfile.current())
 	return light
 
 
-func _shadow_mode(splits: int) -> DirectionalLight3D.ShadowMode:
-	match splits:
-		1:
-			return DirectionalLight3D.SHADOW_ORTHOGONAL
-		4:
-			return DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
-	return DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+func _apply_shadows(light: DirectionalLight3D, spec: SceneLightingSpec, casts: bool, settings: GraphicsSettings) -> void:
+	light.shadow_enabled = casts and spec.shadows and settings.real_shadows
+	light.directional_shadow_mode = GraphicsMapping.shadow_mode(settings.shadow_splits)
+	light.directional_shadow_split_1 = settings.shadow_split_1
+	light.directional_shadow_max_distance = settings.shadow_max_distance
+	light.shadow_bias = settings.shadow_bias
+	light.shadow_normal_bias = settings.shadow_normal_bias
 
 
 func _enter_cave_mode() -> void:
@@ -158,16 +180,25 @@ func _apply_environment(ambient: Vector3, energy: float) -> void:
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color(ambient.x, ambient.y, ambient.z).linear_to_srgb()
 	environment.ambient_light_energy = energy
-	environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-	environment.tonemap_exposure = 1.0
-	environment.glow_enabled = false
 	environment.fog_enabled = false
 	environment.volumetric_fog_enabled = false
-	environment.ssao_enabled = false
 	environment.ssil_enabled = false
 	environment.ssr_enabled = false
 	environment.sdfgi_enabled = false
+	_apply_post(GraphicsProfile.current())
 	_world_environment.environment = environment
+
+
+func _apply_post(settings: GraphicsSettings) -> void:
+	environment.glow_enabled = settings.bloom
+	environment.glow_intensity = settings.bloom_intensity
+	environment.glow_hdr_threshold = settings.bloom_threshold
+	environment.glow_hdr_scale = BLOOM_HDR_SCALE
+	environment.glow_bloom = 0.0
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
+	environment.tonemap_mode = GraphicsMapping.tonemapper(settings.tonemapper)
+	environment.tonemap_exposure = settings.exposure
+	environment.ssao_enabled = settings.ssao
 
 
 func _set_ambient(ambient: Vector3) -> void:

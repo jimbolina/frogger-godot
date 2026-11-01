@@ -14,6 +14,9 @@ func before_each() -> void:
 	_viewer.auto_open = false
 	add_child_autofree(_viewer)
 
+func after_each() -> void:
+	GraphicsProfile.reset()
+
 func _scene() -> MapSceneData:
 	var source := MapSceneData.new()
 	source.level = 48
@@ -261,6 +264,31 @@ func test_cave_map_places_the_cave_light_at_the_static_start() -> void:
 	assert_true(_viewer.show_scene(source))
 	var light: OmniLight3D = _viewer.scene_lighting.cave_light_node()
 	assert_not_null(light)
+	assert_almost_eq(light.position, GameSpace.position(0, 0, 128) + Vector3.UP * CaveLightShape.HEIGHT, Vector3.ONE * 0.0001)
+
+
+func test_the_map_look_and_cave_mode_follow_the_profile() -> void:
+	var source: MapSceneData = _lit_scene()
+	source.cave_enabled = true
+	source.cave_min_r2 = 0x100000
+	source.cave_max_r2 = 0x200000
+	var values: GraphicsSettings = GraphicsProfile.current().copy()
+	values.water_reflection = 0.5
+	values.vertex_tint = 0.4
+	GraphicsProfile.replace(values)
+	assert_true(_viewer.show_scene(source))
+	assert_almost_eq(_viewer.map_instance.water_look()[0], 0.5, 1e-6)
+	assert_almost_eq(_viewer.map_instance._vertex_tint, 0.4, 1e-6)
+	var light: OmniLight3D = _viewer.scene_lighting.cave_light_node()
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(0x200000, CaveLightShape.Mode.EXACT_EDGE), 1e-5)
+	values.water_reflection = 0.2
+	values.vertex_tint = 1.0
+	values.cave_light_mode = GraphicsSettings.CaveMode.FITTED_RANGE
+	GraphicsProfile.replace(values)
+	assert_almost_eq(_viewer.map_instance.water_look()[0], 0.2, 1e-6)
+	assert_eq(_viewer.map_instance._vertex_tint, 1.0)
+	assert_eq(_viewer.scene_lighting.cave_light_node(), light, "the same cave light")
+	assert_almost_eq(light.omni_range, CaveLightShape.range_of(0x200000, CaveLightShape.Mode.FITTED_RANGE), 1e-5)
 	assert_almost_eq(light.position, GameSpace.position(0, 0, 128) + Vector3.UP * CaveLightShape.HEIGHT, Vector3.ONE * 0.0001)
 
 

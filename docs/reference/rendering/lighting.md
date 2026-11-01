@@ -21,7 +21,8 @@ and `AssetCatalog.note_renderer` logs "rendering on <method>; the game
 targets forward_plus, shadows and lighting may differ"; the screens push the
 catalog's warnings to the log. Unshaded surfaces decode their stored colours
 to linear light and the tone mapper is linear, so opaque sprites show their
-stored bytes; translucent blends mix in linear light (about 0.73 where the
+stored bytes; bloom adds only light above 1.0, so it leaves them alone.
+Translucent blends mix in linear light (about 0.73 where the
 original mixed stored values to 0.5), a known and accepted divergence.
 
 ## Scene lighting
@@ -43,17 +44,27 @@ into a node-free `SceneLightingSpec`. With stored fractions `a = ambient / 4096`
   the stored direction and its normal agree, and the source models store
   normals pointing inward (every corner of the committed `GEN_FROG` and
   `ORG_LOG_SMALL` meshes), so that direction is the way the light travels.
-- the slot with the largest luminance casts shadows: two parallel splits,
-  split 0.25, maximum distance 32 (8192 game units), fade 0.8, bias 0.05,
-  normal bias 1.0, blur 1.0, caster mask `SceneLightingSpec.SHADOW_CASTER_LAYER`
-  ([shadows](#shadows)).
+- the slot with the largest luminance casts shadows: fade 0.8, blur 1.0 and
+  caster mask `SceneLightingSpec.SHADOW_CASTER_LAYER` from the spec; splits,
+  split position, distance and biases from the graphics settings (defaults two
+  parallel splits, split 0.25, maximum distance 32 (8192 game units), bias
+  0.05, normal bias 1.0) ([shadows](#shadows)).
 
 `SceneLighting` (`src/presentation/`), a child of `GameplayWorldView`, is the
 only owner of light nodes: it builds the `DirectionalLight3D`s and one
 `WorldEnvironment` (black background, the ambient as a flat colour at energy
-1, linear tone mapping at exposure 1, every screen-space and volumetric effect
-off) on `apply`, sets the `frogger_model_ambient` shader global, and clears
-them with the entity visuals. `build_entities` applies the map's
+1, fog, volumetric fog, SSIL, SSR and SDFGI off) on `apply`, sets the
+`frogger_model_ambient` shader global, and clears them with the entity
+visuals. Bloom, tone mapping, SSAO and the shadow constants come from the live
+`GraphicsSettings` behind `GraphicsProfile.current()` (`src/presentation/graphics/`,
+mapped to engine values by `GraphicsMapping`). Bloom is Godot glow in additive
+blend with `glow_bloom` 0, HDR threshold 1.0 and HDR scale 2.0, so stored
+colours of 1.0 or less are unchanged and only brighter values (water glints,
+unclamped tints, stacked additive sprites) halo. The real-shadow switch is
+`casts_shadow and spec.shadows and real_shadows`, so `--shadows=off` stays a
+per-launch ceiling. While in the tree, a profile change updates these
+properties on the existing environment and lights in place and never reapplies
+the spec, so a background set by the owning view and cave mode are kept. `build_entities` applies the map's
 lights; a scene without map lights (the sandbox, mapless builds, maps whose
 records give neither direction nor ambient) applies the options screen's
 ambient and parallel light instead, so lit shaders never draw black. The
@@ -179,7 +190,10 @@ r)`, `EMISSION = shown × r`), so the surface still darkens in shadow without
 going black, and a Blinn highlight from the scene lights (`specular_strength`,
 `shininess`) sits on top. `MapMesh.Instance` gives every ENVMAP surface
 `WATER_REFLECTION` 0.35, `WATER_SPECULAR` 0.2 and `WATER_SHININESS` 512, and
-`set_water_look(reflection, specular, shininess)` retunes them for the owner.
+`set_water_look(reflection, specular, shininess)` retunes them; the world view
+and the map viewer pass the profile's `water_reflection`, `water_specular` and
+`water_shininess` and `vertex_tint` after building the map and on every
+change.
 Godot's light colour already carries π, so the highlight peaks at π × strength
 × light energy and the exponent sets only its size; on a flat water plane the
 half-vector moves by about half the view angle per pixel, so exponents of
@@ -208,7 +222,8 @@ its range, measured on Forward+ within 8-bit quantisation, and the terrain's
 texel by `min(2 × grey / 255, 1)`, falling linearly in squared distance from
 the minimum to the maximum radius. `CaveLightShape` fits the light to that
 ramp by area-weighted least squares over 512 rings, in two modes chosen with
-`CaveLightShape.DEFAULT_MODE`:
+`CaveLightShape.DEFAULT_MODE`, which is the default of the profile's
+`cave_light_mode` that the world view and map viewer pass:
 
 - `EXACT_EDGE` (default): the range is the ramp's edge `sqrt(max_r2) / 256`,
   so darkness begins where C's does; the fitted energy is about 0.91 for
@@ -306,19 +321,21 @@ and keep what reads best. None affects gameplay.
 
 | Choice | What it is | Default and where | Look at |
 |---|---|---|---|
-| Cave light mode | Godot's point light cannot match the original's linear grey ramp everywhere. `EXACT_EDGE` keeps darkness starting at the ramp's radius (brighter near the frog, darker toward the edge); `FITTED_RANGE` fits range and energy together (closer inside, dim light leaking up to a quarter of the radius past the edge). | `CaveLightShape.DEFAULT_MODE = EXACT_EDGE`; the light's lift above the frog `CaveLightShape.HEIGHT` (0.5) and the cave ambient `CAVE_AMBIENT` (0.02) sit beside it ([cave light](#cave-light)) | CAV1, CAV3, CAV4: the darkness boundary, the brightness around the frog, the croak swell |
-| Water glint | Water keeps part of its colour as reflected light so it never goes black in shadow, plus a specular highlight from the sun. | `MapMesh.Instance.WATER_REFLECTION` 0.35, `WATER_SPECULAR` 0.2, `WATER_SHININESS` 512; `set_water_look(reflection, specular, shininess)` at run time ([water](#water)) | SUB1, SWP1: a compact glint, not a white wash (0.5/0.5/64 washed a quarter of SUB1) |
+| Cave light mode | Godot's point light cannot match the original's linear grey ramp everywhere. `EXACT_EDGE` keeps darkness starting at the ramp's radius (brighter near the frog, darker toward the edge); `FITTED_RANGE` fits range and energy together (closer inside, dim light leaking up to a quarter of the radius past the edge). | Settings `cave_light_mode` `EXACT_EDGE`, matching `CaveLightShape.DEFAULT_MODE`; the light's lift above the frog `CaveLightShape.HEIGHT` (0.5) and the cave ambient `CAVE_AMBIENT` (0.02) sit beside it ([cave light](#cave-light)) | CAV1, CAV3, CAV4: the darkness boundary, the brightness around the frog, the croak swell |
+| Water glint | Water keeps part of its colour as reflected light so it never goes black in shadow, plus a specular highlight from the sun. | Settings `water_reflection` 0.35, `water_specular` 0.2, `water_shininess` 512, matching `MapMesh.Instance.WATER_*` ([water](#water)) | SUB1, SWP1: a compact glint, not a white wash (0.5/0.5/64 washed a quarter of SUB1) |
 | Blob shadows | The original's frog shadow quad and the Desert rock and tumbleweed shadow squares, which doubled up with the real shadows. | Off: `frogger/rendering/effect_shadows="off"` in `project.godot`; `--effect-shadows=retail` after `--` shows both for one launch ([shadows](#shadows)) | ORG1, DES1: whether the real shadow is enough of a landing cue |
-| Real shadows | The directional light's shadow and its constants. | On: `frogger/rendering/shadows="on"`; `--shadows=off` for one launch; splits, distance, bias and blur are the fields of `SceneLightingSpec` ([scene lighting](#scene-lighting)) | ORG1, JUN1, VOL1: acne, gaps under casters, shimmer while the camera follows |
-| Tone mapper | Converts the linear scene for the screen. Linear puts stored sprite and HUD colours on screen exactly; AgX or Filmic compress highlights and desaturate, shifting every stored colour. | `TONE_MAPPER_LINEAR`, exposure 1, set by `SceneLighting.apply` | Lava and the water glint if highlights read too harsh |
-| Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
+| Real shadows | The directional light's shadow and its constants. | On: settings `real_shadows`, below the ceiling `frogger/rendering/shadows="on"` and `--shadows=off` for one launch; `shadow_splits` 2, `shadow_split_1` 0.25, `shadow_max_distance` 32, `shadow_bias` 0.05, `shadow_normal_bias` 1.0; fade and blur on `SceneLightingSpec` ([scene lighting](#scene-lighting)) | ORG1, JUN1, VOL1: acne, gaps under casters, shimmer while the camera follows |
+| Tone mapper | Converts the linear scene for the screen. Linear puts stored sprite and HUD colours on screen exactly; AgX or Filmic compress highlights and desaturate, shifting every stored colour. | Settings `tonemapper` Linear, `exposure` 1 | Lava and the water glint if highlights read too harsh |
+| Bloom | A soft halo around light above 1.0; stored colours of 1.0 or less are unchanged. | On: settings `bloom`, `bloom_intensity` 0.8, `bloom_threshold` 1.0; additive, HDR scale 2.0 ([scene lighting](#scene-lighting)) | SUB1 water glint, DES1 crack tint: a halo, not a wash |
+| Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | Settings `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
 | Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
 
 ## Verification
 
 The headless suites never compile shaders, so verification is by eye and by
 windowed tools: `tools/probe_scene_lighting.gd` measures the energy mapping
-on Forward+ (`LAMBERT_SCALE` is exact at 1), `tools/probe_model_morph.gd`
+on Forward+ through `SceneLighting` with the profile's bloom (`LAMBERT_SCALE`
+is exact at 1), `tools/probe_model_morph.gd`
 checks cel geometry through both shader families, and the capture tools fail
 on any `SHADER ERROR` or a single-colour map capture
 ([testing](../testing/README.md#tools-and-visual-verification)). The goldens

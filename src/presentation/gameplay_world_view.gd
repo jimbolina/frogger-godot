@@ -154,7 +154,7 @@ func draw_state(fraction: float) -> void:
 	var cave_lit: bool = _cave_lit()
 	if cave_lit:
 		var radii: PackedInt64Array = cave_radii(weight)
-		scene_lighting.set_cave_light(frog_transform.origin, radii[0], radii[1])
+		scene_lighting.set_cave_light(frog_transform.origin, radii[0], radii[1], GraphicsMapping.cave_mode(GraphicsProfile.current().cave_light_mode))
 	elif scene_lighting != null and scene_lighting.cave_light_node() != null:
 		scene_lighting.clear_cave_light()
 	var update_entities: bool = _entity_pose_tick != _current.tick_index
@@ -204,6 +204,24 @@ func cave_radii(weight: float) -> PackedInt64Array:
 ## displayed, or multiply script colours by the fade keep their scale.
 static func cave_faded(entity: EntitySnapshot) -> bool:
 	return entity.colour_scaled and not entity.live_flags & (EntityLiveFlags.NO_SCREEN_FADE | EntityLiveFlags.RESPECT_SCALE_COLOURS) and not entity.entity_flags & EntityDefinition.NO_DISPLAY
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_ENTER_TREE and what != NOTIFICATION_EXIT_TREE:
+		return
+	var profile: GraphicsSettings = GraphicsProfile.current()
+	var connected: bool = profile.changed.is_connected(_apply_look)
+	if what == NOTIFICATION_ENTER_TREE and not connected:
+		profile.changed.connect(_apply_look)
+	elif what == NOTIFICATION_EXIT_TREE and connected:
+		profile.changed.disconnect(_apply_look)
+
+## Gives the map the water look and vertex tint of the live graphics profile.
+func _apply_look() -> void:
+	if _map_instance == null:
+		return
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	_map_instance.set_water_look(settings.water_reflection, settings.water_specular, settings.water_shininess)
+	_map_instance.set_vertex_tint(settings.vertex_tint)
 
 func _cave_lit() -> bool:
 	return scene_lighting != null and _map_instance != null and _map_instance.source.scene.cave_enabled
@@ -1029,4 +1047,5 @@ func build_map(scene_data: MapSceneData) -> void:
 	_map_instance = MapMeshBuilder.new().build(scene_data).create_instance()
 	_ground.add_child(_map_instance)
 	_map_instance.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	_apply_look()
 	_configure_effects(scene_data)
