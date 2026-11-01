@@ -46,6 +46,20 @@ if (Test-Path -LiteralPath $fontDirectory -PathType Container) {
     }
 }
 
+$angularDirectory = Join-Path $projectDirectory "assets\fonts\angular"
+if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
+    $uv = if ($env:UV) { $env:UV } else { "uv" }
+    if (-not (Get-Command $uv -CommandType Application -ErrorAction SilentlyContinue)) {
+        Write-Output "run_tests: uv not found; install uv or set `$env:UV to the uv executable"
+        exit 2
+    }
+    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_angular_font.py") --check --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "run_tests: the committed angular font differs from its generator"
+        exit 2
+    }
+}
+
 $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
 & $python (Join-Path $projectDirectory "tools\test_capture_tools.py") *> $null
 if ($LASTEXITCODE -ne 0) {

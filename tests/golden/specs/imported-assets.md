@@ -52,6 +52,39 @@ draws at size 8 scaled by a quarter. Its page `newfont.png` has the
 the retail set's file with a line in `problems` when the set has none, and
 returns null with a problem line when neither exists.
 
+## Angular font
+
+The angular letter face (the retail lettering and the alpha's letter
+models) is a TrueType font, `fonts/angular/frogger_angular.ttf`, written by
+`uv run tools/make_angular_font.py` from two sources beside it:
+
+- `svg/A.svg` to `svg/9.svg`: 36 third-party SVG traces, kept byte for byte
+  (CRLF included, so `.gitattributes` marks them `-text`); `svg/.gdignore`
+  keeps Godot from importing them. Each viewBox is `0 0 W 800`; only
+  `<path>` (M, L, H, V, Z) and `<polygon>` are read, paths that never draw
+  a third point are skipped, and the fill is even-odd.
+- `derived.json`: `! ¡ ' : - . = ◀ É Ó Í Ù Ä Ü Ç` as hand-cut polygons in
+  font units, optionally on a `base` glyph (`rotate` 180 for `¡`).
+
+`tools/angular_glyphs.py` turns both into contours in font units (y up,
+baseline 0, cap height 800, x from the ink box's left); the lettering
+generator reuses it. The font has 1000 units per em, so source units are
+font units; each glyph has side bearings of 40 units (`lsb` equals `xMin`)
+and the space advances 320. Contours are oriented by nesting depth for the
+nonzero fill, and crossing contours are refused. Ascent and descent are the
+outline extremes (1060 and -250). The head timestamps are fixed, so the
+bytes reproduce with the fontTools pinned in `uv.lock`. The TTF is the
+generated artefact: `--check` names each glyph, metric or table that
+differs and exits 1, and both wrappers run it next to the newfont check.
+
+It is imported by `font_data_dynamic` with the keys in
+`test_asset_import_settings.gd`: MSDF on (pixel range 16, size 64), no
+hinting, no mipmaps and no system fallback. `test_asset_angular_font.gd`
+loads it as a `FontFile` with MSDF on, requires a glyph with a positive
+advance for every capital, digit, derived character and the space and no
+lowercase, and requires its own character list to equal the SVG names plus
+`derived.json`'s keys, read with Godot's directory listing and JSON parser.
+
 ## Model meshes
 
 Each part is built from its rest pose, partcel 0. An incomplete model
@@ -215,6 +248,10 @@ import test. Then restore the fact and rerun.
   import-settings test must name the file and key. Change one digit of
   texture 310's `padded_rgba_sha256` in `vlo_images.tsv`: the retail font
   texture check must name the font.
+- **Angular font:** change one coordinate in one `svg/*.svg`:
+  `tools/make_angular_font.py --check` must exit 1 naming the glyph.
+  Remove one derived glyph from `derived.json` and rebuild the font: the
+  font test must name the character.
 
 The generators' `--check` mode was broken and restored in the same way for
 all four files. Each import-test break was restored and the test rerun.

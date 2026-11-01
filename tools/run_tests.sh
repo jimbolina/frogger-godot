@@ -17,6 +17,18 @@ if [ -d assets/fonts ]; then
     fi
 fi
 
+if [ -d assets/fonts/angular ]; then
+    UV="${UV:-uv}"
+    if ! command -v "$UV" >/dev/null 2>&1 && [ ! -x "$UV" ]; then
+        echo "run_tests: uv not found; install uv or set UV=/path/to/uv" >&2
+        exit 2
+    fi
+    if ! "$UV" run --locked --quiet tools/make_angular_font.py --check --quiet; then
+        echo "run_tests: the committed angular font differs from its generator" >&2
+        exit 2
+    fi
+fi
+
 if ! "${PYTHON:-python3}" tools/test_capture_tools.py >/dev/null 2>&1; then
     echo "run_tests: capture tool self-test failed" >&2
     exit 2

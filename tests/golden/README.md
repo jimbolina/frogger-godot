@@ -38,6 +38,7 @@ commands run from the repository root; generated facts live in
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
 | `newfont` bitmap fonts generated from texture 310 per texture set (`assets/fonts/<set>/newfont.fnt`) | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
+| Angular vector font generated from the SVG traces and derived glyphs (`assets/fonts/angular/frogger_angular.ttf`) | [Angular font](specs/imported-assets.md#angular-font) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
 | Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
 | Maps, animation counters, cave falloff and SkyLand | [Maps](specs/maps.md) |

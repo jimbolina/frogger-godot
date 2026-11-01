@@ -4,14 +4,28 @@ extends AssetTest
 ## importer and each policy key in its sidecar's [code][params][/code] equal
 ## the project default, except the keys an upscaled texture folder overrides
 ## (its textures carry mipmaps) and the font pages, which the font importer
-## marks as not imported.
+## marks as not imported. A vector font follows [constant OWN_POLICIES]
+## instead: MSDF glyphs, no hinting and no system fallback.
 
-## Importer name and project default section by source extension.
+## Importer name and project default section by source extension; an
+## empty section takes the policy from [constant OWN_POLICIES].
 const POLICIES: Dictionary[String, Array] = {
 	".png": ["texture", "texture"],
 	".wav": ["wav", "wav"],
 	".ogg": ["oggvorbisstr", "oggvorbisstr"],
 	".fnt": ["font_data_bmfont", "font_data_bmfont"],
+	".ttf": ["font_data_dynamic", ""],
+}
+## Policy keys by source extension for the importers project.godot sets no default for.
+const OWN_POLICIES: Dictionary[String, Dictionary] = {
+	".ttf": {
+		"multichannel_signed_distance_field": true,
+		"msdf_pixel_range": 16,
+		"msdf_size": 64,
+		"hinting": 0,
+		"generate_mipmaps": false,
+		"allow_system_fallback": false,
+	},
 }
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
@@ -50,8 +64,9 @@ func test_sidecars_follow_the_project_policy() -> void:
 	for extension: String in POLICIES:
 		var importer: String = POLICIES[extension][0]
 		var section_key: String = POLICIES[extension][1]
-		var policy: Dictionary = project.get_value("importer_defaults", section_key, {})
-		assert_false(policy.is_empty(), "project.godot has an import policy for %s" % extension)
+		var policy: Dictionary = OWN_POLICIES.get(extension, {}) if section_key.is_empty() \
+			else project.get_value("importer_defaults", section_key, {})
+		assert_false(policy.is_empty(), "an import policy exists for %s" % extension)
 		var mismatches := PackedStringArray()
 		var sources: PackedStringArray = files_under(ASSETS, extension)
 		for source: String in sources:
