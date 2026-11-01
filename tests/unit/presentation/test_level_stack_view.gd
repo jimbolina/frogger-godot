@@ -88,6 +88,27 @@ func test_go_on_an_extended_box_spins_it_out_and_hides_the_box() -> void:
 	assert_eq(view.panel.level_name.position, Vector2(view.selector.title_x, StackLayout.LEVEL_TITLE_Y))
 
 
+func test_a_spun_out_level_shows_its_table_rows_beside_the_picture() -> void:
+	var stack: LevelStack = StackLayoutTest.retail_stack()
+	var rows: Array[HighScoreRow] = [HighScoreRow.create("ABC", 1234, PackedInt32Array([1, 2, 3, 4, 5]))]
+	var none: Array[HighScoreRow] = []
+	var board: HighScoreBoard = HighScoreBoard.create(none, none)
+	board.levels[ORG1 * HighScoreBoard.LEVEL_RANKS] = rows[0]
+	var view: LevelStackView = LevelStackView.create(FrontEndAssets.new(), stack, LevelProgress.create(stack), -1, true,
+		Color.BLACK, null, board)
+	autofree(view)
+	_idle(view, 8)
+	view.render(1.0)
+	assert_eq(view.panel.score_lines(), PackedStringArray(), "no lines before a level spins out")
+	view.tick(StackSelector.Buttons.new(false, false, true))
+	view.render(1.0)
+	assert_eq(view.panel.score_lines(), HighScoreText.lines(board.level_rows(ORG1)), "SELECT.C:2017-2031")
+	view.tick(StackSelector.Buttons.new(false, false, false, true))
+	_idle(view, 12)
+	view.render(1.0)
+	assert_eq(view.panel.score_lines().size(), 3, "the lines stay with the panel after the spin back")
+
+
 func test_back_returns_the_spin_then_leaves_on_the_first_entry() -> void:
 	var view: LevelStackView = _view()
 	_idle(view, 8)

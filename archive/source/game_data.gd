@@ -16,7 +16,7 @@ const SKY_THEME: int = 8
 ## The remap of the sky-land tiles' texture ids.
 const SKY_REMAP: String = "txl_sky_land"
 ## The codes of the levels the game plays, in level-select order.
-const PLAYABLE_LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "FOR1", "FOR2", "VOL1", "VOL3", "VOL2", "CAV1", "CAV3", "CAV4", "SKY1", "SKY3", "SKY4", "SKY2", "SWP1", "SWP4", "SWP3", "SWP2", "SWP5", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1"]
+const PLAYABLE_LEVEL_CODES: PackedStringArray = ["ORG1", "ORG2", "ORG3", "ORG4", "ORG5", "SUB1", "SUB2", "SUB3", "SUB4", "SUB5", "FOR1", "FOR2", "VOL1", "VOL3", "VOL2", "CAV1", "CAV3", "CAV4", "SKY1", "SKY3", "SKY4", "SKY2", "SWP1", "SWP4", "SWP3", "SWP2", "SWP5", "DES1", "DES2", "DES3", "DES4", "DES5", "JUN1"]
 
 ## The build the data belongs to.
 var version: GameVersionConfig

@@ -59,18 +59,19 @@ func test_a_playable_level_opens_with_its_audio_and_others_are_refused() -> void
 	assert_null(screen.run)
 	screen.close_data()
 
-func test_a_command_line_level_opens_the_unaccepted_suburbia_levels() -> void:
+func test_a_command_line_level_passes_the_accepted_list_for_a_mapped_level() -> void:
 	var screen := GameplayScreen.new()
 	screen.auto_open = false
 	add_child_autofree(screen)
 	screen.set_process(false)
+	assert_string_contains(screen.open_data(_data, "JUN2"), "Playable levels")
 	screen.allow_unaccepted_levels = true
-	for code: String in ["SUB2", "SUB3", "SUB4", "SUB5"]:
-		assert_true(code in _data.unaccepted_level_codes(), code)
-		assert_eq(screen.open_data(_data, code), "", code)
-		assert_not_null(screen.run, code)
+	assert_true("JUN2" in _data.unaccepted_level_codes())
+	var setup_error: String = screen.open_data(_data, "JUN2")
+	assert_false(setup_error.contains("Playable levels"), "the map loads and level setup decides")
+	assert_string_contains(setup_error, "checkpoints")
 	var refusal: String = screen.open_data(_data, "CAV2")
 	assert_string_contains(refusal, "unaccepted levels with a map are")
-	assert_string_contains(refusal, "SUB2")
+	assert_string_contains(refusal, "JUN2")
 	assert_null(screen.run)
 	screen.close_data()

@@ -21,7 +21,7 @@ func test_catalog_opens_with_the_imported_build() -> void:
 
 func test_playable_levels_follow_the_arcade_stack() -> void:
 	var codes: PackedStringArray = _assets.playable_level_codes()
-	assert_eq(codes.size(), 29)
+	assert_eq(codes.size(), 33)
 	assert_eq(codes[0], "ORG1")
 	var stack := PackedStringArray()
 	for entry: LevelSelectEntry in _assets.tables.level_select().arcade:
@@ -29,9 +29,9 @@ func test_playable_levels_follow_the_arcade_stack() -> void:
 		if code in codes:
 			stack.append(code)
 	assert_eq(stack, codes)
-	for code: String in ["ORG1", "SUB1", "CAV4", "JUN1", "SWP5", "SKY4"]:
+	for code: String in ["ORG1", "SUB1", "SUB2", "SUB5", "CAV4", "JUN1", "SWP5", "SKY4"]:
 		assert_true(_assets.is_playable_level(FroggerIds.level_from_code(code)), code)
-	for code: String in ["SUB2", "CAV2", "SWPM", "ISLAND"]:
+	for code: String in ["SUBM", "CAV2", "SWPM", "ISLAND"]:
 		assert_false(_assets.is_playable_level(FroggerIds.level_from_code(code)), code)
 	assert_false(_assets.is_playable_level(-1))
 	assert_false(_assets.is_playable_level(100))
@@ -39,10 +39,10 @@ func test_playable_levels_follow_the_arcade_stack() -> void:
 
 func test_unaccepted_levels_are_the_mapped_levels_outside_the_playable_list() -> void:
 	var codes: PackedStringArray = _assets.unaccepted_level_codes()
-	for code: String in ["SUB2", "SUB3", "SUB4", "SUB5", "SUBM", "JUN2", "ORGM"]:
+	for code: String in ["SUBM", "JUN2", "ORGM"]:
 		assert_true(code in codes, code)
 		assert_true(_assets.has_level_map(FroggerIds.level_from_code(code)), code)
-	for code: String in ["SUB1", "CAV2", "CAV5", "FOR3", "SKY5", "ISLAND"]:
+	for code: String in ["SUB1", "SUB2", "SUB5", "CAV2", "CAV5", "FOR3", "SKY5", "ISLAND"]:
 		assert_false(code in codes, code)
 	for code: String in ["CAV2", "CAV5", "FOR3", "SKY5"]:
 		assert_false(_assets.has_level_map(FroggerIds.level_from_code(code)), code)

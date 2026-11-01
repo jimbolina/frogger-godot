@@ -4,8 +4,8 @@ extends Control
 ## the subtractive fade and the LOADING image (SelectLevelStartup, SelectLevelUpdate).
 ##
 ## Sprite colours follow the source's base colours, 0x80 being the image as stored. The fade
-## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. The
-## high-score view adds up to three score lines drawn white with the texture set's
+## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. A
+## spun-out level and the high-score view add up to three score lines drawn white with the texture set's
 ## [code]newfont[/code] bitmap font ([member FrontEndAssets.font]), nearest filtered and
 ## centred by [method NewfontText.width] in a box [constant StackLayout.SCORE_BOX_WIDTH] wide
 ## whose left edge is [member Placement.panel_x]. Each sprite is sized to its image's retail
@@ -32,7 +32,7 @@ class Placement:
 	var title_visible: bool = true
 	## Left edge of the status box (Sel_status_temp_x).
 	var panel_x: float = StackLayout.STATUS_START_X
-	## Score lines drawn at [constant StackLayout.SCORE_LINE_Y], none outside the high-score view.
+	## Score lines drawn at [constant StackLayout.SCORE_LINE_Y]: the shown level's table rows.
 	var score_lines: PackedStringArray = PackedStringArray()
 
 	## This placement moved toward [param later] by [param weight]; discrete fields take [param later]'s.

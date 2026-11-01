@@ -123,10 +123,14 @@ class _Frame:
 ## A view of [param stack]'s arcade rows under [param progress], focused on [param focus_level]
 ## (ORG1 when negative); [param first_time] is Sel_first_time. [param background] fills the
 ## screen behind the stack and [param water_animation], when given, draws the water over it.
+## When [param board] is given, a level spun out shows the first three rows of its table
+## (SELECT.C:2017-2031); the lines stay with the panel until the next spin-out replaces them.
 static func create(assets: FrontEndAssets, stack: LevelStack, progress: LevelProgress, focus_level: int,
-		first_time: bool, background: Color = Color.BLACK, water_animation: MenuWater = null) -> LevelStackView:
+		first_time: bool, background: Color = Color.BLACK, water_animation: MenuWater = null,
+		board: HighScoreBoard = null) -> LevelStackView:
 	var view := LevelStackView.new()
 	view._assets = assets
+	view._board = board
 	view._stack = stack
 	view._progress = progress
 	view._background = background
@@ -439,6 +443,10 @@ func _capture() -> _Frame:
 	else:
 		_spin_row = -1
 	frame.placement = StackPanel.placement(selector)
+	if not score_mode and frame.spin_row >= 0:
+		_shown_level = _progress.arcade_levels[frame.spin_row]
+	if not score_mode and _shown_level >= 0 and _board != null:
+		frame.placement.score_lines = HighScoreText.lines(_board.level_rows(_shown_level))
 	if score_mode:
 		frame.placement.prompt = _prompt
 		frame.placement.title_visible = _title_visible

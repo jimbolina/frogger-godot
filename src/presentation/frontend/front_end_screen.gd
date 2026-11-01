@@ -339,7 +339,7 @@ func _place_menu_sprites() -> void:
 func _build_level_select() -> void:
 	var first_time: bool = not FrontEndSession.level_chosen
 	var view := LevelStackView.create(assets, FrontEndSession.stack, FrontEndSession.progress, FrontEndSession.level,
-		first_time, Color.BLACK, water)
+		first_time, Color.BLACK, water, FrontEndSession.board)
 	view.input = BindingInput.new(FrontEndSession.bindings)
 	view.stack_event.connect(_on_stack_event, CONNECT_DEFERRED)
 	_content.add_child(view)

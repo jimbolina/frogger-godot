@@ -37,8 +37,12 @@ the facts and their C lines. Up/Down are held, Enter or Space is Fire, Escape is
 Triangle.
 
 Retail PC runs the glow pulse that the vendored source builds only for PSX, so
-the port does. The [high-score view](#high-scores) reuses the stack with the
-score lines beside the picture. Not built: race rows and mouse picking. Gold-frog quads draw slightly in front of the boxes
+the port does. A level spun out shows the first three rows of its table beside
+the picture (`SELECT.C:2017-2031`); the lines slide with the panel and stay
+until the next spin-out. A level's rows change only when initials are entered
+at the end of a game, so a level completed in the current game shows its new
+score after name entry. The [high-score view](#high-scores) reuses the stack
+with the same score lines. Not built: race rows and mouse picking. Gold-frog quads draw slightly in front of the boxes
 rather than on top, and the glow is unverified against retail pictures.
 
 ## Water background
