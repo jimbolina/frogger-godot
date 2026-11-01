@@ -298,6 +298,22 @@ whose contract includes entity lighting draws under the map's lights, any
 other under a flat ambient with no lights, so terrain and entities show their
 stored colours as the original drew unlit entities. Map-viewer scenario runs inherit its lighting.
 
+## Look choices
+
+These are the owner's tunables left open after S2. Each has a default in
+place; change it, play the named levels against your memory of the original,
+and keep what reads best. None affects gameplay.
+
+| Choice | What it is | Default and where | Look at |
+|---|---|---|---|
+| Cave light mode | Godot's point light cannot match the original's linear grey ramp everywhere. `EXACT_EDGE` keeps darkness starting at the ramp's radius (brighter near the frog, darker toward the edge); `FITTED_RANGE` fits range and energy together (closer inside, dim light leaking up to a quarter of the radius past the edge). | `CaveLightShape.DEFAULT_MODE = EXACT_EDGE`; the light's lift above the frog `CaveLightShape.HEIGHT` (0.5) and the cave ambient `CAVE_AMBIENT` (0.02) sit beside it ([cave light](#cave-light)) | CAV1, CAV3, CAV4: the darkness boundary, the brightness around the frog, the croak swell |
+| Water glint | Water keeps part of its colour as reflected light so it never goes black in shadow, plus a specular highlight from the sun. | `MapMesh.Instance.WATER_REFLECTION` 0.35, `WATER_SPECULAR` 0.2, `WATER_SHININESS` 512; `set_water_look(reflection, specular, shininess)` at run time ([water](#water)) | SUB1, SWP1: a compact glint, not a white wash (0.5/0.5/64 washed a quarter of SUB1) |
+| Blob shadows | The original's frog shadow quad and the Desert rock and tumbleweed shadow squares, which doubled up with the real shadows. | Off: `frogger/rendering/effect_shadows="off"` in `project.godot`; `--effect-shadows=retail` after `--` shows both for one launch ([shadows](#shadows)) | ORG1, DES1: whether the real shadow is enough of a landing cue |
+| Real shadows | The directional light's shadow and its constants. | On: `frogger/rendering/shadows="on"`; `--shadows=off` for one launch; splits, distance, bias and blur are the fields of `SceneLightingSpec` ([scene lighting](#scene-lighting)) | ORG1, JUN1, VOL1: acne, gaps under casters, shimmer while the camera follows |
+| Tone mapper | Converts the linear scene for the screen. Linear puts stored sprite and HUD colours on screen exactly; AgX or Filmic compress highlights and desaturate, shifting every stored colour. | `TONE_MAPPER_LINEAR`, exposure 1, set by `SceneLighting.apply` | Lava and the water glint if highlights read too harsh |
+| Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
+| Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
+
 ## Verification
 
 The headless suites never compile shaders, so verification is by eye and by

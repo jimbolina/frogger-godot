@@ -26,7 +26,7 @@ retired and `src/convert/` is now `src/rendering/`. `--shadows=off` and
 `--effect-shadows=retail` compare the choices. FrogLord stays the level
 editor: the importer under `archive/` remains runnable and a re-import
 reproduces `assets/`. Awaiting the owner's play check and the
-[look choices](PORTING.md#needed-from-the-owner). Next: P13e; the S1e
+[look choices](reference/rendering/lighting.md#look-choices). Next: P13e; the S1e
 proposals and P14 are the owner's calls ([roadmap](PORTING.md#status)).
 
 Effects never reproduce the frozen generators' random draws. Replays and
