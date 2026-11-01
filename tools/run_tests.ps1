@@ -58,6 +58,11 @@ if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
         Write-Output "run_tests: the committed angular font differs from its generator"
         exit 2
     }
+    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_lettering.py") --check --quiet
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "run_tests: the committed lettering images differ from their generator"
+        exit 2
+    }
 }
 
 $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }

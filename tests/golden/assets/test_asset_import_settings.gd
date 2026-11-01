@@ -2,9 +2,9 @@ extends AssetTest
 ## Every imported texture, WAV, Ogg and bitmap font under assets/ uses the
 ## import policy in project.godot's [code]importer_defaults[/code]: the
 ## importer and each policy key in its sidecar's [code][params][/code] equal
-## the project default, except the keys an upscaled texture folder overrides
-## (its textures carry mipmaps) and the font pages, which the font importer
-## marks as not imported. A vector font follows [constant OWN_POLICIES]
+## the project default, except the keys the upscaled and lettering texture
+## folders override (their textures carry mipmaps) and the font pages, which
+## the font importer marks as not imported. A vector font follows [constant OWN_POLICIES]
 ## instead: MSDF glyphs, no hinting and no system fallback.
 
 ## Importer name and project default section by source extension; an
@@ -30,6 +30,7 @@ const OWN_POLICIES: Dictionary[String, Dictionary] = {
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
 	"res://assets/textures/images_x4/": {"mipmaps/generate": true},
+	"res://assets/textures/lettering/": {"mipmaps/generate": true},
 }
 
 ## Importers a folder (by path prefix) uses instead of an extension's: the

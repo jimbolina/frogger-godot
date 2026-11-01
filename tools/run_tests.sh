@@ -27,6 +27,10 @@ if [ -d assets/fonts/angular ]; then
         echo "run_tests: the committed angular font differs from its generator" >&2
         exit 2
     fi
+    if ! "$UV" run --locked --quiet tools/make_lettering.py --check --quiet; then
+        echo "run_tests: the committed lettering images differ from their generator" >&2
+        exit 2
+    fi
 fi
 
 if ! "${PYTHON:-python3}" tools/test_capture_tools.py >/dev/null 2>&1; then

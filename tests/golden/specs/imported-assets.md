@@ -85,6 +85,43 @@ advance for every capital, digit, derived character and the space and no
 lowercase, and requires its own character list to equal the SVG names plus
 `derived.json`'s keys, read with Godot's directory listing and JSON parser.
 
+## Lettering
+
+`textures/lettering/tNNNN.png` replaces the retail texture `tNNNN` wherever
+the angular face is baked into it (words in five languages, level names, HUD
+digits, the high-score pads, rank turtles and score logs). The game draws it
+in every texture set. `uv run tools/make_lettering.py` writes one PNG per row
+of `fonts/angular/lettering.tsv`, drawn from the glyphs of
+`tools/angular_glyphs.py`. The table's columns are `id`, `name` (FrogLord's
+name or `-`), `language` (`en`, `s`, `g`, `i`, `f` or `-`), `text` (`|`
+breaks a line; retail spelling and spacing), `style`, `background`
+(`transparent`, `green_pad`, `log`, `turtle`) and `layout` (`line`, or
+`components` for `hi_end`, whose letters are fitted one per retail ink
+component). The generator's docstring defines the styles, the fit and the
+backgrounds.
+
+Each PNG is exactly eight times the retail padded size. Transparent words
+have straight alpha with the outermost colour under alpha 0; tiles are
+opaque. No channel is below 8. The PNGs are generated artefacts, not facts:
+`--check` decodes each committed PNG and compares its pixels with a fresh
+rendering, checks each sidecar's importer and policy keys, names every id
+that differs, is missing or has no row, and exits 1. Both wrappers run it
+next to the angular font check. Each sidecar uses the texture importer with
+mipmaps and otherwise the project defaults; a new image's seed sidecar is
+completed by `godot --headless --path . --import`.
+
+`test_asset_lettering.gd` reads the table and `vlo_images.tsv` with Godot's
+file access. It requires:
+
+- one PNG per row at eight times the row's padded size, and no PNG without
+  a row;
+- each imported texture to carry mipmaps;
+- `ImportedAssets.texture_counterpart` of the retail texture to return the
+  lettering image in the retail and x4 sets, with no problems;
+- `frogger_angular.ttf` to hold every character the table writes.
+
+The import-settings test holds the folder to mipmaps on.
+
 ## Model meshes
 
 Each part is built from its rest pose, partcel 0. An incomplete model
@@ -252,6 +289,11 @@ import test. Then restore the fact and rerun.
   `tools/make_angular_font.py --check` must exit 1 naming the glyph.
   Remove one derived glyph from `derived.json` and rebuild the font: the
   font test must name the character.
+- **Lettering:** change one text in `lettering.tsv`:
+  `tools/make_lettering.py --check` must exit 1 naming the id. Delete one
+  lettering PNG: the lettering test must name the id. Set
+  `mipmaps/generate=false` in one lettering sidecar: the import-settings test
+  must name the file.
 
 The generators' `--check` mode was broken and restored in the same way for
 all four files. Each import-test break was restored and the test rerun.
