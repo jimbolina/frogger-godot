@@ -196,6 +196,44 @@ func test_missing_state_resources_or_streams_stay_silent() -> void:
 	assert_false(_view.players[0].playing)
 	assert_eq(resources.diagnostics.size(), 1)
 
+func test_a_page_sound_plays_on_the_spare_player_at_its_note_and_fixed_volume() -> void:
+	_definitions[0].note = 66
+	_view.configure(_resources())
+	_view.effect_volume = 100
+	_view.play_page_sound(1)
+	var player: AudioStreamPlayer = _view.page_player
+	assert_false(player in _view.players, "the spare player is not a voice slot")
+	assert_true(player.playing)
+	assert_not_null(player.stream)
+	assert_eq((player.stream as AudioStreamWAV).loop_mode, AudioStreamWAV.LOOP_DISABLED)
+	assert_almost_eq(player.pitch_scale, AudioResources.pitch_scale(66, 0), 0.00001)
+	assert_almost_eq(player.volume_db, SoundVoiceView.mix(Vector2i(100, 100), 100).x, 0.0001)
+	assert_eq(player.bus, SoundVoiceView.BUS)
+	for slot: int in SoundVoiceView.VOICES:
+		assert_false(_view.players[slot].playing, str(slot))
+		assert_eq(_view.identifier(slot), 0, str(slot))
+
+func test_pause_and_collapse_cover_the_page_sound() -> void:
+	_view.play_page_sound(2)
+	_view.pause(true)
+	assert_true(_view.page_player.stream_paused)
+	_view.pause(false)
+	assert_false(_view.page_player.stream_paused)
+	assert_true(_view.page_player.playing)
+	_view.pause(true)
+	_view.collapse()
+	assert_false(_view.page_player.playing)
+	assert_false(_view.page_player.stream_paused)
+
+func test_an_unknown_or_unconfigured_page_sound_does_nothing() -> void:
+	_view.play_page_sound(99)
+	assert_false(_view.page_player.playing)
+	assert_null(_view.page_player.stream)
+	_view.configure(null)
+	_view.play_page_sound(1)
+	assert_false(_view.page_player.playing)
+	assert_null(_view.page_player.stream)
+
 func test_mix_turns_left_and_right_levels_into_volume_and_pan() -> void:
 	var centred: Vector2 = SoundVoiceView.mix(Vector2i(127, 127), 127)
 	assert_almost_eq(centred.x, linear_to_db(AudioResources.gain(127, 127)), 0.0001)

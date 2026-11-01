@@ -69,6 +69,44 @@ Score, lives and the extra-life threshold carry between levels of one game
 (`GameInitialise` is the only reset); `RunStart` carries them into the next level.
 Replay with R restarts with the values the level began with.
 
+## Level complete
+
+After the fifth frog's bonus, `GameplayScreen` opens `LevelCompletePage`
+(`src/game/frontend/`), the 30 Hz page of `LevelCompleteStartup` and
+`LevelCompleteUpdate` (`tempopt.c:5792-6067`), drawn by `LevelCompleteView` from the
+positions in `LevelCompleteLayout`. Retail has run `LevelEnd` by then, so the page
+sits on the map alone: the HUD, frog, entities and effects hide, the map's animated
+polygons keep moving, and a grey 0x60 poly covers the screen. PC draws that poly with
+tpage 0, the PSX average blend, so the port mixes it at half strength where the stack
+page's fade subtracts. The five frog icons animate at (215, 170 + 20·j) with each
+frog's whole seconds (`Frog_time_data`, the run's rounded-up seconds, 99 cap) in two
+`med` digits and SEC; TOTAL TIME sums them in three digits; TOTAL SCORE shows the level
+score the high-score run recorded (`Frog_score_data[map].he_score`, the better of two
+runs of the level in one game), not the running total. When the next arcade row is in
+the same world the page shows NEXT, the next level's name image, PRESS FIRE and the
+`select4` prompt ("[ESC] SELECT LEVEL"), plays the level-complete sting and pauses the
+music; at a world's end it shows ZONE COMPLETE and PRESS FIRE with the music playing
+(the zone music is PSX-only). The gold frog icon shows at (215, 270) when a gold frog
+was found on the level or, at a world's end, anywhere in the zone.
+
+The count-down starts at 20 units of 31 ticks and the units stop at 17, so the page
+never times out: fire is read once the units pass below 19 (tick 62), when PRESS FIRE
+starts blinking 16 ticks on and off; it croaks and either starts the next level,
+opened in the stack, or returns to the stack. Escape (PC's triangle) works at once,
+opens a closed next level and focuses the stack on it; at a world's end the focus
+stays on the completed level. Fire is the bound super-hop key, Enter or Space. The
+labels are localised (`next`, `total_time`, `total_score`, `select4`, `opt_sec`);
+level names stay English. The [specification](../../../tests/golden/specs/frontend.md#level-complete)
+lists the facts and their C lines.
+
+Port differences: the page opens on the COMPLETE transition rather than after the
+frog's last animation cel; PRESS FIRE blinks from the page's own counter rather than
+`MRFrame_number`; the cave light and the sky drift stay where the level ended; a direct
+`--level=` launch shows the statistics alone (no prompt, R restarts, Escape leaves);
+the sandbox restarts instead; JUN1 shows the zone-complete variant as a stand-in for
+the P16 ending, whose fire follows the ending flow to name entry. The game-over page
+is still the placeholder label.
+
 ## Saves
 
 Progress is saved to `user://progress.cfg` (`ProgressStore`) after each finished
@@ -179,13 +217,14 @@ overrides it for one session and the saved setting can pin one. `FrontEndAssets`
 the language's `OPT` and `FIX` banks after the English ones and resolves each menu image
 by its localized FrogLord name, falling back to English with a recorded diagnostic. The
 logo, font, arrows and gold frog have no localized variants. Level names, the water and
-the in-game HUD stay English.
+the in-game HUD stay English; the level-complete labels are localized.
 
 ## Menu assets
 
 `FrontEndAssets` reads `STARTNTSC.VLO`, `FIXE_VRAM.VLO`, `OPTE_RAM.VLO` and
 `LS_ALL.VLO`. The English names are `opt_start`, `opt_options`, `opt_exit`,
 `opt_race`, `select_level`, `zone_complete`, `press_fire`, `sel_loading`,
-`opt_big_continue`, `opt_yes`, `opt_no`, `opt_paused`, `froglogo` and `newfont`;
-each arcade row also resolves its world, screenshot and stack-name images.
+`opt_big_continue`, `opt_yes`, `opt_no`, `opt_paused`, `froglogo`, `newfont` and the
+level-complete labels `next`, `total_time`, `total_score`, `select4` and `opt_sec`;
+each arcade row also resolves its world, screenshot, stack-name and in-game name images.
 Race rows keep their images in `LS_ALLM.VLO` and belong to the multiplayer pages.

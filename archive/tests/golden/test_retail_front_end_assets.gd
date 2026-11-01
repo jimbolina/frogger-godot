@@ -27,6 +27,9 @@ func test_every_named_and_level_image_resolves() -> void:
 		for kind: FrontEndAssets.LevelImage in FrontEndAssets.LEVEL_IMAGES:
 			var label: String = "%s %s" % [FroggerIds.level_code(row.level), FrontEndAssets.LevelImage.keys()[kind]]
 			var image: Texture2D = assets.level_texture(row.level, kind)
+			if row.image_pointers[kind] == 0:
+				assert_null(image, label + " has no image pointer")
+				continue
 			assert_not_null(image, label)
 			if image != null:
 				assert_gt(image.get_width(), 0, label)

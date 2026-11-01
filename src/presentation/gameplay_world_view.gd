@@ -85,6 +85,9 @@ var scene_lighting: SceneLighting = null
 var effect_shadows: String = ShadowEffectPolicy.DEFAULT
 ## Whether the scene lights cast real shadows; read when entities are built.
 var real_shadows: bool = true
+var _map_only: bool = false
+var _hidden_views: Dictionary[Node3D, bool] = {}
+var _map_extra_ticks: int = 0
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -109,18 +112,18 @@ func draw_state(fraction: float) -> void:
 	_update_projection()
 	var weight: float = clampf(fraction, 0.0, 1.0) if smoothing else 1.0
 	var frog_transform: Transform3D = _motion.frog(weight)
-	if _tongue_view != null:
+	if _tongue_view != null and not _map_only:
 		_tongue_view.draw_state(_current)
-	if _swarm_view != null:
+	if _swarm_view != null and not _map_only:
 		_swarm_view.draw_state(_current)
-	if _cave_sprite_view != null:
+	if _cave_sprite_view != null and not _map_only:
 		_cave_sprite_view.draw_state(_current, _sprite_definitions)
-	if _overlay_view != null:
+	if _overlay_view != null and not _map_only:
 		_overlay_view.draw_state(_current, weight, not playing)
-	if _placeholder_view != null:
+	if _placeholder_view != null and not _map_only:
 		_placeholder_view.draw_state(_current, _motion, weight)
 	_frog.position = frog_transform.origin + Vector3(0, 0.12, 0)
-	if _frog_model != null:
+	if _frog_model != null and not _map_only:
 		_frog_model.transform = frog_transform
 		if _current.animation != null and _frog_pose_tick != _current.tick_index:
 			var player: ModelAnimationPlayer = frog_assets.player
@@ -138,15 +141,12 @@ func draw_state(fraction: float) -> void:
 			_apply_throat(_current.frog)
 			_frog_light_tick = _current.tick_index
 		_frog_model.render(weight)
-	_draw_effects(frog_transform, weight)
+	if not _map_only:
+		_draw_effects(frog_transform, weight)
 	if _current.camera != null:
 		_camera.transform = _motion.camera(weight)
 	if _map_instance != null:
-		if _map_instance.tick != _current.tick_index - 1:
-			if _map_instance.tick == _current.tick_index - 2:
-				_map_instance.step()
-			else:
-				_map_instance.set_tick(_current.tick_index - 1)
+		_sync_map_tick()
 		if _current.sky_drift != null:
 			var drift_now := Vector3(_current.sky_drift.translation())
 			var drift_before: Vector3 = Vector3(_previous.sky_drift.translation()) if _previous.sky_drift != null else drift_now
@@ -184,7 +184,82 @@ func draw_state(fraction: float) -> void:
 						model.player.frame = entity.animation.cel
 					model.capture_pose(not playing)
 				model.render(weight)
-				model.visible = entity.live and not entity.pop_allocated and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
+				model.visible = not _map_only and entity.live and not entity.pop_allocated and not bool(entity.entity_flags & (EntityDefinition.HIDDEN | EntityDefinition.NO_DISPLAY)) and (entity.custom_state == null or not entity.custom_state.model_hidden)
+
+## Shows the map alone when [param map_only] is true, as LevelEnd leaves it: the frog
+## model and marker, tongue, swarm, cave sprites, overlay models, placeholders,
+## shadow, trail, particle, splash, pop and piece effects, glow halos, glow
+## lights and every entity model are hidden while the map, its water and sky
+## stay. False shows them again as they were. A fresh run and a detach clear it.
+func set_map_only(map_only: bool) -> void:
+	if map_only == _map_only:
+		return
+	_map_only = map_only
+	if map_only:
+		_hide_level_objects()
+	else:
+		_show_level_objects()
+
+## True while [method set_map_only] shows the map alone.
+func is_map_only() -> bool:
+	return _map_only
+
+## Moves the map's animated polygons, water and sky on by one update while the
+## game is not ticking; the offset holds until a fresh run or a detach.
+func advance_map_tick() -> void:
+	_map_extra_ticks += 1
+	if _map_instance != null and _current != null:
+		_sync_map_tick()
+
+## Map updates run beyond the committed state's tick by [method advance_map_tick].
+func map_extra_ticks() -> int:
+	return _map_extra_ticks
+
+func _sync_map_tick() -> void:
+	var target: int = _current.tick_index - 1 + _map_extra_ticks
+	if _map_instance.tick == target:
+		return
+	if _map_instance.tick == target - 1:
+		_map_instance.step()
+	else:
+		_map_instance.set_tick(target)
+
+func _level_object_views() -> Array[Node3D]:
+	var candidates: Array[Node3D] = [_frog, _tongue_view, _swarm_view, _cave_sprite_view, _overlay_view, _placeholder_view,
+			_shadow_view, _trail_view, _particle_view, _splash_view, _pop_view, _piece_view, _glow_view]
+	var views: Array[Node3D] = []
+	for view: Node3D in candidates:
+		if view != null:
+			views.append(view)
+	return views
+
+func _hide_level_objects() -> void:
+	_hidden_views.clear()
+	for view: Node3D in _level_object_views():
+		_hidden_views[view] = view.visible
+		view.visible = false
+	_hide_models()
+	if scene_lighting != null:
+		scene_lighting.place_glow_lights([])
+
+func _hide_models() -> void:
+	if _frog_model != null:
+		_frog_model.visible = false
+	for model: AnimatedModelInstance in _entity_models:
+		if model != null:
+			model.visible = false
+
+func _show_level_objects() -> void:
+	for view: Node3D in _hidden_views:
+		if is_instance_valid(view):
+			view.visible = _hidden_views[view]
+	_hidden_views.clear()
+	if _frog_model != null:
+		_frog_model.visible = true
+
+func _leave_level_end() -> void:
+	set_map_only(false)
+	_map_extra_ticks = 0
 
 ## Squared cave radii between the previous and current committed states at
 ## [param weight]; the map's initial radii when no state carries an entity environment.
@@ -285,6 +360,7 @@ func build_world() -> void:
 	_apply_look()
 
 func _clear_entity_visuals() -> void:
+	_leave_level_end()
 	if scene_lighting != null:
 		scene_lighting.clear()
 	if _swarm_view != null:
@@ -633,6 +709,8 @@ func _light_frog(frog: FrogState) -> void:
 ## tick's [param events] start and stop presentation effects.
 func accept_state(state: GameplayState, events: Array[TickEvent] = []) -> void:
 	var fresh: bool = _current == null
+	if fresh:
+		_leave_level_end()
 	_previous = _current if _current != null else state
 	_current = state
 	var created: PackedInt32Array = _sync_entity_models()
@@ -649,6 +727,8 @@ func accept_state(state: GameplayState, events: Array[TickEvent] = []) -> void:
 		_effect_tick = state.tick_index
 	if _voice_view != null:
 		_voice_view.accept_state(_previous, state)
+	if _map_only:
+		_hide_models()
 
 ## Supplies the sound-effect streams, building those of [param sound_ids] now; null silences effects.
 func configure_audio(resources: AudioResources, sound_ids: PackedInt32Array = PackedInt32Array()) -> void:

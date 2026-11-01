@@ -11,7 +11,9 @@ extends Node
 ## to a moving owner follow [method AudioResources.moving_volumes] about the
 ## frog every tick. Left and right levels become one player volume and an
 ## [AudioEffectPanner] setting on the voice's bus, which feeds [constant BUS].
-## The view reads committed state only and never changes it.
+## The view reads committed state only and never changes it. Pages shown outside
+## a tick play their generic sounds on [member page_player], a spare player
+## beside the voice slots ([method play_page_sound]).
 
 ## Source voice slots in [LogicalSoundState].
 const VOICES: int = 24
@@ -24,6 +26,8 @@ const SILENT_DB: float = -80.0
 
 ## One player per source voice slot.
 var players: Array[AudioStreamPlayer] = []
+## The spare player [method play_page_sound] uses, outside the voice slots.
+var page_player: AudioStreamPlayer
 ## Effect volume (0..127) applied to every requested level.
 var effect_volume: int = AudioResources.DEFAULT_EFFECT_VOLUME
 var _resources: AudioResources = null
@@ -41,9 +45,13 @@ func _init() -> void:
 		players.append(player)
 		add_child(player)
 		_panners.append(null)
+	page_player = AudioStreamPlayer.new()
+	page_player.name = "PageSound"
+	add_child(page_player)
 
 func _ready() -> void:
 	ensure_bus(BUS, &"Master")
+	page_player.bus = BUS
 	for slot: int in VOICES:
 		var bus_name := StringName(VOICE_BUS_PREFIX + str(slot))
 		var index: int = ensure_bus(bus_name, BUS)
@@ -109,15 +117,38 @@ func accept_state(before: GameplayState, after: GameplayState) -> void:
 			else:
 				_identifiers[slot] = 0
 
-## Stops every voice and forgets the last tick, for reset, rollback and detach.
+## Plays generic sound [param sound_id] once on [member page_player], outside any tick: the
+## sample's stream at the pitch of its note with no offset and its fixed volume mixed with
+## [member effect_volume], centred; an id without a definition or stream does nothing.
+func play_page_sound(sound_id: int) -> void:
+	if _resources == null:
+		return
+	var definition: LogicalSoundDefinition = _resources.definition_for(sound_id)
+	if definition == null:
+		return
+	var stream: AudioStreamWAV = _resources.stream_for(sound_id)
+	if stream == null:
+		return
+	page_player.stop()
+	page_player.stream_paused = false
+	page_player.stream = stream
+	page_player.pitch_scale = AudioResources.pitch_scale(definition.note, 0)
+	page_player.volume_db = mix(AudioResources.fixed_volumes(definition), effect_volume).x
+	if page_player.is_inside_tree():
+		page_player.play()
+
+## Stops every voice and the page sound and forgets the last tick, for reset, rollback and detach.
 func collapse() -> void:
 	_stop_all()
+	page_player.stop()
+	page_player.stream_paused = false
 	_tick = -1
 
-## Holds or resumes every player where it is.
+## Holds or resumes every player, the page sound's included, where it is.
 func pause(paused: bool) -> void:
 	for player: AudioStreamPlayer in players:
 		player.stream_paused = paused
+	page_player.stream_paused = paused
 
 ## The identifier the player of [param slot] was started for, or 0 when none is tracked.
 func identifier(slot: int) -> int:

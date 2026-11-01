@@ -33,8 +33,15 @@ func test_names_are_the_english_front_end_set() -> void:
 			"press_fire", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "froglogo", "newfont",
 			"select1", "select2", "select5", "sel_loading", "ls_gold_frog"]:
 		assert_has(FrontEndAssets.NAMES, image_name)
-	assert_eq(FrontEndAssets.LEVEL_IMAGES.size(), 4)
+	assert_eq(FrontEndAssets.LEVEL_IMAGES.size(), 5)
 	assert_eq(int(FrontEndAssets.LevelImage.STACK_NAME), 4)
+	assert_eq(int(FrontEndAssets.LevelImage.GAME_NAME), 5)
+	assert_has(FrontEndAssets.LEVEL_IMAGES, FrontEndAssets.LevelImage.GAME_NAME)
+
+
+func test_level_complete_labels_close_the_name_list_in_order() -> void:
+	var count: int = FrontEndAssets.NAMES.size()
+	assert_eq(FrontEndAssets.NAMES.slice(count - 5), PackedStringArray(["next", "total_time", "total_score", "select4", "opt_sec"]))
 
 
 func test_water_images_come_from_the_options_bank_first_loaded() -> void:

@@ -169,6 +169,19 @@ func test_losing_every_life_restarts_the_sandbox() -> void:
 	assert_eq(_screen.run.snapshot().frog.lives, 3)
 	assert_eq(_screen.spawner.placements.size(), 1)
 
+func test_completing_the_run_restarts_without_the_level_complete_page() -> void:
+	var finished: GameplayState = _screen.run.snapshot()
+	finished.completed = true
+	finished.flow.phase = LevelFlowState.Phase.COMPLETE
+	var result := TickResult.new()
+	result.final_snapshot = finished
+	_screen._accept(result)
+	assert_null(_screen._complete_page, "the sandbox never opens the page")
+	assert_true(_screen._hud.visible)
+	_screen._keep_alive()
+	assert_true(_screen.notice.contains("completed"))
+	assert_true(_screen.playing)
+
 func test_debug_overlay_reuses_the_shared_frog_facts() -> void:
 	assert_false(_screen._overlay.visible)
 	_screen.set_debug_visible(true)

@@ -458,6 +458,10 @@ image, and reads the map and arm stores from the supplied executable.
   the language banks after the English ones and English fills any gap.
 - **Not covered.** Retail's `Options_text_textures` pointer table is not read;
   level-stack names, the water and the HUD stay English.
+- **Level complete.** `next`, `total_time`, `total_score`, `select4` and
+  `opt_sec` close the list for the [level-complete page](#level-complete);
+  `opt_sec`'s variants take the prefix form and every language finds them in
+  `LS_ALL.VLO`.
 
 ### Deliberate break
 
@@ -1325,5 +1329,105 @@ to `["croak"]`, or one frog lift in the JSON makes `--check` exit 1 and the
 Godot test fail; restoring passes. A copied C folder with
 `HIGH_SCORE_VIEW_FROG_WAIT_TIME` 17, or the turtle x -0x400, fails the
 cross-check (exit 1).
+
+## Level complete
+
+`make_golden_level_complete.py` replays the level-complete page from the
+frozen C at the PC's 640x480 display. It never reads Godot output.
+
+```sh
+python3 tools/make_golden_level_complete.py           # write the file
+python3 tools/make_golden_level_complete.py --check   # diff against the committed file, exit 1 on change
+```
+
+Standard library only. It checks the two sound ids against FrogLord's retail
+sound list. `--c-reference <dir>` names the frozen C `source/` folder (default
+`../froggy/engine/vendor/frogger-psx-src/source`); a missing folder skips the
+cross-checks. They compare `NUM_OPTION_TICKS`/`NUM_GAME_OVER_TICKS`
+(`tempopt.h`), `GEN_MAX_CHECKPOINTS` (`ent_gen.h`), every startup sprite
+statement and the count-down, fire and triangle statements built from the
+generator's offsets (`tempopt.c`, comments stripped), the gold-frog and five
+checkpoint animlists, `HUDGetDigits` (`HUD.C`), the seconds rounding
+(`FROG.C`), the overlay polygon (`gamesys.C`) and the `sound.h` generic enum.
+
+`test_frontend_level_complete.gd` replays the file through
+`LevelCompletePage`, `LevelCompleteLayout` and
+`HighScoreBoard.checkpoint_seconds`, asset-free.
+
+### Level-complete file (`synthetic/frontend_level_complete.json`)
+
+| Key | Content |
+|---|---|
+| `constants` | start units 20, unit ticks 31, last units 17, fire units 19, blink bit 16, sounds 8 and 3, overlay RGB 0x60 at alpha 0.5, checkpoint cel ticks 2, gold cel ticks 1, 7 cels |
+| `seconds` | checkpoint ticks and the whole seconds shown |
+| `centring` | image width and the centred left edge |
+| `digits` | value, digit count and the shown text |
+| `frames` | frame, checkpoint, checkpoint image and gold image |
+| `scenes` | page runs, below |
+
+A scene has the `LevelCompletePage.create` arguments (`variant`,
+`next_level`, `checkpoint_ticks`, `level_score`, `show_gold_frog`), the
+expected `checkpoint_seconds`, `total_seconds`, `startup_sounds`,
+`pauses_music` and `shows_prompt`, `inputs` (1-based tick to `fire`/`back`),
+`ticks`, an optional `no_exit_after`, `trace` and `sprites_at`. A trace row
+is `[frame, units, ticks, accepts_fire, press_fire_visible, sounds, exit]`
+after that tick, with the exit as a `FrontEndFlow.Event` name or null. A
+trace stops at its exit tick; the test then ticks five more times with fire
+and back and expects nothing to change. `sprites_at` gives, after `frame`
+ticks of a fresh page, the image widths used for centring and the sprites in
+order (`image`, `x`, `y`, top-left corners).
+
+| Scene | Shows |
+|---|---|
+| `next_level_idle` | the full count-down; no exit within 10000 ticks |
+| `fire_at_61_then_62` | fire ignored at units 19, then croak and NEXT_LEVEL |
+| `back_at_1` | BACK before fire is read |
+| `fire_and_back_at_70` | croak and BACK on one tick |
+| `zone_fire_at_100` | ZONE_COMPLETE layout and exit |
+| `statistics_ignores_keys` | no prompt, sounds or exit |
+| `next_level_idle_wraps` | ticks 0 at tick 124, then 4294967295 |
+
+### Rules replayed
+
+- **Count-down** (`tempopt.c:5803-5804`, :5995-6008): units 20 and ticks 31
+  at startup. Each update decrements the `MR_ULONG` ticks (:64-65); at 0 with
+  units above 17 the units fall and ticks reload to 31. Units stop at 17, so
+  ticks reach 0 on tick 124 and then wrap: the page never times out.
+- **Fire** (:6011-6026): once units are below 19, fire zeroes units and ticks
+  and croaks (`SFX_GEN_FROG_CROAK` 3); press fire shows while bit 16 of the
+  frame count is clear. Startup hides it (:5961).
+- **Exit** (:6029-6069): triangle leaves for the level select first; else
+  units and ticks both 0 leave for the next level when there is one, else the
+  level select.
+- **Startup** (:5807-5953): five checkpoint frogs at (215, 170 + 20j), their
+  tens and units digits at x 236 and 252 and `opt_sec` at 268; `total_time` at
+  (304, 180), three digits at x 330/346/362, y 200, `opt_sec` at (378, 200);
+  `total_score` at (298, 225), six digits at x 310..390 step 16, y 245; gold
+  frog at (215, 270). Next level: `next`, the level name, press fire and
+  `select4` centred at y 390, 410, 430 and 450, `SFX_MUSIC_LEVEL_COMPLETE` (8)
+  and the music paused. Zone complete: `zone_complete` and press fire centred
+  at y 430 and 448, no sound on PC.
+- **Digits** (`HUD.C:2522`): `HUDGetDigits` fills ten digits; the page shows
+  the last two, three or six.
+- **Seconds** (`FROG.C:2833-2842`): the checkpoint time rounds up to a whole
+  second; 2971 ticks or more shows 99.
+- **Cels**: checkpoint frogs advance every 2 frames (`HUD.C:641-660`), the gold
+  frog every frame (`tempopt.c:668`), over 7 cels.
+
+### Port differences
+
+- Press fire blinks from the page's own update count where retail reads
+  `MRFrame_number`.
+- The 0x60 overlay is drawn with the PC's average blend (tpage 0,
+  `gamesys.C:4459-4491`) at alpha 0.5; PlayStation subtracts it. The overlay
+  is documented only; the test does not replay it.
+- `STATISTICS` is a port variant with no bottom block; it reads no keys and
+  never exits by itself.
+
+### Deliberate break
+
+Set `UNIT_TICKS = 31` to 30 in the generator: `--check` exits 1 (the C
+cross-check reports the define; with `--c-reference` pointing nowhere the
+diff shows the traces) and the Godot test fails. Restore it (exit 0).
 
 [Golden data index and shared rules](../README.md).

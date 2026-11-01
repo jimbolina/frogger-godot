@@ -121,25 +121,87 @@ func test_player_one_bindings_drive_play_and_fixed_keys_stay() -> void:
 	_key(KEY_SPACE, true)
 	assert_false(_screen.playing, "Space still pauses")
 
-func test_front_end_session_offers_next_level_after_completion_and_unlocks_it() -> void:
+func test_front_end_completion_opens_the_next_level_page_and_fire_opens_the_level() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
 	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
 	FrontEndSession.progress.arcade_flags[1] = 0
 	FrontEndSession.store = null
+	FrontEndSession.level = 24
 	FrontEndSession.active = true
-	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
-	_screen.level_code = FroggerIds.level_code(24)
-	var finished: GameplayState = _screen.run.snapshot()
-	finished.completed = true
-	finished.flow.phase = LevelFlowState.Phase.COMPLETE
-	var result := TickResult.new()
-	result.final_snapshot = finished
-	_screen._accept(result)
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	var page: LevelCompletePage = _screen._complete_page
+	assert_not_null(page)
+	assert_eq(page.variant, LevelCompletePage.Kind.NEXT_LEVEL)
+	assert_eq(page.next_level, 25)
+	assert_false(_screen._actions.visible, "the Godot buttons give way to the page")
+	assert_false(_screen._hud.visible, "the HUD viewport hides under the page")
+	assert_false(FrontEndSession.progress.is_selectable(25), "the next level opens when the page is left, not at completion")
+	var reached: int = _screen.settle_level_complete(FrontEndFlow.Event.NEXT_LEVEL)
+	var level: int = FrontEndSession.level
+	var selectable: bool = FrontEndSession.progress.is_selectable(25)
+	_reset_front_end_session()
+	assert_eq(reached, FrontEndPage.Page.GAME)
+	assert_eq(level, 25)
+	assert_true(selectable)
+	assert_eq(FrontEndSession.selected_level, FroggerIds.level_code(25))
+	FrontEndSession.selected_level = ""
+
+func test_zone_complete_fire_returns_to_the_stack_on_the_completed_level() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 1), LevelStack.Row.new(25, 2, 1, 5, 0, 1)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.level = 24
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	var page: LevelCompletePage = _screen._complete_page
+	assert_eq(page.variant, LevelCompletePage.Kind.ZONE_COMPLETE)
+	assert_eq(page.next_level, -1)
+	var reached: int = _screen.settle_level_complete(FrontEndFlow.Event.ZONE_COMPLETE)
+	var level: int = FrontEndSession.level
+	var start_page: int = FrontEndSession.start_page
+	_reset_front_end_session()
+	assert_eq(reached, FrontEndPage.Page.LEVEL_SELECT)
+	assert_eq(start_page, FrontEndPage.Page.LEVEL_SELECT)
+	assert_eq(level, 24, "the stack keeps the completed level")
+
+func test_direct_launch_shows_the_statistics_and_r_restarts() -> void:
 	FrontEndSession.active = false
-	assert_true(_screen._advance.visible)
-	assert_eq(_screen._advance.text, "Next level")
-	assert_true(FrontEndSession.progress.is_selectable(25))
+	_finish_level(24, LevelFlowState.Phase.COMPLETE, 750)
+	var page: LevelCompletePage = _screen._complete_page
+	assert_not_null(page)
+	assert_eq(page.variant, LevelCompletePage.Kind.STATISTICS)
+	assert_eq(page.level_score, 750, "a direct launch scores the run")
+	assert_eq(page.checkpoint_seconds, PackedInt32Array([1, 2, 3, 4, 5]))
+	assert_false(page.shows_prompt())
+	assert_false(_screen._hud.visible)
+	assert_false(_screen._actions.visible)
+	_key(KEY_ENTER, true)
+	_key(KEY_ESCAPE, true)
+	assert_false(_screen._fire_latched, "the statistics page takes no fire")
+	assert_false(_screen._back_latched)
+	_key(KEY_R, true)
+	assert_null(_screen._complete_page, "R restarts and closes the page")
+	assert_true(_screen._hud.visible)
+
+func test_page_keys_latch_until_its_tick_and_escape_leaves_through_the_page() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	_key(KEY_SPACE, true)
+	assert_true(_screen._fire_latched, "Space is fire on the page")
+	assert_eq(_screen._complete_page.frame, 0, "keys wait for the page tick")
+	assert_eq(_screen.step_level_complete(), -1)
+	assert_eq(_screen._complete_page.frame, 1)
+	assert_false(_screen._fire_latched, "the tick consumes the latch")
+	assert_eq(_screen._complete_page.units, LevelCompletePage.START_UNITS, "fire before the gate changes nothing")
+	_key(KEY_ESCAPE, true)
+	assert_true(_screen._back_latched)
+	var exit_event: int = _screen.step_level_complete()
+	_reset_front_end_session()
+	assert_eq(exit_event, FrontEndFlow.Event.BACK)
+	assert_true(_screen._complete_page.finished())
 
 func test_front_end_completion_records_the_level_score_for_the_high_scores() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
@@ -167,6 +229,10 @@ func test_front_end_completion_records_the_level_score_for_the_high_scores() -> 
 	assert_eq(board.recorded[24], 1)
 	assert_eq(board.run_scores[24], 1000, "the score made in the level")
 	assert_eq(board.run_times_of(24), PackedInt32Array([1, 2, 3, 4, 5]))
+	var page: LevelCompletePage = _screen._complete_page
+	assert_eq(page.level_score, 1000, "TOTAL SCORE is the level's recorded score")
+	assert_eq(page.checkpoint_seconds, PackedInt32Array([1, 2, 3, 4, 5]))
+	assert_eq(page.total_seconds, 15)
 
 func test_front_end_game_over_leads_to_name_entry() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
@@ -206,6 +272,7 @@ func _reset_front_end_session() -> void:
 	FrontEndSession.active = false
 	FrontEndSession.board = null
 	FrontEndSession.score = 0
+	FrontEndSession.level = -1
 	FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
 	FrontEndSession.final_score = 0
 	FrontEndSession.game_quit = false
@@ -224,7 +291,24 @@ func test_front_end_jungle1_completion_is_recorded_like_any_level() -> void:
 	assert_eq(board.run_scores[LevelProgress.LEVEL_JUNGLE1], 700)
 	assert_eq(board.run_times_of(LevelProgress.LEVEL_JUNGLE1), PackedInt32Array([1, 2, 3, 4, 5]),
 		"the checkpoint times are kept, not the statue's zeros")
-	assert_eq(_screen._advance.text, "Finish")
+	assert_eq(_screen._complete_page.variant, LevelCompletePage.Kind.ZONE_COMPLETE, "the page stands in for the P16 ending")
+
+func test_jungle1_fire_follows_the_ending_to_name_entry() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(LevelProgress.LEVEL_JUNGLE1, 7, 0, 4, 0, 1)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	_finish_level(LevelProgress.LEVEL_JUNGLE1, LevelFlowState.Phase.COMPLETE, 900)
+	var reached: int = _screen.settle_level_complete(FrontEndFlow.Event.ZONE_COMPLETE)
+	var start_page: int = FrontEndSession.start_page
+	var ending: int = FrontEndSession.final_score
+	var still_active: bool = FrontEndSession.active
+	_reset_front_end_session()
+	assert_eq(reached, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_eq(start_page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_eq(ending, 900)
+	assert_false(still_active)
 
 func test_leaving_after_game_over_still_reaches_name_entry() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
@@ -259,19 +343,38 @@ func test_leaving_an_unfinished_level_is_a_quit() -> void:
 	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
 	assert_true(quit)
 
-func test_leaving_a_completed_level_returns_to_the_level_select() -> void:
+func test_leaving_a_completed_level_returns_to_the_level_select_focused_on_the_next() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
 	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.progress.arcade_flags[1] = 0
 	FrontEndSession.store = null
 	FrontEndSession.board = null
+	FrontEndSession.level = 24
 	FrontEndSession.active = true
 	_finish_level(24, LevelFlowState.Phase.COMPLETE)
 	_screen.leave_front_end_level()
 	var page: int = FrontEndSession.start_page
 	var still_active: bool = FrontEndSession.active
+	var level: int = FrontEndSession.level
+	var flags: int = FrontEndSession.progress.flags_of(25)
 	_reset_front_end_session()
 	assert_eq(page, FrontEndPage.Page.LEVEL_SELECT)
 	assert_true(still_active)
+	assert_eq(level, 25, "triangle focuses the stack on the next level")
+	assert_eq(flags, LevelProgress.SELECTABLE | LevelProgress.ZONE_ACCESSIBLE, "a closed next level opens")
+
+func test_escape_keeps_an_already_completed_next_level_completed() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.progress.arcade_flags[1] = LevelProgress.COMPLETED | LevelProgress.SELECTABLE | LevelProgress.ZONE_ACCESSIBLE
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	_screen.settle_level_complete(FrontEndFlow.Event.BACK)
+	var flags: int = FrontEndSession.progress.flags_of(25)
+	_reset_front_end_session()
+	assert_eq(flags, LevelProgress.COMPLETED | LevelProgress.SELECTABLE | LevelProgress.ZONE_ACCESSIBLE)
 
 func test_restart_key_is_ignored_in_a_front_end_game() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")

@@ -1,7 +1,7 @@
 class_name FrontEndAssets
 extends RefCounted
-## Main-menu, options, level-select and pause text images in one [GameLanguage], resolved by
-## FrogLord names and level-select texture records from the imported texture banks.
+## Main-menu, options, level-select, pause and level-complete text images in one [GameLanguage],
+## resolved by FrogLord names and level-select texture records from the imported texture banks.
 ##
 ## English loads [constant BANKS]. Another language also loads its fixed-UI and options
 ## text banks after the English ones and draws each name's localized image
@@ -32,6 +32,7 @@ const NAMES: PackedStringArray = [
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 	"opt_view_hs", "opt_ctrl_config", "opt_insert_pad", "select7", "opt_keyboard",
 	"opt_arrow_small_left", "opt_arrow_small_right", "select3", "skip_hi_score", "opt_arrow",
+	"next", "total_time", "total_score", "select4", "opt_sec",
 ]
 ## The bank the water images are read from.
 const WATER_BANK: String = "OPT_VRAM.VLO"
@@ -39,9 +40,11 @@ const WATER_BANK: String = "OPT_VRAM.VLO"
 const WATER_NAMES: PackedStringArray = ["opt_env_sky", "opt_bank3"]
 ## The high-score level stack's checker tiles (SelectLevelCreateBG's im_*_col pairs), unpadded.
 const BACKGROUND_NAMES: PackedStringArray = ["jun_col", "des_col", "cav_col", "vol_col", "sky_col", "org_col", "for_col", "sub_col"]
-## Level images resolved for every arcade row.
+## Level images resolved for every arcade row; a row with no in-game name pointer (a world of one
+## level, never shown as the next level) has no [constant LevelImage.GAME_NAME] image.
 const LEVEL_IMAGES: Array[LevelImage] = [
 	LevelImage.WORLD_UNLOCKED, LevelImage.WORLD_NOT_TRIED, LevelImage.SCREENSHOT, LevelImage.STACK_NAME,
+	LevelImage.GAME_NAME,
 ]
 
 ## Why loading failed, or "" (a failed load holds no textures).
@@ -153,6 +156,8 @@ static func from_data(data: AssetCatalog, for_language: int = GameLanguage.Id.EN
 	var level_sizes: Dictionary[Vector2i, Vector2] = {}
 	for row: LevelSelectEntry in table.arcade:
 		for kind: LevelImage in LEVEL_IMAGES:
+			if kind == LevelImage.GAME_NAME and row.image_pointers[kind] == 0:
+				continue
 			var identity: int = pointers.texture_id_for_pointer(row.image_pointers[kind])
 			var image: Texture2D = library.texture_for_id(identity) if identity > 0 else null
 			if image == null:

@@ -69,6 +69,7 @@ FRONT_END_NAMES = [
     'froglogo', 'newfont', 'select1', 'select2', 'select5', 'ls_gold_frog',
     'opt_view_hs', 'opt_ctrl_config', 'opt_insert_pad', 'select7', 'opt_keyboard',
     'opt_arrow_small_left', 'opt_arrow_small_right', 'select3', 'skip_hi_score', 'opt_arrow',
+    'next', 'total_time', 'total_score', 'select4', 'opt_sec',
 ]
 
 

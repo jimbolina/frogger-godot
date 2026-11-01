@@ -310,6 +310,10 @@ func _respawn(start: RunStart) -> String:
 		return _report(issue)
 	return ""
 
+## The sandbox restarts a completed run instead of opening the level-complete page.
+func _opens_level_complete_page() -> bool:
+	return false
+
 func _keep_alive() -> void:
 	if spawner == null or _current == null or not _current.completed or not last_error.is_empty():
 		return

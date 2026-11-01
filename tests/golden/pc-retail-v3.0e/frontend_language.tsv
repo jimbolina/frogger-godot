@@ -28,6 +28,11 @@
 0	select3	select3	1125	OPTE_RAM.VLO
 0	skip_hi_score	skip_hi_score	806	OPTE_RAM.VLO
 0	opt_arrow	opt_arrow	311	OPTE_RAM.VLO
+0	next	next	801	FIXE_VRAM.VLO
+0	total_time	total_time	794	FIXE_VRAM.VLO
+0	total_score	total_score	793	FIXE_VRAM.VLO
+0	select4	select4	1232	FIXE_VRAM.VLO
+0	opt_sec	opt_sec	1260	LS_ALL.VLO
 1	opt_start	opti_start	562	FIXI_VRAM.VLO
 1	opt_options	opti_options	560	FIXI_VRAM.VLO
 1	opt_exit	opti_exit	591	FIXI_VRAM.VLO
@@ -56,6 +61,11 @@
 1	select3	select3_i	1128	OPTI_RAM.VLO
 1	skip_hi_score	skip_hi_score_i	593	OPTI_RAM.VLO
 1	opt_arrow	opt_arrow	311	OPTI_RAM.VLO
+1	next	next_i	520	FIXI_VRAM.VLO
+1	total_time	total_time_i	528	FIXI_VRAM.VLO
+1	total_score	total_score_i	532	FIXI_VRAM.VLO
+1	select4	select4_i	1235	FIXI_VRAM.VLO
+1	opt_sec	opti_sec	1263	LS_ALL.VLO
 2	opt_start	optg_start	559	FIXG_VRAM.VLO
 2	opt_options	optg_options	557	FIXG_VRAM.VLO
 2	opt_exit	optg_exit	586	FIXG_VRAM.VLO
@@ -84,6 +94,11 @@
 2	select3	select3_g	1127	OPTG_RAM.VLO
 2	skip_hi_score	skip_hi_score_g	588	OPTG_RAM.VLO
 2	opt_arrow	opt_arrow	311	OPTG_RAM.VLO
+2	next	next_g	519	FIXG_VRAM.VLO
+2	total_time	total_time_g	527	FIXG_VRAM.VLO
+2	total_score	total_score_g	531	FIXG_VRAM.VLO
+2	select4	select4_g	1234	FIXG_VRAM.VLO
+2	opt_sec	optg_sec	1262	LS_ALL.VLO
 3	opt_start	optf_start	556	FIXF_VRAM.VLO
 3	opt_options	optf_options	565	FIXF_VRAM.VLO
 3	opt_exit	optf_exit	582	FIXF_VRAM.VLO
@@ -112,6 +127,11 @@
 3	select3	select3_f	1126	OPTF_RAM.VLO
 3	skip_hi_score	skip_hi_score_f	576	OPTF_RAM.VLO
 3	opt_arrow	opt_arrow	311	OPTF_RAM.VLO
+3	next	next_f	521	FIXF_VRAM.VLO
+3	total_time	total_time_f	529	FIXF_VRAM.VLO
+3	total_score	total_score_f	530	FIXF_VRAM.VLO
+3	select4	select4_f	1233	FIXF_VRAM.VLO
+3	opt_sec	optf_sec	1261	LS_ALL.VLO
 4	opt_start	opts_start	554	FIXS_VRAM.VLO
 4	opt_options	opts_options	563	FIXS_VRAM.VLO
 4	opt_exit	opts_exit	596	FIXS_VRAM.VLO
@@ -140,3 +160,8 @@
 4	select3	select3_s	1129	OPTS_RAM.VLO
 4	skip_hi_score	skip_hi_score_s	598	OPTS_RAM.VLO
 4	opt_arrow	opt_arrow	311	OPTS_RAM.VLO
+4	next	next_s	518	FIXS_VRAM.VLO
+4	total_time	total_time_s	526	FIXS_VRAM.VLO
+4	total_score	total_score_s	533	FIXS_VRAM.VLO
+4	select4	select4_s	1236	FIXS_VRAM.VLO
+4	opt_sec	opts_sec	1264	LS_ALL.VLO

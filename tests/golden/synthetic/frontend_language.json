@@ -228,6 +228,31 @@
    "name": "opt_arrow",
    "localized": [null, null, null, null],
    "shared": true
+  },
+  {
+   "name": "next",
+   "localized": ["next_i", "next_g", "next_f", "next_s"],
+   "shared": false
+  },
+  {
+   "name": "total_time",
+   "localized": ["total_time_i", "total_time_g", "total_time_f", "total_time_s"],
+   "shared": false
+  },
+  {
+   "name": "total_score",
+   "localized": ["total_score_i", "total_score_g", "total_score_f", "total_score_s"],
+   "shared": false
+  },
+  {
+   "name": "select4",
+   "localized": ["select4_i", "select4_g", "select4_f", "select4_s"],
+   "shared": false
+  },
+  {
+   "name": "opt_sec",
+   "localized": ["opti_sec", "optg_sec", "optf_sec", "opts_sec"],
+   "shared": false
   }
  ]
 }

@@ -24,7 +24,9 @@ pipeline is retired. S2g adds bloom, bug and gold-frog halos with
 coloured lights, glowing lava with clustered lights, and the 0-key debug
 graphics panel. FrogLord stays the level editor: a re-import through
 `archive/` reproduces `assets/`. Awaiting the owner's play check and the
-[look choices](reference/rendering/lighting.md#look-choices). Next: P13e; the S1e
+[look choices](reference/rendering/lighting.md#look-choices). P13h draws the
+retail [level-complete page](reference/gameplay/front-end.md#level-complete)
+after the fifth frog (owner's play check pending). Next: P13e; the S1e
 proposals and P14 are the owner's calls ([roadmap](PORTING.md#status)).
 
 Effects never reproduce the frozen generators' random draws. Replays and

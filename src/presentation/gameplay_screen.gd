@@ -6,6 +6,13 @@ extends GameplayWorldView
 ## R restarts and Escape leaves unless a binding claims the key. The saved music and effects
 ## volumes are applied when the scene opens. The level is read from the imported assets
 ## ([method ImportedAssets.open]).
+##
+## A completed level opens the retail level-complete page ([LevelCompletePage]) over the map
+## alone, as LevelEnd leaves it (gamesys.C:872-894, tempopt.c:5792-6067): the HUD, frog and
+## entities hide, the page ticks at 30 Hz from [method _process], the bound super-hop key,
+## Enter and Space are fire and Escape is triangle. A front-end game leaves through
+## [method settle_level_complete]; a direct launch shows the statistics alone and keeps R and
+## Escape. The sandbox never opens the page.
 
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
@@ -34,6 +41,16 @@ var _advance_events: PackedInt32Array = PackedInt32Array()
 var _next_level: int = -1
 var _session_finished: bool = false
 var _model_origins: EntityModelOrigins = null
+var _complete_view: LevelCompleteView
+## The open level-complete page, or null.
+var _complete_page: LevelCompletePage = null
+var _complete_elapsed: float = 0.0
+var _fire_latched: bool = false
+var _back_latched: bool = false
+var _completion: LevelProgress.Completion = null
+var _level_score: int = 0
+var _start_score: int = 0
+var _text_assets: FrontEndAssets = null
 ## Problems from the latest map-less entity model resolution, shown to callers instead of failing.
 var entity_model_diagnostics := PackedStringArray()
 ## Player 1's key bindings: the shipped defaults until the saved options are read on opening.
@@ -128,6 +145,7 @@ func close_data() -> void:
 		_data.close()
 	_data = null
 	_owns_data = false
+	_text_assets = null
 	configure_audio(null)
 	configure_music(-1)
 
@@ -141,6 +159,7 @@ func _configure_level_audio(data: AssetCatalog, level_number: int) -> void:
 	configure_music(data.tables.music().track_for_level(level_number))
 
 func _detach_game() -> void:
+	_close_level_complete()
 	_host.close()
 	_host.run = null
 	run = null
@@ -193,6 +212,8 @@ func open_run(definition: LevelDefinition, start: RunStart, origins: EntityModel
 		return _show_error(replacement.error)
 	_definition = definition
 	set_effect_grid(definition.grid)
+	_close_level_complete()
+	_start_score = start.score
 	run = replacement
 	_host.open(run)
 	_held = 0
@@ -240,6 +261,16 @@ func set_paused(paused: bool) -> void:
 func _process(delta: float) -> void:
 	if run == null or _current == null:
 		return
+	if _complete_page != null:
+		_complete_elapsed += delta
+		if _complete_elapsed >= GameplayHost.PERIOD:
+			_complete_elapsed = 0.0 if _complete_elapsed > GameplayHost.PERIOD * 2.0 else _complete_elapsed - GameplayHost.PERIOD
+			var exit_event: int = step_level_complete()
+			if exit_event >= 0:
+				_leave_level_complete(exit_event)
+				return
+		draw_state(1.0)
+		return
 	_host.begin_frame(delta)
 	var result: TickResult = _host.poll()
 	if result != null:
@@ -268,6 +299,10 @@ func _accept(result: TickResult) -> void:
 			var issue: String = recorder.save(_current.tick_index)
 			if not issue.is_empty():
 				last_error = issue
+			elif not recorder.saved_path.is_empty():
+				print("Recorded " + recorder.saved_path)
+		if _current.flow.phase == LevelFlowState.Phase.COMPLETE and last_error.is_empty() and _opens_level_complete_page():
+			_open_level_complete()
 	_update_interface(result.events)
 
 func _finish_pending() -> void:
@@ -277,6 +312,10 @@ func _finish_pending() -> void:
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
 	if key == null or key.echo:
+		return
+	if _complete_page != null:
+		if key.pressed:
+			_press_on_level_complete(key)
 		return
 	var action: int = input.command(key)
 	if action != 0:
@@ -299,6 +338,10 @@ func _build_interface() -> void:
 	_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_hud)
 	_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_complete_view = LevelCompleteView.new()
+	_complete_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_complete_view)
+	_complete_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_status = Label.new()
 	_status.position = Vector2(16, 200)
 	_status.size = Vector2(608, 70)
@@ -329,16 +372,17 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 	if _current != null:
 		_hud.present(_current, _current.tick_index, events)
 	var terminal: bool = _current != null and _current.completed
-	_actions.visible = terminal or not last_error.is_empty()
+	var on_page: bool = _complete_page != null
+	_actions.visible = (terminal and not on_page) or not last_error.is_empty()
 	var in_game: bool = FrontEndSession.active
 	_replay.visible = _definition != null and not in_game
 	_advance.visible = in_game and terminal and _advance_event >= 0
 	if not last_error.is_empty():
 		_status.text = last_error
+	elif on_page:
+		_status.text = ""
 	elif terminal:
 		_status.text = "Level complete" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "Game over"
-		if recorder != null and not recorder.saved_path.is_empty():
-			_status.text += "\nRecorded " + recorder.saved_path
 	else:
 		_status.text = "" if playing else "Paused — Space to resume"
 
@@ -355,15 +399,16 @@ func _return_to_menu() -> void:
 	get_tree().change_scene_to_file(FrontEndScreen.SCENE if in_game else "res://scenes/boot.tscn")
 
 ## Settles the front-end game when the player leaves the level: a completed level returns to the
-## level select; a game over still reaches name entry, and only leaving an unfinished level is a
-## quit that skips it (hsinput.c:189-193). Does nothing outside a front-end game.
+## level select as the page's triangle does; a game over still reaches name entry, and only
+## leaving an unfinished level is a quit that skips it (hsinput.c:189-193). Does nothing outside a
+## front-end game.
 func leave_front_end_level() -> void:
 	if not FrontEndSession.active:
 		return
 	var completed: bool = _current != null and _current.flow.phase == LevelFlowState.Phase.COMPLETE
 	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
 	if _session_finished and completed:
-		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+		settle_level_complete(FrontEndFlow.Event.BACK)
 	else:
 		_warn(FrontEndSession.end_game(not _session_finished, ending))
 
@@ -383,24 +428,22 @@ func _finish_front_end_level() -> void:
 		FrontEndSession.collect_gold_frog(number)
 	_advance_events = PackedInt32Array()
 	_next_level = -1
+	_completion = null
 	if flow.phase == LevelFlowState.Phase.COMPLETE:
-		FrontEndSession.record_level(number, flow.score - FrontEndSession.score, flow.checkpoint_times)
+		_level_score = flow.score - FrontEndSession.score
+		FrontEndSession.record_level(number, _level_score, flow.checkpoint_times)
 		FrontEndSession.carry(_current)
 		if number == LevelProgress.LEVEL_JUNGLE1:
 			progress.reach_jungle_statue()
 			progress.rewrite_jungle_row()
 			_advance_events = PackedInt32Array([FrontEndFlow.Event.GAME_FINISHED, FrontEndFlow.Event.ENDING_DONE])
-			_advance.text = "Finish"
 		else:
-			var completion: LevelProgress.Completion = progress.complete_level(number)
-			if completion.found and completion.next_level >= 0:
-				_next_level = completion.next_level
-				progress.open_level_if_closed(_next_level)
+			_completion = progress.complete_level(number)
+			if _completion.found and _completion.next_level >= 0:
+				_next_level = _completion.next_level
 				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.NEXT_LEVEL])
-				_advance.text = "Next level"
 			else:
 				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.ZONE_COMPLETE])
-				_advance.text = "Level select"
 	else:
 		_advance_events = PackedInt32Array([FrontEndFlow.Event.ALL_LIVES_LOST, FrontEndFlow.Event.GAME_OVER_DONE, FrontEndFlow.Event.CONTINUE_DONE])
 		_advance.text = "Continue"
@@ -415,26 +458,149 @@ func _level_choice_message(data: AssetCatalog) -> String:
 		message += "; unaccepted levels with a map are " + ", ".join(data.unaccepted_level_codes())
 	return message
 
-## Follows the flow from the finished level to its next page.
+## Follows the flow from the game-over placeholder to its next page.
 func _advance_front_end() -> void:
+	var page: int = _follow_flow(_advance_events)
+	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
+	if page == FrontEndPage.Page.LEVEL_SELECT:
+		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+	elif page != FrontEndPage.Page.GAME:
+		_warn(FrontEndSession.end_game(false, ending))
+	_switch_scene(page)
+
+## Whether a completed level opens the level-complete page; the sandbox restarts instead.
+func _opens_level_complete_page() -> bool:
+	return true
+
+## Opens the page for the completed level (tempopt.c:5792-5964): the next-level or zone-complete
+## variant of a front-end game, else the statistics alone; hides the HUD, frog and entities,
+## plays the startup sound and pauses the music as retail does.
+func _open_level_complete() -> void:
+	var flow: LevelFlowState = _current.flow
+	var in_game: bool = FrontEndSession.active
+	var variant: LevelCompletePage.Kind = LevelCompletePage.Kind.STATISTICS
+	if in_game:
+		variant = LevelCompletePage.Kind.NEXT_LEVEL if _next_level >= 0 else LevelCompletePage.Kind.ZONE_COMPLETE
+	var score: int = _level_score if in_game else flow.score - _start_score
+	var number: int = FroggerIds.level_from_code(level_code)
+	if in_game and FrontEndSession.board != null:
+		var table: int = HighScoreBoard.redirect_level(number)
+		if table >= 0 and table < FrontEndSession.board.run_scores.size():
+			score = FrontEndSession.board.run_scores[table]
+	var gold: bool = _completion.show_gold_frog if _completion != null else flow.gold_collected
+	_complete_page = LevelCompletePage.create(variant, _next_level, flow.checkpoint_times, score, gold)
+	_complete_elapsed = 0.0
+	_fire_latched = false
+	_back_latched = false
+	_hud.hide()
+	set_map_only(true)
+	var voices: SoundVoiceView = voice_view()
+	if voices != null:
+		voices.collapse()
+		for sound_id: int in _complete_page.startup_sounds():
+			voices.play_page_sound(sound_id)
+	if _complete_page.pauses_music() and music_player() != null:
+		music_player().pause(true)
+	_ensure_text_assets()
+	_complete_view.open(_complete_page)
+
+func _close_level_complete() -> void:
+	if _complete_view == null:
+		return
+	_complete_page = null
+	_fire_latched = false
+	_back_latched = false
+	_complete_view.close()
+	_hud.visible = true
+	set_map_only(false)
+
+func _ensure_text_assets() -> void:
+	if _text_assets == null and _data != null and _data.is_valid():
+		var text: FrontEndAssets = FrontEndAssets.from_data(_data, FrontEndScreen.session_language(OS.get_cmdline_user_args()))
+		if text.error.is_empty():
+			_text_assets = text
+		else:
+			push_warning("Level-complete images are unavailable: " + text.error)
+	_complete_view.configure(_hud.assets, _text_assets)
+
+func _press_on_level_complete(key: InputEventKey) -> void:
+	var fire: bool = bool(input.command(key) & TickCommand.SUPER_HOP) or key.physical_keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+	if fire:
+		_fire_latched = true
+	elif key.physical_keycode == KEY_ESCAPE:
+		if _complete_page.shows_prompt():
+			_back_latched = true
+		else:
+			_return_to_menu()
+	elif key.physical_keycode == KEY_R and not FrontEndSession.active:
+		restart()
+
+## One 30 Hz update of the open page with the keys pressed since the last one: plays its sounds,
+## keeps the map animating and redraws. Returns the page's exit event, or -1 while it stays open.
+func step_level_complete() -> int:
+	if _complete_page == null:
+		return -1
+	var fire: bool = _fire_latched
+	var back: bool = _back_latched
+	_fire_latched = false
+	_back_latched = false
+	var exit_event: int = _complete_page.tick(fire, back)
+	var voices: SoundVoiceView = voice_view()
+	if voices != null:
+		for sound_id: int in _complete_page.sounds:
+			voices.play_page_sound(sound_id)
+	advance_map_tick()
+	_complete_view.present(_complete_page)
+	return exit_event
+
+## Applies [param exit_event] of the page to the front-end game (tempopt.c:6029-6070): triangle
+## opens a closed next level and focuses the stack on it; the count-down's end opens the next
+## level outright or returns to the stack; JUN1's fire follows the ending. Returns the page the
+## flow reaches.
+func settle_level_complete(exit_event: int) -> int:
+	var number: int = FroggerIds.level_from_code(level_code)
+	var events: PackedInt32Array
+	if exit_event == FrontEndFlow.Event.BACK or number != LevelProgress.LEVEL_JUNGLE1:
+		events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, exit_event])
+	else:
+		events = _advance_events
+	var page: int = _follow_flow(events)
+	var progress: LevelProgress = FrontEndSession.progress
+	if _next_level >= 0 and progress != null:
+		if exit_event == FrontEndFlow.Event.BACK:
+			progress.open_level_if_closed(_next_level)
+			FrontEndSession.level = _next_level
+		elif exit_event == FrontEndFlow.Event.NEXT_LEVEL:
+			progress.open_level(_next_level)
+			FrontEndSession.level = _next_level
+			FrontEndSession.selected_level = FroggerIds.level_code(_next_level)
+	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
+	if page == FrontEndPage.Page.LEVEL_SELECT:
+		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+		_warn(FrontEndSession.save())
+	elif page == FrontEndPage.Page.GAME:
+		_warn(FrontEndSession.save())
+	else:
+		_warn(FrontEndSession.end_game(false, ending))
+	return page
+
+func _leave_level_complete(exit_event: int) -> void:
+	if not FrontEndSession.active:
+		return
+	_switch_scene(settle_level_complete(exit_event))
+
+func _follow_flow(events: PackedInt32Array) -> int:
 	var page: int = FrontEndPage.Page.GAME
 	var problems := PackedStringArray()
-	for event: int in _advance_events:
+	for event: int in events:
 		page = FrontEndFlow.next_page(page, event, problems)
 	for problem: String in problems:
 		push_warning(problem)
-	if page == FrontEndPage.Page.GAME and _next_level >= 0:
-		FrontEndSession.progress.open_level(_next_level)
-		FrontEndSession.save()
-		FrontEndSession.level = _next_level
-		FrontEndSession.selected_level = FroggerIds.level_code(_next_level)
-		close_data()
-		get_tree().reload_current_scene()
-		return
-	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
+	return page
+
+func _switch_scene(page: int) -> void:
 	close_data()
-	if page == FrontEndPage.Page.LEVEL_SELECT:
-		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+	if page == FrontEndPage.Page.GAME and not FrontEndSession.selected_level.is_empty():
+		get_tree().reload_current_scene()
 	else:
-		_warn(FrontEndSession.end_game(false, ending))
-	get_tree().change_scene_to_file(FrontEndScreen.SCENE)
+		get_tree().change_scene_to_file(FrontEndScreen.SCENE)

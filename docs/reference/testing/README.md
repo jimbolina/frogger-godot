@@ -368,6 +368,7 @@ but normal runtime use and the Godot test suites do not build or load them.
 - A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
 - Godot stores mesh normals packed; they come back changed in the fifth decimal place.
 - Assign a `Variant` to a typed local before passing it to a GUT assertion.
+- Never name a class enum `Variant`: a field typed with it reads as the built-in type and every call that passes it fails strict compilation.
 
 Report completed runs in the delivery message and commit body. Keep raw logs,
 captures and per-run provenance outside the repository.

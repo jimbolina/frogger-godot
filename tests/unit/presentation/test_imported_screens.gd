@@ -20,6 +20,19 @@ func test_front_end_hud_and_options_assets_load() -> void:
 		assert_not_null(front.texture(image_name), image_name)
 	var row: LevelSelectEntry = _data.tables.level_select().arcade[0]
 	assert_not_null(front.level_texture(row.level, FrontEndAssets.LevelImage.SCREENSHOT))
+	var named: int = 0
+	for arcade_row: LevelSelectEntry in _data.tables.level_select().arcade:
+		var game_name: Texture2D = front.level_texture(arcade_row.level, FrontEndAssets.LevelImage.GAME_NAME)
+		if arcade_row.image_pointers[FrontEndAssets.LevelImage.GAME_NAME] == 0:
+			assert_null(game_name, str(arcade_row.level))
+			assert_eq(arcade_row.levels_in_world, 1, "only a world of one level lacks an in-game name")
+			continue
+		named += 1
+		assert_not_null(game_name, str(arcade_row.level))
+		assert_gt(front.level_retail_size(arcade_row.level, FrontEndAssets.LevelImage.GAME_NAME).x, 0.0, str(arcade_row.level))
+	assert_gt(named, 0)
+	for image_name: String in ["next", "total_time", "total_score", "select4", "opt_sec"]:
+		assert_gt(front.retail_size(image_name).x, 0.0, image_name)
 	var hud: GameplayHudAssets = GameplayHudAssets.from_data(_data)
 	assert_eq(hud.error, "")
 	assert_true(hud.textures.has("newfont"))
