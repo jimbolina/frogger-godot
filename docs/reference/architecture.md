@@ -62,7 +62,7 @@ it and update in place when it changes. The project's single autoload,
 at startup and, when the file exists, applies the window, root viewport and
 global shadow settings through `GraphicsApplier`; without one, command-line
 window and vsync options stand. Under the headless display server it does nothing.
-F11 shows its panel. Viewport anti-aliasing and scaling reach only the root
+The 0 key shows its panel unless player 1 has bound it. Viewport anti-aliasing and scaling reach only the root
 viewport; the map viewer's `SubViewport` keeps its own.
 
 ## Tick coordination

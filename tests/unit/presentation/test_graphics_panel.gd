@@ -1,10 +1,10 @@
 extends GutTest
-## The GraphicsDebug autoload is inert headless; an activated panel toggles on F11, edits the profile and saves.
+## The GraphicsDebug autoload is inert headless; an activated panel toggles on the 0 key, edits the profile and saves.
 
 const ROOT: String = "user://test_graphics_panel"
 const AUTOLOAD: String = "autoload/GraphicsDebug"
 
-## A panel whose game bindings are supplied directly, since retail cannot bind F11.
+## A panel whose game bindings are supplied directly.
 class BoundPanel:
 	extends GraphicsPanel
 	var input: BindingInput = null
@@ -53,9 +53,9 @@ func _panel() -> GraphicsPanel:
 	return panel
 
 
-func _f11(pressed: bool = true, echo: bool = false) -> InputEventKey:
+func _toggle_key(pressed: bool = true, echo: bool = false) -> InputEventKey:
 	var event := InputEventKey.new()
-	event.physical_keycode = KEY_F11
+	event.physical_keycode = GraphicsPanel.TOGGLE_KEY
 	event.pressed = pressed
 	event.echo = echo
 	return event
@@ -91,7 +91,7 @@ func test_new_instance_is_inert_headless() -> void:
 	add_child_autofree(panel)
 	assert_eq(panel.get_child_count(), 0)
 	assert_eq(Engine.max_fps, _max_fps)
-	panel._unhandled_key_input(_f11())
+	panel._unhandled_key_input(_toggle_key())
 	assert_false(panel.is_open())
 	assert_false(FileAccess.file_exists(GraphicsStore.DEFAULT_PATH))
 
@@ -172,32 +172,32 @@ func test_defaults_button_restores_defaults() -> void:
 	assert_false(ssao.button_pressed)
 
 
-func test_f11_toggles_the_view() -> void:
+func test_the_toggle_key_toggles_the_view() -> void:
 	var panel: GraphicsPanel = _panel()
-	panel._unhandled_key_input(_f11())
+	panel._unhandled_key_input(_toggle_key())
 	assert_true(panel.is_open())
-	panel._unhandled_key_input(_f11(false))
+	panel._unhandled_key_input(_toggle_key(false))
 	assert_true(panel.is_open(), "releases do nothing")
-	panel._unhandled_key_input(_f11())
+	panel._unhandled_key_input(_toggle_key())
 	assert_false(panel.is_open())
 
 
-func test_echoed_f11_is_ignored() -> void:
+func test_an_echoed_toggle_key_is_ignored() -> void:
 	var panel: GraphicsPanel = _panel()
-	panel._unhandled_key_input(_f11(true, true))
+	panel._unhandled_key_input(_toggle_key(true, true))
 	assert_false(panel.is_open())
 
 
-func test_f11_bound_to_a_game_action_does_not_toggle() -> void:
+func test_a_toggle_key_bound_to_a_game_action_does_not_toggle() -> void:
 	var bindings := KeyBindings.create_default()
-	bindings.set_key(0, KeyBindings.Action.CROAK, BindingInput.scancode(_f11()))
+	bindings.set_key(0, KeyBindings.Action.CROAK, BindingInput.scancode(_toggle_key()))
 	var target := SubViewport.new()
 	add_child_autofree(target)
 	var panel := BoundPanel.new()
 	panel.input = BindingInput.new(bindings)
 	add_child_autofree(panel)
 	panel.activate(_path, target)
-	panel._unhandled_key_input(_f11())
+	panel._unhandled_key_input(_toggle_key())
 	assert_false(panel.is_open())
 
 

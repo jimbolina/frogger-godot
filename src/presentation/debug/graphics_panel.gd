@@ -1,20 +1,20 @@
 class_name GraphicsPanel
 extends CanvasLayer
-## The debug graphics panel: loads, applies and saves the graphics settings, and F11 shows it.
+## The debug graphics panel: loads, applies and saves the graphics settings, and the 0 key shows it.
 ##
 ## Registered as the GraphicsDebug autoload. Under the headless display server
 ## (tests and script checks) it builds, applies and writes nothing. Otherwise
 ## [method activate] loads the settings file into the live [GraphicsProfile],
 ## applies the engine-wide settings when the file exists (so a first run keeps
 ## any window or vsync options given on the command line) and builds the
-## hidden view. F11 toggles the view unless the key is bound to a game action.
+## hidden view. The 0 key toggles the view unless it is bound to a game action.
 ## Edits apply at once and are saved after a short pause. It keeps working
 ## while the game is paused.
 
 ## Canvas layer above every game layer.
 const LAYER: int = 100
 ## Key that shows and hides the panel.
-const TOGGLE_KEY: Key = KEY_F11
+const TOGGLE_KEY: Key = KEY_0
 ## Seconds after the last edit before the settings are saved.
 const SAVE_DELAY: float = 0.5
 

@@ -47,8 +47,7 @@ tools and sandbox keep their own keys. Space pauses/resumes,
 R restarts, and Escape returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
 **Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.
 
-F11 (fn+F11 on macOS, where the system may claim F11 for Show Desktop) opens
-the debug graphics panel on the right: display, quality, shadows, bloom,
+The 0 key (top row) opens the debug graphics panel on the right: display, quality, shadows, bloom,
 effects and look settings apply at once and are saved to `user://graphics.cfg`.
 The panel is mouse-driven, so game keys keep working while it is open.
 
