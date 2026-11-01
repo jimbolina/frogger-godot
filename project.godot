@@ -7,6 +7,10 @@ config/description="A Godot rewrite of Frogger (1997, PC). Needs the player's ow
 run/main_scene="res://scenes/front_end.tscn"
 config/features=PackedStringArray("4.5")
 
+[autoload]
+
+GraphicsDebug="*res://src/presentation/debug/graphics_panel.gd"
+
 [debug]
 
 gdscript/warnings/exclude_addons=true

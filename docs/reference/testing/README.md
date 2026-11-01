@@ -363,6 +363,8 @@ but normal runtime use and the Godot test suites do not build or load them.
 - Running the boot scene saves the data folder to `user://settings.cfg`. Delete that file to test first-run behaviour.
 - A headless run draws nothing, so anything that reads the screen (`tools/probe_scene_lighting.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
 - A test script must not name a helper `_compare`: GUT has a member of that name.
+- Autoloads run in `-s` runs too, including GUT and `tools/check_scripts.gd`. `GraphicsDebug` is inert under the headless display server; tests call `GraphicsPanel.activate()` with their own settings path.
+- A test that changes `GraphicsProfile` calls `GraphicsProfile.reset()` in `after_each`.
 - A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
 - Godot stores mesh normals packed; they come back changed in the fifth decimal place.
 - Assign a `Variant` to a typed local before passing it to a GUT assertion.

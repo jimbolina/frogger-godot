@@ -16,7 +16,8 @@ states what each layer may use.
   Godot math types are allowed.
 - `src/application/` owns the adapters from data records to gameplay
   definitions and the behavior and callback catalogs. Only `loaders/`
-  (`ImportedAssets`) and `storage/` (`ProgressStore`, `HighScoreStore`) may
+  (`ImportedAssets`) and `storage/` (`ProgressStore`, `HighScoreStore`,
+  `GraphicsStore`) may
   touch files or the environment.
 - `src/rendering/` builds render resources (meshes, materials, shaders, texture
   pages, effect geometry) from data records and committed gameplay state.
@@ -51,6 +52,18 @@ pending work before changing the run.
 map timelines. The map viewer retains its separate catch-up clock and backward
 seek behavior. `MapCaptureSession` owns external image/metadata capture and
 benchmark scheduling; it consumes rendering facts supplied by the viewer.
+
+### Graphics settings
+
+`GraphicsProfile.current()` is the one live `GraphicsSettings` record; a
+replacement emits its `changed` once. `SceneLighting` and the world views read
+it and update in place when it changes. The project's single autoload,
+`GraphicsDebug` (`debug/GraphicsPanel`), loads `GraphicsStore` into the profile
+at startup and, when the file exists, applies the window, root viewport and
+global shadow settings through `GraphicsApplier`; without one, command-line
+window and vsync options stand. Under the headless display server it does nothing.
+F11 shows its panel. Viewport anti-aliasing and scaling reach only the root
+viewport; the map viewer's `SubViewport` keeps its own.
 
 ## Tick coordination
 
