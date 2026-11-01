@@ -11,14 +11,14 @@ states what each layer may use.
   game-side. Large map sections are stored as packed columns and rebuilt lazily.
 - `src/game/` contains `RefCounted` definitions and exclusively owned run
   state and rules. It receives validated definitions and tick commands; it does
-  not depend on data records, application, conversion, inspection or
+  not depend on data records, application, rendering, inspection or
   presentation, open files, poll input, consult wall time or access Nodes.
   Godot math types are allowed.
 - `src/application/` owns the adapters from data records to gameplay
   definitions and the behavior and callback catalogs. Only `loaders/`
   (`ImportedAssets`) and `storage/` (`ProgressStore`, `HighScoreStore`) may
   touch files or the environment.
-- `src/convert/` builds render resources (meshes, materials, shaders, texture
+- `src/rendering/` builds render resources (meshes, materials, shaders, texture
   pages, effect geometry) from data records and committed gameplay state.
 - `src/inspection/` owns scenarios, validated options, corridor guards, presets
   and their manifests, and the sandbox. Presentation translates CLI and
@@ -90,7 +90,7 @@ releases its drawing resources. Reattaching the same object never closes it or
 silently relinquishes ownership. Do not transfer ownership to multiple viewers.
 
 Meshes/materials belong to their rendering bundle or instance according to the
-existing conversion APIs. Instance animation clocks are separate from shared
+existing rendering APIs. Instance animation clocks are separate from shared
 model definitions. Source replacement clears selections, caches and drawing
 references before another source is shown. Standalone viewer entry points and
 synthetic injection remain supported.
@@ -299,7 +299,7 @@ the normal run; it adds no gameplay rules.
   borrows resolved entities from `GameplaySetup` whole-map setups of the
   supported levels, so scripts, forms, payloads and rewards come from the
   executable's tables. `SandboxPresets` holds the named layouts.
-- `src/convert/`: `EntityModelOrigins` records each slot's source theme and
+- `src/rendering/`: `EntityModelOrigins` records each slot's source theme and
   level; `MaplessEntityResources` builds entity meshes from those origins
   without a decoded map.
 - `src/presentation/`: `sandbox/SandboxScreen` extends `GameplayScreen` and
@@ -352,7 +352,7 @@ resolve, but they are not restricted themselves.
 `AudioStream`, `AudioStreamWAV`, `Animation`, `AnimationLibrary` and
 `PackedScene` fields, but may not use other node or tree types or calls,
 environment I/O, runtime loads or dynamic calls. Data may not depend on gameplay,
-application, conversion, presentation, inspection or scenes. Application and
+application, rendering, presentation, inspection or scenes. Application and
 source code may use data; gameplay may not. Application loaders and storage are
 the only application code allowed file and environment access, including
 computed resource loads.
@@ -363,7 +363,7 @@ dispatch in gameplay, while permitting raw names in diagnostics.
 Light and environment nodes belong to presentation: under `src/`, the types
 `Light3D`, `DirectionalLight3D`, `OmniLight3D`, `SpotLight3D`,
 `WorldEnvironment` and `Environment` may appear only in `src/presentation/`
-(`lighting-ownership`). `src/convert/` computes node-free lighting and tint
+(`lighting-ownership`). `src/rendering/` computes node-free lighting and tint
 specifications that `SceneLighting` applies. A scanner test also checks that
 every folder under `src/` is either protected or forbidden to the protected
 layers, so a renamed folder cannot silently leave the rules.

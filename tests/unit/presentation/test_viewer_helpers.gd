@@ -29,24 +29,14 @@ func test_arguments_preserve_first_prefix_match_and_exact_flags() -> void:
 	assert_true(ViewerArguments.has_flag(PackedStringArray(["--benchmark"]), "--benchmark"))
 
 
-
-func test_the_rendering_argument_wins_over_the_project_setting() -> void:
-	var saved: String = str(ProjectSettings.get_setting(ViewerArguments.RENDERING_SETTING))
-	assert_eq(saved, RenderingProfile.RETAIL)
-	assert_eq(ViewerArguments.rendering_profile(PackedStringArray()), RenderingProfile.RETAIL)
-	assert_eq(ViewerArguments.rendering_profile(PackedStringArray(["--rendering="])), RenderingProfile.RETAIL)
-	assert_eq(ViewerArguments.rendering_profile(PackedStringArray(["--rendering= Modern "])), RenderingProfile.MODERN)
-	ProjectSettings.set_setting(ViewerArguments.RENDERING_SETTING, RenderingProfile.MODERN)
-	var from_setting: String = ViewerArguments.rendering_profile(PackedStringArray())
-	var from_argument: String = ViewerArguments.rendering_profile(PackedStringArray(["--rendering=retail"]))
-	ProjectSettings.set_setting(ViewerArguments.RENDERING_SETTING, saved)
-	assert_eq(from_setting, RenderingProfile.MODERN)
-	assert_eq(from_argument, RenderingProfile.RETAIL)
+func test_the_project_draws_on_forward_plus_without_a_profile_setting() -> void:
+	assert_eq(str(ProjectSettings.get_setting("rendering/renderer/rendering_method")), "forward_plus")
+	assert_false(ProjectSettings.has_setting("frogger/rendering/default_profile"))
 
 
 func test_the_effect_shadows_argument_wins_over_the_project_setting() -> void:
 	var saved: String = str(ProjectSettings.get_setting(ViewerArguments.EFFECT_SHADOWS_SETTING))
-	assert_eq(saved, ShadowEffectPolicy.OFF, "the project hides the blob shadows under the modern profile")
+	assert_eq(saved, ShadowEffectPolicy.OFF, "the project hides the blob shadows")
 	assert_eq(ViewerArguments.effect_shadows(PackedStringArray()), ShadowEffectPolicy.OFF)
 	assert_eq(ViewerArguments.effect_shadows(PackedStringArray(["--effect-shadows="])), ShadowEffectPolicy.OFF)
 	assert_eq(ViewerArguments.effect_shadows(PackedStringArray(["--effect-shadows= Retail "])), ShadowEffectPolicy.RETAIL)

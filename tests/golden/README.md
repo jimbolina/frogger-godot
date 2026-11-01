@@ -36,16 +36,15 @@ commands run from the repository root; generated facts live in
 | Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
-| Imported assets: texture images and pages, model meshes, sound samples, disc tracks, tables, demos, import settings, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
-| Upscaled texture pages baked locally from the x4 images (`imported/texture_pages_x4.tsv`) | [Texture pages at scale](specs/imported-assets.md#texture-pages-at-scale) |
+| Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
 | `newfont` bitmap fonts generated from texture 310 per texture set (`assets/fonts/<set>/newfont.fnt`) | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
 | Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
-| Maps, animation counters, cave falloff, projection and SkyLand | [Maps](specs/maps.md) |
+| Maps, animation counters, cave falloff and SkyLand | [Maps](specs/maps.md) |
 | Gameplay ordering-table depth biases for terrain, frog, pickups and fireflies | [Depth ordering biases](specs/maps.md#depth-ordering-biases) |
-| Modern scene lighting: linear ambient, directional light bases, colours, energies and shadow caster from synthetic map lights | [Scene lighting](specs/rendering.md#scene-lighting) |
-| Modern cave omni light: range, inner radius, fitted energy per mode and window-against-ramp samples from initial and croaked radii | [Cave light](specs/rendering.md#cave-light) |
-| Modern map UVs: normalised per-image and environment UVs, animation counters and cels, sky tile layers and HIT spans from synthetic texture records | [Modern map UVs](specs/rendering.md#modern-map-uvs) |
+| Scene lighting: linear ambient, directional light bases, colours, energies and shadow caster from synthetic map lights | [Scene lighting](specs/rendering.md#scene-lighting) |
+| Cave omni light: range, inner radius, fitted energy per mode and window-against-ramp samples from initial and croaked radii | [Cave light](specs/rendering.md#cave-light) |
+| Map UVs: normalised per-image and environment UVs, animation counters and cels, sky tile layers and HIT spans from synthetic texture records | [Map UVs](specs/rendering.md#map-uvs) |
 | Final-PC PATH records and source path updates | [Paths](specs/paths.md) |
 | Final-PC entity identities, FORM grids, transforms, POP/SAFE/SQUISHED, animated probes/cuboids, guarded JUN1/ORG1 routes and visibility lifecycle | [Entities](specs/entities.md) |
 | Animated-part cuboids, decoded primitive matrices and the collision rotation cache | [Animated primitive contacts](specs/entities.md#animated-primitive-contacts) |

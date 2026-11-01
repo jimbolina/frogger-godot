@@ -33,16 +33,16 @@ copy rules; topic references own the rules themselves.
 |---|---|---|---|---|
 | Import / Archive | `archive/` | Retail readers and `GameData` (`source/`), the importer (`import/`), retail goldens and the archive suite (`tests/`), format references, FrogLord configs | Readers: `src/data` only. Importer: any game-side class it needs to build resources | Nothing game-side may depend on it |
 | Data | `src/data/` | Typed `Resource` records, `AssetCatalog`, `AssetIndex`, `FroggerIds` | Engine resource types only | Every other context |
-| Gameplay | `src/game/` | Definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, rewards, front-end rules (`frontend/`), options (`options/`) | Godot math types | Data, application, conversion, presentation, inspection, scenes; files, input, wall time, nodes |
-| Application | `src/application/` | Setup adapters from records to definitions, `EntityBehaviorCatalog`, `FormCallbackCatalog`, `ImportedAssets` (`loaders/`), `ProgressStore` and `HighScoreStore` (`storage/`) | Data, gameplay | Conversion, presentation, inspection, scenes; I/O outside `loaders/` and `storage/` |
-| Rendering / Conversion | `src/convert/` | Meshes, materials, shaders (retail and lit families), texture pages, `GameSpace`, scene-lighting and tint specs, effect rules over committed state | Data, gameplay, application | Presentation, inspection; light and environment nodes |
+| Gameplay | `src/game/` | Definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, rewards, front-end rules (`frontend/`), options (`options/`) | Godot math types | Data, application, rendering, presentation, inspection, scenes; files, input, wall time, nodes |
+| Application | `src/application/` | Setup adapters from records to definitions, `EntityBehaviorCatalog`, `FormCallbackCatalog`, `ImportedAssets` (`loaders/`), `ProgressStore` and `HighScoreStore` (`storage/`) | Data, gameplay | Rendering, presentation, inspection, scenes; I/O outside `loaders/` and `storage/` |
+| Rendering | `src/rendering/` | Meshes, materials, the lit and unlit shader families, `GameSpace`, scene-lighting and tint specs, effect rules over committed state | Data, gameplay, application | Presentation, inspection; light and environment nodes |
 | Presentation | `src/presentation/`, `scenes/` | Screens, `GameplayHost`, views, HUD, audio playback, input, viewers, `FrontEndSession`, `SceneLighting` (the only owner of lights and environments) | Every context above, inspection for the viewers and sandbox | Archive |
-| Inspection | `src/inspection/` | Scenarios, `ScenarioOptions`, `ExplorationGuard`, presets and their JSON manifests, the sandbox level, spawner and presets, demo playback | Data, gameplay, application, conversion | Presentation; nothing in gameplay or application may depend on it |
+| Inspection | `src/inspection/` | Scenarios, `ScenarioOptions`, `ExplorationGuard`, presets and their JSON manifests, the sandbox level, spawner and presets, demo playback | Data, gameplay, application, rendering | Presentation; nothing in gameplay or application may depend on it |
 
 The [architecture scanner](architecture.md#automated-checks) enforces the
 archive isolation, every rule for data, gameplay and application, and the
 ownership of light and environment nodes by presentation. The other
-conversion and inspection columns are conventions it does not check; today
+rendering and inspection columns are conventions it does not check; today
 `CameraZoneInspection` uses `TerrainTrace` from `src/presentation/tools/`, the
 one inspection-to-presentation dependency.
 
@@ -59,8 +59,8 @@ one inspection-to-presentation dependency.
 4. `GameplayHost` paces 30 Hz ticks, samples a `TickCommand` at each command
    boundary and runs one step at a time on `TerrainTickWorker`.
 5. The accepted `TickResult` goes to `GameplayWorldView`, `GameplayHud` and
-   `SoundVoiceView`, which draw and play it; conversion classes in
-   `src/convert/` supply their meshes, materials and effect geometry.
+   `SoundVoiceView`, which draw and play it; rendering classes in
+   `src/rendering/` supply their meshes, materials and effect geometry.
 6. Level completion and game end reach `FrontEndSession`, which updates
    progress and high scores and saves them through the storage adapters.
 
@@ -200,7 +200,7 @@ afterwards. Catalogs name source constants so the code never tests raw bits.
 | `FrogMode`, `FrogFlags`, `GridSquareFlags`, `EntityLiveFlags`, `PowerupFlags` | Named `FROG_MODE_*`, `FROG_FLAG_*`, `GRID_*`, live-entity and power-up values; trace numbers are unchanged | Gameplay |
 | `EntityBehavior` | Resolved kind, payload layout, execution level and capabilities (immortal, group-moving, tongueable, one-shot) | `EntityBehaviorCatalog` from FrogLord names; gameplay dispatches on the kind |
 | `FormCallback` | Typed FORM reaction kinds and their rules | `FormCallbackCatalog` maps build-specific addresses by build name |
-| `FroggerIds` | Fixed numbering of levels, themes, worlds, death types, pickups and CD tracks | Data, application, conversion, presentation and inspection (gameplay keeps its own constants) |
+| `FroggerIds` | Fixed numbering of levels, themes, worlds, death types, pickups and CD tracks | Data, application, rendering, presentation and inspection (gameplay keeps its own constants) |
 | `TickCommand` | One tick's pressed and held input, recorded demo byte and host start context | `GameplayHost` samples it; `GameplayRun` consumes it |
 | `RunStart` | Spawn, power-ups, lives, score, seed and start mode of a reset | Setup, the front-end session and inspection |
 

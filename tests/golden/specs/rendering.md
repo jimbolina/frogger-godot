@@ -7,8 +7,8 @@
 without `--write` the generator verifies the file and exits non-zero on any
 difference. It implements the C viewport reduction (`API.SRC/MR_LIGHT.C`,
 `MR_VIEW.C`, `mapload.C`, as summarised in
-[model lighting](../../../docs/reference/rendering/README.md#model-lighting))
-and the modern mapping in Python from this specification, and shares no
+[model lighting](../../../docs/reference/rendering/lighting.md#scene-lighting))
+and the Godot light mapping in Python from this specification, and shares no
 GDScript. `test_scene_lighting.gd` builds `MapLight` records from each fixture
 (`enabled` is category 1), runs `MapLighting.configure`, then
 `SceneLightingBuilder.from_lighting(lighting, shadows)`, and compares every
@@ -44,27 +44,27 @@ For the deliberate-break check, change one expected `energy`, confirm the
 generator refuses the file and the golden test fails, then restore with
 `--write`.
 
-## Modern map UVs
+## Map UVs
 
-`synthetic/map_modern_uv.json` is written by
-`python3 tools/make_golden_map_modern_uv.py tests/golden/synthetic/map_modern_uv.json --write`.
+`synthetic/map_uv.json` is written by
+`python3 tools/make_golden_map_uv.py tests/golden/synthetic/map_uv.json --write`.
 Without `--write` the generator checks the file and exits non-zero on any
 difference. It implements in Python, sharing no GDScript: `mapload.C`
 `ResolveMapPolys`, `mapdisp.c` `MapUpdateAnimatedPolys`, the ENVMAP branch of
 `MapRenderQuads`, the sky-land set-up in `mapdisp.c` with the `MR_VRAM.C` HIT
 trims, and the VLO padding rule.
 
-`test_map_modern_uv.gd` builds one modern `MapSceneData` per fixture (each
+`test_map_uv.gd` builds one `MapSceneData` per fixture (each
 image a `VloImage` with a solid texture, each polygon its own group), runs
 `MapMeshBuilder` and a `MapMesh.Instance`, calls `set_tick(tick)` per state and
 `set_camera_presentation(camera)` for environment states, checks the
 material's `image_origin`, `image_padding`, `image_padded_size`, `animated` and
 `environment_uv`, the current cel and track offset, and compares at all six
 mesh vertices (strip corners 0,1,2,1,3,2) within `tolerance` (1e-6):
-`MapLitShaders.normalised_uv(mesh UV, image[, animation_offset])` for static
-and animated polygons, `MapLitShaders.normalised_environment_uv(vertex ×
+`MapShaders.normalised_uv(mesh UV, image[, animation_offset])` for static
+and animated polygons, `MapShaders.normalised_environment_uv(vertex ×
 (256, −256, −256), camera_game, image)` for environment polygons, and
-`MapSkyTiles.layer_uv(mesh UV, tile image)` for sky tiles with `CUSTOM0.x`
+`MapSkyTiles.layer_uv(mesh UV, tile image)` for sky tiles with `UV2.x`
 against `layer` and `sky_tiles.get_layers()` against `layer_count`.
 
 | Field | Arithmetic |

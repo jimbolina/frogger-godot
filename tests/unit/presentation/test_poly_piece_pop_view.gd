@@ -93,7 +93,10 @@ func test_pieces_are_built_once_per_model_file_and_drawn_in_front() -> void:
 	assert_same(_view.pop_for(0).pieces, _view.pop_for(1).pieces, "cached per model file")
 	var material: ShaderMaterial = _view.pop_for(0).nodes[0].material_override as ShaderMaterial
 	assert_string_contains(material.shader.code, "depth_test_disabled")
-	assert_string_contains(material.shader.code, "ALPHA = 1.0;", "opaque pieces join the translucent pass to draw last")
+	assert_string_contains(material.shader.code, "render_mode unshaded, depth_test_disabled, ")
+	assert_string_contains(material.shader.code, "depth_draw_never")
+	assert_string_contains(material.shader.code, "ALBEDO = to_linear(clamp(shown, vec3(0.0), vec3(1.0)));\n\tALPHA = 1.0;",
+		"opaque pieces join the translucent pass to draw last")
 	assert_string_contains(material.shader.code, "cull_disabled")
 	assert_eq(material.render_priority, EffectSpriteMaterial.FRONT_PRIORITY)
 	assert_ne(_view.pop_for(0).nodes[0].material_override, _view.pop_for(1).nodes[0].material_override, "each pop owns its materials")

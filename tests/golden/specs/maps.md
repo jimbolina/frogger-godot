@@ -47,7 +47,6 @@ resource ID; inner lists keep file order.
 | `map_animation_states.tsv` | Ten counter/offset samples per animation, from zero through tick 256 |
 | `map_lighting.tsv` | Synthetic distinct-radius cave falloff facts at boundaries, adjacent distances and midpoints |
 | `sky_land.tsv` | Two 39 by 35 tile maps, packed tiles, texture IDs and rotations |
-| `map_projection.tsv` | 37 synthetic reference-camera projection, short-wrap, near-clamp and ordering-depth samples |
 
 `map_facts.tsv` names its columns in its header. General data is ten unsigned
 16-bit values (start X/Z, rotation, theme, five timers, perspective), then twelve
@@ -97,65 +96,6 @@ C reader offsets and counts. Integrated retail tests compare each file, type
 list and animation. New families require a deliberate-break check and
 byte-exact restoration before delivery.
 
-## Synthetic reference projection
-
-Run `C:\Python313\python.exe tools/make_golden_map_projection.py tests/golden/pc-retail-v3.0e`.
-This standalone generator uses no retail files, GDScript code/output or other
-golden generators. `test_map_projection.gd` runs in asset-free mode too.
-
-The fixed matrix rows are `(8192,0,0)`, `(0,5430,-5430)`, `(0,2896,2896)`.
-They follow `MR_VIEW.C`'s 640/320 horizontal and 480/256 vertical aspect scale,
-the map-slice -512/4096-turn camera pitch, and C matrix multiplication's 4.12
-quantization. The frozen translation unit has no `MR_MODE_NTSC` definition.
-`mapdisp.c/RenderMap` first narrows each negated camera coordinate to signed
-short, then applies rotation with arithmetic `>>12` to create translation.
-`mr_stub_math.c/ApplyMatrix` separately rotates each signed-short vertex, with
-arithmetic `>>12`, before `mr_stub_gpu.c/perspective_transform_one` adds that
-translation. Combining rotation and translation before quantization is wrong
-at negative fractional boundaries; the `separate_floor` sample pins this.
-
-Depth is `max(view_z, 500)` because map-slice retains H=1000. Screen coordinates
-are `320 + trunc(view_x * 1000 / depth)` and
-`240 + trunc(view_y * 1000 / depth)`, with signed division toward zero.
-`gte_stsxy` stores signed-short screen coordinates; Win95 terrain stores the
-clamped depth as unsigned short. Both stored representations have separate
-columns so wrapping is explicit. Samples cover negative quotients, camera
-short wrapping, signed vertex limits, depth 499/500/501, and 65535/65536.
-
-The last four columns describe uniform-depth triangles and quads only.
-`gte_avsz3` uses `(1365 * (z1+z2+z3)) >>12`; `gte_avsz4` divides the four-depth
-sum by four. `mapdisp.c` rejects average depth <=16; ordinary terrain's ordering
-bucket is `(average >>2) +64`, rejected at >=4096 for map-slice's default
-4096-entry viewport. Thus uniform depth 16128 is rejected for a quad, while
-the triangle's weighted average is 16124 and still maps to bucket4095.
-These facts describe ordering depth only, without backface or screen clipping.
-
-`tools/make_map_capture_masks.py RETAIL_DIR --level SUB1 --out EXTERNAL.json`
-generates fixed comparison coverage without reading either capture. It reads the
-supplied EXE map book and independent MAP parser, uses map_slice's vertex-extent
-midpoint camera (target plus `(0,-10000,-10000)`), stable nearest 128 visible
-groups when there are more than 128 (otherwise ascending index), and C's 2500
-polygon budget, which skips whole groups exceeding the remaining count. It uses
-ordinary C ordering depth cut. ENVMAP/MAX_OT bypass that cut. Projected
-triangles are clipped to 640x480; invisible and unreferenced polygons and entities
-are omitted. C NCLIP uses raw projected coordinates: triangles require positive
-area; quads accept positive first area or negative second `(1,2,3)` area.
-SKY levels include the full background. Output has identical eligible/include geometry and empty exclusions
-and landmarks; declare entity rectangles and reference landmarks externally.
-Coverage geometry must remain fixed when comparing candidate revisions. Outputs
-are external JSON only, never retail images or bytes in the repository.
-
-Masks declare `raster_edge_policy: eligible_union_silhouette`. The comparator
-finds the inner one-pixel silhouette of the source eligible union, then applies
-the fixed two-pixel Chebyshev band. Internal polygon seams remain fully tested.
-Do not exclude image gradients or individual polygon perimeters: that would
-hide texture errors and internal seams. Require channel error <=8, 95%
-agreement, 50% eligible coverage, at least 1000 compared pixels, and three
-landmarks within two pixels. Preserve the source denominator.
-Clipping creates no artificial viewport-border edges.
-`python tools/test_map_capture_masks.py`
-checks the exact band width and that texture stripes retain their interior pixels.
-
 ## Whole-map visibility bound
 
 `map_visibility_budget.tsv` is independently decoded by `visibility_budget` in
@@ -179,7 +119,7 @@ no GDScript. `test_depth_biases.gd` runs in both modes and compares
 `MapShaders.TERRAIN_DEPTH_BIAS`, `GameplayWorldView.FROG_DEPTH_BIAS` (applied
 to frog part, texture-track and instance materials) and the `depth_bias` that
 `CaveSpriteView.configure` gives pickup frame, glow and firefly materials.
-`tests/unit/convert/test_depth_shaders.gd` checks that only ordinary terrain
+`tests/unit/rendering/test_depth_shaders.gd` checks that only ordinary terrain
 shader sources contain the push.
 
 | Field | Source | Arithmetic |

@@ -9,10 +9,9 @@ extends Node3D
 ## 640x480 display, snapped to the MAIN preset, and clears to black; otherwise it draws in the
 ## world and through the camera of its parent, as the level select does.
 ##
-## Under the modern rendering profile one [SceneLighting] lights the models drawn in a camera
-## view's world and owns that world's environment, still clearing to black: the view's own
-## ([method light_scene]) or one drawn in it, after which the view gives up its environment
-## ([method release_environment]). A view drawn through its parent's camera is lit by its
+## One [SceneLighting] lights the models drawn in a camera view's world and owns that world's
+## environment, still clearing to black: the view's own ([method light_scene]) or one drawn in
+## it, after which the view gives up its environment ([method release_environment]). A view drawn through its parent's camera is lit by its
 ## parent's world. The water itself stays unlit. The view's own lights are cleared when it leaves
 ## the tree and applied again when it returns.
 
@@ -116,7 +115,7 @@ static func camera_transform(source: Vector3i, target: Vector3i) -> Transform3D:
 	return GameSpace.transform(values)
 
 
-## The modern scene light of the options viewport's lights ([method OptionsModels.options_lighting]),
+## The scene light of the options viewport's lights ([method OptionsModels.options_lighting]),
 ## without shadows.
 static func options_spec() -> SceneLightingSpec:
 	return SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false)

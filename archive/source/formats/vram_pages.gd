@@ -1,8 +1,8 @@
 class_name VramPages
 extends RefCounted
-## Composes the PC game's 256 x 256 VRAM texture pages and the sky-land atlas
-## from decoded texture banks, as the importer bakes them into a
-## [TexturePageSet].
+## Composes the PC game's fourteen 256 x 256 VRAM texture pages and the
+## sky-land atlas from decoded texture banks, as the retail renderer samples
+## them.
 ##
 ## A page starts black; every valid upload of each bank is copied in bank
 ## upload order, so later banks overwrite earlier physical pixels, and an upload
@@ -11,8 +11,13 @@ extends RefCounted
 ## page is transparent and every other pixel opaque, as the frozen PC sampler
 ## does, overriding the decoded image alpha; otherwise the page is opaque.
 
-const PAGE_SIZE: int = TexturePageSet.PAGE_SIZE
-const PAGE_COUNT: int = TexturePageSet.PAGE_COUNT
+## Width and height of a page in pixels.
+const PAGE_SIZE: int = 256
+## Number of pages.
+const PAGE_COUNT: int = 14
+## Height in pixels of one page slot in the sky atlas: the page plus a
+## repeated row above and below.
+const SKY_SLOT_HEIGHT: int = 258
 
 
 ## Page [param page] of [param banks] in upload order, or null outside 0-13
@@ -83,43 +88,22 @@ static func sky_order(general: VloFile, theme: VloFile, sky: SkyLandFile, remap:
 	return order
 
 
-## The sky atlas: 256 wide and [constant TexturePageSet.SKY_SLOT_HEIGHT] rows
+## The sky atlas: 256 wide and [constant SKY_SLOT_HEIGHT] rows
 ## per slot of [param order], magenta, each page in rows 1-256 of its slot
 ## with its first and last rows repeated above and below. A page that is
 ## missing from [param pages] (or -1) leaves its slot magenta.
 static func sky_atlas(pages: Array[Image], order: PackedInt32Array) -> Image:
-	var atlas: Image = Image.create(PAGE_SIZE, TexturePageSet.SKY_SLOT_HEIGHT * maxi(1, order.size()), false, Image.FORMAT_RGBA8)
+	var atlas: Image = Image.create(PAGE_SIZE, SKY_SLOT_HEIGHT * maxi(1, order.size()), false, Image.FORMAT_RGBA8)
 	atlas.fill(Color.MAGENTA)
 	for slot: int in order.size():
 		var page: int = order[slot]
 		if page < 0 or page >= pages.size() or pages[page] == null:
 			continue
-		var top: int = slot * TexturePageSet.SKY_SLOT_HEIGHT
+		var top: int = slot * SKY_SLOT_HEIGHT
 		atlas.blit_rect(pages[page], Rect2i(0, 0, PAGE_SIZE, PAGE_SIZE), Vector2i(0, top + 1))
 		atlas.blit_rect(pages[page], Rect2i(0, 0, PAGE_SIZE, 1), Vector2i(0, top))
 		atlas.blit_rect(pages[page], Rect2i(0, PAGE_SIZE - 1, PAGE_SIZE, 1), Vector2i(0, top + PAGE_SIZE + 1))
 	return atlas
-
-
-## A [TexturePageSet] held in memory for banks [param general] then
-## [param theme] (called [param names]), with [ImageTexture] pages; with
-## [param with_sky] it also holds the sky atlas of [param sky_pages].
-## Composition problems are added to [param diagnostics].
-static func page_set(names: PackedStringArray, general: VloFile, theme: VloFile, diagnostics: PackedStringArray,
-		with_sky: bool = false, sky_pages: PackedInt32Array = PackedInt32Array()) -> TexturePageSet:
-	var banks: Array[VloFile] = [general, theme]
-	var result := TexturePageSet.new()
-	result.set_name = TexturePageSet.name_for(names)
-	result.resource_name = result.set_name
-	result.bank_names = names
-	var pages: Array[Image] = compose_pages(banks, diagnostics)
-	for page: int in PAGE_COUNT:
-		result.pages.append(ImageTexture.create_from_image(pages[page]) if pages[page] != null else null)
-		result.colour_keyed.append(colour_keyed(banks, page))
-	if with_sky:
-		result.sky_pages = sky_pages
-		result.sky_atlas = ImageTexture.create_from_image(sky_atlas(pages, result.sky_pages))
-	return result
 
 
 static func _warn(diagnostics: PackedStringArray, message: String) -> void:

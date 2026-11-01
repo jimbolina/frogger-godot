@@ -5,8 +5,7 @@ extends ImportStep
 ## the archive index, the asset file of every resource id that has one (found
 ## at the path conventions of [ImportContext] by checking which files exist),
 ## every WAD's children without their bytes, the counterpart of every
-## incomplete model, the baked page sets under [code]textures/pages[/code]
-## and the levels the game plays.
+## incomplete model and the levels the game plays.
 
 ## Model record file names tried inside [method ImportContext.model_dir], after
 ## [code]<name>.res[/code] and [code]<name>.tres[/code].
@@ -46,7 +45,6 @@ func run(context: ImportContext, phase: String) -> void:
 			_add_wad(context, index, entry)
 		elif AssetCatalog.is_model_entry(entry) and MofReader.needs_counterpart(context.data.read_resource(entry.index)):
 			index.counterparts[entry.index] = context.data.counterpart_of(entry.index)
-	_add_page_sets(context, index)
 	for row: MapBookEntry in context.data.tables.map_book().entries:
 		if not row.is_dummy() and context.data.is_playable_level(row.level):
 			index.playable_levels.append(row.code())
@@ -93,14 +91,3 @@ func _add_wad(context: ImportContext, index: AssetIndex, entry: MwiEntry) -> voi
 		listed.children.append(copy)
 	index.wads[entry.index] = listed
 
-
-func _add_page_sets(context: ImportContext, index: AssetIndex) -> void:
-	var folder: String = context.assets_root.path_join("textures/pages")
-	if not DirAccess.dir_exists_absolute(folder):
-		return
-	var set_names: PackedStringArray = DirAccess.get_directories_at(folder)
-	set_names.sort()
-	for set_name: String in set_names:
-		var path: String = context.page_set_dir(set_name).path_join("page_set.tres")
-		if FileAccess.file_exists(path):
-			index.page_sets[set_name] = path

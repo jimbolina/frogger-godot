@@ -101,29 +101,14 @@ func test_drawing_leaves_the_committed_state_alone() -> void:
 	assert_eq(view.scene.frog, frog)
 
 
-class ModernCatalog extends AssetCatalog:
-	func rendering_profile() -> RenderingProfile:
-		return RenderingProfile.modern()
-
-
-static func _stub_models(modern: bool) -> OptionsModels:
+static func _stub_models() -> OptionsModels:
 	var models := OptionsModels.new()
 	models.frog = TerrainFrogAssets.new()
-	if modern:
-		models.library.catalog = ModernCatalog.new()
 	return models
 
 
-func test_retail_models_draw_without_scene_lights() -> void:
-	var view: HighScoreEntryView = HighScoreEntryView.create(FrontEndAssets.new(), MenuWater.create(), HighScoreEntry.create(true, false), _stub_models(false))
-	add_child_autofree(view)
-	assert_null(view.models.scene_lighting)
-	assert_null(view.water.scene_lighting)
-	assert_not_null(view.water.world_environment)
-
-
-func test_modern_models_light_the_waters_world_with_the_options_lights() -> void:
-	var view: HighScoreEntryView = HighScoreEntryView.create(FrontEndAssets.new(), MenuWater.create(), HighScoreEntry.create(true, false), _stub_models(true))
+func test_models_light_the_waters_world_with_the_options_lights() -> void:
+	var view: HighScoreEntryView = HighScoreEntryView.create(FrontEndAssets.new(), MenuWater.create(), HighScoreEntry.create(true, false), _stub_models())
 	add_child_autofree(view)
 	var spec: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false)
 	var lighting: SceneLighting = view.models.scene_lighting
@@ -144,8 +129,8 @@ static func _active_environments(root: Node) -> int:
 	return count
 
 
-func test_a_modern_set_outside_a_camera_water_lights_itself() -> void:
-	var models: WaterModelSet = WaterModelSet.create(_stub_models(true))
+func test_a_set_outside_a_camera_water_lights_itself() -> void:
+	var models: WaterModelSet = WaterModelSet.create(_stub_models())
 	add_child_autofree(models)
 	assert_not_null(models.scene_lighting)
 	assert_eq(models.scene_lighting.get_parent(), models)

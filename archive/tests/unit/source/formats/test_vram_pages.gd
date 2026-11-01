@@ -112,19 +112,3 @@ func test_sky_order_lists_tile_pages_in_first_seen_order() -> void:
 	assert_eq(VramPages.sky_order(general, theme, sky, remap), PackedInt32Array([1, 0, -1, 2]),
 		"the theme bank wins, the general bank fills in")
 
-func test_page_set_holds_textures_keys_and_the_sky_atlas() -> void:
-	var keyed: VloImage = _image(1, 0, 0, 1, 1, Color.BLACK)
-	keyed.flags = VloImage.FLAG_BLACK_IS_TRANSPARENT
-	var plain: VloImage = _image(2, 0, 256, 1, 1, Color.GREEN)
-	var diagnostics := PackedStringArray()
-	var made: TexturePageSet = VramPages.page_set(PackedStringArray(["GEN_VRAM", "SKY_VRAM"]), _bank([keyed]), _bank([plain]),
-		diagnostics, true, PackedInt32Array([1]))
-	assert_eq(made.set_name, "GEN_VRAM+SKY_VRAM")
-	assert_eq(made.pages.size(), TexturePageSet.PAGE_COUNT)
-	assert_true(made.colour_keyed[0])
-	assert_false(made.colour_keyed[1])
-	assert_eq(made.page(1).get_image().get_pixel(0, 0), Color.GREEN)
-	assert_eq(made.sky_pages, PackedInt32Array([1]))
-	assert_eq(made.sky_atlas.get_image().get_pixel(0, 1), Color.GREEN)
-	assert_eq(diagnostics, PackedStringArray())
-	assert_null(VramPages.page_set(PackedStringArray(["A", "B"]), _bank([]), _bank([]), diagnostics).sky_atlas)

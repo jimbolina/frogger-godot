@@ -30,9 +30,9 @@ func test_overlay_selection_visibility_and_shared_clock() -> void:
 	assert_eq(_viewer.entity_snapshot().entities[1].path.segment_distance, 0)
 	_viewer.seek_tick(7)
 	assert_eq(_viewer.entity_snapshot().tick_index, 7)
-	_viewer.set_camera_preset("map-slice")
+	_viewer.set_entity_visibility(false)
 	assert_false(_viewer._entity_inspection.visible)
-	_viewer.set_camera_preset("default")
+	_viewer.set_entity_visibility(true)
 	assert_true(_viewer._entity_inspection.visible)
 
 func test_path_controls_do_not_change_attached_entity_start() -> void:
@@ -70,7 +70,7 @@ func test_replacement_releases_run_definitions_and_markers() -> void:
 	assert_eq(_viewer._entity_session.definitions.size(), 0)
 	assert_false(_viewer._entity_visible)
 	assert_eq(_viewer._form_contacts.size(), 0)
-	assert_eq(_viewer._world.get_child_count(), 3)
+	assert_eq(_viewer._world.get_child_count(), 4, "camera, environment, map and its scene lighting")
 
 func test_fixed_probe_contacts_follow_post_tick_pose_and_selection() -> void:
 	var scenario: EntityScenario = EntityScenario.builtin("shared-path")

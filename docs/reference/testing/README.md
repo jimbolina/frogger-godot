@@ -98,11 +98,6 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   `python3 tools/make_golden_frontend.py --check` diffs the committed facts.
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
-- [Upscaled texture pages](../../../tests/golden/specs/imported-assets.md#texture-pages-at-scale):
-  both wrappers run `python3 tools/bake_pages_x4.py --quiet` first, which bakes
-  `assets/textures/pages_x4/` when missing and checks it otherwise (Pillow;
-  plain `python3`, not `-I`); `python3 tools/make_golden_texture_pages_x4.py --check`
-  diffs the committed facts against the retail files and the x4 images.
 - [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts):
   both wrappers run `python3 tools/make_font_newfont.py --check --quiet`, which
   compares the committed `assets/fonts/*/newfont.fnt` with the generator;
@@ -343,19 +338,16 @@ but normal runtime use and the Godot test suites do not build or load them.
   creation/write failures report the path and exit nonzero. Shared validation
   normalizes lexical paths; callers must not use filesystem links to redirect
   an external destination into the checkout.
-- After changing Godot, renderer or environment, run `tools/probe_model_shader.gd`
-  with a window and inspect the measured colours; see [rendering](../rendering/README.md).
-  It reports its rendering method and, outside `gl_compatibility`, marks the
-  translucent blends as expected to differ. After changing lighting, also run
-  `godot --path . --rendering-method forward_plus --script tools/probe_scene_lighting.gd -- --output=<external-folder>`,
-  which reports the lit, source-facing and ambient-only bytes and the
-  `LAMBERT_SCALE` that makes the lit face exact
-  ([modern profile](../rendering/modern-profile.md)).
-- Captures take `--rendering retail|modern` (retail by default); modern starts
-  Godot with `--rendering-method forward_plus`, and `--rendering-method gl_compatibility`
-  forces the Compatibility fallback, for example
-  `python3 tools/capture_map.py --output-directory <external-folder> --level SUB1 --rendering modern`
-  or `python3 tools/run_gameplay_capture.py --godot <executable> --level ORG1 --rendering modern --output-directory <external-folder>`.
+- After changing Godot, the renderer, the environment or the lighting, run
+  `godot --path . --script tools/probe_scene_lighting.gd -- --output=<external-folder>`
+  with a window: it reports the lit, source-facing and ambient-only bytes and
+  the `LAMBERT_SCALE` that makes the lit face exact
+  ([lighting](../rendering/lighting.md#verification)); `tools/probe_model_morph.gd`
+  checks cel geometry through both shader families.
+- Captures run on the project renderer, for example
+  `python3 tools/capture_map.py --output-directory <external-folder> --level SUB1`
+  or `python3 tools/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>`
+  (`--game-argument=--shadows=off` and the like pass launch options through).
   The headless suites never compile shaders, so any `SHADER ERROR` in a
   capture log fails the capture, and a map capture also fails when its image is
   a single colour. `python3 tools/test_capture_tools.py` checks the command
@@ -369,7 +361,7 @@ but normal runtime use and the Godot test suites do not build or load them.
 - Godot's `--import` compiles nothing.
 - Files with extensions Godot does not treat as resources (`.cfg`, `.tsv`) need an include filter in export presets.
 - Running the boot scene saves the data folder to `user://settings.cfg`. Delete that file to test first-run behaviour.
-- A headless run draws nothing, so anything that reads the screen (`tools/probe_model_shader.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
+- A headless run draws nothing, so anything that reads the screen (`tools/probe_scene_lighting.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
 - A test script must not name a helper `_compare`: GUT has a member of that name.
 - A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
 - Godot stores mesh normals packed; they come back changed in the fifth decimal place.

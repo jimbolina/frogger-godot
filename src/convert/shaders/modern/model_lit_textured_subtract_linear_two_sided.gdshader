@@ -1,6 +1,0 @@
-shader_type spatial;
-render_mode blend_sub, depth_draw_never, cull_disabled, diffuse_lambert, specular_disabled, ambient_light_disabled;
-#define TEXTURED
-#define BLEND_SUBTRACT
-uniform sampler2D image : source_color, filter_linear_mipmap, repeat_disable;
-#include "model_lit.gdshaderinc"

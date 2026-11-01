@@ -2,8 +2,7 @@ class_name CameraZoneViewer
 extends Node3D
 ## Camera inspection rendering and controls; camera ticks never depend on rendered transforms.
 ##
-## Under the modern rendering profile the lit map and log models are drawn
-## under a [SceneLighting] child built from the map's light records (or the
+## The lit map and log models are drawn under a [SceneLighting] child built from the map's light records (or the
 ## options screen's lights when the map has none), with the cave light at the
 ## map's static start on cave maps; the probe and markers stay unshaded.
 
@@ -11,7 +10,7 @@ extends Node3D
 var auto_open: bool = true
 var inspection: CameraZoneInspection
 var playing: bool = false
-## The scene lights under the modern profile, or null under retail.
+## The scene lights, created when a map opens.
 var scene_lighting: SceneLighting = null
 var _data: AssetCatalog
 var _owns_data: bool = false
@@ -35,7 +34,7 @@ func _ready() -> void:
 	if lifetime not in ["", "all-attached", "visibility"]:
 		_fail("Camera probe entity-lifecycle must be all-attached or visibility")
 		return
-	var issue: String = open(ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments)), lifetime == "visibility", true)
+	var issue: String = open(ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments)), lifetime == "visibility", true)
 	if not issue.is_empty():
 		_fail(issue)
 		return
@@ -97,8 +96,6 @@ func open(data: AssetCatalog, visibility: bool = false, take_ownership: bool = f
 	return ""
 
 func _light_scene(source: MapSceneData) -> void:
-	if not source.library.rendering_profile().is_modern():
-		return
 	scene_lighting = SceneLighting.new()
 	scene_lighting.name = "SceneLighting"
 	add_child(scene_lighting)

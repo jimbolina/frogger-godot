@@ -18,8 +18,8 @@ wrapper refuses to run while any asset is still an LFS pointer.
 Import settings are fixed in `project.godot` under `importer_defaults`:
 lossless textures without mipmaps, fractional fixed-size scaling for the bitmap fonts, alpha-border fixing or premultiplied alpha,
 and uncompressed WAV without trimming, normalisation or baked loops. The
-upscaled texture folders (`images_x4/`, `pages_x4/`) are the one exception:
-their sidecars generate mipmaps. Loop modes are applied at runtime from the
+upscaled texture folder (`images_x4/`) is the one exception: its sidecars
+generate mipmaps. Loop modes are applied at runtime from the
 sound definitions.
 
 ## Records
@@ -45,15 +45,13 @@ implements it over the retail files for the importer and the archive suite.
 
 | Path | Content |
 |---|---|
-| `catalog.tres` | `AssetIndex`: build name, SHA-256 of the retail executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts, page sets and the playable level codes. |
+| `catalog.tres` | `AssetIndex`: build name, SHA-256 of the retail executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts and the playable level codes. |
 | `tables/<table>.tres`, `tables/game_tables.tres`, `tables/names.tres` | One file per executable table, linked from `game_tables.tres`; FrogLord's name lists. |
 | `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
 | `textures/images_x4/tNNNN.png` | The same images upscaled to exactly four times the padded size, drawn by the `x4` [texture set](#upscaled-textures). |
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
-| `textures/pages/<GENERAL>+<THEME>/page_NN.png`, `sky.png`, `page_set.tres` | The 14 VRAM pages a map set uses, baked by the importer with the page-wide colour key, plus the sky atlas. The game only loads a `TexturePageSet`; composing pages lives in the archive (`VramPages`). The retail profile samples them; the [modern profile](rendering/modern-profile.md#terrain) samples `images/` directly and loads no page set. |
-| `textures/pages_x4/<SET>/` | The same page sets at four times the size, baked locally and ignored by Git ([upscaled textures](#upscaled-textures)). |
 | `fonts/<set>/newfont.fnt`, `newfont.png` | One BMFont text file per texture set (`retail`, `x4`) over a copy of that set's `t0310.png`, imported as a `FontFile` ([fonts](#fonts)). |
-| `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness, on the retail shaders; the modern profile derives lit copies at runtime. |
+| `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness, on the lit model shaders ([lighting](rendering/lighting.md#model-shaders)). |
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
@@ -82,20 +80,16 @@ them. `test_asset_textures_x4.gd` checks the file set, size and alpha.
 
 The game draws from one `TextureSet` per launch: `retail` (the default, set
 by `frogger/textures/default_set` in `project.godot`) or `x4`, chosen with
-`--texture-set=x4` after `--`. Records, materials and page sets keep pointing
-at the retail files; `ImportedAssets` maps each retail path into the set's
-folders where a texture leaves a record (`texture_of`, `texture_counterpart`,
-`page_set`), and `ModelMeshLibrary` keeps one retextured `ModelMeshCopy` per
-model and set. An uninstalled set falls back to retail with a warning.
+`--texture-set=x4` after `--`. Records and materials keep pointing at the
+retail files; `ImportedAssets` maps each retail path into the set's folder
+where a texture leaves a record (`texture_of`, `texture_counterpart`), and
+`ModelMeshLibrary` keeps one retextured `ModelMeshCopy` per model and set. An uninstalled set falls back to retail with a warning.
 Model UVs are normalised from the record sizes, so they need no change; 2D
 draws crop with `TextureBuilder.texture_rect` and draw at the record's retail
 size; the set's 3D materials use the `_linear` shader variants, which sample
-with mipmaps. Maps sample pages, so `tools/bake_pages_x4.py` composes each
-set's pages and sky atlas at scale from the x4 images and the banks'
-placement, with the retail page's colour key enlarged, into `pages_x4/`;
-the test and play wrappers bake it when it is missing and `--check` it
-otherwise, and `tests/golden/assets/test_asset_pages_x4.gd` compares the bake
-with an [independent oracle](../../tests/golden/specs/imported-assets.md#texture-pages-at-scale).
+with mipmaps, and map terrain samples the set's images directly
+([terrain](rendering/lighting.md#terrain)). The original's VRAM page
+composition stays in the archive as format knowledge (`VramPages`).
 
 ## Fonts
 
@@ -111,7 +105,7 @@ compares the page bytes, and the test wrappers run it. Godot imports each as a `
 size 8 (x4: 32) and fractional scaling, so both are drawn at size 8 and the
 x4 glyphs land one to one on screen pixels in a window four times the canvas.
 `AssetCatalog.font("newfont")` returns the set's font, falling back to retail
-with a problem line; `NewfontText` (`src/convert/`) owns the cell size and the
+with a problem line; `NewfontText` (`src/rendering/`) owns the cell size and the
 baseline. The import golden is
 [bitmap fonts](../../tests/golden/specs/imported-assets.md#bitmap-fonts).
 After a hand edit of a set's `t0310.png`, rerun the generator to refresh the

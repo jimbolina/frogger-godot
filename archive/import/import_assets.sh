@@ -54,6 +54,7 @@ run_import() {
     fi
 }
 
+run_import refresh
 run_phase raw ${extra[@]+"${extra[@]}"}
 if [ -x archive/import/encode_music.sh ]; then
     archive/import/encode_music.sh "$scratch" ${extra[@]+"${extra[@]}"} || exit 1

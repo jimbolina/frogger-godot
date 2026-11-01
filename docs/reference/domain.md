@@ -13,7 +13,7 @@ relevant technical reference; do not invent rules.
 |---|---|
 | Source data | [Build recognition](../../archive/docs/formats/build-detection.md), [archives](../../archive/docs/formats/archives.md), [executable tables](../../archive/docs/formats/executable-tables.md), [textures](../../archive/docs/formats/textures.md), [models](../../archive/docs/formats/models.md), [model animation](../../archive/docs/formats/animation.md), [maps](../../archive/docs/formats/maps.md) |
 | Gameplay | [Simulation](gameplay/simulation.md), [PC timing](gameplay/pc-timing.md), [grid](gameplay/grid.md), [paths](gameplay/paths.md), [entities](gameplay/entities.md), [terrain movement](gameplay/terrain-movement.md), [camera](gameplay/gameplay-camera.md), [frog animation](gameplay/frog-animation-control.md), [front end](gameplay/front-end.md) |
-| Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [modern profile](rendering/modern-profile.md), [single-player HUD](rendering/README.md#single-player-hud), [gameplay projection](rendering/gameplay-projection.md), [effects](rendering/effects.md) |
+| Rendering | [Coordinates](rendering/coordinates.md), [shaders and lighting](rendering/README.md), [lighting](rendering/lighting.md), [single-player HUD](rendering/README.md#single-player-hud), [gameplay projection](rendering/gameplay-projection.md), [effects](rendering/effects.md) |
 | Model and assets | [Domain model](domain-model.md), [architecture](architecture.md), [assets](assets.md), [archive](../../archive/README.md) |
 | Verification | [Testing and inspection guide](testing/README.md), [golden specifications](../../tests/golden/README.md), [sandbox](architecture.md#sandbox) |
 

@@ -1,5 +1,5 @@
 extends SceneTree
-## Measures how the renderer turns modern scene lighting into screen bytes.
+## Measures how the renderer turns scene lighting into screen bytes.
 ##
 ## Builds a [WorldEnvironment] and [DirectionalLight3D]s from
 ## [method SceneLightingBuilder.from_lighting] on synthetic [MapLighting]
@@ -12,7 +12,7 @@ extends SceneTree
 ## the side [method MapLighting.shade] lights fully, which checks the sign.
 ## It needs a real window, so it is not part of the test run:
 ##
-##   godot --path . --rendering-method forward_plus --script tools/probe_scene_lighting.gd -- --output=<folder>
+##   godot --path . --script tools/probe_scene_lighting.gd -- --output=<folder>
 ##
 ## The folder must be absolute and outside the repository. The report goes to
 ## [code]scene_lighting_<method>.txt[/code] there and to the log.

@@ -12,12 +12,12 @@ extends Node3D
 ## each sprite lit on its normal as the options page lights its sprites. Without usable
 ## [OptionsModels] nothing is built and drawing does nothing.
 ##
-## Under the modern rendering profile the models draw through the lit shaders under the options
-## lights ([method MenuWaterView.options_spec], no shadows) of the set's own [member scene_lighting]
-## child. On entering the tree inside a [MenuWaterView] with its own camera the set takes over
-## that world's environment ([method MenuWaterView.release_environment]); the lights are cleared
-## when it leaves the tree and applied again when it returns. The shadow and splash sprites keep
-## their CPU light.
+## The models draw through the lit shaders under the options lights
+## ([method MenuWaterView.options_spec], no shadows) of the set's own [member scene_lighting] child.
+## On entering the tree inside a [MenuWaterView] with its own camera the set takes over that
+## world's environment ([method MenuWaterView.release_environment]); the lights are cleared when it
+## leaves the tree and applied again when it returns. The shadow and splash sprites keep their CPU
+## light.
 
 ## Sprite layers, ordered as the options page's shadow and splash layers.
 enum Layer { SHADOW, SPLASHES }
@@ -29,7 +29,7 @@ const LAYER_PRIORITY: PackedInt32Array = [3, 4]
 var models: OptionsModels
 ## Interpolate between ticks; passed to every model instance.
 var smoothing_enabled: bool = true
-## The light the models draw under with the modern profile, or null under retail.
+## The light the models draw under, or null without usable models.
 var scene_lighting: SceneLighting
 
 var _layers: Array[MeshInstance3D] = []
@@ -130,11 +130,10 @@ func setup(with_models: OptionsModels) -> void:
 		_layers.append(instance)
 	if not available():
 		return
-	if models.library.rendering_profile().is_modern():
-		scene_lighting = SceneLighting.new()
-		scene_lighting.name = "SceneLighting"
-		add_child(scene_lighting)
-		scene_lighting.apply(MenuWaterView.options_spec())
+	scene_lighting = SceneLighting.new()
+	scene_lighting.name = "SceneLighting"
+	add_child(scene_lighting)
+	scene_lighting.apply(MenuWaterView.options_spec())
 	for symbol: String in models.images:
 		var record: VloImage = models.images[symbol]
 		var blend: ModelShaders.Blend = EffectSpriteMaterial.image_blend(record)

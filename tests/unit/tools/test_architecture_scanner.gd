@@ -19,7 +19,7 @@ func _has_rule(violations: Array[Scanner.Violation], rule: String) -> bool:
 
 func test_source_io_and_unrelated_text_are_allowed() -> void:
 	var source: String = "extends RefCounted\n" \
-		+ "# Node, get_tree(), Input, preload('res://src/convert/bad.gd')\n" \
+		+ "# Node, get_tree(), Input, preload('res://src/rendering/bad.gd')\n" \
 		+ "const TEXT = \"Node Time FileAccess get_tree()\"\n" \
 		+ "const LONG_TEXT = '''SceneTree\nInput\npreload(\"res://scenes/boot.tscn\")'''\n" \
 		+ "func read_file():\n\tvar f = FileAccess.open(\"user://data\", FileAccess.READ)\n" \
@@ -31,7 +31,7 @@ func test_source_io_and_unrelated_text_are_allowed() -> void:
 func test_project_class_name_dependencies_are_resolved() -> void:
 	var sources: Dictionary[String, String] = {
 		SOURCE: "extends RefCounted\nvar renderer: RenderBridge\n",
-		"res://src/convert/render.gd": "class_name RenderBridge\nextends RefCounted\n",
+		"res://src/rendering/render.gd": "class_name RenderBridge\nextends RefCounted\n",
 	}
 	var violations: Array[Scanner.Violation] = _check(sources)
 	assert_true(_has_rule(violations, "layer"))
@@ -59,12 +59,12 @@ func test_literal_relative_preload_is_resolved() -> void:
 
 func test_literal_global_and_resource_loader_loads_are_resolved() -> void:
 	for expression: String in [
-		"load(\"res://src/convert/bad.gd\")",
-		"ResourceLoader.load(\"res://src/convert/bad.gd\", \"GDScript\")",
+		"load(\"res://src/rendering/bad.gd\")",
+		"ResourceLoader.load(\"res://src/rendering/bad.gd\", \"GDScript\")",
 	]:
 		var sources: Dictionary[String, String] = {
 			SOURCE: "extends RefCounted\nvar bad = " + expression + "\n",
-			"res://src/convert/bad.gd": "extends RefCounted\n",
+			"res://src/rendering/bad.gd": "extends RefCounted\n",
 		}
 		assert_true(_has_rule(_check(sources), "layer"), expression)
 
@@ -131,7 +131,7 @@ func test_source_cannot_depend_on_gameplay() -> void:
 
 
 func test_gameplay_cannot_depend_on_outer_layers() -> void:
-	for target: String in ["src/source", "src/application", "src/inspection", "src/convert", "src/presentation", "scenes"]:
+	for target: String in ["src/source", "src/application", "src/inspection", "src/rendering", "src/presentation", "scenes"]:
 		var source: String = "extends RefCounted\nconst BAD = preload(\"res://" \
 			+ target + "/bad.gd\")\n"
 		assert_true(_has_rule(_check({GAME: source}), "layer"), target)
@@ -263,7 +263,7 @@ func test_shipped_script_cannot_load_archive_path() -> void:
 
 
 func test_shipped_script_cannot_use_archive_class_name() -> void:
-	for path: String in ["res://src/convert/view.gd", "res://tests/unit/test_x.gd",
+	for path: String in ["res://src/rendering/view.gd", "res://tests/unit/test_x.gd",
 			"res://tools/tool.gd", "res://assets/helper.gd"]:
 		var violations: Array[Scanner.Violation] = _check({
 			path: "extends Node\nfunc f():\n\treturn RetailReader.new()\n",
@@ -310,7 +310,7 @@ func test_archived_source_keeps_the_source_layer_rules() -> void:
 		archived: "extends RefCounted\nvar level: LevelData\nfunc read():\n\treturn FileAccess.open(\"data\", 1)\n",
 		"res://src/data/level.gd": "class_name LevelData\nextends Resource\n",
 	}).size(), 0)
-	for target: String in ["src/game", "src/application", "src/convert", "src/presentation",
+	for target: String in ["src/game", "src/application", "src/rendering", "src/presentation",
 			"src/inspection", "scenes"]:
 		assert_true(_has_rule(_check({
 			archived: "extends RefCounted\nconst BAD = preload(\"res://" + target + "/bad.gd\")\n",
@@ -405,7 +405,7 @@ func test_data_layer_dependency_rules() -> void:
 	assert_true(_has_rule(_check({GAME: use, data: schema}), "layer"))
 	assert_eq(_check({"res://src/application/adapter.gd": use, data: schema}).size(), 0)
 	assert_eq(_check({SOURCE: use, data: schema}).size(), 0)
-	for target: String in ["src/game", "src/application", "src/convert", "src/presentation",
+	for target: String in ["src/game", "src/application", "src/rendering", "src/presentation",
 			"src/inspection", "scenes"]:
 		assert_true(_has_rule(_check({
 			data: schema + "const BAD = preload(\"res://" + target + "/bad.gd\")\n",
@@ -435,7 +435,7 @@ func test_application_loaders_may_compute_resource_paths() -> void:
 func test_lighting_types_belong_to_presentation() -> void:
 	for type_name: String in Scanner.LIGHTING_TYPES:
 		var source: String = "extends Node\nfunc f():\n\treturn %s.new()\n" % type_name
-		for path: String in ["res://src/convert/x.gd", "res://src/inspection/x.gd"]:
+		for path: String in ["res://src/rendering/x.gd", "res://src/inspection/x.gd"]:
 			var violations: Array[Scanner.Violation] = _check({path: source})
 			assert_eq(violations.size(), 1, path + " " + type_name)
 			assert_true(_has_rule(violations, "lighting-ownership"), path + " " + type_name)
@@ -445,7 +445,7 @@ func test_lighting_types_belong_to_presentation() -> void:
 
 func test_lighting_names_in_text_and_members_are_allowed() -> void:
 	assert_eq(_check({
-		"res://src/convert/x.gd": "extends RefCounted\n## Environment normals and Light3D notes.\n" \
+		"res://src/rendering/x.gd": "extends RefCounted\n## Environment normals and Light3D notes.\n" \
 			+ "# WorldEnvironment\nconst LABEL = \"DirectionalLight3D Environment\"\n" \
 			+ "func f(o):\n\treturn o.Environment\n",
 	}).size(), 0)

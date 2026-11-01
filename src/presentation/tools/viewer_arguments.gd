@@ -6,15 +6,11 @@ extends RefCounted
 const TEXTURE_SET_ARGUMENT: String = "--texture-set="
 ## The project setting holding the default texture set name.
 const TEXTURE_SET_SETTING: String = "frogger/textures/default_set"
-## The launch argument naming the rendering profile.
-const RENDERING_ARGUMENT: String = "--rendering="
-## The project setting holding the default rendering profile name.
-const RENDERING_SETTING: String = "frogger/rendering/default_profile"
-## The launch argument choosing whether the modern profile keeps the retail shadow effects.
+## The launch argument choosing whether the retail blob shadow effects draw beside the real shadows.
 const EFFECT_SHADOWS_ARGUMENT: String = "--effect-shadows="
 ## The project setting holding the default shadow-effect choice.
 const EFFECT_SHADOWS_SETTING: String = "frogger/rendering/effect_shadows"
-## The launch argument switching the modern profile's real shadows.
+## The launch argument switching the scene lights' real shadows.
 const SHADOWS_ARGUMENT: String = "--shadows="
 ## The project setting holding the default real-shadow switch.
 const SHADOWS_SETTING: String = "frogger/rendering/shadows"
@@ -53,16 +49,6 @@ static func texture_set(arguments: PackedStringArray) -> String:
 	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
 
 
-## The name of the rendering profile a launch asked for:
-## [code]--rendering=[/code] in [param arguments], else the project setting
-## [code]frogger/rendering/default_profile[/code], else the retail profile.
-static func rendering_profile(arguments: PackedStringArray) -> String:
-	var requested: String = value(arguments, RENDERING_ARGUMENT).strip_edges().to_lower()
-	if not requested.is_empty():
-		return requested
-	return str(ProjectSettings.get_setting(RENDERING_SETTING, RenderingProfile.RETAIL))
-
-
 ## The shadow-effect choice a launch asked for, for [ShadowEffectPolicy]:
 ## [code]--effect-shadows=[/code] in [param arguments], else the project setting
 ## [code]frogger/rendering/effect_shadows[/code], else [constant ShadowEffectPolicy.DEFAULT].
@@ -73,7 +59,7 @@ static func effect_shadows(arguments: PackedStringArray) -> String:
 	return str(ProjectSettings.get_setting(EFFECT_SHADOWS_SETTING, ShadowEffectPolicy.DEFAULT)).strip_edges().to_lower()
 
 
-## Whether the modern profile's lights cast real shadows: false when
+## Whether the scene lights cast real shadows: false when
 ## [code]--shadows=off[/code] is in [param arguments], or, without the
 ## argument, when the project setting [code]frogger/rendering/shadows[/code]
 ## is [code]"off"[/code]; true otherwise.

@@ -1,7 +1,7 @@
 extends GutTest
-## The gameplay frog is lit per part from the map's lights with its committed colour scale and custom ambient, and tinted only without map lights;
-## the modern profile also lights the scene from the map's lights, casts real shadows unless switched off
-## and draws the blob shadow effects only when the shadow-effect setting keeps them.
+## The gameplay frog takes its committed colour scale and custom ambient as its tint under the map's
+## lights or the options lights; the scene is lit from the map's lights, casts real shadows unless
+## switched off and draws the blob shadow effects only when the shadow-effect setting keeps them.
 
 const SCALE := Vector3i(0, 64, 192)
 const AMBIENT := Vector3i(32, 64, 64)
@@ -32,63 +32,39 @@ func _draw(flags: int) -> void:
 	_view.accept_state(state)
 	_view.draw_state(1.0)
 
-func _shown() -> ShaderMaterial:
-	return _view._frog_model.part_nodes[0].get_surface_override_material(0) as ShaderMaterial
-
-func _vector(name: StringName) -> Vector3:
-	var material: ShaderMaterial = _shown()
-	assert_not_null(material, "the frog draws an instance-local material")
-	var value: Vector3 = material.get_shader_parameter(name) if material != null else Vector3(-1, -1, -1)
-	return value
-
-func _lit() -> bool:
-	var material: ShaderMaterial = _shown()
-	return material != null and material.get_shader_parameter("source_lighting") == true
-
 func _depth_bias() -> float:
-	var material: ShaderMaterial = _shown()
+	var material: ShaderMaterial = _view._frog_model.part_nodes[0].get_active_material(0) as ShaderMaterial
 	var value: float = material.get_shader_parameter("depth_bias") if material != null else -1.0
 	return value
 
-func _assert_map_lit(ambient: Vector3, colour0: Vector3) -> void:
-	assert_true(_lit())
-	assert_eq(_vector("source_direction0"), _lighting.directions[0])
-	assert_eq(_vector("source_colour0"), colour0)
-	assert_eq(_vector("source_ambient"), ambient)
+func _assert_tint(expected: SceneTint) -> void:
+	assert_eq(_view._frog_model.scene_tint.scale, expected.scale)
+	assert_eq(_view._frog_model.scene_tint.ambient, expected.ambient)
 	assert_eq(_depth_bias(), GameplayWorldView.FROG_DEPTH_BIAS)
 
-func test_map_lights_reach_the_frog_without_flags() -> void:
+func test_map_lights_leave_the_frog_untinted_without_flags() -> void:
 	_view._entity_lighting = _lighting
 	_draw(0)
-	_assert_map_lit(_lighting.ambient, _lighting.colours[0])
+	_assert_tint(SceneTint.new())
 
-func test_custom_ambient_and_colour_scale_follow_the_source_matrix() -> void:
+func test_custom_ambient_and_colour_scale_tint_the_frog() -> void:
 	_view._entity_lighting = _lighting
 	_draw(FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS)
-	var ambient: Vector3 = Vector3(floorf(32.0 * 0.0 / 128.0), floorf(64.0 * 64.0 / 128.0), floorf(64.0 * 192.0 / 128.0)) * 16.0
-	_assert_map_lit(ambient, (_lighting.colours[0] * Vector3(SCALE) / 128.0).floor())
+	_assert_tint(SceneTint.of(SCALE, AMBIENT, true, true))
 
-func test_without_map_lights_the_tint_fallback_applies() -> void:
-	var flags: int = FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS
-	_draw(flags)
-	assert_true(_lit())
-	assert_eq(_vector("source_colour0"), Vector3.ZERO)
-	assert_eq(_vector("source_ambient"), AnimatedModelInstance.tint_light(SCALE, AMBIENT, flags))
-	assert_eq(_depth_bias(), GameplayWorldView.FROG_DEPTH_BIAS)
+func test_without_map_lights_the_frog_takes_the_options_lights() -> void:
+	_draw(FrogTint.SCALED_COLOURS)
+	_assert_tint(SceneTint.of(SCALE, AMBIENT, true, false))
+	assert_eq(_view._lighting_or_options(null).ambient, OptionsModels.options_lighting().ambient)
 
-func test_tinted_then_lit_then_unlit_keeps_no_stale_uniforms() -> void:
+func test_rebuilding_entities_without_lights_keeps_the_tint_on_the_same_tick() -> void:
 	var flags: int = FrogTint.CUSTOM_AMBIENT | FrogTint.SCALED_COLOURS
-	_draw(flags)
 	_view._entity_lighting = _lighting
-	_view._frog_light_tick = -1
-	_view.draw_state(1.0)
-	_assert_map_lit(Vector3(0, 32, 96) * 16.0, (_lighting.colours[0] * Vector3(SCALE) / 128.0).floor())
+	_draw(flags)
 	_view.build_entities(null, null, null)
 	assert_null(_view._entity_lighting)
 	_view.draw_state(1.0)
-	assert_eq(_vector("source_colour0"), Vector3.ZERO, "rebuilding entities without lights re-tints the frog on the same tick")
-	assert_eq(_vector("source_ambient"), AnimatedModelInstance.tint_light(SCALE, AMBIENT, flags))
-	assert_eq(_depth_bias(), GameplayWorldView.FROG_DEPTH_BIAS)
+	_assert_tint(SceneTint.of(SCALE, AMBIENT, true, true))
 
 func _lit_map() -> MapSceneData:
 	var ambient := MapLight.new()
@@ -110,9 +86,8 @@ func _map_lighting(scene: MapSceneData) -> MapLighting:
 	lighting.configure(scene.map.lights)
 	return lighting
 
-func test_the_modern_profile_lights_the_scene_from_the_map() -> void:
+func test_the_scene_is_lit_from_the_map() -> void:
 	var scene: MapSceneData = _lit_map()
-	_view.rendering_profile = RenderingProfile.modern()
 	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
 	var expected: SceneLightingSpec = SceneLightingBuilder.from_lighting(_map_lighting(scene))
 	assert_eq(_view.scene_lighting.light_nodes().size(), expected.lights.size())
@@ -121,8 +96,7 @@ func test_the_modern_profile_lights_the_scene_from_the_map() -> void:
 	assert_not_null(_view.scene_lighting.environment)
 	assert_not_null(_view._entity_lighting, "the source lighting stays for the frog and entities")
 
-func test_the_modern_profile_falls_back_to_the_options_lights_without_map_lighting() -> void:
-	_view.rendering_profile = RenderingProfile.modern()
+func test_the_scene_falls_back_to_the_options_lights_without_map_lighting() -> void:
 	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new(), false)
 	var expected: SceneLightingSpec = SceneLightingBuilder.from_lighting(OptionsModels.options_lighting())
 	assert_eq(_view.scene_lighting.light_nodes().size(), expected.lights.size())
@@ -133,20 +107,9 @@ func test_the_modern_profile_falls_back_to_the_options_lights_without_map_lighti
 	assert_almost_eq(_view.scene_lighting.applied_ambient, expected.ambient, Vector3.ONE * 1e-6, "a map without lights also falls back")
 
 func test_clearing_entities_clears_the_scene_lights() -> void:
-	_view.rendering_profile = RenderingProfile.modern()
 	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
 	_view._clear_entity_visuals()
 	assert_eq(_view.scene_lighting.light_nodes().size(), 0)
-	assert_eq(_view.scene_lighting.applied_ambient, Vector3.ONE)
-
-func test_the_retail_profile_applies_no_scene_lighting() -> void:
-	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
-	assert_false(_view.rendering_profile.is_modern())
-	assert_not_null(_view._entity_lighting)
-	assert_eq(_view.scene_lighting.light_nodes().size(), 0)
-	assert_null(_view.scene_lighting.environment)
-	assert_null(_view.scene_lighting.world_environment())
-	assert_null(_view.scene_lighting.applied_spec)
 	assert_eq(_view.scene_lighting.applied_ambient, Vector3.ONE)
 
 func _cave_map() -> MapSceneData:
@@ -170,13 +133,12 @@ func _cave_state(tick: int, position_16: Vector3i, radius: int, entities: Array[
 	state.entities.entities.assign(entities)
 	return state
 
-func _build_cave(profile: RenderingProfile, scene: MapSceneData = _cave_map()) -> void:
-	_view.rendering_profile = profile
+func _build_cave(scene: MapSceneData = _cave_map()) -> void:
 	_view.build_map(scene)
 	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
 
-func test_the_modern_profile_lights_a_cave_from_above_the_drawn_frog() -> void:
-	_build_cave(RenderingProfile.modern())
+func test_a_cave_is_lit_from_above_the_drawn_frog() -> void:
+	_build_cave()
 	_view.smoothing = true
 	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
 	_view.accept_state(_cave_state(2, Vector3i(512 << 16, 0, -(256 << 16)), 8))
@@ -198,17 +160,10 @@ func test_the_modern_profile_lights_a_cave_from_above_the_drawn_frog() -> void:
 	_view.draw_state(1.0)
 	assert_almost_eq(light.omni_range, 8.0, 1e-5)
 
-func test_the_retail_profile_adds_no_cave_light() -> void:
-	_build_cave(RenderingProfile.retail())
-	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
-	_view.draw_state(1.0)
-	assert_null(_view.scene_lighting.cave_light_node())
-	assert_eq(_view.scene_lighting.get_child_count(), 0)
-
-func test_a_modern_map_without_caves_has_no_cave_light() -> void:
+func test_a_map_without_caves_has_no_cave_light() -> void:
 	var scene: MapSceneData = _cave_map()
 	scene.cave_enabled = false
-	_build_cave(RenderingProfile.modern(), scene)
+	_build_cave(scene)
 	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4))
 	_view.draw_state(1.0)
 	assert_null(_view.scene_lighting.cave_light_node())
@@ -225,7 +180,6 @@ func _faded_entity() -> EntitySnapshot:
 func _lit_model() -> AnimatedModelInstance:
 	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])
 	var builder := ModelMeshBuilder.new(TextureLibrary.new())
-	builder.lit_materials = true
 	var model := AnimatedModelInstance.new()
 	add_child_autofree(model)
 	model.setup(builder.build_animated(file), ModelAnimationPlayer.new(file))
@@ -245,8 +199,8 @@ func _firefly_view() -> void:
 		sprites.append(CaveSpriteView.Sprite.new(ModelShaders.material(null, ModelShaders.Blend.OPAQUE, false, true), 16, 10))
 	_view._cave_sprite_view._firefly = sprites
 
-func test_modern_cave_models_leave_the_fade_to_the_light_and_sprites_keep_it() -> void:
-	_build_cave(RenderingProfile.modern())
+func test_cave_models_leave_the_fade_to_the_light_and_sprites_keep_it() -> void:
+	_build_cave()
 	var model: AnimatedModelInstance = _lit_model()
 	var firefly := EntityDefinition.new()
 	firefly.behavior.kind = EntityBehavior.Kind.FIREFLY
@@ -259,7 +213,7 @@ func test_modern_cave_models_leave_the_fade_to_the_light_and_sprites_keep_it() -
 	assert_eq(colours[0], Color(40 / 255.0, 40 / 255.0, 40 / 255.0), "sprites keep the committed fade")
 
 func test_cave_models_keep_scales_that_are_not_the_fade_alone() -> void:
-	_build_cave(RenderingProfile.modern())
+	_build_cave()
 	var model: AnimatedModelInstance = _lit_model()
 	_with_entities([model], [])
 	var entity: EntitySnapshot = _faded_entity()
@@ -273,10 +227,10 @@ func test_cave_models_keep_scales_that_are_not_the_fade_alone() -> void:
 	entity.live_flags = 0
 	assert_true(GameplayWorldView.cave_faded(entity))
 
-func test_lit_models_outside_caves_and_under_retail_keep_the_scale() -> void:
+func test_models_outside_caves_keep_the_scale() -> void:
 	var scene: MapSceneData = _cave_map()
 	scene.cave_enabled = false
-	_build_cave(RenderingProfile.modern(), scene)
+	_build_cave(scene)
 	var model: AnimatedModelInstance = _lit_model()
 	_with_entities([model], [])
 	_view.accept_state(_cave_state(1, Vector3i.ZERO, 4, [_faded_entity()]))
@@ -295,8 +249,7 @@ func _shadow_state() -> GameplayState:
 	state.entities.entities.append(rock)
 	return state
 
-func _shadow_requests(profile: RenderingProfile, setting: String) -> Array[FrogShadowView.Request]:
-	_view.rendering_profile = profile
+func _shadow_requests(setting: String) -> Array[FrogShadowView.Request]:
 	_view.effect_shadows = setting
 	var definition := EntityDefinition.new()
 	definition.behavior.kind = EntityBehavior.Kind.DES_FALLING_ROCK
@@ -305,19 +258,15 @@ func _shadow_requests(profile: RenderingProfile, setting: String) -> Array[FrogS
 	_view.accept_state(_shadow_state())
 	return _view.shadow_requests(Transform3D.IDENTITY, 1.0)
 
-func test_the_modern_profile_draws_no_blob_shadows_when_the_setting_is_off() -> void:
+func test_no_blob_shadows_draw_when_the_setting_is_off() -> void:
 	assert_eq(_view.effect_shadows, ShadowEffectPolicy.DEFAULT)
-	assert_eq(_shadow_requests(RenderingProfile.modern(), ShadowEffectPolicy.OFF).size(), 0, "neither the frog's nor the rock's shadow")
+	assert_eq(_shadow_requests(ShadowEffectPolicy.OFF).size(), 0, "neither the frog's nor the rock's shadow")
 	assert_false(_view.draws_effect_shadows())
 
-func test_the_modern_profile_draws_blob_shadows_with_the_retail_setting() -> void:
-	var requests: Array[FrogShadowView.Request] = _shadow_requests(RenderingProfile.modern(), ShadowEffectPolicy.RETAIL)
+func test_blob_shadows_draw_with_the_retail_setting() -> void:
+	var requests: Array[FrogShadowView.Request] = _shadow_requests(ShadowEffectPolicy.RETAIL)
 	assert_eq(requests.size(), 2, "the frog's and the rock's shadow")
 	assert_eq(requests[1].symbol, FrogShadowGeometry.NO_ROTATION_TEXTURE)
-
-func test_the_retail_profile_draws_blob_shadows_under_every_setting() -> void:
-	assert_eq(_shadow_requests(RenderingProfile.retail(), ShadowEffectPolicy.OFF).size(), 2)
-	assert_eq(_shadow_requests(RenderingProfile.retail(), ShadowEffectPolicy.RETAIL).size(), 2)
 
 func test_launch_arguments_choose_the_shadow_effects_and_real_shadows() -> void:
 	_view.apply_shadow_arguments(PackedStringArray(["--effect-shadows=retail", "--shadows=off"]))
@@ -334,8 +283,7 @@ func _casters() -> int:
 			casters += 1
 	return casters
 
-func test_real_shadows_off_leaves_the_modern_lights_without_a_caster() -> void:
-	_view.rendering_profile = RenderingProfile.modern()
+func test_real_shadows_off_leaves_the_lights_without_a_caster() -> void:
 	_view.build_entities(EntityCollisionDefinition.new(), _lit_map(), AssetCatalog.new())
 	assert_eq(_casters(), 1, "the brightest light casts by default")
 	assert_true(_view.scene_lighting.applied_spec.shadows)

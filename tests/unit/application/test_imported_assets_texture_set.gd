@@ -2,7 +2,8 @@ extends GutTest
 ## The imported assets draw from the texture set a launch asks for: the x4
 ## set's files stand in for the retail ones where they exist, an uninstalled
 ## or unknown set falls back to retail with a warning, and tests that open the
-## catalog without a name get the retail set.
+## catalog without a name get the retail set. A launch on another renderer
+## than Forward+ leaves a warning.
 
 const SCRATCH: String = "user://texture_set_test"
 
@@ -44,7 +45,7 @@ func test_an_uninstalled_or_unknown_set_falls_back_to_retail() -> void:
 	assert_eq(warnings, PackedStringArray())
 
 
-func test_the_x4_set_serves_upscaled_textures_and_pages() -> void:
+func test_the_x4_set_serves_upscaled_textures() -> void:
 	var assets: ImportedAssets = ImportedAssets.open("res://assets", "x4")
 	assert_true(assets.is_valid())
 	assert_eq(assets.warnings, PackedStringArray())
@@ -68,17 +69,6 @@ func test_the_x4_set_serves_upscaled_textures_and_pages() -> void:
 	library.add_bank(bank, "general")
 	assert_same(library.texture_for(image), upscaled)
 	assert_true(library.linear_filter())
-	if DirAccess.dir_exists_absolute("res://assets/textures/pages_x4"):
-		var pages: TexturePageSet = assets.page_set("GEN_VRAM+SKY_VRAM_WIN95")
-		assert_not_null(pages)
-		assert_eq(pages.page(0).get_width(), 1024)
-		assert_eq(pages.sky_atlas.get_width(), 1024)
-	else:
-		var pages: TexturePageSet = assets.page_set("GEN_VRAM+SKY_VRAM_WIN95")
-		assert_not_null(pages)
-		assert_eq(pages.page(0).get_width(), 256)
-		assert_eq(assets.problems.size(), 1)
-		assert_true(assets.problems[0].contains("no page set"), assets.problems[0])
 
 
 func test_retail_textures_stay_retail() -> void:
@@ -88,3 +78,12 @@ func test_retail_textures_stay_retail() -> void:
 	var image: VloImage = bank.images[0]
 	assert_same(assets.texture_of(image), image.texture)
 	assert_same(assets.texture_counterpart(image.texture), image.texture)
+
+
+func test_a_renderer_note_lands_in_the_warnings_only_on_another_renderer() -> void:
+	var catalog := AssetCatalog.new()
+	assert_eq(catalog.note_renderer(AssetCatalog.RENDERING_METHOD), "")
+	assert_eq(catalog.warnings, PackedStringArray())
+	var note: String = catalog.note_renderer("gl_compatibility")
+	assert_eq(note, "rendering on gl_compatibility; the game targets forward_plus, shadows and lighting may differ")
+	assert_eq(catalog.warnings, PackedStringArray([note]))

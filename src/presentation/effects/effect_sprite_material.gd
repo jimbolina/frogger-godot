@@ -2,10 +2,10 @@ class_name EffectSpriteMaterial
 extends RefCounted
 ## Shared materials, quad batches and camera-plane helpers for the effect views.
 ##
-## Materials come from [ModelShaders] like every other sprite: texture times
-## vertex colour times two for textured polygons, the vertex colour as it is
-## for untextured ones, stored-colour blending, and [code]depth_bias[/code]
-## standing in for the source ordering-table offsets. One ordering slot is
+## Materials come from the unlit [ModelShaders] like every other sprite: texture
+## times vertex colour times two for textured polygons, the vertex colour as it
+## is for untextured ones, and [code]depth_bias[/code] standing in for the
+## source ordering-table offsets. One ordering slot is
 ## two game units of view depth (slot = SZ >> 1), so [method slots_bias]
 ## turns a source OT offset into the bias. [method in_front] makes a variant
 ## that skips the depth test, for polygons the source placed in the nearest
@@ -66,7 +66,7 @@ static func slots_bias(slots: int) -> float:
 ## A clamped image material with the HIT texel trim of the other sprite views,
 ## filtered as [param library]'s texture set asks.
 static func textured(library: TextureLibrary, image: VloImage, blend: ModelShaders.Blend, depth_bias: float, projection_scale: Vector2) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(library.texture_for(image), blend, library.linear_filter(), true)
+	var material: ShaderMaterial = ModelShaders.material(library.texture_for(image), blend, library.linear_filter(), true, false)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
 	uv.size.y -= (1.0 / image.padded_height) if image.has_flag(VloImage.FLAG_HIT_Y) else 0.0
@@ -79,7 +79,7 @@ static func textured(library: TextureLibrary, image: VloImage, blend: ModelShade
 
 ## An untextured material drawing vertex colours.
 static func untextured(blend: ModelShaders.Blend, depth_bias: float, projection_scale: Vector2) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(null, blend, false, true)
+	var material: ShaderMaterial = ModelShaders.material(null, blend, false, true, false)
 	material.set_shader_parameter("projection_scale", projection_scale)
 	material.set_shader_parameter("depth_bias", depth_bias)
 	return material
@@ -90,7 +90,7 @@ static func in_front(blend: ModelShaders.Blend, projection_scale: Vector2) -> Sh
 	var key: String = str(blend)
 	if not _front_shaders.has(key):
 		var shader := Shader.new()
-		shader.code = ModelShaders.shader_code(false, blend, false, true).replace("render_mode unshaded, ", "render_mode unshaded, depth_test_disabled, ")
+		shader.code = ModelShaders.shader_code(false, blend, false).replace("render_mode unshaded, ", "render_mode unshaded, depth_test_disabled, ")
 		_front_shaders[key] = shader
 	var material := ShaderMaterial.new()
 	material.shader = _front_shaders[key]

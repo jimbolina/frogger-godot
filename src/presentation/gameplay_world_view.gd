@@ -71,20 +71,18 @@ var _splashes: Array[SplashView.Splash] = []
 var _effect_tick: int = -1
 var _effect_drawn_tick: int = -1
 var _frog_light_tick: int = -1
-var _frog_lit: bool = false
+var _options_lighting: MapLighting = null
 ## Whether [method build_world] creates the sound-effect and music players.
 var audio_enabled: bool = false
 var _voice_view: SoundVoiceView = null
 var _music_player: MusicPlayer = null
-## How the world is lit and shaded; the screens set it from the opened catalog before building entities.
-var rendering_profile: RenderingProfile = RenderingProfile.retail()
-## The modern profile's lights and environment, created by [method build_world].
+## The scene's lights and environment, created by [method build_world].
 var scene_lighting: SceneLighting = null
 ## The shadow-effect setting, [constant ShadowEffectPolicy.RETAIL] or
-## [constant ShadowEffectPolicy.OFF]; with [member rendering_profile] it decides
-## through [ShadowEffectPolicy] whether the blob shadow effects draw.
+## [constant ShadowEffectPolicy.OFF]; it decides through [ShadowEffectPolicy]
+## whether the blob shadow effects draw.
 var effect_shadows: String = ShadowEffectPolicy.DEFAULT
-## Whether the modern profile's lights cast real shadows; read when entities are built.
+## Whether the scene lights cast real shadows; read when entities are built.
 var real_shadows: bool = true
 
 ## Collapses all drawing history without advancing simulation.
@@ -153,9 +151,6 @@ func draw_state(fraction: float) -> void:
 			var drift_before: Vector3 = Vector3(_previous.sky_drift.translation()) if _previous.sky_drift != null else drift_now
 			_map_instance.set_sky_drift(drift_before.lerp(drift_now, weight))
 		_map_instance.set_camera_presentation(Vector3(_camera.position.x, -_camera.position.y, -_camera.position.z) * GameSpace.UNITS_PER_SQUARE)
-		_map_instance.set_cave_frog(_current.frog.world_position)
-		if _map_instance.source.scene.cave_enabled and _current.entity_environment != null:
-			_map_instance.set_cave_radii(_current.entity_environment.light_min_squared, _current.entity_environment.light_max_squared)
 	var cave_lit: bool = _cave_lit()
 	if cave_lit:
 		var radii: PackedInt64Array = cave_radii(weight)
@@ -174,7 +169,7 @@ func draw_state(fraction: float) -> void:
 					model.transform = transform_now
 				if update_entities and _entity_lighting != null:
 					var scaled: bool = entity.colour_scaled or entity.colour_scale != Vector3i.ZERO
-					if scaled and cave_lit and cave_faded(entity) and AnimatedModelInstance.has_lit_materials(model.model_mesh):
+					if scaled and cave_lit and cave_faded(entity):
 						scaled = false
 					model.set_source_lighting(_entity_lighting, entity.colour_scale, entity.ambient, scaled, entity.ambient != Vector3i.ZERO)
 				if update_entities:
@@ -211,7 +206,7 @@ static func cave_faded(entity: EntitySnapshot) -> bool:
 	return entity.colour_scaled and not entity.live_flags & (EntityLiveFlags.NO_SCREEN_FADE | EntityLiveFlags.RESPECT_SCALE_COLOURS) and not entity.entity_flags & EntityDefinition.NO_DISPLAY
 
 func _cave_lit() -> bool:
-	return scene_lighting != null and rendering_profile.is_modern() and _map_instance != null and _map_instance.source.scene.cave_enabled
+	return scene_lighting != null and _map_instance != null and _map_instance.source.scene.cave_enabled
 
 ## Creates the map, frog and camera drawing roots.
 func build_world() -> void:
@@ -462,15 +457,19 @@ func _sync_entity_models() -> PackedInt32Array:
 		created.append(slot)
 	return created
 
-## Under the modern profile, lights the scene from [param lighting], or from
-## the options screen's lights when there are no map lights.
+## Lights the scene from [param lighting], or from the options screen's
+## lights when there are no map lights.
 func _light_scene(lighting: MapLighting) -> void:
-	if scene_lighting == null or not rendering_profile.is_modern():
+	if scene_lighting == null:
 		return
-	var source: MapLighting = lighting
-	if source == null or (source.directions.is_empty() and source.ambient.is_zero_approx()):
-		source = OptionsModels.options_lighting()
-	scene_lighting.apply(SceneLightingBuilder.from_lighting(source, real_shadows))
+	scene_lighting.apply(SceneLightingBuilder.from_lighting(_lighting_or_options(lighting), real_shadows))
+
+func _lighting_or_options(lighting: MapLighting) -> MapLighting:
+	if lighting != null and not (lighting.directions.is_empty() and lighting.ambient.is_zero_approx()):
+		return lighting
+	if _options_lighting == null:
+		_options_lighting = OptionsModels.options_lighting()
+	return _options_lighting
 
 func _configure_overlay(data: AssetCatalog, scene: MapSceneData, level: int, lighting: MapLighting, diagnostics: PackedStringArray) -> String:
 	if _overlay_view == null:
@@ -577,7 +576,6 @@ func build_frog(assets: TerrainFrogAssets) -> void:
 	frog_assets = assets.with_mesh(ModelMeshCopy.of(assets.mesh))
 	_apply_frog_depth_bias()
 	_frog_light_tick = -1
-	_frog_lit = false
 	_frog_model = AnimatedModelInstance.new()
 	add_child(_frog_model)
 	_frog_model.setup(frog_assets.mesh, frog_assets.player)
@@ -596,23 +594,11 @@ func _show_frog_parts() -> void:
 	for index: int in _frog_model.part_nodes.size():
 		_frog_model.part_nodes[index].visible = not frog_assets.hidden_parts.has(index)
 
-## Lights the frog per part from the map's lights with its committed colour
-## scale and custom ambient, as entities are (MR_LIGHT.C
-## MRCalculateCustomInstanceLights); without map lights it falls back to
-## [method AnimatedModelInstance.set_tint], resetting materials a previous map lit.
+## Applies the frog's committed colour scale and custom ambient as entities'
+## are (MR_LIGHT.C MRCalculateCustomInstanceLights), under the map's lights or
+## the options screen's lights without them.
 func _light_frog(frog: FrogState) -> void:
-	if _entity_lighting != null:
-		_frog_model.set_source_lighting(_entity_lighting, frog.colour_scale, frog.custom_ambient, (frog.tint_flags & FrogTint.SCALED_COLOURS) != 0, (frog.tint_flags & FrogTint.CUSTOM_AMBIENT) != 0)
-		if not _frog_lit:
-			_frog_lit = true
-			_apply_frog_depth_bias()
-		return
-	if _frog_lit:
-		_frog_lit = false
-		_frog_model.setup(frog_assets.mesh, frog_assets.player)
-		_apply_frog_depth_bias()
-		_show_frog_parts()
-	_frog_model.set_tint(frog.colour_scale, frog.custom_ambient, frog.tint_flags)
+	_frog_model.set_source_lighting(_lighting_or_options(_entity_lighting), frog.colour_scale, frog.custom_ambient, (frog.tint_flags & FrogTint.SCALED_COLOURS) != 0, (frog.tint_flags & FrogTint.CUSTOM_AMBIENT) != 0)
 
 ## Captures a committed state and reconciles authored entity lifetimes; the
 ## tick's [param events] start and stop presentation effects.
@@ -871,10 +857,9 @@ func apply_shadow_arguments(arguments: PackedStringArray) -> void:
 	effect_shadows = ViewerArguments.effect_shadows(arguments)
 	real_shadows = ViewerArguments.shadows(arguments)
 
-## Whether the frog and Desert blob shadow effects draw under
-## [member rendering_profile] and [member effect_shadows].
+## Whether the frog and Desert blob shadow effects draw under [member effect_shadows].
 func draws_effect_shadows() -> bool:
-	return ShadowEffectPolicy.draws_blob_shadows(rendering_profile, effect_shadows)
+	return ShadowEffectPolicy.draws_blob_shadows(effect_shadows)
 
 ## The blob shadows of the current state at render [param weight] with the
 ## frog drawn at [param frog_transform]: the frog's, then each Desert rock's

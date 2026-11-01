@@ -4,11 +4,6 @@ extends GutTest
 const VIEWER_SCENE: String = "res://scenes/tools/model_viewer.tscn"
 
 
-class ModernCatalog extends AssetCatalog:
-	func rendering_profile() -> RenderingProfile:
-		return RenderingProfile.modern()
-
-
 var _viewer: ModelViewer
 
 
@@ -197,20 +192,14 @@ func _send_key(keycode: Key) -> void:
 	_viewer.get_viewport().push_input(event)
 
 
-func test_modern_catalog_lights_the_model_with_the_options_lights() -> void:
-	_viewer.data = ModernCatalog.new()
+func test_models_are_lit_with_the_options_lights() -> void:
 	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])), 2)
 	assert_not_null(_viewer.scene_lighting)
 	assert_eq(_viewer.scene_lighting.light_nodes().size(),
 		SceneLightingBuilder.from_lighting(OptionsModels.options_lighting(), false).lights.size())
 	var material: ShaderMaterial = _viewer.animated_instance.part_nodes[0].get_active_material(0) as ShaderMaterial
-	assert_eq(material.shader.resource_path.get_base_dir(), "res://src/convert/shaders/modern")
-	_viewer.data = null
+	var file: String = material.shader.resource_path.get_file()
+	assert_true(file.begins_with("model_") and not file.begins_with(ModelShaders.UNLIT_PREFIX), file)
 	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])), 2)
-	assert_null(_viewer.scene_lighting, "unlit materials release the lights")
-
-
-func test_retail_models_create_no_lights() -> void:
-	assert_eq(_viewer.load_model("TEST.XMR", SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.F4)])), 2)
-	assert_null(_viewer.scene_lighting)
-	assert_eq(_viewer.find_children("*", "DirectionalLight3D", true, false).size(), 0)
+	assert_eq(_viewer.find_children("*", "DirectionalLight3D", true, false).size(), _viewer.scene_lighting.light_nodes().size(),
+		"showing another model keeps one set of lights")

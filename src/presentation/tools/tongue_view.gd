@@ -25,7 +25,7 @@ func draw_state(state: GameplayState) -> void:
 	if not visible:
 		return
 	if _material == null:
-		_material = ModelShaders.material(null, ModelShaders.Blend.ADD, false, true)
+		_material = ModelShaders.material(null, ModelShaders.Blend.ADD, false, true, false)
 		_material.set_shader_parameter("projection_scale", _projection_scale)
 	mesh = _ribbon
 	var points: Array[Vector3] = []

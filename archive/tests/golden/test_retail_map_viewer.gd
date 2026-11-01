@@ -19,12 +19,18 @@ func test_representative_maps_load_and_reuse_resources() -> void:
 		var instance: MapMesh.Instance = _viewer.map_instance
 		_viewer.seek_tick(17)
 		_viewer.set_filtering(true)
-		_viewer.set_camera_preset("map-slice")
+		_viewer.reset_camera()
 		_viewer.step_animation()
 		assert_same(_viewer.current_mesh, mesh, code)
 		assert_same(_viewer.map_instance, instance, code)
 		assert_eq(_viewer.tick, 18, code)
-		assert_lte(instance.visible_group_indices().size(), 128, code)
+		var drawn: int = 0
+		for index: int in _viewer.scene_data.map.groups.size():
+			if _viewer.scene_data.map.groups[index].visible and mesh.groups[index].get_surface_count() > 0:
+				drawn += 1
+		assert_gt(drawn, 0, code)
+		assert_eq(instance.visible_group_indices().size(), drawn, code + " draws every nonempty visible group")
+		assert_not_null(_viewer.scene_lighting, code)
 	assert_true(_viewer.load_level_by_code("SUB1", true))
 	assert_true(_viewer.scene_data.low_poly)
 	assert_false(_viewer.load_level_by_code("UNKNOWN"))
@@ -73,17 +79,18 @@ func test_all_78_detail_switches_release_previous_scene_resources() -> void:
 					assert_null(old_entity_run, "previous entity run released")
 			var has_path: bool = _viewer._path_inspection != null
 			var has_entity: bool = _viewer._entity_inspection != null
-			assert_eq(_viewer._world.get_child_count(), 3 + int(has_path) + int(has_entity), "camera, environment, active map and active inspection overlays remain")
+			assert_eq(_viewer._world.get_child_count(), 4 + int(has_path) + int(has_entity), "camera, environment, active map, its scene lighting and active inspection overlays remain")
 			assert_same(_viewer._world.get_child(2), _viewer.map_instance)
+			assert_same(_viewer._world.get_child(3), _viewer.scene_lighting)
 			if has_path:
-				assert_same(_viewer._world.get_child(3), _viewer._path_inspection)
+				assert_same(_viewer._world.get_child(4), _viewer._path_inspection)
 			if has_entity:
-				assert_same(_viewer._world.get_child(3 + int(has_path)), _viewer._entity_inspection)
+				assert_same(_viewer._world.get_child(4 + int(has_path)), _viewer._entity_inspection)
 			switched += 1
 	assert_eq(switched, 78)
 
 
-func test_static_lighting_probe_builds_and_animated_probe_is_rejected() -> void:
+func test_static_probe_builds_and_animated_probe_is_rejected() -> void:
 	assert_true(_viewer.load_level_by_code("CAV1"))
 	_viewer._show_probe("GEN_CHECKPOINT_1.XMR")
 	assert_not_null(_viewer.probe_mesh)

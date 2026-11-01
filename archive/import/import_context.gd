@@ -84,11 +84,6 @@ func bank_resource_path(bank_name: String) -> String:
 	return "%s/textures/banks/%s.tres" % [assets_root, bank_name]
 
 
-## The folder of a baked texture-page set named [param set_name].
-func page_set_dir(set_name: String) -> String:
-	return "%s/textures/pages/%s" % [assets_root, set_name]
-
-
 ## The folder holding model [param model_name]'s resources and scene.
 func model_dir(model_name: String) -> String:
 	return "%s/models/%s" % [assets_root, model_name]

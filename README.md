@@ -188,7 +188,7 @@ future work.
 ## Assets
 
 The game plays from `assets/`, which holds every asset of the retail PC game
-imported once as Godot resources: textures and baked texture pages, model
+imported once as Godot resources: textures, model
 meshes, scenes and preview animations, maps, the executable's tables, demos,
 sound effects and the CD music. Binary files are Git LFS objects: run
 `git lfs install` before cloning (or `git lfs pull` afterwards), and expect
@@ -199,19 +199,13 @@ hand-edited assets get reviewed golden overrides. See [assets](docs/reference/as
 `assets/textures/images_x4/` holds every texture upscaled four times. Play
 from it with `--texture-set=x4` after `--`, for example
 `tools/play.sh --level=ORG1 --texture-set=x4`; the default is the retail set.
-`--rendering=modern` draws with the modern rendering profile (Godot lights,
-shadows and lit materials; see [modern profile](docs/reference/rendering/modern-profile.md)):
-the wrapper then starts Godot on the Forward+ renderer (Metal on Apple Silicon,
-Vulkan or Direct3D 12 on Windows, Vulkan on Linux), while the default retail
-profile keeps the original look on Compatibility. A direct launch needs
-`--rendering-method forward_plus` before the scene path; the modern profile on
-Compatibility (for example F5 in the editor) still runs and logs a warning
-that shadows and lighting differ. `frogger/rendering/default_profile` in
-`project.godot` changes the default; `--shadows=off` compares without real
-shadows and `--effect-shadows=retail` keeps the blob shadows beside them.
-The first run bakes the matching texture pages into `assets/textures/pages_x4/`
-(about 113 MB, ignored by Git, Pillow required), which the play and test
-wrappers keep current. In-game text draws with the bitmap fonts under
+The game draws on Godot's Forward+ renderer (Metal on Apple Silicon, Vulkan
+or Direct3D 12 on Windows, Vulkan on Linux) with scene lights and real
+shadows from the map light records, lit model materials and lit terrain; see
+[lighting](docs/reference/rendering/lighting.md). On another renderer it
+still runs and logs a warning that shadows and lighting differ.
+`--shadows=off` compares without real shadows, and `--effect-shadows=retail`
+keeps the original's blob shadows beside them. In-game text draws with the bitmap fonts under
 `assets/fonts/`, one per texture set, generated from the `newfont` glyph
 texture by `tools/make_font_newfont.py`.
 
@@ -326,8 +320,7 @@ inspection start: segment, distance, speed, active state, direction and endpoint
 mode. **Show path** draws its sampled shape, runner position and tangent;
 it starts off. The default start is segment 0, distance 0, speed 16, active,
 forward and repeat. Changing a control resets the shared tick. Playback,
-step and seek move the selected cursor with map animation. The map-slice
-reference preset hides the path drawing. These settings inspect a detached
+step and seek move the selected cursor with map animation. These settings inspect a detached
 path runner; map entity attachment has its own authored starts. See the
 [path](docs/reference/gameplay/paths.md) and
 [entity](docs/reference/gameplay/entities.md) contracts.
@@ -338,8 +331,7 @@ readout. Set the FORM probe's X/Y/Z world coordinates, or choose **Place probe
 in first cell**. The viewer draws the selected FORM outline and contacted cell
 and reports contact status, cell and raw flags. An unsupported form shows its
 reason. This query does not move or kill the frog. The panel counts omitted
-records; hover over the count for source diagnostics. The axes start hidden
-and the map-slice reference preset hides them.
+records; hover over the count for source diagnostics. The axes start hidden.
 
 For reproducible path traces and an optional rendered capture, run
 `python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
@@ -369,18 +361,19 @@ logs and captures stay outside the repository.
 For repeatable captures on Windows, set `GODOT`, then:
 
 ```powershell
-tools/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Camera map-slice -Tick 0 -Linear -Benchmark
+tools/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Tick 0 -Linear -Benchmark
 ```
 
 Captures use a fixed 640×480 viewport and write PNG plus metadata outside the
-repository. Use `-Linear` for frozen-C comparisons; omit it for nearest filtering.
+repository (`python3 tools/capture_map.py` is the cross-platform equivalent).
+Use `-Linear` for linear filtering; omit it for nearest.
 Add `-LowDetail` to inspect the matching low-detail map and textures. The viewer also accepts
-`-- --level=SUB1 --low-poly=false --camera=map-slice --tick=0 --linear=false
+`-- --level=SUB1 --low-poly=false --tick=0 --linear=false
 --screenshot-dir=<absolute external folder>`. An optional `--probe-model=GEN_CHECKPOINT_1.XMR`
-shows a static model with map ambient/parallel lighting.
+shows a static model under the map's scene lights.
 High- and low-detail maps are separate resources: select the detail variant
 you want. For fixed-pose comparisons, the capture wrapper accepts
-`-CameraSource 'x,y,z'`, `-CameraTarget 'x,y,z'` (game units) and `-Projection 500`.
+`-CameraSource 'x,y,z'` and `-CameraTarget 'x,y,z'` (game units).
 
 ## Running the tests
 
@@ -426,7 +419,7 @@ commit.
 |---|---|
 | `assets/` | The game's content as committed Godot resources (binary files through Git LFS), with `catalog.tres` as the index; see [assets](docs/reference/assets.md). |
 | `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, `AssetCatalog` (the abstract data provider) and `AssetIndex`. No scene tree, no file access. |
-| `src/convert/` | Turning game data and committed gameplay state into Godot resources: texture pages, model meshes and materials, the shaders that draw them, effect geometry, and the conversion between the game's space and Godot's. |
+| `src/rendering/` | Turning game data and committed gameplay state into Godot resources: model meshes and materials, the shaders that draw them, scene-lighting and tint specifications, effect geometry, and the conversion between the game's space and Godot's. |
 | `src/game/` | Gameplay definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, and the front-end rules (`frontend/`, `options/`). No scene tree, no file access. |
 | `src/application/` | Adapters from data records to gameplay definitions, the behavior and callback catalogs, `ImportedAssets` (`loaders/`) and the save files (`storage/`). |
 | `src/inspection/` | Developer scenarios, validated options, guards, presets and their manifests, and the sandbox arena. |

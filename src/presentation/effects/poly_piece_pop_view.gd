@@ -30,6 +30,8 @@ class Source extends RefCounted:
 	var library: TextureLibrary
 	var preferred: VloFile
 
+const _ALBEDO_LINE: String = "ALBEDO = to_linear(clamp(shown, vec3(0.0), vec3(1.0)));"
+
 static var _front_shaders: Dictionary[String, Shader] = {}
 
 var _sources: Dictionary[int, Source] = {}
@@ -119,7 +121,7 @@ func piece_count() -> int:
 	return count
 
 
-## A variant of the piece material [param original] that skips the depth
+## An unlit variant of the piece material [param original] that skips the depth
 ## test and draws after other translucent polygons, keeping its texture and blend.
 static func front_material(original: ShaderMaterial, blend: ModelShaders.Blend, projection_scale: Vector2) -> ShaderMaterial:
 	var texture: Texture2D = null
@@ -127,10 +129,9 @@ static func front_material(original: ShaderMaterial, blend: ModelShaders.Blend, 
 		texture = original.get_shader_parameter("image")
 	var key: String = "%s/%d" % [texture != null, blend]
 	if not _front_shaders.has(key):
-		var code: String = ModelShaders.shader_code(texture != null, blend, false, true).replace("render_mode unshaded, ", "render_mode unshaded, depth_test_disabled, ")
+		var code: String = ModelShaders.shader_code(texture != null, blend, false).replace("render_mode unshaded, ", "render_mode unshaded, depth_test_disabled, ")
 		if blend == ModelShaders.Blend.OPAQUE:
-			code = code.replace("depth_draw_opaque", "depth_draw_never").replace("ALBEDO = through_renderer(clamp(shown, vec3(0.0), vec3(1.0)));",
-				"ALBEDO = through_renderer(clamp(shown, vec3(0.0), vec3(1.0)));\n\tALPHA = 1.0;")
+			code = code.replace("depth_draw_opaque", "depth_draw_never").replace(_ALBEDO_LINE, _ALBEDO_LINE + "\n\tALPHA = 1.0;")
 		var shader := Shader.new()
 		shader.code = code
 		_front_shaders[key] = shader

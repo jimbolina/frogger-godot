@@ -34,8 +34,7 @@ The map viewer optionally draws a sampled path, cursor and tangent, and uses
 the same 30 Hz clock as map animation. The initial inspection start is segment
 0, distance 0, speed 16, active, forward and repeat. Path controls define an
 inspection start; changing one resets the clock. Seeking backward replays from
-that start. The overlay is hidden by default and always hidden in the map-slice
-reference preset. Its visual samples and marker never drive gameplay state.
+that start. The overlay is hidden by default. Its visual samples and marker never drive gameplay state.
 
 `EntitySetup` now attaches authored `PATH_INFO` to independently owned cursors
 for supported moving base transforms. The [entity contract](entities.md) defines

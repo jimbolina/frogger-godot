@@ -13,7 +13,6 @@ const STEP_SCRIPTS: Array[String] = [
 	"res://archive/import/steps/names_step.gd",
 	"res://archive/import/steps/tables_step.gd",
 	"res://archive/import/steps/textures_step.gd",
-	"res://archive/import/steps/pages_step.gd",
 	"res://archive/import/steps/sfx_step.gd",
 	"res://archive/import/steps/music_step.gd",
 	"res://archive/import/steps/demos_step.gd",

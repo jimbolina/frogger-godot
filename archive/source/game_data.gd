@@ -232,28 +232,6 @@ func read_texture_bank(resource_id: int, problems: PackedStringArray = PackedStr
 	return vlo
 
 
-## The texture pages of general bank [param general_bank_id] then theme bank
-## [param theme_bank_id], composed from their pixels as the importer bakes
-## them ([VramPages]), with the sky-land atlas when the theme bank is the sky
-## theme's; null (with the reason in [param problems]) when a bank cannot be
-## read. Composition problems are added to [param problems] too.
-func page_set_for_banks(general_bank_id: int, theme_bank_id: int, problems: PackedStringArray = PackedStringArray()) -> TexturePageSet:
-	var general: VloFile = read_texture_bank(general_bank_id, problems)
-	var theme: VloFile = read_texture_bank(theme_bank_id, problems)
-	if general == null or theme == null:
-		return null
-	var names := PackedStringArray([mwi.get_entry(general_bank_id).display_name().get_basename(),
-		mwi.get_entry(theme_bank_id).display_name().get_basename()])
-	var sky_detail: int = _sky_detail(theme_bank_id)
-	if sky_detail < 0:
-		return VramPages.page_set(names, general, theme, problems)
-	var sky: SkyLandFile = read_sky_land(sky_detail == 1, problems)
-	var remap: TextureRemap = tables.remaps().find_by_name(SKY_REMAP)
-	if sky == null or remap == null:
-		problems.append("no sky land or %s remap for %s" % [SKY_REMAP, TexturePageSet.name_for(names)])
-		return VramPages.page_set(names, general, theme, problems)
-	return VramPages.page_set(names, general, theme, problems, true, VramPages.sky_order(general, theme, sky, remap))
-
 ## The WAD with resource id [param wad_resource_id], parsed (and kept for
 ## later calls), or null when it is not a readable WAD.
 func read_wad(wad_resource_id: int) -> WadFile:
@@ -304,18 +282,6 @@ func counterpart_of(resource_id: int) -> int:
 			return id
 	return -1
 
-
-## 1 when [param bank_id] is the sky theme's low-poly bank, 0 when it is its
-## high-poly bank, else -1.
-func _sky_detail(bank_id: int) -> int:
-	var sky: ThemeBookEntry = theme_book_entry(SKY_THEME)
-	if sky == null:
-		return -1
-	for low_poly: bool in [false, true]:
-		for multiplayer: bool in [false, true]:
-			if _theme_bank(sky, multiplayer, low_poly) == bank_id:
-				return 1 if low_poly else 0
-	return -1
 
 ## The codes of the levels the game plays, in level-select order.
 func playable_level_codes() -> PackedStringArray:

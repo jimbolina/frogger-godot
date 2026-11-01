@@ -14,12 +14,10 @@ extends Node3D
 ## animated file, L lists low-poly WADs too, Esc goes back. Space plays or
 ## pauses, Period steps one tick, R restarts, and I switches motion smoothing.
 ##
-## Under the retail rendering profile models are shown unlit, in the colours
-## their polygons store: the game lights them while it runs, from lights kept
-## in each map. Under the modern profile the lit materials are drawn under a
-## [SceneLighting] child holding the options screen's ambient and parallel
-## light, without shadows, in front of the same grey backdrop. Skeletal parts,
-## flipbook cels and animated textures advance on the 30 Hz reference clock.
+## Models are drawn under a [SceneLighting] child holding the options
+## screen's ambient and parallel light, without shadows, in front of a grey
+## backdrop. Skeletal parts, flipbook cels and animated textures advance on
+## the 30 Hz reference clock.
 ## Motion smoothing is optional and starts disabled; texture changes remain discrete.
 ##
 ## Started with [code]-- --screenshot-dir=<folder>[/code] it saves pictures
@@ -69,8 +67,7 @@ var player: ModelAnimationPlayer
 var animated_instance: AnimatedModelInstance
 ## Whether game ticks advance automatically.
 var playing: bool = false
-## The options lights drawn under the modern profile, or null while the shown
-## materials are unlit.
+## The options lights the shown model is drawn under, or null before one is shown.
 var scene_lighting: SceneLighting = null
 
 var _wad_entries: Array[MwiEntry] = []
@@ -116,7 +113,7 @@ func _ready() -> void:
 		push_error("Capture folder '%s' must be an absolute path outside the repository" % screenshot_dir)
 		get_tree().quit(1)
 		return
-	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()), ViewerArguments.rendering_profile(OS.get_cmdline_user_args())), true)
+	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not data.is_valid():
 		if not screenshot_dir.is_empty():
@@ -526,7 +523,7 @@ func _show(model: MofFile, existing_player: ModelAnimationPlayer = null) -> int:
 	builder.two_sided = _sides_toggle.button_pressed
 	var shape: MofStatic = model.static_models[_static_index]
 	current_mesh = builder.build_animated(model, _static_index)
-	_light_scene(builder.lit_materials)
+	_light_scene()
 	player = existing_player if existing_player != null else ModelAnimationPlayer.new(model, _static_index)
 	if existing_player == null:
 		player.end_mode = ModelAnimationPlayer.EndMode.LOOP if _loop_toggle.button_pressed else ModelAnimationPlayer.EndMode.HOLD
@@ -551,10 +548,7 @@ func _show(model: MofFile, existing_player: ModelAnimationPlayer = null) -> int:
 	return current_mesh.triangle_count
 
 
-func _light_scene(lit: bool) -> void:
-	if not lit:
-		_release_scene_lighting()
-		return
+func _light_scene() -> void:
 	if scene_lighting != null:
 		return
 	scene_lighting = SceneLighting.new()

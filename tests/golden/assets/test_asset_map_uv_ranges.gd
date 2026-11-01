@@ -1,5 +1,5 @@
 extends AssetTest
-## The premise behind the modern profile's per-image terrain sampling holds
+## The premise behind per-image terrain sampling holds
 ## for the committed maps and banks: every map's static corners land inside
 ## their padded image, the animated scrolls leave it only where
 ## map_uv_ranges.tsv says, the ENVMAP images keep their placement and padded

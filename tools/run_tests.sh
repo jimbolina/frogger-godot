@@ -10,13 +10,6 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
     exit 2
 fi
 
-if [ -d assets/textures/images_x4 ]; then
-    if ! "${PYTHON:-python3}" tools/bake_pages_x4.py --quiet; then
-        echo "run_tests: baking the x4 texture pages failed" >&2
-        exit 2
-    fi
-fi
-
 if [ -d assets/fonts ]; then
     if ! "${PYTHON:-python3}" tools/make_font_newfont.py --check --quiet; then
         echo "run_tests: the committed newfont fonts differ from their generator" >&2

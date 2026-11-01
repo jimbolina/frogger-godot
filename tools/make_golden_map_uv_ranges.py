@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Golden facts for the premise that map terrain can sample per-image textures.
 
-The modern rendering profile draws each textured map polygon from its own
+The game draws each textured map polygon from its own
 padded image with repeat wrapping instead of the reconstructed 256x256 pages
-(docs/reference/rendering/modern-profile.md). That is only faithful while
+(docs/reference/rendering/lighting.md). That is only faithful while
 every corner lands inside the image, or on the first padding column or row
 (u == width, v == height), and while the environment-mapped polygons use
 images that fill a whole page. This generator measures that on every map

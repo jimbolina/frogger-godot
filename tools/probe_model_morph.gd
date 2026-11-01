@@ -1,5 +1,6 @@
 extends SceneTree
-## Compares native morphs and cel-shader geometry/lighting in paired offscreen views.
+## Compares native morphs and cel-shader geometry in paired offscreen views, through the unlit
+## model shader and then through the lit one under a directional light, which checks cel normals.
 
 func _initialize() -> void:
 	_run.call_deferred()
@@ -35,7 +36,7 @@ func _run() -> void:
 	source.add_blend_shape("Cel1")
 	source.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, base, [cel])
 	source.custom_aabb = AABB(Vector3(0, -1, -0.01), Vector3(2, 1, 0.02))
-	var original: ShaderMaterial = ModelShaders.material(null, ModelShaders.Blend.OPAQUE, false, true)
+	var original: ShaderMaterial = ModelShaders.material(null, ModelShaders.Blend.OPAQUE, false, true, false)
 	source.surface_set_material(0, original)
 	var cels: Array[Array] = [[base, cel]]
 	var morph: ModelMorphMesh = ModelMorphMesh.create(source, cels)
@@ -53,6 +54,9 @@ func _run() -> void:
 		camera.size = 4.0
 		camera.position = Vector3(1, -0.5, 5)
 		view.add_child(camera)
+		var light := DirectionalLight3D.new()
+		light.rotation = Vector3(0.0, -PI * 0.5, 0.0)
+		view.add_child(light)
 		var instance := MeshInstance3D.new()
 		instance.mesh = candidate_mesh
 		instance.custom_aabb = source.custom_aabb
@@ -72,10 +76,7 @@ func _run() -> void:
 	for lit: bool in [false, true]:
 		if lit:
 			for material: ShaderMaterial in materials:
-				material.set_shader_parameter("source_lighting", true)
-				material.set_shader_parameter("source_ambient", Vector3(1024, 1024, 1024))
-				material.set_shader_parameter("source_direction0", Vector3.RIGHT)
-				material.set_shader_parameter("source_colour0", Vector3(2048, 1024, 3072))
+				material.shader = ModelShaders.shader(false, ModelShaders.Blend.OPAQUE, false, true)
 		for weight: float in [0.0, 0.25, 0.5, 0.75, 1.0]:
 			instances[0].set_blend_shape_value(0, weight)
 			materials[1].set_shader_parameter("cel_weight", weight)

@@ -8,7 +8,7 @@ extends ImportStep
 ## image's [member VloImage.texture] set to its imported PNG and its
 ## [member VloImage.pixels] left empty, so the pixels live only in the PNG.
 ## Both phases leave the decoded banks, pixels included, in
-## [member ImportContext.banks] for the pages step.
+## [member ImportContext.banks] for later steps.
 
 func step_name() -> String:
 	return "textures"

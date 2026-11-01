@@ -3,8 +3,7 @@ extends Node3D
 ## Map inspection tool. Drag to orbit, right-drag to pan, wheel to zoom.
 ## Space pauses, Period steps, R resets the camera, F changes filtering.
 ## Capture mode renders a fixed 640x480 viewport with no UI and quits.
-## Manual/custom camera poses use ordinary projection; the selected preset still
-## controls the reference group budget and disabled water until reset/preset change.
+## The map is lit by its own light records under the scene lighting.
 
 const BOOT_SCENE: String = "res://scenes/boot.tscn"
 const RENDER_SIZE: Vector2i = Vector2i(640, 480)
@@ -18,14 +17,13 @@ var map_instance: MapMesh.Instance
 var playing: bool = false
 var tick: int = 0
 var linear_filter: bool = false
-var camera_preset: String = "default"
 var load_build_ms: float = 0.0
 var decode_load_ms: float = 0.0
 var mesh_build_ms: float = 0.0
 var instance_build_ms: float = 0.0
 var probe_mesh: ModelMesh
-## The modern profile's scene light for the loaded map, or null under retail
-## and before a map loads; it owns the environment while it exists.
+## The scene light for the loaded map, or null before a map loads; it owns
+## the environment while it exists.
 var scene_lighting: SceneLighting
 
 var _viewport: SubViewport
@@ -41,7 +39,6 @@ var _inspection: CheckButton
 var _filter: CheckButton
 var _play: Button
 var _seek: SpinBox
-var _camera_choice: OptionButton
 var _updating: bool = false
 var _target: Vector3 = Vector3.ZERO
 var _yaw: float = 0.0
@@ -51,8 +48,6 @@ var _clock: float = 0.0
 var _probe: Node3D
 var _probe_name: String = ""
 var _projection_distance: int = 256
-var _projection_scale: int = 1
-var _vertical_ratio: float = 1.0
 var _custom_camera: bool = false
 var _path_session: PathInspectionSession = PathInspectionSession.new()
 var _entity_session: EntityInspectionSession = EntityInspectionSession.new()
@@ -99,20 +94,12 @@ func _ready() -> void:
 		push_error(_status.text)
 		get_tree().quit(1)
 		return
-	camera_preset = _arg("--camera=")
-	if camera_preset.is_empty():
-		camera_preset = "default"
-	if camera_preset not in ["default", "map-slice"]:
-		_status.text = "Unknown camera preset"
-		if not folder.is_empty():
-			get_tree().quit(1)
-		return
 	linear_filter = _arg("--linear=").to_lower() == "true"
 	_filter.set_pressed_no_signal(linear_filter)
 	_probe_name = _arg("--probe-model=")
 	if _probe_name.is_empty() and ViewerArguments.has_flag(OS.get_cmdline_user_args(), "--probe-model"):
 		_probe_name = "GEN_CHECKPOINT_1.XMR"
-	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()), ViewerArguments.rendering_profile(OS.get_cmdline_user_args())), true)
+	open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not data.is_valid():
 		if not folder.is_empty():
@@ -205,9 +192,6 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	_world.add_child(map_instance)
 	instance_build_ms = float(Time.get_ticks_usec() - instance_started) / 1000.0
 	map_instance.set_inspection_visibility(_inspection.button_pressed)
-	map_instance.set_reference_mode(_reference_camera())
-	map_instance.set_reference_target(source.midpoint)
-	map_instance.set_cave_frog(source.midpoint)
 	_light_scene(source)
 	_setup_paths()
 	_setup_entities()
@@ -216,31 +200,12 @@ func show_scene(source: MapSceneData, source_load_ms: float = 0.0) -> bool:
 	_refresh_status()
 	return true
 
-## Uses either GENE defaults or the frozen map_slice inspection camera.
-func set_camera_preset(preset: String) -> bool:
-	if preset not in ["default", "map-slice"]:
-		return false
-	camera_preset = preset
-	_camera_choice.select(1 if preset == "map-slice" else 0)
-	if map_instance != null:
-		map_instance.set_reference_mode(_reference_camera())
-	_update_path_visibility()
-	_update_entity_visibility()
-	reset_camera()
-	_refresh_status()
-	return true
-
-## Restores the selected camera preset without changing animation state.
+## Restores the map's default camera pose without changing animation state.
 func reset_camera() -> void:
 	if scene_data == null:
 		return
-	var preset: MapCameraData = MapCameraData.for_scene(scene_data, camera_preset)
+	var preset: MapCameraData = MapCameraData.for_scene(scene_data)
 	_projection_distance = preset.projection_distance
-	_projection_scale = preset.projection_scale
-	_vertical_ratio = preset.vertical_ratio
-	if map_instance != null:
-		map_instance.set_projection_scale(Vector2(1.0, _vertical_ratio))
-		map_instance.set_reference_projection(_reference_camera())
 	_custom_camera = false
 	_target = preset.look_target()
 	var offset: Vector3 = preset.position() - _target
@@ -251,7 +216,6 @@ func reset_camera() -> void:
 	_pitch = asin(clampf(offset.normalized().y, -1.0, 1.0))
 	_yaw = atan2(offset.x, offset.z)
 	_camera.fov = preset.vertical_fov()
-	_update_probe_projection()
 	_place_camera()
 
 ## Pauses or resumes the 30 Hz inspection clock.
@@ -310,18 +274,11 @@ func _process(delta: float) -> void:
 			break
 	_refresh_status()
 
-## The map-slice preset's reference group budget, disabled water and integer
-## projection apply only under the retail profile; modern keeps the pose alone.
-func _reference_camera() -> bool:
-	return camera_preset == "map-slice" and (current_mesh == null or not current_mesh.modern)
-
-## Under the modern profile, lights the map from its light records (or the
-## options screen's lights when it has none) and, on a cave map, places the
-## cave light at the viewer's static start position with the initial radii.
+## Lights the map from its light records (or the options screen's lights
+## when it has none) and, on a cave map, places the cave light at the
+## viewer's static start position with the initial radii.
 func _light_scene(source: MapSceneData) -> void:
 	_release_scene_lighting()
-	if current_mesh == null or not current_mesh.modern:
-		return
 	_world_environment.environment = null
 	scene_lighting = SceneLighting.new()
 	scene_lighting.name = "SceneLighting"
@@ -351,7 +308,7 @@ func _place_camera() -> void:
 	_camera.position = _target + Vector3(sin(_yaw) * horizontal, sin(_pitch) * _distance, cos(_yaw) * horizontal)
 	_camera.look_at(_target, Vector3.FORWARD if absf(cos(_pitch)) < 0.0001 else Vector3.UP)
 	if map_instance != null:
-		map_instance.set_camera_position(GameSpace.to_game(_camera.position))
+		map_instance.set_camera_presentation(Vector3(GameSpace.to_game(_camera.position)))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
@@ -429,11 +386,6 @@ func _build_scene() -> void:
 	_inspection.text = "Invisible / unreferenced"
 	panel.add_child(_inspection)
 	_inspection.toggled.connect(set_inspection_visibility)
-	_camera_choice = OptionButton.new()
-	_camera_choice.add_item("Default camera")
-	_camera_choice.add_item("Map slice reference")
-	panel.add_child(_camera_choice)
-	_camera_choice.item_selected.connect(_on_camera_selected)
 	var reset := Button.new()
 	reset.text = "Reset camera (R)"
 	reset.pressed.connect(reset_camera)
@@ -630,7 +582,7 @@ func set_path_visibility(value: bool) -> void:
 
 func _update_path_visibility() -> void:
 	if _path_inspection != null:
-		_path_inspection.visible = _path_visible and camera_preset != "map-slice"
+		_path_inspection.visible = _path_visible
 
 func _replay_path(target_tick: int) -> void:
 	if _path_session.runner == null or _path_session.start == null:
@@ -900,7 +852,7 @@ func set_entity_visibility(value: bool) -> void:
 
 func _update_entity_visibility() -> void:
 	if _entity_inspection != null:
-		_entity_inspection.visible = _entity_visible and camera_preset != "map-slice"
+		_entity_inspection.visible = _entity_visible
 
 func _replay_entities(target_tick: int) -> void:
 	if _entity_session.run == null:
@@ -1059,9 +1011,6 @@ func _on_detail_changed(value: bool) -> void:
 	if scene_data != null:
 		load_level_by_code(FroggerIds.LEVEL_CODES[scene_data.level], value)
 
-func _on_camera_selected(index: int) -> void:
-	set_camera_preset("map-slice" if index == 1 else "default")
-
 func _on_play() -> void:
 	set_playing(not playing)
 
@@ -1076,7 +1025,7 @@ func _refresh_status() -> void:
 	if current_mesh == null:
 		return
 	var code: String = FroggerIds.LEVEL_CODES[scene_data.level] if scene_data.level < FroggerIds.LEVEL_CODES.size() else str(scene_data.level)
-	_status.text = "%s %s\n%d triangles, %d groups, %d surfaces\nTick %d • %s\n%.1f ms load/build" % [code, "low" if scene_data.low_poly else "high", current_mesh.triangle_count, current_mesh.group_count, current_mesh.surface_count, tick, camera_preset, load_build_ms]
+	_status.text = "%s %s\n%d triangles, %d groups, %d surfaces\nTick %d • %s\n%.1f ms load/build" % [code, "low" if scene_data.low_poly else "high", current_mesh.triangle_count, current_mesh.group_count, current_mesh.surface_count, tick, _camera_name(), load_build_ms]
 	_status.tooltip_text = "\n".join(_combined_diagnostics())
 
 func _show_probe(name: String) -> void:
@@ -1096,11 +1045,8 @@ func _show_probe(name: String) -> void:
 		return
 	if model == null or model.static_models.is_empty():
 		return
-	var lighting := MapLighting.new()
-	lighting.configure(scene_data.map.lights)
 	var builder := ModelMeshBuilder.new(scene_data.library, scene_data.preferred)
 	builder.linear_filter = linear_filter
-	builder.lighting = lighting
 	probe_mesh = builder.build(model.static_models[0])
 	_probe = Node3D.new()
 	_probe.position = GameSpace.position(scene_data.midpoint.x, scene_data.midpoint.y, scene_data.midpoint.z)
@@ -1111,7 +1057,6 @@ func _show_probe(name: String) -> void:
 		part.mesh = mesh
 		_probe.add_child(part)
 	_world.add_child(_probe)
-	_update_probe_projection()
 
 func _capture(folder: String) -> void:
 	await MapCaptureSession.capture(self, folder)
@@ -1123,7 +1068,7 @@ func capture_image() -> Image:
 ## Names a capture from the selected rendering inputs.
 func capture_basename() -> String:
 	var code: String = FroggerIds.LEVEL_CODES[scene_data.level].to_lower()
-	return "map_%s_%s_%s_tick%d_%s" % [code, "low" if scene_data.low_poly else "high", camera_preset, tick, "linear" if linear_filter else "nearest"]
+	return "map_%s_%s_%s_tick%d_%s" % [code, "low" if scene_data.low_poly else "high", _camera_name(), tick, "linear" if linear_filter else "nearest"]
 
 ## Supplies rendering facts to the external capture workflow.
 func capture_metadata(benchmark: Dictionary, allocations_before: Dictionary, allocations_after: Dictionary) -> Dictionary:
@@ -1134,7 +1079,7 @@ func capture_metadata(benchmark: Dictionary, allocations_before: Dictionary, all
 	if OS.has_method("get_memory_info"):
 		var memory_info: Dictionary = OS.call("get_memory_info")
 		machine["memory_info"] = memory_info
-	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": camera_preset, "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"] or allocations_before["sky_atlas_id"] != allocations_after["sky_atlas_id"], "page_texture_growth": allocations_before["page_texture_ids"] != allocations_after["page_texture_ids"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "nominal_projection": _projection_distance, "effective_projection": _projection_distance * _projection_scale, "projection_scale": _projection_scale, "effective_projection_x": _projection_distance * _projection_scale, "effective_projection_y": _projection_distance * _projection_scale * _vertical_ratio, "clip_scale": [1.0, _vertical_ratio], "custom_camera": _custom_camera, "rendering_profile": scene_data.library.rendering_profile().profile_name, "diagnostics": Array(_combined_diagnostics())}
+	var metadata: Dictionary = {"machine": machine, "level": code, "resource_id": resource, "low_poly": scene_data.low_poly, "camera": _camera_name(), "tick": tick, "linear": linear_filter, "render_width": 640, "render_height": 480, "load_build_ms": load_build_ms, "decode_load_ms": decode_load_ms, "mesh_build_ms": mesh_build_ms, "instance_build_ms": instance_build_ms, "allocations_before": allocations_before, "allocations_after": allocations_after, "allocation_growth": allocations_before["mesh_ids"] != allocations_after["mesh_ids"] or allocations_before["material_ids"] != allocations_after["material_ids"] or allocations_before["sky_tiles_id"] != allocations_after["sky_tiles_id"], "triangles": rendered["triangles"], "groups": rendered["groups"], "surfaces": rendered["surfaces"], "available_triangles": current_mesh.triangle_count, "static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC), "peak_static_memory_bytes": Performance.get_monitor(Performance.MEMORY_STATIC_MAX), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT), "video_memory_bytes": Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED), "render_objects": Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), "render_primitives": Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME), "probe_model": _probe_name, "camera_source_game": _vector_array(GameSpace.to_game(_camera.position)), "camera_target_game": _vector_array(GameSpace.to_game(_target)), "projection_distance": _projection_distance, "custom_camera": _custom_camera, "diagnostics": Array(_combined_diagnostics())}
 	metadata.merge(benchmark)
 	return metadata
 
@@ -1225,15 +1170,13 @@ func _release_scene(detach: bool = true) -> void:
 	_pitch = 0.0
 	_distance = 30.0
 	_projection_distance = 256
-	_projection_scale = 1
-	_vertical_ratio = 1.0
 
 
 func _vector_array(value: Vector3i) -> Array[int]:
 	return [value.x, value.y, value.z]
 
-## Sets a bounded inspection pose in raw game units, without a gameplay camera.
-## Retains the selected preset's group budget/water mode; reset restores its pose.
+## Sets a bounded inspection pose in raw game units, without a gameplay camera;
+## [method reset_camera] restores the default pose.
 func set_camera_pose(source: Vector3i, target: Vector3i, projection: int = 256) -> bool:
 	if source == target or projection < 3 or projection > 8192:
 		_status.text = "Camera needs distinct source/target and projection distance 3..8192"
@@ -1249,25 +1192,16 @@ func set_camera_pose(source: Vector3i, target: Vector3i, projection: int = 256) 
 	_pitch = asin(clampf(offset.normalized().y, -1.0, 1.0))
 	_yaw = atan2(offset.x, offset.z)
 	_projection_distance = projection
-	_projection_scale = 1
-	_vertical_ratio = 1.0
-	if map_instance != null:
-		map_instance.set_projection_scale(Vector2.ONE)
-		map_instance.set_reference_projection(false)
 	_custom_camera = true
 	_camera.fov = rad_to_deg(2.0 * atan(240.0 / float(projection)))
-	_update_probe_projection()
 	_place_camera()
 	_refresh_status()
 	return true
 
-## Effective projection distance; the unused GENE perspective is never used.
+## Projection distance in pixels at the 640 by 480 render size; the unused
+## GENE perspective is never used.
 func projection_distance() -> int:
 	return _projection_distance
-
-## Effective X pixel projection including the frozen viewport scale.
-func effective_projection_distance() -> int:
-	return _projection_distance * _projection_scale
 
 func _apply_cli_camera() -> bool:
 	if not _has_arg("--camera-source=") and not _has_arg("--camera-target=") and not _has_arg("--projection="):
@@ -1286,7 +1220,7 @@ func _apply_cli_camera() -> bool:
 			source = point
 		else:
 			target = point
-	var projection: int = _projection_distance * _projection_scale
+	var projection: int = _projection_distance
 	if _has_arg("--projection="):
 		var value: String = _arg("--projection=")
 		if not value.is_valid_int():
@@ -1324,64 +1258,13 @@ func capture_allocations() -> Dictionary:
 	for material: ShaderMaterial in map_instance._material_copies.values():
 		materials.append(material.get_instance_id())
 	materials.sort()
-	var page_ids: PackedInt64Array = scene_data.texture_pages.cached_texture_ids()
-	for issue: String in modern_texture_issues():
-		if not scene_data.diagnostics.has(issue):
-			scene_data.diagnostics.append(issue)
-	return {"sky_atlas_id": current_mesh.sky_atlas.get_instance_id() if current_mesh.sky_atlas != null else 0, "mesh_ids": meshes, "mesh_count": meshes.size(), "material_ids": materials, "material_count": materials.size(), "page_texture_ids": page_ids, "page_texture_count": page_ids.size(), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT)}
-
-## Under the modern profile, one line for each textured terrain material that
-## does not bind its image's own padded texture (at any texture-set scale);
-## empty under retail and when every material does.
-func modern_texture_issues() -> PackedStringArray:
-	var issues := PackedStringArray()
-	if current_mesh == null or not current_mesh.modern:
-		return issues
-	for group: int in current_mesh.surface_specs.size():
-		for index: int in current_mesh.surface_specs[group].size():
-			var spec: MapMesh.Surface = current_mesh.surface_specs[group][index]
-			if not spec.textured:
-				continue
-			var bindings: Dictionary[ShaderMaterial, VloImage] = {spec.original: spec.image}
-			for id: int in spec.frames:
-				bindings[spec.frames[id]] = scene_data.library.image_for_id(id, scene_data.preferred)
-			for material: ShaderMaterial in bindings:
-				var image: VloImage = bindings[material]
-				if image == null:
-					continue
-				var texture: Texture2D = material.get_shader_parameter("image_nearest")
-				if not _binds_padded_image(texture, image):
-					issues.append("Modern group %d surface %d binds %s, not texture %d's %dx%d padded image" % [
-						group, index, "no texture" if texture == null else "a %dx%d texture" % [texture.get_width(), texture.get_height()],
-						image.texture_id, image.padded_width, image.padded_height])
-	return issues
-
-static func _binds_padded_image(texture: Texture2D, image: VloImage) -> bool:
-	if texture == null or image.padded_width <= 0 or image.padded_height <= 0:
-		return false
-	return texture.get_width() % image.padded_width == 0 and texture.get_width() * image.padded_height == texture.get_height() * image.padded_width
-
-func _update_probe_projection() -> void:
-	if probe_mesh == null:
-		return
-	for mesh: ArrayMesh in probe_mesh.part_meshes:
-		if mesh == null:
-			continue
-		for surface: int in mesh.get_surface_count():
-			var material: ShaderMaterial = mesh.surface_get_material(surface)
-			material.set_shader_parameter("projection_scale", Vector2(1.0, _vertical_ratio))
+	return {"sky_tiles_id": current_mesh.sky_tiles.get_instance_id() if current_mesh.sky_tiles != null else 0, "mesh_ids": meshes, "mesh_count": meshes.size(), "material_ids": materials, "material_count": materials.size(), "resource_count": Performance.get_monitor(Performance.OBJECT_RESOURCE_COUNT)}
 
 func _begin_manual_camera() -> void:
-	if _custom_camera:
-		return
-	_projection_distance *= _projection_scale
-	_projection_scale = 1
-	_vertical_ratio = 1.0
 	_custom_camera = true
-	if map_instance != null:
-		map_instance.set_reference_projection(false)
-		map_instance.set_projection_scale(Vector2.ONE)
-	_update_probe_projection()
+
+func _camera_name() -> String:
+	return "custom" if _custom_camera else "default"
 
 
 func _combined_diagnostics() -> PackedStringArray:

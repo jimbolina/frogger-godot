@@ -10,6 +10,9 @@ extends RefCounted
 ## here; loading the records themselves is left to a concrete catalog such as
 ## [ImportedAssets], which reads the committed imported assets.
 
+## Godot's name for the renderer the game is made for (Forward+).
+const RENDERING_METHOD: String = "forward_plus"
+
 ## The internal name of the build the data comes from, as FrogLord names it,
 ## for example [code]pc-retail-v3.0e[/code]. Behaviour that depends on the
 ## build, such as callback addresses, is chosen by this name.
@@ -46,19 +49,14 @@ func texture_set() -> TextureSet:
 	return TextureSet.retail()
 
 
-## The rendering profile the launch asked for: the retail profile unless a
-## concrete catalog chose another.
-func rendering_profile() -> RenderingProfile:
-	return RenderingProfile.retail()
-
-
-## Appends the rendering profile's [method RenderingProfile.renderer_note]
-## for a game running on [param current_method] to [member warnings] when
-## there is one, and returns it ("" when the renderer is the profile's own).
+## For a game running on [param current_method], appends one warning line to
+## [member warnings] and returns it when that is not
+## [constant RENDERING_METHOD]; returns "" otherwise.
 func note_renderer(current_method: String) -> String:
-	var note: String = rendering_profile().renderer_note(current_method)
-	if not note.is_empty():
-		warnings.append(note)
+	if current_method == RENDERING_METHOD:
+		return ""
+	var note: String = "rendering on %s; the game targets %s, shadows and lighting may differ" % [current_method, RENDERING_METHOD]
+	warnings.append(note)
 	return note
 
 
@@ -223,13 +221,6 @@ func read_demo(resource_id: int, problems: PackedStringArray = PackedStringArray
 ## [param problems], when it cannot be read. A concrete catalog provides this.
 func read_sound_bank(resource_id: int, problems: PackedStringArray = PackedStringArray()) -> SoundBankHeader:
 	_unavailable("sound bank %d" % resource_id, problems)
-	return null
-
-
-## The baked texture-page set for general bank [param general_bank_id] and
-## theme bank [param theme_bank_id], or null when the catalog has none.
-@warning_ignore("unused_parameter")
-func page_set_for_banks(general_bank_id: int, theme_bank_id: int, problems: PackedStringArray = PackedStringArray()) -> TexturePageSet:
 	return null
 
 

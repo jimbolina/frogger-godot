@@ -87,9 +87,9 @@ Stored UV bytes are normalized, then converted to integer pixels by
 `mapdisp.c/MapUpdateAnimatedPolys` owns counters, cel changes and byte wrapping.
 No source bytes are mutated in the Godot representation.
 
-The modern rendering profile samples per-image textures instead
-([modern profile](../../../docs/reference/rendering/modern-profile.md#terrain)).
-Map sampling reconstructs fourteen physical 256x256 PC texture pages in
+The port samples per-image textures
+([terrain](../../../docs/reference/rendering/lighting.md#terrain)); the
+original's page sampling is recorded here. Map sampling reconstructed fourteen physical 256x256 PC texture pages in
 general-then-theme upload order. Final U/V bytes wrap independently before
 page lookup; they must not clamp to an individual image. Frozen PC page
 colour keying tests exact RGB zero, overriding the decoder's FrogLord-style
@@ -120,9 +120,9 @@ triangle order across different tile textures. Duplicate atlas border rows
 keep linear sampling clamped within each original page. Grouping tiles by
 texture changes overlap order for depth-clamped tiles and is incorrect.
 
-The modern profile lights cave terrain with an omni light instead of the ramp
-([cave light](../../../docs/reference/rendering/modern-profile.md#cave-light)).
-Terrain normally uses baked polygon colours. Cave rendering replaces Gouraud
+The port lights cave terrain with an omni light
+([cave light](../../../docs/reference/rendering/lighting.md#cave-light)); the
+original's ramp is recorded here. Terrain normally uses baked polygon colours. Cave rendering replaces Gouraud
 colours with the C squared-distance grey ramp; it does not apply model lights
 to all terrain. The named cave-light entity payload supplies initial radii
 (`ent_cav.c`, `FroggerEntityDataCaveLight`); gameplay owns the per-tick radii and the game scene feeds them to the ramp, while the map viewer keeps this static initial ramp.
@@ -135,37 +135,21 @@ Models use ambient plus at most three parallel lights from LITE. C
 
 ## Camera and reference captures
 
-The normal viewer uses map default offsets around bounds midpoint and H=256,
-with no gameplay-follow claim. All surveyed maps store unused perspective 192.
-Frozen `map_slice` differs: viewport H=1000, bounds-midpoint target, camera
-offset (0,-10000,-10000), pitch -512/4096 turns. Its viewport aspect matrix
-scales X/Y by 2/1.875 at 640x480, making effective projection 2000/1875; H alone does
-not determine its field of view. For maps exceeding 128 groups it selects
-the nearest 128 by stable squared distance from target, preserving index
-order on ties; smaller maps retain index order. `CreateMapGroups` then has
-a 2,500-polygon allocation budget (`MAP_MAX_POLYS_RENDERED`, eight terrain
-types, excluding G2). Skip a whole group if it cannot fit and consider the
-next group; stop when the budget is exhausted. These limitations belong only
-to the reference preset, not the ordinary full-map viewer.
-Cave light holder is the same target. `map_slice` updates map textures and sky
-but does not call gameplay water wibble; match update count before comparison.
-It includes entities absent from the map viewer, requiring declared comparison masks.
-
-The reference preset reproduces fixed 4.12 rotation, separately rounded
-translation, depth clamping at 500, truncating screen division and signed
-16-bit screen wrapping. Ordinary polygon ordering-table depth rejection
-also happens before rasterization; MAX_OT/environment polygons bypass it.
-GPU projection is confined to the reference preset, with per-polygon depth
-attributes so animation never rebuilds static geometry. Explicit custom
-poses and the normal inspection camera use Godot projection.
-Every material using reference projection receives camera translation updates,
-including ordinary surfaces without environment UVs. Changing projection mode
-rebuilds that material selection; otherwise a cached zero camera can project
-the map against the near-depth clamp instead of the reference viewpoint.
-
-Use `mr_stub/src/drivers/map_slice/mr_map_slice_main.c`, `API.SRC/MR_VIEW.C`,
-`CAMERA.C`, `MAPVIEW.C`, `gamesys.C` and GPU rasterizer for behavior. The driver
-uses affine interpolation. Do not confuse its H with Game_perspective=256
-(used for view-list calculations). Reference images are external evidence,
-never copied into this repository. Mask construction and acceptance tolerances are defined in the
-[map golden specification](../../../tests/golden/specs/maps.md#synthetic-reference-projection).
+The viewer uses map default offsets around the bounds midpoint and H=256,
+with no gameplay-follow claim, plus custom poses, and draws every nonempty
+visible group with water on. All surveyed maps store unused perspective 192.
+The frozen `map_slice` reference projection and the capture-mask comparison
+against its pictures were retired with the retail pipeline (S2f); what
+remains of it is source knowledge: viewport H=1000, bounds-midpoint target,
+camera offset (0,-10000,-10000), pitch -512/4096 turns, a viewport aspect
+matrix scaling X/Y by 2/1.875 at 640x480 (effective projection 2000/1875),
+the nearest 128 groups by stable squared distance from the target for maps
+with more, the 2,500-polygon allocation budget of `CreateMapGroups`
+(`MAP_MAX_POLYS_RENDERED`, eight terrain types, excluding G2), fixed 4.12
+rotation, separately rounded translation, depth clamping at 500, truncating
+screen division and signed 16-bit screen wrapping, with MAX_OT and
+environment polygons bypassing the ordering-table depth rejection. Sources:
+`mr_stub/src/drivers/map_slice/mr_map_slice_main.c`, `API.SRC/MR_VIEW.C`,
+`CAMERA.C`, `MAPVIEW.C`, `gamesys.C`. Do not confuse its H with
+Game_perspective=256 (used for view-list calculations). Reference images are
+external evidence, never copied into this repository.

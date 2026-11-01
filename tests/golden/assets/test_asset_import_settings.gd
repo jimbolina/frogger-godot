@@ -16,7 +16,6 @@ const POLICIES: Dictionary[String, Array] = {
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
 	"res://assets/textures/images_x4/": {"mipmaps/generate": true},
-	"res://assets/textures/pages_x4/": {"mipmaps/generate": true},
 }
 
 ## Importers a folder (by path prefix) uses instead of an extension's: the

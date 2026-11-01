@@ -2,12 +2,11 @@ class_name TerrainViewer
 extends GameplayWorldView
 ## Synthetic terrain driver. Scene input, clocks and drawing consume the same pure run API.
 ##
-## Under the modern rendering profile the scene lights follow
-## [method TerrainCaptureStages.entity_lighting]: a scenario whose contract
-## includes entity lighting draws under the map's lights (or the options
-## screen's lights without a map); any other draws under a full flat ambient
-## and no lights, so terrain and entities show their stored colours as retail
-## draws unlit entities.
+## The scene lights follow [method TerrainCaptureStages.entity_lighting]: a
+## scenario whose contract includes entity lighting draws under the map's
+## lights (or the options screen's lights without a map); any other draws
+## under a full flat ambient and no lights, so terrain and entities show their
+## stored colours.
 
 var auto_open: bool = true
 var scenario: TerrainScenario
@@ -49,7 +48,7 @@ func _ready() -> void:
 			selected.error = TerrainScenarioArguments.apply(selected, arguments)
 		open_scenario(selected)
 		if ViewerArguments.uses_assets(arguments):
-			var assets: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments), ViewerArguments.rendering_profile(arguments))
+			var assets: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
 			assets.note_renderer(RenderingServer.get_current_rendering_method())
 			if assets.is_valid():
 				selected.level_code = ViewerArguments.value(arguments, "--level=")
@@ -93,7 +92,6 @@ func open_data(selected: AssetCatalog, take_ownership: bool = false) -> String:
 	data = selected
 	if selected == null:
 		_owns_data = false
-	rendering_profile = selected.rendering_profile() if selected != null else RenderingProfile.retail()
 	if _frog_model != null:
 		remove_child(_frog_model)
 		_frog_model.queue_free()
@@ -499,12 +497,12 @@ func _map_lighting() -> MapLighting:
 	return lighting
 
 ## Applies the map lights only when the scenario's contract includes entity
-## lighting; otherwise a full flat ambient with no lights, under modern only.
+## lighting; otherwise a full flat ambient with no lights.
 func _light_scene(lighting: MapLighting) -> void:
 	if scenario == null or TerrainCaptureStages.entity_lighting(scenario):
 		super._light_scene(lighting)
 		return
-	if scene_lighting == null or not rendering_profile.is_modern():
+	if scene_lighting == null:
 		return
 	var flat := SceneLightingSpec.new()
 	flat.ambient = Vector3.ONE

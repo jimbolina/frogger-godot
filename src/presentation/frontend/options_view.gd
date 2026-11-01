@@ -16,10 +16,9 @@ extends Control
 ## and drawn in layers after the water in the source's ordering-table order: reflections, titles,
 ## the frog shadow, splashes.
 ## Without [OptionsModels] (tests without player data) no model or effect sprite is drawn.
-## Under the modern rendering profile the models draw through the lit shaders under the options
-## lights without shadows, applied through [method MenuWaterView.light_scene] on the page's water;
-## the volume models' glow still reaches them as their custom ambient, and the water and the
-## CPU-lit sprites stay unlit.
+## The models draw through the lit shaders under the options lights without shadows, applied
+## through [method MenuWaterView.light_scene] on the page's water; the volume models' glow still
+## reaches them as their custom ambient, and the water and the CPU-lit sprites stay unlit.
 ##
 ## The menu keys are fixed: Up/Down held, Left/Right, Enter or Space (fire) and Escape (back)
 ## pressed. Each tick's events are raised through [signal menu_event]; the page asks to leave
@@ -135,8 +134,7 @@ static func create(assets: FrontEndAssets, water_animation: MenuWater, rig: Opti
 	view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	view.water = MenuWaterView.create_with_camera(water_animation, assets.texture("opt_env_sky"), assets.texture("opt_bank3"))
 	view.add_child(view.water)
-	if assets.texture_library.rendering_profile().is_modern():
-		view.water.light_scene(MenuWaterView.options_spec())
+	view.water.light_scene(MenuWaterView.options_spec())
 	view._build_sprites()
 	if models != null and models.error.is_empty():
 		view._build_models()

@@ -43,39 +43,37 @@ def png(width, height, pixel, filter_kind=0, odd=None):
 class GameplayCaptureTest(unittest.TestCase):
     def keyboard(self, *argv):
         _, args = gameplay.parse_arguments(['--output-directory', '/external'] + list(argv))
-        method = gameplay.rendering_method(args.rendering, args.rendering_method)
         stages = gameplay.capture_stages(args, None, Path('/external/run'))
         name, arguments, headless = stages[-1]
         self.assertEqual((name, headless), ('keyboard', False))
         return gameplay.stage_command('godot', Path('/project'), Path('/external/k.log'), headless,
-                                      args.resolution, method, arguments)
+                                      args.resolution, arguments)
 
-    def test_retail_is_the_default_and_keeps_the_project_method(self):
+    def test_keyboard_stage_keeps_the_project_method(self):
         command = self.keyboard()
         self.assertNotIn('--rendering-method', command)
-        self.assertEqual(command[-1], '--rendering=retail')
-
-    def test_game_arguments_follow_the_rendering_profile(self):
-        command = self.keyboard('--game-argument=--effect-shadows=retail')
-        self.assertEqual(command[-2:], ['--rendering=retail', '--effect-shadows=retail'])
-
-    def test_modern_selects_forward_plus_before_the_script(self):
-        command = self.keyboard('--rendering', 'modern')
-        method = command.index('--rendering-method')
-        self.assertEqual(command[method + 1], 'forward_plus')
-        self.assertLess(method, command.index('-s'))
+        self.assertEqual(command[command.index('--resolution') + 1], '640x480')
         self.assertLess(command.index('-s'), command.index('--'))
-        self.assertEqual(command[-1], '--rendering=modern')
+        self.assertTrue(command[-1].startswith('--output='))
 
-    def test_explicit_method_overrides_the_profile(self):
-        command = self.keyboard('--rendering', 'modern', '--rendering-method', 'gl_compatibility')
-        self.assertEqual(command[command.index('--rendering-method') + 1], 'gl_compatibility')
-        self.assertEqual(command[-1], '--rendering=modern')
+    def test_game_arguments_follow_the_probe_arguments(self):
+        command = self.keyboard('--game-argument=--effect-shadows=retail')
+        self.assertEqual(command[-1], '--effect-shadows=retail')
+        self.assertTrue(command[-2].startswith('--output='))
 
-    def test_headless_stages_take_no_rendering_method(self):
-        command = gameplay.stage_command('godot', Path('/project'), Path('/l.log'), True, '640x480',
-                                         'forward_plus', ['--import'])
-        self.assertNotIn('--rendering-method', command)
+    def test_rendering_options_are_rejected(self):
+        for argv in (['--rendering', 'modern'], ['--rendering-method', 'gl_compatibility']):
+            with self.assertRaises(SystemExit):
+                with open(os.devnull, 'w') as sink:
+                    stderr, sys.stderr = sys.stderr, sink
+                    try:
+                        gameplay.parse_arguments(['--output-directory', '/external'] + argv)
+                    finally:
+                        sys.stderr = stderr
+
+    def test_headless_stages_take_no_resolution(self):
+        command = gameplay.stage_command('godot', Path('/project'), Path('/l.log'), True, '640x480', ['--import'])
+        self.assertNotIn('--resolution', command)
         self.assertIn('--headless', command)
 
     def test_shader_errors_fail_with_the_line(self):
@@ -94,36 +92,22 @@ class MapCaptureTest(unittest.TestCase):
         _, args = capture_map.parse_arguments(['--output-directory', str(self.folder)] + list(argv))
         return capture_map.capture_command(args, Path('/project'), Path('/run/capture.log'), self.folder)
 
-    def test_retail_command_matches_the_powershell_capture(self):
+    def test_default_command_matches_the_powershell_capture(self):
         command = self.command()
         scene = command.index(capture_map.MAP_VIEWER)
         self.assertNotIn('--rendering-method', command)
         self.assertEqual(command[scene + 1], '--')
         self.assertEqual(command[scene + 2:], [
-            '--level=SUB1', '--camera=map-slice', '--tick=0', '--low-poly=false', '--linear=false',
-            '--screenshot-dir=' + str(self.folder), '--rendering=retail'])
+            '--level=SUB1', '--tick=0', '--low-poly=false', '--linear=false',
+            '--screenshot-dir=' + str(self.folder)])
 
     def test_optional_viewer_arguments(self):
-        command = self.command('--level', 'ORG1', '--camera', 'default', '--tick', '30', '--low-poly',
-                               '--linear', '--benchmark', '--probe-model', 'GEN_FROG',
-                               '--camera-source', '1,2,3', '--camera-target', '4,5,6',
-                               '--projection', '512')
+        command = self.command('--level', 'ORG1', '--tick', '30', '--low-poly', '--linear', '--benchmark',
+                               '--camera-source', '1,2,3', '--camera-target', '4,5,6')
         user = command[command.index('--') + 1:]
-        for expected in ('--level=ORG1', '--camera=default', '--tick=30', '--low-poly=true',
-                         '--linear=true', '--benchmark', '--probe-model=GEN_FROG',
-                         '--camera-source=1,2,3', '--camera-target=4,5,6', '--projection=512'):
+        for expected in ('--level=ORG1', '--tick=30', '--low-poly=true', '--linear=true', '--benchmark',
+                         '--camera-source=1,2,3', '--camera-target=4,5,6'):
             self.assertIn(expected, user)
-
-    def test_modern_inserts_forward_plus_before_the_scene(self):
-        command = self.command('--rendering', 'modern')
-        method = command.index('--rendering-method')
-        self.assertEqual(command[method + 1], 'forward_plus')
-        self.assertLess(method, command.index(capture_map.MAP_VIEWER))
-        self.assertEqual(command[-1], '--rendering=modern')
-
-    def test_modern_can_be_forced_onto_compatibility(self):
-        command = self.command('--rendering', 'modern', '--rendering-method', 'gl_compatibility')
-        self.assertEqual(command[command.index('--rendering-method') + 1], 'gl_compatibility')
 
     def test_output_folder_must_be_absolute_and_external(self):
         with self.assertRaises(ValueError):
@@ -157,8 +141,8 @@ class MapCaptureTest(unittest.TestCase):
             self.assertIsNone(capture_map.blank_capture(log))
 
     def test_invalid_ranges_are_rejected(self):
-        for argv in (['--tick', '-1'], ['--projection', '2'], ['--rendering', 'psx'],
-                     ['--rendering-method', 'mobile']):
+        for argv in (['--tick', '-1'], ['--camera', 'map-slice'], ['--projection', '512'],
+                     ['--probe-model', 'GEN_FROG'], ['--rendering', 'modern']):
             with self.assertRaises(SystemExit):
                 with open(os.devnull, 'w') as sink:
                     stderr, sys.stderr = sys.stderr, sink

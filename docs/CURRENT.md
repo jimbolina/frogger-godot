@@ -17,17 +17,17 @@ bitmap fonts (S2b, accepted). The owner's review of the
 [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) is pending.
 
-S2c–S2e add the [modern rendering profile](reference/rendering/modern-profile.md):
-`tools/play.sh --level=ORG1 --rendering=modern` starts Godot on Forward+ and
-draws scene lights and real shadows from the map light records, lit models
-with the committed tints, lit terrain from per-image textures, water as a
-partial reflection with a glint, the sky from a tile array, caves under an
-omni light at the frog, and the lit front end, sandbox and viewers; retail
-stays the default and byte-exact. `--shadows=off` and `--effect-shadows=retail`
-compare the choices. Awaiting the owner's play check against the retail launch, the
-acceptance decision and the [open choices](PORTING.md#needed-from-the-owner). Next: S2f, the
-cleanup and the `src/convert` rename, gated on acceptance
-([roadmap](PORTING.md#s2-modern-rendering-profile)).
+S2 is complete: the game draws on Forward+ with scene lights and real
+shadows from the map light records, lit models and terrain, reflective
+water, a tile-array sky, caves under an omni light and a lit front end,
+sandbox and viewers ([lighting](reference/rendering/lighting.md)). The
+retail stored-colour pipeline, texture pages and reference projection are
+retired and `src/convert/` is now `src/rendering/`. `--shadows=off` and
+`--effect-shadows=retail` compare the choices. FrogLord stays the level
+editor: the importer under `archive/` remains runnable and a re-import
+reproduces `assets/`. Awaiting the owner's play check and the
+[look choices](PORTING.md#needed-from-the-owner). Next: P13e; the S1e
+proposals and P14 are the owner's calls ([roadmap](PORTING.md#status)).
 
 Effects never reproduce the frozen generators' random draws. Replays and
 native attract comparisons are on-demand

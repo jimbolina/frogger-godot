@@ -1,7 +1,6 @@
 .godot/
 *.translation
 /tests/golden/synthetic/*.csv.import
-/assets/textures/pages_x4/
 
 /export/
 /build/

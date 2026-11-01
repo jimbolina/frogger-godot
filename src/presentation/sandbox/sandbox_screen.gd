@@ -43,7 +43,7 @@ func _ready() -> void:
 	_build_sandbox_interface()
 	if not auto_open:
 		return
-	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()), ViewerArguments.rendering_profile(OS.get_cmdline_user_args()))
+	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()))
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	for warning: String in data.warnings:
 		push_warning(warning)
@@ -65,7 +65,6 @@ func open_sandbox(data: AssetCatalog, take_ownership: bool = false) -> String:
 		_owns_data = (_owns_data or take_ownership) and data != null
 	_data = data
 	level_code = LEVEL_CODE
-	rendering_profile = data.rendering_profile() if data != null else RenderingProfile.retail()
 	apply_shadow_arguments(OS.get_cmdline_user_args())
 	sandbox = SandboxLevel.build()
 	templates = null

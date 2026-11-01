@@ -92,7 +92,7 @@ Left/Right step a volume by one, clamped 0..8; both levels are `127·step/8`
 `OptionsScene` places the page as the C does each tick: every model, title and
 the frog sit on the front-end water's wave surface for the frame being drawn,
 drop onto it during the fly-on and slide away from x 0 during the fly-off.
-`OptionsModels` (`src/convert/`) loads the models by FrogLord name from
+`OptionsModels` (`src/rendering/`) loads the models by FrogLord name from
 `OPTIONSH.WAD`: `OPT_LILLYPAD_BLANK` lilies, `HI_LOG` volume logs whose 64
 animated polygons show each stage blank, full or half, the spinning `OPT_MUSIC`
 and `OPT_SFX` volume models beside them (glowing `(frame & 7) << 5` while selected,

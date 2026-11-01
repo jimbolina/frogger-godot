@@ -36,16 +36,6 @@ function Invoke-GodotStage([string] $name, [string[]] $stageArguments) {
     return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output; LogPath = $logPath }
 }
 
-$upscaledImages = Join-Path $projectDirectory "assets\textures\images_x4"
-if (Test-Path -LiteralPath $upscaledImages -PathType Container) {
-    $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
-    & $python (Join-Path $projectDirectory "tools\bake_pages_x4.py") --quiet
-    if ($LASTEXITCODE -ne 0) {
-        Write-Output "run_tests: baking the x4 texture pages failed"
-        exit 2
-    }
-}
-
 $fontDirectory = Join-Path $projectDirectory "assets\fonts"
 if (Test-Path -LiteralPath $fontDirectory -PathType Container) {
     $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }

@@ -42,10 +42,10 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S2c | [Modern rendering profile](#s2-modern-rendering-profile): `--rendering=modern` on Forward+ beside the retail look; scene lights and shadows from the map light records, lit model materials with the committed tints, lit terrain sampling per-image textures | L | Both suites green with no retail expectation changed; scene-lighting golden with a deliberate break; modern smoke tests; windowed probes and captures on Forward+ and Compatibility; owner play check | Done; owner play check pending |
 | S2d | Cave omni light instead of the grey ramp, sky tile array, water as a partial reflection, `vertex_tint` as a blend, the map viewer under modern, the map UV ranges premise golden | M | Cave-light, modern-UV and UV-ranges goldens with breaks; modern smoke tests for CAV1, SKY1 and SWP1; sky levels load no page set; owner play check | Done; owner play check pending |
 | S2e | Front end, sandbox and viewers under modern; blob shadows replaced by real shadows (`--effect-shadows=`), `--shadows=off` for comparison, water glint and shadow constants checked | M | Modern smoke tests for the front end, sandbox and viewers; owner play check and acceptance decision | Done; owner play check and acceptance pending |
-| S2f | Cleanup after acceptance: retire or keep the retail profile, default profile, golden re-scope, `src/convert/` renamed `src/rendering/` | M/S | Both suites green; no `src/convert` reference left; owner launches ORG1 on the default profile | Next, gated on the owner's acceptance |
+| S2f | Cleanup after acceptance: retire or keep the retail profile, default profile, golden re-scope, `src/rendering/` renamed `src/rendering/` | M/S | Both suites green; no `src/rendering` reference left; owner launches ORG1 on the default profile | Next, gated on the owner's acceptance |
 | P13e | Attract cycle from the main menu | S | Owner play check | |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
-| P14 | FrogLord round trip and reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all load; a repointed behaviour loads without code | Loading half exists |
+| P14 | FrogLord as the level editor: re-import of FrogLord-edited retail files through `archive/import`, reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all import and load; a repointed behaviour loads without code | The importer and readers stay runnable (S2f); the round trip is next after S2 |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs | Mac source setup and isolated verification available; packaged exports and CI pending |
@@ -90,13 +90,17 @@ to what still holds (geometry, animation, gameplay).
 
 ### S2: modern rendering profile
 
-Owner decisions of 2026-10-31: the modern pipeline is a per-launch profile
-beside the retail look (`--rendering=modern`, retail default and byte-exact),
-it runs on Forward+ while retail stays on Compatibility, and the stored-colour
-goldens, `probe_model_shader.gd` and the page bake stand until the owner
-accepts the modern look by eye. Sub-phases S2c–S2f are in the status table;
-S2f also renames `src/convert/` to `src/rendering/`. The rules live in the
-[modern profile](reference/rendering/modern-profile.md) reference.
+Owner decisions of 2026-10-31: the modern pipeline was built as a per-launch
+profile beside the retail look (S2c–S2e, each with a play check), then the
+owner retired the retail look (S2f): Forward+ is the project renderer, the
+lit pipeline is the only pipeline, the stored-colour shaders, the C model
+lighting recipe, texture-page sampling, the frozen `map_slice` reference
+projection and their goldens and probes are gone, and `src/convert/` became
+`src/rendering/`. FrogLord remains the level editor and this port the renderer
+of its output: the importer and readers under `archive/` stay runnable and a
+re-import produces the committed `assets/`; byte-for-byte colour matching is
+not a goal. The rules live in the [lighting](reference/rendering/lighting.md)
+reference.
 
 ### S2b: native text
 
@@ -134,7 +138,7 @@ code that only served runtime decoding of the retail files.
 | Layer-first split under `src/` rather than feature-first | Kept deliberately: the architecture scanner enforces the layers by path prefix. Features are folders inside a layer (`game/entities/`, `game/frontend/`, `presentation/frontend/`, `presentation/sandbox/`). |
 | Scenes beside their scripts | Deferred. The eight scenes in `scenes/` are entry points launched by literal path from `project.godot`, the play and capture wrappers and tests (28 files); views build their nodes in code. Revisit when S2 adds authored scenes. |
 | `tools/` (219 tracked files) | Owner decision. Proposed split: `tools/golden/` (the `make_*` generators), `tools/oracles/` (C oracles, headers and `build_*_oracle.ps1`), `tools/inspection/` (scenario runners, schedule verifiers, captures, comparisons and probes) and `tools/test/` (`check_*.gd`, `support/`, `godot_project.py`, `godot_profile.py`). Each Python test goes beside the tool it tests; `play.*`, `run_tests.*` and `launch_macos.command` stay at the root as entry points. About 100 files name tool paths, so the move is one mechanical commit with a link check. |
-| `src/convert/` renamed `src/rendering/` | Planned for S2f, the cleanup after the owner accepts the modern profile. |
+| `src/convert/` renamed `src/rendering/` | Done in S2f; the scanner's folder classification test guards the name. |
 | Per-corridor inspection presets (`Org1ExplorationSetup`, `Jun1ExplorationSetup`, `Jun1ZoneLifecycleSetup` and five JSON manifests) | Owner decision. Proposed: one preset reader over data keyed by level code, so a new supported scenario is a data file rather than a class. Until then they stay. |
 | `reference/gameplay/entities.md` (1,086 lines) | Deferred documentation work: move route narrative (tick numbers, index ranges) beside the golden specifications and keep the rules. |
 | Viewer sizes | `map_viewer.gd` is 1,319 lines after `MapScenarioRun` took the rendered path and entity scenario runs; `gameplay_world_view.gd` 970, `model_viewer.gd` 907, `terrain_viewer.gd` 646. Deferred: split the map viewer's capture and overlay code when it next changes; S2 reworks the world view's drawing. |
@@ -164,11 +168,11 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 | Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds, music and maps are committed as project resources through Git LFS; the repository stays private and the licence decision covers them. |
 | Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
 | Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
-| Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only; `compare_map_captures.py`, `bake_pages_x4.py` and `make_golden_texture_pages_x4.py` need Pillow. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
+| Python dependency management | When the tooling grows beyond the standard library | The generators and wrappers are stdlib-only. If upscaling or other tooling adds numpy, torch or more, switch to a `pyproject.toml` managed by uv with a lock file, and name `uv run` in the testing guide. |
 | S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | After S2 (decided 2026-10-31) | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
-| Hand-made x4 textures | On hold from 2026-10-31 | The ML upscale is the placeholder and the `x4` set stays optional; when the owner resumes, they replace `images_x4/tNNNN.png` by hand, one texture at a time, keeping the layout rules (exact 4x padded size, alpha the nearest 4x of the retail mask, zero RGB under it, no opaque pixel the 5-bit key cuts). Each batch reruns the page bake and `make_golden_texture_pages_x4.py`; a batch that touches `t0310.png` (`newfont`) also reruns `tools/make_font_newfont.py`, which refreshes the font's page copy under `assets/fonts/x4/`; the wrappers stop until it does. |
-| Acceptance of the modern rendering profile | After the S2e play check | Decides S2f: keep the retail profile beside modern (recommended; it costs nothing while green and compatibility is deferred, not discarded) or retire it with its shaders, page sets, bake and probes; and whether modern becomes the default profile and Forward+ the project renderer. |
-| Modern look choices | At the S2 play check | `vertex_tint` for baked terrain shading under real light; the cave light curve (exact edge or fitted range), height and ambient; the water glint (`set_water_look`); `frogger/rendering/effect_shadows` (blob shadows off by default under modern); linear or AgX tone mapping; mipmaps on the retail images and `fix_alpha_border` on `images_x4` (both change the pinned import policy). |
+| Hand-made x4 textures | On hold from 2026-10-31 | The ML upscale is the placeholder and the `x4` set stays optional; when the owner resumes, they replace `images_x4/tNNNN.png` by hand, one texture at a time, keeping the layout rules (exact 4x padded size, alpha the nearest 4x of the retail mask, zero RGB under it, no opaque pixel the 5-bit key cuts). A batch that touches `t0310.png` (`newfont`) reruns `tools/make_font_newfont.py`, which refreshes the font's page copy under `assets/fonts/x4/`; the wrappers stop until it does. |
+| Acceptance of the modern rendering | Decided 2026-10-31 | The owner retired the retail look in S2f; Forward+ is the project renderer. FrogLord stays the level editor and the import path stays runnable (P14). |
+| Look choices | At the S2 play check | `vertex_tint` for baked terrain shading under real light; the cave light curve (exact edge or fitted range), height and ambient; the water glint (`set_water_look`); `frogger/rendering/effect_shadows` (blob shadows off by default); linear or AgX tone mapping; mipmaps on the retail images and `fix_alpha_border` on `images_x4` (both change the pinned import policy). |
 | A vector recreation of the Frogger font | After the x4 play check, before S2 | A pixel-square TTF equals nearest upscaling (sharp, blocky); a smoothed redraw changes the look and needs the owner's eye. Either is retail-derived like `assets/`, which the private-repository decision covers. Until then the x4 bitmap font serves large windows ([S2b](#s2b-native-text)). |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
@@ -244,7 +248,7 @@ records, splash animation lists, pop colours and effect images, with the
 synthetic and retail families in the [effects specification](../tests/golden/specs/effects.md).
 P11b is complete: the frog's shadow, hop trail, slide, bubble and fire
 particles, death ring, splash ripple, tints and score popups draw from
-committed state and events through the rule classes in `src/convert/effects/`
+committed state and events through the rule classes in `src/rendering/effects/`
 and the views in `src/presentation/effects/`, matched to the synthetic
 families. P11c is complete: Desert rock and tumbleweed shadows, poly-piece
 pops for checkpoints, gold frogs, balloons, the nuclear barrel and the

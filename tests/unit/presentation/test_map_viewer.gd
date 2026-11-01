@@ -1,5 +1,10 @@
 extends GutTest
-## Map camera and inspector controls with synthetic map records.
+## Map camera, inspector controls, scene lighting and captures with synthetic map records.
+
+class BookCatalog extends AssetCatalog:
+	func map_book_entry(_level: int) -> MapBookEntry:
+		return MapBookEntry.new()
+
 
 var _viewer: MapViewer
 
@@ -30,20 +35,36 @@ func _scene() -> MapSceneData:
 	source.map.group_size = Vector2i(768, 768)
 	return source
 
-func test_camera_offsets_and_reference_projection() -> void:
+func _lit_scene() -> MapSceneData:
+	var source: MapSceneData = _scene()
+	source.remap.texture_ids = PackedInt32Array([100])
+	source.map.polygons[0].type_index = 3
+	source.map.polygons[0].uvs = PackedVector2Array([Vector2.ZERO, Vector2(1, 0), Vector2(0, 1)])
+	source.map.polygons[0].texture_id = 0
+	var pixels: Array[int] = []
+	for _index: int in 10 * 6:
+		pixels.append_array([200, 120, 40])
+	source.preferred = SyntheticVlo.bank([SyntheticVlo.spec(8, 4, 2, 100, 0, SyntheticVlo.abgr(pixels))])
+	source.library.add_bank(source.preferred)
+	var ambient := MapLight.new()
+	ambient.light_type = 1
+	ambient.enabled = true
+	ambient.color = Color8(64, 64, 64)
+	var parallel := MapLight.new()
+	parallel.light_type = 2
+	parallel.enabled = true
+	parallel.color = Color8(128, 128, 128)
+	parallel.direction = Vector3i(0, 4096, 0)
+	source.map.lights.append_array([ambient, parallel])
+	return source
+
+func test_camera_offsets() -> void:
 	var source: MapSceneData = _scene()
 	var camera: MapCameraData = MapCameraData.for_scene(source)
 	assert_eq(camera.source, Vector3i(0, -1024, -896))
 	assert_eq(camera.target, Vector3i(0, -128, 128))
+	assert_eq(camera.projection_distance, 256)
 	assert_almost_eq(camera.vertical_fov(), rad_to_deg(2.0 * atan(240.0 / 256.0)), 0.0001)
-	camera = MapCameraData.for_scene(source, "map-slice")
-	assert_eq(camera.source, Vector3i(0, -10000, -9872))
-	assert_eq(camera.target, source.midpoint)
-	assert_eq(camera.projection_distance, 1000)
-	assert_eq(camera.projection_scale, 2)
-	assert_eq(camera.vertical_ratio, 0.9375)
-	assert_eq(camera.projection_distance * camera.projection_scale * camera.vertical_ratio, 1875.0)
-	assert_almost_eq(camera.vertical_fov(), rad_to_deg(2.0 * atan(240.0 / 2000.0)), 0.0001)
 
 func test_controls_keep_mesh_and_fixed_render_target() -> void:
 	assert_true(_viewer.show_scene(_scene()))
@@ -56,13 +77,12 @@ func test_controls_keep_mesh_and_fixed_render_target() -> void:
 	assert_false(_viewer.playing)
 	_viewer.set_filtering(true)
 	_viewer.set_inspection_visibility(true)
-	assert_true(_viewer.set_camera_preset("map-slice"))
 	_viewer.reset_camera()
 	assert_eq(_viewer.tick, 10)
 	assert_same(_viewer.current_mesh, mesh)
 	assert_same(_viewer.map_instance, instance)
-	assert_true(instance.reference_mode)
 	assert_string_contains(_viewer.facts_text(), "SUB1")
+	assert_string_contains(_viewer.facts_text(), "default")
 
 func test_failure_and_capture_destination_boundaries() -> void:
 	assert_false(_viewer.load_level_by_code("SUB1"))
@@ -70,7 +90,6 @@ func test_failure_and_capture_destination_boundaries() -> void:
 	source.error = "Broken map dependency"
 	assert_false(_viewer.show_scene(source))
 	assert_string_contains(_viewer.facts_text(), "Broken map dependency")
-	assert_false(_viewer.set_camera_preset("unknown"))
 	assert_false(MapViewer._external_capture_folder("captures"))
 	assert_false(MapViewer._external_capture_folder(ProjectSettings.globalize_path("res://captures/../captures")))
 	assert_true(MapViewer._external_capture_folder(OS.get_environment("TEMP")))
@@ -138,30 +157,29 @@ func test_custom_raw_camera_and_projection_validate_and_reset() -> void:
 	assert_false(_viewer.set_camera_pose(Vector3i(0, -10, -10), Vector3i.ZERO, 0))
 	assert_false(_viewer.set_camera_pose(Vector3i(1000001, 0, 0), Vector3i.ZERO, 256))
 	assert_true(_viewer.set_camera_pose(Vector3i(0, -256, 0), Vector3i.ZERO, 256))
-	_viewer.set_camera_preset("map-slice")
-	assert_eq(_viewer.projection_distance(), 1000)
-	assert_eq(_viewer.effective_projection_distance(), 2000)
+	assert_true(_viewer._custom_camera)
+	assert_string_contains(_viewer.capture_basename(), "_custom_")
+	_viewer.reset_camera()
+	assert_false(_viewer._custom_camera)
+	assert_eq(_viewer.projection_distance(), 256)
+	assert_eq(GameSpace.to_game(_viewer._camera.position), Vector3i(0, -1024, -896))
 	assert_eq(MapViewer._parse_vector("1,-2,3"), [1, -2, 3])
 	assert_eq(MapViewer._parse_vector("1,two,3").size(), 0)
 	assert_eq(MapViewer._parse_vector("1,2").size(), 0)
 
-func test_manual_reference_camera_motion_uses_custom_projection_and_reset_restores() -> void:
+func test_manual_camera_motion_keeps_the_projection_and_reset_restores() -> void:
 	assert_true(_viewer.show_scene(_scene()))
-	_viewer.set_camera_preset("map-slice")
-	assert_true(_viewer.map_instance.reference_projection)
 	var motion := InputEventMouseMotion.new()
 	motion.button_mask = MOUSE_BUTTON_MASK_LEFT
 	motion.relative = Vector2(20, 5)
 	_viewer._unhandled_input(motion)
-	assert_false(_viewer.map_instance.reference_projection, "fixed C pitch must not override orbit camera")
 	assert_true(_viewer._custom_camera)
-	assert_eq(_viewer.effective_projection_distance(), 2000)
+	assert_eq(_viewer.projection_distance(), 256)
 	assert_eq(_viewer.map_instance.projection_scale, Vector2.ONE)
-	assert_true(_viewer.map_instance.reference_mode, "camera override keeps selected reference geometry/water semantics")
+	assert_string_contains(_viewer.capture_basename(), "_custom_")
 	_viewer.reset_camera()
-	assert_true(_viewer.map_instance.reference_projection)
 	assert_false(_viewer._custom_camera)
-	assert_eq(_viewer.map_instance.projection_scale, Vector2(1, 0.9375))
+	assert_eq(_viewer.map_instance.projection_scale, Vector2.ONE)
 
 func test_path_overlay_uses_shared_clock_and_releases_on_replacement() -> void:
 	var source: MapSceneData = _scene()
@@ -199,7 +217,7 @@ func test_path_overlay_uses_shared_clock_and_releases_on_replacement() -> void:
 	assert_null(_viewer.path_snapshot())
 	assert_null(_viewer._path_inspection)
 	assert_false(_viewer._path_speed.editable)
-	assert_eq(_viewer._world.get_child_count(), 3)
+	assert_eq(_viewer._world.get_child_count(), 4, "camera, environment, map and its scene lighting")
 
 func test_synthetic_path_camera_frames_off_origin_geometry() -> void:
 	assert_true(_viewer.show_scene(_scene()))
@@ -213,3 +231,71 @@ func test_synthetic_path_camera_frames_off_origin_geometry() -> void:
 	MapScenarioRun.frame_path(_viewer, definition)
 	assert_eq(GameSpace.to_game(_viewer._target), Vector3i(4500, -200, 6000))
 	assert_true(_viewer._custom_camera)
+
+
+func test_map_is_lit_by_scene_lighting_that_owns_the_environment() -> void:
+	assert_true(_viewer.show_scene(_lit_scene()))
+	var lighting: SceneLighting = _viewer.scene_lighting
+	assert_not_null(lighting)
+	assert_same(lighting.get_parent(), _viewer._world, "inside the viewport's own world")
+	assert_eq(lighting.light_nodes().size(), 1, "the map's one parallel light")
+	assert_not_null(lighting.applied_spec)
+	assert_null(lighting.cave_light_node(), "no cave light outside cave maps")
+	assert_null(_viewer._world_environment.environment, "the viewer's black environment steps aside")
+	assert_same(_viewer._viewport.find_world_3d().environment, lighting.environment)
+
+
+func test_map_without_lights_uses_the_options_lights() -> void:
+	var source: MapSceneData = _lit_scene()
+	source.map.lights.clear()
+	assert_true(_viewer.show_scene(source))
+	assert_eq(_viewer.scene_lighting.light_nodes().size(),
+		SceneLightingBuilder.from_lighting(OptionsModels.options_lighting()).lights.size())
+
+
+func test_cave_map_places_the_cave_light_at_the_static_start() -> void:
+	var source: MapSceneData = _lit_scene()
+	source.cave_enabled = true
+	source.cave_min_r2 = 0x100000
+	source.cave_max_r2 = 0x200000
+	assert_true(_viewer.show_scene(source))
+	var light: OmniLight3D = _viewer.scene_lighting.cave_light_node()
+	assert_not_null(light)
+	assert_almost_eq(light.position, GameSpace.position(0, 0, 128) + Vector3.UP * CaveLightShape.HEIGHT, Vector3.ONE * 0.0001)
+
+
+func test_capture_metadata_and_allocations() -> void:
+	assert_true(_viewer.show_scene(_lit_scene()))
+	_viewer.data = BookCatalog.new()
+	var allocations: Dictionary = _viewer.capture_allocations()
+	var sky_tiles_id: int = allocations["sky_tiles_id"]
+	var mesh_count: int = allocations["mesh_count"]
+	assert_eq(sky_tiles_id, 0, "no sky on this map")
+	assert_eq(mesh_count, _viewer.current_mesh.groups.size())
+	var metadata: Dictionary = _viewer.capture_metadata({}, allocations, allocations)
+	var growth: bool = metadata["allocation_growth"]
+	var camera: String = metadata["camera"]
+	var projection: int = metadata["projection_distance"]
+	assert_false(growth)
+	assert_eq(camera, "default")
+	assert_eq(projection, 256)
+	for retired: String in ["rendering_profile", "page_texture_growth", "effective_projection", "clip_scale"]:
+		assert_false(metadata.has(retired), retired)
+	_viewer.data = null
+
+
+func test_replacement_releases_the_scene_lighting_and_restores_the_environment() -> void:
+	assert_true(_viewer.show_scene(_lit_scene()))
+	var old: WeakRef = weakref(_viewer.scene_lighting)
+	assert_true(_viewer.show_scene(_lit_scene()))
+	await get_tree().process_frame
+	var released: SceneLighting = old.get_ref()
+	assert_null(released)
+	assert_not_null(_viewer.scene_lighting)
+	_viewer.open_data(null)
+	await get_tree().process_frame
+	assert_null(_viewer.scene_lighting)
+	assert_eq(_viewer._world.get_child_count(), 2, "Only the inspection camera and environment remain")
+	assert_same(_viewer._world_environment.environment, _viewer._viewer_environment)
+	assert_same(_viewer._viewport.find_world_3d().environment, _viewer._viewer_environment)
+

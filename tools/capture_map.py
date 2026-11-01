@@ -1,4 +1,4 @@
-"""Capture the map viewer windowed into an external folder, under either rendering profile."""
+"""Capture the map viewer windowed into an external folder."""
 import argparse
 import os
 from pathlib import Path
@@ -10,7 +10,7 @@ import sys
 import tempfile
 import zlib
 from godot_project import isolated_project
-from run_gameplay_capture import add_rendering_arguments, engine_arguments, rendering_method, shader_error
+from run_gameplay_capture import shader_error
 
 MAP_VIEWER = 'res://scenes/tools/map_viewer.tscn'
 IGNORED_ERROR = re.compile(r'ERROR: Failed to read the root certificate store\.[\r\n]+\s+at: get_system_ca_certificates[^\r\n]*')
@@ -19,14 +19,6 @@ SUCCESS_PATTERN = re.compile(r'map capture .*: OK')
 CAPTURE_PATTERN = re.compile(r'map capture (.+\.png): OK')
 PNG_SIGNATURE = b'\x89PNG\r\n\x1a\n'
 PNG_CHANNELS = {2: 3, 6: 4}
-
-
-def projection(value):
-    """A projection distance of 0 (viewer default) or 3..8192."""
-    number = int(value)
-    if number != 0 and not 3 <= number <= 8192:
-        raise argparse.ArgumentTypeError('must be 0 or 3..8192')
-    return number
 
 
 def tick(value):
@@ -43,16 +35,12 @@ def parse_arguments(argv=None):
     parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
     parser.add_argument('--output-directory', required=True, help='Absolute folder outside the repository')
     parser.add_argument('--level', default='SUB1')
-    parser.add_argument('--camera', choices=('default', 'map-slice'), default='map-slice')
     parser.add_argument('--camera-source', default='')
     parser.add_argument('--camera-target', default='')
-    parser.add_argument('--projection', type=projection, default=0)
     parser.add_argument('--tick', type=tick, default=0)
     parser.add_argument('--low-poly', action='store_true')
     parser.add_argument('--linear', action='store_true')
     parser.add_argument('--benchmark', action='store_true')
-    parser.add_argument('--probe-model', default='')
-    add_rendering_arguments(parser)
     return parser, parser.parse_args(argv)
 
 
@@ -69,20 +57,15 @@ def output_folder(value, repo):
 
 def viewer_arguments(args, folder):
     """User arguments passed to the map viewer after --."""
-    arguments = ['--level=' + args.level, '--camera=' + args.camera, '--tick=' + str(args.tick),
+    arguments = ['--level=' + args.level, '--tick=' + str(args.tick),
                  '--low-poly=' + str(args.low_poly).lower(), '--linear=' + str(args.linear).lower(),
                  '--screenshot-dir=' + str(folder)]
     if args.benchmark:
         arguments.append('--benchmark')
-    if args.probe_model:
-        arguments.append('--probe-model=' + args.probe_model)
     if args.camera_source:
         arguments.append('--camera-source=' + args.camera_source)
     if args.camera_target:
         arguments.append('--camera-target=' + args.camera_target)
-    if args.projection != 0:
-        arguments.append('--projection=' + str(args.projection))
-    arguments.append('--rendering=' + args.rendering)
     return arguments
 
 
@@ -92,10 +75,9 @@ def import_command(godot, project, log):
 
 
 def capture_command(args, project, log, folder):
-    """The windowed map viewer command, with the rendering method before the scene."""
-    method = rendering_method(args.rendering, args.rendering_method)
-    return ([args.godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log)]
-            + engine_arguments(method) + [MAP_VIEWER, '--'] + viewer_arguments(args, folder))
+    """The windowed map viewer command."""
+    return ([args.godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log), MAP_VIEWER, '--']
+            + viewer_arguments(args, folder))
 
 
 def capture_failure(text, returncode):

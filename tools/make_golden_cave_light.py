@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent cave omni-light shape facts for the modern profile.
+"""Independent cave omni-light shape facts.
 
 The retail cave terrain (mapdisp.c) replaces Gouraud colours with a grey
 from the squared distance t between vertex and frog, in game units: 128

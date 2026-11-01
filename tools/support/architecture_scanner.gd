@@ -433,7 +433,7 @@ func _protected_layer(path: String) -> String:
 
 
 func _forbidden_path(path: String, layer: String) -> bool:
-	if path.begins_with("res://src/convert/") \
+	if path.begins_with("res://src/rendering/") \
 			or path.begins_with("res://src/presentation/") \
 			or path.begins_with("res://src/inspection/") \
 			or path.begins_with("res://scenes/") \

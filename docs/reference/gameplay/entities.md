@@ -529,7 +529,7 @@ full parent loss/search behavior. Bounded fixtures reject checkpoint interaction
 outside their admitted dependencies.
 Presentation reads committed entity actions/cels and hidden state.
 ORG1 draws the diving callback's blue tint through the
-[model lighting](../rendering/README.md#model-lighting) path.
+[model lighting](../rendering/README.md#sprite-lighting) path.
 Dying attached frogs retain source platform carry before death velocity and
 reassert CARRY for the next entity update. A deep turtle clears that flag on
 each visit; repeated death requests do not repeat the accepted death or effect.

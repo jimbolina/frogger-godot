@@ -13,7 +13,6 @@ script, scene or resource under `src/`, `scenes/`, `assets/`, `tests/` or
 | `tests/unit/` | Reader unit tests and the synthetic byte builders. |
 | `tests/support/` | `RetailTest`, the base class that opens `FROGGER_DATA_DIR`. |
 | `tests/.gutconfig.json` | The archive suite; `tools/run_tests.*` runs it only when `FROGGER_DATA_DIR` is set. |
-| `tools/` | `migrate_shaders.gd`, which wrote the shader files from the former templates. |
 | `docs/formats/` | The retail format references (archives, executable tables, textures, models, animation, maps, build detection). |
 | `third_party/froglord_cfg/` | FrogLord's configuration files, unmodified (`third_party/README.md`). |
 

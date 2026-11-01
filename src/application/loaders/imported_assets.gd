@@ -10,10 +10,10 @@ extends AssetCatalog
 ## is not kept, so no raw resource bytes are available.
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
-## textures, and [method texture_of], [method texture_counterpart],
-## [method page_set] and [method font] answer with the chosen set's files,
+## textures, and [method texture_of], [method texture_counterpart] and
+## [method font] answer with the chosen set's files,
 ## falling back to the retail file (noted in [member problems]) when the set
-## lacks one. It also carries the launch's [RenderingProfile].
+## lacks one.
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
@@ -21,8 +21,6 @@ var index: AssetIndex
 var root: String = ""
 ## The texture set the catalog draws from.
 var textures: TextureSet = TextureSet.retail()
-## The rendering profile the launch asked for.
-var rendering: RenderingProfile = RenderingProfile.retail()
 ## Records that could not be loaded, one line each.
 var problems: PackedStringArray = PackedStringArray()
 var _counterparts: Dictionary[String, Texture2D] = {}
@@ -30,16 +28,13 @@ var _fonts: Dictionary[String, Font] = {}
 
 
 ## Opens the assets under [param assets_root], drawing from the texture set
-## called [param texture_set_name] ("" for retail) under the rendering
-## profile called [param rendering_profile_name] ("" for retail). Check
-## [member AssetCatalog.error]; a set that is not installed or an unknown
-## profile falls back to retail with a line in [member AssetCatalog.warnings].
-static func open(assets_root: String = "res://assets", texture_set_name: String = "",
-		rendering_profile_name: String = "") -> ImportedAssets:
+## called [param texture_set_name] ("" for retail). Check
+## [member AssetCatalog.error]; a set that is not installed falls back to
+## retail with a line in [member AssetCatalog.warnings].
+static func open(assets_root: String = "res://assets", texture_set_name: String = "") -> ImportedAssets:
 	var catalog := ImportedAssets.new()
 	catalog.root = assets_root
 	catalog.textures = resolve_texture_set(assets_root, texture_set_name, catalog.warnings)
-	catalog.rendering = resolve_rendering_profile(rendering_profile_name, catalog.warnings)
 	var index_path: String = assets_root.path_join("catalog.tres")
 	catalog.index = catalog._load(index_path) as AssetIndex
 	if catalog.index == null:
@@ -79,25 +74,9 @@ static func resolve_texture_set(assets_root: String, texture_set_name: String,
 	return wanted
 
 
-## The rendering profile called [param rendering_profile_name]; the retail
-## profile, with a line appended to [param warnings_out], for an unknown name.
-static func resolve_rendering_profile(rendering_profile_name: String,
-		warnings_out: PackedStringArray) -> RenderingProfile:
-	var wanted: RenderingProfile = RenderingProfile.named(rendering_profile_name)
-	if wanted == null:
-		warnings_out.append("unknown rendering profile %s; drawing the retail profile" % rendering_profile_name)
-		return RenderingProfile.retail()
-	return wanted
-
-
 ## The texture set the catalog draws from.
 func texture_set() -> TextureSet:
 	return textures
-
-
-## The rendering profile the launch asked for.
-func rendering_profile() -> RenderingProfile:
-	return rendering
 
 
 ## The texture of [param image] in the catalog's texture set, or null.
@@ -216,37 +195,6 @@ func read_demo(resource_id: int, problems_out: PackedStringArray = PackedStringA
 ## The imported sound bank whose body has resource id [param resource_id], or null.
 func read_sound_bank(resource_id: int, problems_out: PackedStringArray = PackedStringArray()) -> SoundBankHeader:
 	return _record(resource_id, "sound bank", problems_out) as SoundBankHeader
-
-
-## The baked page set of texture banks [param general_bank_id] then
-## [param theme_bank_id], or null.
-func page_set_for_banks(general_bank_id: int, theme_bank_id: int,
-		problems_out: PackedStringArray = PackedStringArray()) -> TexturePageSet:
-	var general: MwiEntry = mwi.get_entry(general_bank_id)
-	var theme: MwiEntry = mwi.get_entry(theme_bank_id)
-	if general == null or theme == null:
-		problems_out.append("no texture banks %d and %d" % [general_bank_id, theme_bank_id])
-		return null
-	return page_set(TexturePageSet.name_for(PackedStringArray([general.display_name(), theme.display_name()])), problems_out)
-
-
-## The baked page set called [param set_name] from the catalog's texture
-## set, the retail set's when that set has none baked, or null.
-func page_set(set_name: String, problems_out: PackedStringArray = PackedStringArray()) -> TexturePageSet:
-	if not index.page_sets.has(set_name):
-		problems_out.append("no texture page set %s" % set_name)
-		return null
-	var retail_path: String = index.page_sets[set_name]
-	var path: String = textures.counterpart_path(retail_path)
-	if path != retail_path and not ResourceLoader.exists(path):
-		var message: String = "texture set %s has no page set %s; drawing the retail pages" % [textures.set_name, set_name]
-		if not message in problems:
-			problems.append(message)
-		path = retail_path
-	var found: TexturePageSet = _load(path) as TexturePageSet
-	if found == null:
-		problems_out.append("texture page set %s does not load" % set_name)
-	return found
 
 
 func _record(resource_id: int, kind: String, problems_out: PackedStringArray) -> Resource:

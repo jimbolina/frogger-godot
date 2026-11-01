@@ -8,28 +8,7 @@ import uuid
 from godot_project import isolated_project
 
 LEVELS = ('ORG1', 'ORG2', 'ORG3', 'ORG4', 'ORG5', 'SUB1', 'FOR1', 'FOR2', 'VOL1', 'VOL2', 'VOL3', 'CAV1', 'CAV3', 'CAV4', 'DES1', 'DES2', 'DES3', 'DES4', 'DES5', 'JUN1', 'SWP1', 'SWP2', 'SWP3', 'SWP4', 'SWP5', 'SKY1', 'SKY2', 'SKY3', 'SKY4')
-RENDERING_PROFILES = ('retail', 'modern')
-RENDERING_METHODS = ('forward_plus', 'gl_compatibility')
-PROFILE_METHODS = {'modern': 'forward_plus'}
 FAILURE_MARKERS = ('SCRIPT ERROR', 'Parse Error', 'Failed to load script', 'CHECK FAILED', 'gameplay_capture: FAIL')
-
-
-def add_rendering_arguments(parser):
-    """Add the rendering profile and the explicit engine rendering method override."""
-    parser.add_argument('--rendering', choices=RENDERING_PROFILES, default='retail',
-                        help='Rendering profile forwarded to the game as --rendering=<profile>')
-    parser.add_argument('--rendering-method', choices=RENDERING_METHODS,
-                        help='Engine rendering method; overrides the one the profile selects')
-
-
-def rendering_method(profile, override=None):
-    """The engine rendering method to request, or None for the project default."""
-    return override or PROFILE_METHODS.get(profile)
-
-
-def engine_arguments(method):
-    """Engine options that select a rendering method before the scene or script."""
-    return ['--rendering-method', method] if method else []
 
 
 def shader_error(text):
@@ -51,21 +30,21 @@ def log_failure(text):
     return None
 
 
-def keyboard_arguments(level, route, ticks, flow_check, output, rendering, game_arguments=()):
+def keyboard_arguments(level, route, ticks, flow_check, output, game_arguments=()):
     """Script and user arguments of the windowed keyboard capture stage; game arguments follow."""
     return ['-s', 'res://tools/probe_gameplay_capture.gd', '--',
             '--level=' + level, '--route=' + (str(route) if route else ''),
             '--ticks=' + str(ticks), '--flow-check=' + str(flow_check).lower(),
-            '--output=' + str(output), '--rendering=' + rendering] + list(game_arguments)
+            '--output=' + str(output)] + list(game_arguments)
 
 
-def stage_command(godot, project, log, headless, resolution, method, arguments):
+def stage_command(godot, project, log, headless, resolution, arguments):
     """The Godot command line of one capture stage."""
     command = [godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log)]
     if headless:
         command.append('--headless')
     else:
-        command += ['--resolution', resolution] + engine_arguments(method)
+        command += ['--resolution', resolution]
     return command + arguments
 
 
@@ -75,8 +54,7 @@ def capture_stages(args, route, evidence):
             ('check', ['-s', 'res://tools/check_scripts.gd'], True),
             ('architecture', ['-s', 'res://tools/check_architecture.gd'], True),
             ('keyboard', keyboard_arguments(args.level, route, args.ticks, args.flow_check,
-                                            evidence / 'captures', args.rendering,
-                                            args.game_argument), False)]
+                                            evidence / 'captures', args.game_argument), False)]
 
 
 def parse_arguments(argv=None):
@@ -91,7 +69,6 @@ def parse_arguments(argv=None):
     parser.add_argument('--output-directory', type=Path, required=True)
     parser.add_argument('--game-argument', action='append', default=[], metavar='ARGUMENT',
                         help='Extra user argument for the game, given as --game-argument=--effect-shadows=retail; repeatable')
-    add_rendering_arguments(parser)
     args = parser.parse_args(argv)
     if args.flow_check and args.route:
         parser.error('--flow-check excludes --route')
@@ -112,7 +89,6 @@ def main():
     route = args.route.resolve() if args.route else None
     if route and not route.is_file():
         parser.error('Route file does not exist')
-    method = rendering_method(args.rendering, args.rendering_method)
     evidence = output / ('gameplay-' + uuid.uuid4().hex)
     evidence.mkdir(parents=True)
     profile = evidence / 'profile'
@@ -130,7 +106,7 @@ def main():
     print('Gameplay evidence: ' + str(evidence), flush=True)
     for name, arguments, headless in capture_stages(args, route, evidence):
         log = evidence / (name + '.log')
-        command = stage_command(args.godot, project, log, headless, args.resolution, method, arguments)
+        command = stage_command(args.godot, project, log, headless, args.resolution, arguments)
         with (evidence / (name + '-process.log')).open('w', encoding='utf-8') as stream:
             result = subprocess.run(command, cwd=repo, env=env, startupinfo=startup,
                                     stdout=stream, stderr=subprocess.STDOUT, timeout=1800)

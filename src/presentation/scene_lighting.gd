@@ -1,6 +1,6 @@
 class_name SceneLighting
 extends Node3D
-## The modern profile's scene light: one [WorldEnvironment] and up to three
+## The scene light: one [WorldEnvironment] and up to three
 ## [DirectionalLight3D] children built from a [SceneLightingSpec], plus the
 ## frogger_model_ambient shader global, and in caves one [OmniLight3D].
 ##

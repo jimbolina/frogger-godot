@@ -1,15 +1,12 @@
 param(
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [string]$Level = 'SUB1',
-    [ValidateSet('default','map-slice')][string]$Camera = 'map-slice',
     [string]$CameraSource = '',
     [string]$CameraTarget = '',
-    [ValidateScript({ $_ -eq 0 -or ($_ -ge 3 -and $_ -le 8192) })][int]$Projection = 0,
     [ValidateRange(0,100000)][int]$Tick = 0,
     [switch]$LowDetail,
     [switch]$Linear,
-    [switch]$Benchmark,
-    [string]$ProbeModel = ''
+    [switch]$Benchmark
 )
 $ErrorActionPreference = 'Stop'
 $projectDirectory = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
@@ -47,12 +44,10 @@ try {
         exit 1
     }
     $logPath = Join-Path $runDirectory 'capture.log'
-    $arguments = @('--disable-crash-handler','--path',$projectDirectory,'--log-file',$logPath,'res://scenes/tools/map_viewer.tscn','--',('--level=' + $Level),('--camera=' + $Camera),('--tick=' + $Tick),('--low-poly=' + $LowDetail.IsPresent.ToString().ToLower()),('--linear=' + $Linear.IsPresent.ToString().ToLower()),('--screenshot-dir=' + $captureDirectory))
+    $arguments = @('--disable-crash-handler','--path',$projectDirectory,'--log-file',$logPath,'res://scenes/tools/map_viewer.tscn','--',('--level=' + $Level),('--tick=' + $Tick),('--low-poly=' + $LowDetail.IsPresent.ToString().ToLower()),('--linear=' + $Linear.IsPresent.ToString().ToLower()),('--screenshot-dir=' + $captureDirectory))
     if ($Benchmark) { $arguments += '--benchmark' }
-    if ($ProbeModel) { $arguments += '--probe-model=' + $ProbeModel }
     if ($CameraSource) { $arguments += '--camera-source=' + $CameraSource }
     if ($CameraTarget) { $arguments += '--camera-target=' + $CameraTarget }
-    if ($Projection -ne 0) { $arguments += '--projection=' + $Projection }
     $commandLine = ($arguments | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' '
     Write-Output "capture_map: log $logPath"
     $process = Start-Process -FilePath $godotExecutable -ArgumentList $commandLine -WorkingDirectory $projectDirectory -WindowStyle Hidden -Wait -PassThru

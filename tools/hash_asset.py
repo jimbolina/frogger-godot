@@ -3,10 +3,10 @@
 
 PNG (8-bit RGBA or RGB, not interlaced; every filter type) gives its size,
 the SHA-256 of its RGBA8 pixels (rows top to bottom, RGB widened with alpha
-255) and its opaque pixel count: the padded image digest of vlo_images.tsv
-and the page digest of texture_pages.tsv. WAV (PCM, 16-bit) gives channels,
-rate, frames and the SHA-256 of its sample bytes: the pcm16 digest of
-sound_samples.tsv and the PCM digest of disc_tracks.tsv. Palette, greyscale,
+255) and its opaque pixel count: the padded image digest of vlo_images.tsv.
+WAV (PCM, 16-bit) gives channels, rate, frames and the SHA-256 of its sample
+bytes: the pcm16 digest of sound_samples.tsv and the PCM digest of
+disc_tracks.tsv. Palette, greyscale,
 16-bit and interlaced PNGs and non-PCM WAVs are rejected with a message.
 
 Used to fill tests/golden/imported/overrides.tsv for reviewed hand edits
