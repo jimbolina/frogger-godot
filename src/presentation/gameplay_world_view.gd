@@ -72,6 +72,7 @@ var _effect_tick: int = -1
 var _effect_drawn_tick: int = -1
 var _frog_light_tick: int = -1
 var _options_lighting: MapLighting = null
+var _emissive_clusters: Array[EmissiveClusters.Cluster] = []
 ## Whether [method build_world] creates the sound-effect and music players.
 var audio_enabled: bool = false
 var _voice_view: SoundVoiceView = null
@@ -386,6 +387,7 @@ func build_mapless_entities(definitions: EntityCollisionDefinition, origins: Ent
 	if definitions == null:
 		return PackedStringArray()
 	_definitions = definitions.entities
+	_emissive_clusters = []
 	var resources: MaplessEntityResources = MaplessEntityResources.resolve(definitions.entities, origins)
 	var diagnostics: PackedStringArray = resources.diagnostics
 	var sprite_slots: Dictionary[int, bool] = {}
@@ -483,11 +485,13 @@ func _sync_entity_models() -> PackedInt32Array:
 	return created
 
 ## Lights the scene from [param lighting], or from the options screen's
-## lights when there are no map lights.
+## lights when there are no map lights, and lights the glowing lava of the
+## map last built.
 func _light_scene(lighting: MapLighting) -> void:
 	if scene_lighting == null:
 		return
 	scene_lighting.apply(SceneLightingBuilder.from_lighting(_lighting_or_options(lighting), real_shadows))
+	scene_lighting.set_emissive_lights(_emissive_clusters)
 
 func _lighting_or_options(lighting: MapLighting) -> MapLighting:
 	if lighting != null and not (lighting.directions.is_empty() and lighting.ambient.is_zero_approx()):
@@ -1059,5 +1063,6 @@ func build_map(scene_data: MapSceneData) -> void:
 	_map_instance = MapMeshBuilder.new().build(scene_data).create_instance()
 	_ground.add_child(_map_instance)
 	_map_instance.set_projection_scale(GameplayProjection.clip_scale(Vector2i(get_viewport().get_visible_rect().size)))
+	_emissive_clusters = EmissiveClusters.build(scene_data)
 	_apply_look()
 	_configure_effects(scene_data)

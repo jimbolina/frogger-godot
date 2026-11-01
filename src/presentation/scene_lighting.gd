@@ -24,6 +24,12 @@ extends Node3D
 ## [GlowLightPool], created on first use, following the profile's glow-light
 ## switch and energy; in cave mode the glow lights stay hidden unless the
 ## profile allows them in caves.
+##
+## [method set_emissive_lights] lights the surroundings of glowing lava with an
+## [EmissiveLightSet], created on first use: its lights show while the
+## profile's [member GraphicsSettings.lava_lights] is set and their energy
+## follows [member GraphicsSettings.lava_emission], so dimming the lava dims
+## its light. They ignore cave mode; no cave map has glowing images.
 
 ## Shader global carrying the linear ambient to the lit model shaders.
 const AMBIENT_GLOBAL: StringName = &"frogger_model_ambient"
@@ -45,6 +51,8 @@ var _cave_light: OmniLight3D = null
 var _cave_key: PackedInt64Array = PackedInt64Array()
 var _glow_pool: GlowLightPool = null
 var _glow_points: Array[GlowLightSpec.Point] = []
+var _emissive_set: EmissiveLightSet = null
+var _emissive_clusters: Array[EmissiveClusters.Cluster] = []
 
 
 ## Replaces the lights with those of [param spec] and sets the environment and
@@ -64,11 +72,13 @@ func apply(spec: SceneLightingSpec) -> void:
 	_set_ambient(spec.ambient)
 
 
-## Frees the lights, the cave light and the glow lights and resets the ambient global to one; the environment stays.
+## Frees the lights, the cave light, the glow lights and the lava lights and
+## resets the ambient global to one; the environment stays.
 func clear() -> void:
 	_free_cave_light()
 	_free_lights()
 	_free_glow_pool()
+	_free_emissive_set()
 	_set_ambient(Vector3.ONE)
 	if environment != null:
 		environment.ambient_light_energy = 1.0
@@ -121,6 +131,18 @@ func place_glow_lights(points: Array[GlowLightSpec.Point], camera_position: Vect
 	_place_glow()
 
 
+## Lights [param clusters] of glowing lava, replacing any earlier clusters;
+## an empty array hides the lava lights.
+func set_emissive_lights(clusters: Array[EmissiveClusters.Cluster]) -> void:
+	_emissive_clusters = clusters.duplicate()
+	_place_emissive()
+
+
+## The lava light set, or null before lava lights were first shown.
+func emissive_light_set() -> EmissiveLightSet:
+	return _emissive_set
+
+
 ## The glow light pool, or null before glow lights were first shown.
 func glow_light_pool() -> GlowLightPool:
 	return _glow_pool
@@ -159,6 +181,7 @@ func _on_profile_changed() -> void:
 	if environment != null:
 		_apply_post(settings)
 	_place_glow()
+	_place_emissive()
 	if applied_spec == null:
 		return
 	for index: int in _lights.size():
@@ -260,6 +283,26 @@ func _free_glow_pool() -> void:
 	remove_child(_glow_pool)
 	_glow_pool.free()
 	_glow_pool = null
+
+
+func _place_emissive() -> void:
+	var settings: GraphicsSettings = GraphicsProfile.current()
+	if _emissive_set == null:
+		if not settings.lava_lights or _emissive_clusters.is_empty():
+			return
+		_emissive_set = EmissiveLightSet.new()
+		_emissive_set.name = "LavaLights"
+		add_child(_emissive_set)
+	_emissive_set.set_clusters(_emissive_clusters, settings.lava_emission, settings.lava_lights)
+
+
+func _free_emissive_set() -> void:
+	_emissive_clusters = []
+	if _emissive_set == null:
+		return
+	remove_child(_emissive_set)
+	_emissive_set.free()
+	_emissive_set = null
 
 
 func _free_lights() -> void:

@@ -377,8 +377,9 @@ Light and environment nodes belong to presentation: under `src/`, the types
 `Light3D`, `DirectionalLight3D`, `OmniLight3D`, `SpotLight3D`,
 `WorldEnvironment` and `Environment` may appear only in `src/presentation/`
 (`lighting-ownership`). `src/rendering/` computes node-free lighting and tint
-specifications that `SceneLighting` applies, such as the glow points it
-places in its `GlowLightPool`. A scanner test also checks that
+specifications that `SceneLighting` applies through the light nodes it
+owns: glow points in its `GlowLightPool` and lava clusters in its
+`EmissiveLightSet`, each created on first use. A scanner test also checks that
 every folder under `src/` is either protected or forbidden to the protected
 layers, so a renamed folder cannot silently leave the rules.
 

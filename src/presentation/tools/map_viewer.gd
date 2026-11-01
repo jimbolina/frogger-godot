@@ -276,8 +276,9 @@ func _process(delta: float) -> void:
 	_refresh_status()
 
 ## Lights the map from its light records (or the options screen's lights
-## when it has none) and, on a cave map, places the cave light at the
-## viewer's static start position with the initial radii.
+## when it has none) and its glowing lava ([EmissiveClusters]) and, on a cave
+## map, places the cave light at the viewer's static start position with the
+## initial radii.
 func _light_scene(source: MapSceneData) -> void:
 	_release_scene_lighting()
 	_world_environment.environment = null
@@ -289,6 +290,7 @@ func _light_scene(source: MapSceneData) -> void:
 	if lighting.directions.is_empty() and lighting.ambient.is_zero_approx():
 		lighting = OptionsModels.options_lighting()
 	scene_lighting.apply(SceneLightingBuilder.from_lighting(lighting))
+	scene_lighting.set_emissive_lights(EmissiveClusters.build(source))
 	_place_cave_light()
 
 func _place_cave_light() -> void:

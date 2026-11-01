@@ -1,6 +1,6 @@
 extends GutTest
 ## The scene lighting node builds one environment and a directional light per spec slot, and leaves nothing behind;
-## bloom, tone mapping and the shadow constants follow the live graphics profile in place.
+## bloom, tone mapping, the shadow constants and the glow and lava lights follow the live graphics profile in place.
 
 var _lighting: SceneLighting
 
@@ -382,3 +382,83 @@ func test_clear_frees_the_glow_lights() -> void:
 		assert_false(child is GlowLightPool, "the pool is freed")
 	_lighting.place_glow_lights(_glow_points(1))
 	assert_eq(_lighting.glow_light_pool().shown_count(), 1)
+
+
+func _clusters(count: int) -> Array[EmissiveClusters.Cluster]:
+	var clusters: Array[EmissiveClusters.Cluster] = []
+	for index: int in count:
+		clusters.append(EmissiveClusters.Cluster.new(Vector3(index * 4.0, 0.5, 0), 4.0, Color(1.0, 0.6, 0.4), 0.5 + index, 8.0))
+	return clusters
+
+
+func test_lava_lights_follow_the_clusters_scaled_by_the_lava_emission() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_emissive_lights(_clusters(3))
+	var lava: EmissiveLightSet = _lighting.emissive_light_set()
+	assert_not_null(lava)
+	assert_eq(lava.shown_count(), 3)
+	var light: OmniLight3D = lava.lights()[1]
+	assert_eq(light.position, Vector3(4.0, 0.5, 0))
+	assert_eq(light.omni_range, 4.0)
+	assert_eq(light.light_color, Color(1.0, 0.6, 0.4))
+	assert_eq(light.light_energy, 1.5)
+	assert_false(light.shadow_enabled)
+	assert_eq(light.light_specular, EmissiveLightSet.SPECULAR)
+	assert_true(light.distance_fade_enabled)
+	_change("lava_emission", 2.0)
+	assert_eq(light.light_energy, 3.0, "a profile change rescales in place")
+	assert_eq(_lighting.emissive_light_set(), lava)
+	assert_eq(lava.lights().size(), 3)
+	assert_eq(lava.lights()[1], light, "the same light nodes")
+
+
+func test_lava_lights_off_hides_them_and_back_on_shows_the_same_lights() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_emissive_lights(_clusters(2))
+	var lava: EmissiveLightSet = _lighting.emissive_light_set()
+	var lights: Array[OmniLight3D] = lava.lights()
+	_change("lava_lights", false)
+	assert_eq(lava.shown_count(), 0)
+	_change("lava_lights", true)
+	assert_eq(lava.shown_count(), 2)
+	assert_eq(lava.lights(), lights)
+
+
+func test_no_lava_set_is_made_without_clusters_or_while_lava_lights_are_off() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_emissive_lights(_clusters(0))
+	assert_null(_lighting.emissive_light_set())
+	_change("lava_lights", false)
+	_lighting.set_emissive_lights(_clusters(2))
+	assert_null(_lighting.emissive_light_set())
+	_change("lava_lights", true)
+	assert_eq(_lighting.emissive_light_set().shown_count(), 2, "switching on creates them")
+
+
+func test_fewer_clusters_hide_the_surplus_lava_lights() -> void:
+	_lighting.set_emissive_lights(_clusters(3))
+	var lava: EmissiveLightSet = _lighting.emissive_light_set()
+	_lighting.set_emissive_lights(_clusters(1))
+	assert_eq(lava.lights().size(), 3)
+	assert_eq(lava.shown_count(), 1)
+
+
+func test_lava_lights_survive_reapplying_and_cave_mode() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_emissive_lights(_clusters(2))
+	var lava: EmissiveLightSet = _lighting.emissive_light_set()
+	_lighting.apply(_spec())
+	assert_eq(_lighting.emissive_light_set(), lava)
+	_lighting.set_cave_light(Vector3.ZERO, 1, 65536)
+	assert_eq(lava.shown_count(), 2, "cave mode leaves the lava lights")
+
+
+func test_clear_frees_the_lava_lights() -> void:
+	_lighting.apply(_spec())
+	_lighting.set_emissive_lights(_clusters(2))
+	_lighting.clear()
+	assert_null(_lighting.emissive_light_set())
+	for child: Node in _lighting.get_children():
+		assert_false(child is EmissiveLightSet, "the set is freed")
+	_change("lava_emission", 2.0)
+	assert_null(_lighting.emissive_light_set(), "the cleared clusters do not come back")

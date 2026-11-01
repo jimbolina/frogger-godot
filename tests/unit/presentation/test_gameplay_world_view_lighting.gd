@@ -2,7 +2,8 @@ extends GutTest
 ## The gameplay frog takes its committed colour scale and custom ambient as its tint under the map's
 ## lights or the options lights; the scene is lit from the map's lights, casts real shadows unless
 ## switched off and draws the blob shadow effects only when the shadow-effect setting keeps them; the map's
-## water look, vertex tint and cave light mode follow the live graphics profile.
+## water look, vertex tint and cave light mode follow the live graphics profile, and the built map's lava
+## lights its surroundings.
 
 const SCALE := Vector3i(0, 64, 192)
 const AMBIENT := Vector3i(32, 64, 64)
@@ -341,3 +342,46 @@ func test_the_cave_light_follows_the_profile_mode() -> void:
 	assert_almost_eq(light.omni_range, CaveLightShape.range_of(radii[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
 	assert_almost_eq(light.light_energy, CaveLightShape.energy_of(radii[0], radii[1], CaveLightShape.Mode.FITTED_RANGE), 1e-5)
 	assert_eq(_view.scene_lighting.light_nodes().size(), 0, "cave mode survives the change")
+
+func _lava_map() -> MapSceneData:
+	var scene: MapSceneData = _lit_map()
+	scene.remap = TextureRemap.new()
+	scene.remap.texture_ids = PackedInt32Array([301])
+	var entry := EmissiveImage.new()
+	entry.colour = Color(1.0, 0.6, 0.4)
+	entry.light = true
+	entry.light_energy = 1.0
+	scene.emissive = {301: entry}
+	scene.map.vertices = [Vector3i(0, 0, 0), Vector3i(512, 0, 0), Vector3i(0, 0, 512), Vector3i(512, 0, 512)]
+	var polygon := MapPolygon.new()
+	polygon.type_index = 3
+	polygon.vertex_indices = PackedInt32Array([0, 1, 2, 3])
+	polygon.colors = PackedColorArray([Color8(128, 128, 128)])
+	polygon.uvs = PackedVector2Array([Vector2.ZERO, Vector2(1, 0), Vector2(0, 1), Vector2.ONE])
+	polygon.texture_id = 0
+	scene.map.polygons.append(polygon)
+	var group := MapGroup.new()
+	group.polygon_indices = PackedInt32Array([0])
+	scene.map.groups.append(group)
+	return scene
+
+func test_the_lava_lights_of_the_built_map_survive_the_entity_rebuild() -> void:
+	var scene: MapSceneData = _lava_map()
+	_view.build_map(scene)
+	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
+	var lava: EmissiveLightSet = _view.scene_lighting.emissive_light_set()
+	assert_not_null(lava, "lit after the entity rebuild cleared the scene lighting")
+	assert_eq(lava.shown_count(), 1)
+	var expected: EmissiveClusters.Cluster = EmissiveClusters.build(scene)[0]
+	assert_eq(lava.lights()[0].position, expected.centre)
+	assert_almost_eq(lava.lights()[0].light_energy, expected.energy, 1e-6)
+	_view.build_entities(EntityCollisionDefinition.new(), scene, AssetCatalog.new())
+	assert_eq(_view.scene_lighting.emissive_light_set().shown_count(), 1, "relit after a second rebuild")
+	var values: GraphicsSettings = GraphicsProfile.current().copy()
+	values.lava_emission = 0.5
+	GraphicsProfile.replace(values)
+	assert_almost_eq(_view.scene_lighting.emissive_light_set().lights()[0].light_energy, expected.energy * 0.5, 1e-6)
+
+func test_a_map_without_lava_has_no_lava_lights() -> void:
+	_build_cave()
+	assert_null(_view.scene_lighting.emissive_light_set())

@@ -221,7 +221,7 @@ and the map viewer pass after building the map and on every change.
 
 | Family | Images | Strength | Colour |
 |---|---|---|---|
-| Molten lava | `vol_lava2/3/5/5a`, `vol_lavacent`, `vol_lavacent2`, `vol_lavani1`–`9` | 1.2 | (1, 0.6, 0.4) |
+| Molten lava | `vol_lava2/3/5/5a`, `vol_lavacent`, `vol_lavacent2`, `vol_lavani1`–`9` | 1.0 | (1, 0.6, 0.4) |
 | Lava edges | `vol_lavaedge`, `vol_lava6`, `vol_lava7` | 1.0 | (1, 0.6, 0.4) |
 | Cracked hot rock | `vol_hotrocka/b/c1`–`6`, `vol_hhotrock1` | 1.8 | (1, 0.5, 0.3) |
 | Plain hot rock | `vol_hotrock1`, `vol_hotrock3` | 0.5 | (1, 0.5, 0.3) |
@@ -229,8 +229,34 @@ and the map viewer pass after building the map and on every change.
 The red channel of bright molten texels passes the bloom threshold, so lava
 blooms softly red-orange onto nearby walls; the cracked rock's dark stone
 emits almost nothing, so only its cracks glow. Every family is drawn on
-VOL1, VOL2 or VOL3. Each entry's `light` and `light_energy` are kept for lava
-lights.
+VOL1, VOL2 or VOL3.
+
+Molten lava and its edges (`light` set, energy 1.0 and 0.6) also light their
+surroundings; hot rock does not. `EmissiveClusters.build` takes the textured
+faces of visible groups whose image, or any frame of their animated track,
+casts light, and bins their area-weighted centroids into 4-square horizontal
+cells. Cells with less than one square of glowing surface are dropped. Each
+remaining cell gives a light one square above its centroid, with a range of
+1.5 times the cell's half-diagonal (about 4.2 squares), the area-weighted
+entry colour and an energy of `ENERGY` (0.6) times the area-weighted light
+energy times the share of the cell covered. At most 24 are kept, largest
+first. VOL1 gets 22, VOL2 24 (capped) and VOL3 16. UV scrolling does not move
+them.
+
+`SceneLighting.set_emissive_lights` places them in an `EmissiveLightSet` of
+shadowless, specular-free `OmniLight3D`s with attenuation 0.25, fading out
+between 40 and 50 squares from the camera. They show while the profile's
+`lava_lights` is set, and their energy is scaled by `lava_emission`, so
+dimming the lava dims its light. A profile change updates the same lights.
+They ignore cave mode, since no cave map has glowing images. The world view
+computes the clusters when it builds the map and applies them each time it
+lights the scene, after an entity rebuild has cleared it. The map viewer does
+the same.
+
+Each light also brightens the lava under it, so molten strength dropped from
+1.2 to 1.0 when the lights arrived. That keeps the lava's overall brightness
+close to its look without lights. The frame-time difference on VOL1–VOL3 was
+within run-to-run noise in the map-viewer benchmark.
 
 ## Cave light
 
@@ -383,7 +409,8 @@ and keep what reads best. None affects gameplay.
 | Glow halo | The soft additive halo around pickups and gold frogs that replaces the grey mask 1727. | Settings `glow_halo_strength` 2.0, matching `GlowHaloMaterial.DEFAULT_STRENGTH`; falloff `DEFAULT_FALLOFF` 3 ([glow](#glow)); 3.0 with falloff 2 clipped to a flat disc | ORG1 home flies, CAV1 fat fire flies, the ORG gold baby frog: a soft halo with a bright core, not a disc |
 | Glow lights | Small coloured lights at each glow that tint the nearby ground and pulse with the halo. | On: settings `glow_lights`, `glow_light_energy` 1.0; `GlowLightSpec.ENERGY` 0.75 and `RANGE_SQUARES` 1.5 ([glow](#glow)); energy 2 washed the grass | ORG1, ORG gold frog: a visible tint under the glow without washing out the ground |
 | Glow lights in caves | Whether cave glows also light the ground. | Off: settings `glow_lights_in_caves` ([glow](#glow)) | CAV1: whether the fat fire flies' light breaks the cave darkness |
-| Lava emission | How strongly lava and hot rock glow and bloom. | Settings `lava_emission` 1.0, scaling each entry of `emissive_images.tres` ([lava](#lava)); molten lava at 1.5 saturated the red channel over about 30% of the VOL2 overview and flattened its texture | VOL1 cracks, VOL2 lava lake, VOL3 lava pit: a red-orange glow with visible texture, not a flat sheet |
+| Lava emission | How strongly lava and hot rock glow and bloom. | Settings `lava_emission` 1.0, scaling each entry of `emissive_images.tres` ([lava](#lava)); molten lava at 1.5 saturated the red channel over about 30% of the VOL2 overview and flattened its texture; molten is 1.0 now that the lava lights also brighten it | VOL1 cracks, VOL2 lava lake, VOL3 lava pit: a red-orange glow with visible texture, not a flat sheet |
+| Lava lights | Soft red-orange lights over lava that tint nearby rocks, walls, entities and the frog. | On: settings `lava_lights`, energy scaled by `lava_emission`; `EmissiveClusters.ENERGY` 0.6, `LIGHT_HEIGHT` 1.0, `CELL_SQUARES` 4, `MAX_LIGHTS` 24, `EmissiveLightSet.ATTENUATION` 0.25 ([lava](#lava)). Lights half a square up with attenuation 0.75 left bright patches on the lava and barely reached raised blocks | VOL1 blocks and gears beside the lava, the VOL2 walkway, the VOL3 pit walls: a warm tint, not a wash |
 | Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | Settings `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
 | Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
 
