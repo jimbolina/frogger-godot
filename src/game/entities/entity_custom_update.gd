@@ -31,7 +31,9 @@ static func update(definition: EntityDefinition, previous: EntitySnapshot, envir
 		EntityBehavior.Kind.HEDGEHOG:
 			issue = EntityHedgehog.update(definition, result, grid)
 		EntityBehavior.Kind.DOG:
-			issue = EntityDog.update(definition, result, frog, hit)
+			issue = EntityDog.update(definition, result, frog, hit, grid)
+		EntityBehavior.Kind.SUB_LAWNMOWER:
+			issue = EntityLawnmower.update(definition, result, hit, grid)
 		EntityBehavior.Kind.BEAVER:
 			issue = EntityBeaver.update(definition, result, neighbors, definitions, frog)
 		EntityBehavior.Kind.LOG_SNAKE:

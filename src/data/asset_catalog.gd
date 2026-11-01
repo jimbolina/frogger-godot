@@ -196,6 +196,24 @@ func is_playable_level(level: int) -> bool:
 	return not code.is_empty() and code in playable_level_codes()
 
 
+## True if level number [param level] has a map in the level list, whether or
+## not it is one of [method playable_level_codes].
+func has_level_map(level: int) -> bool:
+	var row: MapBookEntry = map_book_entry(level) if tables != null else null
+	return row != null and not row.is_dummy() and row.map_id() > 0
+
+
+## The codes of the levels with a map that are not in
+## [method playable_level_codes], in level-number order.
+func unaccepted_level_codes() -> PackedStringArray:
+	var playable: PackedStringArray = playable_level_codes()
+	var codes := PackedStringArray()
+	for code: String in FroggerIds.LEVEL_CODES:
+		if not code in playable and has_level_map(FroggerIds.level_from_code(code)):
+			codes.append(code)
+	return codes
+
+
 ## The lower-case hex SHA-256 of the retail files the catalog's data comes
 ## from, keyed [code]"exe"[/code] and [code]"mwd"[/code]; empty when the
 ## catalog does not know them. A concrete catalog provides this.

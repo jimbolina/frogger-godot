@@ -53,6 +53,9 @@ To launch a level directly:
 godot --path . res://scenes/game/gameplay.tscn -- --level=SUB1
 ```
 
+`--level=` also opens a level that has a map but is not yet accepted, such as
+SUB2–SUB5, with a warning; the front end lists only accepted levels.
+
 A direct launch reads the project's class-name cache in `.godot/`, which goes
 stale when new scripts arrive and then fails with a script parse error. Prefer
 `tools/play.sh --level=SUB1` (or `tools/play.ps1`), which refreshes the cache

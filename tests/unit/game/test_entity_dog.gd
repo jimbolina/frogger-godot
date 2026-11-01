@@ -150,3 +150,81 @@ func test_selective_reset_recreates_dog_without_mutating_original_run() -> void:
 	assert_eq(reset.custom_state.timer, 2)
 	assert_gt(run.snapshot().entities[0].path.segment_distance, 0)
 	assert_eq(run.snapshot().entities[0].custom_state.mode, EntityDog.Mode.WALKING)
+
+func _sloped_grid(square_count: int = 1) -> GridDefinition:
+	var grid := GridDefinition.new()
+	grid.dimensions = Vector2i(2, 2)
+	grid.base = Vector2i(-256, -256)
+	for index: int in 4:
+		var stack := GridStackDefinition.new()
+		stack.first_square_index = grid.squares.size()
+		stack.square_count = square_count
+		grid.stacks.append(stack)
+		for layer: int in square_count:
+			var square := GridSquareDefinition.new()
+			var x: int = -256 + (index % 2) * 256
+			var z: int = -256 + (index >> 1) * 256
+			square.vertices = [Vector3i(x, -((z + 256) >> 2) - 64, z + 256), Vector3i(x + 256, -((z + 256) >> 2) - 64, z + 256), Vector3i(x, -(z >> 2) - 64, z), Vector3i(x + 256, -(z >> 2) - 64, z)]
+			grid.squares.append(square)
+	return grid
+
+func test_projected_dog_bites_from_its_prior_pose_and_closes_on_the_land() -> void:
+	var definition: EntityDefinition = _definition()
+	definition.flags = EntityDefinition.PROJECT_ON_LAND
+	var entity: EntitySnapshot = _state()
+	entity.entity_flags = EntityDefinition.PROJECT_ON_LAND
+	entity.custom_state.mode = EntityDog.Mode.WALKING
+	entity.path.position = Vector3i(16, 0, 40)
+	entity.matrix12 = PackedInt32Array([4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 16, -70, 24])
+	var grid: GridDefinition = _sloped_grid()
+	var environment := EntityEnvironmentState.new()
+	environment.checkpoint_positions.resize(5)
+	var result: EntityCustomResult = EntityCustomUpdate.update(definition, entity, environment, SourceRandom.create(1), Vector3i.ZERO, true, false, null, null, null, [], [], 0, grid)
+	assert_eq(result.error, "")
+	if not result.error.is_empty():
+		return
+	assert_eq(result.entity.custom_state.mode, EntityDog.Mode.BITING)
+	assert_eq(result.frog_matrix12, PackedInt32Array([0, 0, 4096, 0, 4096, 0, -4096, 0, 0, 16, -70, 216]), "The bite reads the pose before the moving update")
+	var expected: PackedInt32Array = EntityTransform.moving_on_land(entity.path, EntityDefinition.PROJECT_ON_LAND, grid)
+	assert_eq(result.entity.matrix12, expected)
+	assert_ne(expected, EntityTransform.moving(entity.path, EntityDefinition.PROJECT_ON_LAND))
+	var failed: EntityCustomResult = EntityCustomUpdate.update(definition, entity, environment, SourceRandom.create(1), Vector3i.ZERO, true, false, null, null, null, [], [], 0, _sloped_grid(0))
+	assert_eq(failed.error, "Dog projected path requires a valid first terrain square")
+	assert_null(failed.entity)
+	assert_eq(entity.custom_state.mode, EntityDog.Mode.WALKING)
+
+func test_dog_visit_keeps_its_prior_pose_under_visibility_lifetime() -> void:
+	var lifecycle := EntityLifecycleDefinition.new()
+	lifecycle.group_base = Vector3i(-4096, 0, -4096)
+	lifecycle.group_dimensions = Vector2i.ONE
+	lifecycle.group_size = Vector2i(8192, 8192)
+	lifecycle.polygon_counts = PackedInt32Array([0])
+	var definition: EntityDefinition = _definition()
+	definition.path_start.speed = 10
+	var run: EntityRun = EntityRun.create([definition], lifecycle)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var camera := GameplayCameraSnapshot.new()
+	camera.source_world = Vector3i(0, -500, -500)
+	camera.axis_x_12 = Vector3i(4096, 0, 0)
+	camera.axis_y_12 = Vector3i(0, 2896, -2896)
+	camera.axis_z_12 = Vector3i(0, 2896, 2896)
+	assert_eq(run.apply_visibility(camera), "")
+	var environment := EntityEnvironmentState.new()
+	environment.checkpoint_positions.resize(5)
+	var random: SourceRandom = SourceRandom.create(1)
+	for tick: int in 4:
+		var candidate: EntityRun = run.begin_candidate(tick, -1, true)
+		assert_eq(candidate.error, "")
+		var before: PackedInt32Array = candidate.snapshot().entities[0].matrix12
+		assert_true(candidate.begin_update(0, -1))
+		assert_eq(candidate.snapshot().entities[0].matrix12, before)
+		var hit: bool = tick == 3
+		var result: EntityCustomResult = candidate.update_custom(0, environment, random, Vector3i.ZERO, hit)
+		assert_eq(result.error, "")
+		random = result.random
+		if hit:
+			assert_eq(result.frog_matrix12[11], before[11] + 192, "The bite offsets from the pose before this tick's path step")
+			assert_ne(result.entity.matrix12[11], before[11])
+		run.commit_candidate(candidate)

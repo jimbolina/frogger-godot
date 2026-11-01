@@ -3,7 +3,7 @@ extends RefCounted
 ## Resolves authored map entities into detached base-transform definitions.
 
 ## Path movers that frozen ENTSTRUpdateMovingMOF projects onto the landscape.
-const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = EntityRun.PROJECTED_KINDS
 
 ## Desert path runners decoded from PATH_INFO alone.
 const DESERT_PATH_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_SNAKE, EntityBehavior.Kind.DES_VULTURE]
@@ -131,7 +131,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 				definition.parent_unique_id = span.payload.decode_s16(32)
 				if definition.behavior.kind == EntityBehavior.Kind.LOG_SNAKE:
 					definition.movement_speed = span.payload.decode_u16(34)
-		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS + EntityBehavior.JUNGLE_PATH_KINDS + EntityBehavior.SWAMP_PATH_KINDS):
+		elif definition.behavior.kind == EntityBehavior.Kind.PATH_FOLLOWER or (custom_behaviors_enabled and definition.behavior.kind in [EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.TURTLE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SUB_LAWNMOWER, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.FIREFLY] + DESERT_PATH_KINDS + EntityBehavior.JUNGLE_PATH_KINDS + EntityBehavior.SWAMP_PATH_KINDS):
 			var info: MapEntityPayload = MapEntityPayload.read_path_info(span)
 			if not info.error.is_empty():
 				result._issue("invalid_payload", info.error, span, form, index, source_id, resource_id, build_id)
@@ -167,7 +167,7 @@ static func from_map(map: MapFile, theme_book: ThemeBook, source_id: String = ""
 					continue
 				definition.authored_delay = span.payload.decode_s16(12)
 				definition.behavior.execution = EntityBehavior.Execution.UPDATE
-			if definition.behavior.kind in DESERT_PATH_KINDS:
+			if definition.behavior.kind in DESERT_PATH_KINDS + [EntityBehavior.Kind.SUB_LAWNMOWER]:
 				definition.behavior.execution = EntityBehavior.Execution.UPDATE
 			if definition.behavior.kind == EntityBehavior.Kind.JUN_HIPPO and span.payload.size() < SUBURBIA_TURTLE_SIZE:
 				result._issue("invalid_payload", "Jungle hippo requires PATH_INFO, dive and rise delays and its turtle type", span, form, index, source_id, resource_id, build_id)

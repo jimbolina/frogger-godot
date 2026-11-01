@@ -5,7 +5,8 @@ extends RefCounted
 enum Mode { WAITING, WALKING, FALLING, BITING }
 
 ## Advances a private candidate before updating its source moving transform.
-static func update(definition: EntityDefinition, result: EntityCustomResult, frog: GameplayState, hit: bool) -> String:
+## The bite reads the previous pose; the closing moving update projects onto the land when flagged.
+static func update(definition: EntityDefinition, result: EntityCustomResult, frog: GameplayState, hit: bool, grid: GridDefinition = null) -> String:
 	var entity: EntitySnapshot = result.entity
 	var custom: EntityCustomState = entity.custom_state
 	if entity.path == null or entity.animation == null or entity.animation.lengths.size() < 3:
@@ -49,7 +50,9 @@ static func update(definition: EntityDefinition, result: EntityCustomResult, fro
 			custom.count = (custom.count - 1) & 4294967295
 			if custom.count == 0:
 				_walk(result)
-	entity.matrix12 = EntityTransform.moving(entity.path, entity.entity_flags)
+	entity.matrix12 = EntityTransform.moving_on_land(entity.path, entity.entity_flags, grid)
+	if entity.matrix12.is_empty():
+		return "Dog projected path requires a valid first terrain square"
 	return ""
 
 static func _bite(result: EntityCustomResult) -> void:

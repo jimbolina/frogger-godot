@@ -12,6 +12,8 @@ const NO_AUDIO_FLAG: String = "--no-audio"
 
 var auto_open: bool = true
 var level_code: String = "ORG1"
+## Whether a level with a map outside the accepted list may open; set when the command line names a level.
+var allow_unaccepted_levels: bool = false
 var run: GameplayRun
 var last_error: String = ""
 var _data: AssetCatalog
@@ -50,6 +52,7 @@ func _ready() -> void:
 			AudioLevels.apply(settings.music_volume, settings.sound_volume, voice_view())
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
 		recorder = InputRecorder.from_arguments(arguments)
+		allow_unaccepted_levels = not ViewerArguments.value(arguments, "--level=").is_empty()
 		level_code = FrontEndSession.selected_level if not FrontEndSession.selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
 		if level_code.is_empty():
 			level_code = "ORG1"
@@ -83,7 +86,9 @@ func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -
 	if data == null or not data.is_valid():
 		return _show_error("Valid imported assets are required")
 	if not data.is_playable_level(level_number):
-		return _show_error("Playable levels are " + ", ".join(data.playable_level_codes()))
+		if not allow_unaccepted_levels or not data.has_level_map(level_number):
+			return _show_error(_level_choice_message(data))
+		print("%s is not an accepted level and may play incompletely" % code)
 	var scene_data: MapSceneData = MapSceneData.load_level(data, level_number)
 	if not scene_data.error.is_empty():
 		return _show_error(scene_data.error)
@@ -403,6 +408,12 @@ func _finish_front_end_level() -> void:
 	var issue: String = FrontEndSession.save()
 	if not issue.is_empty():
 		last_error = issue
+
+func _level_choice_message(data: AssetCatalog) -> String:
+	var message: String = "Playable levels are " + ", ".join(data.playable_level_codes())
+	if allow_unaccepted_levels:
+		message += "; unaccepted levels with a map are " + ", ".join(data.unaccepted_level_codes())
+	return message
 
 ## Follows the flow from the finished level to its next page.
 func _advance_front_end() -> void:

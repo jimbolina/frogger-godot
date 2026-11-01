@@ -5,9 +5,9 @@ Launch `tools/play.sh --scene=res://scenes/front_end.tscn`: the main menu,
 the 3D level-select stack over the animated water, Options (volumes, keys,
 high scores) and localised menu images. ORG1–ORG5,
 SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and
-SKY1–SKY4 are accepted by the owner's play check. See the [roadmap](PORTING.md)
-and [front end](reference/gameplay/front-end.md). X2 frog lighting and P12 audio
-await the owner's checks.
+SKY1–SKY4 are accepted by the owner's play check; SUB2–SUB5 (P9h) open only
+with `--level=` and await it. See the [roadmap](PORTING.md). X2 frog lighting
+and P12 audio await the owner's checks.
 
 Everything plays from the committed `assets/` through `ImportedAssets`
 ([assets](reference/assets.md)); readers, importer and retail goldens live in

@@ -39,6 +39,45 @@ func test_dog_clocks_rng_and_bite_match_independent_facts() -> void:
 				sounds.append(request.sound_id)
 			_assert_custom_row({"mode": entity.custom_state.mode, "timer": entity.custom_state.timer, "count": entity.custom_state.count, "rng": random.state, "draws": random.draw_count, "action": entity.animation.action, "active": result.path_active_request, "sounds": sounds, "pose": Array(result.frog_matrix12)}, row, "%s tick %d" % [fixture.name, row.tick])
 
+func test_lawnmower_sound_chop_and_prior_pose_match_independent_facts() -> void:
+	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
+	for fixture: Dictionary in facts.lawnmowers:
+		var definition := EntityDefinition.new()
+		definition.entity_index = 12
+		definition.behavior = EntityBehaviorCatalog.resolve("SUB_LAWNMOWER")
+		definition.behavior.execution = EntityBehavior.Execution.CONTACT
+		var entity := EntitySnapshot.new()
+		entity.custom_state = EntityCustomState.new()
+		entity.custom_state.mode = EntityLawnmower.Mode.MOWING
+		entity.path = PathSnapshot.new()
+		var tangent: Array = fixture.tangent
+		entity.path.tangent = _vector(tangent)
+		var hits: Array = fixture.hits
+		var dropped: Array = fixture.get("dropped", [])
+		var random: SourceRandom = SourceRandom.create(1)
+		for row: Dictionary in fixture.rows:
+			var label: String = "%s tick %d" % [fixture.name, row.tick]
+			entity.requests.clear()
+			if dropped.has(row.tick):
+				entity.custom_state.moving_sound.clear()
+			var position: Array = row.position
+			entity.path.position = _vector(position)
+			var result: EntityCustomResult = EntityCustomUpdate.update(definition, entity, _environment(), random, Vector3i.ZERO, hits.has(row.tick), false)
+			assert_eq(result.error, "", label)
+			if not result.error.is_empty():
+				return
+			entity = result.entity
+			assert_eq(result.random.draw_count, 0, label)
+			_assert_custom_row({"mode": entity.custom_state.mode, "pose": Array(result.frog_matrix12), "matrix": Array(entity.matrix12)}, row, label)
+			var expected_sounds: Array = row.sounds
+			assert_eq(entity.requests.size(), expected_sounds.size(), "%s sounds" % label)
+			for index: int in mini(entity.requests.size(), expected_sounds.size()):
+				var request: TickEvent = entity.requests[index]
+				var expected: Array = expected_sounds[index]
+				var name: String = expected[0]
+				assert_eq(request.kind, TickEvent.Kind.MOVING if name == "moving" else TickEvent.Kind.SOUND, label)
+				assert_eq(PackedInt32Array([request.sound_id, request.minimum_distance, request.maximum_distance]), PackedInt32Array(expected.slice(1)), label)
+
 func test_crocodile_state_machine_matches_independent_facts() -> void:
 	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
 	for fixture: Dictionary in facts.crocodiles:
@@ -82,6 +121,12 @@ func test_crocodile_state_machine_matches_independent_facts() -> void:
 					var expected_number: int = row[key]
 					var actual_number: int = observed[key]
 					assert_eq(actual_number, expected_number, "tick %d %s" % [row.tick, key])
+
+func _vector(values: Array) -> Vector3i:
+	var x: int = values[0]
+	var y: int = values[1]
+	var z: int = values[2]
+	return Vector3i(x, y, z)
 
 func _environment() -> EntityEnvironmentState:
 	var result := EntityEnvironmentState.new()

@@ -263,7 +263,49 @@ def dogs():
     return specifications
 
 
+def moving_mof(position, tangent):
+    """ENTITY.C ENTSTRUpdateMovingMOF for a unit axis-aligned tangent: X = Y x Z, Y = Z x X."""
+    def cross(a, b):
+        return [(a[1] * b[2] - a[2] * b[1]) >> 12, (a[2] * b[0] - a[0] * b[2]) >> 12, (a[0] * b[1] - a[1] * b[0]) >> 12]
+    x = cross([0, 4096, 0], tangent)
+    y = cross(tangent, x)
+    return [x[0], y[0], tangent[0], x[1], y[1], tangent[1], x[2], y[2], tangent[2]] + list(position)
+
+
+def lawnmowers():
+    """ent_sub.c ENTSTRSubUpdateLawnmower: mowing sound, hit, one chop on the prior pose, then nothing."""
+    specifications = [
+        dict(name='mow_hit_chop_then_nothing', tangent=[0, 0, 4096], start=[1000, -200, 32700], step=[0, 0, 16], ticks=5, hits=[1]),
+        dict(name='hit_ignored_after_mowing', tangent=[-4096, 0, 0], start=[-500, 64, 300], step=[-24, 0, 0], ticks=4, hits=[0, 1, 2, 3]),
+        dict(name='lost_sound_object_recreated', tangent=[4096, 0, 0], start=[0, 0, 0], step=[8, 0, 0], ticks=4, hits=[], dropped=[2]),
+    ]
+    for spec in specifications:
+        mode, has_sound = 0, False
+        matrix = [4096, 0, 0, 0, 4096, 0, 0, 0, 4096, 0, 0, 0]
+        rows = []
+        for tick in range(spec['ticks']):
+            if tick in spec.get('dropped', []):
+                has_sound = False
+            position = [spec['start'][axis] + spec['step'][axis] * tick for axis in range(3)]
+            sounds, pose = [], []
+            if mode == 0:
+                if not has_sound:
+                    has_sound = True
+                    sounds.append(['moving', 159, 512, 1536])
+                if tick in spec['hits']:
+                    mode = 1
+                    sounds.append(['sound', 156, 0, 0])
+            elif mode == 1:
+                offset = [signed16((matrix[row * 3 + 2] * 128) >> 12) for row in range(3)]
+                pose = matrix[:9] + [matrix[9 + axis] + offset[axis] for axis in range(3)]
+                mode = 2
+            matrix = moving_mof(position, spec['tangent'])
+            rows.append(dict(tick=tick, position=position, mode=mode, sounds=sounds, pose=pose, matrix=matrix.copy()))
+        spec['rows'] = rows
+    return specifications
+
+
 if __name__ == '__main__':
-    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), snakes=snakes(), beavers=beavers(), dogs=dogs())
+    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), snakes=snakes(), beavers=beavers(), dogs=dogs(), lawnmowers=lawnmowers())
     path = Path(__file__).resolve().parents[1] / 'tests/golden/synthetic/entity_custom.json'
     path.write_text(json.dumps(value, indent=2) + '\n')

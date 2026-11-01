@@ -1,7 +1,7 @@
 extends RetailTest
 ## Data-backed sandbox spawning from supported-level templates, runs and checkpoint limits.
 
-const UNSPAWNABLE: PackedStringArray = ["FOR_SWAYING_BRANCH", "ORG_BABY_FROG", "ORG_LOG_SNAKE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT"]
+const UNSPAWNABLE: PackedStringArray = ["FOR_SWAYING_BRANCH", "ORG_BABY_FROG", "ORG_LOG_SNAKE", "GEN_TOP_LEFT", "GEN_BOTTOM_RIGHT", "SUB_LAWNMOWER"]
 
 var _data: GameData
 var _templates: SandboxEntityTemplates

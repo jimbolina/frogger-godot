@@ -959,7 +959,10 @@ Log-snake cases cover narrowed ranges/offsets, parent visibility and recreation;
 beaver cases cover authored neighbor order, narrowed hit distance, strict bite
 range, gap/bite/dive clocks and parent retirement. Dog cases cover unsigned
 postdecrement and wrap, bark distance, bounced-end RNG, fall/hit precedence and
-bite expiry/refresh. Sources are `ent_gen.c`, `ent_org.c` and `ent_sub.c`; the
+bite expiry/refresh. Lawnmower cases cover the moving-sound request and its
+recreation after the sound object is lost, the hit sound, the one chop on the
+previous pose including a 32-bit translation sum beyond signed 16 bits, ignored
+later hits and the continuing path pose. Sources are `ent_gen.c`, `ent_org.c` and `ent_sub.c`; the
 generator does not call gameplay code. Change one expected
 state value in each new family for deliberate-break checks, then restore it.
 

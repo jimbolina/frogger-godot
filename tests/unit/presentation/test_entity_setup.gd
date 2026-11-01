@@ -37,6 +37,36 @@ func test_dog_wait_payload_is_unsigned_and_truncation_is_reported() -> void:
 	assert_eq(setup.diagnostics[0].code, "invalid_payload")
 	assert_eq(setup.diagnostics[0].source_id, "dog.map")
 
+func test_lawnmower_and_projected_dog_follow_moving_mof_setup() -> void:
+	var book: ThemeBook = _book()
+	book.entries[1].forms[0].entity_name = "SUB_LAWNMOWER"
+	book.entries[1].forms[1].entity_name = "SUB_DOG"
+	var map: MapFile = _map()
+	_add_path(map)
+	_add_entity(map, 0, 0, _path_info(0), 1)
+	_add_entity(map, 0, EntityDefinition.PROJECT_ON_LAND, _path_info(0), 2)
+	var dog: PackedByteArray = _path_info(0)
+	dog.resize(16)
+	_add_entity(map, 1, EntityDefinition.PROJECT_ON_LAND, dog, 3)
+	_add_entity(map, 0, EntityDefinition.LOCAL_ALIGN, _path_info(0), 4)
+	var setup: EntitySetup = EntitySetup.from_map(map, book, "sub.map", 49, "pc-retail-v3.0e", true)
+	assert_eq(setup.error, "")
+	assert_eq(setup.definitions.size(), 3)
+	if setup.definitions.size() != 3:
+		return
+	for definition: EntityDefinition in setup.definitions:
+		assert_eq(definition.behavior.execution, EntityBehavior.Execution.UPDATE)
+		assert_not_null(definition.path_start)
+	assert_eq(setup.definitions[0].behavior.kind, EntityBehavior.Kind.SUB_LAWNMOWER)
+	assert_eq(setup.definitions[1].flags, EntityDefinition.PROJECT_ON_LAND)
+	assert_eq(setup.definitions[2].behavior.kind, EntityBehavior.Kind.DOG)
+	assert_eq(setup.definitions[2].flags, EntityDefinition.PROJECT_ON_LAND)
+	assert_eq(setup.diagnostics[0].code, "unsupported_transform", "LOCAL_ALIGN stays unsupported for custom movers")
+	assert_eq(setup.diagnostics[0].entity_index, 3)
+	assert_eq(EntityRun.create(setup.definitions).error, "")
+	setup = EntitySetup.from_map(map, book, "sub.map", 49, "pc-retail-v3.0e")
+	assert_true(setup.definitions.is_empty(), "Transform inspection has no lawnmower decoder")
+
 func test_butterfly_callback_reads_its_payload_in_both_roles_and_repointed_types() -> void:
 	for bonus: bool in [true, false]:
 		var book: ThemeBook = _book()

@@ -13,7 +13,7 @@ decoded map record for later behavior work.
 Invalid form/name, matrix or PATH_INFO, missing/unsupported path, bad start
 and unknown entity flag bits omit only that entity.
 `PROJECT_ON_LAND` is supported for whole-map path followers, fireflies, moving
-platforms, hedgehogs, Swamp slugs and nuclear barrels, which project onto the first terrain layer during live
+platforms, hedgehogs, Suburbia dogs and lawnmowers, Swamp slugs and nuclear barrels, which project onto the first terrain layer during live
 updates while creation and reset keep the plain path pose; other projected
 transforms remain omitted. `LOCAL_ALIGN` is supported for whole-map generic
 path followers, Swamp slugs and nuclear barrels as frozen
@@ -655,6 +655,24 @@ pose, without changing its authoritative position or repeating FORM death.
 Logical bark/bite requests participate in the same transaction. Moving tongueable
 entities retain path movement and tongue eligibility. Dynamic entities are
 immortal and join moving-group ordering despite their matrix payload.
+
+Dogs and lawnmowers end their update with `ENTSTRUpdateMovingMOF`, so their
+visit keeps the previous tick's pose even though the path has already stepped;
+the bite and chop read that pose, and the closing moving update projects onto
+the first terrain layer when `PROJECT_ON_LAND` is set. A paused dog reprojects
+the same path position. `LOCAL_ALIGN` remains unsupported for both.
+
+Lawnmowers (`SUB_LAWNMOWER`, form `SUB_LAWN_MOWER`) read `PATH_INFO` alone and
+never pause their path (`ENTSTRSubCreateLawnmower`, `ENTSTRSubUpdateLawnmower`).
+Creation and checkpoint or frog-death reset start `MOWING`. While mowing, the
+mower requests `SFX_SUB_MOWER` (159) as its moving sound with radii 512 and
+1536 whenever it owns no moving sound; a hit then switches to `CHOPPING` and
+requests the 2D `SFX_SUB_FROG_MOWED` (156). The next update copies the mower
+rotation to the frog matrix and sets the frog translation to the mower's plus
+its rotated (0, 0, 128), narrowed to signed 16 bits before the 32-bit sum, then
+switches to `DO_NOTHING`, which ignores further hits and requests no sound. The
+kill itself is the form's `FORM_DEATH_MOWED` contact (`GEN_FROG_MOWN`). The form
+row has no script, so `script_sub_lawn_mower` is not run.
 
 For MOVING entities running `SCRIPT_TURTLE`, frozen loader behavior reserves three
 zeroed register words after the 12-byte path payload. Setup reproduces that narrow

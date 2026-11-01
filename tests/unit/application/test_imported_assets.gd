@@ -37,6 +37,21 @@ func test_playable_levels_follow_the_arcade_stack() -> void:
 	assert_false(_assets.is_playable_level(100))
 
 
+func test_unaccepted_levels_are_the_mapped_levels_outside_the_playable_list() -> void:
+	var codes: PackedStringArray = _assets.unaccepted_level_codes()
+	for code: String in ["SUB2", "SUB3", "SUB4", "SUB5", "SUBM", "JUN2", "ORGM"]:
+		assert_true(code in codes, code)
+		assert_true(_assets.has_level_map(FroggerIds.level_from_code(code)), code)
+	for code: String in ["SUB1", "CAV2", "CAV5", "FOR3", "SKY5", "ISLAND"]:
+		assert_false(code in codes, code)
+	for code: String in ["CAV2", "CAV5", "FOR3", "SKY5"]:
+		assert_false(_assets.has_level_map(FroggerIds.level_from_code(code)), code)
+	for code: String in _assets.playable_level_codes():
+		assert_true(_assets.has_level_map(FroggerIds.level_from_code(code)), code)
+	assert_false(_assets.has_level_map(-1))
+	assert_false(_assets.has_level_map(100))
+
+
 func test_every_playable_level_resolves_its_map_theme_remap_and_banks() -> void:
 	var general: ThemeBookEntry = _assets.theme_book_entry(FroggerIds.THEME_GENERAL)
 	assert_not_null(general)

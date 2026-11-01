@@ -2,10 +2,14 @@ class_name EntityRun
 extends RefCounted
 ## Owns attached entity transforms and independent path cursors for one run.
 
-const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
+## Path movers that frozen ENTSTRUpdateMovingMOF projects onto the landscape.
+const PROJECTED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.FIREFLY, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL, EntityBehavior.Kind.DOG, EntityBehavior.Kind.SUB_LAWNMOWER]
+## Custom path movers whose source update reads the previous tick's transform before ending with
+## ENTSTRUpdateMovingMOF; their visit keeps that pose and the update projects its own.
+const PRIOR_POSE_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.DOG, EntityBehavior.Kind.SUB_LAWNMOWER]
 ## Generic ENTSTRUpdateMovingMOF users whose LOCAL_ALIGN flag the run honours.
 const LOCALLY_ALIGNED_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PATH_FOLLOWER, EntityBehavior.Kind.SWP_SLUG, EntityBehavior.Kind.NUCLEAR_BARREL]
-const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK, EntityBehavior.Kind.SWP_SQUIRT, EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS, EntityBehavior.Kind.SWP_RAT]
+const RETAINED_MATRIX_KINDS: Array[EntityBehavior.Kind] = [EntityBehavior.Kind.PICKUP, EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.BABY_FROG, EntityBehavior.Kind.CROC_HEAD, EntityBehavior.Kind.GOLD_FROG, EntityBehavior.Kind.LOG_SNAKE, EntityBehavior.Kind.BEAVER, EntityBehavior.Kind.DOG, EntityBehavior.Kind.HIVE, EntityBehavior.Kind.BREAKING_BRANCH, EntityBehavior.Kind.SQUIRREL, EntityBehavior.Kind.HEDGEHOG, EntityBehavior.Kind.MOVING_PLATFORM, EntityBehavior.Kind.VOL_COLOUR_SWITCH, EntityBehavior.Kind.VOL_FALLING_PLATFORM, EntityBehavior.Kind.CAVE_LIGHT, EntityBehavior.Kind.FAT_FIRE_FLY, EntityBehavior.Kind.DES_FALLING_ROCK, EntityBehavior.Kind.DES_ROLLING_ROCK, EntityBehavior.Kind.DES_TUMBLE_WEED, EntityBehavior.Kind.DES_CROC_HEAD, EntityBehavior.Kind.DES_CRACK, EntityBehavior.Kind.SWP_SQUIRT, EntityBehavior.Kind.SWP_CRUSHER, EntityBehavior.Kind.SWP_PRESS, EntityBehavior.Kind.SWP_RAT, EntityBehavior.Kind.SUB_LAWNMOWER]
 var error: String = ""
 var _definitions: Array[EntityDefinition] = []
 var _scripts: Array[PreparedEntityScript] = []
@@ -776,6 +780,8 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 		elif definition.behavior.kind in [EntityBehavior.Kind.BONUS_FLY, EntityBehavior.Kind.CROC_HEAD]:
 			entity.entity_flags |= EntityDefinition.HIDDEN | EntityDefinition.NO_COLLISION
 			entity.custom_state.model_hidden = true
+		elif definition.behavior.kind == EntityBehavior.Kind.SUB_LAWNMOWER:
+			entity.custom_state.mode = EntityLawnmower.Mode.MOWING
 		elif definition.behavior.kind == EntityBehavior.Kind.DOG:
 			entity.custom_state.timer = definition.authored_delay
 			if runner != null:
@@ -843,7 +849,7 @@ func begin_update(slot: int, attached: int, grid: GridDefinition = null) -> bool
 		_state.live_order.remove_at(_state.live_order.find(entity.entity_index))
 		return false
 	entity.live_flags = (entity.live_flags & ~EntityLiveFlags.DESTROY) | int(entity.destroy_pending)
-	if entity.path != null:
+	if entity.path != null and _definitions[slot].behavior.kind not in PRIOR_POSE_KINDS:
 		entity.matrix12 = _path_pose(slot, entity.path, _definitions[slot].flags, grid, entity.matrix12)
 		if entity.matrix12.is_empty():
 			error = _projection_error(slot)
@@ -859,7 +865,7 @@ func apply_cave_fade(slot: int, frog_position: Vector3i, environment: EntityEnvi
 
 func _projects(slot: int, flags: int, grid: GridDefinition) -> bool:
 	var kind: EntityBehavior.Kind = _definitions[slot].behavior.kind
-	return grid != null and flags & EntityDefinition.PROJECT_ON_LAND and kind != EntityBehavior.Kind.HEDGEHOG and kind in PROJECTED_KINDS
+	return grid != null and flags & EntityDefinition.PROJECT_ON_LAND and kind != EntityBehavior.Kind.HEDGEHOG and kind not in PRIOR_POSE_KINDS and kind in PROJECTED_KINDS
 
 func _path_pose(slot: int, path: PathSnapshot, flags: int, grid: GridDefinition, previous: PackedInt32Array) -> PackedInt32Array:
 	if _projects(slot, flags, grid):

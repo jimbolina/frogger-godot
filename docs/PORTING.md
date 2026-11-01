@@ -25,6 +25,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P8d | Inspection module split: guards, presets, scenario options and manifests leave gameplay | S | Scanner and both test modes | Done before P8b |
 | P10 | Dedicated game scene, original-style HUD and broader level setup | L | ORG1–ORG5 and SUB1 playable start to finish; SUB1 and ORG1 attract demos run to completion with the same end state | Done; six keyboard completions, native attract comparisons, schedule parity and both test modes pass |
 | P9 | The remaining seven themes, one sub-phase each: FOR and VOL (attract demos exist), then CAV, DES, JUN, SWP, SKY | XL | A checklist per level; demo or reference-engine trace per theme | Done; P9a Forest, P9b Volcano, P9c Cave, P9d Desert, P9e Jungle, P9f Swamp and P9g Sky complete; every playable level accepted by the owner |
+| P9h | Suburbia SUB2–SUB5: lawnmowers, land-projected dogs, and `--level=` opening mapped levels outside the accepted list | M | Independent lawnmower golden with break; setup and screen tests open SUB2–SUB5; owner play check | Implemented; owner play check pending |
 | P11 | Effects and particles | L | By eye against reference pictures | Done; P11a effect signals and resources, P11b frog effects and P11c entity effects complete and accepted by the owner's play check |
 | P12 | Sound banks and music: PC sound-bank reader with an independent golden, then playback of the typed sound events | M | Reader golden; by ear | Done; sound effects and disc music play from committed voices (owner's by-ear check pending) |
 | P13a | Front-end flow, unlock progression, saves, plain main menu and level list, score and lives carried between levels | M | Independent unlock and flow goldens; owner play check | Done; accepted by the owner's play check |
@@ -235,6 +236,13 @@ facts cover every Sky-specific rule and the retail payloads; all four demos
 complete with schedule parity and match native traces per tick, obtained from a
 scratch store that unlocks SKY1. Fixing SKY3 also made freefall entry clear the
 whole frozen entity landing mask. SKY5 and SKYM are dummy rows.
+
+P9h Suburbia covers SUB2–SUB5, which P10 left after SUB1. Lawnmowers and
+land-projected dogs follow `ent_sub.c`, and dogs and mowers now keep the prior
+tick's pose during their update, which also moves the SUB1 dog bite by one tick
+of path travel. Until the owner accepts them they open only with
+`tools/play.sh --level=SUB2` (likewise SUB3–SUB5), not from the front end.
+SUBM is multiplayer.
 
 ## P11 effects and particles
 
