@@ -265,7 +265,7 @@ pops for checkpoints, gold frogs, balloons, the nuclear barrel and the
 breaking branch, the gold-frog glow, turtle, hippo and rat splashes,
 exhaust, cloud, smoke and fire sprites from the resolved hilites, the croak
 key (C) with the throat scale, and a sandbox effects preset. The ORG gold
-baby frog is carried rather than popped and the outro stone frog belongs to
+baby frog pops and collects on contact; the outro stone frog belongs to
 P16. See the [effects reference](reference/rendering/effects.md).
 
 Each level is accepted when the owner plays it in the game scene and confirms it

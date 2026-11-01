@@ -1,11 +1,16 @@
 class_name EntityBaby
 extends RefCounted
-## Frozen pink frog search, autonomous hops, pickup and riding behavior.
+## Frozen pink frog search, autonomous hops, pickup and riding behavior, and the ORG gold baby
+## frog that is collected and popped instead of ridden.
 
 enum Mode { SEARCHING, ON_ENTITY, JUMPING, ON_FROG, NOTHING, WAIT_TO_SEARCH_AGAIN }
 
-## Advances one privately owned baby against the parent's pose at this live-list visit.
-static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: GameplayState = null, hit: bool = false) -> String:
+## ORG_GOLD_BABY_FROG_FORM_ID (ent_org.h).
+const GOLD_FORM: int = 24
+
+## Advances one privately owned baby against the parent's pose at this live-list visit; a
+## [param gold] baby keeps its action on landing and is collected on HIT (ent_org.c:695-726).
+static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormContactDefinition, frog: GameplayState = null, hit: bool = false, gold: bool = false) -> String:
 	var state: EntityCustomState = entity.custom_state
 	if parent == null or form == null or form.dimensions.x <= 0 or form.dimensions.y <= 0:
 		return "Baby requires a resolved authored parent and FORM"
@@ -24,7 +29,8 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 					state.velocity_16 = Vector3i.ZERO
 					state.offset_16 = Vector3i((form.offsets.x + 128) << 16, (form.height - 30) << 16, (form.offsets.y + 128) << 16)
 					state.mode = Mode.ON_ENTITY
-					entity.animation.select(1)
+					if not gold:
+						entity.animation.select(1)
 				else:
 					state.mode = Mode.WAIT_TO_SEARCH_AGAIN
 		Mode.WAIT_TO_SEARCH_AGAIN:
@@ -50,7 +56,8 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 				state.velocity_16 = Vector3i.ZERO
 				state.mode = Mode.ON_ENTITY
 				state.delay = 30
-				entity.animation.select(1)
+				if not gold:
+					entity.animation.select(1)
 			else:
 				state.offset_16 += state.velocity_16
 		Mode.ON_FROG:
@@ -74,9 +81,19 @@ static func update(entity: EntitySnapshot, parent: EntitySnapshot, form: FormCon
 				state.carried_jump_ticks = 6
 		Mode.NOTHING:
 			state.model_hidden = true
+			if entity.pop_allocated and entity.pop_remaining == 0:
+				entity.pop_allocated = false
 			return ""
 		_:
 			return "Unsupported pink frog mode"
+	if gold and hit and state.mode != Mode.ON_FROG:
+		state.mode = Mode.NOTHING
+		state.model_hidden = true
+		entity.pop_allocated = true
+		entity.pop_remaining = 32
+		entity.requests.append(TickEvent.make(TickEvent.Kind.GOLD_FROG_COLLECT))
+		entity.requests.append(TickEvent.make(TickEvent.Kind.ENTITY_POP_EXPLOSION_REQUEST))
+		return ""
 	if hit and state.mode != Mode.ON_FROG:
 		if frog == null:
 			return "Pink frog pickup requires its single-player carrier"
@@ -123,7 +140,7 @@ static func _hop(entity: EntitySnapshot, form: FormContactDefinition) -> String:
 ## Advances the supported baby-frog update with optional parent and contact state.
 static func update_custom(definition: EntityDefinition, entity: EntitySnapshot, parent_live: bool, parent: EntitySnapshot, parent_form: FormContactDefinition, frog: GameplayState, hit: bool) -> String:
 	if parent != null:
-		var issue: String = EntityBaby.update(entity, parent, parent_form, frog if (definition.behavior.execution == EntityBehavior.Execution.CONTACT) else null, hit)
+		var issue: String = EntityBaby.update(entity, parent, parent_form, frog if (definition.behavior.execution == EntityBehavior.Execution.CONTACT) else null, hit, definition.form_id == GOLD_FORM)
 		if not issue.is_empty():
 			return issue
 		return ""

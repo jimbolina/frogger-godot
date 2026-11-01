@@ -25,7 +25,7 @@ const COLOUR := Vector3i(255, 255, 16)
 ## Largest drawn screen Y magnitude.
 const MAX_SCREEN_Y: int = 0x300
 ## ORG_GOLD_BABY_FROG_FORM_ID (ent_org.h).
-const ORG_GOLD_BABY_FROG_FORM: int = 24
+const ORG_GOLD_BABY_FROG_FORM: int = EntityBaby.GOLD_FORM
 
 ## One glow: its owner's generation, pulse moves and drawn origins.
 class Glow extends RefCounted:

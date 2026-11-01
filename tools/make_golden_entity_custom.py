@@ -90,6 +90,75 @@ def gold_frogs():
     return cases
 
 
+def org_babies():
+    hop, complete = 0, 1
+    usable = [True, True]
+    cases = []
+    for gold, hits in [(True, [10, 11, 50]), (True, [37, 38]), (False, [37, 38])]:
+        mode, search_count, delay, count, direction, cell = 'SEARCHING', 0, 0, 0, 0, 0
+        action, landed, carried, moving = hop, False, False, False
+        remaining, allocated, hidden = 0, False, True
+        rows = []
+        for tick in range(76):
+            parent_live = tick not in (1, 2)
+            hit = tick in hits
+            requests = []
+            done = False
+            if mode == 'NOTHING':
+                hidden = True
+                if allocated and remaining == 0:
+                    allocated = False
+                done = True
+            elif mode == 'SEARCHING':
+                if parent_live:
+                    search_count += 1
+                    if search_count >= 2:
+                        search_count, landed, direction, cell, count = 0, True, 0, 0, 0
+                        mode, delay = 'ON_ENTITY', 30
+                        if not gold:
+                            action = complete
+                    else:
+                        mode = 'WAIT_TO_SEARCH_AGAIN'
+            elif mode == 'WAIT_TO_SEARCH_AGAIN':
+                if not parent_live:
+                    mode = 'SEARCHING'
+            elif mode == 'ON_ENTITY':
+                if not parent_live:
+                    mode, landed, delay, search_count = 'SEARCHING', False, 0, 0
+                else:
+                    expired = delay == 0
+                    delay -= 1
+                    if expired:
+                        step = [1, 0, -1, 0][direction]
+                        if not 0 <= cell + step < len(usable):
+                            direction = (direction + 2) & 3
+                            step = [1, 0, -1, 0][direction]
+                        cell += step
+                        mode, count, action = 'JUMPING', 6, hop
+                        if not moving:
+                            moving = True
+                            requests.append('moving')
+            elif mode == 'JUMPING':
+                count -= 1
+                if count == 0:
+                    mode, delay = 'ON_ENTITY', 30
+                    if not gold:
+                        action = complete
+            if not done:
+                if gold and hit and mode != 'ON_FROG':
+                    mode, hidden, allocated, remaining = 'NOTHING', True, True, 32
+                    requests += ['gold_frog_collect', 'entity_pop_explosion_request']
+                else:
+                    if hit and mode != 'ON_FROG':
+                        mode, carried, landed, action = 'ON_FROG', True, False, hop
+                    hidden = not (carried or (landed and parent_live))
+            remaining = max(0, remaining - 1)
+            rows.append(dict(tick=tick, hit=hit, parent_live=parent_live, mode=mode, action=action,
+                             remaining=remaining, allocated=allocated, hidden=hidden, requests=requests))
+        cases.append(dict(gold=gold, rows=rows))
+    return cases
+
+
 def snakes():
     cases = []
     for snake_radius, log_radius, height, speed in [(20, 50, -32, 2048), (0, 40000, 40000, 8388608), (0, 0, -32769, -256)]:
@@ -306,6 +375,6 @@ def lawnmowers():
 
 
 if __name__ == '__main__':
-    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), snakes=snakes(), beavers=beavers(), dogs=dogs(), lawnmowers=lawnmowers())
+    value = dict(schema='entity-custom-v1', crocodiles=[crocodile(0,-1,-1), crocodile(0,81,-1), crocodile(0,-1,30), crocodile(31,-1,-1)], gold_frogs=gold_frogs(), org_babies=org_babies(), snakes=snakes(), beavers=beavers(), dogs=dogs(), lawnmowers=lawnmowers())
     path = Path(__file__).resolve().parents[1] / 'tests/golden/synthetic/entity_custom.json'
     path.write_text(json.dumps(value, indent=2) + '\n')

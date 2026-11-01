@@ -34,7 +34,7 @@ native attract comparisons are on-demand
 [diagnostics](reference/testing/README.md#diagnostics-demo-playback-and-native-comparison);
 the sandbox and the owner's play checks are the system checks.
 
-The ORG gold baby frog is carried rather than popped; the outro stone frog
-belongs to P16. Attract demos, multiplayer, exports, hosted CI and performance
+The ORG gold baby frog pops on contact (play check pending); the outro stone
+frog belongs to P16. Attract demos, multiplayer, exports, hosted CI and performance
 tuning are separate. The FMV decision gates P16. FrogLord compatibility
 is deferred from S1 on. Never push.

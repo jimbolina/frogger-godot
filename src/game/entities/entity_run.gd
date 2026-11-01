@@ -792,6 +792,9 @@ func _initialize_instance(entity: EntitySnapshot, definition: EntityDefinition, 
 		elif definition.behavior.kind == EntityBehavior.Kind.BABY_FROG:
 			entity.custom_state.timer = 0
 			entity.custom_state.model_hidden = true
+			if definition.form_id == EntityBaby.GOLD_FORM and gold_collected:
+				entity.entity_flags |= EntityDefinition.NO_DISPLAY
+				entity.custom_state.mode = EntityBaby.Mode.NOTHING
 		elif definition.behavior.kind == EntityBehavior.Kind.CHECKPOINT:
 			var checkpoint: int = definition.form_id & 32767
 			if environment != null and environment.collected & (1 << checkpoint):

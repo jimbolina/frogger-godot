@@ -496,6 +496,10 @@ func _visit_entity(slot: int, previous_flags: int, state: GameplayState, events:
 				var reward_issue: String = GameplayRewards.apply(_frog.rewards[request.reward_id], state, events, _candidate_random)
 				if not reward_issue.is_empty():
 					return reward_issue
+			elif request.kind == TickEvent.Kind.GOLD_FROG_COLLECT:
+				var gold_issue: String = CheckpointCollection.collect_gold(_frog, state, _candidate_random, events)
+				if not gold_issue.is_empty():
+					return gold_issue
 			var sound_issue: String = _apply_entity_sound(state, background.entity, request)
 			if not sound_issue.is_empty():
 				return sound_issue

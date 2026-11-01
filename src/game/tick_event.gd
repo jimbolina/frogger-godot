@@ -46,9 +46,10 @@ enum Kind {
 	LEVEL_TRANSITION,
 	SPLASH,
 	CROAK,
+	GOLD_FROG_COLLECT,
 }
 
-const TRACE_NAMES: PackedStringArray = ["camera_death", "camera_clockwise", "camera_anticlockwise", "ouch", "super_hop", "quick_hop", "auto_hop", "roll", "hop", "hop_sound", "score_10_request", "score_50_request", "score_5_request", "pant", "death_complete", "single_frog_died_request", "falling", "stun_sound", "crash", "camera_stun_shake", "unknown_terrain_flags_ignored", "death_fire_particle_request", "camera_fixed", "entity_squish", "entity_pop_explosion_request", "platform_attachment", "platform_departure", "slipping_loop_start", "slipping_loop_stop", "slide_particles_request", "slide_particles_stop", "death_pgen", "sound", "moving", "sprite", "create", "destroy", "death_animation", "pitch_bend", "reward", "level_transition", "splash", "croak"]
+const TRACE_NAMES: PackedStringArray = ["camera_death", "camera_clockwise", "camera_anticlockwise", "ouch", "super_hop", "quick_hop", "auto_hop", "roll", "hop", "hop_sound", "score_10_request", "score_50_request", "score_5_request", "pant", "death_complete", "single_frog_died_request", "falling", "stun_sound", "crash", "camera_stun_shake", "unknown_terrain_flags_ignored", "death_fire_particle_request", "camera_fixed", "entity_squish", "entity_pop_explosion_request", "platform_attachment", "platform_departure", "slipping_loop_start", "slipping_loop_stop", "slide_particles_request", "slide_particles_stop", "death_pgen", "sound", "moving", "sprite", "create", "destroy", "death_animation", "pitch_bend", "reward", "level_transition", "splash", "croak", "gold_frog_collect"]
 
 var reward_id: int = -1
 var flow_phase: int = -1

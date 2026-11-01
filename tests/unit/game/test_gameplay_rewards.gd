@@ -96,6 +96,20 @@ func test_gold_collection_does_not_change_checkpoint_progress_or_frog_mode() -> 
 	assert_eq(CheckpointCollection.collect(frog, state, entity, events), "")
 	assert_eq(state.flow.score, 1000)
 
+func test_entity_gold_collection_ignores_frog_mode_and_pays_once() -> void:
+	var frog := Frog.new()
+	var state := GameplayState.new()
+	state.frog.mode = FrogMode.JUMPING
+	var events: Array[TickEvent] = []
+	assert_eq(CheckpointCollection.collect_gold(frog, state, SourceRandom.create(17), events), "")
+	assert_true(state.flow.gold_collected)
+	assert_eq(state.flow.score, 1000)
+	assert_eq(events.filter(func(event: TickEvent) -> bool: return event.kind == TickEvent.Kind.SOUND and event.sound_id == 22).size(), 1)
+	var count: int = events.size()
+	assert_eq(CheckpointCollection.collect_gold(frog, state, SourceRandom.create(17), events), "")
+	assert_eq(events.size(), count)
+	assert_eq(state.flow.score, 1000)
+
 func test_checkpoint_does_not_accept_an_unlanded_jump() -> void:
 	var frog := Frog.new()
 	var state := GameplayState.new()

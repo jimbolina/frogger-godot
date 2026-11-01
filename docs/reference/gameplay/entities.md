@@ -427,6 +427,16 @@ The inactive state remains hidden. All continuation fields and requests share
 the run transaction; pickup and parent changes collapse presentation history.
 
 Checkpoint delivery emits its reward once at the next source entity visit.
+
+The ORG gold baby frog is an `ORG_BABY_FROG` with form 24
+(`ORG_GOLD_BABY_FROG_FORM_ID`). It searches and hops like the pink frog but
+keeps its action on landing (`ent_org.c:387, 596`). HIT outside riding mode
+collects it (`ent_org.c:695-726`): the inactive mode, a 32-tick poly-piece pop
+and one gold-collect request, which runs `FrogCollectGoldFrog` (jingle 22,
+reward 10, the level's gold flag) without the FORM checkpoint's landing
+condition. It never rides, and recreation after collection stays hidden and
+inactive (`ent_org.c:233-240`). C hides it after a collection in an earlier
+game through `Gold_frogs`; the port tracks only the current level's flag.
 Tongue, reward and selective-reset behavior is described below. [Independent evidence](../../../tests/golden/specs/entities.md#scripted-visibility)
 and [inspection commands](../testing/terrain-inspection.md#scripted-org1-visibility)
 cover the supported pickup, riding and death behavior.

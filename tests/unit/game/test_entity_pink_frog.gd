@@ -116,3 +116,25 @@ func test_usable_contact_keeps_strict_edges_and_does_not_mount() -> void:
 	assert_eq(FormContactQuery.query(form, pose, Vector3i(9, 0, 0)).status, FormContactResult.CONTACT)
 	pose.live = false
 	assert_eq(FormContactQuery.query(form, pose, Vector3i.ZERO).status, FormContactResult.DISABLED)
+
+func test_collected_gold_baby_recreates_hidden_and_inert() -> void:
+	for gold: bool in [false, true]:
+		var definition := EntityDefinition.new()
+		definition.entity_index = 0
+		definition.behavior = EntityBehaviorCatalog.resolve("ORG_BABY_FROG")
+		definition.behavior.execution = EntityBehavior.Execution.CONTACT
+		definition.form_id = EntityBaby.GOLD_FORM if gold else 1
+		definition.form_flags = 16
+		definition.action_lengths = PackedInt32Array([6, 1])
+		var definitions: Array[EntityDefinition] = [definition]
+		var run: EntityRun = EntityRun.create(definitions)
+		assert_eq(run.error, "")
+		if not run.error.is_empty():
+			return
+		var environment := EntityEnvironmentState.new()
+		environment.checkpoint_positions.resize(5)
+		assert_eq(run.reset_in_level(false, environment, true), "")
+		var entity: EntitySnapshot = run.entity_snapshot(0)
+		assert_eq(entity.custom_state.mode, EntityBaby.Mode.NOTHING if gold else EntityBaby.Mode.SEARCHING)
+		assert_eq(bool(entity.entity_flags & EntityDefinition.NO_DISPLAY), gold)
+		assert_true(entity.custom_state.model_hidden)

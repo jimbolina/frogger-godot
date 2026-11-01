@@ -16,17 +16,7 @@ static func collect(frog: Frog, state: GameplayState, definition: EntityDefiniti
 				return issue
 		state.attachment.current_entity_index = -1
 	if definition.behavior.kind == EntityBehavior.Kind.GOLD_FROG:
-		if state.flow.gold_collected:
-			return ""
-		var sound_issue: String = GameplaySound.play(state, frog.random, 22, frog.music_pitch_offset)
-		if not sound_issue.is_empty():
-			return sound_issue
-		events.append(TickEvent.sound(22))
-		var reward_issue: String = GameplayRewards.apply(frog.rewards[10], state, events, frog.random)
-		if not reward_issue.is_empty():
-			return reward_issue
-		state.flow.gold_collected = true
-		return ""
+		return collect_gold(frog, state, frog.random, events)
 	var checkpoint: int = definition.form_id & 32767
 	if checkpoint >= 5:
 		checkpoint -= 11
@@ -58,4 +48,19 @@ static func collect(frog: Frog, state: GameplayState, definition: EntityDefiniti
 	if frog.camera != null:
 		frog.camera.request_checkpoint()
 	events.append(TickEvent.transition(LevelFlowState.Phase.CHECKPOINT, checkpoint))
+	return ""
+
+## FrogCollectGoldFrog (FROG.C:2909-2919): plays the gold jingle, applies the 1000 reward and marks
+## the level's gold frog once; a repeated collection does nothing.
+static func collect_gold(frog: Frog, state: GameplayState, random: SourceRandom, events: Array[TickEvent]) -> String:
+	if state.flow.gold_collected:
+		return ""
+	var sound_issue: String = GameplaySound.play(state, random, 22, frog.music_pitch_offset)
+	if not sound_issue.is_empty():
+		return sound_issue
+	events.append(TickEvent.sound(22))
+	var reward_issue: String = GameplayRewards.apply(frog.rewards[10], state, events, random)
+	if not reward_issue.is_empty():
+		return reward_issue
+	state.flow.gold_collected = true
 	return ""

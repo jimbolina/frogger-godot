@@ -955,6 +955,9 @@ on a different owning form and preserve source-located unknown-entry diagnostics
 Its crocodile cases cover signed16 spawn offsets, warning and attack clocks,
 occupied checkpoint selection, RNG order, bite and checkpoint-triggered reset.
 Gold-frog cases cover repeated HIT and pop clocks plus collected recreation.
+ORG baby cases cover the gold variety's search, kept action, collection on
+HIT while resting or jumping, ignored repeat HIT and pop retirement, against a
+pink control that rides instead.
 Log-snake cases cover narrowed ranges/offsets, parent visibility and recreation;
 beaver cases cover authored neighbor order, narrowed hit distance, strict bite
 range, gap/bite/dive clocks and parent retirement. Dog cases cover unsigned

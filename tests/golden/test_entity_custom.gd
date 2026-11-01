@@ -183,6 +183,44 @@ func test_gold_frog_pop_and_repeated_hit_match_independent_facts() -> void:
 			assert_eq(result.random.state, 17)
 			assert_eq(result.random.draw_count, 0)
 
+func test_org_gold_baby_collects_and_pops_where_the_pink_frog_rides() -> void:
+	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
+	for fixture: Dictionary in facts.org_babies:
+		var definition := EntityDefinition.new()
+		definition.behavior = EntityBehaviorCatalog.resolve("ORG_BABY_FROG")
+		definition.behavior.execution = EntityBehavior.Execution.CONTACT
+		definition.form_id = EntityBaby.GOLD_FORM if fixture.gold else 1
+		var entity := EntitySnapshot.new()
+		entity.custom_state = EntityCustomState.new()
+		entity.custom_state.model_hidden = true
+		entity.animation = EntityAnimationState.create(PackedInt32Array([6, 1]), true)
+		var parent := EntitySnapshot.new()
+		parent.entity_index = 7
+		var form := FormContactDefinition.new()
+		form.dimensions = Vector2i(1, 2)
+		form.grid_flags = PackedInt32Array([GridSquareFlags.USABLE, GridSquareFlags.USABLE])
+		var frog := GameplayState.new()
+		for row: Dictionary in fixture.rows:
+			entity.requests.clear()
+			parent.live = row.parent_live
+			var hit: bool = row.hit
+			var result: EntityCustomResult = EntityCustomUpdate.update(definition, entity, _environment(), SourceRandom.create(17), Vector3i.ZERO, hit, true, parent, form, frog)
+			assert_eq(result.error, "")
+			if not result.error.is_empty():
+				return
+			entity = result.entity
+			entity.pop_remaining = maxi(0, entity.pop_remaining - 1)
+			var requests: Array[String] = []
+			for request: TickEvent in entity.requests:
+				requests.append(TickEvent.TRACE_NAMES[request.kind])
+			var label: String = "%s baby tick %d" % ["gold" if fixture.gold else "pink", row.tick]
+			var mode: String = EntityBaby.Mode.keys()[entity.custom_state.mode]
+			var expected_mode: String = row.mode
+			assert_eq(mode, expected_mode, label + " mode")
+			var expected_requests: Array = row.requests
+			assert_eq(",".join(requests), ",".join(PackedStringArray(expected_requests)), label + " requests")
+			_assert_custom_row({"action": entity.animation.action, "remaining": entity.pop_remaining, "allocated": entity.pop_allocated, "hidden": entity.custom_state.model_hidden}, row, label)
+
 func test_log_snake_narrowing_visibility_and_recreation_match_independent_facts() -> void:
 	var facts: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/golden/synthetic/entity_custom.json"))
 	for fixture: Dictionary in facts.snakes:

@@ -120,9 +120,8 @@ coloured lights instead of the mask ([glow](lighting.md#glow)).
   colour (255, user<<1, 0), 32 nearer, never culled in front).
 - **Croak throat**: part 15 (`THROAT` in `gen_frog.h`) shows while the
   committed croak mode is active, scaled by `croak_scale / 4096`.
-- **Pops not reached**: the ORG gold baby frog is carried like a pink frog
-  rather than collected and popped, and the Jungle outro stone frog belongs
-  to the ending sequence (P16).
+- **Pops not reached**: the Jungle outro stone frog belongs to the ending
+  sequence (P16).
 
 ## Poly-piece pops
 
