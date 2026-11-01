@@ -126,6 +126,16 @@ func test_every_view_control_refuses_focus() -> void:
 		assert_eq(control.focus_mode, Control.FOCUS_NONE, str(control.get_path()))
 
 
+func test_unchecked_boxes_draw_an_outlined_icon() -> void:
+	var panel: GraphicsPanel = _panel()
+	var bloom: CheckBox = panel.view.find_child("bloom", true, false) as CheckBox
+	var icon: Texture2D = bloom.get_theme_icon("unchecked")
+	assert_eq(icon.get_size(), Vector2(GraphicsPanelView.BOX_SIZE, GraphicsPanelView.BOX_SIZE))
+	var image: Image = icon.get_image()
+	assert_almost_eq(image.get_pixel(0, 0).r, GraphicsPanelView.BOX_OUTLINE.r, 0.01)
+	assert_lt(image.get_pixel(GraphicsPanelView.BOX_SIZE / 2, GraphicsPanelView.BOX_SIZE / 2).a, 0.5)
+
+
 func test_an_edit_updates_the_copy_profile_and_emits() -> void:
 	var panel: GraphicsPanel = _panel()
 	watch_signals(panel.view)

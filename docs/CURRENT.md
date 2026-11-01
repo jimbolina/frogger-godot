@@ -17,15 +17,13 @@ bitmap fonts (S2b, accepted). The owner's review of the
 [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) is pending.
 
-S2 is complete: the game draws on Forward+ with scene lights and real
-shadows from the map light records, lit models and terrain, reflective
-water, a tile-array sky, caves under an omni light and a lit front end,
-sandbox and viewers ([lighting](reference/rendering/lighting.md)). The
-retail stored-colour pipeline, texture pages and reference projection are
-retired and `src/convert/` is now `src/rendering/`. `--shadows=off` and
-`--effect-shadows=retail` compare the choices. FrogLord stays the level
-editor: the importer under `archive/` remains runnable and a re-import
-reproduces `assets/`. Awaiting the owner's play check and the
+S2 is complete: Forward+ with scene lights, real shadows, lit models and
+terrain, reflective water, a tile-array sky, cave omni lights and a lit
+front end ([lighting](reference/rendering/lighting.md)); the retail
+pipeline is retired. S2g adds bloom, bug and gold-frog halos with
+coloured lights, glowing lava with clustered lights, and the F11 debug
+graphics panel. FrogLord stays the level editor: a re-import through
+`archive/` reproduces `assets/`. Awaiting the owner's play check and the
 [look choices](reference/rendering/lighting.md#look-choices). Next: P13e; the S1e
 proposals and P14 are the owner's calls ([roadmap](PORTING.md#status)).
 

@@ -21,6 +21,10 @@ const VALUE_WIDTH: float = 34.0
 const BACKGROUND: Color = Color(0.04, 0.05, 0.08, 0.78)
 ## Section heading colour.
 const HEADING: Color = Color(1.0, 0.84, 0.36)
+## Outline colour of an unchecked box.
+const BOX_OUTLINE: Color = Color(0.85, 0.85, 0.85)
+## Side of the unchecked box icon in pixels.
+const BOX_SIZE: int = 12
 ## Window size presets; zero keeps the launch size.
 const WINDOW_SIZES: Array[Vector2i] = [
 	Vector2i.ZERO, Vector2i(640, 480), Vector2i(960, 720), Vector2i(1280, 960), Vector2i(1600, 1200),
@@ -52,6 +56,7 @@ func build(values: GraphicsSettings) -> void:
 	settings = values.copy()
 	var panel_theme := Theme.new()
 	panel_theme.default_font_size = FONT_SIZE
+	panel_theme.set_icon("unchecked", "CheckBox", unchecked_icon())
 	theme = panel_theme
 	set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	offset_left = -WIDTH
@@ -225,6 +230,17 @@ func _heading(text: String) -> void:
 	label.add_theme_color_override("font_color", HEADING)
 	label.focus_mode = Control.FOCUS_NONE
 	_rows.add_child(label)
+
+
+## An outlined square that stays visible on the dark panel background.
+static func unchecked_icon() -> ImageTexture:
+	var image := Image.create(BOX_SIZE, BOX_SIZE, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.0, 0.0, 0.0, 0.35))
+	for index: int in BOX_SIZE:
+		for edge: int in [0, BOX_SIZE - 1]:
+			image.set_pixel(index, edge, BOX_OUTLINE)
+			image.set_pixel(edge, index, BOX_OUTLINE)
+	return ImageTexture.create_from_image(image)
 
 
 func _row(title: String) -> HBoxContainer:
