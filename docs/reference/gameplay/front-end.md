@@ -232,3 +232,6 @@ the in-game HUD stay English; the level-complete labels are localized.
 level-complete labels `next`, `total_time`, `total_score`, `select4` and `opt_sec`;
 each arcade row also resolves its world, screenshot, stack-name and in-game name images.
 Race rows keep their images in `LS_ALLM.VLO` and belong to the multiplayer pages.
+The words in the angular face, the level names and the high-score lilies, rank
+turtles and score logs draw their [vector lettering](../assets.md#lettering)
+images instead of the retail pixels, at the retail sizes.

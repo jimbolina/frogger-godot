@@ -52,6 +52,8 @@ implements it over the retail files for the importer and the archive suite.
 | `textures/images_x4/tNNNN.png` | The same images upscaled to exactly four times the padded size, drawn by the `x4` [texture set](#upscaled-textures). |
 | `textures/banks/<BANK>.tres` | The bank's `VloFile` headers and placement; pixels live in the PNGs. |
 | `fonts/<set>/newfont.fnt`, `newfont.png` | One BMFont text file per texture set (`retail`, `x4`) over a copy of that set's `t0310.png`, imported as a `FontFile` ([fonts](#fonts)). |
+| `fonts/angular/` | The angular letter face: source SVGs, `derived.json`, the generated MSDF `frogger_angular.ttf` and `lettering.tsv` ([lettering](#lettering)). |
+| `textures/lettering/tNNNN.png` | Vector lettering at eight times the padded size, drawn in every texture set in place of the retail image ([lettering](#lettering)). |
 | `materials/model/tNNNN_bB[_2s].tres` | One shared `ShaderMaterial` per texture id, blend mode and sidedness, on the lit model shaders ([lighting](rendering/lighting.md#model-shaders)). |
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
@@ -112,3 +114,43 @@ baseline. The import golden is
 [bitmap fonts](../../tests/golden/specs/imported-assets.md#bitmap-fonts).
 After a hand edit of a set's `t0310.png`, rerun the generator to refresh the
 page copy; until then the wrappers stop at the font check.
+
+No vector or higher-resolution master of `newfont` ships. Texture 1847
+(FrogLord's guessed name `newfont4`) is the same glyphs doubled to 16x16
+cells with a near-black drop shadow, and 1846 adds accented glyphs at 8x8.
+The owner's pre-recode PlayStation disc (built 19 March 1997) has the same
+grid with identical lowercase but unshaded capitals and digits with a black
+drop shadow, so the grey-shaded capitals were drawn later. The angular
+high-score letters are a separate face: the alpha's front-end models
+`A.XMR`–`Z.XMR` and `0.XMR`–`9.XMR` (in `FRONT_0.WAD`) are flat single-colour
+polygon glyphs, and retail's `hi_a`–`hi_z` lily-pad textures are those
+shapes rasterised; retail has no number models. That face is drawn from a
+vector font ([lettering](#lettering)); `newfont` stays a bitmap.
+
+## Lettering
+
+Every retail texture that shows the angular face (lily-pad letters, rank
+turtles, score logs, HUD digits and `SEC` labels, menu, HUD and
+level-complete words in all five languages, level names: 319 ids, excluding
+the decorated `1up1`) is drawn from a vector rendering instead of its retail
+pixels. The glyphs are a community trace of the alpha's letter models (36
+SVGs under `fonts/angular/svg/`) plus punctuation and accented capitals
+built in `fonts/angular/derived.json`. `uv run tools/make_angular_font.py`
+writes `fonts/angular/frogger_angular.ttf`, which the catalog serves as
+`font("angular")` in every set; nothing draws runtime text with it yet.
+`fonts/angular/lettering.tsv` holds each texture's text (retail spelling
+kept), style and background. `uv run tools/make_lettering.py` fits that text
+to the retail image's ink box and writes `textures/lettering/tNNNN.png` at
+eight times the padded size, mipmapped, with a one-retail-pixel outline; the
+turtle shell is rebuilt without its digit from the ten retail tiles. Both
+generators' `--check` runs in the test wrappers.
+
+`ImportedAssets.texture_counterpart` prefers a lettering image in the retail
+and x4 sets alike; `ModelMeshLibrary` converts a retail-set mesh that draws
+one, so the lily pads, turtles and logs sample it linearly with mipmaps, and
+`TextureLibrary.texture_for` hands 2D draws a linear, mipmapped
+`CanvasTexture` so nearest-filtered nodes still shrink it smoothly. Draws
+keep their retail sizes through `TextureBuilder.texture_rect` and
+`retail_size`. The retail PNGs stay byte-exact as source data. Goldens:
+[angular font](../../tests/golden/specs/imported-assets.md#angular-font) and
+[lettering](../../tests/golden/specs/imported-assets.md#lettering).

@@ -83,6 +83,17 @@ The community editor, MIT licensed, at commit `5416ae4f`. Its Java source is the
 
 Its config files are under `resources/games/frogger/`. This repository ships unmodified copies in `archive/third_party/froglord_cfg/`.
 
+## The pre-recode alpha and the letter SVGs
+
+The owner's PlayStation disc image of a pre-recode build (MWD created 19 March
+1997) is at `~/Downloads/alpha/FROGGER.bin`; FrogLord's old-format MWI entries
+in its `PSX.EXE` index `FROGGER.MWD`, whose `FRONT_0.WAD` holds the flat letter
+models `A.XMR`–`Z.XMR` and `0.XMR`–`9.XMR`. Nothing reads it; it is reference
+only. The 36 SVGs in `assets/fonts/angular/svg/` are a community trace of
+those models, received by the owner on 2026-11-01 (author and licence not
+recorded; the repository is private). They match the models to 98–99% of
+their area ([lettering](assets.md#lettering)).
+
 ## The retail game files
 
 `../froggy/resources/pc-version/extracted/FROGGER/` holds `FROGGER.EXE` and `FROGPSX.MWD`; the videos are in `../froggy/resources/pc-version/extracted/VIDEO/`. These are the owner's own copy. The importer and the archive test suite read the first folder through `FROGGER_DATA_DIR`; the game plays from the imported `assets/`.

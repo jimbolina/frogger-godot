@@ -14,7 +14,8 @@ picture. See the [roadmap](PORTING.md).
 Everything plays from the committed `assets/` through `ImportedAssets`
 ([assets](reference/assets.md)); readers, importer and retail goldens live in
 `archive/`. `--texture-set=x4` draws the upscaled set (hand-made replacements
-on hold) and text draws from the `newfont` bitmap fonts. The owner's review
+on hold); text draws from the `newfont` bitmap fonts, and the angular
+lettering from vector images (S2h, owner play check pending). The owner's review
 of the [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) is deferred.
 

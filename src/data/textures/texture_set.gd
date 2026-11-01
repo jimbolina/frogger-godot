@@ -23,6 +23,11 @@ const X4: String = "x4"
 const IMAGES_DIR: String = "images"
 ## The lettering images folder under [code]textures/[/code].
 const LETTERING_DIR: String = "lettering"
+## Vector fonts by name, with their paths under the assets root; every set
+## draws the same file.
+const VECTOR_FONTS: Dictionary[String, String] = {
+	"angular": "fonts/angular/frogger_angular.ttf",
+}
 
 ## [constant RETAIL] or [constant X4].
 var set_name: String = RETAIL
@@ -96,6 +101,9 @@ static func is_lettering_path(path: String) -> bool:
 	return path.contains("/textures/%s/" % LETTERING_DIR)
 
 
-## The path under the assets root of the set's bitmap font called [param name].
+## The path under the assets root of the font called [param name]: one of the
+## [constant VECTOR_FONTS], the same in every set, or the set's bitmap font.
 func font_path(name: String) -> String:
+	if VECTOR_FONTS.has(name):
+		return VECTOR_FONTS[name]
 	return "fonts/%s/%s.fnt" % [fonts_dir, name]

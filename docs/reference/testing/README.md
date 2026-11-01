@@ -102,6 +102,12 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   both wrappers run `python3 tools/make_font_newfont.py --check --quiet`, which
   compares the committed `assets/fonts/*/newfont.fnt` with the generator;
   `tests/golden/assets/test_asset_fonts.gd` checks the imported fonts.
+- [Angular font](../../../tests/golden/specs/imported-assets.md#angular-font)
+  and [lettering](../../../tests/golden/specs/imported-assets.md#lettering):
+  both wrappers run `uv run --locked tools/make_angular_font.py --check --quiet`
+  and `uv run --locked tools/make_lettering.py --check --quiet`, which need
+  [uv](https://docs.astral.sh/uv/) on PATH (`UV` can select it); the pinned
+  fontTools and Pillow live in `pyproject.toml` and `uv.lock`.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has
