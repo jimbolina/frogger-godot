@@ -1,0 +1,26 @@
+# edit	kind	target	subject	field	resource	offset	old	new
+edit	form	ORIGINAL	ORG_LORRY	entity_type	exe	0x81C58	1	35
+edit	form	ORIGINAL	ORG_FLY	bonus_callback	exe	0x81D14	4338128	4444256
+edit	form	GENERAL	GEN_STAT_FALL_BLOCK	collision_callback	exe	0x80748	4360128	4360096
+edit	form	ORIGINAL	ORG_TRUCK_GREEN	collision_callback	exe	0x81C88	0	4198400
+edit	script	SCRIPT_ORG_TRUCK_SFX	3	word	exe	0x7434C	94	97
+edit	remap	txl_org1	8	slot	exe	0x79CC0	1462	883
+edit	demo	ORG1DEMO.DAT	9	input	29	0x15	128	132
+edit	map	ORG1.MAP	45	form_id	658	0xD0C	1	2
+# exe_forms	theme	local_id	global_id	form	entity_type	entity	model_id	script	flags	collision_callback	radius_squared	death_type	death	bonus_callback
+exe_forms	GENERAL	22	22	GEN_STAT_FALL_BLOCK	0	STATIC	141	0	0	0x4287A0	0	0	SQUISHED	0x0
+exe_forms	ORIGINAL	7	191	ORG_LORRY	35	MOVING_TONGUEABLE	7	3	0	0x0	0	0	SQUISHED	0x0
+exe_forms	ORIGINAL	8	192	ORG_TRUCK_GREEN	1	MOVING	8	7	0	0x401000	0	0	SQUISHED	0x0
+exe_forms	ORIGINAL	12	196	ORG_FLY	20	ORG_FLY	12	0	1	0x0	0	0	SQUISHED	0x43D060
+# exe_scripts	index	name	pointer	commands	words	words_sha256	first_command	last_command
+exe_scripts	35	SCRIPT_ORG_TRUCK_SFX	0x475340	2	7	ec92c1eabe8eb67b63c290997d4915527794e3f1c3c19c238ef2157582ef40fc	PLAY_SOUND_DISTANCE	RESTART
+# exe_remaps	position	name	file_offset	resource_id	count	ids_sha256	first_id	last_id
+exe_remaps	14	txl_org1	0x79CB0	658	16	8a3ef9fbe8b152e6921fa0e52190020d29367f5c8b3d01a929c22c3c3224a688	883	222
+# demos	detail	level	resource	duration	start_x	start_z	input_count	input_digest	skip	up	right	down	left	unused	super_hop	tongue	camera_ccw	camera_cw
+demos	low	24	29	724	10	1	1800	8a1f4399f81f8ba38b7126d2ff0aacc46c350f857c9cb6aee0a11e0f946e2e1a	813	923	21	10	33	1	1	6	3	3
+demos	high	24	29	724	10	1	1800	8a1f4399f81f8ba38b7126d2ff0aacc46c350f857c9cb6aee0a11e0f946e2e1a	813	923	21	10	33	1	1	6	3	3
+# entities_retail	resource_id	name	entity_count	generic_static	generic_moving	setup_eligible	identity_digest	base_record_digest	setup_digest
+entities_retail	658	ORG1.MAP	64	0	35	39	c1cbf4d49c7b8af2d680a1040db53c84b92d8c3c54292fbd6b6dcfeeae686672	defc4ebd27d6c7f5c078f5560688440d3f4f4300e76d4f114bdc9a5873406a02	7b72d348dddb5837d24f2273669a2a254560385cd3237ffdf3a4996b41f78cf5
+entities_retail	647	CAV3.MAP	112	56	13	67	58ac2a53582413257653cdab7312fb3bdb27e0c43eb17bb77355af10c0eeadc5	83bdc82e48edc6047cae8175538266826ff5292068164441cb929e1e2febd28f	9e029c8c46bc73328cb1246d8ed681c55d0cf270021e0163a03c526d9ee1a285
+# report	kind	key	levels	form
+report	callback	0x401000	-	ORG_TRUCK_GREEN

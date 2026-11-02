@@ -12,10 +12,12 @@ fi
 data_dir="${FROGGER_DATA_DIR:-}"
 disc="${FROGGER_DISC:-}"
 extra=()
+roots=()
 for argument in "$@"; do
     case "$argument" in
         --data-dir=*) data_dir="${argument#--data-dir=}" ;;
         --disc=*) disc="${argument#--disc=}" ;;
+        --assets-root=*|--fallback-root=*) roots+=("$argument") ;;
         *) extra+=("$argument") ;;
     esac
 done
@@ -34,7 +36,7 @@ run_phase() {
     shift
     "$GODOT" --headless --disable-crash-handler --path . --log-file "$logs/$phase.log" \
         -s res://archive/import/import_assets.gd -- "--data-dir=$data_dir" "--disc=$disc" \
-        "--scratch=$scratch" "--phase=$phase" "$@" >"$logs/$phase.console.log" 2>&1
+        "--scratch=$scratch" "--phase=$phase" ${roots[@]+"${roots[@]}"} "$@" >"$logs/$phase.console.log" 2>&1
     local rc=$?
     grep -E '^import:' "$logs/$phase.log" 2>/dev/null
     if [ "$rc" -ne 0 ] || grep -Eq "$script_errors" "$logs/$phase.log"; then

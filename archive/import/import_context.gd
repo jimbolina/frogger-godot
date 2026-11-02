@@ -3,13 +3,24 @@ extends RefCounted
 ## Shared state and path conventions for one importer run.
 ##
 ## Steps read the retail data through [member data], write under
-## [member assets_root] and report problems through [method report]. Every
-## asset path convention lives here so steps and tests agree on it.
+## [member assets_root], report problems through [method report] and remarks
+## through [method note]. Every asset path convention lives here so steps and
+## tests agree on it. [member touched] lists every file the run wrote or found
+## unchanged; [method keep_record] and [method restore_record] carry it, with
+## [member complete_phases], between the phases of one run through the
+## scratch folder.
+
+## The scratch file holding the record of earlier phases.
+const RECORD_FILE: String = "import_record.json"
 
 ## The retail files, open for reading.
 var data: GameData
 ## Where assets are written; the committed location is [code]res://assets[/code].
 var assets_root: String = "res://assets"
+## A complete asset root whose files the catalog step records for every
+## resource this run did not write, so an overlay index is complete; empty
+## when [member assets_root] is complete on its own.
+var fallback_root: String = ""
 ## An absolute folder outside the repository for intermediate files such as
 ## decoded music WAVs; empty when the run has no scratch folder.
 var scratch: String = ""
@@ -25,12 +36,72 @@ var problems: PackedStringArray = PackedStringArray()
 var written: PackedStringArray = PackedStringArray()
 ## Files whose content was already identical.
 var unchanged: int = 0
+## Every file written or found unchanged during this run, earlier phases
+## included once [method restore_record] has run.
+var touched: PackedStringArray = PackedStringArray()
+## The phases in which every step ran, so [member touched] lists all their output.
+var complete_phases: PackedStringArray = PackedStringArray()
+## Remarks that do not fail the run.
+var notes: PackedStringArray = PackedStringArray()
 
 
 ## Records a problem; the run exits non-zero when any exists.
 func report(message: String) -> void:
 	problems.append(message)
 	printerr("import: " + message)
+
+
+## Records a remark that does not fail the run.
+func note(message: String) -> void:
+	notes.append(message)
+	print("import: note " + message)
+
+
+## Merges the record [method keep_record] left in the scratch folder into
+## [member touched] and [member complete_phases]; does nothing without a
+## scratch folder or a record.
+func restore_record() -> void:
+	if scratch.is_empty():
+		return
+	var path: String = scratch.path_join(RECORD_FILE)
+	if not FileAccess.file_exists(path):
+		return
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not parsed is Dictionary:
+		report("cannot read the run record %s" % path)
+		return
+	var record: Dictionary = parsed
+	touched = _merged(touched, record.get("touched", []))
+	complete_phases = _merged(complete_phases, record.get("complete_phases", []))
+
+
+static func _merged(into: PackedStringArray, listed: Variant) -> PackedStringArray:
+	var merged: PackedStringArray = into
+	var present: Dictionary[String, bool] = {}
+	for text: String in merged:
+		present[text] = true
+	if listed is Array:
+		var items: Array = listed
+		for item: Variant in items:
+			var text: String = str(item)
+			if not present.has(text):
+				present[text] = true
+				merged.append(text)
+	return merged
+
+
+## Saves [member touched] and [member complete_phases] in the scratch folder
+## for the run's next phase; does nothing without a scratch folder.
+func keep_record() -> void:
+	if scratch.is_empty():
+		return
+	DirAccess.make_dir_recursive_absolute(scratch)
+	var file: FileAccess = FileAccess.open(scratch.path_join(RECORD_FILE), FileAccess.WRITE)
+	if file == null:
+		report("cannot write the run record in %s" % scratch)
+		return
+	file.store_string(JSON.stringify({"touched": Array(touched), "complete_phases": Array(complete_phases)}))
+	file.close()
 
 
 ## Creates [param path] (a [code]res://[/code] folder) and its parents.
@@ -46,6 +117,7 @@ func write_if_changed(path: String, bytes: PackedByteArray) -> bool:
 	ensure_dir(path.get_base_dir())
 	if FileAccess.file_exists(path) and FileAccess.get_file_as_bytes(path) == bytes:
 		unchanged += 1
+		touched.append(path)
 		return false
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if file == null:
@@ -54,6 +126,7 @@ func write_if_changed(path: String, bytes: PackedByteArray) -> bool:
 	file.store_buffer(bytes)
 	file.close()
 	written.append(path)
+	touched.append(path)
 	return true
 
 
@@ -69,7 +142,15 @@ func save_resource(resource: Resource, path: String) -> bool:
 		report("cannot save %s (%s)" % [path, error_string(result)])
 		return false
 	written.append(path)
+	touched.append(path)
 	return true
+
+
+## The part of [param path] below [member assets_root], or "" when it lies
+## elsewhere.
+func relative_to_assets(path: String) -> String:
+	var prefix: String = assets_root.trim_suffix("/") + "/"
+	return path.substr(prefix.length()) if path.begins_with(prefix) else ""
 
 
 ## The committed PNG for texture [param texture_id] (pixels are identical for

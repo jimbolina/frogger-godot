@@ -60,7 +60,9 @@ slots (Volcano switch colours, Jungle plinth `op_id`). Table examples live in
 
 Entity setup resolves FrogLord names through `EntityBehaviorCatalog` into
 typed implementation and payload capabilities. Unknown names retain the
-diagnostic-and-omission fallback.
+diagnostic-and-omission fallback; `LevelSupportReport` lists every form,
+entity name, script, callback and remap a build uses and which are unmapped
+([architecture](architecture.md#extending-behavior)).
 The [FORM contact contract](gameplay/entities.md#form-contact-inspection) copies
 the selected grid and checks one detached entity pose against a world point.
 Bounded POP and SAFE-platform reactions use source map-group order and a shared

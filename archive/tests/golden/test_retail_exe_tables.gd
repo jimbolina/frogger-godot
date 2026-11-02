@@ -139,10 +139,7 @@ func test_forms() -> void:
 	var covered_forms: int = 0
 	var multiplayer_forms: int = 0
 	for f: FormBookEntry in _tables.theme_book().all_forms:
-		got.append(PackedStringArray([FroggerIds.theme_name(f.theme), str(f.local_id), str(f.global_id), f.form_name,
-			str(f.entity_type), f.entity_name, str(f.model_id), str(f.script_id), str(f.flags),
-			GoldenFiles.hex(f.collision_callback), str(f.radius_squared), str(f.death_type), f.death_type_name(),
-			GoldenFiles.hex(f.bonus_callback)]))
+		got.append(RetailFactRows.form_row(f))
 		if FroggerIds.theme_name(f.theme) in ["GENERAL", "ORIGINAL"]:
 			covered_forms += 1
 			if f.entity_name == "MULTIPOINT":
@@ -160,9 +157,7 @@ func test_remaps() -> void:
 	var got: Array[PackedStringArray] = []
 	var position: int = 0
 	for r: TextureRemap in _tables.remaps().remaps:
-		got.append(PackedStringArray([str(position), r.name, GoldenFiles.hex(r.file_offset), str(r.resource_id),
-			str(r.size()), GoldenFiles.list_digest32(r.texture_ids), str(r.global_id(0)) if r.size() > 0 else "",
-			str(r.global_id(r.size() - 1)) if r.size() > 0 else ""]))
+		got.append(RetailFactRows.remap_row(position, r))
 		position += 1
 	_check("remaps", got)
 
@@ -170,10 +165,7 @@ func test_remaps() -> void:
 func test_scripts() -> void:
 	var got: Array[PackedStringArray] = []
 	for s: EntityScript in _tables.scripts().scripts:
-		var words: PackedInt32Array = s.words()
-		got.append(PackedStringArray([str(s.id), s.name, GoldenFiles.hex(s.pointer), str(s.commands.size()),
-			str(words.size()), GoldenFiles.list_digest32(words),
-			s.commands[0].name() if not s.is_empty() else "", s.commands[-1].name() if not s.is_empty() else ""]))
+		got.append(RetailFactRows.script_row(s))
 	_check("scripts", got)
 
 

@@ -222,8 +222,14 @@ texture by `tools/make_font_newfont.py`.
 The importer and the retail readers live in `archive/`, which the game never
 loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`
 regenerates `assets/` from the owner's copy of `pc-retail-v3.0e`; see
-[archive](archive/README.md). FrogLord-saved edits and other builds are not
-supported for now.
+[archive](archive/README.md). The folder may instead hold a FrogLord save of
+that build (`modded_FROGGER.EXE` and `modded_FROGPSX.MWD`): FrogLord is the
+level editor and this port plays its output. `--assets-root=` and
+`--fallback-root=` import such a save as an overlay beside `assets/` without
+touching it. `tools/asset_report.sh [--index-root=<folder>] [--strict]` lists,
+per level, the forms, entity names, scripts, FORM callbacks and texture remaps
+a build uses and which of them the port cannot play; a mod may repoint data
+only to behaviour the port already implements. Other builds are not supported.
 
 ### Sandbox
 

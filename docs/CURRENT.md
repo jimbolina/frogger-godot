@@ -2,33 +2,33 @@
 
 The front end and every accepted level play from the imported assets.
 Launch `tools/play.sh --scene=res://scenes/front_end.tscn`: the main menu,
-the 3D level-select stack over the animated water, Options (volumes, keys,
-high scores) and localised menu images. ORG1–ORG5, SUB1–SUB5, FOR1–FOR2,
-VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 are
-accepted by the owner's play check, as are audio (P12), the level-complete
-page (P13h), the ORG gold baby frog, the S2g glow and graphics panel, the
-asset switch (S1d), the modern rendering (S2c–S2e) and X2 frog lighting. See
+the 3D level-select stack over the animated water, Options and localised menu
+images. ORG1–ORG5, SUB1–SUB5, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5,
+JUN1, SWP1–SWP5 and SKY1–SKY4 are accepted by the owner's play check, as are
+audio (P12), the level-complete page (P13h), the modern rendering (S2), the
+S2g glow and graphics panel, X2 frog lighting and the
+[attract cycle](reference/gameplay/front-end.md#attract-cycle) (P13e). See
 the [roadmap](PORTING.md).
 
 Everything plays from the committed `assets/` through `ImportedAssets`
 ([assets](reference/assets.md)); readers, importer and retail goldens live in
 `archive/`. `--texture-set=x4` draws the upscaled set (hand-made replacements
-on hold); text draws from the `newfont` bitmap fonts, linear over 4x pages so
-its pixels stay even at any window scale (accepted), and the angular
-lettering from vector images (S2h, accepted). The owner's review of the
+on hold); text draws from the `newfont` bitmap fonts (accepted) and the
+angular lettering from vector images (S2h, accepted). The
+[look choices](reference/rendering/lighting.md#look-choices) keep their
+defaults until the owner tunes them. The owner's review of the
 [domain model](reference/domain-model.md) and
 [layout audit](PORTING.md#s1e-layout-audit) is deferred.
 
-S2 is complete: Forward+ with scene lights, shadows, lit models and terrain,
-reflective water, a tile-array sky and cave omni lights
-([lighting](reference/rendering/lighting.md)). FrogLord stays the
-level editor: a re-import through `archive/` reproduces `assets/`. The
-[look choices](reference/rendering/lighting.md#look-choices) keep their
-defaults until the owner tunes them. The main menu runs retail's
-[attract cycle](reference/gameplay/front-end.md#attract-cycle): a 27 s dwell,
-then the executable's demos in the game scene with the menu live over them
-(P13e, accepted; `--attract` starts the first demo at once).
-Next: P14 is the owner's call ([roadmap](PORTING.md#status)).
+FrogLord is the level editor (P14a): the importer accepts a FrogLord save and
+writes it as an overlay beside `assets/` (`--assets-root`, `--fallback-root`),
+`AssetIndex` records the source, and `tools/asset_report.sh` prints the
+`LevelSupportReport` of what a build uses that the port cannot play (nothing,
+for the committed assets). The archive suite's round trip imports a synthetic
+save and loads ORG1 and CAV3 from it. Next: P14b, reload on change
+(`tools/froglord_watch.sh` and `--froglord`), then the owner's call among P15,
+P16 and P17 ([roadmap](PORTING.md#status)). A FrogLord save replacing the
+retail `assets/` waits on the owner's facts-folder decision.
 
 Effects never reproduce the frozen generators' random draws. Replays and
 native attract comparisons are on-demand
@@ -36,5 +36,4 @@ native attract comparisons are on-demand
 the sandbox and the owner's play checks are the system checks.
 
 The outro stone frog belongs to P16. Multiplayer, exports, hosted CI and
-tuning are separate. The FMV decision gates P16.
-FrogLord compatibility is deferred from S1 on. Never push.
+tuning are separate. The FMV decision gates P16. Never push.

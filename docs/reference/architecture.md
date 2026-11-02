@@ -307,6 +307,17 @@ Implementing another original behavior is a code change. A mod only repoints
 data to already supported behavior. Keep raw identifiers for diagnostics;
 never dispatch executable addresses directly.
 
+`LevelSupportReport` (`src/application`) is the inventory of that support for
+any `AssetCatalog`: per playable level it runs every placed form through the
+theme book, `EntityBehaviorCatalog`, `FormCallbackCatalog`, `EntityScriptSetup`
+with `validate` and `EntitySetup`, and every used remap slot through the level's
+banks, and also checks the unplaced forms of the used themes. Rows are mapped
+(empty reason), unmapped (a selected level uses them and the port cannot play
+them) or unplaced. The importer prints it after the catalog step and
+`tools/asset_report.sh` prints it on demand; the archive suite's round trip
+requires a FrogLord save to add exactly its deliberate probe
+([golden](../../tests/golden/specs/imported-assets.md#froglord-round-trip)).
+
 ## Sandbox
 
 The [sandbox](../../README.md#sandbox) is an owner play-check scene layered on

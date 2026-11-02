@@ -362,6 +362,12 @@ but normal runtime use and the Godot test suites do not build or load them.
   lines without Godot; the wrappers run it.
 - Every new golden family needs an independent generator and a deliberate-break
   check, with the original fact restored. See [golden rules](../../../tests/golden/README.md).
+- `tools/asset_report.sh [--index-root=<folder>] [--levels=ORG1,CAV3] [--strict]`
+  prints the `LevelSupportReport` of the committed assets or an overlay index;
+  `--strict` exits 1 on an unmapped row or a read problem. The archive suite's
+  `test_retail_froglord_roundtrip` writes a synthetic FrogLord save under
+  `user://`, imports it in-process as an overlay and loads ORG1 and CAV3 from it
+  ([FrogLord round trip](../../../tests/golden/specs/imported-assets.md#froglord-round-trip)).
 
 ## GDScript and runner pitfalls
 

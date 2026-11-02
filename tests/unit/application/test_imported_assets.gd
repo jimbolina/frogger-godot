@@ -1,13 +1,30 @@
 extends GutTest
-## The committed imported assets open as a catalog that serves every playable level.
+## The committed imported assets open as a catalog that serves every playable
+## level and names its retail source; an index read from another folder serves
+## records from that folder and the committed one.
 
 const BUILD: String = "pc-retail-v3.0e"
+const OVERLAY: String = "user://imported_assets_overlay"
 
 var _assets: ImportedAssets
 
 
 func before_all() -> void:
 	_assets = ImportedAssets.open()
+
+
+func after_all() -> void:
+	_remove(OVERLAY)
+
+
+func _remove(path: String) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for child: String in DirAccess.get_directories_at(path):
+		_remove(path.path_join(child))
+	for child: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(child))
+	DirAccess.remove_absolute(path)
 
 
 func test_catalog_opens_with_the_imported_build() -> void:
@@ -139,3 +156,59 @@ func test_a_missing_emissive_image_table_is_empty_and_noted() -> void:
 	assert_eq(catalog.emissive_images().entries.size(), 0)
 	assert_eq(catalog.problems.size(), 1)
 	assert_string_contains(catalog.problems[0], "res://no_such_assets/rendering/emissive_images.tres")
+
+
+func test_the_committed_index_names_its_retail_source() -> void:
+	assert_eq(_assets.index.source_kind, AssetIndex.SOURCE_RETAIL)
+	assert_eq(_assets.index.source_kind, "retail")
+	assert_eq(_assets.index.froglord_version, -1)
+	assert_eq(_assets.index.trailer_build, "")
+	assert_eq(_assets.index.fallback_root, "")
+	assert_eq(_assets.index_root, "res://assets")
+	assert_eq(_assets.source_summary(), "retail FROGGER.EXE + FROGPSX.MWD")
+
+
+func test_a_froglord_overlay_index_summarises_its_source() -> void:
+	var catalog := ImportedAssets.new()
+	catalog.index = AssetIndex.new()
+	catalog.index.source_kind = AssetIndex.SOURCE_FROGLORD_MOD
+	catalog.index.source_exe_name = "modded_FROGGER.EXE"
+	catalog.index.source_mwd_name = "modded_FROGPSX.MWD"
+	catalog.index.froglord_version = 12
+	catalog.index.trailer_build = BUILD
+	assert_eq(catalog.source_summary(),
+		"FrogLord mod modded_FROGGER.EXE + modded_FROGPSX.MWD (FrogLord 12, base pc-retail-v3.0e)")
+	catalog.index.fallback_root = "res://assets"
+	assert_string_ends_with(catalog.source_summary(), " over res://assets")
+
+
+func test_an_index_root_serves_maps_from_its_own_folder_and_the_assets_root() -> void:
+	var row: MapBookEntry = _assets.map_book_entry(FroggerIds.level_from_code("ORG1"))
+	var moved_id: int = row.map_id(true)
+	var kept_id: int = row.map_id(false)
+	assert_ne(moved_id, kept_id)
+	var committed: String = _assets.index.path_of(moved_id)
+	var moved: String = OVERLAY.path_join("maps").path_join(committed.get_file())
+	assert_eq(DirAccess.make_dir_recursive_absolute(moved.get_base_dir()), OK)
+	var map: Resource = ResourceLoader.load(committed, "", ResourceLoader.CACHE_MODE_IGNORE)
+	assert_eq(ResourceSaver.save(map, moved, ResourceSaver.FLAG_COMPRESS), OK)
+	var loaded: AssetIndex = ResourceLoader.load("res://assets/catalog.tres", "", ResourceLoader.CACHE_MODE_IGNORE) as AssetIndex
+	var overlay: AssetIndex = loaded.duplicate() as AssetIndex
+	overlay.paths[moved_id] = moved
+	overlay.fallback_root = "res://assets"
+	assert_eq(ResourceSaver.save(overlay, OVERLAY.path_join("catalog.tres")), OK)
+	var assets: ImportedAssets = ImportedAssets.open("res://assets", "", OVERLAY)
+	assert_eq(assets.error, "")
+	assert_eq(assets.root, "res://assets")
+	assert_eq(assets.index_root, OVERLAY)
+	assert_eq(assets.index.fallback_root, "res://assets")
+	var problems := PackedStringArray()
+	var from_overlay: MapFile = assets.read_map(moved_id, problems)
+	var from_assets: MapFile = assets.read_map(kept_id, problems)
+	assert_eq(problems, PackedStringArray())
+	assert_not_null(from_overlay)
+	assert_not_null(from_assets)
+	if from_overlay != null and from_assets != null:
+		assert_eq(from_overlay.resource_path, moved)
+		assert_eq(from_assets.resource_path, _assets.index.path_of(kept_id))
+		assert_true(from_assets.resource_path.begins_with("res://assets/maps/"))

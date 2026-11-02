@@ -1,26 +1,21 @@
 extends SceneTree
-## Imports the owner's retail files into [code]res://assets[/code] once.
+## Imports the owner's retail files, or a FrogLord save of them, into an
+## asset root once.
 ##
 ##   godot --headless --path . -s res://archive/import/import_assets.gd -- \
 ##       --data-dir=<folder> [--disc=<FROGGER.mds>] [--scratch=<folder>] \
-##       --phase=raw|resources [--only=step,step] [--force-music]
+##       --phase=raw|resources [--only=step,step] [--force-music] \
+##       [--assets-root=<folder>] [--fallback-root=<folder>]
 ##
 ## [code]archive/import/import_assets.sh[/code] runs the phases in order with
-## Godot's import step between them. Steps run in the fixed order below; each
-## reports problems and the process exits 1 when any were reported.
-
-const STEP_SCRIPTS: Array[String] = [
-	"res://archive/import/steps/names_step.gd",
-	"res://archive/import/steps/tables_step.gd",
-	"res://archive/import/steps/textures_step.gd",
-	"res://archive/import/steps/sfx_step.gd",
-	"res://archive/import/steps/music_step.gd",
-	"res://archive/import/steps/demos_step.gd",
-	"res://archive/import/steps/maps_step.gd",
-	"res://archive/import/steps/models_step.gd",
-	"res://archive/import/steps/options_models_step.gd",
-	"res://archive/import/steps/catalog_step.gd",
-]
+## Godot's import step between them. [ImportRun] runs the steps in their fixed
+## order; each reports problems and the process exits 1 when any were
+## reported. [code]--assets-root[/code] (default [code]res://assets[/code]) is
+## where the run writes; [code]--fallback-root[/code] names a complete asset
+## root the index falls back to for everything the run did not write, which
+## makes the run an overlay. The data folder must hold a pc-retail-v3.0e build:
+## the retail files, or FrogLord's [code]modded_[/code] pair whose trailer
+## names that build.
 
 
 func _init() -> void:
@@ -36,6 +31,9 @@ func _init() -> void:
 	if context.disc.is_empty():
 		context.disc = OS.get_environment("FROGGER_DISC")
 	context.force_music = options.has("force-music")
+	var assets_root: String = _option(options, "assets-root")
+	context.assets_root = assets_root if not assets_root.is_empty() else "res://assets"
+	context.fallback_root = _option(options, "fallback-root")
 	var data_dir: String = _option(options, "data-dir")
 	var located: GameDataLocator.Located = GameDataLocator.new().locate(data_dir)
 	if located == null or located.source == null or located.version == null:
@@ -52,32 +50,33 @@ func _init() -> void:
 		quit(2)
 		return
 	var only: PackedStringArray = _option(options, "only").split(",", false)
-	var started: int = Time.get_ticks_msec()
-	for script_path: String in STEP_SCRIPTS:
-		var expected_name: String = script_path.get_file().trim_suffix("_step.gd")
-		if not only.is_empty() and not only.has(expected_name):
-			continue
-		if not ResourceLoader.exists(script_path):
-			print("import: no step at %s" % script_path)
-			continue
-		var script: GDScript = load(script_path)
-		if script == null or not script.can_instantiate():
-			printerr("import: step %s does not compile" % script_path)
-			quit(2)
-			return
-		var step: ImportStep = script.new()
-		if step.step_name() != expected_name:
-			context.report("step %s names itself %s" % [script_path, step.step_name()])
-		if not step.phases().has(phase):
-			continue
-		var step_started: int = Time.get_ticks_msec()
-		step.run(context, phase)
-		print("import: %s (%s) %d ms" % [step.step_name(), phase, Time.get_ticks_msec() - step_started])
+	var problems: int = ImportRun.new().run(context, phase, only)
+	if phase == ImportStep.PHASE_RESOURCES:
+		_report_support(context)
 	context.data.close()
-	print("import: phase %s wrote %d files, %d unchanged, %d problems, %d ms" % [
-		phase, context.written.size(), context.unchanged, context.problems.size(),
-		Time.get_ticks_msec() - started])
-	quit(1 if not context.problems.is_empty() else 0)
+	quit(1 if problems > 0 else 0)
+
+
+## Prints the [LevelSupportReport] of the source and saves it as
+## [code]support_report.tsv[/code] in the scratch folder's [code]logs[/code]
+## when the run has one. Unmapped rows are information, not problems.
+func _report_support(context: ImportContext) -> void:
+	var report: LevelSupportReport = LevelSupportReport.from_catalog(context.data)
+	print("import: support %s" % report.summary())
+	for row: LevelSupportReport.Row in report.unmapped():
+		print("import: unmapped %s" % row.to_tsv())
+	for problem: String in report.problems:
+		print("import: support problem %s" % problem)
+	if context.scratch.is_empty():
+		return
+	var path: String = context.scratch.path_join("logs").path_join("support_report.tsv")
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		context.note("cannot write %s" % path)
+		return
+	file.store_string("\n".join(report.to_tsv_lines()) + "\n")
+	file.close()
+	print("import: support report %s" % path)
 
 
 func _option(options: Dictionary[String, String], key: String) -> String:

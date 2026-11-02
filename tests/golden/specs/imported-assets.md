@@ -382,4 +382,114 @@ Deliberate break: change `outside_scroll` of `SWP5_WIN95`. The generator
 without `--write` must exit 1 with the diff, and the test must name the map
 and column. Restore with `--write` and rerun both.
 
+## FrogLord round trip
+
+`pc-retail-v3.0e/froglord_roundtrip.tsv` pins P14's exit check: an edited
+map, script, remap and demo, and forms repointed to other behaviours, import
+and load without code. The edits are a shared specification,
+`synthetic/froglord_edits.tsv`. A GDScript fixture applies them to the
+retail pair and writes a FrogLord save; the generator applies them to the
+decoded retail data in memory. Each side implements the formats on its own.
+
+The specification has one tab-separated row per edit, `#` lines and blank
+lines skipped. Values are decimal or `0x` hexadecimal.
+
+| kind | target | subject | field | width |
+|---|---|---|---|---|
+| `form` | theme | form name | `entity_type`, `model_id`, `script_id`, `flags`, `collision_callback`, `radius_squared`, `death_type` or `bonus_callback` (+0 to +28 of the 32-byte library entry) | 32-bit, callbacks unsigned |
+| `script` | script name | word index | `word` | signed 32-bit |
+| `remap` | remap name | slot | `slot` | signed 16-bit |
+| `demo` | archive file | input index | `input` (byte 12 + index) | unsigned 8-bit |
+| `map` | archive file | entity index | `form_grid_id`, `unique_id`, `form_id` or `flags` (+0 to +6 of the EMTP record) | unsigned 16-bit |
+
+The sixth column is a note. Every premise was checked against the retail
+data: the lorry has no `[Override]`, ORG_FLY's bonus is 0x4231D0, slot 8 of
+`txl_org1` is 1462 and slot 0 is 883, ORG1 entity 45 is form 1 with unique id
+127, input 9 of ORG1DEMO.DAT is 0x80, GEN_STAT_FALL_BLOCK is placed only in
+CAV3 and CAV3_WIN95, and no map places ORG_TRUCK_GREEN.
+
+### Fixture
+
+`archive/tests/support/froglord_mod_fixture.gd` opens the retail pair.
+`FrogLordExePatcher` resolves names through the archive readers and patches
+the executable (forms, scripts, remaps) or an archive file's unpacked bytes
+(demos, maps), little-endian. `FrogLordMwdWriter` then writes FrogLord's
+three files:
+
+- `modded_FROGPSX.MWD`: the retail first sector, then every entry that is
+  not group access, in MWI index order, each from a 2048-byte boundary and
+  zero-padded to the next. An edited entry flagged compressed is packed
+  again as PP20 literals; an edited stored entry is written as it is; every
+  other entry keeps its stored bytes. Each MWI record in the executable gets
+  the new sector (+12), packed size (+24) and unpacked size (+28, the
+  safety-margin byte kept).
+- `modded_FROGPSX.MWI`: the 48,840-byte index region of the executable.
+- `modded_FROGGER.EXE`: the patched program followed by FrogLord's trailer.
+  Its text is `demoTableAddress=0x<file offset>` and `lowPolyDemoTable=true`
+  at the top level, then `[BuildInfo]` with `gameType=frogger`,
+  `gameVersion=pc-retail-v3.0e` and `frogLordVersion=1`.
+
+### Facts
+
+```
+python3 tools/make_golden_froglord_roundtrip.py --data-dir <retail folder>
+```
+
+`--data-dir` defaults to `FROGGER_DATA_DIR`, `--spec` to the shared
+specification, `--output` to the committed file; `--check` compares, prints a
+diff and exits 1. The generator reuses the readers of
+`make_golden_exe_tables.py`, `make_golden_entities.py` (map entities),
+`make_golden_demos.py` and `make_golden_manifest.py`. It decodes the patched
+executable again, and first requires its row builders to reproduce the
+committed retail rows of each schema from the unedited data. Each line starts
+with its section's tag; a `#` line before each section names its columns.
+
+| Section | Rows |
+|---|---|
+| `edit` | each edit: kind, target, subject, field, resource (`exe` or the MWI index), offset in the executable or unpacked file, retail value, new value |
+| `exe_forms`, `exe_scripts`, `exe_remaps` | the edited forms, scripts and remaps, as in the executable tables |
+| `demos` | the demo-table rows of the edited demos (both detail lists) |
+| `entities_retail` | the high-detail maps of ORG1 and CAV3 |
+| `report` | the rows the edits add to the unmapped and unplaced support-report rows of ORG1 and CAV3: a callback that no retail form uses, on a form no map of those levels places, gives `callback`, the address, `-` (unplaced) and the form name; the report's reason text is not pinned |
+
+### Test
+
+`archive/tests/golden/test_retail_froglord_roundtrip.gd` writes the fixture
+to `user://froglord_fixture/` and requires:
+
+- `GameDataLocator.open_directory` gives a `FrogLordModSource`; detection
+  uses the trailer and finds `pc-retail-v3.0e`; `GameData` opens without an
+  error or warnings, compared the standalone index and decodes every table;
+- the demo table read from the build information equals the one the retail
+  search finds;
+- the patcher's resolved edits equal `edit`;
+- the rows built with `RetailFactRows` from the modded files equal their
+  sections;
+- the importer's `names`, `tables`, `demos`, `maps` and `catalog` steps, run
+  in-process into `user://froglord_roundtrip/` with `res://assets` as the
+  fallback root, report no problems; `ImportedAssets.open` of that index has
+  source kind `FrogLord mod`, the trailer's FrogLord version and the fallback
+  root, draws texture banks from `res://assets` and ORG1's map from the
+  overlay, and yields the same rows;
+- `MapSceneData` and `GameplaySetup` load ORG1 and CAV3 from the overlay: the
+  lorries are tongueable, entity 45 is ORG_CAR_PURPLE, the bonus fly scores
+  as a cave firefly, remap slot 8 gives 883, the ORG1 demo's input 9 is 132
+  and CAV3's fall blocks have waterfall-block contacts;
+- `LevelSupportReport` of the overlay adds exactly the `report` rows (kind,
+  key, levels and form) to the retail report's unmapped and unplaced rows.
+
+Both folders are removed afterwards.
+
+### Deliberate breaks
+
+- Change ORG_LORRY's `entity_type` in `exe_forms`: the modded-file and
+  overlay checks name the form row.
+- Change a digit of the ORG1DEMO.DAT digest in `demos`: both checks name the
+  demo.
+- Change the remap value in `froglord_edits.tsv` without regenerating:
+  `--check` exits 1 with the `edit` and `exe_remaps` lines of `txl_org1` slot
+  8, and the test names the `edit` row and the remap row.
+
+Each was restored and `--check` rerun.
+
 [Golden data index and shared rules](../README.md). Commands above run from the repository root.

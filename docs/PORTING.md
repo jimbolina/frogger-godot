@@ -49,7 +49,8 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P13h | Level-complete page: the retail statistics page over the map after the fifth frog, with the next-level and zone-complete exits ([front end](reference/gameplay/front-end.md#level-complete)) | S–M | Independent page golden with a deliberate break; owner play check | Done; accepted by the owner's play check |
 | P13e | Attract cycle: the main menu's fixed dwell, the executable's demo order and gates, demos in the game scene with the menu live over them, the fade and the return; the intro slot restarts the menu ([front end](reference/gameplay/front-end.md#attract-cycle)) | S | Independent attract golden with a deliberate break; owner play check | Done; accepted by the owner's play check |
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
-| P14 | FrogLord as the level editor: re-import of FrogLord-edited retail files through `archive/import`, reload on change, with a report of unmapped forms, scripts and callbacks | M | An edited map, script, remap and demo all import and load; a repointed behaviour loads without code | The importer and readers stay runnable (S2f); the round trip is next after S2 |
+| P14a | FrogLord as the level editor: the importer accepts a FrogLord save, writes an overlay (`--assets-root`, `--fallback-root`) whose index falls back to `assets/`, records the source in `AssetIndex`, and prints the `LevelSupportReport` of unmapped forms, entity names, scripts, callbacks and remaps (`tools/asset_report.sh`) | M | A synthetic FrogLord save with an edited map, script, remap, demo and repointed callbacks imports as an overlay and ORG1 and CAV3 load from it; independent Python golden with deliberate breaks; both suites green; the committed assets report no unmapped row | Done |
+| P14b | Reload on change: `tools/froglord_watch.sh` re-imports a FrogLord save into `user://froglord/<fingerprint>/` when it changes and writes a pointer file; `tools/play.sh --level=X --froglord` reopens the level when the pointer changes (`F5` on demand) | S–M | Owner play check: a FrogLord save reopens the running level | Next |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs | Mac source setup and isolated verification available; packaged exports and CI pending |
@@ -65,8 +66,8 @@ Network play is deferred. Multiplayer levels belong to P15.
 The owner has set two spikes ahead of P13e. They deliberately leave the
 compatibility mantra: FrogLord-saved files, runtime loading of the player's
 archive and executable, and the stored-colour fidelity checks stop being
-requirements. That compatibility is deferred, not discarded; P14 and the
-`pc-retail-v3.0e` target return to the plan later if the owner wants them.
+requirements. That compatibility was deferred, not discarded: P14a brought
+FrogLord saves of `pc-retail-v3.0e` back as overlay imports.
 
 S1 imports every asset once into `assets/` as committed Godot resources:
 models and animations as meshes, scenes and animation libraries (the XAR
@@ -178,6 +179,7 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 | Acceptance of the modern rendering | Decided 2026-10-31 | The owner retired the retail look in S2f; Forward+ is the project renderer. FrogLord stays the level editor and the import path stays runnable (P14). |
 | Look choices | Open, defaults in place | The tunables of the modern rendering: cave light mode, water glint, blob and real shadows, tone mapper, baked terrain shading and texture filtering, each with its default and where to change it in [look choices](reference/rendering/lighting.md#look-choices). |
 | A vector recreation of the Frogger font | Angular face decided 2026-11-01; `newfont` open | The angular lettering is drawn from vector glyphs replacing the retail images outright (S2h). The shaded `newfont` stays a bitmap; a pixel-square TTF equals nearest upscaling and a smoothed redraw needs the owner's eye ([S2b](#s2b-native-text)). |
+| Facts for a mod imported into `assets/` | Before a FrogLord save replaces the retail assets | The import goldens compare `assets/` with the retail facts under `tests/golden/pc-retail-v3.0e/`, so a full import of a FrogLord save into `assets/` fails them until the Python generators are run on the modded files into a facts folder of their own (its name and how the tests select it are the owner's call). Until then, FrogLord saves play as overlays (P14a). |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage

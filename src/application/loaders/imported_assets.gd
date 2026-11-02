@@ -3,8 +3,10 @@ extends AssetCatalog
 ## The [AssetCatalog] read from the committed resources under
 ## [code]res://assets[/code], written once by the importer.
 ##
-## [method open] loads the [AssetIndex] ([code]catalog.tres[/code]), the
-## executable tables and the name lists; every other record is loaded on
+## [method open] loads the [AssetIndex] ([code]catalog.tres[/code]), from the
+## assets root or from a separate index root holding an overlay index whose
+## paths point into either folder, then the executable tables and the name
+## lists; every other record is loaded on
 ## request through Godot's resource cache, so a record asked for twice is the
 ## same object. Records are shared and must not be changed. The retail archive
 ## is not kept, so no raw resource bytes are available.
@@ -21,8 +23,12 @@ const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
-## The folder the assets were opened from.
+## The folder the assets were opened from: fonts, lettering, the emissive
+## table and texture sets are read from here.
 var root: String = ""
+## The folder the asset index was read from; [member root] unless
+## [method open] was given another.
+var index_root: String = ""
 ## The texture set the catalog draws from.
 var textures: TextureSet = TextureSet.retail()
 ## Records that could not be loaded, one line each.
@@ -33,14 +39,17 @@ var _emissive: EmissiveImageTable
 
 
 ## Opens the assets under [param assets_root], drawing from the texture set
-## called [param texture_set_name] ("" for retail). Check
-## [member AssetCatalog.error]; a set that is not installed falls back to
-## retail with a line in [member AssetCatalog.warnings].
-static func open(assets_root: String = "res://assets", texture_set_name: String = "") -> ImportedAssets:
+## called [param texture_set_name] ("" for retail). The index is read from
+## [param index_folder] when it is not empty, otherwise from
+## [param assets_root]. Check [member AssetCatalog.error]; a set that is not
+## installed falls back to retail with a line in [member AssetCatalog.warnings].
+static func open(assets_root: String = "res://assets", texture_set_name: String = "",
+		index_folder: String = "") -> ImportedAssets:
 	var catalog := ImportedAssets.new()
 	catalog.root = assets_root
+	catalog.index_root = index_folder if not index_folder.is_empty() else assets_root
 	catalog.textures = resolve_texture_set(assets_root, texture_set_name, catalog.warnings)
-	var index_path: String = assets_root.path_join("catalog.tres")
+	var index_path: String = catalog.index_root.path_join("catalog.tres")
 	catalog.index = catalog._load(index_path) as AssetIndex
 	if catalog.index == null:
 		catalog.error = "no asset index at %s" % index_path
@@ -151,6 +160,28 @@ func emissive_images() -> EmissiveImageTable:
 		problems.append("no emissive image table at %s" % path)
 		_emissive = EmissiveImageTable.new()
 	return _emissive
+
+
+## One line naming the source the assets were imported from, for example
+## [code]retail FROGGER.EXE + FROGPSX.MWD[/code] or
+## [code]FrogLord mod modded_FROGGER.EXE + modded_FROGPSX.MWD (FrogLord 12, base pc-retail-v3.0e)[/code],
+## followed by the root an overlay index falls back to; "" without an index.
+func source_summary() -> String:
+	if index == null:
+		return ""
+	var line: String = index.source_kind
+	if not index.source_exe_name.is_empty() or not index.source_mwd_name.is_empty():
+		line += " %s + %s" % [index.source_exe_name, index.source_mwd_name]
+	var origin := PackedStringArray()
+	if index.froglord_version >= 0:
+		origin.append("FrogLord %d" % index.froglord_version)
+	if not index.trailer_build.is_empty():
+		origin.append("base %s" % index.trailer_build)
+	if not origin.is_empty():
+		line += " (%s)" % ", ".join(origin)
+	if not index.fallback_root.is_empty():
+		line += " over %s" % index.fallback_root
+	return line
 
 
 ## The SHA-256 of the executable and archive the assets were imported from.

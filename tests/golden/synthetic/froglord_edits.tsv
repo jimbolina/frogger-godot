@@ -1,0 +1,9 @@
+# kind	target	subject	field	value	note
+form	ORIGINAL	ORG_LORRY	entity_type	35	MOVING to MOVING_TONGUEABLE, same PathInfo payload, no [Override]
+form	ORIGINAL	ORG_FLY	bonus_callback	0x43D060	OrgFly to CavFireFly, both verified bonus callbacks
+form	GENERAL	GEN_STAT_FALL_BLOCK	collision_callback	0x4287A0	fall block to waterfall block, placed only in CAV3
+form	ORIGINAL	ORG_TRUCK_GREEN	collision_callback	0x401000	unmapped probe on a form no map places
+script	SCRIPT_ORG_TRUCK_SFX	3	word	97	PLAY_SOUND_DISTANCE sound 94 to 97, size unchanged
+remap	txl_org1	8	slot	883	texture 1462 to 883, already in ORG1's banks
+demo	ORG1DEMO.DAT	9	input	132	0x80 to 0x84, bit 2 is uninterpreted
+map	ORG1.MAP	45	form_id	2	ORG_CAR_BLUE to ORG_CAR_PURPLE, same payload and script shape

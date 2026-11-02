@@ -31,6 +31,12 @@ func test_catalog_opens() -> void:
 	assert_eq(_assets.names.errors.size(), 0)
 	assert_eq(_assets.index.exe_sha256.length(), 64)
 	assert_eq(_assets.index.mwd_sha256.length(), 64)
+	assert_eq(_assets.index.source_kind, "retail")
+	assert_eq(_assets.index.source_exe_name, "FROGGER.EXE")
+	assert_eq(_assets.index.source_mwd_name, "FROGPSX.MWD")
+	assert_eq(_assets.index.trailer_build, "")
+	assert_eq(_assets.index.froglord_version, -1)
+	assert_eq(_assets.index.fallback_root, "")
 
 
 func test_tables_are_separate_files() -> void:

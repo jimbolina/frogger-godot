@@ -44,9 +44,15 @@ implements it over the retail files for the importer and the archive suite.
 
 ## Layout
 
+An importer run may also write an overlay index outside `assets/`: its paths
+point into its own folder for what the run wrote and into `assets/` for the
+rest, and `ImportedAssets.open` reads it through its index-root argument while
+fonts, lettering and texture sets still come from the assets root
+([archive](../../archive/README.md#regenerating-the-assets)).
+
 | Path | Content |
 |---|---|
-| `catalog.tres` | `AssetIndex`: build name, SHA-256 of the retail executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts and the playable level codes. |
+| `catalog.tres` | `AssetIndex`: build name, source kind (`retail` or `FrogLord mod`) with its executable and archive names, a FrogLord save's trailer build and FrogLord version (-1 for retail), the fallback root of an overlay (empty here), SHA-256 of the executable and archive, the MWI index, the asset path of every resource id, WAD membership, model counterparts and the playable level codes. |
 | `tables/<table>.tres`, `tables/game_tables.tres`, `tables/names.tres` | One file per executable table, linked from `game_tables.tres`; FrogLord's name lists. |
 | `textures/images/tNNNN.png` | One padded RGBA8 image per texture id (1,858); exact black is alpha 0 where the image is colour-keyed. |
 | `textures/images_x4/tNNNN.png` | The same images upscaled to exactly four times the padded size, drawn by the `x4` [texture set](#upscaled-textures). |

@@ -81,6 +81,7 @@ commands run from the repository root; generated facts live in
 | Synthetic gameplay projection and source-rendered geometry | [Gameplay projection](specs/gameplay-projection.md) |
 | Synthetic frog animation catalog and component records | [Frog animation](specs/frog-animation.md) |
 | Synthetic ordered terrain/camera/animation component records | [Integrated terrain](specs/integrated-terrain.md) |
+| FrogLord round trip: a synthetic FrogLord save from the shared edit specification (`synthetic/froglord_edits.tsv`) decoded, imported into an overlay and set up (`froglord_roundtrip.tsv`) | [FrogLord round trip](specs/imported-assets.md#froglord-round-trip) |
 | Map UV ranges: static corners and animated scrolls against each padded image, ENVMAP images and minimum padding (`imported/map_uv_ranges.tsv`) | [Map UV ranges](specs/imported-assets.md#map-uv-ranges) |
 
 ## Digest convention
