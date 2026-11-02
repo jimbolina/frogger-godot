@@ -95,7 +95,9 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   synthetic gameplay and prescribed JUN1 logs, independent coupled reference
   facts, transaction failures and complete schedule parity.
 - [Front-end flow and unlock goldens](../../../tests/golden/specs/frontend.md):
-  `python3 tools/make_golden_frontend.py --check` diffs the committed facts.
+  `python3 tools/make_golden_frontend.py --check` diffs the committed facts;
+  `python3 tools/make_golden_attract.py --check` does the same for the
+  [attract cycle](../../../tests/golden/specs/frontend.md#attract-cycle).
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 - [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts):

@@ -7,6 +7,10 @@ extends RefCounted
 ## high-score file, else from the executable's default tables; they are loaded once and kept with
 ## the run's recorded levels across the game and front-end scenes, and written by
 ## [method save_scores] after initials are entered and when a game ends (retail saves at GameEnd).
+##
+## The attract cycle is built once from the executable's demo table and keeps its place across
+## the main menu and the game scene, which plays [member attract_level] while it is not -1 and
+## hands back with [member attract_return] and, for the INTRO slot, [member attract_intro].
 
 ## Whether a game started from the front end is under way; direct level launches leave it false.
 static var active: bool = false
@@ -47,6 +51,18 @@ static var scores_store_path: String = HighScoreStore.DEFAULT_PATH
 static var final_score: int = 0
 ## True when the last game was quit from the game rather than played out.
 static var game_quit: bool = false
+## The attract demos in order, or null when the demo table is missing or empty.
+static var attract: AttractCycle = null
+## The demo level the game scene plays, or -1 for normal play.
+static var attract_level: int = -1
+## True when the game scene handed back after a demo: the main menu opens at HIGH_SCORE_VIEW_INIT
+## with the camera snapped to MAIN and [member attract_option] kept.
+static var attract_return: bool = false
+## True when the finished demo was followed by the INTRO slot, which the port replaces with a
+## main-menu restart: cursor on Start, camera snapped to MAIN and a fresh dwell.
+static var attract_intro: bool = false
+## The main menu's focused row (Option_number) kept across the demo.
+static var attract_option: int = 0
 
 
 ## Builds the stack and the saved progress from the executable's level-select table.
@@ -56,13 +72,16 @@ static func load_progress(data: AssetCatalog) -> String:
 		return table.error
 	stack = LevelProgressSetup.stack_from_table(table)
 	store = ProgressStore.load_from(store_path)
-	diagnostics = PackedStringArray()
+	if not attract_return and not attract_intro:
+		diagnostics = PackedStringArray()
 	if not store.error.is_empty():
 		diagnostics.append(store.error)
 	read_options(store)
 	if not bindings.error.is_empty():
 		diagnostics.append(bindings.error)
 	load_scores(data)
+	if attract == null:
+		attract = attract_from(data.tables.demo_table() if data.tables != null else null)
 	if store.level_flags.is_empty():
 		progress = LevelProgress.create(stack)
 	else:
@@ -96,6 +115,26 @@ static func load_scores(data: AssetCatalog) -> void:
 	diagnostics.append("High scores are unavailable (%s); the tables start empty" % (table.error if table != null else "no tables"))
 	var none: Array[HighScoreRow] = []
 	board = HighScoreBoard.create(none, none)
+
+
+## The attract cycle over [param table]'s rows up to the terminator, a skipped row standing for
+## the INTRO slot; null when [param table] is missing, unreadable or has no demo to play.
+static func attract_from(table: DemoTable) -> AttractCycle:
+	if table == null or not table.error.is_empty():
+		return null
+	var levels := PackedInt32Array()
+	var gates := PackedInt32Array()
+	for entry: DemoTableEntry in table.entries:
+		if entry.level == DemoTable.TERMINATOR:
+			break
+		if entry.is_skipped():
+			levels.append(AttractCycle.INTRO)
+			gates.append(AttractCycle.INTRO)
+		else:
+			levels.append(entry.level)
+			gates.append(entry.unlock_level)
+	var cycle: AttractCycle = AttractCycle.from_rows(levels, gates)
+	return cycle if cycle.current_level() >= 0 else null
 
 
 ## Rows from parallel [param initials], [param scores] and five [param times] per row.
@@ -163,6 +202,25 @@ static func begin_game() -> void:
 	game_quit = false
 	if board != null:
 		board.reset_run()
+
+
+## Starts the game the main menu's Start row opens: a fresh game whose level list may still go
+## back, opened on the level select.
+static func menu_start() -> void:
+	begin_game()
+	level_chosen = false
+	start_page = FrontEndPage.Page.LEVEL_SELECT
+
+
+## Asks the game scene to play attract demo [param demo_level].
+static func begin_attract(demo_level: int) -> void:
+	attract_level = demo_level
+
+
+## Ends the attract demo; [param return_to_menu] opens the main menu as the demo hands back.
+static func end_attract(return_to_menu: bool) -> void:
+	attract_level = -1
+	attract_return = return_to_menu
 
 
 ## Ends the game on [param ending_score]: the next front-end scene opens name entry, which leaves

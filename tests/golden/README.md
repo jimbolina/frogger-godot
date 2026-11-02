@@ -72,6 +72,7 @@ commands run from the repository root; generated facts live in
 | Name-entry page layout, frog hops, pad flips, letters, BACK and END and scripted page traces | [High-score entry](specs/frontend.md#high-score-entry) |
 | High-score view layout, log digit cels, scrolly frog, camera follow, manual and automatic stack tours and scripted traces | [High-score view](specs/frontend.md#high-score-view) |
 | Level-complete count-down, fire and back, checkpoint seconds, digits, cels, sprite layout and scripted page traces | [Level complete](specs/frontend.md#level-complete) |
+| Attract demo order and intro rows, main-menu dwell, demo loading, fade-out and fire gate | [Attract cycle](specs/frontend.md#attract-cycle) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

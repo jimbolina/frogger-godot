@@ -42,7 +42,10 @@ camera. **Options** on the main menu sets the music and effects volume and, unde
 control configuration, rebinds these keys (F1 redefine, F3 key list, Esc back), and
 **View high scores** shows the level stack (Enter spins a level out to its three
 rows, Left shows the main table, Escape backs out); the main menu scrolls the main
-table behind its buttons. Menu images follow your system language, or pass `--language=en|it|de|fr|es`. The inspection
+table behind its buttons. Menu images follow your system language, or pass `--language=en|it|de|fr|es`.
+Left alone for 27 seconds, the main menu plays the attract demos in the game scene and
+returns between them; Start and Options still work over a demo. Pass `--attract` to
+start the first demo as soon as the menu has flown on. The inspection
 tools and sandbox keep their own keys. Space pauses/resumes,
 R restarts, and Escape returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
 **Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.

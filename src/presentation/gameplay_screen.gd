@@ -13,6 +13,15 @@ extends GameplayWorldView
 ## Enter and Space are fire and Escape is triangle. A front-end game leaves through
 ## [method settle_level_complete]; a direct launch shows the statistics alone and keeps R and
 ## Escape. The sandbox never opens the page.
+##
+## When [member FrontEndSession.attract_level] names a level outside a game, the screen plays
+## that level's recorded attract demo instead (tempopt.c:1481-1626): the demo's own commands drive
+## the run ([DemoPlaybackSession]), the HUD panels hide while the score sprites stay (tempopt.c:1379
+## leaves GAME_FLAG_SCORE_SPRITES set), and the main menu's sprites fly on over the running game
+## and stay live through focus ([MainMenuView]). Pause, restart, croak and Escape are ignored. When
+## the demo is 30 ticks from its end ([AttractTimer]) the sprites fly off, the LOADING sprite
+## brightens and the screen fades to black over 30 ticks while the game keeps running; the main
+## menu then returns. Deaths restart at the demo spawn without rewinding the recording.
 
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
@@ -55,6 +64,20 @@ var _text_assets: FrontEndAssets = null
 var entity_model_diagnostics := PackedStringArray()
 ## Player 1's key bindings: the shipped defaults until the saved options are read on opening.
 var input: BindingInput = BindingInput.new()
+## The attract demo's duration and input cursor while one plays, else null.
+var attract_session: DemoPlaybackSession = null
+## The attract demo's menu fly and fade clocks while one plays, else null.
+var attract_timer: AttractTimer = null
+## Whether leaving an attract demo changes the scene; tests turn it off.
+var switches_scene: bool = true
+## The scene an attract demo last left for, or "".
+var left_for: String = ""
+var _attract_demo: SourceDemoFile = null
+var _attract_done: bool = false
+var _attract_layer: Control = null
+var _main_menu: MainMenuView = null
+var _loading: TextureRect = null
+var _fade: ColorRect = null
 
 func _ready() -> void:
 	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
@@ -68,17 +91,23 @@ func _ready() -> void:
 		if audio_enabled:
 			AudioLevels.apply(settings.music_volume, settings.sound_volume, voice_view())
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
-		recorder = InputRecorder.from_arguments(arguments)
-		allow_unaccepted_levels = not ViewerArguments.value(arguments, "--level=").is_empty()
-		level_code = FrontEndSession.selected_level if not FrontEndSession.selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
-		if level_code.is_empty():
-			level_code = "ORG1"
+		var attract: bool = FrontEndSession.attract_level >= 0 and not FrontEndSession.active
+		if attract:
+			level_code = FroggerIds.level_code(FrontEndSession.attract_level)
+		else:
+			recorder = InputRecorder.from_arguments(arguments)
+			allow_unaccepted_levels = not ViewerArguments.value(arguments, "--level=").is_empty()
+			level_code = FrontEndSession.selected_level if not FrontEndSession.selected_level.is_empty() else ViewerArguments.value(arguments, "--level=")
+			if level_code.is_empty():
+				level_code = "ORG1"
 		FrontEndSession.selected_level = ""
 		var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
 		data.note_renderer(RenderingServer.get_current_rendering_method())
 		for warning: String in data.warnings:
 			push_warning(warning)
-		if data.is_valid():
+		if attract:
+			open_attract(data)
+		elif data.is_valid():
 			open_data(data, level_code, true)
 		else:
 			_show_error("The imported assets cannot be opened: %s" % data.error)
@@ -188,10 +217,54 @@ func _detach_game() -> void:
 	if _actions != null:
 		_actions.hide()
 
+## Opens [member FrontEndSession.attract_level]'s recorded demo (high detail) from [param data],
+## taking ownership of it. A demo that cannot be resolved or opened is noted in
+## [member FrontEndSession.diagnostics] and the main menu returns at once.
+func open_attract(data: AssetCatalog) -> void:
+	var setup: DemoSetup = DemoSetup.resolve(data, FrontEndSession.attract_level)
+	if not setup.error.is_empty():
+		if data != null:
+			data.close()
+		_finish_attract("Attract demo %s: %s" % [level_code, setup.error])
+		return
+	_attract_demo = setup.demo
+	var issue: String = open_data(data, level_code, true)
+	if not issue.is_empty():
+		_finish_attract("Attract demo %s: %s" % [level_code, issue])
+
+## Plays [param demo] on [param definition] as an attract demo timed by [param timer]: the run
+## starts from the demo's spawn ([method DemoSetup.start_for]), the session counts the demo's
+## ticks and input, the HUD panels hide and the main menu's sprites start their fly-on. Returns
+## the problem, or "".
+func open_attract_run(definition: LevelDefinition, demo: SourceDemoFile, timer: AttractTimer) -> String:
+	_attract_demo = demo
+	_attract_done = false
+	attract_timer = timer
+	attract_session = DemoPlaybackSession.new()
+	recorder = null
+	definition.demo_playback = true
+	var issue: String = attract_session.configure(demo.duration, demo.input_bytes, -1)
+	if issue.is_empty():
+		issue = open_run(definition, DemoSetup.start_for(demo), _model_origins)
+	if not issue.is_empty():
+		return issue
+	_hud.visible = false
+	_build_attract_overlay()
+	attract_timer.start_demo()
+	_present_attract()
+	_update_interface()
+	return ""
+
+## Whether an attract demo plays.
+func is_attract() -> bool:
+	return attract_timer != null
+
 ## Creates a fresh session while retaining the selected level and decoded assets.
 func restart() -> String:
 	if _definition == null:
 		return _show_error("Select a level before restarting")
+	if _attract_demo != null:
+		return open_attract_run(_definition, _attract_demo, AttractTimer.new())
 	var start: RunStart
 	if FrontEndSession.active:
 		start = FrontEndSession.run_start()
@@ -275,22 +348,66 @@ func _process(delta: float) -> void:
 	var result: TickResult = _host.poll()
 	if result != null:
 		_accept(result)
+		if run == null or _current == null:
+			return
 	if _host.advance(delta, playing):
 		_host.consume_period()
-		var command: TickCommand = _host.sample(_current.tick_index, _held)
-		if recorder != null:
-			recorder.record(command)
-		if not _host.submit(command):
-			_show_error(_host.error)
+		if is_attract():
+			_submit_attract_tick()
+		else:
+			var command: TickCommand = _host.sample(_current.tick_index, _held)
+			if recorder != null:
+				recorder.record(command)
+			if not _host.submit(command):
+				_show_error(_host.error)
+		if run == null or _current == null:
+			return
 	draw_state(_host.render_elapsed / GameplayHost.PERIOD if playing else 1.0)
 
+func _submit_attract_tick() -> void:
+	if _attract_done:
+		return
+	var command: TickCommand = attract_session.command(attract_session.elapsed_ticks)
+	if command == null:
+		_advance_attract()
+	elif not _host.submit(command):
+		_finish_attract("Attract demo %s: %s" % [level_code, _host.error])
+
+## One synchronous attract logic tick: the demo's next recorded command through the host, or only
+## the menu and fade clocks once the recording has run out. Returns the tick's result, or null.
+func step_attract() -> TickResult:
+	if not is_attract() or _attract_done:
+		return null
+	_finish_pending()
+	if _attract_done:
+		return null
+	var command: TickCommand = attract_session.command(attract_session.elapsed_ticks)
+	if command == null:
+		_advance_attract()
+		return null
+	return step_command(command, false)
+
 func _accept(result: TickResult) -> void:
+	var demo_issue: String = ""
+	if is_attract() and not _attract_done:
+		demo_issue = attract_session.accept(result)
 	if not result.error.is_empty():
 		_show_error(result.error)
 		reset_interpolation()
+		if is_attract():
+			_finish_attract("Attract demo %s: %s" % [level_code, result.error])
 		return
 	accept_state(result.final_snapshot, result.events)
 	_host.render_elapsed = 0.0
+	if is_attract():
+		_update_interface(result.events)
+		if not demo_issue.is_empty():
+			_finish_attract("Attract demo %s: %s" % [level_code, demo_issue])
+		elif _current.completed:
+			_finish_attract("Attract demo %s ended its game" % level_code)
+		else:
+			_advance_attract()
+		return
 	if _current.completed:
 		playing = false
 		reset_interpolation()
@@ -311,7 +428,7 @@ func _finish_pending() -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key == null or key.echo:
+	if key == null or key.echo or is_attract():
 		return
 	if _complete_page != null:
 		if key.pressed:
@@ -371,6 +488,10 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 		return
 	if _current != null:
 		_hud.present(_current, _current.tick_index, events)
+	if is_attract():
+		_actions.visible = false
+		_status.text = ""
+		return
 	var terminal: bool = _current != null and _current.completed
 	var on_page: bool = _complete_page != null
 	_actions.visible = (terminal and not on_page) or not last_error.is_empty()
@@ -385,6 +506,131 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 		_status.text = "Level complete" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "Game over"
 	else:
 		_status.text = "" if playing else "Paused — Space to resume"
+
+## Builds the overlay over the world once: the score sprites, the subtractive fade, the main
+## menu's sprites and the LOADING sprite centred as the level select draws it.
+func _build_attract_overlay() -> void:
+	if _attract_layer != null:
+		return
+	_attract_layer = Control.new()
+	_attract_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hud.get_parent().add_child(_attract_layer)
+	_attract_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hud.score_popups().reparent(_attract_layer, false)
+	_fade = ColorRect.new()
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.position = Vector2.ZERO
+	_fade.size = Vector2(StackLayout.DISPLAY_WIDTH, StackLayout.DISPLAY_HEIGHT)
+	var subtract := CanvasItemMaterial.new()
+	subtract.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
+	_fade.material = subtract
+	_fade.visible = false
+	_attract_layer.add_child(_fade)
+	_ensure_text_assets()
+	var assets: FrontEndAssets = _text_assets if _text_assets != null else FrontEndAssets.new()
+	_main_menu = MainMenuView.create(assets, OptionsModels.cloud_texture(_data))
+	_attract_layer.add_child(_main_menu)
+	_main_menu.menu_event.connect(_on_menu_event)
+	_main_menu.sound_requested.connect(_play_menu_sound)
+	_main_menu.grab_first_focus()
+	_main_menu.focus_row(FrontEndSession.attract_option)
+	_loading = TextureRect.new()
+	_loading.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_loading.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_loading.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_loading.stretch_mode = TextureRect.STRETCH_SCALE
+	_loading.texture = assets.texture("sel_loading")
+	var loading_size: Vector2 = assets.retail_size("sel_loading")
+	_loading.custom_minimum_size = loading_size
+	_loading.size = loading_size
+	_loading.position = Vector2((StackLayout.DISPLAY_WIDTH >> 1) - (int(loading_size.x) >> 1),
+		(StackLayout.DISPLAY_HEIGHT >> 1) - (int(loading_size.y) >> 1))
+	_loading.visible = false
+	_attract_layer.add_child(_loading)
+
+## Runs one DEMO_MAIN or DEMO_FADE_OUT step of the timer after a logic tick, then redraws the
+## overlay; the finished fade returns to the main menu.
+func _advance_attract() -> void:
+	if _attract_done:
+		return
+	if attract_timer.phase == AttractTimer.Phase.PLAYING:
+		attract_timer.demo_tick(attract_session.duration - attract_session.elapsed_ticks)
+	elif attract_timer.phase == AttractTimer.Phase.FADE_OUT:
+		attract_timer.fade_tick()
+	_present_attract()
+	if attract_timer.phase == AttractTimer.Phase.FINISHED:
+		_finish_attract()
+
+func _present_attract() -> void:
+	if _main_menu == null:
+		return
+	_main_menu.set_slide(attract_timer.menu_slide())
+	_main_menu.fire_allowed = attract_timer.fire_allowed(false, false)
+	var fading: bool = attract_timer.phase in [AttractTimer.Phase.FADE_OUT, AttractTimer.Phase.FINISHED]
+	_loading.visible = fading and _loading.texture != null
+	var brightness: float = minf(float(attract_timer.loading_brightness) / StackPanel.NEUTRAL_COLOUR, 1.0)
+	_loading.modulate = Color(brightness, brightness, brightness)
+	_fade.visible = fading and attract_timer.fade_grey > 0
+	var grey: float = attract_timer.fade_grey / 255.0
+	_fade.color = Color(grey, grey, grey)
+
+func _on_menu_event(kind: int) -> void:
+	if not is_attract() or _attract_done:
+		return
+	match kind:
+		MainMenuView.Kind.START:
+			_end_demo(false)
+			FrontEndSession.menu_start()
+			_leave_for(FrontEndScreen.SCENE)
+		MainMenuView.Kind.OPTIONS:
+			_end_demo(false)
+			FrontEndSession.start_page = FrontEndPage.Page.OPTIONS
+			_leave_for(FrontEndScreen.SCENE)
+		MainMenuView.Kind.EXIT:
+			_end_demo(false)
+			if switches_scene:
+				get_tree().quit()
+
+func _play_menu_sound(sound_name: String) -> void:
+	var voices: SoundVoiceView = voice_view()
+	if voices == null or _data == null or _data.names == null or _data.names.sounds == null:
+		return
+	var sound_id: int = _data.names.sounds.index_of(sound_name)
+	if sound_id >= 0:
+		voices.play_page_sound(sound_id)
+
+## Ends the demo as retail's GameEnd does, keeping the menu row for the main menu.
+func _end_demo(return_to_menu: bool) -> void:
+	_attract_done = true
+	if _main_menu != null:
+		FrontEndSession.attract_option = _main_menu.option_number
+	_finish_pending_quietly()
+	close_data()
+	FrontEndSession.end_attract(return_to_menu)
+
+func _finish_pending_quietly() -> void:
+	if _host.pending():
+		_host.finish()
+	_host.close()
+
+## Advances the attract cycle past the finished demo (tempopt.c:1560-1626) and returns to the
+## main menu; [param reason] notes a demo that could not play to its end.
+func _finish_attract(reason: String = "") -> void:
+	if _attract_done:
+		return
+	if not reason.is_empty():
+		push_warning(reason)
+		FrontEndSession.diagnostics.append(reason)
+	if FrontEndSession.attract != null and FrontEndSession.progress != null:
+		var next: int = FrontEndSession.attract.finish(FrontEndSession.progress)
+		FrontEndSession.attract_intro = next == AttractCycle.INTRO
+	_end_demo(true)
+	_leave_for(FrontEndScreen.SCENE)
+
+func _leave_for(scene: String) -> void:
+	left_for = scene
+	if switches_scene:
+		get_tree().change_scene_to_file(scene)
 
 func _show_error(message: String) -> String:
 	last_error = message

@@ -65,9 +65,12 @@ or extend supported gameplay.
 fast-start timer. The session supplies its countdown only after accepted ticks.
 Demo playback starts with `DemoSetup.DEMO_LIVES` (10, frozen `FROG_MAX_LIVES`):
 frozen C never reinitialises lives between attract demos, so a lone demo has no
-faithful count, and the native SWP1 demo dies five times. Keyboard play keeps
-three. Normal map, zone, entity and corridor validation still applies. Demo
-setup does not establish whole-map gameplay support.
+faithful count, and the native SWP1 demo dies five times. The attract cycle
+keeps that count with the HUD hidden: `LevelFlow` skips completion and timeouts
+in a demo but still ends the game when the last life is lost, which a demo must
+never do. Keyboard play keeps three. Normal map, zone, entity and corridor
+validation still applies. Demo setup does not establish whole-map gameplay
+support.
 
 After a death or checkpoint reset, frozen `LevelEnd` redraws four times, so the
 next frame runs the three-loop logic cap while `Game_start_timer` decrements

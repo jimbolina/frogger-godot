@@ -387,3 +387,184 @@ func test_restart_key_is_ignored_in_a_front_end_game() -> void:
 	assert_same(during, before, "R does not restart a front-end level")
 	_key(KEY_R, true)
 	assert_ne(_screen.run, before, "a direct launch still restarts")
+
+func _attract_demo(duration: int, bytes: PackedByteArray) -> SourceDemoFile:
+	var demo := SourceDemoFile.new()
+	demo.duration = duration
+	demo.start_grid_x = 2
+	demo.start_grid_z = 1
+	demo.input_bytes = bytes
+	return demo
+
+func _attract_level() -> LevelDefinition:
+	var level: LevelDefinition = TerrainScenario.builtin("normal").level
+	level.flow_enabled = true
+	level.level_time = 900
+	return level
+
+func _open_attract(duration: int, bytes: PackedByteArray) -> void:
+	_screen.switches_scene = false
+	FrontEndSession.attract = null
+	FrontEndSession.attract_level = 24
+	FrontEndSession.attract_return = false
+	assert_eq(_screen.open_attract_run(_attract_level(), _attract_demo(duration, bytes), AttractTimer.new()), "")
+
+func _reset_attract_session() -> void:
+	FrontEndSession.attract = null
+	FrontEndSession.attract_level = -1
+	FrontEndSession.attract_return = false
+	FrontEndSession.attract_intro = false
+	FrontEndSession.attract_option = 0
+	FrontEndSession.progress = null
+	FrontEndSession.level_chosen = false
+	_reset_front_end_session()
+
+func _filled(count: int, value: int) -> PackedByteArray:
+	var bytes := PackedByteArray()
+	bytes.resize(count)
+	bytes.fill(value)
+	return bytes
+
+func test_attract_demo_hides_the_hud_and_plays_the_recorded_commands() -> void:
+	_open_attract(200, _filled(200, 0x80))
+	assert_true(_screen.is_attract())
+	assert_false(_screen._hud.visible, "the HUD panels hide in a demo")
+	assert_false(_screen._actions.visible)
+	assert_eq(_screen.run.snapshot().frog.cell, Vector2i(2, 1), "the run starts at the demo spawn")
+	assert_eq(_screen.run.snapshot().frog.lives, DemoSetup.DEMO_LIVES)
+	_key(KEY_UP, true)
+	_key(KEY_SPACE, true)
+	_key(KEY_R, true)
+	_key(KEY_ESCAPE, true)
+	assert_eq(_screen._held, 0, "live keys never reach the run")
+	assert_true(_screen.playing, "Space does not pause a demo")
+	assert_eq(_screen.left_for, "", "Escape does not leave a demo")
+	var consumed: int = -1
+	for tick: int in 40:
+		var result: TickResult = _screen.step_attract()
+		assert_eq(result.error, "")
+		if result.consumed_demo_byte >= 0:
+			consumed = result.consumed_demo_byte
+	assert_eq(consumed, 0x80, "the session's recorded byte drives the run")
+	assert_eq(_screen.attract_session.elapsed_ticks, 40)
+	assert_gt(_screen.attract_session.input_cursor, 0)
+	_reset_attract_session()
+
+func test_attract_demo_fades_out_over_its_last_thirty_ticks_and_returns_to_the_menu() -> void:
+	_open_attract(70, _filled(100, 0x80))
+	assert_eq(_screen.attract_timer.phase, AttractTimer.Phase.PLAYING)
+	assert_false(_screen._main_menu.fire_allowed, "fire waits for the fly-on")
+	for tick: int in AttractTimer.FLY_TIME:
+		_screen.step_attract()
+	assert_true(_screen._main_menu.fire_allowed)
+	for tick: int in 39 - AttractTimer.FLY_TIME:
+		_screen.step_attract()
+	assert_eq(_screen.attract_timer.phase, AttractTimer.Phase.PLAYING)
+	assert_false(_screen._loading.visible)
+	_screen.step_attract()
+	assert_eq(_screen.attract_session.duration - _screen.attract_session.elapsed_ticks, AttractTimer.DEMO_END_TICKS)
+	assert_eq(_screen.attract_timer.phase, AttractTimer.Phase.FADE_OUT)
+	assert_false(_screen._main_menu.fire_allowed, "fire is refused during the fly-off")
+	for tick: int in AttractTimer.FADE_UNITS - 1:
+		_screen.step_attract()
+		assert_true(_screen.playing, "the game keeps running through the fade")
+	assert_eq(_screen.attract_timer.phase, AttractTimer.Phase.FADE_OUT)
+	assert_true(_screen._fade.visible)
+	_screen.step_attract()
+	var phase: int = _screen.attract_timer.phase
+	var level: int = FrontEndSession.attract_level
+	var returning: bool = FrontEndSession.attract_return
+	_reset_attract_session()
+	assert_eq(phase, AttractTimer.Phase.FINISHED)
+	assert_eq(level, -1)
+	assert_true(returning, "the finished demo hands back to the main menu")
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_null(_screen.run)
+
+func test_finished_attract_demo_advances_the_cycle() -> void:
+	var levels := PackedInt32Array([24, AttractCycle.INTRO, 25])
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	var twin: AttractCycle = AttractCycle.from_rows(levels, levels)
+	var expected: int = twin.finish(FrontEndSession.progress)
+	_open_attract(31, _filled(40, 0x80))
+	FrontEndSession.attract = AttractCycle.from_rows(levels, levels)
+	for tick: int in 31:
+		_screen.step_attract()
+	var intro: bool = FrontEndSession.attract_intro
+	var next: int = FrontEndSession.attract.current_level()
+	_reset_attract_session()
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_eq(intro, expected == AttractCycle.INTRO)
+	assert_eq(next, twin.current_level())
+
+func test_attract_death_restarts_at_the_demo_spawn_without_rewinding_the_recording() -> void:
+	var bytes := PackedByteArray([0])
+	bytes.append_array(_filled(300, 0x80))
+	_open_attract(400, bytes)
+	while _screen.attract_session.input_cursor == 0:
+		assert_eq(_screen.step_attract().error, "")
+	for tick: int in 12:
+		assert_eq(_screen.step_attract().error, "")
+	assert_ne(_screen.run.snapshot().frog.cell, Vector2i(2, 1), "the recorded hop moved the frog")
+	var cursor: int = _screen.attract_session.input_cursor
+	_screen.run._state.frog.mode = FrogMode.DYING
+	_screen.run._state.frog.death_count = 1
+	var result: TickResult = _screen.step_attract()
+	var session: DemoPlaybackSession = _screen.attract_session
+	var left: String = _screen.left_for
+	_reset_attract_session()
+	assert_eq(result.error, "")
+	assert_false(result.final_snapshot.completed)
+	assert_eq(result.final_snapshot.frog.cell, Vector2i(2, 1), "the death restarts at the demo spawn")
+	assert_gte(session.input_cursor, cursor, "the recording carries on")
+	assert_eq(left, "", "a death never ends the demo")
+
+func test_attract_start_ends_the_demo_and_opens_the_level_select() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	_open_attract(200, _filled(200, 0x80))
+	for tick: int in AttractTimer.FLY_TIME + 1:
+		_screen.step_attract()
+	assert_true(_screen._main_menu.fire_allowed)
+	_screen._on_menu_event(MainMenuView.Kind.START)
+	var page: int = FrontEndSession.start_page
+	var level: int = FrontEndSession.attract_level
+	var returning: bool = FrontEndSession.attract_return
+	var active: bool = FrontEndSession.active
+	_reset_attract_session()
+	assert_eq(page, FrontEndPage.Page.LEVEL_SELECT)
+	assert_eq(level, -1)
+	assert_false(returning)
+	assert_true(active, "Start begins a game")
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_null(_screen.run)
+	assert_null(_screen.step_attract(), "nothing plays after the demo ends")
+
+func test_attract_options_opens_the_options_page() -> void:
+	_open_attract(200, _filled(200, 0x80))
+	_screen._on_menu_event(MainMenuView.Kind.OPTIONS)
+	var page: int = FrontEndSession.start_page
+	var level: int = FrontEndSession.attract_level
+	_reset_attract_session()
+	assert_eq(page, FrontEndPage.Page.OPTIONS)
+	assert_eq(level, -1)
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+
+func test_unresolvable_attract_demo_returns_to_the_menu_with_a_diagnostic() -> void:
+	_screen.switches_scene = false
+	FrontEndSession.attract = null
+	FrontEndSession.attract_level = 24
+	FrontEndSession.diagnostics = PackedStringArray()
+	_screen.open_attract(null)
+	assert_engine_error("Demo setup requires valid player data", "the abandoned demo is reported")
+	var notes: PackedStringArray = FrontEndSession.diagnostics
+	var returning: bool = FrontEndSession.attract_return
+	FrontEndSession.diagnostics = PackedStringArray()
+	_reset_attract_session()
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_true(returning)
+	assert_eq(notes.size(), 1)
+	assert_false(_screen.is_attract() and _screen.run != null)

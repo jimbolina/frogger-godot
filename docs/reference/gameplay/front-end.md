@@ -2,8 +2,9 @@
 
 The single-player front end is a main menu and the 3D level-select stack in front
 of the game scene. Menu text, the logo and level names are the player's own images,
-resolved by FrogLord name ([menu assets](#menu-assets)). Attract demos,
-multiplayer pages and videos are not built; see the [roadmap](../../PORTING.md).
+resolved by FrogLord name ([menu assets](#menu-assets)). The main menu
+alternates with the [attract demos](#attract-cycle); multiplayer pages and videos
+are not built; see the [roadmap](../../PORTING.md).
 
 ## Page flow
 
@@ -23,6 +24,42 @@ translucent `opt_menu_cloud` poly, sliding up 8 a tick during the table's fly-on
 (`tempopt.c:1209-1290`, `:1486`). Up and Down hop between the rows and wrap, and
 fire croaks (`:1712-1744`, `:1820`). Retail's rows are Start, Race and Options; the
 port's Exit takes the race row until P15.
+
+## Attract cycle
+
+`MainMenuView` (`src/presentation/frontend/`) draws the three sprites and the cloud,
+which follows the first sprite's row as the C recomputes it each tick (`tempopt.c:1700`).
+`AttractTimer` and `AttractCycle` (`src/game/frontend/`) hold the counters and the
+demo order; `FrontEndSession` keeps the cycle and the demo request across scenes.
+
+- Each main-menu startup places the sprites below their rows and flies them on 8 a
+  tick with the scrolling table, then counts `SCORE_TIME` (810 ticks, 27 s)
+  while no fly counter runs (`:1629-1685`). Up and Down hop at any time and never
+  reset the count (`:1713-1746`); fire is read only while no fly counter runs and no
+  demo is loading (`:1811-1817`).
+- When the count ends the table and the water go, the options music stops, and over
+  10 ticks the sprites slide 8 down a tick while the centred LOADING sprite brightens
+  16 a tick from black (`:1336-1426`). The demo then plays in the game scene with no
+  HUD, the sprites flying back on over it and staying live; Start opens the level
+  select and Options the options page (`:1824-1977`).
+- At 30 ticks before the demo's end the sprites fly off, LOADING brightens again and
+  the screen fades to black over 30 ticks (`:1481-1557`). The main menu returns with
+  the camera snapped to MAIN, the row kept, the table flying on, the options music and
+  a fresh count; the next demo is the next row whose unlock level is selectable
+  (`:1560-1626`).
+
+Port differences: retail plays the INTRO video at each `-2` row and when the list
+wraps; the port restarts the main menu instead, cursor on Start, camera snapped and a
+fresh count (owner decision 2026-11-02). The LOADING sprite's colour maps 0x80 to full
+brightness, as the stack page's does. Retail places the rows 90 below and moves
+them nine times, so its menu rests 18 lower than the accepted port rows, which slide
+from 80 below over 10 ticks. The menu is a scene of its own, so each return
+from a demo reloads it. Options on the main menu opens at once, as before, where retail
+flies the sprites off first through its delayed request; the count therefore never
+waits for one. A demo whose resource is missing or whose tick fails returns to the
+menu with a note in the menu's diagnostics. Deaths never end a demo: the level restarts
+at the demo spawn with the input stream carried on and ten lives, since the HUD is hidden
+([simulation](simulation.md#recorded-demo-control)). `--attract` ends the first count at once.
 
 ## Level-select stack
 
@@ -202,8 +239,8 @@ the main table with the static camera when it has a new row, and times out to th
 menu after 120 ticks; Escape leaves at once. From Options the view opens on the stack:
 Up/Down travel, Enter spins a level out, Left shows the main table, Right returns to
 the stack and Escape returns to Options. The main menu runs the scrolling table behind
-its buttons with the camera following the frog; the attract alternation with demos
-belongs to P13e. The score lines centre in retail's 192-wide text box (KF-407) while
+its buttons with the camera following the frog and alternates with the
+[attract demos](#attract-cycle). The score lines centre in retail's 192-wide text box (KF-407) while
 the stack keeps the vendored panel end 400, title y 300 and line pitch 16, where
 retail measures 364, 280 and 20 (sanitize T35); the stack geometry was accepted with
 P13b and the change is deferred. The arrow glow is capped at the neutral colour where

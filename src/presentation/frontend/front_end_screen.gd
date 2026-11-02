@@ -17,6 +17,14 @@ extends Control
 ## are saved and lead to the high-score view's tour. The options page's high-score row opens the
 ## view by hand. The high-score pages use their own static cameras; leaving them places the shared
 ## camera on the main or options preset.
+##
+## The main menu runs [AttractTimer]'s dwell: 810 ticks after its fly-on, not reset by Up or Down,
+## the water and the table go, the menu sprites slide off and the LOADING sprite brightens from
+## black, then the game scene plays the next demo of [member FrontEndSession.attract]
+## (tempopt.c:1333-1478, :1629-1685). When the demo hands back the menu opens on the kept row with
+## the camera snapped to MAIN; the INTRO slot opens it afresh on Start. [code]--attract[/code]
+## ends the first dwell at once. A page the game scene asks for from a running demo
+## ([member FrontEndSession.start_page] LEVEL_SELECT or OPTIONS) opens directly.
 
 ## The front-end scene.
 const SCENE: String = "res://scenes/front_end.tscn"
@@ -26,22 +34,14 @@ const TOOLS_SCENE: String = "res://scenes/boot.tscn"
 const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 ## Side margin of the page content.
 const MARGIN: int = 24
-## Main-menu sprite rows: the first sits MAIN_MENU_Y_OFFSET above the bottom once the fly-on has
-## lifted it 8 a tick for 10 ticks (tempopt.c:1222-1226, :1486-1488); the rows are 16 apart.
-const MENU_ROW_Y: int = StackLayout.DISPLAY_HEIGHT - 80
-const MENU_ROW_PITCH: int = 16
-const MENU_SLIDE: int = 8
-## The cloud poly's border around the widest sprite and its subtractive colour (tempopt.c:1237-1266).
-const CLOUD_BORDER: int = 8
-const CLOUD_COLOUR: Color = Color(0.25, 0.25, 0.25)
 ## CD track played on the menu pages (LEVEL_SELECT in the music table).
 const MENU_TRACK: int = 13
 ## Colour behind the messages shown when the imported assets cannot be used.
 const BACKGROUND_COLOUR: Color = Color(0.04, 0.12, 0.05)
 ## FrogLord name of the generic hop sound the level-select stack plays.
-const HOP_SOUND: String = "GEN_FROG_HOP"
+const HOP_SOUND: String = MainMenuView.HOP_SOUND
 ## FrogLord name of the generic croak sound played when a level is started.
-const CROAK_SOUND: String = "GEN_FROG_CROAK"
+const CROAK_SOUND: String = MainMenuView.CROAK_SOUND
 ## FrogLord name of the splash played when the options frog lands (SFX_GEN_FROG_SPLASH1).
 const SPLASH_SOUND: String = "GEN_SPLASH01"
 ## FrogLord name of the repeating croak that tests the effects volume.
@@ -69,11 +69,18 @@ var camera_rig: OptionsCamera = OptionsCamera.new()
 
 var _background: ColorRect
 var _content: Control
-var _first_focus: Control
-## The main menu's sprites top to bottom, slid by the scrolly table's fly-on.
-var _menu_sprites: Array[TextureButton] = []
-## False until the menu's first sprite has taken focus, so only later moves hop.
-var _menu_focused: bool = false
+## True once a front-end scene has used [code]--attract[/code], so only the first dwell is cut short.
+static var _attract_flag_used: bool = false
+
+## The main menu's sprites, while the main menu shows.
+var main_menu: MainMenuView
+## The main menu's dwell, loading and fly counters.
+var attract_timer: AttractTimer = AttractTimer.new()
+var _attract_immediate: bool = false
+var _menu_option: int = 0
+var _loading_backdrop: ColorRect
+var _tools_button: Button
+var _loading_sprite: TextureRect
 var _music: MusicPlayer
 var _sounds: Dictionary[String, AudioStreamPlayer] = {}
 var _sound_definitions: Dictionary[String, LogicalSoundDefinition] = {}
@@ -102,6 +109,9 @@ func _ready() -> void:
 	_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_content)
 	var arguments: PackedStringArray = OS.get_cmdline_user_args()
+	if ViewerArguments.attract(arguments) and not _attract_flag_used:
+		_attract_flag_used = true
+		_attract_immediate = true
 	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	for warning: String in data.warnings:
@@ -134,6 +144,15 @@ func _ready() -> void:
 		_music.select(MENU_TRACK)
 		_music.restart()
 	page = FrontEndSession.start_page
+	if page == FrontEndPage.Page.OPTIONS:
+		FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
+		camera_rig.snap(OptionsMenu.Camera.OPTIONS)
+	if FrontEndSession.attract_return or FrontEndSession.attract_intro:
+		page = FrontEndPage.Page.MAIN_MENU
+		camera_rig.snap(OptionsMenu.Camera.MAIN)
+		_menu_option = 0 if FrontEndSession.attract_intro else FrontEndSession.attract_option
+		FrontEndSession.attract_return = false
+		FrontEndSession.attract_intro = false
 	_show_page()
 
 
@@ -159,13 +178,16 @@ func _process(delta: float) -> void:
 	_draw_main_menu(_camera_elapsed / MenuWaterView.PERIOD)
 
 
-## Runs one main-menu tick: the water, any camera sweep, the scrolly table and its sounds, then
-## the camera's follow of the frog.
+## Runs one main-menu tick: the water, any camera sweep, the scrolly table and its sounds, the
+## camera's follow of the frog and the attract dwell; once the dwell has ended, the loading.
 func tick_main_menu() -> void:
 	if _main_water == null:
 		return
 	_camera_before_source = camera_rig.source
 	_camera_before_target = camera_rig.target
+	if attract_timer.phase == AttractTimer.Phase.LOADING:
+		_tick_loading()
+		return
 	_main_water.tick()
 	if camera_rig.timer != 0:
 		camera_rig.tick()
@@ -175,8 +197,52 @@ func tick_main_menu() -> void:
 		menu_scores_view.step()
 		if camera_rig.timer == 0 and menu_scores.camera_followed:
 			camera_rig.follow_z(menu_scores.camera_source_z, menu_scores.camera_target_z)
-		_place_menu_sprites()
+	if attract_timer.dwell_tick(false) == AttractTimer.Phase.LOADING:
+		_begin_loading()
+	_update_menu_sprites(false)
 	_draw_main_menu(0.0)
+
+
+func _update_menu_sprites(loading: bool) -> void:
+	if main_menu == null:
+		return
+	main_menu.set_slide(attract_timer.menu_slide())
+	main_menu.fire_allowed = attract_timer.fire_allowed(loading, false)
+
+
+## The dwell has ended: the options water and the table go (UnloadOptionsResources and the hidden
+## objects, tempopt.c:1340-1395), the music stops and the LOADING sprite shows black.
+func _begin_loading() -> void:
+	if menu_scores != null:
+		menu_scores.stop_flying()
+	_main_water.visible = false
+	_loading_backdrop.visible = true
+	_loading_sprite.visible = true
+	_loading_sprite.modulate = Color.BLACK
+	if _tools_button != null:
+		_tools_button.visible = false
+	if _music != null:
+		_music.collapse()
+
+
+## One loading tick: the sprites slide 8 down and the LOADING sprite brightens 16 while the fly-off
+## runs; when it ends the next demo's level goes to the game scene (tempopt.c:1404-1426).
+func _tick_loading() -> void:
+	attract_timer.loading_tick()
+	var brightness: float = minf(float(attract_timer.loading_brightness) / StackPanel.NEUTRAL_COLOUR, 1.0)
+	_loading_sprite.modulate = Color(brightness, brightness, brightness)
+	_update_menu_sprites(true)
+	if not attract_timer.loading_done():
+		return
+	var level: int = FrontEndSession.attract.current_level() if FrontEndSession.attract != null else -1
+	if level < 0:
+		_menu_option = main_menu.option_number
+		_show_page()
+		return
+	FrontEndSession.attract_option = main_menu.option_number
+	FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
+	FrontEndSession.begin_attract(level)
+	get_tree().change_scene_to_file(GAME_SCENE)
 
 
 ## Draws the main menu [param fraction] of the way from the previous tick to the last one, the
@@ -216,8 +282,8 @@ func _show_page() -> void:
 	for child: Node in _content.get_children():
 		_content.remove_child(child)
 		child.queue_free()
-	_first_focus = null
 	_main_water = null
+	main_menu = null
 	_options = null
 	_controls = null
 	_entry = null
@@ -240,8 +306,6 @@ func _show_page() -> void:
 		_:
 			page = FrontEndPage.Page.MAIN_MENU
 			_build_main_menu()
-	if _first_focus != null:
-		_first_focus.grab_focus.call_deferred()
 
 
 func _build_main_menu() -> void:
@@ -256,45 +320,43 @@ func _build_main_menu() -> void:
 		menu_scores_view = HighScoreSceneView.create_for(menu_scores, options_models)
 		_main_water.add_child(menu_scores_view)
 		_draw_main_menu(1.0)
+	_loading_backdrop = ColorRect.new()
+	_loading_backdrop.color = Color.BLACK
+	_loading_backdrop.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_loading_backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_loading_backdrop.visible = false
+	_content.add_child(_loading_backdrop)
+	attract_timer.start_dwell(_attract_immediate)
+	_attract_immediate = false
+	main_menu = MainMenuView.create(assets, options_models.image_texture(OptionsModels.CLOUD_IMAGE) if options_models != null else null)
+	main_menu.menu_event.connect(_on_menu_event)
+	main_menu.sound_requested.connect(_play_sound)
+	main_menu.option_number = _menu_option
+	_menu_option = 0
+	_content.add_child(main_menu)
+	_update_menu_sprites(false)
+	main_menu.grab_first_focus()
+	_loading_sprite = TextureRect.new()
+	_loading_sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_loading_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_loading_sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_loading_sprite.stretch_mode = TextureRect.STRETCH_SCALE
+	_loading_sprite.texture = assets.texture("sel_loading")
+	_loading_sprite.size = assets.retail_size("sel_loading")
+	_loading_sprite.position = Vector2((StackLayout.DISPLAY_WIDTH >> 1) - (int(_loading_sprite.size.x) >> 1),
+		(StackLayout.DISPLAY_HEIGHT >> 1) - (int(_loading_sprite.size.y) >> 1))
+	_loading_sprite.visible = false
+	_content.add_child(_loading_sprite)
 	var panel := Control.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_content.add_child(panel)
-	_menu_sprites = [_menu_sprite("opt_start", _start_game),
-		_menu_sprite("opt_options", _send.bind(FrontEndFlow.Event.OPTIONS)), _menu_sprite("opt_exit", get_tree().quit)]
-	var width: int = 0
-	var last_height: int = 0
-	for sprite: TextureButton in _menu_sprites:
-		if sprite.texture_normal != null:
-			width = maxi(width, int(sprite.custom_minimum_size.x))
-			last_height = int(sprite.custom_minimum_size.y)
-	width += CLOUD_BORDER << 1
-	var cloud := TextureRect.new()
-	cloud.texture = options_models.image_texture(OptionsModels.CLOUD_IMAGE) if options_models != null else null
-	cloud.stretch_mode = TextureRect.STRETCH_SCALE
-	cloud.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	cloud.modulate = CLOUD_COLOUR
-	var cloud_material := CanvasItemMaterial.new()
-	cloud_material.blend_mode = CanvasItemMaterial.BLEND_MODE_SUB
-	cloud.material = cloud_material
-	cloud.position = Vector2((StackLayout.DISPLAY_WIDTH - width) >> 1, MENU_ROW_Y - CLOUD_BORDER)
-	cloud.size = Vector2(width, MENU_ROW_PITCH * 2 + last_height + 16 + CLOUD_BORDER)
-	panel.add_child(cloud)
-	for sprite: TextureButton in _menu_sprites:
-		panel.add_child(sprite)
-	var count: int = _menu_sprites.size()
-	for index: int in count:
-		var sprite: TextureButton = _menu_sprites[index]
-		sprite.focus_neighbor_top = sprite.get_path_to(_menu_sprites[(index + count - 1) % count])
-		sprite.focus_neighbor_bottom = sprite.get_path_to(_menu_sprites[(index + 1) % count])
-	_place_menu_sprites()
-	_first_focus = _menu_sprites[0]
-	_menu_focused = false
-	var tools := Button.new()
-	tools.text = "Inspection tools"
-	tools.focus_mode = Control.FOCUS_CLICK
-	tools.pressed.connect(open_tools)
-	tools.position = Vector2(StackLayout.DISPLAY_WIDTH - 160, 8)
-	panel.add_child(tools)
+	_tools_button = Button.new()
+	_tools_button.text = "Inspection tools"
+	_tools_button.focus_mode = Control.FOCUS_CLICK
+	_tools_button.pressed.connect(open_tools)
+	_tools_button.position = Vector2(StackLayout.DISPLAY_WIDTH - 160, 8)
+	panel.add_child(_tools_button)
 	if not FrontEndSession.diagnostics.is_empty():
 		var notes := Label.new()
 		notes.text = "\n".join(FrontEndSession.diagnostics)
@@ -304,36 +366,14 @@ func _build_main_menu() -> void:
 		panel.add_child(notes)
 
 
-## A main-menu sprite: Up and Down hop between rows and wrap (tempopt.c:1712-1744), fire croaks
-## before [param action] runs (:1820).
-func _menu_sprite(image_name: String, action: Callable) -> TextureButton:
-	var button := TextureButton.new()
-	button.texture_normal = assets.texture(image_name)
-	button.ignore_texture_size = true
-	button.stretch_mode = TextureButton.STRETCH_SCALE
-	button.custom_minimum_size = assets.retail_size(image_name)
-	button.size = button.custom_minimum_size
-	button.pressed.connect(_play_sound.bind(CROAK_SOUND))
-	button.pressed.connect(action)
-	button.focus_entered.connect(_on_menu_focus.bind(button))
-	button.focus_exited.connect(button.set_modulate.bind(Color.WHITE))
-	return button
-
-
-func _on_menu_focus(button: TextureButton) -> void:
-	button.modulate = Color(1.0, 1.0, 0.6)
-	if _menu_focused:
-		_play_sound(HOP_SOUND)
-	_menu_focused = true
-
-
-## Centres each menu sprite on its row, slid down 8 for every fly-on tick still to run.
-func _place_menu_sprites() -> void:
-	var slide: int = menu_scores.fly_on * MENU_SLIDE if menu_scores != null else 0
-	for index: int in _menu_sprites.size():
-		var sprite: TextureButton = _menu_sprites[index]
-		var sprite_width: int = int(sprite.custom_minimum_size.x) if sprite.texture_normal != null else 0
-		sprite.position = Vector2((StackLayout.DISPLAY_WIDTH - sprite_width) >> 1, MENU_ROW_Y + index * MENU_ROW_PITCH + slide)
+func _on_menu_event(kind: int) -> void:
+	match kind:
+		MainMenuView.Kind.START:
+			_start_game()
+		MainMenuView.Kind.OPTIONS:
+			_send(FrontEndFlow.Event.OPTIONS)
+		MainMenuView.Kind.EXIT:
+			get_tree().quit()
 
 
 func _build_level_select() -> void:
@@ -563,9 +603,7 @@ func _show_message(text: String) -> void:
 
 
 func _start_game() -> void:
-	FrontEndSession.begin_game()
-	FrontEndSession.level_chosen = false
-	FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
+	FrontEndSession.menu_start()
 	_send(FrontEndFlow.Event.START)
 
 

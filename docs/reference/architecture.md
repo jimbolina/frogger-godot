@@ -116,6 +116,13 @@ reports consumed input. `DemoPlaybackSession` owns duration/cursor state and
 accepts that result after synchronous or worker completion. `DemoSetup` resolves
 the demo's resources and initial state without relaxing a preset's guard. See
 [recorded control](gameplay/simulation.md#recorded-demo-control).
+
+The attract cycle's `AttractCycle` lives in `FrontEndSession` for the session
+and keeps its place across the main menu and the game scene. Each attract demo
+gets its own `DemoPlaybackSession` and `AttractTimer` in `GameplayScreen`; both
+end with the demo, and a death reset inside the run never touches the session's
+cursor.
+
 Entity/path advancement builds its next independent state directly. The entity aggregate exposes `begin_candidate`, detached snapshots and ordered
 update methods; the gameplay aggregate never accesses its private state.
 `commit_candidate` consumes the successful candidate only after all phases pass.

@@ -72,8 +72,10 @@ the vendored line requests, and `retail`, a KEY_FACTS citation. Page names are
 the vendored `OPTIONS_PAGE_*` suffixes. Events describe the condition in the
 cited arm.
 
-Global quits (`OPTIONS.C:189`, retail Alt+F4), attract demos (P13e), PSX
-select+start reset (`pause.c:118`) and the network pages are not rows.
+Global quits (`OPTIONS.C:189`, retail Alt+F4), PSX select+start reset
+(`pause.c:118`) and the network pages are not rows. Attract demos (P13e) are
+not rows either: they run inside MAIN_OPTIONS, and fire during a demo reuses
+the MAIN_MENU rows ([attract cycle](#attract-cycle)).
 
 The P13d rows cover the high-score pages. CONTINUE `arcade`
 (`tempopt.c:3993`) and CREDITS `finished` (`credits.c:882`, retagged from P16:
@@ -97,8 +99,10 @@ options back-outs onto BACK_TO_OPTIONS.
 `differences` records each one. The flow follows retail where it differs:
 
 - **Start and boot order:** retail seeds ANTI_PIRACY. HASBRO_LOGO then requests
-  the language page, which silently requests MAIN_OPTIONS. INTRO and CHECK are
-  never entered (KEY_FACTS KF-288, KF-294, KF-343, KF-351). The vendored line
+  the language page, which silently requests MAIN_OPTIONS. CHECK is never
+  entered. INTRO is never entered at boot; the attract loop enters it at the
+  -2 rows and wraps, which the port replaces by a main-menu restart (KEY_FACTS
+  KF-288, KF-294, KF-343, KF-351). The vendored line
   is kept as `source`/`source_next`.
 - **Page numbers:** retail numbers pages +1 through the boot range and +2 from
   LEVEL_SELECT (KF-147, KF-254, KF-288). The files use names only.
@@ -261,7 +265,7 @@ Rules replayed (`SELECT.C`):
 `tests/golden/test_frontend_flow_golden.gd` (asset-free) maps the port's
 `FrontEndFlow.table_names()` onto these rows. Port pages that collapse
 vendored pages are aliased in the test. Every port row must agree with the
-golden rows, and every `P13a`, `P13c` and `P13d` row must be covered. `tests/golden/test_retail_frontend_progress.gd`
+golden rows, and every `P13a`, `P13c` and `P13d` row must be covered. `archive/tests/golden/test_retail_frontend_progress.gd`
 builds the stack from the supplied executable and replays every progression
 row.
 
@@ -1429,5 +1433,120 @@ order (`image`, `x`, `y`, top-left corners).
 Set `UNIT_TICKS = 31` to 30 in the generator: `--check` exits 1 (the C
 cross-check reports the define; with `--c-reference` pointing nowhere the
 diff shows the traces) and the Godot test fails. Restore it (exit 0).
+
+## Attract cycle
+
+`make_golden_attract.py` replays the main menu's attract loop from the frozen
+C: the high-score dwell, the demo load, play and fade-out, and the
+`Demo_level_table` search. It never reads Godot output.
+
+```sh
+python3 tools/make_golden_attract.py           # write the file
+python3 tools/make_golden_attract.py --check   # diff against the committed file, exit 1 on change
+```
+
+Standard library only. It keeps its own copy of `Demo_level_table` and checks
+it against the high-poly list of `pc-retail-v3.0e/exe_demos.tsv` (`level` and
+`unlock_level`); the selectable sets come from `exe_level_select.tsv`. A
+model of `MainOptionsUpdate` runs one pass call by call and must give the
+status run lengths the native engine measured (`4x1 5x819 6x1 0x15`, KEY_FACTS
+KF-093, KF-274). `--c-reference <dir>` names the frozen C `source/` folder
+(default `../froggy/engine/vendor/frogger-psx-src/source`); a missing folder
+skips the cross-checks. They compare `SCORE_TIME` under `PSX_RELEASE`
+(`tempopt.h`) and the `PSX_RELEASE` define (`PC/winsys.h`), both fly times,
+the `Demo_time == 30` test, the fade units and grey, the slide and brighten
+steps, the VIEW_INIT rows and its fall-through, the dwell exit and fire
+conjunctions, the DEMO_FINISH loop and both intro arms (`tempopt.c`, comments
+stripped), every `Demo_level_table` row and its resource name,
+`HSUpdateFlying` (`HSView.c`) and the `Demo_time` count-down (`gamesys.C`).
+
+`test_frontend_attract.gd` replays the file through `AttractCycle` and
+`AttractTimer` over the retail-shaped stack of `test_stack_layout.gd`,
+asset-free; `test_attract_cycle.gd` and `test_attract_timer.gd` cover the
+edge cases.
+
+### Attract file (`synthetic/frontend_attract.json`)
+
+| Key | Content |
+|---|---|
+| `constants` | score time 810, fly time 10, fade units 30, demo end 30, brighten 16, slide 8, and `view_main_calls` 819 derived from the model |
+| `table`, `table_codes` | the 34 rows as `[level, gate]`, -2 for the play-intro rows, and their codes |
+| `cycles` | per selectable set (`fresh_boot`, `fresh_boot_and_sky1`, `world_firsts`, `all_open`): `selectable` levels, `codes`, the `first` demo (row 0) and 24 `steps` of `[result, seen, next demo]` after each DEMO_FINISH |
+| `dwell_trace` | one pass, below |
+| `fire_gate` | `[fly_on, fly_off, loading, delayed, accepted]` |
+
+`dwell_trace` holds `c_status_rle` (`[status, calls]`), `start` (after
+`start_dwell`), `view_init` (after the INIT call's fall-through),
+`view_main_calls`, `view_main_phases` (phase after each call, run-length),
+`view_main_samples` (`[call, phase, fly_on, score_time, menu_slide,
+c_sprite_offset]` for calls 1-12 and 817-819), `loading` (`[fly_off,
+brightness, done, menu_slide, c_sprite_offset]` per call), `demo_frames` 100,
+`playing_first` (`[demo_time, fly_on, menu_slide, c_sprite_offset]` for 12
+calls), `playing_phases`, `switch_demo_time` and `fade` (`[phase, fly_off,
+brightness, grey, menu_slide, c_sprite_offset]` per call). `menu_slide` is the
+port's offset below its rest rows; `c_sprite_offset` is the C's offset below
+`Game_display_height - MAIN_MENU_Y_OFFSET` and `c_rest_offset` its rest (18).
+The test does not replay the C offsets.
+
+### Rules replayed
+
+- **Dwell** (`tempopt.c:1629-1685`): VIEW_INIT sets `score_time` to
+  `SCORE_TIME`, `30*27` under `PSX_RELEASE`, which `PC/winsys.h:29` defines;
+  `HSInitialiseScrollyHighScore` seeds the fly-on with 10 (`HSView.c:2492`).
+  VIEW_INIT has no `break`, so its call also runs VIEW_MAIN.
+  `HSUpdateFlying` (`HSView.c:2983-2993`) decrements the fly counters before
+  the slide test, so the fly-on reaches 0 on the ninth VIEW_MAIN call; from
+  then `!score_time--` counts 810 down and the call that finds 0 ends the
+  dwell: 9 + 810 = 819 VIEW_MAIN calls, then one VIEW_FINISH call.
+- **Loading** (:1337-1478): DEMO_LOADING_INIT sets the fly-off to 10 and the
+  LOADING sprite black; each DEMO_LOADING call with the counter positive
+  slides the menu 8 down and brightens the sprite 16. The load completes on
+  the call that reaches 0; GAME_START takes three calls and LEVEL_START one,
+  15 DEMO_INIT calls in all. LEVEL_START sets `Demo_time` and flies the menu on.
+- **Demo** (:1481-1514): each call slides the menu 8 up while the fly-on runs;
+  `GameMainloop` decrements `Demo_time` once per logic tick, clamped at 0
+  (`gamesys.C:1357-1363`). `Demo_time == 30` starts the fade with 30 units,
+  the fly-off 10 and the LOADING sprite black: a demo of N frames has N - 30
+  DEMO_MAIN calls.
+- **Fade-out** (:1517-1557): the menu flies off and the sprite brightens while
+  the fly-off runs; units fall by one and the subtractive grey is
+  `min(255, (30 - units) * 255 / 30)`; units 0 is DEMO_FINISH.
+- **Demo order** (:1578-1614): `Num_demo_levels_seen` is session-long and
+  starts at 0; row 0 plays first without its gate. DEMO_FINISH steps to the
+  next row, wrapping at the -1 terminator, until a -2 row or a row whose gate
+  is selectable; row 0 is checked after a wrap. A wrap to row 0 requests the
+  intro; a -2 row requests it and steps past, so the following row plays next
+  without its gate. Gates are each world's first level, so `world_firsts` and
+  `all_open` give one order. From a fresh boot the order is SUB1, FOR1, VOL1,
+  intro, ORG1 (the native measurement); with every row open SWP1 is the
+  thirteenth demo, and with only SKY1 added SKY1 is the sixteenth.
+- **Fire** (:1811-1817): fire is read only with both fly counters 0, no demo
+  loading and no delayed request. Up and Down (:1713-1746) never touch
+  `score_time`.
+
+### Port differences
+
+- The intro the loop requests at a wrap or a -2 row is replaced by a restart
+  of the main menu; `seen` is already positioned for the next demo.
+- The port loads a demo synchronously, so LOADING lasts exactly the 10-call
+  fly-off; VIEW_FINISH, DEMO_LOADING_INIT, GAME_START and LEVEL_START are
+  folded into the transitions.
+- The demo ends at `Demo_time <= 30`, latched, where the C tests `== 30` and
+  would never end a demo shorter than 30 frames.
+- The port's `score_time` does not wrap after the exit.
+- The menu rests at `MAIN_MENU_Y_OFFSET` above the bottom with a
+  `fly_on * 8` slide; the C places the rows 90 below at VIEW_INIT and moves
+  them nine times, so retail's rows rest 18 lower (`c_rest_offset`).
+- No row qualifying and a final -2 row would hang or overrun the C; the port
+  returns no demo or wraps to row 0.
+- Lives stay `DemoSetup.DEMO_LIVES` because the HUD is hidden. Effects never
+  reproduce the C's random draws, so a demo's route may differ from native.
+
+### Deliberate break
+
+Set `SCORE_TIME = 30 * 27` to 811 in the generator: `--check` exits 1 (the C
+cross-check reports the define; with `--c-reference` pointing nowhere the diff
+shows `score_time` 811 and `view_main_calls` 820), and after writing with the
+cross-check skipped the Godot test fails. Restore it and rewrite (exit 0).
 
 [Golden data index and shared rules](../README.md).

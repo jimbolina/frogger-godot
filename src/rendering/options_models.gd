@@ -145,6 +145,28 @@ static func from_data(data: AssetCatalog) -> OptionsModels:
 	return result
 
 
+## The main menu's cloud texture from [param data]'s GENERAL bank alone, or null when it is
+## missing; the attract demo draws the menu over the game without loading the options models.
+static func cloud_texture(data: AssetCatalog) -> ImageTexture:
+	if data == null or not data.is_valid() or data.names.images == null:
+		return null
+	var general: ThemeBookEntry = data.theme_book_entry(FroggerIds.THEME_GENERAL)
+	if general == null:
+		return null
+	var problems := PackedStringArray()
+	var general_bank: VloFile = data.read_texture_bank(general.high_vlo_id, problems)
+	if general_bank == null:
+		return null
+	var bank_library := TextureLibrary.new()
+	bank_library.catalog = data
+	bank_library.add_bank(general_bank, "general")
+	var cloud_id: int = data.names.images.index_of(CLOUD_IMAGE)
+	var record: VloImage = bank_library.image_for_id(cloud_id, general_bank) if cloud_id >= 0 else null
+	if record == null:
+		return null
+	return ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record, bank_library.texture_for(record)))
+
+
 ## The unpadded texture of named image [param symbol] from [member images] in the catalog's
 ## texture set, or null; it is the texture set's scale times the record's in-game size.
 func image_texture(symbol: String) -> ImageTexture:
