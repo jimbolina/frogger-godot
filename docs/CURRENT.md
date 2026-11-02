@@ -27,7 +27,7 @@ level editor: a re-import through `archive/` reproduces `assets/`. The
 defaults until the owner tunes them. The main menu runs retail's
 [attract cycle](reference/gameplay/front-end.md#attract-cycle): a 27 s dwell,
 then the executable's demos in the game scene with the menu live over them
-(P13e, play check pending; `--attract` starts the first demo at once).
+(P13e, accepted; `--attract` starts the first demo at once).
 Next: P14 is the owner's call ([roadmap](PORTING.md#status)).
 
 Effects never reproduce the frozen generators' random draws. Replays and
