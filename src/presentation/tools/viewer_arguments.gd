@@ -18,6 +18,9 @@ const SHADOWS_SETTING: String = "frogger/rendering/shadows"
 const SHADOWS_OFF: String = "off"
 ## The launch flag that starts the main menu's first attract demo right after its fly-on.
 const ATTRACT_FLAG: String = "--attract"
+## The launch flag that plays the level from the FrogLord watcher's overlay and reloads it when the
+## watcher imports a new save.
+const FROGLORD_FLAG: String = "--froglord"
 
 
 ## Value following the first argument starting with [param prefix], including an empty value.
@@ -76,6 +79,12 @@ static func shadows(arguments: PackedStringArray) -> bool:
 ## so the first attract demo loads as soon as the menu has flown on.
 static func attract(arguments: PackedStringArray) -> bool:
 	return has_flag(arguments, ATTRACT_FLAG)
+
+
+## Whether a launch asked for [constant FROGLORD_FLAG]: the gameplay scene opens the overlay the
+## [FrogLordPointer] names and reloads it when the pointer changes or F5 is pressed.
+static func froglord(arguments: PackedStringArray) -> bool:
+	return has_flag(arguments, FROGLORD_FLAG)
 
 
 ## Whether a scenario run attaches the imported assets: a map selected with

@@ -1,5 +1,8 @@
 extends GutTest
-## Dedicated play preserves host transactions, pause boundaries and fresh sessions.
+## Dedicated play preserves host transactions, pause boundaries and fresh sessions; a
+## [code]--froglord[/code] launch plays and reloads the overlay its pointer names.
+
+const FROGLORD_FOLDER: String = "user://gameplay_screen_froglord"
 
 var _screen: GameplayScreen
 
@@ -568,3 +571,57 @@ func test_unresolvable_attract_demo_returns_to_the_menu_with_a_diagnostic() -> v
 	assert_true(returning)
 	assert_eq(notes.size(), 1)
 	assert_false(_screen.is_attract() and _screen.run != null)
+
+func _remove_froglord_folder(path: String = FROGLORD_FOLDER) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for child: String in DirAccess.get_directories_at(path):
+		_remove_froglord_folder(path.path_join(child))
+	for child: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(child))
+	DirAccess.remove_absolute(path)
+
+func test_froglord_without_a_pointer_opens_the_committed_assets_and_warns() -> void:
+	_remove_froglord_folder()
+	_screen.froglord_pointer_path = FROGLORD_FOLDER.path_join("current.cfg")
+	var data: ImportedAssets = _screen.open_froglord_assets()
+	assert_true(data.is_valid(), data.error)
+	assert_eq(data.index_root, "res://assets")
+	var warned: bool = false
+	for warning: String in data.warnings:
+		warned = warned or warning.begins_with("No FrogLord overlay pointer at %s" % _screen.froglord_pointer_path)
+	assert_true(warned, "\n".join(data.warnings))
+	assert_ne(_screen.reload_assets(), "")
+	data.close()
+
+func test_froglord_opens_the_pointer_overlay_and_reloads_the_level_from_a_new_catalog() -> void:
+	_remove_froglord_folder()
+	var overlay: String = FROGLORD_FOLDER.path_join("0123456789abcdef")
+	assert_eq(DirAccess.make_dir_recursive_absolute(overlay), OK)
+	assert_eq(DirAccess.copy_absolute("res://assets/catalog.tres", overlay.path_join("catalog.tres")), OK)
+	var pointer := FrogLordPointer.new()
+	pointer.index_root = overlay
+	pointer.fingerprint = "0123456789abcdef"
+	_screen.froglord_pointer_path = FROGLORD_FOLDER.path_join("current.cfg")
+	assert_eq(pointer.write(_screen.froglord_pointer_path), OK)
+	var data: ImportedAssets = _screen.open_froglord_assets()
+	assert_true(data.is_valid(), data.error)
+	assert_eq(data.index_root, overlay)
+	assert_eq(data.warnings.size(), 0, "\n".join(data.warnings))
+	assert_eq(_screen.open_data(data, "ORG1", true), "")
+	_screen.watch_froglord()
+	assert_not_null(_screen._reload_watcher)
+	assert_eq(_screen._reload_watcher.pointer_path, _screen.froglord_pointer_path)
+	assert_eq(_screen.reload_assets(), "")
+	var reloaded: ImportedAssets = _screen._data as ImportedAssets
+	assert_ne(reloaded, data)
+	assert_eq(reloaded.index_root, overlay)
+	assert_true(_screen._owns_data)
+	assert_eq(_screen.level_code, "ORG1")
+	assert_not_null(_screen.run)
+	DirAccess.remove_absolute(_screen.froglord_pointer_path)
+	assert_ne(_screen.reload_assets(), "")
+	assert_eq(_screen._data, reloaded, "a failed reload keeps the current catalog")
+	assert_not_null(_screen.run, "a failed reload keeps the current level")
+	_screen.close_data()
+	_remove_froglord_folder()

@@ -368,6 +368,9 @@ but normal runtime use and the Godot test suites do not build or load them.
   `test_retail_froglord_roundtrip` writes a synthetic FrogLord save under
   `user://`, imports it in-process as an overlay and loads ORG1 and CAV3 from it
   ([FrogLord round trip](../../../tests/golden/specs/imported-assets.md#froglord-round-trip)).
+- `archive/import/froglord_watch.sh --data-dir=<folder> --once` runs one watcher cycle
+  into the real `user://froglord/` and exits 1 when it was not clean; the round
+  trip also runs a cycle in-process under `user://froglord_roundtrip_watch/`.
 
 ## GDScript and runner pitfalls
 

@@ -40,6 +40,17 @@ is complete although the folder is not. Open it with
 Ogg files under the assets root and `encode_music.sh` writes to `assets/`, so
 leave `music` out of an overlay's `--only` list.
 
+`froglord_watch.gd` (run by `archive/import/froglord_watch.sh --data-dir=<folder>
+[--once] [--interval=1.0] [--steps=...]`) imports the folder's pair once, then
+again whenever its files change and stay unchanged for one more interval. Each
+cycle (`FrogLordWatchCycle`) is an overlay run of `names,tables,demos,maps,catalog`
+into `user://froglord/<key>/`, keyed by the first 16 hex digits of the source
+fingerprint, with `support_report.tsv` beside its index; earlier folders stay,
+since a running game loads maps lazily. Last, it rewrites the pointer
+`user://froglord/current.cfg` (`FrogLordPointer`), which a game launched with
+`--froglord` opens and reloads. Files FrogLord has not finished writing are
+retried on the next poll; `--once` exits 1 when the cycle was not clean.
+
 A complete run without a fallback root prints `import: note stale <path>` for
 every file under `textures/banks`, `textures/images`, `maps`, `demos`,
 `tables`, `models` and `audio/sfx` that it neither wrote nor found unchanged;

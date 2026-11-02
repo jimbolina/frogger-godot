@@ -230,6 +230,10 @@ touching it. `tools/asset_report.sh [--index-root=<folder>] [--strict]` lists,
 per level, the forms, entity names, scripts, FORM callbacks and texture remaps
 a build uses and which of them the port cannot play; a mod may repoint data
 only to behaviour the port already implements. Other builds are not supported.
+To edit a level while it runs, start `archive/import/froglord_watch.sh --data-dir=<FrogLord folder>`
+in one terminal and `tools/play.sh --level=ORG1 --froglord` in another; each
+save in FrogLord is imported and the level reopens with the edit. `F5` reloads
+on demand. Textures and sounds need a full import and a relaunch.
 
 ### Sandbox
 

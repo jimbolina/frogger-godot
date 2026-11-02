@@ -5,7 +5,9 @@ extends GameplayWorldView
 ## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); Space pauses,
 ## R restarts and Escape leaves unless a binding claims the key. The saved music and effects
 ## volumes are applied when the scene opens. The level is read from the imported assets
-## ([method ImportedAssets.open]).
+## ([method ImportedAssets.open]). A direct launch with [code]--froglord[/code] reads the overlay
+## the [FrogLordPointer] names instead and reopens the level from a new catalog whenever an
+## [AssetReloadWatcher] sees the pointer change or F5 is pressed ([method reload_assets]).
 ##
 ## A completed level opens the retail level-complete page ([LevelCompletePage]) over the map
 ## alone, as LevelEnd leaves it (gamesys.C:872-894, tempopt.c:5792-6067): the HUD, frog and
@@ -27,6 +29,8 @@ extends GameplayWorldView
 const NO_AUDIO_FLAG: String = "--no-audio"
 
 var auto_open: bool = true
+## The pointer file a [code]--froglord[/code] launch opens and watches.
+var froglord_pointer_path: String = FrogLordPointer.DEFAULT_PATH
 var level_code: String = "ORG1"
 ## Whether a level with a map outside the accepted list may open; set when the command line names a level.
 var allow_unaccepted_levels: bool = false
@@ -78,6 +82,8 @@ var _attract_layer: Control = null
 var _main_menu: MainMenuView = null
 var _loading: TextureRect = null
 var _fade: ColorRect = null
+var _texture_set_name: String = ""
+var _reload_watcher: AssetReloadWatcher = null
 
 func _ready() -> void:
 	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
@@ -101,7 +107,14 @@ func _ready() -> void:
 			if level_code.is_empty():
 				level_code = "ORG1"
 		FrontEndSession.selected_level = ""
-		var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+		_texture_set_name = ViewerArguments.texture_set(arguments)
+		var froglord: bool = not attract and not FrontEndSession.active and ViewerArguments.froglord(arguments)
+		var data: ImportedAssets
+		if froglord:
+			data = open_froglord_assets()
+			watch_froglord()
+		else:
+			data = ImportedAssets.open("res://assets", _texture_set_name)
 		data.note_renderer(RenderingServer.get_current_rendering_method())
 		for warning: String in data.warnings:
 			push_warning(warning)
@@ -114,6 +127,44 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	close_data()
+
+## Opens the catalog from the overlay the [FrogLordPointer] at [member froglord_pointer_path] names,
+## or from [code]res://assets[/code] with a line in its warnings when there is no pointer.
+func open_froglord_assets() -> ImportedAssets:
+	var pointer: FrogLordPointer = FrogLordPointer.read(froglord_pointer_path)
+	if pointer.exists():
+		return ImportedAssets.open("res://assets", _texture_set_name, pointer.index_root)
+	var data: ImportedAssets = ImportedAssets.open("res://assets", _texture_set_name)
+	data.warnings.append("No FrogLord overlay pointer at %s; playing res://assets until archive/import/froglord_watch.sh writes one" % froglord_pointer_path)
+	return data
+
+## Adds the [AssetReloadWatcher] on [member froglord_pointer_path] that calls [method reload_assets]
+## and lets F5 call it too. Does nothing when already watching.
+func watch_froglord() -> void:
+	if _reload_watcher != null:
+		return
+	_reload_watcher = AssetReloadWatcher.new()
+	_reload_watcher.pointer_path = froglord_pointer_path
+	_reload_watcher.pointer_changed.connect(reload_assets)
+	add_child(_reload_watcher)
+
+## Reopens the current level from a new catalog over the overlay the pointer names, releasing the
+## previous catalog. A missing pointer or an overlay that does not open shows the error and keeps
+## the current level. Returns the error or "".
+func reload_assets() -> String:
+	var pointer: FrogLordPointer = FrogLordPointer.read(froglord_pointer_path)
+	if not pointer.exists():
+		return _show_error("No FrogLord overlay to reload: %s is missing" % froglord_pointer_path)
+	var data: ImportedAssets = ImportedAssets.open("res://assets", _texture_set_name, pointer.index_root)
+	if not data.is_valid():
+		return _show_error("The FrogLord overlay cannot be opened: %s" % data.error)
+	for warning: String in data.warnings:
+		push_warning(warning)
+	var issue: String = open_data(data, level_code, true)
+	if not issue.is_empty():
+		return issue
+	print("froglord: reloaded %s from %s (%s)" % [level_code, data.source_summary(), pointer.fingerprint])
+	return ""
 
 ## Opens an explicitly selected level, borrowing the data unless ownership is transferred.
 func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -> String:
@@ -446,6 +497,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			KEY_R:
 				if not FrontEndSession.active:
 					restart()
+			KEY_F5:
+				if _reload_watcher != null:
+					reload_assets()
 			KEY_ESCAPE: _return_to_menu()
 
 func _build_interface() -> void:

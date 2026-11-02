@@ -4,11 +4,13 @@ extends RetailTest
 ## decoded, imported into an overlay beside the committed assets and played.
 ## The edited rows match froglord_roundtrip.tsv, written by the independent
 ## tools/make_golden_froglord_roundtrip.py (tests/golden/specs/imported-assets.md).
+## The watcher's cycle imports the same save and points the game at it.
 
 const SPEC_PATH: String = "res://tests/golden/synthetic/froglord_edits.tsv"
 const GOLDEN: String = "froglord_roundtrip.tsv"
 const FIXTURE_ROOT: String = "user://froglord_fixture"
 const OVERLAY_ROOT: String = "user://froglord_roundtrip"
+const WATCH_ROOT: String = "user://froglord_roundtrip_watch"
 const FALLBACK_ROOT: String = "res://assets"
 const LEVELS: PackedStringArray = ["ORG1", "CAV3"]
 const IMPORT_STEPS: PackedStringArray = ["names", "tables", "demos", "maps", "catalog"]
@@ -34,6 +36,7 @@ func before_all() -> void:
 		_golden[row[0]].append(row.slice(1))
 	_remove_tree(FIXTURE_ROOT)
 	_remove_tree(OVERLAY_ROOT)
+	_remove_tree(WATCH_ROOT)
 	var library := FrogLordConfigLibrary.new()
 	_retail = GameData.open(retail_source(), library.load_version("pc-retail-v3.0e"), library)
 	_fixture = FrogLordModFixture.write(OS.get_environment(GameDataLocator.ENV_VAR), FIXTURE_ROOT, SPEC_PATH)
@@ -60,6 +63,7 @@ func after_all() -> void:
 	_overlay = null
 	_remove_tree(FIXTURE_ROOT)
 	_remove_tree(OVERLAY_ROOT)
+	_remove_tree(WATCH_ROOT)
 
 
 func _import() -> int:
@@ -283,3 +287,31 @@ func test_the_support_report_adds_only_the_unplaced_probe() -> void:
 		if not row.is_mapped() and not known.has(row.to_tsv()):
 			added.append(PackedStringArray([row.kind, row.key, ",".join(row.levels), row.form]))
 	_match_golden("report", added)
+
+
+func test_the_watch_cycle_points_the_game_at_a_new_overlay() -> void:
+	if _source == null:
+		fail_test("no FrogLord fixture")
+		return
+	var pointer_path: String = WATCH_ROOT.path_join("current.cfg")
+	var result: FrogLordWatchCycle.Result = FrogLordWatchCycle.run(FIXTURE_ROOT, IMPORT_STEPS, WATCH_ROOT, pointer_path)
+	assert_true(result.is_ok(), "%s\n%s" % [result.line(), "\n".join(result.problems)])
+	assert_eq(result.fingerprint, _source.fingerprint().substr(0, FrogLordWatchCycle.KEY_LENGTH))
+	assert_eq(result.index_root, WATCH_ROOT.path_join(result.fingerprint))
+	assert_eq(result.folders, 1)
+	var pointer: FrogLordPointer = FrogLordPointer.read(pointer_path)
+	assert_true(pointer.exists())
+	assert_eq(pointer.index_root, result.index_root)
+	assert_eq(pointer.fingerprint, result.fingerprint)
+	assert_eq(pointer.source_summary, result.source_summary)
+	assert_eq(pointer.report_path, result.index_root.path_join(FrogLordWatchCycle.REPORT_FILE))
+	assert_gt(pointer.written_at, 0)
+	assert_false(FileAccess.file_exists(pointer_path + ".tmp"))
+	assert_true(FileAccess.file_exists(pointer.report_path))
+	var overlay: ImportedAssets = ImportedAssets.open(FALLBACK_ROOT, "", pointer.index_root)
+	assert_true(overlay.is_valid(), overlay.error)
+	if overlay.is_valid():
+		assert_eq(overlay.index.source_kind, AssetIndex.SOURCE_FROGLORD_MOD)
+		assert_eq(overlay.source_summary(), pointer.source_summary)
+	overlay.close()
+	_remove_tree(WATCH_ROOT)

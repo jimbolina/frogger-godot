@@ -318,6 +318,13 @@ them) or unplaced. The importer prints it after the catalog step and
 requires a FrogLord save to add exactly its deliberate probe
 ([golden](../../tests/golden/specs/imported-assets.md#froglord-round-trip)).
 
+`FrogLordPointer` (`src/application/loaders`) reads and atomically writes the
+file naming the overlay the FrogLord watcher imported last; `AssetReloadWatcher`
+(`src/presentation`) polls it and signals `GameplayScreen` under `--froglord`.
+A reload opens a new `ImportedAssets` over the new overlay folder, whose
+records lie at new paths, and hands it to `open_data` with ownership, which
+releases the previous catalog; loaded records are never replaced in place.
+
 ## Sandbox
 
 The [sandbox](../../README.md#sandbox) is an owner play-check scene layered on
