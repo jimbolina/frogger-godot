@@ -6,29 +6,41 @@ glyphs of ASCII 32..127 in 8 x 8 cells, 32 to a row in three rows, with no
 padding. assets/textures/images_x4/t0310.png is the same grid at four times
 the size. For each texture set whose PNG exists this tool writes a BMFont v3
 text file that Godot's font_data_bmfont importer turns into a FontFile, and
-copies the PNG beside it as the font's page:
+the font's page beside it:
 
     assets/fonts/retail/newfont.fnt and newfont.png  (from textures/images/t0310.png)
     assets/fonts/x4/newfont.fnt and newfont.png      (from textures/images_x4/t0310.png)
 
-The page is a copy because the importer marks every page image of a font as
-not imported (importer "skip"), which would take t0310.png away from the
-texture banks. The scale S is the PNG width divided by 256; the height must
-be 24 * S. Glyph `id` sits at x = ((id - 32) % 32) * 8 * S,
-y = ((id - 32) // 32) * 8 * S with width, height and advance 8 * S and no
-offsets; the line height and base are 8 * S. The colour channels carry the
-glyph (alphaChnl=0 keeps the RGBA pixels as they are).
+The page is a separate file because the importer marks every page image of
+a font as not imported (importer "skip"), which would take t0310.png away
+from the texture banks. Every page is built at 4 times the retail size so
+that linear filtering keeps the glyph pixels even at any window scale: a PNG
+of scale S (its width divided by 256; the height must be 24 * S, and S must
+divide 4) is enlarged 4 / S times by repeating pixels. Each 32 x 32 glyph
+cell is then surrounded by a 4-pixel transparent border, giving 40 x 40
+cells on a 1280 x 120 page. The two rings of transparent pixels around the
+glyph's opaque pixels, within its cell, take the per-channel maximum colour
+of their filled neighbours, so filtering does not darken the edges. Glyph `id` sits at
+x = ((id - 32) % 32) * 40, y = ((id - 32) // 32) * 40 with width and height
+40, offsets -4 and advance 32; the size, line height and base are 32. The
+colour channels carry the glyph (alphaChnl=0 keeps the RGBA pixels as they
+are). The info line ends with page_sha256, the SHA-256 of the page's RGBA
+rows, which Godot ignores: Godot does not track a font's page, so a changed
+page must change the .fnt to be imported again.
 
---check writes nothing, prints a unified diff for each font file and names
-each page that differs or is missing, and exits 1. --quiet prints nothing on
-success. A missing x4 PNG skips the x4 font.
+--check writes nothing, prints a unified diff for each font file, names each
+page whose size or pixels differ or that is missing, and exits 1. --quiet
+prints nothing on success. A missing x4 PNG skips the x4 font. The tool uses
+only the standard library.
 """
 
 import argparse
 import difflib
+import hashlib
 import os
 import struct
 import sys
+import zlib
 
 sys.dont_write_bytecode = True
 
@@ -43,49 +55,145 @@ COLUMNS = 32
 ROWS = 3
 FIRST = 32
 COUNT = COLUMNS * ROWS
+PAGE_SCALE = 4
+GLYPH = CELL * PAGE_SCALE
+BORDER = PAGE_SCALE
+STRIDE = GLYPH + 2 * BORDER
+FILL_RINGS = 2
+SIGNATURE = b"\x89PNG\r\n\x1a\n"
 SETS = (("retail", "images", True), ("x4", "images_x4", False))
 
 
-def png_size(path):
-    """Width and height from a PNG's IHDR chunk."""
+def read_png(path):
+    """Width, height and RGBA rows (bytes) of the 8-bit RGBA, non-interlaced PNG at path."""
     with open(path, "rb") as f:
-        header = f.read(24)
-    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
+        data = f.read()
+    if data[:8] != SIGNATURE:
         raise SystemExit("%s is not a PNG" % path)
-    return struct.unpack(">II", header[16:24])
+    at, header, compressed = 8, None, []
+    while at < len(data):
+        length, kind = struct.unpack(">I4s", data[at:at + 8])
+        body = data[at + 8:at + 8 + length]
+        if kind == b"IHDR":
+            header = struct.unpack(">IIBBBBB", body)
+        elif kind == b"IDAT":
+            compressed.append(body)
+        elif kind == b"IEND":
+            break
+        at += 12 + length
+    if header is None or header[2:] != (8, 6, 0, 0, 0):
+        raise SystemExit("%s is not an 8-bit RGBA non-interlaced PNG" % path)
+    width, height = header[0], header[1]
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width * 4
+    rows, previous = [], bytearray(stride)
+    for y in range(height):
+        kind = raw[y * (stride + 1)]
+        line = bytearray(raw[y * (stride + 1) + 1:(y + 1) * (stride + 1)])
+        for i in range(stride):
+            left = line[i - 4] if i >= 4 else 0
+            up = previous[i]
+            corner = previous[i - 4] if i >= 4 else 0
+            if kind == 1:
+                line[i] = (line[i] + left) & 255
+            elif kind == 2:
+                line[i] = (line[i] + up) & 255
+            elif kind == 3:
+                line[i] = (line[i] + ((left + up) >> 1)) & 255
+            elif kind == 4:
+                guess = left + up - corner
+                pa, pb, pc = abs(guess - left), abs(guess - up), abs(guess - corner)
+                pick = left if pa <= pb and pa <= pc else (up if pb <= pc else corner)
+                line[i] = (line[i] + pick) & 255
+            elif kind != 0:
+                raise SystemExit("%s has an unknown PNG filter %d" % (path, kind))
+        rows.append(bytes(line))
+        previous = line
+    return width, height, rows
 
 
-def scale_of(path):
-    """The glyph scale of the newfont PNG at path."""
-    width, height = png_size(path)
+def write_png(width, height, rows):
+    """The bytes of an 8-bit RGBA PNG holding rows, unfiltered."""
+    def chunk(kind, body):
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
+    raw = b"".join(b"\x00" + row for row in rows)
+    return (SIGNATURE + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+
+
+def scale_of(path, width, height):
+    """The glyph scale of the newfont PNG at path, which must divide the page scale."""
     if width % (COLUMNS * CELL) != 0:
         raise SystemExit("%s is %dx%d; the width is not a multiple of %d" % (path, width, height, COLUMNS * CELL))
     scale = width // (COLUMNS * CELL)
     if scale < 1 or height != ROWS * CELL * scale:
         raise SystemExit("%s is %dx%d; expected %dx%d" % (path, width, height, width, ROWS * CELL * scale))
+    if PAGE_SCALE % scale != 0:
+        raise SystemExit("%s has scale %d, which does not divide %d" % (path, scale, PAGE_SCALE))
     return scale
 
 
-def font_text(scale):
-    """The BMFont v3 text of the font whose page beside it has glyphs at scale."""
-    cell = CELL * scale
+def page_pixels(path):
+    """The page's RGBA rows built from the newfont PNG at path."""
+    width, height, rows = read_png(path)
+    factor = PAGE_SCALE // scale_of(path, width, height)
+    page_width, page_height = COLUMNS * STRIDE, ROWS * STRIDE
+    page = [bytearray(page_width * 4) for _ in range(page_height)]
+    filled = [bytearray(page_width) for _ in range(page_height)]
+    for index in range(COUNT):
+        column, row = index % COLUMNS, index // COLUMNS
+        for y in range(GLYPH):
+            source = rows[(row * GLYPH + y) // factor]
+            target = page[row * STRIDE + BORDER + y]
+            mask = filled[row * STRIDE + BORDER + y]
+            for x in range(GLYPH):
+                at = ((column * GLYPH + x) // factor) * 4
+                to = column * STRIDE + BORDER + x
+                target[to * 4:to * 4 + 4] = source[at:at + 4]
+                mask[to] = 1 if source[at + 3] else 0
+    for _ in range(FILL_RINGS):
+        ring = []
+        for y in range(page_height):
+            for x in range(page_width):
+                if filled[y][x]:
+                    continue
+                colour = None
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        ny, nx = y + dy, x + dx
+                        same_cell = ny // STRIDE == y // STRIDE and nx // STRIDE == x // STRIDE
+                        if (dy or dx) and 0 <= ny < page_height and 0 <= nx < page_width and same_cell and filled[ny][nx]:
+                            rgb = page[ny][nx * 4:nx * 4 + 3]
+                            colour = rgb if colour is None else bytes(max(a, b) for a, b in zip(colour, rgb))
+                if colour is not None:
+                    ring.append((y, x, colour))
+        for y, x, colour in ring:
+            page[y][x * 4:x * 4 + 3] = colour
+            filled[y][x] = 1
+    return page_width, page_height, [bytes(line) for line in page]
+
+
+def font_text(page):
+    """The BMFont v3 text of a font whose page beside it holds page, as page_pixels returns it."""
+    digest = hashlib.sha256(b"".join(page[2])).hexdigest()
     lines = [
         'info face="%s" size=%d bold=0 italic=0 charset="" unicode=1 stretchH=100 smooth=0 aa=1 '
-        'padding=0,0,0,0 spacing=0,0 outline=0' % (NAME, cell),
+        'padding=0,0,0,0 spacing=0,0 outline=0 page_sha256=%s' % (NAME, GLYPH, digest),
         "common lineHeight=%d base=%d scaleW=%d scaleH=%d pages=1 packed=0 alphaChnl=0 redChnl=4 "
-        "greenChnl=4 blueChnl=4" % (cell, cell, COLUMNS * cell, ROWS * cell),
+        "greenChnl=4 blueChnl=4" % (GLYPH, GLYPH, COLUMNS * STRIDE, ROWS * STRIDE),
         'page id=0 file="%s"' % PAGE,
         "chars count=%d" % COUNT,
     ]
     for code in range(FIRST, FIRST + COUNT):
         index = code - FIRST
-        lines.append("char id=%d x=%d y=%d width=%d height=%d xoffset=0 yoffset=0 xadvance=%d page=0 chnl=15"
-                     % (code, (index % COLUMNS) * cell, (index // COLUMNS) * cell, cell, cell, cell))
+        lines.append("char id=%d x=%d y=%d width=%d height=%d xoffset=%d yoffset=%d xadvance=%d page=0 chnl=15"
+                     % (code, (index % COLUMNS) * STRIDE, (index // COLUMNS) * STRIDE, STRIDE, STRIDE,
+                        -BORDER, -BORDER, GLYPH))
     return "\n".join(lines) + "\n"
 
 
 def outputs():
-    """The path and bytes of every font file and page of the sets whose PNG exists."""
+    """The path, kind and contents of every font file and page of the sets whose PNG exists."""
     result = []
     for set_name, images_dir, required in SETS:
         png = os.path.join(TEXTURES, images_dir, TEXTURE)
@@ -94,10 +202,20 @@ def outputs():
                 raise SystemExit("%s is missing" % png)
             continue
         folder = os.path.join(FONTS, set_name)
-        result.append((os.path.join(folder, NAME + ".fnt"), font_text(scale_of(png)).encode("ascii")))
-        with open(png, "rb") as f:
-            result.append((os.path.join(folder, PAGE), f.read()))
+        page = page_pixels(png)
+        result.append((os.path.join(folder, NAME + ".fnt"), "fnt", font_text(page).encode("ascii")))
+        result.append((os.path.join(folder, PAGE), "page", page))
     return result
+
+
+def matches(path, kind, contents):
+    """Whether the committed file at path holds contents: equal bytes, or equal page pixels."""
+    if not os.path.exists(path):
+        return False
+    if kind == "page":
+        return read_png(path) == contents
+    with open(path, "rb") as f:
+        return f.read() == contents
 
 
 def main():
@@ -107,26 +225,24 @@ def main():
     args = parser.parse_args()
     files = outputs()
     differing = 0
-    for path, data in files:
+    for path, kind, contents in files:
         relative = os.path.relpath(path, ROOT)
-        old = None
-        if os.path.exists(path):
-            with open(path, "rb") as f:
-                old = f.read()
-        if old == data:
+        if matches(path, kind, contents):
             continue
+        exists = os.path.exists(path)
         if args.check:
             differing += 1
-            if path.endswith(".fnt"):
-                old_lines = (old or b"").decode("utf-8", "replace").splitlines(True)
-                diff = list(difflib.unified_diff(old_lines, data.decode("ascii").splitlines(True),
+            if kind == "fnt" and exists:
+                with open(path, "rb") as f:
+                    old_lines = f.read().decode("utf-8", "replace").splitlines(True)
+                diff = list(difflib.unified_diff(old_lines, contents.decode("ascii").splitlines(True),
                                                  relative, "generated", n=0))
                 sys.stdout.writelines(diff[:80])
-            print("%s: %s" % (relative, "missing" if old is None else "differs from the generator"))
+            print("%s: %s" % (relative, "differs from the generator" if exists else "missing"))
             continue
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as f:
-            f.write(data)
+            f.write(write_png(*contents) if kind == "page" else contents)
         if not args.quiet:
             print("wrote %s" % relative)
     if differing:

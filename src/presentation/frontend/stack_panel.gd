@@ -6,8 +6,8 @@ extends Control
 ## Sprite colours follow the source's base colours, 0x80 being the image as stored. The fade
 ## rectangle subtracts its shade from everything drawn before it; the sprites draw over it. A
 ## spun-out level and the high-score view add up to three score lines drawn white with the texture set's
-## [code]newfont[/code] bitmap font ([member FrontEndAssets.font]), nearest filtered and
-## centred by [method NewfontText.width] in a box [constant StackLayout.SCORE_BOX_WIDTH] wide
+## [code]newfont[/code] bitmap font ([member FrontEndAssets.font]), linearly filtered (the
+## sprites stay nearest) and centred by [method NewfontText.width] in a box [constant StackLayout.SCORE_BOX_WIDTH] wide
 ## whose left edge is [member Placement.panel_x]. Each sprite is sized to its image's retail
 ## size, whatever the texture set's scale.
 
@@ -109,7 +109,7 @@ static func score_line_x(line: String, box_x: float) -> float:
 func setup(assets: FrontEndAssets) -> void:
 	_assets = assets
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	fade = ColorRect.new()
 	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade.position = Vector2.ZERO
@@ -178,6 +178,7 @@ func _draw() -> void:
 func _sprite(texture: Texture2D, retail_size: Vector2, colour: int) -> TextureRect:
 	var sprite := TextureRect.new()
 	sprite.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	sprite.stretch_mode = TextureRect.STRETCH_SCALE
 	sprite.texture = texture

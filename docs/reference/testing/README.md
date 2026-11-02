@@ -100,7 +100,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
   and independent generator commands, grouped by feature.
 - [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts):
   both wrappers run `python3 tools/make_font_newfont.py --check --quiet`, which
-  compares the committed `assets/fonts/*/newfont.fnt` with the generator;
+  compares the committed `assets/fonts/*/newfont.fnt` and their pages with the generator;
   `tests/golden/assets/test_asset_fonts.gd` checks the imported fonts.
 - [Angular font](../../../tests/golden/specs/imported-assets.md#angular-font)
   and [lettering](../../../tests/golden/specs/imported-assets.md#lettering):

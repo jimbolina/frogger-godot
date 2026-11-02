@@ -89,6 +89,7 @@ func test_ink_records_text_lines_in_order_without_a_font() -> void:
 	ink.text(Vector2(592, 16), "1 UP", Color.WHITE)
 	ink.text(Vector2(288, 436), "SUPERHOP", Color(0.5, 0.5, 0.5))
 	assert_null(ink.font)
+	assert_eq(ink.texture_filter, CanvasItem.TEXTURE_FILTER_LINEAR, "newfont text is linearly filtered")
 	assert_eq(ink.lines.size(), 2)
 	var first: GameplayHudInk.Line = ink.lines[0]
 	var second: GameplayHudInk.Line = ink.lines[1]

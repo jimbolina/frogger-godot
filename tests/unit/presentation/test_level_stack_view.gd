@@ -109,6 +109,13 @@ func test_a_spun_out_level_shows_its_table_rows_beside_the_picture() -> void:
 	assert_eq(view.panel.score_lines().size(), 3, "the lines stay with the panel after the spin back")
 
 
+func test_score_lines_filter_linearly_and_the_sprites_stay_nearest() -> void:
+	var view: LevelStackView = _view()
+	assert_eq(view.panel.texture_filter, CanvasItem.TEXTURE_FILTER_LINEAR, "the newfont score lines")
+	for sprite: TextureRect in [view.panel.title, view.panel.prompt, view.panel.level_name, view.panel.loading]:
+		assert_eq(sprite.texture_filter, CanvasItem.TEXTURE_FILTER_NEAREST, "sprite %s" % sprite)
+
+
 func test_back_returns_the_spin_then_leaves_on_the_first_entry() -> void:
 	var view: LevelStackView = _view()
 	_idle(view, 8)

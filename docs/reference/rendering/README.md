@@ -19,7 +19,8 @@
   per image, UVs in retail pixels at any texture-set scale. The retail texture
   set samples nearest without mipmaps; the upscaled `x4` set samples through
   the `_linear` variants with mipmaps, and 2D draws scale it back to retail
-  pixels. Filtering is a viewer option; the font is always nearest.
+  pixels. Filtering is a viewer option; `newfont` text is always linear
+  over its 4x page ([fonts](../assets.md#fonts)).
 - One mesh per map group, split by material. Polygons with animated textures
   get their own surfaces.
 - Map captures use a fixed 640x480 viewport; projection is explicit. The

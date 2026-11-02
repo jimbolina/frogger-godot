@@ -1,9 +1,10 @@
 extends AssetTest
 ## The committed newfont bitmap fonts (assets/fonts/<set>/newfont.fnt and its
 ## page newfont.png, written by tools/make_font_newfont.py) import as the glyph
-## grid of texture 310: 96 glyphs of ASCII 32..127 in cells of 8 retail pixels
-## times the set's scale, 32 to a row, with the texture's pixels kept exactly
-## and a string measured at size 8 the same in both sets.
+## grid of texture 310: 96 glyphs of ASCII 32..127, 32 to a row, each a
+## 32-pixel glyph (the set's texture enlarged to 4 page pixels per retail
+## pixel) inside a 4-pixel transparent border, with the texture's pixels kept
+## exactly and a string measured at size 8 the same in both sets.
 
 const FONT: String = "newfont"
 const TEXTURE_ID: int = 310
@@ -11,6 +12,10 @@ const FIRST: int = 32
 const COUNT: int = 96
 const COLUMNS: int = 32
 const RETAIL_CELL: int = 8
+const PAGE_SCALE: int = 4
+const GLYPH: int = RETAIL_CELL * PAGE_SCALE
+const BORDER: int = PAGE_SCALE
+const STRIDE: int = GLYPH + 2 * BORDER
 
 var _x4: ImportedAssets
 
@@ -52,14 +57,13 @@ func test_fonts_hold_the_glyph_grid() -> void:
 	for entry: Dictionary in _sets():
 		var set_name: String = entry["name"]
 		var assets: ImportedAssets = entry["catalog"]
-		var scale: int = entry["scale"]
 		var font: FontFile = _font_of(set_name, assets)
 		if font == null:
 			continue
 		var prefix: String = "res://assets/fonts/%s/" % set_name
 		if not font.resource_path.begins_with(prefix):
 			mismatches.append("%s: font loads from %s, not %s" % [set_name, font.resource_path, prefix])
-		var cell: int = RETAIL_CELL * scale
+		var cell: int = GLYPH
 		var size := Vector2i(cell, 0)
 		var fixed_size: int = font.fixed_size
 		var scale_mode: int = font.fixed_size_scale_mode
@@ -73,19 +77,19 @@ func test_fonts_hold_the_glyph_grid() -> void:
 			mismatches.append("%s: ascent %s and descent %s, expected %d and 0" % [set_name, ascent, descent, cell])
 		for code: int in range(FIRST, FIRST + COUNT):
 			var at: int = code - FIRST
-			var uv_rect := Rect2((at % COLUMNS) * cell, (at / COLUMNS) * cell, cell, cell)
+			var uv_rect := Rect2((at % COLUMNS) * STRIDE, (at / COLUMNS) * STRIDE, STRIDE, STRIDE)
 			var got_uv: Rect2 = font.get_glyph_uv_rect(0, size, code)
 			var got_size: Vector2 = font.get_glyph_size(0, size, code)
 			var got_advance: Vector2 = font.get_glyph_advance(0, cell, code)
 			var got_offset: Vector2 = font.get_glyph_offset(0, size, code)
 			if got_uv != uv_rect:
 				mismatches.append("%s glyph %d: uv rect %s, expected %s" % [set_name, code, got_uv, uv_rect])
-			if got_size != Vector2(cell, cell):
-				mismatches.append("%s glyph %d: size %s, expected %d" % [set_name, code, got_size, cell])
+			if got_size != Vector2(STRIDE, STRIDE):
+				mismatches.append("%s glyph %d: size %s, expected %d" % [set_name, code, got_size, STRIDE])
 			if got_advance != Vector2(cell, 0):
 				mismatches.append("%s glyph %d: advance %s, expected %d" % [set_name, code, got_advance, cell])
-			if got_offset != Vector2(0, -cell):
-				mismatches.append("%s glyph %d: offset %s, expected (0, %d)" % [set_name, code, got_offset, -cell])
+			if got_offset != Vector2(-BORDER, -cell - BORDER):
+				mismatches.append("%s glyph %d: offset %s, expected (%d, %d)" % [set_name, code, got_offset, -BORDER, -cell - BORDER])
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)
 	assert_eq(mismatches.size(), 0, "both newfont fonts hold the %d-glyph grid" % COUNT)
@@ -106,27 +110,47 @@ func test_fonts_keep_the_texture_pixels() -> void:
 		var font: FontFile = _font_of(set_name, assets)
 		if font == null:
 			continue
-		var cell: int = RETAIL_CELL * scale
-		var image: Image = font.get_texture_image(0, Vector2i(cell, 0), 0)
-		if image == null:
+		var page: Image = font.get_texture_image(0, Vector2i(GLYPH, 0), 0)
+		if page == null:
 			mismatches.append("%s font %s has no texture image" % [set_name, font.resource_path])
 			continue
-		if image.has_mipmaps():
+		if page.has_mipmaps():
 			mismatches.append("%s font %s has mipmaps" % [set_name, font.resource_path])
-		image.convert(Image.FORMAT_RGBA8)
-		var expected_size := Vector2i(256 * scale, 24 * scale)
-		if image.get_size() != expected_size:
-			mismatches.append("%s font %s is %s, expected %s" % [set_name, font.resource_path, image.get_size(), expected_size])
+		page.convert(Image.FORMAT_RGBA8)
+		var expected_size := Vector2i(COLUMNS * STRIDE, (COUNT / COLUMNS) * STRIDE)
+		if page.get_size() != expected_size:
+			mismatches.append("%s font %s is %s, expected %s" % [set_name, font.resource_path, page.get_size(), expected_size])
 			continue
 		var source: Image = _png(png)
-		if source == null or source.get_data() != image.get_data():
-			mismatches.append("%s font %s: pixels differ from %s" % [set_name, font.resource_path, png])
+		if source == null or source.get_size() != Vector2i(256 * scale, 24 * scale):
+			mismatches.append("%s: %s is missing or not %d x %d" % [set_name, png, 256 * scale, 24 * scale])
+			continue
+		var factor: int = PAGE_SCALE / scale
+		var differing: int = 0
+		for index: int in COUNT:
+			var cell_x: int = (index % COLUMNS) * STRIDE
+			var cell_y: int = (index / COLUMNS) * STRIDE
+			var glyph_x: int = (index % COLUMNS) * GLYPH
+			var glyph_y: int = (index / COLUMNS) * GLYPH
+			for y: int in STRIDE:
+				for x: int in STRIDE:
+					var got: Color = page.get_pixel(cell_x + x, cell_y + y)
+					var inside: bool = x >= BORDER and x < BORDER + GLYPH and y >= BORDER and y < BORDER + GLYPH
+					if not inside:
+						if got.a8 != 0:
+							differing += 1
+						continue
+					var want: Color = source.get_pixel((glyph_x + x - BORDER) / factor, (glyph_y + y - BORDER) / factor)
+					if got.a8 != want.a8 or (want.a8 != 0 and got != want):
+						differing += 1
+		if differing != 0:
+			mismatches.append("%s font %s: %d page pixels differ from %s" % [set_name, font.resource_path, differing, png])
 		if scale == 1:
-			var digest: String = sha256_hex(image.get_data())
+			var digest: String = sha256_hex(source.get_data())
 			var asset: String = png.trim_prefix(ASSETS + "/")
 			for retail: String in digests:
 				if digest != expected(asset, "vlo_images", "padded_rgba_sha256", retail):
-					mismatches.append("%s font %s: RGBA digest differs from texture %d" % [set_name, font.resource_path, TEXTURE_ID])
+					mismatches.append("%s: %s RGBA digest differs from texture %d" % [set_name, png, TEXTURE_ID])
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)
 	assert_eq(mismatches.size(), 0, "both newfont fonts keep their texture's pixels")

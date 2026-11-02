@@ -8,8 +8,8 @@ extends RefCounted
 
 ## Width and height of one glyph in canvas pixels.
 const CELL: int = 8
-## The size both fonts are drawn at: the retail font's fixed size, to which
-## the x4 font's fixed size of 32 scales down.
+## The size both fonts are drawn at; their fixed size of 32 (4 page pixels
+## per retail pixel) scales down to it.
 const DRAW_SIZE: int = 8
 
 

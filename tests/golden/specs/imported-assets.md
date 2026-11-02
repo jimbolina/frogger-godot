@@ -25,19 +25,29 @@ to a row in three rows, with no padding: `textures/images/t0310.png` is
 scale S is the PNG width divided by 256, and the height must be 24 x S.
 `tools/make_font_newfont.py` writes, for each set whose PNG exists,
 `fonts/retail/` and `fonts/x4/` holding `newfont.fnt`, a BMFont v3 text file,
-and `newfont.png`, a byte copy of the set's `t0310.png` that the font names
-as its only page. The font's `size`, `lineHeight` and `base` are 8 x S,
-`scaleW` and `scaleH` the PNG size, and `alphaChnl=0` with the colour
-channels at 4, so the importer keeps the RGBA pixels (the glyphs are eight
-grey levels; `alphaChnl=1` would turn them white on alpha). Glyph `id` sits
-at `x = ((id - 32) % 32) * 8S`, `y = ((id - 32) / 32) * 8S` with width,
-height and `xadvance` 8 x S and no offsets. The page is a copy because the
-font importer sets the importer of every page image it reads to `skip`,
-which would take `t0310.png` away from the texture banks.
+and `newfont.png`, the page the font names as its only page. S must divide 4.
+The page enlarges the set's PNG 4 / S times by repeating pixels, so every
+glyph is 32 x 32, and sets each glyph inside a 4-pixel transparent border:
+40 x 40 cells, 32 to a row, on a 1280 x 120 page. The two rings of
+transparent pixels around each glyph's opaque pixels, within its cell, take
+the per-channel maximum colour of their already filled 8-neighbours, ring by
+ring; other transparent pixels keep the source's colour or zero. The font's
+`size`, `lineHeight` and `base` are 32, `scaleW` and `scaleH` 1280 and 120,
+and `alphaChnl=0` with the colour channels at 4, so the importer keeps the
+RGBA pixels (the glyphs are eight grey levels; `alphaChnl=1` would turn them
+white on alpha). The `info` line ends with `page_sha256`, the SHA-256 of
+the page's RGBA rows, which Godot ignores; it makes a page change change the
+`.fnt`, since the importer does not track the page. Glyph `id` sits at
+`x = ((id - 32) % 32) * 40`,
+`y = ((id - 32) / 32) * 40` with width and height 40, `xoffset` and
+`yoffset` -4 and `xadvance` 32. The page is a separate file because the font
+importer sets the importer of every page image it reads to `skip`, which
+would take `t0310.png` away from the texture banks.
 
-The `.fnt` and the page copy are the generated artefacts, not facts: the
-generator's `--check` is the comparison. It writes nothing, prints a diff
-for each differing `.fnt`, names each differing or missing file and exits 1;
+The `.fnt` and the page are the generated artefacts, not facts: the
+generator's `--check` is the comparison (page pixels, not bytes). It writes
+nothing, prints a diff for each differing `.fnt`, names each differing or
+missing file and exits 1;
 both test wrappers run it before importing and stop with exit 2 on a
 difference. Without `images_x4/t0310.png` the x4 font is skipped. A hand
 edit of a set's `t0310.png` is carried into its font by rerunning the
@@ -45,9 +55,13 @@ generator.
 
 Each `.fnt` is imported by `font_data_bmfont` with the `importer_defaults`
 entry in `project.godot`: `compress` true, no `fallbacks` and
-`scaling_mode` 2 (fractional), so the x4 font, whose fixed size is 32,
-draws at size 8 scaled by a quarter. Its page `newfont.png` has the
-`skip` importer. The catalog's texture set chooses the font:
+`scaling_mode` 2 (fractional), so both fonts, whose fixed size is 32, draw
+at size 8 scaled by a quarter. Its page `newfont.png` has the `skip`
+importer. The golden checks the grid (fixed size, ascent, UV rectangles,
+glyph size, advance and offset (-4, -36)), that every glyph pixel's alpha,
+and colour where opaque, equals the source PNG pixel it repeats and every
+border pixel is transparent, the retail source's digest, and that "1 UP"
+measures 32 x 8 at size 8 in both sets. The catalog's texture set chooses the font:
 `ImportedAssets.font(name)` loads `fonts/<set>/<name>.fnt`, falls back to
 the retail set's file with a line in `problems` when the set has none, and
 returns null with a problem line when neither exists.
