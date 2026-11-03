@@ -180,7 +180,9 @@ the project except their exclude filters, into `build/` (git-ignored):
 `tools/export.sh [preset ...]` (`tools/export.ps1` on Windows, which exports
 macOS as a `.zip`) imports the project, exports each preset, fails when the
 export log stores any file under `assets/` or `.godot/imported/` other than
-the shippable ones below, and zips each build as
+the shippable ones below (a lettering image's imported texture is allowed by
+the `path` its `.import` sidecar names, since retail images import to files of
+the same name), and zips each build as
 `build/Frogger-<version>-<platform>.zip`; logs go to `build/logs/`.
 The version is `config/version` in `project.godot`; the release pull request
 writes it, never a hand edit.
@@ -214,14 +216,24 @@ kept as `export-logs-<runner os>` for 14 days.
 A packaged build carries no retail-derived file. It ships `src/` (shaders
 included), `scenes/`, `archive/import/` with `disc_tracks.tsv`,
 `archive/source/`, FrogLord's configuration files with their `LICENSE.md`,
-the icon, and from `assets/` only `fonts/angular/frogger_angular.ttf` and
-`rendering/emissive_images.tres`. It excludes `tests/`, `tools/`, `addons/`
-(GUT), `docs/`, `archive/tests/`, `archive/docs/` and every retail-derived
-asset: the index, tables, textures (with the lettering images, which trace
-the alpha's letter models over retail ink boxes), models, materials, maps,
-audio, demos, the `newfont` page and its `.fnt`, and the angular font's
-sources. The game suite's `test_export_presets` checks every committed
-asset against the filters of every preset.
+the icon, and from `assets/` only `fonts/angular/frogger_angular.ttf`,
+`rendering/emissive_images.tres` and the 319 [lettering](assets.md#lettering)
+images of `textures/lettering/`, as their `.import` sidecars and the
+lossless, mipmapped `.ctex` textures under `.godot/imported/` (the PNGs
+themselves are not stored). It excludes `tests/`, `tools/`, `addons/`
+(GUT), `docs/`, `archive/tests/`, `archive/docs/` and every other
+retail-derived asset: the index, tables, retail images and banks, models,
+materials, maps, audio, demos, the `newfont` page and its `.fnt`, and the
+angular font's sources. The game suite's `test_export_presets` checks every
+committed asset against the filters of every preset and that every lettering
+image ships.
+
+The lettering images are the port's vector text, by the owner's decision
+shipped as committed. The 270 transparent ones hold no retail pixels. The 49
+tiles (lily-pad letters, score logs and rank turtles) draw that text over a
+background measured from retail images: the most common colour of `t0263` or
+`t0566`, or the turtle shell rebuilt per pixel from `t0638`–`t0647`, with a
+fill colour taken from the retail ink.
 
 The catalog serves such a build without the missing shippable files
 ([ImportedAssets](../../src/application/loaders/imported_assets.gd)):
@@ -231,8 +243,8 @@ it), with the glyph layout of the committed `.fnt`; the `.fnt` is not
 shipped because Godot's imported font embeds the page's retail pixels, and
 its layout follows from the page geometry alone.
 `test_asset_newfont_runtime` checks that the built font stores every property
-the imported one does and the same page. Without lettering images every
-texture draws its retail image, silently.
+the imported one does and the same page. A shippable root without lettering
+images draws every retail image, silently.
 
 The app icon is a placeholder: `icon/frogger_icon.svg`, an original frog on
 a lily pad, until an artist replaces it. `godot --headless --path . -s
@@ -253,9 +265,11 @@ The exported macOS app was checked with an isolated user folder: an
 it; it breaks the bundle's seal, so only on a copy) naming a custom user
 folder. The setup screen opened, detected the game folder, ran the child
 import from inside the app as an export template without `--path`, opened
-the front end on Play and played ORG1 with `newfont` text and the retail
-lettering; the next launch went to the menu. The Windows and Linux builds
-were exported but not run.
+the front end on Play and played ORG1 with `newfont` text; the next launch
+went to the menu. Once the lettering shipped, the app's own child import
+(the command line above) imported into such a folder, and `--write-movie`
+frames of its high-score table and of ORG1 matched an isolated source run
+pixel for pixel. The Windows and Linux builds were exported but not run.
 
 ## Verification
 

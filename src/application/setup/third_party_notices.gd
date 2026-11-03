@@ -1,9 +1,10 @@
 class_name ThirdPartyNotices
 extends RefCounted
-## The credits and licence notices the setup screen shows: what the game is,
-## the importer's third-party notice ([method AssetImporter.third_party_notice])
-## and the Godot Engine's licence with the third-party components the engine
-## is built from, as [Engine] reports them for the running build.
+## The credits and licence notices the setup screen shows: what the game is
+## with the credit for its traced lettering, the importer's third-party
+## notice ([method AssetImporter.third_party_notice]) and the Godot Engine's
+## licence with the third-party components the engine is built from, as
+## [Engine] reports them for the running build.
 
 
 ## The notices for game version [param version], with [param importer_notice]
@@ -11,8 +12,10 @@ extends RefCounted
 static func text(version: String, importer_notice: String) -> String:
 	var sections := PackedStringArray()
 	sections.append("Frogger (1997) in Godot, version %s\n\n" % version
-		+ "A rewrite of the 1997 PC game. It contains no part of the original game: "
-		+ "the game files are imported from the player's own copy.")
+		+ "A rewrite of the 1997 PC game. The game's levels, models, sounds and textures "
+		+ "are imported from the player's own copy; only the lily-pad, log and turtle "
+		+ "lettering images keep backgrounds taken from the original textures.\n\n"
+		+ "The angular lettering font and images are traced from the 1997 alpha's letter models by StarmanUltra.")
 	if not importer_notice.is_empty():
 		sections.append(_heading("FrogLord") + importer_notice.strip_edges())
 	sections.append(_heading("Godot Engine") + "This game uses Godot Engine (https://godotengine.org), "

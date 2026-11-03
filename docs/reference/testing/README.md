@@ -135,11 +135,12 @@ it covers the rest. The release workflow is described under
   [uv](https://docs.astral.sh/uv/) on PATH (`UV` can select it); the pinned
   fontTools and Pillow live in `pyproject.toml` and `uv.lock`.
 - [Packaging](../setup.md#packaging): `test_export_presets` checks that every
-  preset excludes each retail-derived file under `assets/`, the tests, tools,
+  preset excludes each retail-derived file under `assets/` except the
+  shipped lettering images, which it requires, and the tests, tools,
   documentation and GUT; `test_app_icons` checks the icon files against
   `icon/frogger_icon.svg` (`godot --headless --path . -s
   res://tools/make_icons.gd` rewrites them); `tools/export.sh` fails an
-  export whose log stores a retail-derived file.
+  export whose log stores any other retail-derived file.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has

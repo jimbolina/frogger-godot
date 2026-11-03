@@ -16,10 +16,9 @@ extends AssetCatalog
 ## [member root]. Fonts, lettering and the emissive table are the port's own
 ## work and come from [member shippable_root], which stays
 ## [constant SHIPPABLE_ROOT] when the base root is an import under
-## [code]user://[/code]. A packaged build ships only the angular font and
-## the emissive table there: [code]newfont[/code] is then built from the
-## player's texture 310 and every texture draws its retail image instead of
-## lettering.
+## [code]user://[/code]. A packaged build ships only the angular font, the
+## emissive table and the lettering images there: [code]newfont[/code] is
+## then built from the player's texture 310.
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
 ## textures, and [method texture_of], [method texture_counterpart] and

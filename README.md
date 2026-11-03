@@ -499,9 +499,12 @@ stay outside the repository, and Git retains development history.
 
 ## Packaged builds
 
-A packaged build holds the game's code and its own files, and no part of the
-original game: on the first start the [setup screen](#setup-and-first-run)
-imports your own copy of Frogger into the game's user folder. Each release on
+A packaged build holds the game's code and its own files, including the
+high-resolution lettering images; 49 of them (the lily-pad letters, score logs
+and rank turtles) keep backgrounds taken from the original textures. The
+game's levels, models, sounds and textures are not included: on the first
+start the [setup screen](#setup-and-first-run) imports your own copy of
+Frogger into the game's user folder. Each release on
 the repository's GitHub Releases page carries the three zips below.
 
 - **macOS** (Apple Silicon and Intel): unzip `Frogger-<version>-macos.zip` and
@@ -530,7 +533,8 @@ To build the packages, install the Godot 4.5.1 export templates (Editor,
 Manage Export Templates), then run `tools/export.sh` (or `tools/export.ps1`
 on Windows); `tools/export.sh macOS` builds one. The builds and their zips go
 to `build/`. The script stops when a build would carry any file under
-`assets/` except the angular font and the emissive table. The icon is a
+`assets/` except the angular font, the emissive table and the lettering
+images. The icon is a
 placeholder drawn for the port, `icon/frogger_icon.svg`; after editing it,
 run `godot --headless --path . -s res://tools/make_icons.gd`. See
 [packaging](docs/reference/setup.md#packaging).
@@ -549,6 +553,8 @@ and GUT (MIT, `addons/gut/LICENSE.md`).
   configuration files it ships.
 - The Highway Frogs community's documentation of Frogger's formats and the
   released original PlayStation source code.
+- **StarmanUltra**: the traced letter outlines of the 1997 alpha's letter
+  models, from which the angular lettering font and images are drawn.
 - **GUT** by Butch Wesley, for testing.
 
 Frogger is a trademark of Konami. This is an unofficial fan project and is not

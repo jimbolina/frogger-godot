@@ -67,7 +67,8 @@ records: the index, tables, maps, models, banks, sounds, music, demos and the
 retail images. The shippable root, `res://assets` in every scene, holds the port's own
 work: the fonts, the lettering images and the emissive table. A base root
 under `user://` therefore still finds them. A packaged build ships only the
-angular font and the emissive table there ([packaging](setup.md#packaging)). [Texture packs](#texture-packs)
+angular font, the lettering images and the emissive table there
+([packaging](setup.md#packaging)). [Texture packs](#texture-packs)
 live apart from both, in the player's user data. An import made at runtime stores each
 image as `textures/images/tNNNN.res` (a lossless `PortableCompressedTexture2D`) and each music track
 as `audio/music/track_NN.res` (an `AudioStreamWAV` saved without a loop);
@@ -304,6 +305,8 @@ one, so the lily pads, turtles and logs sample it linearly with mipmaps, and
 `TextureLibrary.texture_for` hands 2D draws a linear, mipmapped
 `CanvasTexture` so nearest-filtered nodes still shrink it smoothly. Draws
 keep their retail sizes through `TextureBuilder.texture_rect` and
-`retail_size`. The retail PNGs stay byte-exact as source data. Goldens:
+`retail_size`. The retail PNGs stay byte-exact as source data. Packaged
+builds ship every lettering image as committed
+([packaging](setup.md#packaging)). Goldens:
 [angular font](../../tests/golden/specs/imported-assets.md#angular-font) and
 [lettering](../../tests/golden/specs/imported-assets.md#lettering).

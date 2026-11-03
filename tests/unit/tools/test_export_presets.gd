@@ -1,7 +1,8 @@
 extends GutTest
 ## The committed export presets ship no retail-derived file: every file under
-## res://assets except the port's own shippable files matches an exclude
-## filter of every preset, as do the tests, tools, documentation and GUT;
+## res://assets except the port's own shippable files (the angular font, the
+## emissive table and the lettering images) matches an exclude filter of
+## every preset, as do the tests, tools, documentation and GUT;
 ## the archive's import facts and FrogLord's configuration with its licence
 ## are included as plain files. Filters are matched the way Godot's exporter
 ## matches them, against the path with and without res://.
@@ -13,6 +14,10 @@ const SHIPPABLE: PackedStringArray = [
 	"res://assets/fonts/angular/frogger_angular.ttf",
 	"res://assets/rendering/emissive_images.tres",
 ]
+## The folder of shippable lettering images: vector text, every image of
+## which a packaged build carries.
+const LETTERING: String = "res://assets/textures/lettering"
+const LETTERING_IMAGES: int = 319
 ## Folders no build carries.
 const EXCLUDED_FOLDERS: PackedStringArray = [
 	"res://tests", "res://tools", "res://addons", "res://docs", "res://archive/tests", "res://archive/docs",
@@ -88,16 +93,22 @@ func test_the_three_platforms_export_everything_but_the_filters_to_build() -> vo
 func test_every_retail_derived_asset_is_excluded() -> void:
 	var assets: PackedStringArray = _files(ASSETS, PackedStringArray())
 	assert_gt(assets.size(), 1000, "the committed assets are present")
+	var lettering: PackedStringArray = _files(LETTERING, PackedStringArray())
+	assert_eq(lettering.size(), LETTERING_IMAGES, "lettering images")
+	var shippable: PackedStringArray = SHIPPABLE.duplicate()
+	shippable.append_array(lettering)
 	for preset: Dictionary in _presets():
 		var excluded: PackedStringArray = _filters(preset, "exclude_filter")
 		var leaked := PackedStringArray()
 		for path: String in assets:
-			if not SHIPPABLE.has(path) and not _matches(path, excluded):
+			if not shippable.has(path) and not _matches(path, excluded):
 				leaked.append(path)
 		assert_eq(leaked, PackedStringArray(), "%s would ship: %s" % [preset["name"], ", ".join(leaked.slice(0, 10))])
-		for path: String in SHIPPABLE:
-			assert_true(FileAccess.file_exists(path), path)
-			assert_false(_matches(path, excluded), "%s ships %s" % [preset["name"], path])
+		var missing := PackedStringArray()
+		for path: String in shippable:
+			if not FileAccess.file_exists(path) or _matches(path, excluded):
+				missing.append(path)
+		assert_eq(missing, PackedStringArray(), "%s does not ship: %s" % [preset["name"], ", ".join(missing.slice(0, 10))])
 
 
 func test_tests_tools_documentation_and_gut_are_excluded() -> void:

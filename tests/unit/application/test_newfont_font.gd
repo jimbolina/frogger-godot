@@ -1,8 +1,8 @@
 extends GutTest
-## A catalog whose shippable root holds no fonts or lettering, as in a packaged
+## A catalog whose shippable root holds no bitmap font, as in a packaged
 ## build, builds newfont from texture 310 (a texture pack's, else the base
-## root's runtime-imported image) and draws every retail image without
-## lettering, with no problems. Synthetic images only.
+## root's runtime-imported image), and one without lettering images draws
+## every retail image, with no problems. Synthetic images only.
 
 const ROOT: String = "user://test_newfont_font"
 const BASE: String = ROOT + "/assets/0123456789abcdef"

@@ -56,9 +56,14 @@ for preset in "${presets[@]}"; do
         rc=1
         continue
     fi
-    leaked="$(sed 's/\x1b\[[0-9;]*m//g' "$log" | grep -o 'Storing File: res://[^ ]*' | sed 's/^Storing File: //' |
-        grep -E '^res://(assets/|\.godot/imported/)' |
-        grep -vE '^res://(assets/fonts/angular/frogger_angular\.ttf\.import|assets/rendering/emissive_images\.tres\.remap|\.godot/imported/(frogger_angular\.ttf|frogger_icon\.(png|svg))-[0-9a-f]+\.[a-z]+)$')"
+    stored="$(sed 's/\x1b\[[0-9;]*m//g' "$log" | grep -o 'Storing File: res://[^ ]*' | sed 's/^Storing File: //')"
+    lettering="$(printf '%s\n' "$stored" | grep -E '^res://assets/textures/lettering/t[0-9]{4}\.png\.import$')"
+    lettering_imported="$(printf '%s\n' "$lettering" | while IFS= read -r sidecar; do
+        [ -n "$sidecar" ] && sed -n 's/^path="\(res:\/\/\.godot\/imported\/[^"]*\)"$/\1/p' "${sidecar#res://}"
+    done)"
+    leaked="$(printf '%s\n' "$stored" | grep -E '^res://(assets/|\.godot/imported/)' |
+        grep -vE '^res://(assets/fonts/angular/frogger_angular\.ttf\.import|assets/rendering/emissive_images\.tres\.remap|assets/textures/lettering/t[0-9]{4}\.png\.import|\.godot/imported/(frogger_angular\.ttf|frogger_icon\.(png|svg))-[0-9a-f]+\.[a-z]+)$' |
+        grep -vxF -e "$lettering_imported" -e '')"
     if [ -n "$leaked" ]; then
         rm -rf "$folder"
         echo "export: $preset would ship files outside the shippable assets:" >&2
