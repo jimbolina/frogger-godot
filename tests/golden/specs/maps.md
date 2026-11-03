@@ -16,7 +16,7 @@ Build only the adapter, with its executable outside the repository:
 $env:PATH = 'C:\msys64\mingw64\bin;' + $env:PATH
 $mapOracleExe = Join-Path $env:TEMP 'frogger-map-oracle-adapter.exe'
 & C:/msys64/mingw64/bin/gcc.exe -std=c11 -Wall -Wextra -Werror '-I../froggy/engine/asset_pipeline/include' tools/map_oracle_adapter.c ../froggy/engine/build/asset_pipeline/libasset_pipeline.a -o $mapOracleExe
-C:\Python313\python.exe tools/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e --c-oracle $mapOracleExe
+python -B tools/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e --c-oracle $mapOracleExe
 ```
 
 The adapter receives each decompressed map on stdin and emits only decimal

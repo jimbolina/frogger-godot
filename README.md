@@ -197,7 +197,7 @@ For other commands in this README, use the executable inside the app:
 
 ```sh
 export GODOT=/Applications/Godot.app/Contents/MacOS/Godot
-export FROGGER_DATA_DIR="$(cd ../froggy/resources/pc-version/extracted/FROGGER && pwd)"
+export FROGGER_DATA_DIR=/path/to/FROGGER   # optional: the retail folder
 "$GODOT" --path .
 bash tools/run_tests.sh
 ```
@@ -436,6 +436,16 @@ you want. For fixed-pose comparisons, the capture wrapper accepts
 Contributors: start with the [domain language](docs/reference/domain.md) and
 [architecture and ownership](docs/reference/architecture.md). These describe
 source identities, viewer lifetimes, and ownership of gameplay state.
+
+A fresh checkout needs git LFS, Python 3, [uv](https://docs.astral.sh/uv/)
+and Godot 4.5.1. `tools/setup_dev.sh` (Bash) or `tools/setup_dev.ps1`
+(PowerShell) checks each, pulls the LFS objects, syncs the Python tools'
+environment and imports the project once; `--check` only reports, and
+`--download-godot` (`-DownloadGodot`) fetches the pinned editor into
+`build/godot/` when none is installed. Set `GODOT` to an existing executable
+and, optionally, `FROGGER_DATA_DIR` to the retail folder. Nothing else in the
+checkout depends on other repositories: the `../froggy` reference engine named
+in the references is only needed to regenerate goldens or compare traces.
 
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
 

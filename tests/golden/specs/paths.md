@@ -29,7 +29,7 @@ entity-list pointer is only a metadata value; FrogLord reads that list later,
 outside the PATH record sequence. To regenerate:
 
 ```powershell
-python -B tools/make_golden_paths.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --out-dir tests\golden\pc-retail-v3.0e
+python -B tools/make_golden_paths.py --data-dir $env:FROGGER_DATA_DIR --out-dir tests\golden\pc-retail-v3.0e
 ```
 
 `fixtures/paths.json` contains invented geometry and runner starts. Each case

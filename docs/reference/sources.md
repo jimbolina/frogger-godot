@@ -63,7 +63,8 @@ the [game-over page](../../tests/golden/specs/frontend.md#game-over) do.
 ### Exporting reference material from the engine
 
 The verified native macOS arm64 binary is
-`/Users/cybertron/Desktop/frogger-reference-build/verify-m57/build/mr_stub/frogger`.
+`<reference-build>/build/mr_stub/frogger` on the owner's machine, where
+`<reference-build>` is a copy of `../froggy` built outside the frozen source tree.
 Its build directory is the parent `build/` folder, outside the frozen source
 tree. Its sibling `../verification.json` (relative to the build directory)
 records a clean source HEAD of
@@ -73,8 +74,8 @@ do not modify or rebuild the frozen sources. Keep exports outside repositories.
 
 | Want | How |
 |---|---|
-| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
-| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir /Users/cybertron/Desktop/frogger-reference-build/verify-m57/build --out <external-folder>` |
+| A screenshot of every map | `python3 ../froggy/engine/tools/reference_export.py screens --build-dir <reference-build>/build --out <external-folder>` |
+| Per-tick traces of the attract demos | `python3 ../froggy/engine/tools/reference_export.py traces --build-dir <reference-build>/build --out <external-folder>` |
 | A trace of any run | Start the `frogger` driver with `--trace-csv=<file>` |
 | Attract demos the fresh boot never reaches (Cave, Desert, Swamp, Sky) | Run the driver with a scratch store whose "Selectable Levels" value opens the wanted arcade rows (row 18 is SKY1, which gates all four Sky demos), then let the attract route cycle to the wanted demo with a `--smoke` script of repeated `waitstatus:DEMO_MAIN;waitstatus:DEMO_FINISH;` steps; with every row open SWP1 is the thirteenth demo (the fourteenth table row, counting the first -2 row), and with only Sky added SKY1 is the sixteenth, inside the sound-journal cap. Keep the store and traces outside repositories. |
 
@@ -102,7 +103,7 @@ Its config files are under `resources/games/frogger/`. This repository ships unm
 ## The pre-recode alpha and the letter SVGs
 
 The owner's PlayStation disc image of a pre-recode build (MWD created 19 March
-1997) is at `~/Downloads/alpha/FROGGER.bin`; FrogLord's old-format MWI entries
+1997) is kept outside every repository; FrogLord's old-format MWI entries
 in its `PSX.EXE` index `FROGGER.MWD`, whose `FRONT_0.WAD` holds the flat letter
 models `A.XMR`–`Z.XMR` and `0.XMR`–`9.XMR`. Nothing reads it; it is reference
 only. The 36 SVGs in `assets/fonts/angular/svg/` are a trace of those

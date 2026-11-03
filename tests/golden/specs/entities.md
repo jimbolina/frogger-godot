@@ -26,7 +26,7 @@ FrogLord name configuration and MWD. It never writes source bytes to the
 golden file. Regenerate with:
 
 ```powershell
-python -B tools/make_golden_entities.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --out-dir tests\golden\pc-retail-v3.0e
+python -B tools/make_golden_entities.py --data-dir $env:FROGGER_DATA_DIR --out-dir tests\golden\pc-retail-v3.0e
 ```
 
 `fixtures/entities.json` contains invented source ordered entity definitions.
@@ -499,7 +499,7 @@ reads the player's map data; the TSV contains decimal facts and digests only.
 Regenerate with:
 
 ```powershell
-python -B tools/make_golden_form_contacts.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --out-dir tests\golden\pc-retail-v3.0e
+python -B tools/make_golden_form_contacts.py --data-dir $env:FROGGER_DATA_DIR --out-dir tests\golden\pc-retail-v3.0e
 ```
 
 `pc-retail-v3.0e/form_contacts_retail.tsv` pins every ORG1 small-log entity's
@@ -585,7 +585,7 @@ DES2 map independently; every writer of a selected shared grid must use the
 same form-book ID. Regenerate with:
 
 ```powershell
-python -B tools/make_golden_entity_reactions.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER
+python -B tools/make_golden_entity_reactions.py --data-dir $env:FROGGER_DATA_DIR
 ```
 
 The bounded retail probe starts at DES2 cell (17,30), facing EAST with
@@ -636,8 +636,8 @@ start, not an established route from safe terrain. The selected source entity
 has no behavior script or collision/bonus callback. Regenerate or verify with:
 
 ```powershell
-python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER
-python -B tools/make_golden_retail_platform.py --data-dir C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER --verify
+python -B tools/make_golden_retail_platform.py --data-dir $env:FROGGER_DATA_DIR
+python -B tools/make_golden_retail_platform.py --data-dir $env:FROGGER_DATA_DIR --verify
 ```
 
 ## Script control and entity death policy

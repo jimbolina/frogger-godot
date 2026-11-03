@@ -20,12 +20,15 @@ subsequent checks.
   `run_tests: archive suite not run (FROGGER_DATA_DIR unset)`.
 
 ```powershell
-$env:GODOT = 'C:\Users\janit\Desktop\Godot.exe'
-$env:FROGGER_DATA_DIR = 'C:\Users\janit\Desktop\repos\froggy\resources\pc-version\extracted\FROGGER'
+$env:GODOT = 'C:\path\to\Godot.exe'
+$env:FROGGER_DATA_DIR = 'C:\path\to\FROGGER'
 & .\tools\run_tests.ps1
 ```
 
 For Bash: `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`.
+`tools/setup_dev.sh` or `tools/setup_dev.ps1` prepares a fresh checkout for
+the wrapper (LFS objects, uv environment, a Godot 4.5.1 editor, the first
+import); see [running the tests](../../../README.md#running-the-tests).
 Commands run from the repository root. Before a commit, run with
 `FROGGER_DATA_DIR` set so both suites run. Exit codes: 0 = every stage passed;
 1 = compile, architecture, input, test or result failure; 2 = setup failure
@@ -133,7 +136,10 @@ it covers the rest. The release workflow is described under
   both wrappers run `uv run --locked tools/make_angular_font.py --check --quiet`
   and `uv run --locked tools/make_lettering.py --check --quiet`, which need
   [uv](https://docs.astral.sh/uv/) on PATH (`UV` can select it); the pinned
-  fontTools and Pillow live in `pyproject.toml` and `uv.lock`.
+  fontTools and Pillow live in `pyproject.toml` and `uv.lock`. The lettering
+  check allows the one-supersample rounding that differs between Pillow's
+  arm64 and x86_64 wheels, so the hosted Linux run matches images generated
+  on a Mac ([lettering](../../../tests/golden/specs/imported-assets.md#lettering)).
 - [Packaging](../setup.md#packaging): `test_export_presets` checks that every
   preset excludes each retail-derived file under `assets/` except the
   shipped lettering images, which it requires, and the tests, tools,
