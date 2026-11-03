@@ -379,7 +379,7 @@ releases the previous catalog; loaded records are never replaced in place.
 
 ## Sandbox
 
-The [sandbox](../../README.md#sandbox) is an owner play-check scene layered on
+The [sandbox](testing/inspection-tools.md#sandbox) is an owner play-check scene layered on
 the normal run; it adds no gameplay rules.
 
 - `src/inspection/`: `SandboxLevel` builds the data-free arena `LevelDefinition`
