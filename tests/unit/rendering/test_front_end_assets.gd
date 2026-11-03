@@ -1,6 +1,6 @@
 extends GutTest
-## FrontEndAssets refuses unusable data with an actionable error and no textures, and carries
-## the imported texture set's newfont bitmap font.
+## FrontEndAssets refuses unusable data with an actionable error and no textures, and names its
+## images and banks per language.
 
 
 func test_missing_data_has_actionable_error() -> void:
@@ -19,13 +19,6 @@ func test_invalid_data_has_actionable_error() -> void:
 	assert_string_contains(assets.error, "valid player data")
 	assert_null(assets.texture("newfont"))
 	assert_null(assets.font)
-
-
-func test_the_imported_catalog_serves_the_newfont_bitmap_font() -> void:
-	var assets: FrontEndAssets = FrontEndAssets.from_data(ImportedAssets.open())
-	assert_eq(assets.error, "")
-	var font: Font = assets.font
-	assert_true(font is FontFile, "the bundle carries the texture set's newfont FontFile")
 
 
 func test_names_are_the_english_front_end_set() -> void:
@@ -69,13 +62,3 @@ func test_unknown_language_is_reported_and_drawn_in_english() -> void:
 	assert_eq(assets.language, GameLanguage.Id.ENGLISH)
 	assert_string_contains(assets.diagnostics[0], "Language 9 is unknown")
 	assert_eq(assets.source_name("opt_start"), "")
-
-
-func test_the_pause_quit_label_localises_without_a_prefix_family() -> void:
-	assert_eq(GameLanguage.localized_name("quit", GameLanguage.Id.GERMAN), "quit_g")
-	assert_eq(GameLanguage.localized_name("quit", GameLanguage.Id.FRENCH), "quit_f")
-	var assets: FrontEndAssets = FrontEndAssets.from_data(ImportedAssets.open(), GameLanguage.Id.ITALIAN)
-	assert_eq(assets.error, "")
-	assert_eq(assets.source_name("quit"), "quit_i")
-	assert_not_null(assets.texture("quit"))
-	assert_gt(assets.retail_size("quit").x, 0.0)

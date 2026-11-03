@@ -2,7 +2,8 @@ extends GutHookScript
 ## Saves exact test outcomes after GUT and fails any skip, pending test or problem.
 ##
 ## The suite comes from [code]FROGGER_TEST_SUITE[/code] (unset means the game
-## suite) and selects the saved report path.
+## suite) and selects the saved report path; [code]FROGGER_TEST_SELECTION[/code]
+## lets a selection match nothing in this suite.
 
 const Policy := preload("res://tests/support/result_policy.gd")
 
@@ -22,6 +23,10 @@ func run() -> void:
 			OS.get_environment("FROGGER_DATA_DIR"))
 		if not input_problem.is_empty():
 			problems.append(input_problem)
+	elif suite == "imported":
+		var imported_problem: String = Policy.imported_error()
+		if not imported_problem.is_empty():
+			problems.append(imported_problem)
 	var test_filter: String = runner.get("unit_test_name")
 	var class_filter: String = runner.get("inner_class_name")
 	for script: Object in scripts:
@@ -65,14 +70,15 @@ func run() -> void:
 	var logger_errors: Array = logger.call("get_errors")
 	if not logger_errors.is_empty():
 		problems.append("GUT reported %d runner errors" % logger_errors.size())
-	var report: Dictionary = Policy.make_report(records, suite, problems)
+	var allow_empty: bool = Policy.selection_requested()
+	var report: Dictionary = Policy.make_report(records, suite, problems, allow_empty)
 	var file: FileAccess = FileAccess.open(Policy.report_path(suite), FileAccess.WRITE)
 	if file != null:
 		file.store_string(JSON.stringify(report) + "\n")
 		file.close()
 	else:
 		problems.append("could not save machine report")
-		report = Policy.make_report(records, suite, problems)
+		report = Policy.make_report(records, suite, problems, allow_empty)
 	var lines := PackedStringArray()
 	for record: Dictionary in records:
 		if record["status"] in ["skip", "pending"]:

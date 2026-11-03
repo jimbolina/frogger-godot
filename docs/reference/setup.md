@@ -18,8 +18,9 @@ and the launcher settings:
 | `show_setup_on_start` is true | the pages open |
 | Otherwise | the front end opens |
 
-A source checkout with the committed `assets/` and no launcher file therefore
-goes straight to the front end, as before. When the screen would skip, it
+A source checkout whose local `assets/` holds an import and no launcher file
+therefore goes straight to the front end; one without an import opens the
+pages like an exported game. When the screen would skip, it
 first waits 0.3 s for Shift: a held key is seen through `Input.is_key_pressed`
 or through any key or mouse event that carries the Shift modifier. On macOS a
 key held before launch may reach the game only once the mouse moves over the
@@ -118,7 +119,7 @@ reads the save folder's source state (each file's name, modification time
 and size). A state that differs from the one the current overlay was
 imported from and stays the same for one more second starts an overlay
 import of the save's name lists, tables, demos and maps into
-`user://froglord/` (overlays over the committed assets) or
+`user://froglord/` (overlays over the developer's `assets/`) or
 `user://froglord/over-<key>/` (over any other base root, keyed by its path),
 each save in a folder named by its fingerprint, with an index that names the
 base root for everything else. The import runs on a worker thread, so the
@@ -141,7 +142,7 @@ none stops play. When a level opens from an overlay, the rows of its own
 `LevelSupportReport` the port cannot play show the same way.
 
 `--froglord` and `archive/import/froglord_watch.sh` stay the developer path:
-the external watch imports over the committed assets and a `--froglord`
+the external watch imports over the local `assets/` and a `--froglord`
 launch follows whatever overlay the pointer names.
 
 ## Desktop shortcut
@@ -179,10 +180,10 @@ the project except their exclude filters, into `build/` (git-ignored):
 
 `tools/export.sh [preset ...]` (`tools/export.ps1` on Windows, which exports
 macOS as a `.zip`) imports the project, exports each preset, fails when the
-export log stores any file under `assets/` or `.godot/imported/` other than
-the shippable ones below (a lettering image's imported texture is allowed by
-the `path` its `.import` sidecar names, since retail images import to files of
-the same name), and zips each build as
+export log stores any file under `assets/`, or under `content/` or
+`.godot/imported/` other than the shippable ones below (a lettering image's or
+mask's imported file is allowed by the `path` its `.import` sidecar names),
+and zips each build as
 `build/Frogger-<version>-<platform>.zip`; logs go to `build/logs/`.
 The version is `config/version` in `project.godot`; the release pull request
 writes it, never a hand edit.
@@ -213,38 +214,26 @@ workflow by hand is a dry run: it builds the same zips as workflow artifacts
 (`packages-<runner os>`, kept 30 days) and makes no release. Export logs are
 kept as `export-logs-<runner os>` for 14 days.
 
-A packaged build carries no retail-derived file. It ships `src/` (shaders
-included), `scenes/`, `archive/import/` with `disc_tracks.tsv`,
+A packaged build holds no part of the original game. It ships `src/`
+(shaders included), `scenes/`, `archive/import/` with `disc_tracks.tsv`,
 `archive/source/`, FrogLord's configuration files with their `LICENSE.md`,
-the icon, and from `assets/` only `fonts/angular/frogger_angular.ttf`,
-`rendering/emissive_images.tres` and the 319 [lettering](assets.md#lettering)
-images of `textures/lettering/`, as their `.import` sidecars and the
-lossless, mipmapped `.ctex` textures under `.godot/imported/` (the PNGs
-themselves are not stored). It excludes `tests/`, `tools/`, `addons/`
-(GUT), `docs/`, `archive/tests/`, `archive/docs/` and every other
-retail-derived asset: the index, tables, retail images and banks, models,
-materials, maps, audio, demos, the `newfont` page and its `.fnt`, and the
-angular font's sources. The game suite's `test_export_presets` checks every
-committed asset against the filters of every preset and that every lettering
-image ships.
+the icon, and from [`content/`](assets.md#content) the angular font
+`fonts/angular/frogger_angular.ttf`, `rendering/emissive_images.tres`, the
+270 [lettering](assets.md#lettering) images of `lettering/` and the 49 tile
+masks of `lettering/masks/`, as their `.import` sidecars and imported files
+under `.godot/imported/` (the PNGs themselves are not stored). It excludes
+`assets/` wholesale, the sources under `content/fonts/angular/` (`svg/`,
+`derived.json`, `lettering.tsv`, `lettering_layout.tsv`), `tests/`, `tools/`, `addons/`
+(GUT), `docs/`, `archive/tests/` and `archive/docs/`. The game suite's
+`test_export_presets` checks the filters of every preset: the local import
+excluded, only the shippable content included, and every lettering image
+and mask shipped.
 
-The lettering images are the port's vector text, by the owner's decision
-shipped as committed. The 270 transparent ones hold no retail pixels. The 49
-tiles (lily-pad letters, score logs and rank turtles) draw that text over a
-background measured from retail images: the most common colour of `t0263` or
-`t0566`, or the turtle shell rebuilt per pixel from `t0638`–`t0647`, with a
-fill colour taken from the retail ink.
-
-The catalog serves such a build without the missing shippable files
-([ImportedAssets](../../src/application/loaders/imported_assets.gd)):
-`newfont` is built at runtime by `NewfontFont` around a `NewfontPage` page
-from the player's imported texture 310 (a texture pack's, when it redraws
-it), with the glyph layout of the committed `.fnt`; the `.fnt` is not
-shipped because Godot's imported font embeds the page's retail pixels, and
-its layout follows from the page geometry alone.
-`test_asset_newfont_runtime` checks that the built font stores every property
-the imported one does and the same page. A shippable root without lettering
-images draws every retail image, silently.
+Everything drawn from the player's copy is built at runtime from their
+import: `newfont` around texture 310 ([fonts](assets.md#fonts)) and the
+lily-pad, log and turtle tiles from their masks over the player's own
+textures (`LetteringTile`, [lettering](assets.md#lettering)). A shippable
+root without lettering draws every retail image, silently.
 
 The app icon is a placeholder: `icon/frogger_icon.svg`, an original frog on
 a lily pad, until an artist replaces it. `godot --headless --path . -s

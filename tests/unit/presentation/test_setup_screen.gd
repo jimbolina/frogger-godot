@@ -7,6 +7,9 @@ extends GutTest
 const ROOT: String = "user://test_setup_screen"
 const FINGERPRINT: String = "0123456789abcdef"
 const PACKS: String = ROOT + "/texture_packs"
+## A usable assets root (a stub index) named by the argument the tests launch with.
+const USABLE: String = ROOT + "/usable"
+const USABLE_ARGUMENT: String = "--assets-root=" + USABLE
 
 
 class FakeImporter:
@@ -55,7 +58,8 @@ var _process: FakeProcess
 
 func before_each() -> void:
 	ImportProcess.remove_tree(ROOT)
-	DirAccess.make_dir_recursive_absolute(ROOT)
+	DirAccess.make_dir_recursive_absolute(USABLE)
+	ResourceSaver.save(AssetIndex.new(), USABLE.path_join(ImportedAssets.INDEX_FILE))
 	_importer = FakeImporter.new()
 	_process = FakeProcess.new()
 
@@ -117,24 +121,24 @@ func _texture_items(screen: SetupScreen) -> PackedStringArray:
 
 func test_a_source_checkout_without_a_launcher_file_goes_straight_to_the_front_end() -> void:
 	var screen: SetupScreen = _screen()
-	screen.begin(PackedStringArray())
+	screen.begin(PackedStringArray([USABLE_ARGUMENT]))
 	assert_eq(screen.opening, SetupFlow.Opening.SKIP)
 	assert_eq(screen.left_for, FrontEndScreen.SCENE)
 	assert_null(screen.flow)
 	assert_eq(_importer.detected, PackedStringArray(), "a skip detects nothing")
 
 
-func test_the_setup_flag_opens_the_pages_on_the_committed_assets() -> void:
+func test_the_setup_flag_opens_the_pages_on_the_usable_assets() -> void:
 	var screen: SetupScreen = _screen()
-	screen.begin(PackedStringArray([SetupFlow.SETUP_FLAG]))
+	screen.begin(PackedStringArray([SetupFlow.SETUP_FLAG, USABLE_ARGUMENT]))
 	assert_eq(screen.opening, SetupFlow.Opening.REQUESTED)
 	assert_eq(screen.left_for, "")
 	assert_not_null(screen.flow)
-	assert_eq(screen.flow.base_root, ImportedAssets.COMMITTED_ROOT)
+	assert_eq(screen.flow.base_root, USABLE)
 	assert_eq(screen.views.size(), screen.flow.pages.size(), "one view per page")
 	assert_true(screen.views[0].visible)
 	assert_false(screen.views[1].visible)
-	assert_true(screen.flow.can_continue(), "the committed assets play without an import")
+	assert_true(screen.flow.can_continue(), "usable assets play without an import")
 
 
 func test_the_first_run_waits_for_game_files_and_offers_the_remembered_folder() -> void:
@@ -240,7 +244,7 @@ func test_the_launch_draws_the_texture_pack_the_setup_chose() -> void:
 
 func test_the_settings_page_follows_the_installed_packs() -> void:
 	var screen: SetupScreen = _screen()
-	screen.begin(PackedStringArray([SetupFlow.SETUP_FLAG]))
+	screen.begin(PackedStringArray([SetupFlow.SETUP_FLAG, USABLE_ARGUMENT]))
 	screen.next_page()
 	screen.next_page()
 	assert_eq(screen.flow.page(), screen.flow.options)
@@ -256,7 +260,7 @@ func test_the_settings_page_follows_the_installed_packs() -> void:
 func test_shift_during_the_grace_wait_opens_the_setup() -> void:
 	var screen: SetupScreen = _screen()
 	screen.shift_grace = 1.0
-	screen.begin(PackedStringArray())
+	screen.begin(PackedStringArray([USABLE_ARGUMENT]))
 	assert_eq(screen.left_for, "", "the skip waits for a held Shift first")
 	var shift := InputEventKey.new()
 	shift.keycode = KEY_SHIFT
@@ -271,7 +275,7 @@ func test_shift_during_the_grace_wait_opens_the_setup() -> void:
 func test_without_shift_the_grace_wait_ends_in_the_front_end() -> void:
 	var screen: SetupScreen = _screen()
 	screen.shift_grace = 1.0
-	screen.begin(PackedStringArray())
+	screen.begin(PackedStringArray([USABLE_ARGUMENT]))
 	var motion := InputEventMouseMotion.new()
 	screen._input(motion)
 	screen._process(0.5)

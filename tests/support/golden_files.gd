@@ -71,3 +71,22 @@ static func differences(label: String, got: Array[PackedStringArray], want: Arra
 	if mismatches > 0:
 		out.append("%s: %d rows differ" % [label, mismatches])
 	return out
+
+
+## Every file under [param folder] (a [code]res://[/code] path) whose name ends
+## with [param suffix], recursively, sorted.
+static func files_under(folder: String, suffix: String) -> PackedStringArray:
+	var found := PackedStringArray()
+	_collect(folder, suffix, found)
+	found.sort()
+	return found
+
+
+static func _collect(folder: String, suffix: String, into: PackedStringArray) -> void:
+	if not DirAccess.dir_exists_absolute(folder):
+		return
+	for child: String in DirAccess.get_directories_at(folder):
+		_collect(folder.path_join(child), suffix, into)
+	for file: String in DirAccess.get_files_at(folder):
+		if file.ends_with(suffix):
+			into.append(folder.path_join(file))

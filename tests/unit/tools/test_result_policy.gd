@@ -63,6 +63,16 @@ func test_empty_records_fail() -> void:
 	assert_gt(Policy.validate_report(empty, _log(empty), 0, "game").size(), 0)
 
 
+func test_a_selection_may_match_nothing_in_one_suite() -> void:
+	var empty: Dictionary = Policy.make_report([], "imported", [], true)
+	assert_eq(_count(empty, "exit"), 0)
+	assert_eq(Policy.validate_report(empty, _log(empty), 0, "imported", true).size(), 0)
+	assert_gt(Policy.validate_report(empty, _log(empty), 0, "imported").size(), 0,
+		"without a selection an empty suite fails")
+	var skipped: Dictionary = Policy.make_report([_record(UNIT_ID, "skip", "reason")], "game", [], true)
+	assert_eq(_count(skipped, "exit"), 1, "a selection still fails a skip")
+
+
 func test_unrun_or_no_assert_tests_fail() -> void:
 	assert_eq(_count(Policy.make_report([_record(UNIT_ID, "not_run")], "game"), "exit"), 1)
 	assert_eq(_count(Policy.make_report(
@@ -74,6 +84,11 @@ func test_fixture_and_runner_errors_fail_even_if_tests_pass() -> void:
 	assert_eq(_count(report, "pass"), 1)
 	assert_eq(_count(report, "exit"), 1)
 	assert_eq(Policy.validate_report(report, _log(report), 1, "game").size(), 0)
+
+
+func test_the_imported_suite_needs_the_local_import() -> void:
+	assert_eq(Policy.imported_error() == "", FileAccess.file_exists(Policy.IMPORTED_INDEX))
+	assert_eq(Policy.IMPORTED_INDEX, ImportedAssets.COMMITTED_ROOT.path_join(ImportedAssets.INDEX_FILE))
 
 
 func test_archive_input_needs_both_retail_files() -> void:
@@ -121,4 +136,7 @@ func test_missing_or_extra_named_skips_are_rejected() -> void:
 
 
 func test_suites_save_distinct_reports() -> void:
+	assert_eq(Policy.SUITES, ["game", "imported", "archive"] as Array[String])
 	assert_ne(Policy.report_path("game"), Policy.report_path("archive"))
+	assert_ne(Policy.report_path("game"), Policy.report_path("imported"))
+	assert_ne(Policy.report_path("imported"), Policy.report_path("archive"))

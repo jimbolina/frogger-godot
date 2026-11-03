@@ -1,21 +1,19 @@
-extends AssetTest
+extends GutTest
 ## The lettering (written by tools/make_lettering.py from
 ## content/fonts/angular/lettering.tsv) replaces its retail textures: every
 ## transparent row has one image content/lettering/tNNNN.png, imported with
 ## mipmaps, and every tile row one grey mask
 ## content/lettering/masks/<background>/tNNNN.png, imported as an exact
 ## [Image], each at exactly eight times the retail padded size recorded in
-## vlo_images.tsv. Without a texture pack the catalog draws the image, or a
-## mipmapped tile composited from the mask, for the retail texture with no
-## problems; no file lacks a row, and the angular font holds every character
-## the table writes. The tables are read with Godot's own file access,
-## independent of the generator; the pixels themselves are the generator's
-## --check and the composited tiles test_asset_lettering_tiles.gd's.
+## vlo_images.tsv. No file lacks a row, and the angular font holds every
+## character the table writes. The tables are read with Godot's own file
+## access, independent of the generator; the pixels themselves are the
+## generator's --check, and what the catalog draws the imported suite's
+## test_asset_lettering.gd and test_asset_lettering_tiles.gd.
 
 const TABLE_PATH: String = "res://content/fonts/angular/lettering.tsv"
 const FONT_PATH: String = "res://content/fonts/angular/frogger_angular.ttf"
 const LETTERING: String = "res://content/lettering"
-const IMAGES: String = "res://assets/textures/images"
 const TRANSPARENT: String = "transparent"
 const SCALE: int = 8
 const COLUMNS: int = 7
@@ -49,7 +47,7 @@ func _path(row: PackedStringArray) -> String:
 
 func _padded_sizes() -> Dictionary[int, Vector2i]:
 	var sizes: Dictionary[int, Vector2i] = {}
-	for row: PackedStringArray in fact_rows("vlo_images.tsv"):
+	for row: PackedStringArray in GoldenFiles.rows("vlo_images.tsv"):
 		sizes[row[VLO_TEXTURE_ID].to_int()] = Vector2i(row[VLO_PADDED_WIDTH].to_int(), row[VLO_PADDED_HEIGHT].to_int())
 	return sizes
 
@@ -122,30 +120,6 @@ func test_images_import_with_mipmaps_and_masks_as_exact_images() -> void:
 	_report(mismatches, "%d lettering images and masks import as wanted" % rows.size())
 
 
-func test_the_catalog_draws_the_lettering() -> void:
-	var catalogs: Array[ImportedAssets] = [ImportedAssets.open(ASSETS)]
-	var mismatches := PackedStringArray()
-	var rows: Array[PackedStringArray] = _rows()
-	for row: PackedStringArray in rows:
-		var texture_id: int = row[ID_COLUMN].to_int()
-		var retail: Texture2D = load(IMAGES.path_join(_file(texture_id))) as Texture2D
-		if retail == null:
-			mismatches.append("t%04d has no retail texture" % texture_id)
-			continue
-		var wanted: String = _path(row) if row[BACKGROUND_COLUMN] == TRANSPARENT else ""
-		for assets: ImportedAssets in catalogs:
-			var drawn: Texture2D = assets.texture_counterpart(retail)
-			var got: String = drawn.resource_path if drawn != null else "null"
-			if got != wanted:
-				mismatches.append("t%04d: the catalog draws %s, not %s" % [texture_id, got, wanted])
-			elif drawn.get_size() != retail.get_size() * SCALE or not drawn.get_image().has_mipmaps():
-				mismatches.append("t%04d: the catalog draws %s without mipmaps or at another size than %d times %s"
-					% [texture_id, drawn.get_size(), SCALE, retail.get_size()])
-	for assets: ImportedAssets in catalogs:
-		assert_eq(assets.problems, PackedStringArray(), "catalog problems")
-	_report(mismatches, "%d lettering images replace their retail textures" % rows.size())
-
-
 func test_the_font_holds_every_character_of_the_table() -> void:
 	var font: FontFile = load(FONT_PATH) as FontFile
 	assert_not_null(font, "%s loads as a FontFile" % FONT_PATH)
@@ -173,7 +147,7 @@ func test_no_lettering_file_lacks_a_row() -> void:
 	for row: PackedStringArray in _rows():
 		listed[_path(row)] = true
 	var mismatches := PackedStringArray()
-	var found: PackedStringArray = files_under(LETTERING, ".png")
+	var found: PackedStringArray = GoldenFiles.files_under(LETTERING, ".png")
 	for path: String in found:
 		if not listed.has(path):
 			mismatches.append("%s has no row in %s" % [path, TABLE_PATH])

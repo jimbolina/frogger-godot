@@ -1,14 +1,23 @@
 extends RefCounted
 ## Shared result rules used by the GUT hook and the wrapper's independent check.
 ##
-## Two suites exist: [code]game[/code] ([code]tests/[/code], always run, asset-free)
-## and [code]archive[/code] ([code]archive/tests/[/code], run only with the player's
-## files). In both, every selected test must pass; a skip or pending test fails.
-## Valid process exits are 0 (all passed) and 1 (any failure or problem).
+## Three suites exist: [code]game[/code] ([code]tests/unit/[/code] and
+## [code]tests/golden/[/code], always run, asset-free), [code]imported[/code]
+## ([code]tests/imported/[/code], run with the player's files over the local
+## import under [code]assets/[/code]) and [code]archive[/code]
+## ([code]archive/tests/[/code], run only with the player's files). In each,
+## every selected test must pass; a skip or pending test fails. A suite runs at
+## least one test unless the wrapper passed a selection, which another suite
+## may match instead. Valid process exits are 0 (all passed) and 1 (any failure
+## or problem).
 
 const SUITE_VARIABLE: String = "FROGGER_TEST_SUITE"
-const SUITES: Array[String] = ["game", "archive"]
+## Set to [code]1[/code] by the wrapper when it forwards a test selection.
+const SELECTION_VARIABLE: String = "FROGGER_TEST_SELECTION"
+const SUITES: Array[String] = ["game", "imported", "archive"]
 const REPORT_VERSION: int = 2
+## The asset index the imported suite needs.
+const IMPORTED_INDEX: String = "res://assets/catalog.tres"
 
 
 ## The suite named by [code]FROGGER_TEST_SUITE[/code]; unset selects the game suite.
@@ -16,6 +25,11 @@ static func current_suite() -> String:
 	if OS.has_environment(SUITE_VARIABLE):
 		return OS.get_environment(SUITE_VARIABLE)
 	return "game"
+
+
+## True when the wrapper forwarded a test selection, so a suite may select nothing.
+static func selection_requested() -> bool:
+	return OS.get_environment(SELECTION_VARIABLE) == "1"
 
 
 ## The machine report saved by one suite's GUT run.
@@ -30,6 +44,14 @@ static func input_error(directory: String) -> String:
 	return ""
 
 
+## Describes why the imported suite cannot run, or "" when
+## [constant IMPORTED_INDEX] exists.
+static func imported_error() -> String:
+	if not FileAccess.file_exists(IMPORTED_INDEX):
+		return "assets/ holds no import; run tools/setup_dev.sh --import"
+	return ""
+
+
 static func _has_file(directory: String, file_name: String) -> bool:
 	if directory.is_empty() or not DirAccess.dir_exists_absolute(directory):
 		return false
@@ -39,8 +61,9 @@ static func _has_file(directory: String, file_name: String) -> bool:
 	return false
 
 
-## Counts records; any failure, skip, pending test or problem gives exit 1.
-static func evaluate(records: Array, initial_problems: Array = []) -> Dictionary:
+## Counts records; any failure, skip, pending test or problem gives exit 1, and
+## so do no records unless [param allow_empty].
+static func evaluate(records: Array, initial_problems: Array = [], allow_empty: bool = false) -> Dictionary:
 	var result: Dictionary = {"pass": 0, "fail": 0, "skip": 0, "exit": 0,
 		"problems": initial_problems.duplicate()}
 	var problems: Array = result["problems"]
@@ -70,7 +93,7 @@ static func evaluate(records: Array, initial_problems: Array = []) -> Dictionary
 				problems.append("unapproved " + status + ": " + identity + " (" + reason + ")")
 			_:
 				problems.append("unknown test status: " + status)
-	if records.is_empty():
+	if records.is_empty() and not allow_empty:
 		problems.append("no tests ran")
 	var failed: int = result["fail"]
 	if failed > 0 or not problems.is_empty():
@@ -78,9 +101,11 @@ static func evaluate(records: Array, initial_problems: Array = []) -> Dictionary
 	return result
 
 
-## Creates one suite's machine report from independently inspectable records.
-static func make_report(records: Array, suite: String, problems: Array = []) -> Dictionary:
-	var report: Dictionary = evaluate(records, problems)
+## Creates one suite's machine report from independently inspectable records;
+## [param allow_empty] accepts a selection that matched nothing in this suite.
+static func make_report(records: Array, suite: String, problems: Array = [],
+		allow_empty: bool = false) -> Dictionary:
+	var report: Dictionary = evaluate(records, problems, allow_empty)
 	report["version"] = REPORT_VERSION
 	report["suite"] = suite
 	report["records"] = records
@@ -94,9 +119,9 @@ static func summary(result: Dictionary) -> String:
 
 
 ## Validates a saved report against its suite, the log summary, named skips and
-## the actual process exit.
+## the actual process exit; [param allow_empty] as in [method make_report].
 static func validate_report(value: Variant, log_text: String, process_exit: int,
-		suite: String) -> PackedStringArray:
+		suite: String, allow_empty: bool = false) -> PackedStringArray:
 	var errors := PackedStringArray()
 	if not value is Dictionary:
 		return PackedStringArray(["missing or malformed machine report"])
@@ -112,7 +137,7 @@ static func validate_report(value: Variant, log_text: String, process_exit: int,
 		if not problem is String:
 			errors.append("malformed result problem")
 	var records: Array = report["records"]
-	var expected: Dictionary = evaluate(records)
+	var expected: Dictionary = evaluate(records, [], allow_empty)
 	if not source_problems.is_empty():
 		expected["exit"] = 1
 	for key: String in ["pass", "fail", "skip", "exit"]:

@@ -1,4 +1,4 @@
-extends AssetTest
+extends GutTest
 ## The committed angular vector font (content/fonts/angular/frogger_angular.ttf,
 ## written by tools/make_angular_font.py) imports as an MSDF [FontFile] that
 ## holds every capital, digit and derived character with a positive advance
@@ -29,15 +29,6 @@ func _characters(text: String) -> PackedStringArray:
 		result.append(text[index])
 	result.sort()
 	return result
-
-
-func test_the_catalog_serves_the_font_by_name() -> void:
-	var assets: ImportedAssets = ImportedAssets.open(ASSETS)
-	var served: FontFile = assets.font("angular") as FontFile
-	assert_not_null(served, "the catalog serves the angular font")
-	if served != null:
-		assert_eq(served.resource_path, FONT_PATH, "the catalog draws the committed font")
-	assert_eq(assets.problems, PackedStringArray(), "the catalog serves the font without problems")
 
 
 func test_the_font_draws_with_msdf() -> void:

@@ -218,9 +218,8 @@ func test_fonts_keep_the_texture_pixels() -> void:
 			mismatches.append("%s font %s: %d page pixels differ from %s" % [set_name, font.resource_path, differing, png])
 		if scale == 1:
 			var digest: String = sha256_hex(source.get_data())
-			var asset: String = png.trim_prefix(ASSETS + "/")
 			for retail: String in digests:
-				if digest != expected(asset, "vlo_images", "padded_rgba_sha256", retail):
+				if digest != retail:
 					mismatches.append("%s: %s RGBA digest differs from texture %d" % [set_name, png, TEXTURE_ID])
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)

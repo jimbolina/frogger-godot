@@ -1,9 +1,10 @@
 # Imported assets (`pc-retail-v3.0e/model_meshes.tsv`, `sound_samples.tsv`, `asset_census.txt`, `archive/import/disc_tracks.tsv`)
 
-S1c imports every retail asset into `assets/`. These facts say what each
-imported file must hold. They are derived from the retail bytes by
-independent Python that reads no Godot output. The import goldens decode the
-committed assets and compare. Model facts
+The importer writes every retail asset into the developer's local `assets/`
+(git-ignored). These facts say what each imported file must hold. They are
+derived from the retail bytes by independent Python that reads no Godot
+output. The import goldens of the imported suite decode the local import and
+compare. Model facts
 are the same for every texture bank context: the model generator checks that
 every texture id has one size and padding in every bank that holds it.
 
@@ -21,9 +22,13 @@ every texture id has one size and padding in every bank that holds it.
 
 `newfont` is texture 310, 96 glyphs of ASCII 32 to 127 in square cells, 32
 to a row in three rows, with no padding: `textures/images/t0310.png` is
-256 x 24 (8-pixel cells). `tools/make_font_newfont.py` writes
-`fonts/retail/newfont.fnt`, a BMFont v3 text file, and `newfont.png`, the
-page the font names as its only page. The page enlarges the PNG 4 times by
+256 x 24 (8-pixel cells). No font file is committed or shipped, since its
+page holds texture 310's pixels; the game builds the font at runtime
+(`NewfontFont` around a `NewfontPage` page). `tools/make_font_newfont.py
+--out <folder>` is the golden generator: from an import's `t0310.png`
+(`--images` names another images folder) it writes `newfont.fnt`, a BMFont
+v3 text file, and `newfont.png`, the page the font names as its only page.
+The page enlarges the PNG 4 times by
 repeating pixels, so every glyph is 32 x 32, and sets each glyph inside a
 4-pixel transparent border:
 40 x 40 cells, 32 to a row, on a 1280 x 120 page. The two rings of
@@ -31,54 +36,47 @@ transparent pixels around each glyph's opaque pixels, within its cell, take
 the per-channel maximum colour of their already filled 8-neighbours, ring by
 ring; other transparent pixels keep the source's colour or zero. The font's
 `size`, `lineHeight` and `base` are 32, `scaleW` and `scaleH` 1280 and 120,
-and `alphaChnl=0` with the colour channels at 4, so the importer keeps the
+and `alphaChnl=0` with the colour channels at 4, so a BMFont loader keeps the
 RGBA pixels (the glyphs are eight grey levels; `alphaChnl=1` would turn them
 white on alpha). The `info` line ends with `page_sha256`, the SHA-256 of
-the page's RGBA rows, which Godot ignores; it makes a page change change the
-`.fnt`, since the importer does not track the page. Glyph `id` sits at
+the page's RGBA rows. Glyph `id` sits at
 `x = ((id - 32) % 32) * 40`,
 `y = ((id - 32) / 32) * 40` with width and height 40, `xoffset` and
-`yoffset` -4 and `xadvance` 32. The page is a separate file because the font
-importer sets the importer of every page image it reads to `skip`, which
-would take `t0310.png` away from the texture banks.
+`yoffset` -4 and `xadvance` 32.
 
-The `.fnt` and the page are the generated artefacts, not facts: the
-generator's `--check` is the comparison (page pixels, not bytes). It writes
-nothing, prints a diff for each differing `.fnt`, names each differing or
-missing file and exits 1;
-both test wrappers run it before importing and stop with exit 2 on a
-difference. A hand edit of `t0310.png` is carried into the font by rerunning
-the generator.
-
-Each `.fnt` is imported by `font_data_bmfont` with the `importer_defaults`
-entry in `project.godot`: `compress` true, no `fallbacks` and
-`scaling_mode` 2 (fractional), so the font, whose fixed size is 32, draws
-at size 8 scaled by a quarter. Its page `newfont.png` has the `skip`
-importer. The golden checks the grid (fixed size, ascent, UV rectangles,
-glyph size, advance and offset (-4, -36)), that every glyph pixel's alpha,
-and colour where opaque, equals the source PNG pixel it repeats and every
-border pixel is transparent, the retail source's digest, and that "1 UP"
-measures 32 x 8 at size 8. `ImportedAssets.font(name)` loads
-`fonts/retail/<name>.fnt` and returns null with a problem line when it is
-missing.
+Both test wrappers run the generator on the local import into the run
+folder's `generated/newfont/` and export the run's `generated/` folder as
+`FROGGER_GENERATED_DIR`; the tests that read it fail when it is unset.
+`test_asset_newfont_runtime.gd` loads the generated `.fnt` with Godot's
+BMFont loader and the options of the project's `font_data_bmfont` defaults
+(fixed size with fractional scaling, no fallbacks), and requires the font
+`NewfontFont` builds from the imported texture 310 to store every property,
+glyph and metric it stores, with a page equal pixel for pixel, and text to
+measure the same. `test_asset_fonts.gd` checks the built font against the
+grid (fixed size, ascent, UV rectangles, glyph size, advance and offset
+(-4, -36)), that every glyph pixel's alpha, and colour where opaque, equals
+the source PNG pixel it repeats and every border pixel is transparent, the
+retail source's digest, and that "1 UP" measures 32 x 8 at size 8.
+`ImportedAssets.font("newfont")` returns null with a problem line only when
+texture 310 is missing.
 
 A texture pack's `t0310.png` (any whole scale S from 1 to 16 of 256 x 24)
-is drawn by a copy of the committed font whose page `NewfontPage` builds at
-runtime by the same rule: an S dividing 4 is enlarged 4 / S times by
-repeating pixels, any other S is resampled with Lanczos to 1024 x 96, then
-the borders and the two fill rings are applied. The golden writes a
-synthetic pack holding the retail `t0310.png` enlarged four times with its
-opaque pixels tinted, and checks that pack's font against the same grid,
-pixel and string-size rules, with the tinted PNG as the source. It also
-checks that `NewfontPage.build` of the retail PNG enlarged 1, 2 and 4 times
-equals the committed page pixel for pixel, so the runtime builder and the
-generator agree, and that a size that is no multiple builds nothing.
+is drawn by a font whose page `NewfontPage` builds at runtime by the same
+rule: an S dividing 4 is enlarged 4 / S times by repeating pixels, any other
+S is resampled with Lanczos to 1024 x 96, then the borders and the two fill
+rings are applied. The golden writes a synthetic pack holding the retail
+`t0310.png` enlarged four times with its opaque pixels tinted, and checks
+that pack's font against the same grid, pixel and string-size rules, with
+the tinted PNG as the source. It also checks that `NewfontPage.build` of the
+retail PNG enlarged 1, 2 and 4 times equals the generated page pixel for
+pixel, so the runtime builder and the generator agree, and that a size that
+is no multiple builds nothing.
 
 ## Angular font
 
 The angular letter face (the retail lettering and the alpha's letter
-models) is a TrueType font, `fonts/angular/frogger_angular.ttf`, written by
-`uv run tools/make_angular_font.py` from two sources beside it:
+models) is a TrueType font, `content/fonts/angular/frogger_angular.ttf`,
+written by `uv run tools/make_angular_font.py` from two sources beside it:
 
 - `svg/A.svg` to `svg/9.svg`: 36 third-party SVG traces, kept byte for byte
   (CRLF included, so `.gitattributes` marks them `-text`); `svg/.gdignore`
@@ -97,59 +95,82 @@ nonzero fill, and crossing contours are refused. Ascent and descent are the
 outline extremes (1060 and -250). The head timestamps are fixed, so the
 bytes reproduce with the fontTools pinned in `uv.lock`. The TTF is the
 generated artefact: `--check` names each glyph, metric or table that
-differs and exits 1, and both wrappers run it next to the newfont check.
+differs and exits 1, and both wrappers run it before the suites.
 
-It is imported by `font_data_dynamic` with the keys in
-`test_asset_import_settings.gd`: MSDF on (pixel range 16, size 64), no
-hinting, no mipmaps and no system fallback. `test_asset_angular_font.gd`
-loads it as a `FontFile` with MSDF on, requires a glyph with a positive
-advance for every capital, digit, derived character and the space and no
-lowercase, and requires its own character list to equal the SVG names plus
-`derived.json`'s keys, read with Godot's directory listing and JSON parser.
+It is imported by `font_data_dynamic` with the keys `ImportPolicyCheck`
+holds (`tests/support/import_policy_check.gd`, run over `content/` by the
+game suite's `test_content_import_settings.gd`): MSDF on (pixel range 16,
+size 64), no hinting, no mipmaps and no system fallback.
+`tests/golden/content/test_content_angular_font.gd` loads it as a `FontFile`
+with MSDF on, requires a glyph with a positive advance for every capital,
+digit, derived character and the space and no lowercase, and requires its
+own character list to equal the SVG names plus `derived.json`'s keys, read
+with Godot's directory listing and JSON parser. The imported suite's
+`test_asset_angular_font.gd` requires a catalog over the local import to
+serve it by name without problems.
 
 ## Lettering
 
-`textures/lettering/tNNNN.png` replaces the retail texture `tNNNN` wherever
-the angular face is baked into it (words in five languages, level names, HUD
-digits, the high-score pads, rank turtles and score logs). The game draws it
-unless a texture pack supplies that texture itself
-([texture packs](../../../docs/reference/assets.md#texture-packs)). `uv run tools/make_lettering.py` writes one PNG per row
-of `fonts/angular/lettering.tsv`, drawn from the glyphs of
-`tools/angular_glyphs.py`. Pillow's polygon rasteriser rounds edge crossings
-differently on arm64 and x86_64 (its wheels fuse multiply-adds on one and not
-the other), so `--check` and the write path treat an image as the
-generator's when no channel differs by more than one coverage step
+The lettering replaces the retail texture `tNNNN` wherever the angular face
+is baked into it (words in five languages, level names, HUD digits, the
+high-score pads, rank turtles and score logs). The game draws it unless a
+texture pack supplies that texture itself
+([texture packs](../../../docs/reference/assets.md#texture-packs)).
+`uv run tools/make_lettering.py` reads only `content/fonts/angular/lettering.tsv`,
+`lettering_layout.tsv`, the SVGs and `derived.json` (no retail input),
+draws the glyphs of `tools/angular_glyphs.py` and writes one file per table
+row: `content/lettering/tNNNN.png` for a transparent row and the 8-bit fill
+coverage `content/lettering/masks/<background>/tNNNN.png` for a tile row
+(`green_pad`, `log`, `turtle`). Pillow's polygon rasteriser rounds edge
+crossings differently on arm64 and x86_64 (its wheels fuse multiply-adds on
+one and not the other), so `--check` and the write path treat an image as
+the generator's when no channel differs by more than one coverage step
 (`RASTER_STEP`, 16 of 255 at four-times supersampling) on at most
 `RASTER_PIXELS` (16) pixels; anything larger is a real change.
-The table's columns are `id`, `name` (FrogLord's
+`lettering.tsv`'s columns are `id`, `name` (FrogLord's
 name or `-`), `language` (`en`, `s`, `g`, `i`, `f` or `-`), `text` (`|`
 breaks a line; retail spelling and spacing), `style`, `background`
 (`transparent`, `green_pad`, `log`, `turtle`) and `layout` (`line`, or
 `components` for `hi_end`, whose letters are fitted one per retail ink
-component). The generator's docstring defines the styles, the fit and the
-backgrounds.
+component). `lettering_layout.tsv` holds per row the retail padded width and
+height and the ink box of each line or letter; `make_lettering.py --layout`
+measures it from an import's retail images and `--layout --check` compares.
+The generator's docstring defines the styles, the fit, the layout
+measurement and the backgrounds.
 
-Each PNG is exactly eight times the retail padded size. Transparent words
-have straight alpha with the outermost colour under alpha 0; tiles are
-opaque. No channel is below 8. The PNGs are generated artefacts, not facts:
-`--check` decodes each committed PNG and compares its pixels with a fresh
-rendering, checks each sidecar's importer and policy keys, names every id
-that differs, is missing or has no row, and exits 1. Both wrappers run it
-next to the angular font check. Each sidecar uses the texture importer with
-mipmaps and otherwise the project defaults; a new image's seed sidecar is
-completed by `godot --headless --path . --import`.
+Each file is exactly eight times the retail padded size. Transparent words
+have straight alpha with the outermost colour under alpha 0; a mask is grey
+coverage. No channel of an image is below 8. The files are generated
+artefacts, not facts: `--check` decodes each committed PNG and compares its
+pixels with a fresh rendering, checks each sidecar's importer and policy
+keys, names every id that differs, is missing or has no row, and exits 1.
+Both wrappers run it next to the angular font check. An image's sidecar uses
+the texture importer with mipmaps and otherwise the project defaults; a
+mask's uses the `image` importer, which keeps its values exactly. A new
+file's seed sidecar is completed by `godot --headless --path . --import`.
 
-`test_asset_lettering.gd` reads the table and `vlo_images.tsv` with Godot's
-file access. It requires:
+The game suite's `tests/golden/content/test_content_lettering.gd` reads the
+table and `vlo_images.tsv` with Godot's file access. It requires:
 
-- one PNG per row at eight times the row's padded size, and no PNG without
-  a row;
-- each imported texture to carry mipmaps;
-- `ImportedAssets.texture_counterpart` of the retail texture to return the
-  lettering image, with no problems;
+- one image or mask per row at eight times the row's padded size, and no
+  file without a row;
+- each image to import with mipmaps and each mask as an exact `Image`;
 - `frogger_angular.ttf` to hold every character the table writes.
 
-The import-settings test holds the folder to mipmaps on.
+The opaque tiles exist only at runtime: `LetteringTile` composites each from
+its mask and the import's retail images
+([lettering](../../../docs/reference/assets.md#lettering)).
+`make_lettering.py --composite <assets> --out <folder>` is their golden
+generator: it measures the geometry from the import's images itself, draws
+the fill coverage and lays the fill colour over the background with Pillow's
+`Image.composite`. Both wrappers run it into the run folder's
+`generated/lettering/`. In the imported suite, `test_asset_lettering.gd`
+requires the catalog to draw every row's image or tile in place of its retail
+texture at eight times the retail size with no problems, and
+`test_asset_lettering_tiles.gd` requires every runtime tile to equal the
+generated tile within the same `RASTER_STEP` and `RASTER_PIXELS` allowance.
+Since the generator measures from the retail images rather than the
+committed table and masks, this also checks the layout file and the masks.
 
 ## Model meshes
 
@@ -205,64 +226,53 @@ that rate, so the six rows whose header says 22050 still import at 11025.
 The disc table is read as `archive/source/sound/disc_audio.gd` documents. Track
 bytes come from each track's start offset, never its start sector. The
 image stores no pregap. `pcm_sha256` hashes the raw 2352-byte sectors, which
-are signed 16-bit little-endian stereo. Music is committed as Ogg Vorbis,
+are signed 16-bit little-endian stereo. Music is imported as Ogg Vorbis,
 which is lossy. The import test therefore checks only that the decoded
-frame count equals `frames`. The digest applies to a lossless copy checked
-with `tools/hash_asset.py`.
+frame count equals `frames`; the digest is checked on the decoded track at
+import time.
 
 ## Import tests
 
-The import goldens are game-suite tests under `tests/golden/assets/`. They
-extend `AssetTest` (`tests/support/asset_test.gd`), which opens `assets/` once
-as an `ImportedAssets` catalog and reads these facts and the reviewed
-overrides. They need no retail files.
+The import goldens are imported-suite tests under
+`tests/imported/golden/assets/` ([testing](../../../docs/reference/testing/README.md)).
+They extend `AssetTest` (`tests/imported/support/asset_test.gd`), which
+opens the local `assets/` once as an `ImportedAssets` catalog and reads these
+facts; every imported file is compared with the retail facts directly. They
+read no retail files themselves. Beside them,
+`tests/imported/golden/test_sky_script_names.gd`,
+`test_swamp_script_names.gd`, `test_jungle_script_names.gd` and
+`test_frontend_language_names.gd` check the frozen facts that need the
+imported FrogLord name lists, and the files under `content/` are checked by
+the game suite's `tests/golden/content/` without an import.
 
 | Test | Compares |
 |---|---|
 | `test_asset_textures.gd` | Every `vlo_images.tsv` row with its bank resource's image: texture id, VRAM position, sizes, `u`, `v`, flags, blend mode and page, and that `texture` is `textures/images/tNNNN.png` with no stored pixels. Each PNG, decoded from the file and through its imported texture, is RGBA8 at the padded size with `padded_rgba_sha256`; its in-game region has `rgba_sha256`. The front-end and HUD images load from the catalog. |
-| `test_asset_fonts.gd` | For the committed catalog and one drawing a synthetic texture pack with a tinted 4x `t0310.png`, `font("newfont")` is a `FontFile` (under `fonts/retail/`, or built at runtime for the pack) with fixed size 32, ascent 32, descent 0 and fractional fixed-size scaling; every glyph 32 to 127 has the grid rule's UV rect, size, advance and offset (-4, -36); texture image 0 is the 1280 x 120 RGBA8 page without mipmaps whose glyph pixels repeat the source PNG and whose borders are transparent, and the retail PNG has texture 310's `padded_rgba_sha256` from `vlo_images.tsv`; `"1 UP"` measures 32 x 8 at size 8 in both. `NewfontPage.build` rebuilds the committed page exactly from the retail PNG at scales 1, 2 and 4. The pack catalog opens without problems, and an unknown font name gives null and a problem line. |
+| `test_asset_fonts.gd` | For the local catalog and one drawing a synthetic texture pack with a tinted 4x `t0310.png`, `font("newfont")` is a `FontFile` built at runtime with fixed size 32, ascent 32, descent 0 and fractional fixed-size scaling; every glyph 32 to 127 has the grid rule's UV rect, size, advance and offset (-4, -36); texture image 0 is the 1280 x 120 RGBA8 page without mipmaps whose glyph pixels repeat the source PNG and whose borders are transparent, and the retail PNG has texture 310's `padded_rgba_sha256` from `vlo_images.tsv`; `"1 UP"` measures 32 x 8 at size 8 in both. `NewfontPage.build` rebuilds the generated page exactly from the retail PNG at scales 1, 2 and 4. The pack catalog opens without problems, and an unknown font name gives null and a problem line. |
 | `test_asset_tables.gd` | Every row of `exe_map_book`, `exe_theme_book`, `exe_forms`, `exe_remaps`, `exe_scripts`, `exe_music`, `exe_level_select`, `exe_demos` and `exe_pickups` built from the imported tables as the archive suite builds them from the executable; the high-score row counts; each table in its own file; the name lists. Every `*.DAT` entry has a demo resource, and each demo of `demos.tsv` has its duration, start square, input count and input digest. |
 | `test_asset_census.gd` | The `asset_census.txt` counts against the files present: MWI entries, map and sky-land resources, bank resources, images, texture PNGs, models by kind with incomplete models and parts, sound banks and WAVs, the demo table and the demos it names, and music tracks. |
-| `test_asset_import_settings.gd` | Every `.png`, `.wav`, `.ogg` and `.fnt` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`textures/lettering/` generates mipmaps). A font page `fonts/*/newfont.png` must have the `skip` importer (`FOLDER_IMPORTERS`). |
+| `test_asset_import_settings.gd` | Every `.png`, `.wav` and `.ogg` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot` (`ImportPolicyCheck`). The game suite's `tests/golden/content/test_content_import_settings.gd` applies the same check to `content/`: the `.ttf` with its MSDF keys, the lettering images with mipmaps and the masks with the `image` importer. |
 | `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
 | `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
 | `test_asset_music.gd` | Each of the `disc_audio_tracks` tracks of `asset_census.txt` has `audio/music/track_NN.ogg` (`oggenc -q 6 --serial NN`, byte-identical on re-encode) with no baked loop, and every `exe_music.tsv` track is present. No music table resource is written; a track's Ogg is found by its number. |
 
-The game suite cannot read `archive/`, so the archive suite's
+The imported suite cannot read `archive/`, so the archive suite's
 `test_retail_disc_tracks.gd` checks the lengths: every
 `archive/import/disc_tracks.tsv` track's Ogg has a `get_length()` within 1 ms
 of `frames / 44100`. The PCM digest is checked on the decoded track at import
-time only.
+time only. The game suite's `test_music_player.gd` needs no import: it plays
+a silent fixture, `tests/fixtures/music/track_02.ogg`.
 
 `test_asset_emissive_images.gd` sits beside them as a consistency check of
-the hand-authored `rendering/emissive_images.tres`, not a retail-fact golden:
-the table loads without problems and validates, every image name resolves in
-the committed name list, and VOL1, VOL2 and VOL3 each draw at least one
-listed image.
+the hand-authored `content/rendering/emissive_images.tres`, not a
+retail-fact golden: the table loads without problems and validates, every
+image name resolves in the imported name list, and VOL1, VOL2 and VOL3 each
+draw at least one listed image.
 
 A bank resource keeps the image headers only: each image's pixels live in
 its PNG, which every bank holding the texture id shares, and `pixels` is
 empty.
-
-## Reviewed overrides
-
-A reviewed hand edit of a committed asset gets one row in
-`tests/golden/imported/overrides.tsv`:
-
-| Column | Meaning |
-|---|---|
-| asset | path under `assets/` |
-| family | `model_meshes`, `sound_samples`, `disc_tracks` or `vlo_images` |
-| field | the fact column it replaces, e.g. `rgba_sha256` |
-| value | the new value |
-| reason | why the edit was made; must not be empty |
-
-The import tests look up (asset, family, field) before they use the retail
-fact. `python3 tools/hash_asset.py <file>` prints the PNG digest (RGBA8,
-padded) and opaque count, or the WAV frames and PCM digest. Its
-`--self-test` round-trips PNG filters 0-4 and a WAV. Retail facts are never
-edited to match an asset.
 
 ## How they were generated
 
@@ -273,13 +283,15 @@ python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROG
 python3 tools/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
 ```
 
-The bitmap fonts are written from the committed PNGs with
-`python3 tools/make_font_newfont.py`; it needs no retail folder.
+The bitmap font is written from an import's `t0310.png` with
+`python3 tools/make_font_newfont.py --out <folder>`, and the lettering tiles
+with `uv run tools/make_lettering.py --composite assets --out <folder>`;
+the test wrappers run both into their run folder.
 
 `--data-dir` defaults to `FROGGER_DATA_DIR`, and `--disc` to
 `FROGGER_DISC`. `--output` names another file. `--check` compares with the
-committed file, prints a diff and exits 1 on a difference. All generators
-use only the Python standard library. The disc track generator streams the
+committed file, prints a diff and exits 1 on a difference. The four fact
+generators use only the Python standard library. The disc track generator streams the
 .mdf in 8 MB chunks.
 
 They share `tools/imported_assets_common.py`, which covers arguments, lazy
@@ -308,32 +320,34 @@ import test. Then restore the fact and rerun.
 - **Census:** change one count, e.g. `images`.
 - **Texture images:** change one digit of a `padded_rgba_sha256`; the PNG
   and imported-texture checks must name that PNG. Then change a `flags`
-  value; the header check must name the bank and image. Adding an override
-  row with the true digest must make the PNG checks pass again.
+  value; the header check must name the bank and image.
 - **Tables and demos:** change a map id in `exe_map_book.tsv`, then a
   duration in `demos.tsv`.
 - **Import settings:** set `mipmaps/generate=true` in one `.png.import`;
   the test must name the PNG and key.
-- **Bitmap fonts:** change one `x=` in `fonts/retail/newfont.fnt`:
-  `tools/make_font_newfont.py --check` must exit 1 with a diff, and the font
-  test must name the set and glyph. Set `scaling_mode=0` in
-  `fonts/retail/newfont.fnt.import`: the string-size check must fail and the
-  import-settings test must name the file and key. Change one digit of
-  texture 310's `padded_rgba_sha256` in `vlo_images.tsv`: the retail font
-  texture check must name the font. Set `NewfontPage.FILL_RINGS` to 1: the
-  runtime page check must fail at every scale.
+- **Bitmap fonts:** corrupt one glyph field in the generator's output:
+  `test_asset_newfont_runtime.gd` must fail naming the property. Change one
+  digit of texture 310's `padded_rgba_sha256` in `vlo_images.tsv`: the
+  retail font texture check must name the font. Set `NewfontPage.FILL_RINGS`
+  to 1: the runtime page checks must fail at every scale.
 - **Angular font:** change one coordinate in one `svg/*.svg`:
   `tools/make_angular_font.py --check` must exit 1 naming the glyph.
   Remove one derived glyph from `derived.json` and rebuild the font: the
   font test must name the character.
 - **Lettering:** change one text in `lettering.tsv`:
   `tools/make_lettering.py --check` must exit 1 naming the id. Delete one
-  lettering PNG: the lettering test must name the id. Set
-  `mipmaps/generate=false` in one lettering sidecar: the import-settings test
-  must name the file.
+  lettering PNG: the content lettering test must name the id. Set
+  `mipmaps/generate=false` in one lettering sidecar: the content
+  import-settings test must name the file.
+- **Lettering layout and masks:** change one box in `lettering_layout.tsv`:
+  both `tools/make_lettering.py --check` and `--layout --check` must exit 1
+  naming the id. Change one pixel of one mask by more than `RASTER_STEP`:
+  `make_lettering.py --check` must exit 1 and `test_asset_lettering_tiles.gd`
+  must name the tile and its differing pixels. Both breaks were run (a mask
+  pixel of t0263 failed both, the test reporting 1 pixel differing by up to
+  224; a layout box failed both checks) and restored.
 
-The generators' `--check` mode was broken and restored in the same way for
-all four files. Each import-test break was restored and the test rerun.
+Restore each break and rerun the check.
 
 ## Map UV ranges
 
@@ -342,8 +356,8 @@ all four files. Each import-test break was restored and the test rerun.
 textured map polygon drawn from its own padded image with repeat wrapping
 lands on the texels the retail page held. `tools/make_golden_map_uv_ranges.py`
 measures it from the retail executable and archive.
-`test_asset_map_uv_ranges.gd` measures the committed maps and banks the same
-way through `MapAnimationPlayer` and compares. There is no tolerance.
+`test_asset_map_uv_ranges.gd` (imported suite) measures the imported maps
+and banks the same way through `MapAnimationPlayer` and compares. There is no tolerance.
 
 Each map is measured with the remap and banks of the one map-book row and
 detail that names it: the GENERAL theme's bank, then the map's theme bank
@@ -388,7 +402,7 @@ up to 30 rows above the top. The ENVMAP images are 221 (SUB), 222 (ORG),
 (SWP) is 253 x 253 padded to 255 at the top left of page 5. The minimum
 padding is 1.
 
-The test needs no retail files. It also checks that every committed map
+The test reads no retail files. It also checks that every imported map
 has one row and that each ENVMAP image's PNG, through
 `ImportedAssets.texture_of`, is its padded size. It measures all 78 maps in
 about 3 s.
@@ -409,10 +423,10 @@ and column. Restore with `--write` and rerun both.
 
 `archive/tests/golden/test_retail_runtime_import.gd` runs `RuntimeImport`
 once through `AssetImporterFactory` on the main thread, from `FROGGER_DATA_DIR`
-into `user://runtime_import_golden/assets`, and compares it with the
-committed `assets/`. There is no generator: the committed assets are the
-oracle, since Godot's editor import produced them from the same retail files
-and the import goldens above check them against the independent facts.
+into `user://runtime_import_golden/assets`, and compares it with the local
+`assets/`. There is no generator: the editor import is the oracle, since
+Godot's editor import produced it from the same retail files and the import
+goldens above check it against the independent facts.
 
 - The run reports no problems, leaves no `.partial` or `.old` folder, reports
   rising progress that ends at 1, and notes that it has no music exactly when
@@ -428,8 +442,8 @@ and the import goldens above check them against the independent facts.
   ones and path strings by their path below the root without extension. This
   covers the index's keys and paths.
 - Every texture is a `PortableCompressedTexture2D` whose image equals the
-  committed texture's in size, format, mipmaps and bytes (1,858).
-- Every sound effect equals the committed `AudioStreamWAV` in format, rate,
+  editor-imported texture's in size, format, mipmaps and bytes (1,858).
+- Every sound effect equals the editor-imported `AudioStreamWAV` in format, rate,
   channels, loop mode and points and PCM (174).
 - `ImportedAssets.open` of the root loads ORG1's map without problems.
 - With `FROGGER_DISC` set, each `archive/import/disc_tracks.tsv` track is a

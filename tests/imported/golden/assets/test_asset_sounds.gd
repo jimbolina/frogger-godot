@@ -3,8 +3,6 @@ extends AssetTest
 ## assets/audio/sfx whose PCM matches sound_samples.tsv, and each bank's
 ## resource points its present rows at those WAVs without holding PCM.
 
-const FAMILY: String = "sound_samples"
-
 var _rows: Array[PackedStringArray] = []
 
 
@@ -29,9 +27,9 @@ func test_every_sample_is_a_wav_with_the_retail_pcm() -> void:
 		if stream == null:
 			failures.append("%s does not load" % asset)
 			continue
-		var frames: int = int(expected(asset, FAMILY, "frames", row[6]))
-		var rate: int = int(expected(asset, FAMILY, "rate", row[7]))
-		var digest: String = expected(asset, FAMILY, "pcm16_sha256", row[8])
+		var frames: int = int(row[6])
+		var rate: int = int(row[7])
+		var digest: String = row[8]
 		if stream.format != AudioStreamWAV.FORMAT_16_BITS or stream.stereo:
 			failures.append("%s is not mono 16-bit" % asset)
 		if stream.mix_rate != rate:

@@ -1,5 +1,5 @@
 extends GutTest
-## The imported assets draw the texture pack a launch names over synthetic
+## The catalog draws the texture pack a launch names over synthetic
 ## retail textures: a partial pack replaces only the textures it supplies,
 ## each at its own scale, and the rest stay retail; an image of the wrong size
 ## is rejected with a problem and a logged warning and falls back; a pack wins over a lettering
@@ -14,7 +14,6 @@ const PACKS: String = SCRATCH + "/texture_packs"
 const RETAIL: String = SCRATCH + "/base/textures/images"
 const LETTERING_ROOT: String = "res://tests/fixtures/lettering"
 const LETTERED: String = "res://assets/textures/images/t0263.png"
-const UNLETTERED: String = "res://assets/textures/images/t0000.png"
 const LETTERING_SCALE: int = 8
 const LETTERED_SIZE: Vector2i = Vector2i(34, 34)
 const PADDED: Vector2i = Vector2i(10, 6)
@@ -83,10 +82,6 @@ func _catalog(pack_name: String) -> ImportedAssets:
 
 
 func test_the_default_is_the_original_textures() -> void:
-	var assets: ImportedAssets = ImportedAssets.open()
-	assert_true(assets.is_valid())
-	assert_true(assets.texture_set().is_retail())
-	assert_eq(assets.warnings, PackedStringArray())
 	var catalog: ImportedAssets = _catalog("")
 	assert_true(catalog.texture_set().is_retail())
 	var retail: Texture2D = _retail(12)
@@ -217,7 +212,7 @@ func test_the_lettering_path_sits_under_the_shippable_root() -> void:
 
 
 func test_texture_for_wraps_lettering_in_a_linear_mipmapped_canvas_texture() -> void:
-	var retail: Texture2D = load(LETTERED) as Texture2D
+	var retail: Texture2D = _retail(263, LETTERED_SIZE)
 	var record: VloImage = _record(retail, 263)
 	var library := TextureLibrary.new()
 	library.catalog = _catalog("")
@@ -233,7 +228,7 @@ func test_texture_for_wraps_lettering_in_a_linear_mipmapped_canvas_texture() -> 
 	var material: ShaderMaterial = ModelShaders.material(drawn, ModelShaders.Blend.OPAQUE, false, false)
 	var model_image: Texture2D = material.get_shader_parameter("image")
 	assert_same(model_image, drawn.diffuse_texture, "3D materials draw the image itself")
-	var plain: Texture2D = load(UNLETTERED) as Texture2D
+	var plain: Texture2D = _retail(0)
 	assert_same(library.texture_for(_record(plain, 0)), plain, "other images are not wrapped")
 
 

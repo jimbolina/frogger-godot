@@ -1,5 +1,5 @@
 extends GutTest
-## Synthetic Swamp capabilities, FrogLord payload decoding, run validation, register payloads and level scope.
+## Synthetic Swamp capabilities, FrogLord payload decoding, run validation and register payloads.
 
 const MATRIX_NAMES: PackedStringArray = ["SWP_SQUIRT", "SWP_CRUSHER", "SWP_PRESS", "SWP_RAT", "SWP_STAT_WEIR"]
 const PATH_NAMES: PackedStringArray = ["SWP_SLUG", "NUCLEAR_BARREL"]
@@ -339,9 +339,3 @@ func test_register_payload_follows_the_layout_offset_with_one_to_six_registers()
 		var count: int = rejected[1]
 		var has_path: bool = rejected[2]
 		assert_ne(_definition(offset, count).validate(PackedInt32Array(), 0, has_path), "", str(rejected))
-
-func test_swamp_levels_are_supported_without_multiplayer() -> void:
-	var data: ImportedAssets = ImportedAssets.open()
-	for code: String in ["SWP1", "SWP2", "SWP3", "SWP4", "SWP5"]:
-		assert_true(data.is_playable_level(FroggerIds.level_from_code(code)), code)
-	assert_false(data.is_playable_level(FroggerIds.level_from_code("SWPM")))

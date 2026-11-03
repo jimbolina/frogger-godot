@@ -1,0 +1,10 @@
+{
+  "dirs": ["res://tests/imported/"],
+  "include_subdirs": true,
+  "prefix": "test_",
+  "suffix": ".gd",
+  "post_run_script": "res://tests/support/summary_hook.gd",
+  "should_exit": true,
+  "log_level": 1,
+  "hide_orphans": true
+}

@@ -1,9 +1,10 @@
-extends AssetTest
-## Every imported texture, WAV, Ogg and font under assets/ and content/ uses
-## the import policy in project.godot's [code]importer_defaults[/code]: the
-## importer and each policy key in its sidecar's [code][params][/code] equal
-## the project default, except the keys the lettering folder overrides (its
-## images carry mipmaps) and the lettering tile masks, which the image
+class_name ImportPolicyCheck
+extends RefCounted
+## Checks that every imported texture, WAV, Ogg and font under a set of roots
+## uses the import policy in project.godot's [code]importer_defaults[/code]:
+## the importer and each policy key in its sidecar's [code][params][/code]
+## equal the project default, except the keys the lettering folder overrides
+## (its images carry mipmaps) and the lettering tile masks, which the image
 ## importer keeps exactly. A vector font follows [constant OWN_POLICIES]
 ## instead: MSDF glyphs, no hinting and no system fallback.
 
@@ -36,8 +37,6 @@ const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
 const FOLDER_IMPORTERS: Dictionary[String, Dictionary] = {
 	"res://content/lettering/masks/": {".png": "image"},
 }
-## The roots whose files are checked.
-const ROOTS: PackedStringArray = [ASSETS, ImportedAssets.SHIPPABLE_ROOT]
 
 
 ## The importer of [param source], whose extension is [param extension]: its
@@ -58,20 +57,22 @@ static func policy_for(source: String, policy: Dictionary) -> Dictionary:
 	return chosen
 
 
-func test_sidecars_follow_the_project_policy() -> void:
+## Asserts through [param test] that every file under [param roots] follows
+## the policy and that at least one file was checked.
+static func check(test: GutTest, roots: PackedStringArray) -> void:
 	var project := ConfigFile.new()
-	assert_eq(project.load("res://project.godot"), OK)
+	test.assert_eq(project.load("res://project.godot"), OK)
 	var checked: int = 0
 	for extension: String in POLICIES:
 		var importer: String = POLICIES[extension][0]
 		var section_key: String = POLICIES[extension][1]
 		var policy: Dictionary = OWN_POLICIES.get(extension, {}) if section_key.is_empty() \
 			else project.get_value("importer_defaults", section_key, {})
-		assert_false(policy.is_empty(), "an import policy exists for %s" % extension)
+		test.assert_false(policy.is_empty(), "an import policy exists for %s" % extension)
 		var mismatches := PackedStringArray()
 		var sources := PackedStringArray()
-		for root: String in ROOTS:
-			sources.append_array(files_under(root, extension))
+		for root: String in roots:
+			sources.append_array(GoldenFiles.files_under(root, extension))
 		for source: String in sources:
 			var sidecar := ConfigFile.new()
 			if sidecar.load(source + ".import") != OK:
@@ -90,6 +91,6 @@ func test_sidecars_follow_the_project_policy() -> void:
 				if got != expected_policy[key]:
 					mismatches.append("%s: %s is %s, the policy says %s" % [source, key, got, expected_policy[key]])
 		for mismatch: String in mismatches.slice(0, 10):
-			fail_test(mismatch)
-		assert_eq(mismatches.size(), 0, "%d %s files follow the policy" % [sources.size(), extension])
-	assert_gt(checked, 0)
+			test.fail_test(mismatch)
+		test.assert_eq(mismatches.size(), 0, "%d %s files follow the policy" % [sources.size(), extension])
+	test.assert_gt(checked, 0)

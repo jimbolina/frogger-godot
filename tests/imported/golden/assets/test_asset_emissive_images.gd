@@ -1,5 +1,5 @@
 extends AssetTest
-## The hand-authored glowing-image table under assets/rendering/ loads, is
+## The hand-authored glowing-image table under content/rendering/ loads, is
 ## well formed and names only images the committed name list knows. It is an
 ## asset consistency check, not a retail-fact golden.
 

@@ -44,7 +44,7 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | S2d | Cave omni light instead of the grey ramp, sky tile array, water as a partial reflection, `vertex_tint` as a blend, the map viewer under modern, the map UV ranges premise golden | M | Cave-light, modern-UV and UV-ranges goldens with breaks; modern smoke tests for CAV1, SKY1 and SWP1; sky levels load no page set; owner play check | Done; accepted by the owner's play check |
 | S2e | Front end, sandbox and viewers under modern; blob shadows replaced by real shadows (`--effect-shadows=`), `--shadows=off` for comparison, water glint and shadow constants checked | M | Modern smoke tests for the front end, sandbox and viewers; owner play check and acceptance decision | Done; accepted by the owner's play check |
 | S2f | Cleanup after acceptance: retire or keep the retail profile, default profile, golden re-scope, `src/convert/` renamed `src/rendering/` | M/S | Both suites green; no `src/convert` reference left; owner launches ORG1 on the default profile | Done; the retail look is retired and Forward+ is the only pipeline |
-| S2g | Real glow and a debug graphics panel: bloom over HDR emission, procedural bug and gold-frog halos with pooled coloured lights, lava and hot-rock emission from the hand-authored `assets/rendering/emissive_images.tres` with clustered lava lights, and the 0-key [graphics panel](reference/architecture.md) saved to `user://graphics.cfg` ([lighting](reference/rendering/lighting.md)) | M | Both suites green; windowed captures of ORG1, SUB1, CAV1 and VOL1–VOL3; owner play check | Done; accepted by the owner's play check |
+| S2g | Real glow and a debug graphics panel: bloom over HDR emission, procedural bug and gold-frog halos with pooled coloured lights, lava and hot-rock emission from the hand-authored `content/rendering/emissive_images.tres` with clustered lava lights, and the 0-key [graphics panel](reference/architecture.md) saved to `user://graphics.cfg` ([lighting](reference/rendering/lighting.md)) | M | Both suites green; windowed captures of ORG1, SUB1, CAV1 and VOL1–VOL3; owner play check | Done; accepted by the owner's play check |
 | S2h | Vector lettering: the angular face (lily-pad letters, rank and HUD digits, menu, HUD and level-complete words in five languages, level names; 319 textures) drawn from the SVG-traced alpha letter models through generated eight-times images and the `frogger_angular.ttf` font, replacing the retail images in every set ([lettering](reference/assets.md#lettering)) | M | Font and lettering generators' `--check`; lettering, font and hook tests; both suites green; owner play check | Done; accepted by the owner's play check |
 | P13h | Level-complete page: the retail statistics page over the map after the fifth frog, with the next-level and zone-complete exits ([front end](reference/gameplay/front-end.md#level-complete)) | S–M | Independent page golden with a deliberate break; owner play check | Done; accepted by the owner's play check |
 | P13e | Attract cycle: the main menu's fixed dwell, the executable's demo order and gates, demos in the game scene with the menu live over them, the fade and the return; the intro slot restarts the menu ([front end](reference/gameplay/front-end.md#attract-cycle)) | S | Independent attract golden with a deliberate break; owner play check | Done; accepted by the owner's play check |
@@ -54,13 +54,13 @@ P8 is split into exit-sized pieces. P8c includes the minimum playable level loop
 | P13f | Multiplayer and network front-end pages | L | With P15 | |
 | P14a | FrogLord as the level editor: the importer accepts a FrogLord save, writes an overlay (`--assets-root`, `--fallback-root`) whose index falls back to `assets/`, records the source in `AssetIndex`, and prints the `LevelSupportReport` of unmapped forms, entity names, scripts, callbacks and remaps (`tools/asset_report.sh`) | M | A synthetic FrogLord save with an edited map, script, remap, demo and repointed callbacks imports as an overlay and ORG1 and CAV3 load from it; independent Python golden with deliberate breaks; both suites green; the committed assets report no unmapped row | Done |
 | P14b | Reload on change: `archive/import/froglord_watch.sh` re-imports a FrogLord save into `user://froglord/<fingerprint>/` when it changes and writes a pointer file; `tools/play.sh --level=X --froglord` reopens the level when the pointer changes (`F5` on demand) | S–M | Owner play check: a FrogLord save reopens the running level | Done; accepted by the owner's play check with a real FrogLord save |
-| L1 | Import without the editor: a runtime mode writes `user://assets/<fingerprint>/` atomically, with lossless `PortableCompressedTexture2D` images, `AudioStreamWAV` effects and, when the player gives a disc image, WAV music; the setup screen reaches it through the one `AssetImporter` seam ([runtime import](reference/assets.md#runtime-import)) | M | Runtime-import equivalence golden against the committed `assets/` with deliberate breaks; scanner seam tests; both suites green | Done |
+| L1 | Import without the editor: a runtime mode writes `user://assets/<fingerprint>/` atomically, with lossless `PortableCompressedTexture2D` images, `AudioStreamWAV` effects and, when the player gives a disc image, WAV music; the setup screen reaches it through the one `AssetImporter` seam ([runtime import](reference/assets.md#runtime-import)) | M | Runtime-import equivalence golden against the editor-imported `assets/` with deliberate breaks; scanner seam tests; both suites green | Done |
 | L2 | Asset location: `AssetLocation` picks the base root (`--assets-root`, `user://launcher.cfg`, `res://assets`), fonts, lettering and the emissive table come from the shippable root, music from the base root ([asset location](reference/assets.md#asset-location)) | S–M | Asset-free resolution, launcher-store and root-split tests; both suites green | Done |
 | L3 | First-run setup screen as the main scene: game files and disc image, build detection, import progress, language, window, texture and volume settings, the FrogLord toggle and a desktop shortcut; Shift or `--setup` reopens it | M | Asset-free setup-state tests; clean-profile run; owner play check | Done; owner play check pending |
 | L4 | FrogLord inside the game: the watch cycle in-process over the player's base root, overlays through the front end | S–M | Owner play check: a FrogLord save reopens a menu-started level | Done; owner play check pending |
 | L5 | Packaged builds and the app icon, the export half of P17 | M | Clean-profile run of the exported build; export-preset guard with a deliberate break; owner launches from the icon | Done; owner play check pending |
 | L6 | Texture packs replace the ML `x4` set: partial packs of hand-drawn images at any whole scale, loaded at runtime | M | Synthetic-pack tests; runtime newfont page golden with a deliberate break; owner play check | Done; owner play check pending |
-| P-public | Retail-derived content leaves the tree: `assets/` becomes local importer output, lettering and `newfont` are generated at import, goldens audited; the owner rewrites history and publishes | L | Both suites green from a fresh import; list of purged paths for the owner | |
+| P-public | Retail-derived content leaves the tree: `assets/` becomes git-ignored local importer output (`tools/setup_dev.sh --import`), the port's own files move to tracked `content/`, `newfont` and the lettering tiles are built at runtime from the player's copy, and an imported suite holds the tests that need an import ([assets](reference/assets.md#content)); the owner rewrites history and publishes | L | Every suite green from a fresh import; list of purged paths for the owner, handed over outside the repository | Done; owner history rewrite pending |
 | P15 | Split-screen for two to four players | L | By eye | |
 | P16 | Videos, credits, ending, including the JUN2 ending stage and the JUN1 end-of-game sequence | M–L | By eye | Blocked on the FMV codec decision below |
 | P17 | Export for Windows, Linux and macOS; hosted CI pinned to Godot 4.5.1 | S–M | A run on a clean machine; one verified CI runner with retained logs | Exports and [hosted CI](reference/testing/README.md#hosted-ci) landed: tests on every push, releases through release-please, builds on release tags ([packaging](reference/setup.md#packaging)); owner's verification pending (a green run, the dry-run zips launched, a first release) |
@@ -86,7 +86,8 @@ as PNG images with baked texture pages, sound effects as WAV and the CD music
 as Ogg Vorbis, maps and the executable's tables as typed `Resource` records in
 `src/data/`. Binary assets go through Git LFS. The readers, the importer, the
 retail-format goldens and FrogLord's configuration live in `archive/`, which
-the game never depends on; the assets are then edited directly. S1 then audits
+the game never depends on. P-public later took `assets/` out of the
+repository: it is now each developer's local import. S1 then audits
 the project layout, class boundaries and naming against Godot's project
 organisation practice and domain-driven design, and writes the domain model
 documentation (bounded contexts, aggregates and their invariants). The audit
@@ -94,8 +95,10 @@ proposes the reorganisation; the owner decides. Sub-phases S1a–S1e are in the
 status table.
 
 Test suites: the game suite under `tests/` is asset-free and allows no skips;
-the archive suite under `archive/tests/` runs only with `FROGGER_DATA_DIR`
-set. The former exit 3 and the reviewed-skip manifest are retired.
+the archive suite under `archive/tests/` and, since P-public, the imported
+suite under `tests/imported/` run only with `FROGGER_DATA_DIR` set
+([testing](reference/testing/README.md)). The former exit 3 and the
+reviewed-skip manifest are retired.
 
 S2 replaces the C lighting recipe, its per-vertex stored-colour shaders and the
 map's light records with Godot's lights, shadows and material pipeline, and
@@ -113,7 +116,7 @@ lighting recipe, texture-page sampling, the frozen `map_slice` reference
 projection and their goldens and probes are gone, and `src/convert/` became
 `src/rendering/`. FrogLord remains the level editor and this port the renderer
 of its output: the importer and readers under `archive/` stay runnable and a
-re-import produces the committed `assets/`; byte-for-byte colour matching is
+re-import produces the local `assets/`; byte-for-byte colour matching is
 not a goal. The rules live in the [lighting](reference/rendering/lighting.md)
 reference.
 
@@ -128,10 +131,10 @@ for the retail texture and one for the x4 texture with 32-pixel cells drawn
 at size 8, chosen by the texture set) and draws the three sites with
 `draw_string` or `Label` nodes, pixel-identical at retail. Text then takes
 theme colours, outlines, authored scenes and later localisation without new
-draw code. Done: `tools/make_font_newfont.py` writes `assets/fonts/retail/newfont.fnt`
-and `assets/fonts/x4/newfont.fnt`, Godot imports them as `FontFile`s, the
-catalog serves the set's font, and the HUD ink layer and stack panel draw with
-`draw_string` through `NewfontText` ([assets](reference/assets.md#fonts)).
+draw code. Done: the catalog serves `newfont` as a `FontFile`, built at
+runtime from texture 310 since P-public, and the HUD ink layer and stack
+panel draw with `draw_string` through `NewfontText`
+([assets](reference/assets.md#fonts)).
 A vector recreation of the Frogger font is the only way text stays
 crisp at any window size; it is a design task (automatic vectorising of 8x8
 glyphs gives blobs), so it waits for the owner's decision after the x4 play
@@ -178,18 +181,19 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 
 | What | Needed by | Why |
 |---|---|---|
-| A licence for this project's own code | Decided 2026-10-31 | The repository is permanently private, so no public licence is needed; third-party material keeps its own licences. |
-| A repository host | Decided 2026-10-31 | `https://github.com/jimbolina/frogger-godot.git`, private; pushes happen only when the owner asks. GitHub's free Git LFS allowance (1 GB storage and bandwidth) bounds how often the assets can be re-imported or replaced before a data pack is needed; CI caches the LFS objects, so a run spends it only when the assets change or its cache has expired. |
-| Where imported assets live | Decided 2026-10-30 | Imported models, textures, sounds, music and maps are committed as project resources through Git LFS; the repository stays private and the licence decision covers them. |
-| Git LFS on every machine that clones | Before S1c | Binary assets are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
-| Licence position on retail-derived assets | Decided 2026-10-31 | `assets/` is derived from Frogger (1997); the repository stays private permanently, so the assets are never distributed. |
+| A licence for this project's own code | Before publishing | The repository will be public (decided 2026-11-02, reversing the private decision of 2026-10-31); the licence of the port's own code and `content/` is the owner's choice. Third-party material keeps its own licences; StarmanUltra's SVG traces have no recorded terms ([sources](reference/sources.md#the-pre-recode-alpha-and-the-letter-svgs)). |
+| A repository host | Decided 2026-10-31 | `https://github.com/jimbolina/frogger-godot.git`, private until the owner publishes; pushes happen only when the owner asks. GitHub's free Git LFS allowance (1 GB storage and bandwidth) covers the files under `content/`; CI caches the LFS objects, so a run spends it only when they change or its cache has expired. |
+| Where imported assets live | Decided 2026-11-02 | Not in the repository: `assets/` is each developer's git-ignored import of their own copy, and a player's import lives in the user folder. The port's own files are tracked under `content/`. |
+| Git LFS on every machine that clones | Before S1c | The PNGs and the TTF under `content/` are LFS objects; a clone without `git lfs install` holds pointer files, which the test wrapper rejects. |
+| History rewrite | Before publishing | Earlier commits hold retail-derived files under `assets/`: every imported file, the removed `images_x4/` set, the `newfont` page and the lettering tiles with retail backgrounds. The owner rewrites history to purge them, using the list of purged paths handed to the owner outside the repository with P-public. |
+| The retail text facts | Before publishing | `tests/golden/pc-retail-v3.0e/` holds text facts (names, sizes, counts, digests) decoded from the retail files and stays tracked for now; whether it stays in the public repository is the owner's call. |
 | Python dependency management | Decided 2026-11-01 | The font and lettering generators use fontTools and Pillow through a `pyproject.toml` and `uv.lock` run with `uv run` ([testing](reference/testing/README.md)); the other generators stay stdlib-only. |
 | S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | After S2 (decided 2026-10-31) | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
 | Hand-made textures | Decided 2026-11-02 | The ML `x4` set is removed. An artist draws higher-resolution images delivered as [texture packs](reference/assets.md#texture-packs), loaded at runtime and falling back to the original images. |
 | Acceptance of the modern rendering | Decided 2026-10-31 | The owner retired the retail look in S2f; Forward+ is the project renderer. FrogLord stays the level editor and the import path stays runnable (P14). |
 | Look choices | Open, defaults in place | The tunables of the modern rendering: cave light mode, water glint, blob and real shadows, tone mapper, baked terrain shading and texture filtering, each with its default and where to change it in [look choices](reference/rendering/lighting.md#look-choices). |
 | A vector recreation of the Frogger font | Angular face decided 2026-11-01; `newfont` open | The angular lettering is drawn from vector glyphs replacing the retail images outright (S2h). The shaded `newfont` stays a bitmap; a pixel-square TTF equals nearest upscaling and a smoothed redraw needs the owner's eye ([S2b](#s2b-native-text)). |
-| Facts for a mod imported into `assets/` | Before a FrogLord save replaces the retail assets | The import goldens compare `assets/` with the retail facts under `tests/golden/pc-retail-v3.0e/`, so a full import of a FrogLord save into `assets/` fails them until the Python generators are run on the modded files into a facts folder of their own (its name and how the tests select it are the owner's call). Until then, FrogLord saves play as overlays (P14a). |
+| Facts for a mod imported into `assets/` | Before a FrogLord save replaces the retail import | The import goldens compare `assets/` with the retail facts under `tests/golden/pc-retail-v3.0e/`, so a full import of a FrogLord save into `assets/` fails them until the Python generators are run on the modded files into a facts folder of their own (its name and how the tests select it are the owner's call). Until then, FrogLord saves play as overlays (P14a). |
 | A decision on the FMV videos | Before P16 | The videos are ARMovie `.RPL` files with the Escape codec; Godot has no decoder. Either a decoder is written (GDScript or GDExtension) or the videos are skipped with a documented stub. |
 
 ## P9 theme coverage

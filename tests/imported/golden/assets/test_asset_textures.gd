@@ -22,10 +22,6 @@ func _png(path: String) -> Image:
 	return image
 
 
-func _asset(path: String) -> String:
-	return path.trim_prefix(ASSETS + "/")
-
-
 func test_bank_images_match_the_headers() -> void:
 	var mismatches := PackedStringArray()
 	for row: PackedStringArray in _image_rows:
@@ -67,12 +63,10 @@ func test_pngs_match_the_pixels() -> void:
 		if image.get_size() != size:
 			mismatches.append("%s is %s, golden %s" % [path, image.get_size(), size])
 			continue
-		var padded: String = expected(_asset(path), "vlo_images", "padded_rgba_sha256", row[14])
-		if sha256_hex(image.get_data()) != padded:
+		if sha256_hex(image.get_data()) != row[14]:
 			mismatches.append("%s: padded RGBA digest differs" % path)
 		var inner := Rect2i((size.x - int(row[7])) / 2, (size.y - int(row[8])) / 2, int(row[7]), int(row[8]))
-		var unpadded: String = expected(_asset(path), "vlo_images", "rgba_sha256", row[15])
-		if sha256_hex(image.get_region(inner).get_data()) != unpadded:
+		if sha256_hex(image.get_region(inner).get_data()) != row[15]:
 			mismatches.append("%s: unpadded RGBA digest differs" % path)
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)
@@ -97,7 +91,7 @@ func test_imported_textures_hold_the_pixels() -> void:
 		image.convert(Image.FORMAT_RGBA8)
 		if image.has_mipmaps():
 			mismatches.append("%s has mipmaps" % path)
-		if sha256_hex(image.get_data()) != expected(_asset(path), "vlo_images", "padded_rgba_sha256", row[14]):
+		if sha256_hex(image.get_data()) != row[14]:
 			mismatches.append("%s: imported RGBA digest differs" % path)
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)

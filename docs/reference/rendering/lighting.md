@@ -87,8 +87,8 @@ polygon on screen ([depth ordering](README.md#depth-ordering)) and
 `projection_scale` applies the clip-Y projection scale.
 
 The lit family, `model_{textured|flat}_{opaque|average|add|subtract|add_quarter}[_linear][_two_sided].gdshader`
-(30 files, `model.gdshaderinc`), draws every model mesh; the committed
-materials under `assets/materials/model/` name these files by path and the
+(30 files, `model.gdshaderinc`), draws every model mesh; the imported
+materials under `materials/model/` name these files by path and the
 importer writes them through the same `ModelShaders`. Godot's lights shade it
 (`diffuse_lambert, specular_disabled, ambient_light_disabled`): the texture
 is read through `source_color`, the polygon colour is decoded to linear
@@ -210,8 +210,8 @@ independent. The MAX_OT riverbed stays plain lit terrain.
 ## Lava
 
 Lava and hot rock glow: map surfaces drawing an image listed in the
-hand-authored `assets/rendering/emissive_images.tres`
-([assets](../assets.md#layout)) add emission on top of their lit colour.
+hand-authored `content/rendering/emissive_images.tres`
+([assets](../assets.md#content)) add emission on top of their lit colour.
 `EmissiveSurfaces.resolve` turns the table's image names into texture ids
 through FrogLord's image names for `MapSceneData.emissive`; an unknown name
 becomes a scene diagnostic. `MapMesh.Instance` sets `emission_strength`

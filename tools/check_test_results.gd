@@ -5,9 +5,10 @@ extends SceneTree
 ##   -s res://tools/check_test_results.gd -- --input
 ##       Exit 0 when FROGGER_DATA_DIR names a folder with FROGGER.EXE and
 ##       FROGPSX.MWD; exit 1 when it is unset, empty or lacks either file.
-##   -s res://tools/check_test_results.gd -- <log> <exit> [--suite=archive]
+##   -s res://tools/check_test_results.gd -- <log> <exit> [--suite=<name>]
 ##       Exit 0 when the suite's report agrees with the GUT log and process
-##       exit; the suite defaults to game.
+##       exit; the suite is game (the default), imported or archive. With
+##       FROGGER_TEST_SELECTION=1 a suite that selected nothing is valid.
 
 const Policy := preload("res://tests/support/result_policy.gd")
 const SUITE_OPTION: String = "--suite="
@@ -29,7 +30,7 @@ func _init() -> void:
 		suite = arguments[2].trim_prefix(SUITE_OPTION)
 		arguments.resize(2)
 	if arguments.size() != 2 or not arguments[1].is_valid_int() or suite not in Policy.SUITES:
-		print("RESULT ERROR: expected test log path, process exit and optional --suite=archive")
+		print("RESULT ERROR: expected test log path, process exit and optional --suite=<%s>" % "|".join(Policy.SUITES))
 		quit(1)
 		return
 	var report: Variant = null
@@ -39,7 +40,7 @@ func _init() -> void:
 	if FileAccess.file_exists(arguments[0]):
 		log_text = FileAccess.get_file_as_string(arguments[0])
 	var errors: PackedStringArray = Policy.validate_report(
-		report, log_text, arguments[1].to_int(), suite)
+		report, log_text, arguments[1].to_int(), suite, Policy.selection_requested())
 	for problem: String in errors:
 		print("RESULT ERROR: " + problem)
 	if errors.is_empty():

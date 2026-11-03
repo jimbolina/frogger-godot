@@ -13,11 +13,13 @@ copy rules; topic references own the rules themselves.
   behavioural reference ([sources](sources.md)). A rule is ported from it and
   checked against independent facts; a disagreement with retail observation or
   FrogLord is recorded in the owning topic reference, not resolved by guessing.
-- **The committed assets are the source of truth for content.** Since S1 the
-  game plays only from `assets/` through `ImportedAssets`
-  ([assets](assets.md)). Editing an asset changes the game; nothing re-reads
-  the retail files at run time. `AssetIndex` records the build name and the
-  SHA-256 of the executable and archive the assets came from, as provenance.
+- **The imported assets are the source of truth for content.** The game
+  plays only from an import of the player's copy through `ImportedAssets`
+  ([assets](assets.md)): the developer's local `assets/` or a player's import
+  under `user://`, with the port's own files from `content/`. Nothing re-reads
+  the retail files at run time; content changes go through the importer, a
+  FrogLord overlay or a texture pack. `AssetIndex` records the build name and
+  the SHA-256 of the executable and archive the assets came from, as provenance.
 - **FrogLord is the format authority for the archive readers only.** The
   readers under `archive/source/` follow FrogLord's formats
   ([archive](../../archive/README.md)). FrogLord's name lists were imported with
@@ -48,8 +50,8 @@ one inspection-to-presentation dependency.
 
 ## From asset to frame
 
-1. `GameplayScreen` opens `ImportedAssets`, the `AssetCatalog` over
-   `assets/catalog.tres`; `MapSceneData.load_level` and `TerrainFrogAssets`
+1. `GameplayScreen` opens `ImportedAssets`, the `AssetCatalog` over the
+   base root's `catalog.tres`; `MapSceneData.load_level` and `TerrainFrogAssets`
    load the level's `MapFile`, render resources and the frog model.
 2. `GameplaySetup.from_data` runs the setup adapters (grid, paths, entities,
    behaviours, contacts, rewards, sounds, zones) and validates whole-map

@@ -326,7 +326,8 @@ requires a FrogLord save to add exactly its deliberate probe
 
 `AssetLocation` resolves the base root in the order the
 [assets reference](assets.md#asset-location) gives and opens `ImportedAssets`
-over it with the shippable root beside it; scenes reach it through
+over it with the shippable root `res://content` beside it; the developer's
+local import `res://assets` is only the last candidate. Scenes reach it through
 `GameplayScreen.asset_location` or `ViewerArguments.open_assets`, which read
 `LauncherStore` from `user://launcher.cfg` into a `LauncherSettings` record;
 `ViewerArguments.texture_set` takes the launcher's texture pack when the
@@ -354,7 +355,7 @@ FrogLord version), `source_state` (the save files' names, modification times
 and sizes, cheap enough to poll every second) and `import_overlay` (one
 `FrogLordWatchCycle` over a given base root, into `overlay_parent`, rewriting
 the pointer at `pointer_path`). `overlay_parent_for` keeps overlays over the
-committed assets in `user://froglord/` and gives every other base root its own
+developer's `assets/` in `user://froglord/` and gives every other base root its own
 folder below it.
 
 `FrogLordPointer` (`src/application/loaders`) reads and atomically writes the

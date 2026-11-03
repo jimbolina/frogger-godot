@@ -13,7 +13,7 @@ that one dependency and rejects any other script, scene or resource under
 | Path | What |
 |---|---|
 | `source/` | The readers that decode `FROGGER.EXE` and `FROGPSX.MWD` into the `src/data` records (`io/`, `config/`, `source/`, `formats/`, `exe/`, `sound/`), and `GameData`, the retail-backed `AssetCatalog`. |
-| `import/` | The importer: `import_assets.sh` runs the raw and resource phases of `import_assets.gd` with Godot's import between them and `encode_music.sh` for the CD tracks; `RuntimeImport` runs both phases in-process without the editor import; `ImportRun` runs the steps of one phase; `steps/` holds one step per asset kind; `ImportContext` fixes the path conventions; `disc_tracks.tsv` holds the disc's audio-track facts the music step checks. It reads the retail files or FrogLord's `modded_FROGGER.EXE` and `modded_FROGPSX.MWD` when their trailer names `pc-retail-v3.0e`. |
+| `import/` | The importer: `import_assets.sh` writes the developer's local `assets/` (git-ignored); it runs the raw and resource phases of `import_assets.gd` with Godot's import between them and `encode_music.sh` for the CD tracks; `RuntimeImport` runs both phases in-process without the editor import; `ImportRun` runs the steps of one phase; `steps/` holds one step per asset kind; `ImportContext` fixes the path conventions; `disc_tracks.tsv` holds the disc's audio-track facts the music step checks. It reads the retail files or FrogLord's `modded_FROGGER.EXE` and `modded_FROGPSX.MWD` when their trailer names `pc-retail-v3.0e`. |
 | `tests/golden/` | The archive suite's retail goldens (`test_retail_*.gd`), comparing decoded values with `tests/golden/pc-retail-v3.0e/`. |
 | `tests/unit/` | Reader unit tests and the synthetic byte builders. |
 | `tests/support/` | `RetailTest`, the base class that opens `FROGGER_DATA_DIR`. |
@@ -23,15 +23,20 @@ that one dependency and rejects any other script, scene or resource under
 
 ## Regenerating the assets
 
+`assets/` is never committed: each developer fills it from their own copy with
+`tools/setup_dev.sh --import` ([developer setup](../README.md#developer-setup)),
+which runs
+
 ```bash
 GODOT=/Applications/Godot.app/Contents/MacOS/Godot FROGGER_DATA_DIR=<game-folder> FROGGER_DISC=<FROGGER.mds> archive/import/import_assets.sh
 ```
 
+`FROGGER_DISC` is optional; the music step needs it and `oggenc`.
 `--only=<step,...>` limits the run to named steps and `--force-music`
 re-encodes existing Ogg files. The run is idempotent: a second run leaves
-`assets/` byte-identical. Hand-edited assets are overwritten by a full run, so
-record them as [golden overrides](../tests/golden/specs/imported-assets.md)
-and re-import only the steps you mean to.
+`assets/` unchanged. Nothing under `assets/` is edited by hand; a change to
+imported content belongs in the importer's steps, a FrogLord overlay or a
+texture pack.
 
 The data folder may hold the retail pair or a FrogLord save of it
 (`modded_FROGGER.EXE` and `modded_FROGPSX.MWD`); the index records which, with
@@ -108,7 +113,6 @@ through the seam over a runtime import under `user://` and plays ORG1 from
 it. `third_party_notice` returns FrogLord's credit with the shipped
 `LICENSE.md` for the setup screen's credits. `import/disc_tracks.tsv` and the
 FrogLord `.cfg` files are read with `FileAccess`, so the export presets
-include them as plain files ([packaging](../docs/reference/setup.md#packaging)). The editor-import path stays the default for the committed
-`assets/`. The archive suite's `test_retail_runtime_import` compares a
-runtime import with them
+include them as plain files ([packaging](../docs/reference/setup.md#packaging)). The editor-import path writes the developer's local `assets/`. The archive
+suite's `test_retail_runtime_import` compares a runtime import with it
 ([runtime import golden](../tests/golden/specs/imported-assets.md#runtime-import)).

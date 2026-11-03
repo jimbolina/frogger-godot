@@ -1,6 +1,7 @@
 param(
     [switch]$Check,
-    [switch]$DownloadGodot
+    [switch]$DownloadGodot,
+    [switch]$Import
 )
 
 Set-Location (Join-Path $PSScriptRoot '..')
@@ -27,17 +28,17 @@ if (-not (Found 'git')) {
     } else {
         if (-not $Check) { git lfs install --local *> $null }
         $pointers = 0
-        if (Test-Path assets) {
-            Get-ChildItem assets -Recurse -File | Where-Object { $_.Length -lt 1024 } | ForEach-Object {
+        if (Test-Path content) {
+            Get-ChildItem content -Recurse -File | Where-Object { $_.Length -lt 1024 } | ForEach-Object {
                 $line = Get-Content $_.FullName -TotalCount 1 -ErrorAction SilentlyContinue
                 if ($line -and $line.StartsWith('version https://git-lfs.github.com/spec')) { $pointers += 1 }
             }
         }
         if ($pointers -gt 0) {
             if ($Check) {
-                Problem "$pointers git LFS pointers under assets/; run git lfs pull"
+                Problem "$pointers git LFS pointers under content/; run git lfs pull"
             } else {
-                Step "pulling git LFS objects ($pointers pointers under assets/)"
+                Step "pulling git LFS objects ($pointers pointers under content/)"
                 git lfs pull
                 if ($LASTEXITCODE -ne 0) { Problem 'git lfs pull failed' }
             }
@@ -121,14 +122,39 @@ if (-not $Check -and $script:problems -eq 0) {
 }
 
 Write-Output ''
+$retailReady = $false
 if ($env:FROGGER_DATA_DIR) {
     if ((Test-Path (Join-Path $env:FROGGER_DATA_DIR 'FROGGER.EXE')) -and (Test-Path (Join-Path $env:FROGGER_DATA_DIR 'FROGPSX.MWD'))) {
-        Step 'FROGGER_DATA_DIR holds the retail files; the archive suite will run'
+        $retailReady = $true
+        Step 'FROGGER_DATA_DIR holds the retail files; the archive and imported suites will run'
     } else {
         Problem "FROGGER_DATA_DIR is set but $env:FROGGER_DATA_DIR lacks FROGGER.EXE or FROGPSX.MWD"
     }
 } else {
-    Step 'FROGGER_DATA_DIR unset: the game and its suite need no retail files; set it to run the archive suite'
+    Step 'FROGGER_DATA_DIR unset: the game suite needs no retail files; set it to import your copy and run the other suites'
+}
+if ($env:FROGGER_DISC -and -not (Test-Path $env:FROGGER_DISC -PathType Leaf)) {
+    Problem "FROGGER_DISC is set but $env:FROGGER_DISC is not a file"
+}
+if ($Import) {
+    $oggenc = if ($env:OGGENC) { $env:OGGENC } else { 'oggenc' }
+    if (-not $retailReady) {
+        Problem '-Import needs FROGGER_DATA_DIR pointing at FROGGER.EXE and FROGPSX.MWD'
+    } elseif (-not (Found 'bash')) {
+        Problem '-Import runs archive/import/import_assets.sh, which needs the bash that comes with Git for Windows'
+    } elseif ($env:FROGGER_DISC -and -not (Found $oggenc)) {
+        Problem 'FROGGER_DISC is set but oggenc is missing; install vorbis-tools or clear FROGGER_DISC to skip the music'
+    } elseif (-not $Check -and $script:problems -eq 0) {
+        Step 'importing your copy of the game into assets/ (takes several minutes)'
+        $env:GODOT = $godot
+        bash archive/import/import_assets.sh
+        if ($LASTEXITCODE -ne 0) { Problem 'the retail import failed; see the log folder it printed' }
+    }
+}
+if (Test-Path assets/catalog.tres) {
+    Step 'assets/ holds an import of the game'
+} else {
+    Step 'assets/ is empty: the game opens its setup screen; run with -Import to play and test from source'
 }
 if ($script:problems -ne 0) {
     Write-Output "setup_dev: $($script:problems) problem(s); fix them and rerun"

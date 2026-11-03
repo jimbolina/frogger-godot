@@ -1,11 +1,16 @@
 # Golden data
 
 These are text facts only: names, sizes, flags, counts, IDs and digests.
-The game suite under `tests/golden/` compares committed synthetic facts and
-keyboard fixtures. The archive suite (`archive/tests/golden/test_retail_*.gd`,
-run only with `FROGGER_DATA_DIR`) loads the owner's retail files and compares
-decoded values with the facts in `pc-retail-v3.0e/`; from S1c the import
-goldens compare the committed assets with the same facts.
+The game suite under `tests/golden/` compares committed synthetic facts,
+keyboard fixtures and the port's own files (`content/`, tested in
+`tests/golden/content/`). The archive suite
+(`archive/tests/golden/test_retail_*.gd`, run only with `FROGGER_DATA_DIR`)
+loads the owner's retail files and compares decoded values with the facts in
+`pc-retail-v3.0e/`; the imported suite's goldens compare the developer's
+local import in `assets/` with the same facts: the import goldens under
+`tests/imported/golden/assets/` (extending `AssetTest`) and the name-list
+facts in `tests/imported/golden/test_{sky,swamp,jungle}_script_names.gd` and
+`test_frontend_language_names.gd`.
 
 `synthetic/.gdignore` keeps raw fixtures out of Godot's asset importer. Tests
 read them with `FileAccess`; CSV columns are not translation locales. Importing
@@ -36,10 +41,10 @@ commands run from the repository root; generated facts live in
 | Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
-| Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census, reviewed overrides and the runtime import | [Imported assets](specs/imported-assets.md) |
-| `newfont` bitmap font generated from texture 310 (`assets/fonts/retail/newfont.fnt`), and the runtime page built from a texture pack's `t0310.png` | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
-| Angular vector font generated from the SVG traces and derived glyphs (`assets/fonts/angular/frogger_angular.ttf`) | [Angular font](specs/imported-assets.md#angular-font) |
-| Lettering images drawn from the angular font in place of the retail lettering textures (`assets/textures/lettering/`, `assets/fonts/angular/lettering.tsv`) | [Lettering](specs/imported-assets.md#lettering) |
+| Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census and the runtime import | [Imported assets](specs/imported-assets.md) |
+| `newfont` bitmap font built at runtime from texture 310, against the font `tools/make_font_newfont.py` generates from the import, and the page built from a texture pack's `t0310.png` | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
+| Angular vector font generated from the SVG traces and derived glyphs (`content/fonts/angular/frogger_angular.ttf`) | [Angular font](specs/imported-assets.md#angular-font) |
+| Lettering images and tile masks drawn from the angular font (`content/lettering/`, `content/fonts/angular/lettering.tsv` and `lettering_layout.tsv`), and the tiles composited at runtime from the import | [Lettering](specs/imported-assets.md#lettering) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |
 | Map light inputs and lit polygon colours of posed frog parts and flipbook cels | [Animated part lighting](specs/animation.md#animated-part-lighting) |
 | Maps, animation counters, cave falloff and SkyLand | [Maps](specs/maps.md) |

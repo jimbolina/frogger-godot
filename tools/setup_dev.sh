@@ -8,22 +8,27 @@ GODOT_HOME="build/godot"
 
 download=0
 check_only=0
+import_assets=0
 for argument in "$@"; do
     case "$argument" in
         --download-godot) download=1 ;;
         --check) check_only=1 ;;
+        --import) import_assets=1 ;;
         -h|--help)
             cat <<'USAGE'
-usage: tools/setup_dev.sh [--check] [--download-godot]
+usage: tools/setup_dev.sh [--check] [--download-godot] [--import]
 
 Prepares a checkout for development: git LFS objects, the Python tools'
 environment, a Godot 4.5.1 editor and the project's first import.
 
   --check           report what is missing without changing anything
   --download-godot  fetch the pinned editor into build/godot/ when none is found
+  --import          import your own copy of the game into assets/
 
 Set GODOT to a Godot 4.5.1 executable to use an existing install. Set
-FROGGER_DATA_DIR to the retail game folder to also run the archive suite.
+FROGGER_DATA_DIR to the retail game folder (FROGGER.EXE and FROGPSX.MWD) to
+import it and to run the archive and imported suites; set FROGGER_DISC to the
+disc image (.mds or .cue) to import the music too, which needs oggenc.
 USAGE
             exit 0
             ;;
@@ -55,12 +60,12 @@ else
         case "$first_line" in
             "version https://git-lfs.github.com/spec"*) pointers=$((pointers + 1)) ;;
         esac
-    done < <(find assets -type f -size -1024c -print0 2>/dev/null)
+    done < <(find content -type f -size -1024c -print0 2>/dev/null)
     if [ "$pointers" -gt 0 ]; then
         if [ "$check_only" -eq 1 ]; then
-            problem "$pointers git LFS pointers under assets/; run git lfs pull"
+            problem "$pointers git LFS pointers under content/; run git lfs pull"
         else
-            step "pulling git LFS objects ($pointers pointers under assets/)"
+            step "pulling git LFS objects ($pointers pointers under content/)"
             git lfs pull || problem "git lfs pull failed"
         fi
     else
@@ -173,14 +178,34 @@ if [ "$check_only" -eq 0 ] && [ "$problems" -eq 0 ]; then
 fi
 
 echo
+retail_ready=0
 if [ -n "${FROGGER_DATA_DIR:-}" ]; then
     if [ -f "$FROGGER_DATA_DIR/FROGGER.EXE" ] && [ -f "$FROGGER_DATA_DIR/FROGPSX.MWD" ]; then
-        step "FROGGER_DATA_DIR holds the retail files; the archive suite will run"
+        retail_ready=1
+        step "FROGGER_DATA_DIR holds the retail files; the archive and imported suites will run"
     else
         problem "FROGGER_DATA_DIR is set but $FROGGER_DATA_DIR lacks FROGGER.EXE or FROGPSX.MWD"
     fi
 else
-    step "FROGGER_DATA_DIR unset: the game and its suite need no retail files; set it to run the archive suite"
+    step "FROGGER_DATA_DIR unset: the game suite needs no retail files; set it to import your copy and run the other suites"
+fi
+if [ -n "${FROGGER_DISC:-}" ] && [ ! -f "$FROGGER_DISC" ]; then
+    problem "FROGGER_DISC is set but $FROGGER_DISC is not a file"
+fi
+if [ "$import_assets" -eq 1 ]; then
+    if [ "$retail_ready" -eq 0 ]; then
+        problem "--import needs FROGGER_DATA_DIR pointing at FROGGER.EXE and FROGPSX.MWD"
+    elif [ -n "${FROGGER_DISC:-}" ] && ! command -v "${OGGENC:-oggenc}" >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/oggenc ]; then
+        problem "FROGGER_DISC is set but oggenc is missing; install vorbis-tools or unset FROGGER_DISC to skip the music"
+    elif [ "$check_only" -eq 0 ] && [ "$problems" -eq 0 ]; then
+        step "importing your copy of the game into assets/ (takes several minutes)"
+        GODOT="$GODOT" bash archive/import/import_assets.sh || problem "the retail import failed; see the log folder it printed"
+    fi
+fi
+if [ -f assets/catalog.tres ]; then
+    step "assets/ holds an import of the game"
+else
+    step "assets/ is empty: the game opens its setup screen; run with --import to play and test from source"
 fi
 if [ "$problems" -ne 0 ]; then
     echo "setup_dev: $problems problem(s); fix them and rerun" >&2

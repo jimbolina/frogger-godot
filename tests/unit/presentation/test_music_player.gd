@@ -4,23 +4,24 @@ extends GutTest
 ## diagnostics otherwise.
 
 const TRACK: int = 2
-const COMMITTED: String = "res://assets/audio/music"
+## A folder holding a silent synthetic track 2 as an imported Ogg.
+const FIXTURE: String = "res://tests/fixtures/music"
 
 var _player: MusicPlayer
 
 func before_each() -> void:
 	_player = MusicPlayer.new()
 	_player.threaded = false
-	_player.use_folder(COMMITTED)
+	_player.use_folder(FIXTURE)
 	add_child_autofree(_player)
 
 func test_imported_track_paths_exist_only_for_imported_tracks() -> void:
-	assert_eq(MusicPlayer.imported_track_path(COMMITTED, TRACK), "res://assets/audio/music/track_02.ogg")
-	assert_eq(MusicPlayer.imported_track_path(COMMITTED, 99), "")
+	assert_eq(MusicPlayer.imported_track_path(FIXTURE, TRACK), "res://tests/fixtures/music/track_02.ogg")
+	assert_eq(MusicPlayer.imported_track_path(FIXTURE, 99), "")
 	assert_eq(MusicPlayer.imported_track_path("", TRACK), "")
 
 func test_the_imported_ogg_is_read_once_and_loops_a_copy() -> void:
-	var path: String = MusicPlayer.imported_track_path(COMMITTED, TRACK)
+	var path: String = MusicPlayer.imported_track_path(FIXTURE, TRACK)
 	for threaded: bool in [false, true]:
 		_player.clear()
 		_player.threaded = threaded
@@ -71,7 +72,7 @@ func test_a_once_only_copy_drops_a_baked_loop() -> void:
 	assert_ne(once, wav)
 	assert_eq(once.loop_mode, AudioStreamWAV.LOOP_DISABLED)
 	assert_eq(wav.loop_mode, AudioStreamWAV.LOOP_FORWARD, "the shared track keeps its settings")
-	var ogg: AudioStreamOggVorbis = load(MusicPlayer.imported_track_path(COMMITTED, TRACK)) as AudioStreamOggVorbis
+	var ogg: AudioStreamOggVorbis = load(MusicPlayer.imported_track_path(FIXTURE, TRACK)) as AudioStreamOggVorbis
 	assert_same(MusicPlayer.once_copy(ogg), ogg)
 	assert_null(MusicPlayer.once_copy(Resource.new()))
 
@@ -170,7 +171,7 @@ func test_a_runtime_imported_wav_track_is_found_and_played_looping() -> void:
 	assert_eq(stream.loop_mode, AudioStreamWAV.LOOP_FORWARD)
 	assert_eq(stream.loop_end, 2205)
 	assert_true(_player.is_playing())
-	_player.use_folder(COMMITTED)
+	_player.use_folder(FIXTURE)
 	assert_eq(_player.track, -1, "a new folder forgets the selected track")
 	assert_null(_player.stream())
 	_player.clear()

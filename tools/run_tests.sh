@@ -10,6 +10,46 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
     exit 2
 fi
 
+data_requested=0
+data_dir=""
+if [ -n "${FROGGER_DATA_DIR+x}" ]; then
+    data_requested=1
+    data_dir="$FROGGER_DATA_DIR"
+fi
+unset FROGGER_DATA_DIR FROGGER_TEST_SUITE FROGGER_TEST_SELECTION FROGGER_GENERATED_DIR
+
+if [ "$data_requested" -eq 1 ] && { [ ! -f assets/catalog.tres ] || [ ! -d assets/textures/images ]; }; then
+    echo "run_tests: assets/ holds no import; run tools/setup_dev.sh --import" >&2
+    exit 2
+fi
+
+game_arguments=()
+imported_arguments=()
+selected=0
+for argument in "$@"; do
+    selected=1
+    case "$argument" in
+        -gdir=*|-gtest=*)
+            option="${argument%%=*}"
+            game_paths=""
+            imported_paths=""
+            IFS=, read -r -a paths <<<"${argument#*=}"
+            for path in ${paths[@]+"${paths[@]}"}; do
+                case "$path" in
+                    res://tests/imported/*) imported_paths="${imported_paths:+$imported_paths,}$path" ;;
+                    *) game_paths="${game_paths:+$game_paths,}$path" ;;
+                esac
+            done
+            game_arguments+=("$option=$game_paths")
+            imported_arguments+=("$option=$imported_paths")
+            ;;
+        *)
+            game_arguments+=("$argument")
+            imported_arguments+=("$argument")
+            ;;
+    esac
+done
+
 UV="${UV:-uv}"
 if [ -d content/fonts/angular ]; then
     if ! command -v "$UV" >/dev/null 2>&1 && [ ! -x "$UV" ]; then
@@ -42,14 +82,6 @@ while IFS= read -r -d '' asset; do
     esac
 done < <(find assets content -type f -size -1024c -print0 2>/dev/null)
 
-archive_requested=0
-archive_data_dir=""
-if [ -n "${FROGGER_DATA_DIR+x}" ]; then
-    archive_requested=1
-    archive_data_dir="$FROGGER_DATA_DIR"
-fi
-unset FROGGER_DATA_DIR FROGGER_TEST_SUITE
-
 run_directory="$(mktemp -d "${TMPDIR:-/tmp}/frogger-tests.XXXXXX")" || exit 2
 mkdir "$run_directory/appdata" "$run_directory/data" "$run_directory/config" "$run_directory/temp" || exit 2
 export APPDATA="$run_directory/appdata"
@@ -73,7 +105,8 @@ case "$(uname -s)" in
 esac
 echo "run_tests: logs and isolated profile: $run_directory"
 
-if [ -d assets/textures/images ]; then
+generated=""
+if [ "$data_requested" -eq 1 ]; then
     generated="$run_directory/generated"
     if ! "${PYTHON:-python3}" tools/make_font_newfont.py --out "$generated/newfont" --quiet; then
         echo "run_tests: the newfont generator failed" >&2
@@ -83,7 +116,6 @@ if [ -d assets/textures/images ]; then
         echo "run_tests: the lettering tile generator failed" >&2
         exit 2
     fi
-    export FROGGER_GENERATED_DIR="$generated"
 fi
 script_errors='SCRIPT ERROR|Parse Error|Failed to load script|Failed loading resource|Could not load|CHECK FAILED'
 
@@ -127,6 +159,7 @@ if [ "$architecture_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/arc
 fi
 
 rc=0
+selected_tests=0
 
 check_suite() {
     local suite="$1"
@@ -134,6 +167,10 @@ check_suite() {
     run_stage "$suite" -s res://addons/gut/gut_cmdln.gd "$@"
     local tests_rc=$?
     cat "$run_directory/$suite.log" 2>/dev/null
+    if [ "$selected" -eq 1 ] && grep -Eq 'Could not find script matching|You do not have any directories configured' "$run_directory/$suite.log"; then
+        echo "run_tests: the selection matches no script in the $suite suite"
+        return
+    fi
     if grep -Eq "$script_errors" "$run_directory/$suite.log"; then
         echo "run_tests: script errors found in the $suite suite; see $run_directory/$suite.log" >&2
         rc=1
@@ -148,12 +185,24 @@ check_suite() {
         echo "run_tests: $suite suite result validation failed; see $run_directory/$suite-results.log" >&2
         rc=1
     fi
+    if [ "$suite" = archive ]; then
+        return
+    fi
+    local counts
+    counts="$(sed -nE 's/^SUMMARY: PASS=([0-9]+) FAIL=([0-9]+) SKIP=([0-9]+) EXIT=[01][[:space:]]*$/\1 \2 \3/p' "$run_directory/$suite.log" 2>/dev/null | tail -n 1)"
+    for count in $counts; do
+        selected_tests=$((selected_tests + count))
+    done
 }
 
-check_suite game "$@"
+if [ "$selected" -eq 1 ]; then
+    export FROGGER_TEST_SELECTION=1
+fi
 
-if [ "$archive_requested" -eq 1 ]; then
-    export FROGGER_DATA_DIR="$archive_data_dir"
+check_suite game ${game_arguments[@]+"${game_arguments[@]}"}
+
+if [ "$data_requested" -eq 1 ]; then
+    export FROGGER_DATA_DIR="$data_dir"
     run_stage input -s res://tools/check_test_results.gd -- --input
     input_rc=$?
     if [ "$input_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/input.log" || ! grep -Eq '^test_input: valid[[:space:]]*$' "$run_directory/input.log"; then
@@ -161,10 +210,18 @@ if [ "$archive_requested" -eq 1 ]; then
         echo "run_tests: invalid archive input; see $run_directory/input.log" >&2
         exit 1
     fi
-    export FROGGER_TEST_SUITE=archive
+    unset FROGGER_DATA_DIR
+    export FROGGER_TEST_SUITE=imported FROGGER_GENERATED_DIR="$generated"
+    check_suite imported -gconfig=res://tests/imported/.gutconfig.json ${imported_arguments[@]+"${imported_arguments[@]}"}
+    unset FROGGER_TEST_SUITE FROGGER_GENERATED_DIR FROGGER_TEST_SELECTION
+    export FROGGER_DATA_DIR="$data_dir" FROGGER_TEST_SUITE=archive
     check_suite archive -gconfig=res://archive/tests/.gutconfig.json
     unset FROGGER_TEST_SUITE
 else
-    echo "run_tests: archive suite not run (FROGGER_DATA_DIR unset)"
+    echo "run_tests: imported and archive suites not run (FROGGER_DATA_DIR unset)"
+fi
+if [ "$selected" -eq 1 ] && [ "$selected_tests" -eq 0 ]; then
+    echo "run_tests: the selection matched no tests" >&2
+    rc=1
 fi
 exit "$rc"

@@ -4,17 +4,18 @@ A rewrite of **Frogger** (Hasbro Interactive / Millennium Interactive, 1997;
 the PC release, also known as *Frogger: He's Back*) in
 [Godot 4](https://godotengine.org) with statically typed GDScript. The aim is
 the original game's feel on modern desktops (Windows, Linux, macOS), playing
-from the retail PC game's assets imported once into this private repository
-and edited from there. The formats were decoded following
-[FrogLord](https://github.com/Kneesnap/FrogLord), the community's Frogger
-editor; loading FrogLord-saved edits at run time is deferred.
+from the player's own copy of the retail PC game, which it imports on the
+first run. The repository holds none of the original game's content. The
+formats were decoded following [FrogLord](https://github.com/Kneesnap/FrogLord),
+the community's Frogger editor, and the port plays FrogLord's saves.
 
 The importer under `archive/` reads every file in the retail archives (the
 MWI index, the MWD archive, WAD bundles and PowerPacker compression), decodes
 the game tables held in the executable (levels, themes, forms, texture remaps
 and pointers, entity scripts, music, level select, demos, bugs), every
 texture, every model with its flipbooks and polygon textures, the sound banks
-and the CD music, and writes them as Godot resources under `assets/`. The map
+and the CD music, and writes them as Godot resources: into the game's user
+folder for a player, or into a developer's local `assets/`. The map
 inspection viewer renders terrain, water, sky and map animations.
 The dedicated game scene supports ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4, with the original-style
 single-player HUD, tongue collection, pickup and firefly sprites, the cave light, Desert rock explosions, Swamp crushers and presses, Sky balloons and the complete level loop.
@@ -68,8 +69,9 @@ JUN2, with a warning; the front end lists only accepted levels.
 A direct launch reads the project's class-name cache in `.godot/`, which goes
 stale when new scripts arrive and then fails with a script parse error. Prefer
 `tools/play.sh --level=SUB1` (or `tools/play.ps1`), which refreshes the cache
-before launching; `--scene=` selects another scene. No data folder is needed:
-the game reads `assets/`. `tools/run_tests.sh` also refreshes the
+before launching; `--scene=` selects another scene. No data folder is needed
+once `assets/` holds an import ([developer setup](#developer-setup)).
+`tools/run_tests.sh` also refreshes the
 checkout cache after strict compilation, and on Windows the wrapper's import
 stage already targets the checkout.
 The default is high-detail ORG1. Add `--record-inputs` to record your play: when
@@ -96,15 +98,17 @@ the game starts, or start it with `-- --setup`, to open the setup again, for
 example `godot --path . -- --setup`; the last page can also make it open every
 time. On Windows and Linux the last page puts a shortcut on the desktop; on
 macOS drag the exported app to Applications or the Dock. A source checkout
-plays the committed `assets/` and skips the setup unless asked. See
+whose `assets/` holds an import plays it and skips the setup unless asked;
+without one it opens the setup and imports into the user folder like an
+exported game. See
 [first-run setup](docs/reference/setup.md).
 
 ### Audio
 
-Sound effects play from the imported banks under `assets/audio/sfx/` and
-music from the imported CD tracks under `assets/audio/music/` (`track_NN.ogg`,
-NN being the disc track number). A missing track stays silent with a
-diagnostic. `--no-audio` turns all sound off.
+Sound effects play from the imported banks and music from the imported CD
+tracks (`audio/music/track_NN` of the import, NN being the disc track
+number); without a disc image there is no music. A missing track stays silent
+with a diagnostic. `--no-audio` turns all sound off.
 
 The terrain inspection driver uses the same rules as the tests:
 `godot --path . res://scenes/tools/terrain_viewer.tscn`.
@@ -197,14 +201,13 @@ For other commands in this README, use the executable inside the app:
 
 ```sh
 export GODOT=/Applications/Godot.app/Contents/MacOS/Godot
-export FROGGER_DATA_DIR=/path/to/FROGGER   # optional: the retail folder
+export FROGGER_DATA_DIR=/path/to/FROGGER   # the retail folder, for the import and the tests
 "$GODOT" --path .
 bash tools/run_tests.sh
 ```
 
-Only the test wrapper's archive suite and the importer read `FROGGER_DATA_DIR`;
-the game itself needs no retail files. The wrapper runs the game suite and,
-with the variable set, the archive suite; exit 0 is the only pass. See the
+Only the importer and the test wrapper read `FROGGER_DATA_DIR`; the game
+itself reads its import. See [running the tests](#running-the-tests) and the
 [testing guide](docs/reference/testing/README.md) for isolated Mac profiles.
 Use `python3` for Python commands on macOS.
 
@@ -216,14 +219,23 @@ described under [packaged builds](#packaged-builds).
 
 ## Assets
 
-The game plays from `assets/`, which holds every asset of the retail PC game
-imported once as Godot resources: textures, model
-meshes, scenes and preview animations, maps, the executable's tables, demos,
-sound effects and the CD music. Binary files are Git LFS objects: run
-`git lfs install` before cloning (or `git lfs pull` afterwards), and expect
-about 180 MB on disk. The test wrapper refuses to run while any asset is still
-an LFS pointer. The assets are the source of truth and are edited directly;
-hand-edited assets get reviewed golden overrides. See [assets](docs/reference/assets.md).
+The repository holds no part of the original game. Its content comes from
+the player's own copy, imported as Godot resources: textures, model meshes,
+scenes and preview animations, maps, the executable's tables, demos, sound
+effects and the CD music. A player's import lives in the game's user folder;
+a developer's lives in `assets/`, which is git-ignored and filled by
+`tools/setup_dev.sh --import` ([developer setup](#developer-setup)). Imported
+content is never edited by hand: change the importer, play a FrogLord save as
+an overlay or draw a [texture pack](#texture-packs).
+
+`content/` holds the port's own files, tracked in the repository: the angular
+lettering font traced from the alpha's letter models, the lettering images
+that replace the retail lettering textures, the masks from which the
+lily-pad, log and turtle lettering tiles are composited over the player's own
+textures at run time, and the table of glowing images. Its images and font
+are Git LFS objects: run `git lfs install` before cloning (or `git lfs pull`
+afterwards); the test wrapper refuses to run while any file is still an LFS
+pointer. See [assets](docs/reference/assets.md).
 
 The game draws on Godot's Forward+ renderer (Metal on Apple Silicon, Vulkan
 or Direct3D 12 on Windows, Vulkan on Linux) with scene lights and real
@@ -231,13 +243,13 @@ shadows from the map light records, lit model materials and lit terrain; see
 [lighting](docs/reference/rendering/lighting.md). On another renderer it
 still runs and logs a warning that shadows and lighting differ.
 `--shadows=off` compares without real shadows, and `--effect-shadows=retail`
-keeps the original's blob shadows beside them. In-game text draws with the bitmap font under
-`assets/fonts/retail/`, generated from the `newfont` glyph texture by
-`tools/make_font_newfont.py`.
+keeps the original's blob shadows beside them. In-game text draws with a
+bitmap font built at run time from the imported `newfont` glyph texture.
 
-The importer and the retail readers live in `archive/`, which the game never
-loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`
-regenerates `assets/` from the owner's copy of `pc-retail-v3.0e`; see
+The importer and the retail readers live in `archive/`, which the game loads
+only through its runtime-import seam. `tools/setup_dev.sh --import` runs
+`archive/import/import_assets.sh`, which writes `assets/` from your copy of
+`pc-retail-v3.0e`; see
 [archive](archive/README.md). The folder may instead hold a FrogLord save of
 that build (`modded_FROGGER.EXE` and `modded_FROGPSX.MWD`): FrogLord is the
 level editor and this port plays its output. `--assets-root=` and
@@ -437,15 +449,30 @@ Contributors: start with the [domain language](docs/reference/domain.md) and
 [architecture and ownership](docs/reference/architecture.md). These describe
 source identities, viewer lifetimes, and ownership of gameplay state.
 
+### Developer setup
+
 A fresh checkout needs git LFS, Python 3, [uv](https://docs.astral.sh/uv/)
-and Godot 4.5.1. `tools/setup_dev.sh` (Bash) or `tools/setup_dev.ps1`
-(PowerShell) checks each, pulls the LFS objects, syncs the Python tools'
-environment and imports the project once; `--check` only reports, and
-`--download-godot` (`-DownloadGodot`) fetches the pinned editor into
-`build/godot/` when none is installed. Set `GODOT` to an existing executable
-and, optionally, `FROGGER_DATA_DIR` to the retail folder. Nothing else in the
+and Godot 4.5.1, and your own copy of the game to play from source:
+
+```sh
+export FROGGER_DATA_DIR=/path/to/FROGGER   # holds FROGGER.EXE and FROGPSX.MWD
+export FROGGER_DISC=/path/to/FROGGER.mds   # optional: the disc image, for the music
+tools/setup_dev.sh --download-godot --import
+```
+
+`tools/setup_dev.sh` (Bash) or `tools/setup_dev.ps1` (PowerShell, `-DownloadGodot`
+and `-Import`) checks each tool, pulls the LFS objects, syncs the Python
+tools' environment and imports the project once. `--download-godot` fetches
+the pinned editor into `build/godot/` when none is installed; set `GODOT` to
+use an existing executable instead. `--import` imports your copy into
+`assets/` (several minutes); with `FROGGER_DISC` set it also encodes the CD
+music, which needs `oggenc` (vorbis-tools). `--check` only reports. Without
+an import the game still runs from source: it opens the setup screen and
+imports into its user folder like an exported game. Nothing else in the
 checkout depends on other repositories: the `../froggy` reference engine named
 in the references is only needed to regenerate goldens or compare traces.
+
+### Test suites
 
 Tests use [GUT](https://github.com/bitwes/Gut) and run headless:
 
@@ -454,11 +481,14 @@ GODOT=/path/to/godot tools/run_tests.sh              # bash (Linux, macOS, Git B
 $env:GODOT="C:\path\to\Godot.exe"; tools\run_tests.ps1   # PowerShell
 ```
 
-The game suite under `tests/` needs no game files and allows no skips. Set
-`FROGGER_DATA_DIR` to the folder holding the retail `FROGGER.EXE` and
-`FROGPSX.MWD` to also run the archive suite (`archive/tests/`), which checks
-the retail readers against the committed text facts; without it the wrapper
-reports that the archive suite was not run. Each suite prints a summary such
+The game suite under `tests/` needs no game files and allows no skips; it is
+the suite hosted CI runs. Set `FROGGER_DATA_DIR` to the folder holding the
+retail `FROGGER.EXE` and `FROGPSX.MWD` to also run the archive suite
+(`archive/tests/`), which checks the retail readers against the committed
+text facts, and the imported suite (`tests/imported/`), which checks your
+import in `assets/` and stops with a pointer to `tools/setup_dev.sh --import`
+when there is none. The [testing guide](docs/reference/testing/README.md)
+says what each suite needs. Each suite prints a summary such
 as `SUMMARY: PASS=70 FAIL=0 SKIP=0 EXIT=0`, followed by the wrapper's
 result-validation status.
 
@@ -466,7 +496,7 @@ result-validation status.
 |---|---|
 | 0 | every test ran and passed |
 | 1 | a test failed or skipped, or a script does not compile |
-| 2 | runner setup failed (for example, Godot was not found, or `assets/` holds unfetched Git LFS pointers) |
+| 2 | runner setup failed (for example, Godot was not found, or the checkout holds unfetched Git LFS pointers) |
 
 Every script is compiled before the tests run (`tools/check_scripts.gd`),
 with the project's strict typing warnings treated as errors. The wrappers also
@@ -476,14 +506,15 @@ retail folder, any skip or an empty selection fails.
 The wrappers isolate writable user data, save explicit logs in a temporary
 folder, disable the crash handler and stop at the first failed stage.
 For a focused iteration, append `-gselect=test_model_viewer` to either wrapper.
-The complete run with `FROGGER_DATA_DIR` set remains required before each
-commit.
+The complete run with `FROGGER_DATA_DIR` set and `assets/` imported remains
+required before each commit.
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `assets/` | The game's content as committed Godot resources (binary files through Git LFS), with `catalog.tres` as the index; see [assets](docs/reference/assets.md). |
+| `assets/` | Git-ignored: your local import of the game as Godot resources, with `catalog.tres` as the index, written by `tools/setup_dev.sh --import`; see [assets](docs/reference/assets.md). |
+| `content/` | The port's own files, tracked (images and font through Git LFS): the angular font and its sources, the lettering images and tile masks, the glowing-image table. |
 | `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, `AssetCatalog` (the abstract data provider) and `AssetIndex`. No scene tree, no file access. |
 | `src/rendering/` | Turning game data and committed gameplay state into Godot resources: model meshes and materials, the shaders that draw them, scene-lighting and tint specifications, effect geometry, and the conversion between the game's space and Godot's. |
 | `src/game/` | Gameplay definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, and the front-end rules (`frontend/`, `options/`). No scene tree, no file access. |
@@ -492,8 +523,9 @@ commit.
 | `src/presentation/` | The game and front-end screens (`frontend/`), the setup screen (`setup/`), the sandbox screen (`sandbox/`), audio, input and effect views, and development tools (`tools/`: the model, map, terrain and camera-zone viewers). |
 | `scenes/` | Godot scenes (`setup.tscn` is the main scene, which opens `front_end.tscn` once the game is set up, and `boot.tscn` the developer tools menu; `game/` holds the game and sandbox scenes, `tools/` the viewers). |
 | `tests/unit/` | The game suite's unit tests, one folder per layer. |
-| `tests/golden/` | Golden tests over committed synthetic facts and keyboard fixtures, and the retail text facts the archive suite compares with. |
-| `archive/` | Everything that reads the retail files, which the game never loads: `source/` (the readers and the retail-backed `GameData`), `import/` (the one-time importer that writes `assets/`), `tests/` (the archive suite, run only with `FROGGER_DATA_DIR`), `tools/`, `docs/formats/` (the retail format references) and `third_party/froglord_cfg/` (FrogLord's configuration files, unmodified; see `archive/third_party/README.md`). |
+| `tests/golden/` | Golden tests over committed synthetic facts, `content/` and keyboard fixtures, and the retail text facts the archive and imported suites compare with. |
+| `tests/imported/` | The imported suite: tests that need your import in `assets/`. |
+| `archive/` | Everything that reads the retail files, which the game reaches only through the runtime-import seam: `source/` (the readers and the retail-backed `GameData`), `import/` (the importer that writes `assets/` or a player's import), `tests/` (the archive suite, run only with `FROGGER_DATA_DIR`), `tools/`, `docs/formats/` (the retail format references) and `third_party/froglord_cfg/` (FrogLord's configuration files, unmodified; see `archive/third_party/README.md`). |
 | `tools/` | The play and test wrappers, the script and architecture checks, the golden-data generators `make_*.py` (see `tests/golden/README.md`), the C oracles, and the inspection runners, verifiers and probes. |
 | `addons/gut/` | The GUT test framework, unmodified. |
 
@@ -509,12 +541,11 @@ stay outside the repository, and Git retains development history.
 
 ## Packaged builds
 
-A packaged build holds the game's code and its own files, including the
-high-resolution lettering images; 49 of them (the lily-pad letters, score logs
-and rank turtles) keep backgrounds taken from the original textures. The
-game's levels, models, sounds and textures are not included: on the first
-start the [setup screen](#setup-and-first-run) imports your own copy of
-Frogger into the game's user folder. Each release on
+A packaged build holds the port's code and its own files from `content/`,
+and no part of the original game: on the first start the
+[setup screen](#setup-and-first-run) imports your own copy of Frogger into
+the game's user folder. The lily-pad letters, score logs and rank turtles
+are composited from the port's lettering masks over textures of that copy. Each release on
 the repository's GitHub Releases page carries the three zips below.
 
 - **macOS** (Apple Silicon and Intel): unzip `Frogger-<version>-macos.zip` and
@@ -543,17 +574,20 @@ To build the packages, install the Godot 4.5.1 export templates (Editor,
 Manage Export Templates), then run `tools/export.sh` (or `tools/export.ps1`
 on Windows); `tools/export.sh macOS` builds one. The builds and their zips go
 to `build/`. The script stops when a build would carry any file under
-`assets/` except the angular font, the emissive table and the lettering
-images. The icon is a
+`assets/`, or any file of `content/` other than the angular font, the
+glowing-image table, the lettering images and the tile masks. The icon is a
 placeholder drawn for the port, `icon/frogger_icon.svg`; after editing it,
 run `godot --headless --path . -s res://tools/make_icons.gd`. See
 [packaging](docs/reference/setup.md#packaging).
 
 ## Licence
 
-This repository is permanently private: it holds assets derived from the
-retail game, and nothing in it is distributed or licensed to others. Third-party material keeps its own
-licence: FrogLord's configuration files (MIT, `archive/third_party/froglord_cfg/LICENSE.md`)
+The repository holds none of the original game's files: its levels, models,
+textures, sounds and music come from the player's own copy, imported on the
+first run. The test facts in `tests/golden/pc-retail-v3.0e/`, decoded from
+the retail files, stay until the owner decides on them. A licence for the project's own code has not been chosen yet; that
+is the owner's decision. Third-party material keeps its own licence:
+FrogLord's configuration files (MIT, `archive/third_party/froglord_cfg/LICENSE.md`)
 and GUT (MIT, `addons/gut/LICENSE.md`).
 
 ## Credits

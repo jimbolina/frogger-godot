@@ -1,8 +1,6 @@
 extends GutTest
 ## Independent frozen Sky trigger, PATH_INFO, drift, Game_timer and balloon-script register facts at source widths.
 
-## The imported FrogLord name lists of the retail build.
-const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/sky.json"
 const SKY_THEME: int = 8
 const DRIFT_LABELS: Array[String] = ["sky:drift_x", "sky:drift_z"]
@@ -366,57 +364,3 @@ func test_game_timer_cadence_match_independent_facts() -> void:
 				if not result.error.is_empty():
 					return
 		assert_eq(run.snapshot().game_timer, _int(expected.final_game_timer), label + " final")
-
-func _names() -> NameBank:
-	var names: GameNameLists = load(NAMES) as GameNameLists
-	assert_not_null(names)
-	return names.scripts if names != null else null
-
-## Builds a supplied-table stand-in holding the frozen-source programs under their FrogLord ids.
-func _table(bank: NameBank, programs: Dictionary) -> ScriptTable:
-	var table := ScriptTable.new()
-	var highest: int = 0
-	for key: String in programs:
-		highest = maxi(highest, key.to_int())
-	for id: int in range(highest + 1):
-		var program := EntityScript.new()
-		program.id = id
-		program.name = bank.name_of(id)
-		var words: Array[int] = [38]
-		if programs.has(str(id)):
-			words = _ints(programs[str(id)])
-		var cursor: int = 0
-		while cursor < words.size():
-			var command := EntityScript.Command.new()
-			command.opcode = words[cursor]
-			var width: int = EntityScriptDefinition.WIDTHS[command.opcode]
-			command.arguments = PackedInt32Array(words.slice(cursor + 1, cursor + width))
-			program.commands.append(command)
-			cursor += width
-		table.scripts.append(program)
-	return table
-
-func test_sky_script_registers_match_independent_facts() -> void:
-	var bank: NameBank = _names()
-	if bank == null:
-		return
-	var family: Dictionary = _facts().sky_script_registers
-	var programs: Dictionary = family.programs
-	var table: ScriptTable = _table(bank, programs)
-	var setups: Array = family.setup
-	for fixture: Dictionary in setups:
-		var initial: Dictionary = fixture.input
-		var expected: Dictionary = fixture.expected
-		var label: String = "%s registers" % str(initial.name)
-		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve(str(initial.entity))
-		assert_eq(behavior.layout, EntityBehavior.Layout.MATRIX, label)
-		var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, bank, _int(initial.root), behavior, _bytes(initial.payload))
-		if not expected.source_defined:
-			assert_ne(setup.error, "", label + " reads outside the entity data")
-			continue
-		assert_eq(setup.error, "", label)
-		if setup.definition == null:
-			continue
-		assert_eq(setup.definition.payload_offset, 32, label + " offset")
-		assert_eq(setup.definition.payload_registers.size(), _int(expected.count), label + " count")
-		assert_eq(setup.definition.payload_registers, PackedInt32Array(_ints(expected.registers)), label + " values")

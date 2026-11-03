@@ -2,7 +2,7 @@
 
 The core domain is faithful Frogger behavior played from the imported assets.
 Frozen C is the behavior authority, checked against retail observations; the
-committed assets are the content authority; FrogLord is the format authority
+imported assets are the content authority; FrogLord is the format authority
 for the archive readers ([source policy](sources.md),
 [domain model](domain-model.md#authority)). Record disagreements in the
 relevant technical reference; do not invent rules.

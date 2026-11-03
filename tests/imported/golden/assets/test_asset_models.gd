@@ -7,7 +7,6 @@ extends AssetTest
 ## [code]model.res[/code] and [code]model.tscn[/code] hold the parts
 ## mof_parts.tsv lists, and every animated model has its preview animations.
 
-const FAMILY: String = "model_meshes"
 const MODELS: String = "res://assets/models"
 const OPTIONS: String = "res://assets/models/options"
 
@@ -117,7 +116,6 @@ func _check_part(folder: String, row: PackedStringArray, mismatches: PackedStrin
 		return
 	var part_index: int = int(row[3])
 	var part: ArrayMesh = mesh.part_meshes[part_index] if part_index < mesh.part_meshes.size() else null
-	var asset: String = folder.trim_prefix(ASSETS + "/").path_join("part_%02d.res" % part_index)
 	var cels: int = part.get_blend_shape_count() + 1 if part != null else file.static_models[int(row[2])].parts[part_index].partcels.size()
 	if cels > 1 and part != null:
 		var morph: ModelMorphMesh = mesh.morph_meshes[part_index] if part_index < mesh.morph_meshes.size() else null
@@ -130,7 +128,7 @@ func _check_part(folder: String, row: PackedStringArray, mismatches: PackedStrin
 	var fields: PackedStringArray = ["surfaces", "triangles", "cels", "positions_sha256", "colours_sha256", "uvs_sha256"]
 	var columns: PackedInt32Array = [4, 5, 6, 8, 9, 10]
 	for at: int in fields.size():
-		var want: String = expected(asset, FAMILY, fields[at], row[columns[at]])
+		var want: String = row[columns[at]]
 		if got[at] != want:
 			mismatches.append("%s part %d %s: %s, want %s" % [folder, part_index, fields[at], got[at], want])
 

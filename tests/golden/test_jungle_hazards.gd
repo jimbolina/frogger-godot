@@ -1,8 +1,6 @@
 extends GutTest
-## Independent frozen Jungle plant timeline, outro-door bounce-back and hippo no-dive facts at source widths.
+## Independent frozen Jungle plant timeline and outro-door bounce-back facts at source widths.
 
-## The imported FrogLord name lists of the retail build.
-const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/jungle.json"
 const SNAP_SOUND: int = 93
 
@@ -173,44 +171,3 @@ func test_door_bounce_back_match_independent_facts() -> void:
 		assert_eq([state.frog.velocity_16.x, state.frog.velocity_16.y, state.frog.velocity_16.z], _ints(expected.velocity), label + " velocity")
 		assert_eq([state.frog.matrix12[9], state.frog.matrix12[10], state.frog.matrix12[11]], _ints(expected.translation), label + " translation")
 		assert_eq(state.frog.old_y, 12345 if expected.old_y == null else _int(expected.old_y), label + " old y")
-
-func test_hippo_no_dive_match_independent_facts() -> void:
-	var names: GameNameLists = load(NAMES) as GameNameLists
-	assert_not_null(names)
-	if names == null:
-		return
-	var bank: NameBank = names.scripts
-	var dive: int = bank.index_of("SCRIPT_JUN_HIPPO")
-	var table := ScriptTable.new()
-	for id: int in range(maxi(dive, bank.index_of("SCRIPT_JUN_HIPPO_NO_DIVE")) + 1):
-		var program := EntityScript.new()
-		program.id = id
-		program.name = bank.name_of(id)
-		var stop := EntityScript.Command.new()
-		stop.opcode = 38
-		program.commands = [stop]
-		table.scripts.append(program)
-	var hippo: EntityBehavior = EntityBehaviorCatalog.resolve("JUN_HIPPO")
-	for fixture: Dictionary in _facts().hippo_no_dive:
-		var initial: Dictionary = fixture.input
-		var expected: Dictionary = fixture.expected
-		var turtle_type: int = _int(initial.turtle_type)
-		var label: String = "hippo turtle_type %d" % turtle_type
-		var payload := PackedByteArray()
-		payload.resize(24)
-		payload.encode_s32(12, 180)
-		payload.encode_s32(16, 60)
-		payload.encode_u32(20, turtle_type)
-		var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, bank, dive, hippo, payload)
-		var script_name: String = expected.script
-		var script_id: int = _int(expected.script_id)
-		assert_eq(bank.index_of(script_name), script_id, label + " FrogLord script id")
-		if turtle_type in [0, 1]:
-			assert_eq(setup.error, "", label)
-			if setup.definition == null:
-				continue
-			assert_eq(setup.definition.root_id, script_id, label)
-			assert_eq(bank.name_of(setup.definition.root_id), script_name, label)
-		else:
-			assert_eq(script_name, "SCRIPT_JUN_HIPPO", label)
-			assert_eq(setup.error, "Unsupported turtle payload type", label + " port rejects types frozen C treats as diving")

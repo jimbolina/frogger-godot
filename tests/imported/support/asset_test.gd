@@ -1,9 +1,8 @@
 class_name AssetTest
 extends GutTest
-## Base of the import goldens under [code]tests/golden/assets/[/code]: opens the
-## committed assets as an [ImportedAssets] catalog (once per run, through
-## [AssetTestCache]) and reads the retail facts and reviewed overrides they are
-## compared with.
+## Base of the import goldens under [code]tests/imported/golden/assets/[/code]:
+## opens the local import as an [ImportedAssets] catalog (once per run, through
+## [AssetTestCache]) and reads the retail facts they are compared with.
 
 ## Where the imported assets live.
 const ASSETS: String = AssetTestCache.ASSETS
@@ -14,7 +13,7 @@ const GENERATED_VARIABLE: String = "FROGGER_GENERATED_DIR"
 const IMPORTED_DIR: String = "res://tests/golden/imported"
 
 
-## The committed assets, opened once and shared by every asset test.
+## The local import, opened once and shared by every asset test.
 func catalog() -> ImportedAssets:
 	return AssetTestCache.catalog()
 
@@ -39,19 +38,10 @@ func fact_values(file_name: String) -> Dictionary[String, String]:
 	return GoldenFiles.facts(file_name)
 
 
-## The retail fact [param retail] for [param field] of [param family], or the
-## reviewed override recorded for [param asset] (a path under [code]assets/[/code]).
-func expected(asset: String, family: String, field: String, retail: String) -> String:
-	return AssetTestCache.override(asset, family, field, retail)
-
-
 ## Every file under [param folder] (a [code]res://[/code] path) whose name ends
 ## with [param suffix], recursively, sorted.
 func files_under(folder: String, suffix: String) -> PackedStringArray:
-	var found := PackedStringArray()
-	_collect(folder, suffix, found)
-	found.sort()
-	return found
+	return GoldenFiles.files_under(folder, suffix)
 
 
 ## The folder [param name] of the generators' output under
@@ -68,12 +58,3 @@ func generated_folder(name: String) -> String:
 func sha256_hex(bytes: PackedByteArray) -> String:
 	return GoldenFiles.sha256_hex(bytes)
 
-
-func _collect(folder: String, suffix: String, into: PackedStringArray) -> void:
-	if not DirAccess.dir_exists_absolute(folder):
-		return
-	for child: String in DirAccess.get_directories_at(folder):
-		_collect(folder.path_join(child), suffix, into)
-	for file: String in DirAccess.get_files_at(folder):
-		if file.ends_with(suffix):
-			into.append(folder.path_join(file))

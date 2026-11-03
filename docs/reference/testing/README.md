@@ -2,22 +2,43 @@
 
 ## Required commit gate
 
-Run the wrapper before every commit that touches code, tests, goldens, assets,
-tools or project configuration; documentation-only commits need no run. It
-checks that `assets/` holds no git LFS pointers, imports, strictly compiles
-every script (including `archive/`), refreshes the checkout's class cache,
-checks architecture, then runs two suites and verifies each saved result report
-against its log and process exit. Stop on a failed stage; fix it before starting
-subsequent checks.
+Run the wrapper before every commit that touches code, tests, goldens,
+content, tools or project configuration; documentation-only commits need no
+run. It checks that the checkout holds no git LFS pointers, imports, strictly
+compiles every script (including `archive/`), refreshes the checkout's class
+cache, checks architecture, then runs the suites and verifies each saved
+result report against its log and process exit. Stop on a failed stage; fix
+it before starting subsequent checks.
 
-- Game suite (`tests/`, `.gutconfig.json`): always runs, needs no player files
-  and never sees `FROGGER_DATA_DIR`. Every test must pass; a skip or pending
-  test is a failure.
+### Suites
+
+The wrapper runs up to three suites, in this order: the game suite, the
+retail-folder check, the imported suite and the archive suite. Every test
+must pass; a skip or pending test is a failure in every suite.
+
+- Game suite (`tests/unit/` and `tests/golden/`, `.gutconfig.json`): always
+  runs, needs no player files and no `assets/`, and never sees
+  `FROGGER_DATA_DIR`. Hosted CI runs only this suite.
+- Imported suite (`tests/imported/`, `tests/imported/.gutconfig.json`,
+  `FROGGER_TEST_SUITE=imported`): runs only when `FROGGER_DATA_DIR` is set and
+  needs the local import from `tools/setup_dev.sh --import`. When
+  `assets/catalog.tres` or `assets/textures/images` is missing the wrapper
+  exits 2 with `run_tests: assets/ holds no import; run tools/setup_dev.sh --import`.
+  Before it, the wrapper runs the `newfont` and lettering-tile generators on
+  the import into the run folder and exports that folder as
+  `FROGGER_GENERATED_DIR`, which only this suite sees
+  ([bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts),
+  [lettering](../../../tests/golden/specs/imported-assets.md#lettering)).
 - Archive suite (`archive/tests/`, `archive/tests/.gutconfig.json`): runs only
-  when `FROGGER_DATA_DIR` is set. The wrapper first checks that the folder holds
-  FROGGER.EXE and FROGPSX.MWD; a set but invalid or empty value fails. Skips
-  and pending tests fail here too. When the variable is unset the wrapper prints
-  `run_tests: archive suite not run (FROGGER_DATA_DIR unset)`.
+  when `FROGGER_DATA_DIR` is set. The retail-folder check
+  (`check_test_results.gd -- --input`) first requires the folder to hold
+  FROGGER.EXE and FROGPSX.MWD; a set but invalid or empty value fails.
+
+When `FROGGER_DATA_DIR` is unset the wrapper prints
+`run_tests: imported and archive suites not run (FROGGER_DATA_DIR unset)`.
+New tests that read retail data go in `tests/imported/` (extending `AssetTest`
+from `tests/imported/support/`) when they need the import, or in
+`archive/tests/` (extending `RetailTest`) when they read the retail files.
 
 ```powershell
 $env:GODOT = 'C:\path\to\Godot.exe'
@@ -28,12 +49,14 @@ $env:FROGGER_DATA_DIR = 'C:\path\to\FROGGER'
 For Bash: `GODOT=/path/to/godot FROGGER_DATA_DIR=/path/to/retail tools/run_tests.sh`.
 `tools/setup_dev.sh` or `tools/setup_dev.ps1` prepares a fresh checkout for
 the wrapper (LFS objects, uv environment, a Godot 4.5.1 editor, the first
-import); see [running the tests](../../../README.md#running-the-tests).
+project import, and with `--import` the local `assets/`); see
+[developer setup](../../../README.md#developer-setup).
 Commands run from the repository root. Before a commit, run with
-`FROGGER_DATA_DIR` set so both suites run. Exit codes: 0 = every stage passed;
-1 = compile, architecture, input, test or result failure; 2 = setup failure
-(Godot missing, run folder, or git LFS pointers under `assets/`: run
-`git lfs pull`).
+`FROGGER_DATA_DIR` set and `assets/` imported so every suite runs. Exit
+codes: 0 = every stage passed; 1 = compile, architecture, input, test or
+result failure; 2 = setup failure (Godot missing, run folder, git LFS
+pointers: run `git lfs pull`, or `FROGGER_DATA_DIR` set without an import in
+`assets/`: run `tools/setup_dev.sh --import`).
 
 On macOS, the Bash wrapper also finds `/Applications/Godot.app/Contents/MacOS/Godot`
 when `godot` is not on PATH. After strict compilation it imports the checkout
@@ -56,7 +79,7 @@ after diagnosis. Sandbox environments must allow the unique Library directory.
 runner for every push to any branch and on manual dispatch; a newer push to the
 same ref cancels a run in progress. `FROGGER_DATA_DIR` is never set there, so
 only the game suite runs: retail data never leaves the owner's machine, and
-the archive suite stays a local check. A green hosted run therefore does not
+the archive and imported suites stay local checks. A green hosted run therefore does not
 replace the local run before a commit.
 
 The runner installs Python 3.12, uv 0.11.19 and Godot 4.5.1-stable, which
@@ -65,7 +88,7 @@ against a pinned SHA-512 and caches. `.github/actions/lfs-cache` restores
 `.git/lfs` from the Actions cache, keyed on the commit's LFS object list, and
 pulls only what is missing, so a run spends the repository's
 [Git LFS bandwidth](../../PORTING.md#needed-from-the-owner) only when the
-assets change or the cache has expired.
+files under `content/` change or the cache has expired.
 The run's logs are kept as the artifact `test-logs-<commit sha>` for 14 days.
 
 The release pull request gets no run, because GitHub starts no workflow for
@@ -127,10 +150,15 @@ it covers the rest. The release workflow is described under
   [attract cycle](../../../tests/golden/specs/frontend.md#attract-cycle).
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
-- [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts):
-  both wrappers run `python3 tools/make_font_newfont.py --check --quiet`, which
-  compares the committed `assets/fonts/*/newfont.fnt` and their pages with the generator;
-  `tests/golden/assets/test_asset_fonts.gd` checks the imported fonts.
+- [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts)
+  and [lettering tiles](../../../tests/golden/specs/imported-assets.md#lettering):
+  before the imported suite, both wrappers run
+  `python3 tools/make_font_newfont.py --out` and
+  `uv run --locked tools/make_lettering.py --composite assets --out` into the
+  run folder's `generated/` and export it as `FROGGER_GENERATED_DIR`;
+  `tests/imported/golden/assets/test_asset_newfont_runtime.gd`,
+  `test_asset_fonts.gd` and `test_asset_lettering_tiles.gd` compare the
+  runtime font and tiles with those files.
 - [Angular font](../../../tests/golden/specs/imported-assets.md#angular-font)
   and [lettering](../../../tests/golden/specs/imported-assets.md#lettering):
   both wrappers run `uv run --locked tools/make_angular_font.py --check --quiet`
@@ -140,13 +168,17 @@ it covers the rest. The release workflow is described under
   check allows the one-supersample rounding that differs between Pillow's
   arm64 and x86_64 wheels, so the hosted Linux run matches images generated
   on a Mac ([lettering](../../../tests/golden/specs/imported-assets.md#lettering)).
+  The game suite's `tests/golden/content/test_content_angular_font.gd`,
+  `test_content_lettering.gd` and `test_content_import_settings.gd` check the
+  committed files under `content/` without an import.
 - [Packaging](../setup.md#packaging): `test_export_presets` checks that every
-  preset excludes each retail-derived file under `assets/` except the
-  shipped lettering images, which it requires, and the tests, tools,
-  documentation and GUT; `test_app_icons` checks the icon files against
+  preset excludes the local import `assets/`, ships only the shippable files
+  of `content/` (every lettering image and tile mask among them, never their
+  sources), and excludes the tests, tools, documentation and GUT; `test_app_icons` checks the icon files against
   `icon/frogger_icon.svg` (`godot --headless --path . -s
   res://tools/make_icons.gd` rewrites them); `tools/export.sh` fails an
-  export whose log stores any other retail-derived file.
+  export whose log stores any file under `assets/` or an unlisted file of
+  `content/`.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
   independent background diagnostics and the [bounded route proof](../../../tests/golden/specs/entities.md#org1-route-proof).
   The older general-pose diagnostic remains blocked; the narrower route has
@@ -321,8 +353,8 @@ the by-ear check for [audio playback](../../../archive/docs/formats/archives.md#
 Append `-gselect=test_model_viewer` to either wrapper to select one script.
 GUT arguments are forwarded unchanged; `-gunit_test_name=<substring>` narrows
 test names further. Every focused run still compiles all scripts and checks
-architecture. A selection matching no tests fails. Before committing, always
-run both complete modes without selectors.
+architecture. Before committing, always run the complete wrapper with
+`FROGGER_DATA_DIR` set and no selectors.
 In PowerShell, quote options containing resource paths, for example
 `'-gdir=res://tests/unit/presentation'`.
 For a focused group, use `'-gdir='` and
@@ -336,16 +368,22 @@ file, line and dependency rule. New gameplay directories are checked when added;
 no empty gameplay scaffolding is needed now.
 
 Extra wrapper arguments (`-gselect=`, `-gunit_test_name=`, `-gdir=`, `-gtest=`)
-apply to the game suite only; the archive suite always runs whole.
+reach the game and imported suites; `-gdir=` and `-gtest=` paths under
+`res://tests/imported/` go to the imported suite and all others to the game
+suite. The archive suite always runs whole. A suite whose selection matches
+no script is reported (`run_tests: the selection matches no script in the
+<suite> suite`) without failing, and the wrapper sets
+`FROGGER_TEST_SELECTION=1` so the result check accepts that empty suite; the
+run fails with `run_tests: the selection matched no tests` when the game and
+imported suites together selected nothing.
 
-The GUT hook saves `user://test_results_game.json` or
-`user://test_results_archive.json` (chosen by `FROGGER_TEST_SUITE`, which the
-wrapper sets) in the isolated profile and prints named failures, skips and the
-summary. The wrapper's independent check (`check_test_results.gd -- <log>
-<exit> [--suite=archive]`) recounts the records and checks the suite, named
-skips, summary and process exit. Missing, duplicate, inconsistent or empty
-reports fail. New tests that read retail files live in `archive/tests/` and
-extend `RetailTest`. Retain the printed run folder for diagnosis.
+The GUT hook saves `user://test_results_<suite>.json` (`game`, `imported` or
+`archive`, chosen by `FROGGER_TEST_SUITE`, which the wrapper sets) in the
+isolated profile and prints named failures, skips and the summary. The
+wrapper's independent check (`check_test_results.gd -- <log> <exit>
+--suite=<game|imported|archive>`) recounts the records and checks the suite,
+named skips, summary and process exit. Missing, duplicate, inconsistent or
+empty reports fail. Retain the printed run folder for diagnosis.
 
 On macOS each isolated project starts from an APFS clone of the checkout's
 `.godot/imported`, `uid_cache.bin` and `global_script_class_cache.cfg`, so only
@@ -399,7 +437,7 @@ but normal runtime use and the Godot test suites do not build or load them.
 - Every new golden family needs an independent generator and a deliberate-break
   check, with the original fact restored. See [golden rules](../../../tests/golden/README.md).
 - `tools/asset_report.sh [--index-root=<folder>] [--levels=ORG1,CAV3] [--strict]`
-  prints the `LevelSupportReport` of the committed assets or an overlay index;
+  prints the `LevelSupportReport` of the local import or an overlay index;
   `--strict` exits 1 on an unmapped row or a read problem. The archive suite's
   `test_retail_froglord_roundtrip` writes a synthetic FrogLord save under
   `user://`, imports it in-process as an overlay and loads ORG1 and CAV3 from it

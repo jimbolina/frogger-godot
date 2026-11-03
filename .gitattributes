@@ -3,11 +3,6 @@
 *.png binary
 *.ttf binary
 *.otf binary
-assets/**/*.png filter=lfs diff=lfs merge=lfs -text
-assets/**/*.wav filter=lfs diff=lfs merge=lfs -text
-assets/**/*.ogg filter=lfs diff=lfs merge=lfs -text
-assets/**/*.res filter=lfs diff=lfs merge=lfs -text
-assets/**/*.ttf filter=lfs diff=lfs merge=lfs -text
 content/**/*.png filter=lfs diff=lfs merge=lfs -text
 content/**/*.ttf filter=lfs diff=lfs merge=lfs -text
 content/fonts/angular/svg/*.svg -text

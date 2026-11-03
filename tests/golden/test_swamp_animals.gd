@@ -1,8 +1,6 @@
 extends GutTest
-## Independent frozen Swamp rat cycle, slug action, weir rotation and LOCAL_ALIGN facts at source widths.
+## Independent frozen Swamp rat cycle, slug action, weir matrix and LOCAL_ALIGN facts at source widths.
 
-## The imported FrogLord name lists of the retail build.
-const NAMES: String = "res://assets/tables/names.tres"
 const FACTS: String = "res://tests/golden/synthetic/swamp.json"
 
 var _cache: Dictionary = {}
@@ -115,78 +113,13 @@ func test_slug_action_match_independent_facts() -> void:
 		var expected: Dictionary = fixture.expected
 		assert_eq(run.snapshot().entities[0].animation.action, _int(expected.action), label)
 
-func _table(bank: NameBank, programs: Dictionary) -> ScriptTable:
-	var table := ScriptTable.new()
-	var highest: int = 0
-	for key: String in programs:
-		highest = maxi(highest, key.to_int())
-	for id: int in range(highest + 1):
-		var program := EntityScript.new()
-		program.id = id
-		program.name = bank.name_of(id)
-		var words: Array[int] = [38]
-		if programs.has(str(id)):
-			words = _ints(programs[str(id)])
-		var cursor: int = 0
-		while cursor < words.size():
-			var command := EntityScript.Command.new()
-			command.opcode = words[cursor]
-			var width: int = EntityScriptDefinition.WIDTHS[command.opcode]
-			command.arguments = PackedInt32Array(words.slice(cursor + 1, cursor + width))
-			program.commands.append(command)
-			cursor += width
-		table.scripts.append(program)
-	return table
-
-func test_weir_matrix_and_rotation_match_independent_facts() -> void:
+func test_weir_matrix_match_independent_facts() -> void:
 	var weir: Dictionary = _facts().weir_matrix
 	for fixture: Dictionary in weir.overrides:
 		var initial: Dictionary = fixture.input
 		var expected: Dictionary = fixture.expected
 		var matrix := PackedInt32Array(_ints(initial.matrix))
 		assert_eq(EntitySetup.weir_matrix(matrix), PackedInt32Array(_ints(expected.matrix)), "weir override %s" % str(matrix))
-	var names: GameNameLists = load(NAMES) as GameNameLists
-	assert_not_null(names)
-	if names == null:
-		return
-	var bank: NameBank = names.scripts
-	var registers: Dictionary = _facts().script_registers
-	var programs: Dictionary = registers.programs
-	var table: ScriptTable = _table(bank, programs)
-	for fixture: Dictionary in weir.rotation:
-		var initial: Dictionary = fixture.input
-		var root: int = _int(initial.root)
-		assert_eq(bank.name_of(root), "SCRIPT_SWP_WEIR_ROTATE")
-		var behavior: EntityBehavior = EntityBehaviorCatalog.resolve("SWP_STAT_WEIR")
-		var setup: EntityScriptSetup = EntityScriptSetup.from_tables(table, bank, root, behavior, PackedByteArray(_ints(initial.payload)))
-		assert_eq(setup.error, "", "weir script")
-		if setup.definition == null:
-			continue
-		var authored := PackedInt32Array(_ints(initial.authored))
-		var matrix: PackedInt32Array = authored.duplicate()
-		var state: EntityScriptState = EntityScriptState.create(root)
-		var animation: EntityAnimationState = EntityAnimationState.create(PackedInt32Array())
-		var random: SourceRandom = SourceRandom.create(1)
-		var expected: Dictionary = fixture.expected
-		for row: Dictionary in expected.rows:
-			var at: String = "weir tick %d" % _int(row.tick)
-			var context := EntityUpdateContext.new()
-			context.has_path = false
-			context.base_matrix = matrix.duplicate()
-			context.authored_matrix = authored.duplicate()
-			var result: EntityUpdateResult = EntityScriptRunner.update(setup.definition, state, animation, context, random)
-			assert_eq(result.error, "", at)
-			if not result.error.is_empty():
-				break
-			state = result.script_state
-			animation = result.animation
-			random = result.random
-			matrix = result.matrix12
-			assert_eq(state.entity_type, 1, at + " matrix entity")
-			assert_eq(state.cursor, _int(row.cursor), at + " cursor")
-			assert_eq(state.angles, _vector(row.angles), at + " angles")
-			assert_eq(state.angular_counts, _vector(row.angle_counts), at + " angle counts")
-			assert_eq(matrix, PackedInt32Array(_ints(row.matrix)), at + " matrix")
 
 func test_local_align_match_independent_facts() -> void:
 	for fixture: Dictionary in _facts().local_align:

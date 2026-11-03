@@ -36,6 +36,30 @@ function Invoke-GodotStage([string] $name, [string[]] $stageArguments) {
     return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output; LogPath = $logPath }
 }
 
+$dataRequested = Test-Path Env:FROGGER_DATA_DIR
+$dataDirectory = if ($dataRequested) { $env:FROGGER_DATA_DIR } else { "" }
+if ($dataRequested -and (-not (Test-Path -LiteralPath (Join-Path $projectDirectory "assets\catalog.tres") -PathType Leaf) -or -not (Test-Path -LiteralPath (Join-Path $projectDirectory "assets\textures\images") -PathType Container))) {
+    Write-Output "run_tests: assets/ holds no import; run tools/setup_dev.sh --import"
+    exit 2
+}
+
+$selected = $gutArguments.Count -gt 0
+$gameArguments = @()
+$importedArguments = @()
+foreach ($argument in $gutArguments) {
+    if ($argument -match '^(-gdir|-gtest)=(.*)$') {
+        $option = $Matches[1]
+        $paths = @($Matches[2] -split ',' | Where-Object { $_ -ne "" })
+        $gamePaths = @($paths | Where-Object { -not $_.StartsWith("res://tests/imported/") })
+        $importedPaths = @($paths | Where-Object { $_.StartsWith("res://tests/imported/") })
+        $gameArguments += "$option=$($gamePaths -join ',')"
+        $importedArguments += "$option=$($importedPaths -join ',')"
+    } else {
+        $gameArguments += $argument
+        $importedArguments += $argument
+    }
+}
+
 $uv = if ($env:UV) { $env:UV } else { "uv" }
 $angularDirectory = Join-Path $projectDirectory "content\fonts\angular"
 if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
@@ -76,12 +100,13 @@ foreach ($folder in @("assets", "content")) {
     }
 }
 
-$archiveRequested = Test-Path Env:FROGGER_DATA_DIR
-$archiveDataDirectory = if ($archiveRequested) { $env:FROGGER_DATA_DIR } else { "" }
-
 function Test-Suite([string] $suite, [string[]] $suiteArguments) {
     $tests = Invoke-GodotStage $suite (@("-s", "res://addons/gut/gut_cmdln.gd") + $suiteArguments)
     Write-Output $tests.Output
+    if ($selected -and $tests.Output -cmatch "Could not find script matching|You do not have any directories configured") {
+        Write-Output "run_tests: the selection matches no script in the $suite suite"
+        return
+    }
     $passed = $tests.ExitCode -eq 0
     if ($tests.Output -cmatch $scriptErrorPattern) {
         Write-Output "run_tests: script errors found in the $suite suite; see $($tests.LogPath)"
@@ -94,10 +119,13 @@ function Test-Suite([string] $suite, [string[]] $suiteArguments) {
         $passed = $false
     }
     $script:suiteFailed = $script:suiteFailed -or -not $passed
+    if ($suite -ne "archive" -and $tests.Output -cmatch "(?m)^SUMMARY: PASS=(\d+) FAIL=(\d+) SKIP=(\d+) EXIT=[01]\s*$") {
+        $script:selectedTests += [int]$Matches[1] + [int]$Matches[2] + [int]$Matches[3]
+    }
 }
 
 $savedEnvironment = @{}
-foreach ($name in @("APPDATA", "TEMP", "TMP", "FROGGER_DATA_DIR", "FROGGER_TEST_SUITE", "FROGGER_GENERATED_DIR")) {
+foreach ($name in @("APPDATA", "TEMP", "TMP", "FROGGER_DATA_DIR", "FROGGER_TEST_SUITE", "FROGGER_GENERATED_DIR", "FROGGER_TEST_SELECTION")) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
 }
 
@@ -111,10 +139,11 @@ try {
     $env:APPDATA = $profileDirectory
     $env:TEMP = $temporaryDirectory
     $env:TMP = $temporaryDirectory
-    Remove-Item Env:FROGGER_DATA_DIR, Env:FROGGER_TEST_SUITE -ErrorAction SilentlyContinue
+    Remove-Item Env:FROGGER_DATA_DIR, Env:FROGGER_TEST_SUITE, Env:FROGGER_GENERATED_DIR, Env:FROGGER_TEST_SELECTION -ErrorAction SilentlyContinue
     Write-Output "run_tests: logs and isolated profile: $runDirectory"
 
-    if (Test-Path -LiteralPath (Join-Path $projectDirectory "assets\textures\images") -PathType Container) {
+    $generated = ""
+    if ($dataRequested) {
         $generated = Join-Path $runDirectory "generated"
         $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
         & $python (Join-Path $projectDirectory "tools\make_font_newfont.py") --out (Join-Path $generated "newfont") --quiet
@@ -127,7 +156,6 @@ try {
             Write-Output "run_tests: the lettering tile generator failed"
             exit 2
         }
-        $env:FROGGER_GENERATED_DIR = $generated
     }
 
     $import = Invoke-GodotStage "import" @("--import")
@@ -154,21 +182,33 @@ try {
     }
 
     $script:suiteFailed = $false
-    Test-Suite "game" $gutArguments
+    $script:selectedTests = 0
+    if ($selected) { $env:FROGGER_TEST_SELECTION = "1" }
+    Test-Suite "game" $gameArguments
 
-    if ($archiveRequested) {
-        $env:FROGGER_DATA_DIR = $archiveDataDirectory
+    if ($dataRequested) {
+        $env:FROGGER_DATA_DIR = $dataDirectory
         $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
         if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -cmatch $scriptErrorPattern -or $inputCheck.Output -cnotmatch "(?m)^test_input: valid\s*$") {
             Write-Output $inputCheck.Output
             Write-Output "run_tests: invalid archive input; see $($inputCheck.LogPath)"
             exit 1
         }
+        Remove-Item Env:FROGGER_DATA_DIR -ErrorAction SilentlyContinue
+        $env:FROGGER_TEST_SUITE = "imported"
+        $env:FROGGER_GENERATED_DIR = $generated
+        Test-Suite "imported" (@("-gconfig=res://tests/imported/.gutconfig.json") + $importedArguments)
+        Remove-Item Env:FROGGER_TEST_SUITE, Env:FROGGER_GENERATED_DIR, Env:FROGGER_TEST_SELECTION -ErrorAction SilentlyContinue
+        $env:FROGGER_DATA_DIR = $dataDirectory
         $env:FROGGER_TEST_SUITE = "archive"
         Test-Suite "archive" @("-gconfig=res://archive/tests/.gutconfig.json")
         Remove-Item Env:FROGGER_TEST_SUITE -ErrorAction SilentlyContinue
     } else {
-        Write-Output "run_tests: archive suite not run (FROGGER_DATA_DIR unset)"
+        Write-Output "run_tests: imported and archive suites not run (FROGGER_DATA_DIR unset)"
+    }
+    if ($selected -and $script:selectedTests -eq 0) {
+        Write-Output "run_tests: the selection matched no tests"
+        $script:suiteFailed = $true
     }
     exit $(if ($script:suiteFailed) { 1 } else { 0 })
 } catch {

@@ -9,8 +9,9 @@ Forward+, statically typed GDScript, warnings as errors. Verify faithful
 feel against references; floats are allowed. Default to high-poly maps/models.
 No PlayStation, web or mobile.
 
-The game plays from committed assets under `assets/`, imported once from the
-owner's `pc-retail-v3.0e` copy and edited directly afterwards. `archive/`
+The game plays from `assets/`, local importer output from each developer's own
+`pc-retail-v3.0e` copy (`tools/setup_dev.sh --import`), never committed;
+`content/` holds the port's own and community files. `archive/`
 holds the retail readers, the importer, the retail-format goldens and
 FrogLord's configuration; nothing under `src/`, `scenes/`, `assets/`,
 `tests/` or `tools/` may depend on it, except the one runtime-import seam
@@ -18,12 +19,11 @@ FrogLord's configuration; nothing under `src/`, `scenes/`, `assets/`,
 the player's own copy at first run; FrogLord saves import as overlays. Mods may repoint
 existing entity behaviors, not introduce code.
 
-- Commit retail-derived content only as imported assets under `assets/`
-  (binaries through Git LFS); never the executable, archives, disc images or
-  videos. The repository stays private.
+- Never commit retail-derived content: imported assets, the executable,
+  archives, disc images or videos. The repository will be public. Change
+  imported content through the importer, FrogLord overlays or texture packs.
 - Golden generators are independent Python implementations from FrogLord/C;
-  never derive expected data from GDScript output. Hand-edited assets get
-  reviewed golden overrides.
+  never derive expected data from GDScript output.
 - Follow FrogLord for the archive formats, frozen C for behavior. Record
   disagreements in the relevant technical reference.
 - `../froggy` is read-only. Never read or write `../frogger-multiplatform`.
@@ -46,9 +46,9 @@ Delegate independent implementation, investigation and review to Opus
 sub-agents without asking again, with clear scopes and non-overlapping file
 ownership; the orchestrator integrates and verifies the whole result.
 
-Before every commit that touches code, tests, goldens, assets, tools or
+Before every commit that touches code, tests, goldens, content, tools or
 project configuration, run `tools/run_tests.ps1` or `tools/run_tests.sh` with
-`FROGGER_DATA_DIR` set, so the game suite and the archive suite both run;
+`FROGGER_DATA_DIR` set and `assets/` imported, so all three suites run;
 documentation-only commits need no run. Read
 [testing](docs/reference/testing/README.md) for commands and process safety.
 Every test passes with no skips; exit 0 is the only pass. Strict script

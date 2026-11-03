@@ -2,6 +2,7 @@
 *.translation
 /tests/golden/synthetic/*.csv.import
 
+/assets/
 /export/
 /build/
 *.pck

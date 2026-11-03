@@ -1,14 +1,15 @@
 extends GutTest
 ## AssetLocation picks the base root from the --assets-root= argument, then the
 ## launcher settings' imported root when it holds an index, then the committed
-## assets, and reports when none is usable. The FrogLord overlay is resolved
-## separately, and the shippable root stays the committed one.
+## root (a stub index here), and reports when none is usable. The FrogLord
+## overlay is resolved separately, and the shippable root stays the committed
+## one.
 
 const SCRATCH: String = "user://asset_location_test"
 const IMPORTED: String = SCRATCH + "/assets/0123456789abcdef"
 const OTHER: String = SCRATCH + "/other"
 const MISSING: String = SCRATCH + "/missing"
-const COMMITTED: String = ImportedAssets.COMMITTED_ROOT
+const COMMITTED: String = SCRATCH + "/committed"
 const SHIPPABLE: String = ImportedAssets.SHIPPABLE_ROOT
 
 
@@ -16,6 +17,7 @@ func before_each() -> void:
 	_remove(SCRATCH)
 	_stub_index(IMPORTED)
 	_stub_index(OTHER)
+	_stub_index(COMMITTED)
 
 
 func after_all() -> void:
@@ -45,7 +47,7 @@ func _store(imported_root: String) -> LauncherStore:
 
 func test_the_argument_wins_over_the_launcher_settings_and_the_committed_assets() -> void:
 	var location: AssetLocation = AssetLocation.resolve(
-		PackedStringArray(["--level=ORG1", "--assets-root=%s/" % OTHER]), _store(IMPORTED))
+		PackedStringArray(["--level=ORG1", "--assets-root=%s/" % OTHER]), _store(IMPORTED), COMMITTED)
 	assert_true(location.is_usable(), location.error)
 	assert_eq(location.base_root, OTHER, "a trailing slash is dropped")
 	assert_eq(location.origin, AssetLocation.Origin.ARGUMENT)
@@ -54,7 +56,7 @@ func test_the_argument_wins_over_the_launcher_settings_and_the_committed_assets(
 
 func test_an_argument_without_an_index_is_not_usable_and_does_not_fall_back() -> void:
 	var location: AssetLocation = AssetLocation.resolve(
-		PackedStringArray(["--assets-root=" + MISSING]), _store(IMPORTED))
+		PackedStringArray(["--assets-root=" + MISSING]), _store(IMPORTED), COMMITTED)
 	assert_false(location.is_usable())
 	assert_eq(location.base_root, MISSING)
 	assert_eq(location.origin, AssetLocation.Origin.ARGUMENT)
@@ -65,7 +67,7 @@ func test_an_argument_without_an_index_is_not_usable_and_does_not_fall_back() ->
 
 
 func test_the_launcher_imported_root_is_used_when_it_holds_an_index() -> void:
-	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), _store(IMPORTED))
+	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), _store(IMPORTED), COMMITTED)
 	assert_true(location.is_usable(), location.error)
 	assert_eq(location.base_root, IMPORTED)
 	assert_eq(location.origin, AssetLocation.Origin.LAUNCHER)
@@ -73,7 +75,7 @@ func test_the_launcher_imported_root_is_used_when_it_holds_an_index() -> void:
 
 
 func test_a_launcher_root_without_an_index_falls_back_to_the_committed_assets() -> void:
-	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), _store(MISSING))
+	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), _store(MISSING), COMMITTED)
 	assert_true(location.is_usable(), location.error)
 	assert_eq(location.base_root, COMMITTED)
 	assert_eq(location.origin, AssetLocation.Origin.COMMITTED)
@@ -81,17 +83,13 @@ func test_a_launcher_root_without_an_index_falls_back_to_the_committed_assets() 
 	assert_string_contains(location.attempts[0], MISSING)
 
 
-func test_no_launcher_settings_open_the_committed_assets() -> void:
+func test_no_launcher_settings_fall_back_to_the_committed_root() -> void:
 	for store: LauncherStore in [null, LauncherStore.new(), LauncherStore.load_from(MISSING.path_join("launcher.cfg"))]:
-		var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), store)
+		var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), store, COMMITTED)
 		assert_true(location.is_usable(), location.error)
 		assert_eq(location.base_root, COMMITTED)
 		assert_eq(location.origin, AssetLocation.Origin.COMMITTED)
 		assert_eq(location.warnings, PackedStringArray())
-	var catalog: ImportedAssets = AssetLocation.resolve(PackedStringArray(), null).open()
-	assert_true(catalog.is_valid(), catalog.error)
-	assert_eq(catalog.root, COMMITTED)
-	assert_eq(catalog.shippable_root, SHIPPABLE)
 
 
 func test_nothing_usable_is_reported() -> void:
@@ -110,7 +108,7 @@ func test_a_damaged_launcher_file_warns_and_still_resolves() -> void:
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	file.store_string("[meta]\nformat_version=99\n")
 	file.close()
-	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), LauncherStore.load_from(path))
+	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), LauncherStore.load_from(path), COMMITTED)
 	assert_eq(location.base_root, COMMITTED)
 	assert_eq(location.warnings.size(), 1)
 	assert_string_contains(location.warnings[0], "format version 99")
@@ -119,7 +117,7 @@ func test_a_damaged_launcher_file_warns_and_still_resolves() -> void:
 
 
 func test_the_froglord_overlay_is_resolved_separately() -> void:
-	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), null)
+	var location: AssetLocation = AssetLocation.resolve(PackedStringArray(), null, COMMITTED)
 	var pointer_path: String = SCRATCH.path_join("froglord/current.cfg")
 	assert_false(location.resolve_overlay(pointer_path).exists())
 	var pointer := FrogLordPointer.new()
