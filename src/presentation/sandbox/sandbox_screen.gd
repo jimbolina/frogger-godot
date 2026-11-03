@@ -317,12 +317,18 @@ func _respawn(start: RunStart) -> String:
 func _opens_level_complete_page() -> bool:
 	return false
 
+## The sandbox restarts a run that enters the game-over phase instead of opening the game-over page.
+func _opens_game_over_page() -> bool:
+	return false
+
 ## The sandbox pauses with Space and leaves with Escape instead of opening the pause page.
 func _opens_pause_page() -> bool:
 	return false
 
 func _keep_alive() -> void:
-	if spawner == null or _current == null or not _current.completed or not last_error.is_empty():
+	if spawner == null or _current == null or not last_error.is_empty():
+		return
+	if not _current.completed and _current.flow.phase != LevelFlowState.Phase.GAME_OVER:
 		return
 	var ended: String = "completed" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "ended"
 	if restart().is_empty():

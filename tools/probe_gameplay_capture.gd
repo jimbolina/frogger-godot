@@ -144,7 +144,7 @@ func _run() -> void:
 		prior_collected = collected
 		prior_phase = actual.flow.phase
 		prior_bonus_stage = actual.flow.bonus_stage
-		if actual.completed:
+		if actual.completed or actual.flow.phase == LevelFlowState.Phase.GAME_OVER:
 			break
 	var final: GameplayState = _screen.run.snapshot()
 	var accepted: bool = goal == "inspect" or (goal == "game_over" and timeout_seen and respawn_seen and final.flow.phase == LevelFlowState.Phase.GAME_OVER) or (goal == "complete" and final.entity_environment.collected == 31 and final.flow.phase == LevelFlowState.Phase.COMPLETE) or (goal == "pink_delivery" and pink_delivered) or (goal == "tongue_collection" and tongue_collected)

@@ -128,7 +128,7 @@ names the newest.
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
-| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number (`track_NN.res` WAV streams in an import made at runtime). |
+| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number (`track_NN.res` WAV streams in an import made at runtime). Tracks 2–21 are the level and menu music (`MusicTable`), 22 the game-over jingle and 23–32 the zone-complete tunes (`PlayCD(theme + 22)` in the retail executable; only 22 is played so far). |
 | `demos/<NAME>.tres` | The recorded demos. |
 | `rendering/emissive_images.tres` | Hand-authored, not imported: the `EmissiveImageTable` of texture images that glow, by FrogLord image name, each with a colour, strength and light settings ([lava](rendering/lighting.md#lava)). Edit it as text; `test_asset_emissive_images` checks that it validates and every name resolves. |
 

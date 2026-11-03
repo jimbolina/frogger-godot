@@ -29,6 +29,7 @@
 0	select3	select3	1125	OPTE_RAM.VLO
 0	skip_hi_score	skip_hi_score	806	OPTE_RAM.VLO
 0	opt_arrow	opt_arrow	311	OPTE_RAM.VLO
+0	opt_gameover	opt_gameover	807	FIXE_VRAM.VLO
 0	next	next	801	FIXE_VRAM.VLO
 0	total_time	total_time	794	FIXE_VRAM.VLO
 0	total_score	total_score	793	FIXE_VRAM.VLO
@@ -63,6 +64,7 @@
 1	select3	select3_i	1128	OPTI_RAM.VLO
 1	skip_hi_score	skip_hi_score_i	593	OPTI_RAM.VLO
 1	opt_arrow	opt_arrow	311	OPTI_RAM.VLO
+1	opt_gameover	opt_gameover	807	FIXI_VRAM.VLO
 1	next	next_i	520	FIXI_VRAM.VLO
 1	total_time	total_time_i	528	FIXI_VRAM.VLO
 1	total_score	total_score_i	532	FIXI_VRAM.VLO
@@ -97,6 +99,7 @@
 2	select3	select3_g	1127	OPTG_RAM.VLO
 2	skip_hi_score	skip_hi_score_g	588	OPTG_RAM.VLO
 2	opt_arrow	opt_arrow	311	OPTG_RAM.VLO
+2	opt_gameover	opt_gameover	807	FIXG_VRAM.VLO
 2	next	next_g	519	FIXG_VRAM.VLO
 2	total_time	total_time_g	527	FIXG_VRAM.VLO
 2	total_score	total_score_g	531	FIXG_VRAM.VLO
@@ -131,6 +134,7 @@
 3	select3	select3_f	1126	OPTF_RAM.VLO
 3	skip_hi_score	skip_hi_score_f	576	OPTF_RAM.VLO
 3	opt_arrow	opt_arrow	311	OPTF_RAM.VLO
+3	opt_gameover	opt_gameover	807	FIXF_VRAM.VLO
 3	next	next_f	521	FIXF_VRAM.VLO
 3	total_time	total_time_f	529	FIXF_VRAM.VLO
 3	total_score	total_score_f	530	FIXF_VRAM.VLO
@@ -165,6 +169,7 @@
 4	select3	select3_s	1129	OPTS_RAM.VLO
 4	skip_hi_score	skip_hi_score_s	598	OPTS_RAM.VLO
 4	opt_arrow	opt_arrow	311	OPTS_RAM.VLO
+4	opt_gameover	opt_gameover	807	FIXS_VRAM.VLO
 4	next	next_s	518	FIXS_VRAM.VLO
 4	total_time	total_time_s	526	FIXS_VRAM.VLO
 4	total_score	total_score_s	533	FIXS_VRAM.VLO

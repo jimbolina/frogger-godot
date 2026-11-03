@@ -224,6 +224,16 @@ func set_cheats(value: CheatState) -> String:
 	_state.cheats = value.copy()
 	return ""
 
+## The pause menu's Quit (pause.c:499-513): removes the frog's control and requests the
+## game-over page by entering [constant LevelFlowState.Phase.GAME_OVER] without completing the run.
+## Call it only while no tick is in flight.
+func quit_game() -> String:
+	if _state == null:
+		return "Reset the gameplay run before quitting the game"
+	_state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
+	_state.flow.phase = LevelFlowState.Phase.GAME_OVER
+	return ""
+
 ## Returns detached state; changing it has no effect on the run.
 func snapshot() -> GameplayState:
 	return _state.copy() if _state != null else null

@@ -1,6 +1,12 @@
 class_name LevelFlow
 extends RefCounted
 ## Detached single-player main-loop decisions after world effects and visibility.
+##
+## The last-life kill clears FROG_ACTIVE and enters [constant LevelFlowState.Phase.GAME_OVER] on
+## that tick (FrogKill, gamesys.C:1898-1903) without completing the run: retail's game-over page
+## keeps updating the level under it (OptUpdateGame, tempopt.c:4112), so the dying frog, entities
+## and effects go on while the timer, collection and timeout stop. The frog's DEATH_COMPLETE
+## completion is cleared in that phase so the run keeps stepping. COMPLETE still completes the run.
 
 enum Reset { NONE, DEATH, CHECKPOINT }
 var error: String = ""
@@ -28,7 +34,10 @@ static func advance(frog: Frog, state: GameplayState, entities: EntityRun, event
 		else:
 			LevelStartSequence.advance(state, random, level_time, events)
 		return result
-	if state.flow.phase in [LevelFlowState.Phase.COMPLETE, LevelFlowState.Phase.GAME_OVER]:
+	if state.flow.phase == LevelFlowState.Phase.COMPLETE:
+		return result
+	if state.flow.phase == LevelFlowState.Phase.GAME_OVER:
+		state.completed = false
 		return result
 	if state.flow.phase == LevelFlowState.Phase.CHECKPOINT:
 		result.error = _checkpoint(state, entities, events, result, checkpoint_skip, random)
@@ -40,7 +49,6 @@ static func advance(frog: Frog, state: GameplayState, entities: EntityRun, event
 		state.completed = false
 		if state.frog.lives == 0:
 			state.flow.phase = LevelFlowState.Phase.GAME_OVER
-			state.completed = true
 			events.append(TickEvent.transition(LevelFlowState.Phase.GAME_OVER))
 		else:
 			result.reset = Reset.DEATH
@@ -69,7 +77,6 @@ static func advance(frog: Frog, state: GameplayState, entities: EntityRun, event
 				result.reset = Reset.DEATH
 	if not state.frog.flags & FrogFlags.ACTIVE:
 		state.flow.phase = LevelFlowState.Phase.GAME_OVER
-		state.completed = true
 		events.append(TickEvent.transition(LevelFlowState.Phase.GAME_OVER))
 	elif state.frog.mode == FrogMode.DYING or state.frog.flags & FrogFlags.MUST_DIE:
 		if state.flow.phase != LevelFlowState.Phase.DEATH:

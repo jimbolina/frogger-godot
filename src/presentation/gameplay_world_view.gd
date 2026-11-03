@@ -16,6 +16,8 @@ const DESERT_SHADOW_OFFSETS: Array[Vector3i] = [Vector3i(-0x70, 0, 0x70), Vector
 const ENTITY_FIELD_SEED: int = 0x50a11c
 ## Colour scale of an entity mesh no fade has scaled.
 const UNSCALED_COLOUR := Vector3i(128, 128, 128)
+## Width of the display a game viewport rect is measured on.
+const VIEW_WIDTH: int = 640
 
 var playing: bool = false
 var smoothing: bool = false:
@@ -88,6 +90,8 @@ var real_shadows: bool = true
 var _map_only: bool = false
 var _hidden_views: Dictionary[Node3D, bool] = {}
 var _map_extra_ticks: int = 0
+var _view_rect: Rect2i = Rect2i()
+var _camera_cull_mask: int = 0
 
 ## Collapses all drawing history without advancing simulation.
 func reset_interpolation() -> void:
@@ -260,6 +264,8 @@ func _show_level_objects() -> void:
 func _leave_level_end() -> void:
 	set_map_only(false)
 	_map_extra_ticks = 0
+	if _view_rect != Rect2i():
+		set_view_rect(Rect2i())
 
 ## Squared cave radii between the previous and current committed states at
 ## [param weight]; the map's initial radii when no state carries an entity environment.
@@ -354,6 +360,7 @@ func build_world() -> void:
 	_camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_camera.position = Vector3(3.5, 4.5, 5.5)
 	_camera.fov = 45.0
+	_camera_cull_mask = _camera.cull_mask
 	add_child(_camera)
 	_camera.look_at(Vector3.ZERO)
 	_camera.current = true
@@ -603,7 +610,7 @@ func _update_projection() -> void:
 	if size == _projection_size:
 		return
 	_projection_size = size
-	_camera.fov = GameplayProjection.vertical_fov_degrees(size)
+	_apply_view_rect()
 	_entity_pose_tick = -1
 	var scale: Vector2 = GameplayProjection.clip_scale(size)
 	if _swarm_view != null:
@@ -638,6 +645,35 @@ func _update_projection() -> void:
 	var marker: ShaderMaterial = _frog.material_override as ShaderMaterial
 	if marker != null:
 		marker.set_shader_parameter("projection_scale", scale)
+
+## Narrows the game viewport to [param rect] of the 640x480 display as retail's MRChangeViewport
+## does (MR_VIEW.C:230-320): the viewport's aspect matrix scales the projection by
+## [code]rect.size.x / 640[/code] about the display centre, here by widening the camera's vertical
+## field of view ([method view_fov_degrees]). A zero width draws no world; [code]Rect2i()[/code]
+## restores the full display. The surround is left to the caller's mask.
+func set_view_rect(rect: Rect2i) -> void:
+	_view_rect = rect
+	if _camera != null and is_inside_tree():
+		_apply_view_rect()
+
+## The game viewport [method set_view_rect] set, or [code]Rect2i()[/code] for the full display.
+func view_rect() -> Rect2i:
+	return _view_rect
+
+## The vertical field of view that draws the scene of [param full_fov_degrees] scaled by
+## [code]width / 640[/code] about the centre; widths of 640 or more, or none set, keep it. The
+## result stays within the camera's 179 degree limit.
+static func view_fov_degrees(full_fov_degrees: float, width: int) -> float:
+	if width <= 0 or width >= VIEW_WIDTH:
+		return full_fov_degrees
+	var half: float = tan(deg_to_rad(full_fov_degrees) * 0.5) * VIEW_WIDTH / width
+	return minf(rad_to_deg(2.0 * atan(half)), 179.0)
+
+func _apply_view_rect() -> void:
+	var full: float = GameplayProjection.vertical_fov_degrees(Vector2i(get_viewport().get_visible_rect().size))
+	var hidden: bool = _view_rect.size.x <= 0 and _view_rect != Rect2i()
+	_camera.fov = view_fov_degrees(full, maxi(_view_rect.size.x, 1) if _view_rect != Rect2i() else 0)
+	_camera.cull_mask = 0 if hidden else _camera_cull_mask
 
 func _drawn_mesh(shared: ModelMesh) -> ModelMesh:
 	if shared == null:

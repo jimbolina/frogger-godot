@@ -44,6 +44,22 @@ A port of the original C game code to modern PCs, matched against the retail PC 
 
 File names in that folder are mixed case. Use the exact spelling; it matters on Linux.
 
+### The retail executable
+
+The vendored source is a PlayStation decompilation; retail PC's `FROGGER.EXE`
+(`FROGGER_DATA_DIR`, image base `0x00400000`, `.text` at `0x00401000`) compiles
+bodies that the source leaves empty, disabled or different. Where behaviour is
+retail-only, read the executable instead of guessing:
+`llvm-objdump -d --x86-asm-syntax=intel --start-address=<va> --stop-address=<va> FROGGER.EXE`
+(Xcode's Command Line Tools) disassembles it. froggy's
+`engine/docs/evidence/m38_step0_ground_truth.txt` (from line 671) maps retail's
+options-page rows to their startup, update and shutdown addresses; retail numbers
+the pages differently from the vendored enum (row 18 is GAME_OVER, 16 LEVEL_SELECT).
+`KEY_FACTS.md` names other recovered addresses (`PlayCD` `0x004300a0`,
+`MRSNDPlaySound` `0x0044c290`, `Option_page_request` `0x00498500`, `GameEnd`
+`0x00430560`). Pin executable facts to their bytes in a golden, as the cheats and
+the [game-over page](../../tests/golden/specs/frontend.md#game-over) do.
+
 ### Exporting reference material from the engine
 
 The verified native macOS arm64 binary is

@@ -121,11 +121,12 @@ var cheats: PauseCheats = null
 
 
 ## True when the pause may start this tick: the start timer is 0, the frog is active and the
-## level is neither complete nor starting (Game_start_timer and GAME_FLAG_NO_PAUSE_ALLOWED,
-## FROG_ACTIVE, pause.c:166-177).
+## level is neither complete, starting nor under the game-over page (Game_start_timer and
+## GAME_FLAG_NO_PAUSE_ALLOWED, FROG_ACTIVE, pause.c:166-177).
 static func allowed(state: GameplayState) -> bool:
 	return (state.frog.start_timer == 0 and (state.frog.flags & FrogFlags.ACTIVE) != 0
-		and not state.completed and state.flow.phase != LevelFlowState.Phase.START)
+		and not state.completed
+		and state.flow.phase not in [LevelFlowState.Phase.START, LevelFlowState.Phase.GAME_OVER])
 
 
 ## The press tick (pause.c:183-193) with the game's [param game_sound_volume]: the next tick is

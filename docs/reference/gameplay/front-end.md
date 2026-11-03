@@ -145,8 +145,49 @@ frog's last animation cel; PRESS FIRE blinks from the page's own counter rather 
 `MRFrame_number`; the cave light and the sky drift stay where the level ended; a direct
 `--level=` launch shows the statistics alone (no prompt, R restarts, Escape leaves);
 the sandbox restarts instead; JUN1 shows the zone-complete variant as a stand-in for
-the P16 ending, whose fire follows the ending flow to name entry. The game-over page
-is still the placeholder label.
+the P16 ending, whose fire follows the ending flow to name entry.
+
+## Game over
+
+`GameOverPage` (`src/game/frontend/`) is the 30 Hz machine of retail PC's game-over
+page, drawn by `GameOverView` (`src/presentation/`). The last life's `FrogKill` clears
+FROG_ACTIVE and the same tick requests the page (`FROG.C:3157-3166`,
+`gamesys.C:1898-1903`); the pause menu's Quit requests it too, with the frog's control
+removed (`pause.c:499-513`). The vendored page (`tempopt.c:4057-4175`,
+`tempopt.h:43-44`) keeps the level updating under it through `OptUpdateGame` and never
+runs `LevelEnd`, so the dead frog stays and the entities keep moving; `GameplayRun`
+therefore keeps ticking in the GAME_OVER phase with the timer, collection and timeout
+stopped, and the page ticks once per run tick. The count starts at 165
+(`GAME_OVER_DURATION` 105 + `GAME_OVER_PREDELAY` 60); nothing shows for 30 ticks; fire
+(the bound super-hop key, Enter or Space) leaves once the count is below 90 (tick 76),
+otherwise the count's end does (`:4119-4131`); CONTINUE is compiled out and moves
+straight to name entry (`:3993`), which returns to the main menu when nothing qualifies
+or Quit was used.
+
+Retail PC's executable replaces the vendored fade (page row 18: `GameOverStartup`
+`0x00443630`, `GameOverUpdate` `0x00443700`, `GameOverShutdown` `0x00443800`, read
+as the [sources](../sources.md#the-retail-executable) describe). Startup mutes the
+effects (`MRSNDSetVolumeLevel(MRSND_FX_VOLUME, 0)`), hides the HUD viewport
+(`vp_flags |= MR_VP_NO_DISPLAY`), stops the CD and plays disc track 22 once
+(`PlayCD(22, 0)`, the PC game-over jingle), and sets up a shrink of `165 >> 2` = 41
+steps. From tick 31 each tick narrows the game viewport by `480 / 41` = 11 pixels at
+the display aspect (`height = 480 · width / 640`), centred, through `MRChangeViewport`,
+which scales the projection with the viewport (`MR_VIEW.C:308-316`): the level zooms
+out into the centre over the black back colour (`Game_back_colour`, `gamesys.C:85`)
+and is gone at tick 89. The GAME OVER sprite sits at the screen centre and brightens
+from black to 0x7F over ticks 31–60 on the hardware path (`ds:0x495124 & 1`). No fade
+poly is drawn. Shutdown restores the effects volume, and `GameEnd` stops the jingle
+when the next page opens. The
+[specification](../../../tests/golden/specs/frontend.md#game-over) lists the facts
+with their lines and addresses.
+
+Port differences: one camera scale stands in for the aspect matrix's separate x and y
+factors; the next run restores the HUD, voices and view where retail kills its
+viewports; the croak is requested but silent, as retail's effects volume is 0; the
+sprite fades as on retail's hardware path; the jingle plays through the game scene's
+music player and stops with the scene change; a direct `--level=` launch shows the page
+and then Replay and Return, and Escape does nothing while the page runs; the sandbox
+restarts instead.
 
 ## Pause page
 
@@ -167,9 +208,10 @@ The Continue/Quit menu follows `pause.c:300-432`: Continue at y 272 and Quit at
 y 288 (`:556-571`), Up and Down hop between them, and fire (the bound super-hop
 key, Enter or keypad Enter, on release) chooses with a croak. Quit shows YES 48
 right of centre and NO 48 left at y 304 with NO selected (`:590-606`); Left and
-Right swap with a hop; No resumes, Yes quits with a croak straight to the end of
-the game without the fade-up (`:400-421`), which `FrontEndFlow` carries as the
-pause quit (`:502`): an unfinished level skips name entry. The selected word
+Right swap with a hop; No resumes, Yes quits with a croak and no fade-up straight to
+the [game-over page](#game-over) over the resumed level with the frog's control
+removed (`:400-421`, `:499-513`), which `FrontEndFlow` carries as the pause quit
+(`:502`): name entry then skips. The selected word
 glows `(frame & 7) << 5` as the options sprites do (`OPTIONS.C:381-414`), capped
 at neutral.
 

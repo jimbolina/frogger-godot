@@ -1732,4 +1732,137 @@ and with `--froggy-reference` pointing nowhere the generator's own spelling
 check stops it ("does not spell NO MORE ROAD SPLATS", exit 1) before any
 diff. Restore and rewrite (exit 0).
 
+## Game over
+
+`make_golden_game_over.py` replays retail PC's game-over page at the 640x480
+display from the frozen C and the retail executable. It never reads Godot
+output.
+
+```sh
+python3 tools/make_golden_game_over.py           # write the file
+python3 tools/make_golden_game_over.py --check   # diff against the committed file, exit 1 on change
+FROGGER_DATA_DIR=<retail folder> python3 tools/make_golden_game_over.py --check   # also pin FROGGER.EXE
+```
+
+Standard library only. It checks the croak id against FrogLord's retail sound
+list. `--c-reference <dir>` names the frozen C `source/` folder (default
+`../froggy/engine/vendor/frogger-psx-src/source`); a missing folder skips the
+cross-checks. They compare `GAME_OVER_DURATION`, `GAME_OVER_PREDELAY` and
+`OPTIONS_SOUND_STAGES` (`tempopt.h`), the startup, update and shutdown
+statements built from the generator's offsets (`tempopt.c:4057-4175`, comments
+stripped), the `OPTION_TEXT_GAMEOVER` image (`tempopt.c:272`), the sprite's
+creation at the screen centre (`OPTIONS.C:641-643`) and the `sound.h` generic
+enum. `--data-dir` (default `$FROGGER_DATA_DIR`) names the retail folder; the
+generator reads the PE headers of its `FROGGER.EXE` (image base `0x00400000`,
+`.text` at `0x00401000`), maps each pinned address through the section table
+to a file offset and compares the bytes. Without the folder the pins are
+skipped with a message; a folder without `FROGGER.EXE` fails.
+
+`test_frontend_game_over.gd` replays the file through `GameOverPage`,
+asset-free; `test_game_over_page.gd` covers the edge cases.
+
+### Executable facts
+
+The vendored `GameOverStartup` plays a PlayStation XA tune and fades a polygon;
+the retail PC build differs, read with `llvm-objdump -d --x86-asm-syntax=intel`
+(`exe_pins`, each `{address, bytes_hex, meaning}`):
+
+| Address | Fact |
+|---|---|
+| `0x0044367d` | the sprite turns black only with display-capability bit 0 (`ds:0x495124 & 1`) |
+| `0x004436a2` | `Options_count_down_units = 0xa5` (165) |
+| `0x004436ac` | `Game_over_no_new_sound = TRUE` |
+| `0x004436b6` | `MRSNDSetVolumeLevel(MRSND_FX_VOLUME, 0)` (`0x0044cd40`): every effect is silent |
+| `0x004436c2`, `0x004436c7` | `StopCD()` then `PlayCD(0x16, 0)` (`0x004300a0`): disc track 22 once |
+| `0x004436d3` | shrink setup `0x00435490(0, units >> 2)`: 41 steps |
+| `0x004436e6` | `Game_viewporth->vp_flags \|= MR_VP_NO_DISPLAY` (`or byte [ecx+8], 4`): the HUD hides |
+| `0x00443734` | the CONTINUE request `0x11` and the gate `0x87` (135) held in registers |
+| `0x00443753` | `units -= 1`; nothing more while `units >= 135`; `units == 0` requests CONTINUE |
+| `0x00443766` | fire (`FR_GO`, bit 1 of the pressed byte) only while `units < 0x5a` (90) |
+| `0x00443779` | `MRSNDPlaySound(3)` (`0x0044c290`), then `Option_page_request = 0x11` |
+| `0x0044378c` | the shrink step `0x004354e0` on every update past the gate, the exit update included |
+| `0x00443791` | hardware path only: grey `min(0xff, (135 - units) * 0xff / 0x1e) >> 1` |
+| `0x00443805`, `0x0044381c` | shutdown: `Game_over_no_new_sound = FALSE`, sprite hidden, FX volume `127 * Sound_volume / 8` |
+| `0x0043549e` | setup, single player only: width and height from the viewport (`+0x10`, `+0x12`), step `height / steps` = 480 / 41 = 11 |
+| `0x00435500` | step: `width = max(0, width - step)`, `height = 480 * width / 640` (`imul`, `idiv`) |
+| `0x0043554b` | step: `x = (640 - width) >> 1`, `y = (480 - height) >> 1`, `MRChangeViewport` (`0x0044d710`) |
+| `0x0043e580` | level complete, not this page: `PlayCD(theme + 22, 0)`, so tracks 23–32 are the zone-complete tunes |
+
+Retail's page table puts CONTINUE at row 17 (`0x11`; froggy's
+`m38_step0_ground_truth.txt`), where the vendored WIN95 enum counts 15; the
+file records the request as an event name.
+
+### Game-over file (`synthetic/frontend_game_over.json`)
+
+| Key | Content |
+|---|---|
+| `constants` | duration 105, predelay 60, fade ticks 30, fire units 90, gate units 135, start units 165, 41 shrink steps of 11, jingle track 22, croak 3, display 640x480, image `opt_gameover`, retail CONTINUE page 17, zone-track base 22 |
+| `startup` | `GameOverPage.create` state: units, steps, width step, view `[x, y, w, h]`, grey, startup track, effects muted, HUD hidden, no exit |
+| `row_columns` | the row layout below |
+| `ticks` | rows for ticks 1–165 with no input |
+| `traces` | scripted runs, below |
+| `exe` | file name, image base and `.text` address |
+| `exe_pins` | the executable facts above |
+
+A row is `[tick, units, view_x, view_y, view_w, view_h, sprite_grey,
+accepts_fire, overlay_visible]` after that tick. `accepts_fire` is
+`units < 90` while the page is open; `overlay_visible` is `units < 135` (the
+predelay is over). A trace has `name`, `quit` (`GameOverPage.create`),
+`fire_ticks`, `exit_tick`, `exit_event` (a `FrontEndFlow.Event` name),
+`sounds_at` (tick to the sounds that tick requested) and sampled `rows` at
+ticks 1, 30, 31, 45, 60, 75, 76, 89, 90, 120 and 165 up to the exit tick, and
+the exit tick. The test ticks five more times with fire after the exit and
+expects nothing to change.
+
+| Trace | Shows |
+|---|---|
+| `timeout` | no input; GAME_OVER_DONE at tick 165 |
+| `fire_early` | fire at tick 40 ignored; timeout |
+| `fire_skip` | fire at tick 76 croaks and leaves |
+| `fire_edge` | fire at tick 75 (units 90) ignored, at tick 100 leaves |
+| `quit` | the timeout opened from the pause menu's Quit |
+
+### Rules replayed
+
+- **Count-down** (`tempopt.h:43-44`, `tempopt.c:4069`, `0x004436a2`): units
+  start at 165 and fall by one each update (`:4117`). While units are 135 or
+  more nothing else happens: 30 updates of predelay.
+- **Exit** (`:4119-4133`, `0x00443753`, `0x00443766`): units 0 requests
+  CONTINUE (tick 165); otherwise fire with units below 90 (from tick 76)
+  croaks and requests CONTINUE. The request is read after the update, so the
+  rest of the update still runs.
+- **Shrink** (`0x0044378c`, `0x00435490`, `0x004354e0`): from tick 31 each
+  update narrows the game viewport by 11 pixels, height `480 * width / 640`,
+  centred at `((640 - w) >> 1, (480 - h) >> 1)`; width 0 at tick 89 (`[320,
+  240, 0, 0]`).
+- **Sprite** (`:4136-4146`, `0x00443791`): grey `min(255, (135 - units) * 255
+  / 30) >> 1`, 4 at tick 31, 0x7F from tick 60.
+- **Startup** (`0x00443630`): the opt_gameover sprite centred
+  (`OPTIONS.C:641-643`), track 22 once, effects at volume 0, the HUD viewport
+  hidden.
+
+### Port differences
+
+- A uniform camera scale by `width / 640` about the centre stands in for the
+  viewport's aspect matrix (`MR_VIEW.C:308-316`); the file records the rect.
+- The croak is requested but not played: retail's FX volume is 0 on the page.
+- The sprite fade follows the hardware-capability path (`ds:0x495124 & 1`);
+  without that bit retail never colours the sprite.
+- The vendored fade polygon (`GamePauseAddPrim`) is never drawn by retail and
+  is not replayed.
+- Tracks 23–32 are the zone-complete tunes (`PlayCD(theme + 22)` at
+  `0x0043e582`), not used by this page.
+
+### Deliberate break
+
+Set `FIRE_UNITS` to `DURATION - 14` in `src/game/frontend/game_over_page.gd`,
+or `width_step` to `DISPLAY_HEIGHT / page.shrink_steps + 1` in its `create`,
+and run `FROGGER_DATA_DIR=<retail folder> tools/run_tests.sh
+-gselect=test_frontend_game_over.gd`: `test_constants` fails on the fire
+units (or `test_startup` on the width step) and `test_traces` and
+`test_tick_table` fail on the rows. Restore (exit 0). Setting
+`FIRE_BEFORE_END = 14` in the generator fails the C cross-check and the pin at
+`0x00443766`; with `--c-reference` pointing nowhere and no data folder the
+diff shows `fire_units` 91. Restore and rewrite (exit 0).
+
 [Golden data index and shared rules](../README.md).

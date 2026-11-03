@@ -182,6 +182,19 @@ func test_completing_the_run_restarts_without_the_level_complete_page() -> void:
 	assert_true(_screen.notice.contains("completed"))
 	assert_true(_screen.playing)
 
+func test_a_game_over_restarts_without_the_game_over_page() -> void:
+	var over: GameplayState = _screen.run.snapshot()
+	over.flow.phase = LevelFlowState.Phase.GAME_OVER
+	var result := TickResult.new()
+	result.final_snapshot = over
+	_screen._accept(result)
+	assert_null(_screen._game_over_page, "the sandbox never opens the page")
+	assert_true(_screen._hud.visible)
+	_screen._keep_alive()
+	assert_true(_screen.notice.contains("ended"))
+	assert_eq(_screen.run.snapshot().flow.phase, LevelFlowState.Phase.PLAY)
+	assert_true(_screen.playing)
+
 func test_debug_overlay_reuses_the_shared_frog_facts() -> void:
 	assert_false(_screen._overlay.visible)
 	_screen.set_debug_visible(true)

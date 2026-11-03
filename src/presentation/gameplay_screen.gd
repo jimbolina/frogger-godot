@@ -17,9 +17,10 @@ extends GameplayWorldView
 ## closes it again from its menu; the page ticks at 30 Hz from [method _process] while the game
 ## holds, the sound effects hold and the music plays on (pause.c:215-221). Continue and Quit show
 ## at once; the arrow keys move the selection and releasing the bound super-hop key or Enter is
-## fire. Quit then Yes leaves: a front-end game as a quit, a direct launch to the boot scene.
-## Space no longer pauses, and Escape no longer leaves the level. The sandbox keeps its own Space
-## pause and Escape leave ([method _opens_pause_page]). Every letter or Space key-down, play and
+## fire. Quit then Yes croaks, resumes and removes the frog's control
+## ([method GameplayHost.quit_game]), so the next tick opens the game-over page as a quit. Space no
+## longer pauses, and Escape no longer leaves the level. The sandbox keeps its own Space pause and
+## Escape leave ([method _opens_pause_page]). Every letter or Space key-down, play and
 ## auto-repeat included, sets the shared [member FrontEndSession.pause_cheats] gate, and each menu
 ## tick checks the cheat phrases against the keys down or tapped since the last tick; fired cheats
 ## change [member FrontEndSession.cheats], which seeds every run start and reaches the paused run
@@ -31,6 +32,17 @@ extends GameplayWorldView
 ## Enter and Space are fire and Escape is triangle. A front-end game leaves through
 ## [method settle_level_complete]; a direct launch shows the statistics alone and keeps R and
 ## Escape. The sandbox never opens the page.
+##
+## The last life lost, or the pause menu's Quit, opens retail PC's game-over page
+## ([GameOverPage], GameOverStartup 0x00443630) on the tick the run enters
+## [constant LevelFlowState.Phase.GAME_OVER]: the HUD hides, the sound effects hold (retail sets
+## the effects volume to 0), disc track 22 plays once and the run keeps ticking under the page, one
+## page update per accepted run tick, while [GameOverView] shrinks the game viewport into the
+## centre over black ([method GameplayWorldView.set_view_rect]) and brightens GAME OVER. The bound
+## super-hop key, Enter or Space is fire; Escape does nothing. A front-end game then follows the
+## flow to name entry, as a quit when Quit opened the page; a direct launch stops on the black
+## screen with Replay and Return, and R restarts it during or after the page. The sandbox never
+## opens the page.
 ##
 ## When [member FrontEndSession.attract_level] names a level outside a game, the screen plays
 ## that level's recorded attract demo instead (tempopt.c:1481-1626): the demo's own commands drive
@@ -70,9 +82,7 @@ var _hud: GameplayHud
 var _status: Label
 var _actions: HBoxContainer
 var _replay: Button
-var _advance: Button
 var _back: Button
-var _advance_event: int = -1
 var _advance_events: PackedInt32Array = PackedInt32Array()
 var _next_level: int = -1
 var _session_finished: bool = false
@@ -116,6 +126,13 @@ var _pause_buttons := PausePage.Buttons.new()
 var _sound_volume: int = ProgressStore.DEFAULT_SOUND_VOLUME
 var _keys_down := PackedInt32Array()
 var _keys_tapped := PackedInt32Array()
+var _game_over_view: GameOverView
+## The open game-over page, or null.
+var _game_over_page: GameOverPage = null
+var _game_over_shown: bool = false
+var _quit_requested: bool = false
+var _jingle_selected: bool = false
+var _level_music_track: int = -1
 
 func _ready() -> void:
 	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
@@ -250,7 +267,7 @@ func support_warnings(data: AssetCatalog) -> PackedStringArray:
 	return rows
 
 func _on_pointer_changed() -> void:
-	if _complete_page != null or _session_finished or is_attract():
+	if _complete_page != null or _game_over_page != null or _session_finished or is_attract():
 		return
 	var choice: FrogLordOverlay = froglord_overlay()
 	if choice.index_root.is_empty():
@@ -340,6 +357,8 @@ func _configure_level_audio(data: AssetCatalog, level_number: int) -> void:
 func _detach_game() -> void:
 	_close_level_complete()
 	_close_pause_page()
+	_close_game_over()
+	_quit_requested = false
 	_host.close()
 	_host.run = null
 	run = null
@@ -441,6 +460,8 @@ func open_run(definition: LevelDefinition, start: RunStart, origins: EntityModel
 	set_effect_grid(definition.grid)
 	_close_level_complete()
 	_close_pause_page()
+	_close_game_over()
+	_quit_requested = false
 	_start_score = start.score
 	run = replacement
 	_host.open(run)
@@ -570,12 +591,16 @@ func _accept(result: TickResult) -> void:
 		_update_interface(result.events)
 		if not demo_issue.is_empty():
 			_finish_attract("Attract demo %s: %s" % [level_code, demo_issue])
-		elif _current.completed:
+		elif _current.completed or _current.flow.phase == LevelFlowState.Phase.GAME_OVER:
 			_finish_attract("Attract demo %s ended its game" % level_code)
 		else:
 			_advance_attract()
 		return
-	if _current.completed:
+	if _current.flow.phase == LevelFlowState.Phase.GAME_OVER:
+		_accept_game_over()
+		if _current == null:
+			return
+	elif _current.completed:
 		playing = false
 		reset_interpolation()
 		_finish_front_end_level()
@@ -603,6 +628,10 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if _complete_page != null:
 		if key.pressed:
 			_press_on_level_complete(key)
+		return
+	if _game_over_page != null:
+		if key.pressed:
+			_press_on_game_over(key)
 		return
 	if _pause_page != null and _pause_page.active():
 		_press_on_pause(key)
@@ -644,6 +673,9 @@ func _build_interface() -> void:
 	_pause_view = PauseView.new()
 	layer.add_child(_pause_view)
 	_pause_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_game_over_view = GameOverView.new()
+	layer.add_child(_game_over_view)
+	_game_over_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_status = Label.new()
 	_status.position = Vector2(16, 200)
 	_status.size = Vector2(608, 70)
@@ -659,9 +691,6 @@ func _build_interface() -> void:
 	_replay.text = "Replay"
 	_replay.pressed.connect(restart)
 	_actions.add_child(_replay)
-	_advance = Button.new()
-	_advance.pressed.connect(_advance_front_end)
-	_actions.add_child(_advance)
 	_back = Button.new()
 	_back.text = "Return"
 	_back.pressed.connect(_return_to_menu)
@@ -677,18 +706,14 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 		_actions.visible = false
 		_status.text = ""
 		return
-	var terminal: bool = _current != null and _current.completed
-	var on_page: bool = _complete_page != null
+	var terminal: bool = _current != null and _current.flow.phase in [LevelFlowState.Phase.COMPLETE, LevelFlowState.Phase.GAME_OVER]
+	var on_page: bool = _complete_page != null or _game_over_page != null
 	_actions.visible = (terminal and not on_page) or not last_error.is_empty()
-	var in_game: bool = FrontEndSession.active
-	_replay.visible = _definition != null and not in_game
-	_advance.visible = in_game and terminal and _advance_event >= 0
+	_replay.visible = _definition != null and not FrontEndSession.active
 	if not last_error.is_empty():
 		_status.text = last_error
-	elif on_page:
+	elif on_page or terminal:
 		_status.text = ""
-	elif terminal:
-		_status.text = "Level complete" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "Game over"
 	else:
 		_status.text = "" if playing or _opens_pause_page() else "Paused — Space to resume"
 
@@ -877,8 +902,6 @@ func _finish_front_end_level() -> void:
 				_advance_events = PackedInt32Array([FrontEndFlow.Event.LEVEL_FINISHED, FrontEndFlow.Event.ZONE_COMPLETE])
 	else:
 		_advance_events = PackedInt32Array([FrontEndFlow.Event.ALL_LIVES_LOST, FrontEndFlow.Event.GAME_OVER_DONE, FrontEndFlow.Event.CONTINUE_DONE])
-		_advance.text = "Continue"
-	_advance_event = _advance_events[0]
 	var issue: String = FrontEndSession.save()
 	if not issue.is_empty():
 		last_error = issue
@@ -889,18 +912,12 @@ func _level_choice_message(data: AssetCatalog) -> String:
 		message += "; unaccepted levels with a map are " + ", ".join(data.unaccepted_level_codes())
 	return message
 
-## Follows the flow from the game-over placeholder to its next page.
-func _advance_front_end() -> void:
-	var page: int = _follow_flow(_advance_events)
-	var ending: int = _current.flow.score if _current != null else FrontEndSession.score
-	if page == FrontEndPage.Page.LEVEL_SELECT:
-		FrontEndSession.start_page = FrontEndPage.Page.LEVEL_SELECT
-	elif page != FrontEndPage.Page.GAME:
-		_warn(FrontEndSession.end_game(false, ending))
-	_switch_scene(page)
-
 ## Whether a completed level opens the level-complete page; the sandbox restarts instead.
 func _opens_level_complete_page() -> bool:
+	return true
+
+## Whether the game-over phase opens the game-over page; the sandbox restarts instead.
+func _opens_game_over_page() -> bool:
 	return true
 
 ## Whether Escape opens the pause page; the sandbox pauses with Space and leaves with Escape instead.
@@ -912,7 +929,7 @@ func _opens_pause_page() -> bool:
 ## holds the screen: play holds with the sound effects, the music plays on, the hop sounds and
 ## the page shows. Returns whether the page opened.
 func open_pause() -> bool:
-	if is_attract() or _pause_page != null or _complete_page != null or not playing:
+	if is_attract() or _pause_page != null or _complete_page != null or _game_over_page != null or not playing:
 		return false
 	_finish_pending()
 	if run == null or _current == null or _complete_page != null or not last_error.is_empty() or not PausePage.allowed(_current):
@@ -955,7 +972,9 @@ func step_pause() -> Array[PausePage.Event]:
 	if PausePage.Event.QUIT in events:
 		_apply_session_cheats()
 		_close_pause_page()
-		_return_to_menu()
+		set_paused(false)
+		_quit_requested = true
+		_warn(_host.quit_game())
 	elif PausePage.Event.RESUMED in events:
 		_close_pause_page()
 		_apply_session_cheats()
@@ -1100,6 +1119,7 @@ func _ensure_text_assets() -> void:
 			push_warning("Level-complete images are unavailable: " + text.error)
 	_complete_view.configure(_hud.assets, _text_assets)
 	_pause_view.configure(_text_assets)
+	_game_over_view.configure(_text_assets)
 
 func _press_on_level_complete(key: InputEventKey) -> void:
 	var fire: bool = bool(input.command(key) & TickCommand.SUPER_HOP) or key.physical_keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
@@ -1179,6 +1199,94 @@ func _follow_flow(events: PackedInt32Array) -> int:
 func _switch_scene(page: int) -> void:
 	close_data()
 	if page == FrontEndPage.Page.GAME and not FrontEndSession.selected_level.is_empty():
-		get_tree().reload_current_scene()
+		if switches_scene:
+			get_tree().reload_current_scene()
 	else:
-		get_tree().change_scene_to_file(FrontEndScreen.SCENE)
+		_leave_for(FrontEndScreen.SCENE)
+
+## Opens the game-over page on the first tick of the game-over phase after settling the
+## front-end progress, then ticks it once per accepted run tick (retail's GameOverUpdate runs the
+## level under it, OptUpdateGame). The page's croak request is not played: retail's effects volume
+## is 0 for the whole page.
+func _accept_game_over() -> void:
+	if not _game_over_shown:
+		_game_over_shown = true
+		_finish_front_end_level()
+		if _opens_game_over_page():
+			_open_game_over()
+		return
+	if _game_over_page == null:
+		return
+	var exit_event: int = _game_over_page.tick(_fire_latched)
+	_fire_latched = false
+	set_view_rect(_game_over_page.view_rect())
+	_game_over_view.present(_game_over_page)
+	if exit_event >= 0:
+		_leave_game_over(exit_event)
+
+## Starts the page as GameOverStartup does: the HUD hides, the sound effects hold, the level
+## music gives way to disc track 22 played once, and the run's held keys are released.
+func _open_game_over() -> void:
+	_game_over_page = GameOverPage.create(_quit_requested)
+	_fire_latched = false
+	_held = 0
+	_host.sampled_held = 0
+	if _game_over_page.hides_hud():
+		_hud.hide()
+	var voices: SoundVoiceView = voice_view()
+	if voices != null and _game_over_page.mutes_effects():
+		voices.hold_voices(true)
+	var music: MusicPlayer = music_player()
+	if music != null:
+		if not _jingle_selected:
+			_level_music_track = music.track
+			_jingle_selected = true
+		music.select(_game_over_page.startup_track(), false)
+		music.restart()
+	_ensure_text_assets()
+	_game_over_view.open(_game_over_page)
+
+## Ends the page with [param exit_event]: a front-end game follows the flow through CONTINUE to
+## name entry, as a quit when Quit opened the page; a direct launch stops on the last frame of the
+## shrink with Replay and Return.
+func _leave_game_over(exit_event: int) -> void:
+	var page: GameOverPage = _game_over_page
+	_game_over_page = null
+	_release_game_over_effects(page)
+	if FrontEndSession.active:
+		_game_over_view.close()
+		var first: int = FrontEndFlow.Event.QUIT if page.quit else FrontEndFlow.Event.ALL_LIVES_LOST
+		var reached: int = _follow_flow(PackedInt32Array([first, exit_event, FrontEndFlow.Event.CONTINUE_DONE]))
+		var score: int = _current.flow.score if _current != null else FrontEndSession.score
+		_warn(FrontEndSession.end_game(page.quit, score))
+		_switch_scene(reached)
+		return
+	_game_over_view.finish()
+	_hold_play(true)
+
+func _release_game_over_effects(page: GameOverPage) -> void:
+	var voices: SoundVoiceView = voice_view()
+	if voices != null and page != null and page.mutes_effects():
+		voices.hold_voices(false)
+
+func _close_game_over() -> void:
+	if _game_over_view == null:
+		return
+	_release_game_over_effects(_game_over_page)
+	_game_over_page = null
+	_game_over_shown = false
+	_fire_latched = false
+	_game_over_view.close()
+	set_view_rect(Rect2i())
+	_hud.visible = true
+	var music: MusicPlayer = music_player()
+	if _jingle_selected and music != null:
+		music.select(_level_music_track)
+	_jingle_selected = false
+	_level_music_track = -1
+
+func _press_on_game_over(key: InputEventKey) -> void:
+	if bool(input.command(key) & TickCommand.SUPER_HOP) or key.physical_keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]:
+		_fire_latched = true
+	elif key.physical_keycode == KEY_R and not FrontEndSession.active:
+		restart()

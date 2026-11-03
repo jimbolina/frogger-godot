@@ -235,6 +235,11 @@
    "shared": true
   },
   {
+   "name": "opt_gameover",
+   "localized": [null, null, null, null],
+   "shared": true
+  },
+  {
    "name": "next",
    "localized": ["next_i", "next_g", "next_f", "next_s"],
    "shared": false

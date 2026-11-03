@@ -98,17 +98,34 @@ func test_quit_then_yes_leaves_the_front_end_game_as_a_quit() -> void:
 	_screen._process(GameplayHost.PERIOD)
 	assert_eq(_screen._pause_page.mode, PausePage.Mode.DEINIT)
 	_screen._process(GameplayHost.PERIOD)
+	assert_null(_screen._pause_page)
+	assert_true(_screen.playing, "Quit resumes the run under the game-over page")
+	var quitting: GameplayState = _screen.run.snapshot()
+	assert_eq(quitting.flow.phase, LevelFlowState.Phase.GAME_OVER)
+	assert_eq(quitting.frog.flags & FrogFlags.CONTROL_ACTIVE, 0, "Quit removes the frog's control")
+	assert_null(_screen._game_over_page, "the page opens on the next tick")
+	assert_true(FrontEndSession.active)
+	_run_tick()
+	var page_opened: GameOverPage = _screen._game_over_page
+	assert_not_null(page_opened)
+	assert_true(page_opened.quit)
+	for tick: int in GameOverPage.DURATION + GameOverPage.PREDELAY:
+		_run_tick()
 	var quit: bool = FrontEndSession.game_quit
 	var page: int = FrontEndSession.start_page
 	var still_active: bool = FrontEndSession.active
 	FrontEndSession.progress = null
 	_reset_front_end_session()
-	assert_null(_screen._pause_page)
+	assert_true(page_opened.finished())
 	assert_null(_screen.run, "leaving closes the level")
 	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
 	assert_true(quit)
 	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
 	assert_false(still_active)
+
+## One synchronous run tick with no keys held.
+func _run_tick() -> void:
+	_screen.step_command(_screen._host.sample(_screen._current.tick_index, 0))
 
 func test_paused_keys_reach_only_the_page() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
@@ -347,33 +364,161 @@ func test_front_end_completion_records_the_level_score_for_the_high_scores() -> 
 	assert_eq(page.checkpoint_seconds, PackedInt32Array([1, 2, 3, 4, 5]))
 	assert_eq(page.total_seconds, 15)
 
-func test_front_end_game_over_leads_to_name_entry() -> void:
+func _start_front_end_game() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
 	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
 	FrontEndSession.store = null
+	FrontEndSession.board = null
 	FrontEndSession.active = true
-	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
-	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
-	_screen.level_code = FroggerIds.level_code(24)
-	var finished: GameplayState = _screen.run.snapshot()
-	finished.completed = true
-	finished.flow.phase = LevelFlowState.Phase.GAME_OVER
+	_screen.switches_scene = false
+
+## Accepts a committed game-over state one tick on from the current one, as the run keeps
+## ticking under the page.
+func _game_over_tick(score: int) -> void:
+	var state: GameplayState = _screen.run.snapshot()
+	state.tick_index = _screen._current.tick_index + 1
+	state.completed = false
+	state.flow.phase = LevelFlowState.Phase.GAME_OVER
+	state.flow.score = score
 	var result := TickResult.new()
-	result.final_snapshot = finished
+	result.final_snapshot = state
 	_screen._accept(result)
+
+func test_front_end_game_over_opens_the_page_over_the_running_level() -> void:
+	_start_front_end_game()
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER, 2500)
+	var page: GameOverPage = _screen._game_over_page
+	var still_active: bool = FrontEndSession.active
+	var music: MusicPlayer = _screen.music_player()
+	assert_not_null(page)
+	assert_false(page.quit)
+	assert_eq(page.frame, 0, "the kill tick opens the page; its updates follow")
+	assert_true(still_active, "the game lasts until the page ends")
+	assert_true(_screen._session_finished, "the progress is settled when the page opens")
+	assert_false(_screen._hud.visible, "the HUD viewport hides")
+	assert_true(_screen.playing, "the run keeps ticking under the page")
+	assert_false(_screen._actions.visible)
+	assert_eq(_screen._status.text, "")
+	assert_true(_screen._game_over_view.visible)
+	assert_false(_screen._game_over_view.shows_sprite(), "the sprite waits for the predelay")
+	if music != null:
+		assert_eq(music.track, GameOverPage.JINGLE_TRACK)
+		assert_false(music.looping, "the jingle plays once")
+	_key(KEY_ESCAPE, true)
+	assert_null(_screen._pause_page, "Escape does nothing on the page")
+	assert_false(_screen.open_pause())
+	_key(KEY_UP, true)
+	assert_eq(_screen._held, 0, "play keys do not reach the run")
+	_game_over_tick(2500)
+	assert_eq(page.frame, 1)
+	assert_eq(_screen.view_rect(), Rect2i(0, 0, 640, 480), "the predelay keeps the full viewport")
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+
+func test_front_end_game_over_shrinks_then_reaches_name_entry_on_the_timeout() -> void:
+	_start_front_end_game()
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER, 4321)
+	var page: GameOverPage = _screen._game_over_page
+	for tick: int in GameOverPage.PREDELAY / 2 + 1:
+		_game_over_tick(4321)
+	assert_eq(_screen.view_rect(), page.view_rect())
+	assert_eq(_screen.view_rect().size.x, 640 - page.width_step, "the first update after the predelay shrinks")
+	assert_true(_screen._game_over_view.shows_sprite())
+	var full: float = GameplayProjection.vertical_fov_degrees(Vector2i(_screen.get_viewport().get_visible_rect().size))
+	var expected: float = rad_to_deg(2.0 * atan(tan(deg_to_rad(full) * 0.5) * 640.0 / _screen.view_rect().size.x))
+	assert_almost_eq(_screen._camera.fov, expected, 0.0001, "the projection scales by width / 640")
+	while _screen.run != null and page.frame < GameOverPage.DURATION + GameOverPage.PREDELAY - 1:
+		_game_over_tick(4321)
+	assert_not_null(_screen._game_over_page, "the page holds until its count-down ends")
+	var opened: bool = FrontEndSession.active
+	_game_over_tick(4321)
+	var start_page: int = FrontEndSession.start_page
+	var quit: bool = FrontEndSession.game_quit
+	var ending: int = FrontEndSession.final_score
+	var still_active: bool = FrontEndSession.active
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+	assert_true(opened)
+	assert_eq(page.frame, GameOverPage.DURATION + GameOverPage.PREDELAY)
+	assert_true(page.finished())
+	assert_eq(start_page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_false(quit, "a game over is not a quit")
+	assert_eq(ending, 4321)
+	assert_false(still_active)
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_null(_screen.run, "leaving closes the level")
+
+func test_front_end_game_over_fire_leaves_only_once_the_gate_opens() -> void:
+	_start_front_end_game()
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER, 10)
+	var page: GameOverPage = _screen._game_over_page
+	while page.frame < 74:
+		_game_over_tick(10)
+	_key(KEY_SPACE, true)
+	assert_true(_screen._fire_latched, "Space is fire on the page")
+	_game_over_tick(10)
+	assert_false(_screen._fire_latched, "the tick consumes the latch")
+	assert_false(page.finished(), "fire at update 75 is ignored")
+	_key(KEY_ENTER, true)
+	_game_over_tick(10)
+	var start_page: int = FrontEndSession.start_page
+	var still_active: bool = FrontEndSession.active
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+	assert_eq(page.frame, 76)
+	assert_true(page.finished(), "fire at update 76 leaves")
+	assert_eq(page.sounds, PackedInt32Array([GameOverPage.SOUND_CROAK]), "the croak is requested, but muted")
+	assert_eq(start_page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_false(still_active)
+
+func test_direct_launch_game_over_ends_on_black_with_replay_and_return() -> void:
 	FrontEndSession.active = false
-	var page: int = FrontEndPage.Page.GAME
-	for event: int in _screen._advance_events:
-		page = FrontEndFlow.next_page(page, event, PackedStringArray())
-	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
-	assert_eq(_screen._advance.text, "Continue")
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER, 50)
+	var page: GameOverPage = _screen._game_over_page
+	assert_not_null(page)
+	assert_false(_screen._actions.visible, "the buttons wait for the page")
+	for tick: int in GameOverPage.DURATION + GameOverPage.PREDELAY:
+		_game_over_tick(50)
+	assert_true(page.finished())
+	assert_null(_screen._game_over_page)
+	assert_false(_screen.playing)
+	assert_true(_screen._actions.visible)
+	assert_true(_screen._replay.visible)
+	assert_true(_screen._back.visible)
+	assert_eq(_screen._status.text, "", "the page is the label")
+	assert_true(_screen._game_over_view.visible, "the screen stays black")
+	assert_false(_screen._game_over_view.shows_sprite())
+	assert_eq(_screen._game_over_view.view_rect().size.x, 0)
+	assert_eq(_screen._camera.cull_mask, 0, "no world is drawn at zero width")
+	var before: GameplayRun = _screen.run
+	_game_over_tick(50)
+	assert_null(_screen._game_over_page, "the ended page does not reopen")
+	_key(KEY_R, true)
+	assert_ne(_screen.run, before, "R restarts")
+	assert_false(_screen._game_over_view.visible)
+	assert_true(_screen._hud.visible)
+	assert_eq(_screen.view_rect(), Rect2i())
+	assert_ne(_screen._camera.cull_mask, 0)
+	assert_true(_screen.playing)
+
+func test_r_restarts_a_direct_launch_during_the_page() -> void:
+	FrontEndSession.active = false
+	_finish_level(24, LevelFlowState.Phase.GAME_OVER)
+	for tick: int in 40:
+		_game_over_tick(0)
+	assert_not_null(_screen._game_over_page)
+	_key(KEY_R, true)
+	assert_null(_screen._game_over_page)
+	assert_eq(_screen.view_rect(), Rect2i())
+	assert_true(_screen._hud.visible)
+	assert_true(_screen.playing)
 
 func _finish_level(level: int, phase: LevelFlowState.Phase, score: int = 0) -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
 	_screen.level_code = FroggerIds.level_code(level)
 	var finished: GameplayState = _screen.run.snapshot()
-	finished.completed = true
+	finished.completed = phase == LevelFlowState.Phase.COMPLETE
 	finished.flow.phase = phase
 	finished.flow.score = score
 	finished.flow.checkpoint_times = PackedInt32Array([30, 60, 90, 120, 150])

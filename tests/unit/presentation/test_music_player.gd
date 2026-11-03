@@ -1,6 +1,7 @@
 extends GutTest
 ## MusicPlayer plays the imported Ogg or WAV track of its folder once per selection, loops a copy of the
-## whole track and stays silent with diagnostics otherwise.
+## whole track or, for a once-only selection, plays it without a loop, and stays silent with
+## diagnostics otherwise.
 
 const TRACK: int = 2
 const COMMITTED: String = "res://assets/audio/music"
@@ -40,6 +41,39 @@ func test_the_imported_ogg_is_read_once_and_loops_a_copy() -> void:
 		assert_same(_player.stream(), stream, "a restart replays the read track")
 		assert_true(_player.is_playing())
 	assert_eq(_player.diagnostics, PackedStringArray())
+
+func test_a_once_only_selection_plays_without_a_loop_and_a_looping_reselection_replaces_it() -> void:
+	_player.select(TRACK, false)
+	assert_false(_player.looping)
+	_player.restart()
+	var once: AudioStreamOggVorbis = _player.stream() as AudioStreamOggVorbis
+	assert_not_null(once)
+	assert_false(once.loop)
+	assert_true(_player.is_playing())
+	_player.select(TRACK, false)
+	assert_same(_player.stream(), once, "the same once-only selection keeps the read track")
+	_player.select(TRACK)
+	assert_true(_player.looping)
+	assert_null(_player.stream(), "a change of looping is a new selection")
+	assert_false(_player.is_playing())
+	_player.restart()
+	var looped: AudioStreamOggVorbis = _player.stream() as AudioStreamOggVorbis
+	assert_not_null(looped)
+	assert_true(looped.loop)
+	assert_ne(looped, once)
+	assert_eq(_player.diagnostics, PackedStringArray())
+
+func test_a_once_only_copy_drops_a_baked_loop() -> void:
+	var wav: AudioStreamWAV = _wav(100, AudioStreamWAV.FORMAT_16_BITS, false)
+	assert_same(MusicPlayer.once_copy(wav), wav, "a track without a loop is played as it is")
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	var once: AudioStreamWAV = MusicPlayer.once_copy(wav) as AudioStreamWAV
+	assert_ne(once, wav)
+	assert_eq(once.loop_mode, AudioStreamWAV.LOOP_DISABLED)
+	assert_eq(wav.loop_mode, AudioStreamWAV.LOOP_FORWARD, "the shared track keeps its settings")
+	var ogg: AudioStreamOggVorbis = load(MusicPlayer.imported_track_path(COMMITTED, TRACK)) as AudioStreamOggVorbis
+	assert_same(MusicPlayer.once_copy(ogg), ogg)
+	assert_null(MusicPlayer.once_copy(Resource.new()))
 
 func test_a_collapse_while_loading_cancels_the_pending_start() -> void:
 	_player.threaded = true

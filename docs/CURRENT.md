@@ -8,9 +8,10 @@ JUN1, SWP1–SWP5 and SKY1–SKY4 are accepted by the owner's play check, as are
 audio (P12), the level-complete page (P13h), the modern rendering (S2), the
 S2g glow and graphics panel, X2 frog lighting and the
 [attract cycle](reference/gameplay/front-end.md#attract-cycle) (P13e). The
-[pause page](reference/gameplay/front-end.md#pause-page) (P13i: Escape pauses,
-Continue/Quit at once) and its [cheat phrases](reference/gameplay/front-end.md#cheats)
-(P13j) await the owner's play check. See the [roadmap](PORTING.md).
+[pause page](reference/gameplay/front-end.md#pause-page) (P13i), its
+[cheat phrases](reference/gameplay/front-end.md#cheats) (P13j) and the
+[game-over page](reference/gameplay/front-end.md#game-over) (P13k) await the
+owner's play check. See the [roadmap](PORTING.md).
 
 Everything plays from the committed `assets/` through `ImportedAssets`
 ([assets](reference/assets.md)); readers and importer live in `archive/`. [Texture packs](reference/assets.md#texture-packs) replace the upscaled set; text is the `newfont` bitmap font and the vector angular lettering

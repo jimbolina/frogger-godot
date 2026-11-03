@@ -48,8 +48,9 @@ returns between them; Start and Options still work over a demo. Pass `--attract`
 start the first demo as soon as the menu has flown on. The inspection
 tools and sandbox keep their own keys. Escape pauses: PAUSED shows over the level
 with Continue and Quit (arrows move, Enter picks, Escape resumes); R restarts a
-direct launch, and Quit returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
-**Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.
+direct launch, and Quit leads to the game-over page. From the menu, completion offers **Next level** or **Level select**;
+losing the last life shrinks the level away under GAME OVER (Enter skips it after a moment) and
+goes on to name entry or the menu; a direct launch offers **Replay** and **Return** afterwards. The game starts automatically after loading.
 
 The 0 key (top row) opens the debug graphics panel on the right: display, quality, shadows, bloom,
 effects and look settings apply at once and are saved to `user://graphics.cfg`.

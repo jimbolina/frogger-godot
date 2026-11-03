@@ -65,6 +65,15 @@ func set_cheats(value: CheatState) -> String:
 	close()
 	return run.set_cheats(value)
 
+## Applies the pause menu's Quit to the run between ticks, joining an idle worker first.
+func quit_game() -> String:
+	if run == null:
+		return "Open a gameplay run before quitting the game"
+	if pending():
+		return "Finish the pending command before quitting the game"
+	close()
+	return run.quit_game()
+
 ## Submits one detached command, creating the worker on first use.
 func submit(command: TickCommand) -> bool:
 	error = ""

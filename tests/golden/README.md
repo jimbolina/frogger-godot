@@ -74,6 +74,7 @@ commands run from the repository root; generated facts live in
 | Level-complete count-down, fire and back, checkpoint seconds, digits, cels, sprite layout and scripted page traces | [Level complete](specs/frontend.md#level-complete) |
 | Attract demo order and intro rows, main-menu dwell, demo loading, fade-out and fire gate | [Attract cycle](specs/frontend.md#attract-cycle) |
 | In-game pause press rule, fade-down and fade-up, sound-volume ramp, Continue/Quit and Yes/No menus, glow, sprite layout and scripted traces | [Pause page](specs/frontend.md#pause-page) |
+| Game-over count-down, fire gate, viewport shrink, sprite grey, track 22 and the retail executable pins, scripted page traces | [Game over](specs/frontend.md#game-over) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

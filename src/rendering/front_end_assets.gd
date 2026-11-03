@@ -1,7 +1,8 @@
 class_name FrontEndAssets
 extends RefCounted
-## Main-menu, options, level-select, pause and level-complete text images in one [GameLanguage],
-## resolved by FrogLord names and level-select texture records from the imported texture banks.
+## Main-menu, options, level-select, pause, level-complete and game-over text images in one
+## [GameLanguage], resolved by FrogLord names and level-select texture records from the imported
+## texture banks.
 ##
 ## English loads [constant BANKS]. Another language also loads its fixed-UI and options
 ## text banks after the English ones and draws each name's localized image
@@ -32,7 +33,7 @@ const NAMES: PackedStringArray = [
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 	"opt_view_hs", "opt_ctrl_config", "opt_insert_pad", "select7", "opt_keyboard",
 	"opt_arrow_small_left", "opt_arrow_small_right", "select3", "skip_hi_score", "opt_arrow",
-	"next", "total_time", "total_score", "select4", "opt_sec",
+	"opt_gameover", "next", "total_time", "total_score", "select4", "opt_sec",
 ]
 ## The bank the water images are read from.
 const WATER_BANK: String = "OPT_VRAM.VLO"

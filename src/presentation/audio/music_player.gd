@@ -1,6 +1,7 @@
 class_name MusicPlayer
 extends Node
-## Plays the level's music track on the [constant BUS] bus, looping, from the imported track.
+## Plays a music track on the [constant BUS] bus from the imported track: the level's, looping, or
+## a track selected to play once, such as the game-over jingle (PlayCD(22, 0)).
 ##
 ## The track number comes from the executable's music list
 ## ([method MusicTable.track_for_level]). The imported track under
@@ -10,7 +11,8 @@ extends Node
 ## by an import at runtime). It is loaded through Godot's threaded resource
 ## loader unless [member threaded] is false. A track is read once per selection
 ## and replayed from memory on each restart, from a copy that loops the whole
-## track. Without the track the level is silent and [member diagnostics] says why.
+## track, or, for a once-only selection, from the track without a loop. Without
+## the track the music is silent and [member diagnostics] says why.
 
 ## Bus the music plays on.
 const BUS: StringName = &"Music"
@@ -25,6 +27,8 @@ var diagnostics := PackedStringArray()
 var threaded: bool = true
 ## Selected CD track number, or -1.
 var track: int = -1
+## Whether the selected track loops.
+var looping: bool = true
 ## Folder of imported tracks, or "" before one is chosen ([method use_folder]).
 var imported_dir: String = ""
 var _player: AudioStreamPlayer = null
@@ -63,12 +67,14 @@ static func folder_of(catalog: AssetCatalog) -> String:
 		return ""
 	return imported.root.path_join(MUSIC_FOLDER)
 
-## Selects track [param number]; a new selection stops the old one.
-func select(number: int) -> void:
-	if number == track:
+## Selects track [param number], looping unless [param loop] is false; a new number or a change
+## of looping is a new selection, which stops the old one.
+func select(number: int, loop: bool = true) -> void:
+	if number == track and loop == looping:
 		return
 	clear()
 	track = number
+	looping = loop
 
 ## Plays the selected track from its start, reading it first when needed.
 func restart() -> void:
@@ -127,6 +133,7 @@ func clear() -> void:
 	_player.stream = null
 	_stream = null
 	track = -1
+	looping = true
 
 ## The imported track [param number] under [param folder], trying each of
 ## [constant TRACK_EXTENSIONS] in turn, or "" when there is none.
@@ -156,6 +163,25 @@ static func looping_copy(loaded: Resource) -> AudioStream:
 	looped.loop_end = wav_frames(wav)
 	return looped
 
+## [param loaded] as a stream that plays once: the shared resource when it has no loop, else a
+## copy without one; null when [param loaded] is neither Ogg Vorbis nor WAV.
+static func once_copy(loaded: Resource) -> AudioStream:
+	var ogg: AudioStreamOggVorbis = loaded as AudioStreamOggVorbis
+	if ogg != null:
+		if not ogg.loop:
+			return ogg
+		var copy: AudioStreamOggVorbis = ogg.duplicate() as AudioStreamOggVorbis
+		copy.loop = false
+		return copy
+	var wav: AudioStreamWAV = loaded as AudioStreamWAV
+	if wav == null:
+		return null
+	if wav.loop_mode == AudioStreamWAV.LOOP_DISABLED:
+		return wav
+	var once: AudioStreamWAV = wav.duplicate() as AudioStreamWAV
+	once.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	return once
+
 ## The number of sample frames in [param wav].
 static func wav_frames(wav: AudioStreamWAV) -> int:
 	var channels: int = 2 if wav.stereo else 1
@@ -167,7 +193,7 @@ static func wav_frames(wav: AudioStreamWAV) -> int:
 	return roundi(wav.get_length() * wav.mix_rate)
 
 func _accept(path: String, loaded: Resource) -> void:
-	_stream = looping_copy(loaded)
+	_stream = looping_copy(loaded) if looping else once_copy(loaded)
 	if _stream == null:
 		diagnostics.append("Imported music %s could not be loaded" % path)
 	elif _wanted:
