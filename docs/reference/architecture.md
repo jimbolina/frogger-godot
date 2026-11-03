@@ -35,7 +35,8 @@ states what each layer may use.
   goldens. Nothing outside `archive/` depends on it, with one exception:
   `src/application/setup/AssetImporterFactory` loads
   `archive/import/runtime_import.gd`, the importer's implementation of the
-  `AssetImporter` interface the setup screen is typed against.
+  `AssetImporter` interface the setup screen and the in-game FrogLord watcher
+  are typed against.
 - Simulation uses direct calls for ordered updates. Notifications follow
   state changes; subscriber order must not decide collision outcomes or RNG use.
   Rendering interpolation cannot feed back into authoritative state.
@@ -347,11 +348,30 @@ files through `AssetImporterFactory`, and run the import through
 `DesktopShortcut` builds and writes the desktop shortcut and
 `SetupFileDialog` opens the folder and file pickers.
 
+`AssetImporter` is one interface for both imports. Besides `detect` and `run`
+it has `detect_froglord` (which pair a save folder holds, its build and
+FrogLord version), `source_state` (the save files' names, modification times
+and sizes, cheap enough to poll every second) and `import_overlay` (one
+`FrogLordWatchCycle` over a given base root, into `overlay_parent`, rewriting
+the pointer at `pointer_path`). `overlay_parent_for` keeps overlays over the
+committed assets in `user://froglord/` and gives every other base root its own
+folder below it.
+
 `FrogLordPointer` (`src/application/loaders`) reads and atomically writes the
-file naming the overlay the FrogLord watcher imported last;
-`AssetLocation.resolve_overlay` reads it beside the base root, and
-`AssetReloadWatcher` (`src/presentation`) polls it and signals `GameplayScreen`
-under `--froglord`.
+file naming the overlay imported last, with the save folder, the base root it
+falls back to and the save's source state; `AssetLocation.resolve_overlay`
+reads it beside the base root. `FrogLordWatch` (`src/application/froglord`)
+is the in-game watch's change, stability and import state machine and
+`FrogLordOverlay` decides which index a level opens; neither touches files.
+`FrogLordWatcher` (`src/presentation/froglord`) is the one watcher per
+process: `FrontEndScreen` and `GameplayScreen` call `follow` with the launcher
+settings and the base root, which adds it under the tree's root, so it
+outlives their scene changes for the session like `FrontEndSession`'s state.
+It is not an autoload because the setup screen, the viewers, the import
+child and the test runs must not watch. It polls through the importer, runs
+`import_overlay` on a worker thread and shows what the watch says in a
+`FrogLordNotice`. `AssetReloadWatcher` (`src/presentation`) polls the pointer
+and signals `GameplayScreen` whenever its level follows FrogLord.
 A reload opens a new `ImportedAssets` over the new overlay folder, whose
 records lie at new paths, and hands it to `open_data` with ownership, which
 releases the previous catalog; loaded records are never replaced in place.

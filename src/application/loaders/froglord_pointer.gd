@@ -1,8 +1,8 @@
 class_name FrogLordPointer
 extends RefCounted
-## The file naming the newest overlay [code]archive/import/froglord_watch.sh[/code]
-## imported from a FrogLord save, which a game launched with
-## [code]--froglord[/code] opens and reloads.
+## The file naming the newest overlay imported from a FrogLord save, by
+## [code]archive/import/froglord_watch.sh[/code] or the in-game watcher, which
+## a game following FrogLord opens and reloads.
 ##
 ## The file is a [ConfigFile] with one section, [code][overlay][/code], holding
 ## the fields below. [method write] writes a temporary file beside the target
@@ -24,6 +24,13 @@ var source_summary: String = ""
 var report_path: String = ""
 ## When the watcher wrote the pointer, in Unix seconds.
 var written_at: int = 0
+## The save folder the overlay was imported from.
+var data_dir: String = ""
+## The base root the overlay's index falls back to.
+var fallback_root: String = ""
+## The save files' state when the import began, as
+## [code]AssetImporter.source_state[/code] gives it.
+var source_state: String = ""
 
 var _exists: bool = false
 
@@ -43,6 +50,9 @@ static func read(path: String = DEFAULT_PATH) -> FrogLordPointer:
 	pointer.report_path = str(file.get_value(_SECTION, "report_path", ""))
 	var stamp: Variant = file.get_value(_SECTION, "written_at", 0)
 	pointer.written_at = stamp if stamp is int else 0
+	pointer.data_dir = str(file.get_value(_SECTION, "data_dir", ""))
+	pointer.fallback_root = str(file.get_value(_SECTION, "fallback_root", ""))
+	pointer.source_state = str(file.get_value(_SECTION, "source_state", ""))
 	pointer._exists = not pointer.index_root.is_empty()
 	return pointer
 
@@ -71,6 +81,9 @@ func write(path: String = DEFAULT_PATH) -> Error:
 	file.set_value(_SECTION, "source_summary", source_summary)
 	file.set_value(_SECTION, "report_path", report_path)
 	file.set_value(_SECTION, "written_at", written_at)
+	file.set_value(_SECTION, "data_dir", data_dir)
+	file.set_value(_SECTION, "fallback_root", fallback_root)
+	file.set_value(_SECTION, "source_state", source_state)
 	var temporary: String = path + _TEMP_SUFFIX
 	var saved: Error = file.save(temporary)
 	if saved != OK:

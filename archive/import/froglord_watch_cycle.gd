@@ -6,7 +6,8 @@ extends RefCounted
 ## [method run] imports the resource steps into
 ## [code]<root_parent>/<key>/[/code], where the key is the first
 ## [constant KEY_LENGTH] hex digits of [method GameDataSource.fingerprint],
-## with [code]res://assets[/code] as the fallback root, writes the overlay's
+## over a fallback root ([constant FALLBACK_ROOT] unless another is given, such
+## as a [code]user://assets/<fingerprint>/[/code] root), writes the overlay's
 ## [LevelSupportReport] beside it as [constant REPORT_FILE] and, last, the
 ## [FrogLordPointer]. Earlier key folders are kept, since an open game loads
 ## maps lazily. Files that are not yet a complete pc-retail-v3.0e pair, or that
@@ -19,7 +20,7 @@ const DEFAULT_STEPS: PackedStringArray = ["names", "tables", "demos", "maps", "c
 const ALLOWED_STEPS: PackedStringArray = ["names", "tables", "demos", "maps", "catalog"]
 ## The folder the overlays and the pointer live in.
 const DEFAULT_ROOT_PARENT: String = "user://froglord"
-## The root every overlay falls back to.
+## The root an overlay falls back to when no other is given.
 const FALLBACK_ROOT: String = "res://assets"
 ## The hex digits of the fingerprint that name an overlay folder.
 const KEY_LENGTH: int = 16
@@ -27,6 +28,14 @@ const KEY_LENGTH: int = 16
 const REPORT_FILE: String = "support_report.tsv"
 ## The only build the importer accepts.
 const BUILD: String = "pc-retail-v3.0e"
+## What each step does, for the progress label.
+const STEP_LABELS: Dictionary[String, String] = {
+	"names": "Reading name lists",
+	"tables": "Reading game tables",
+	"demos": "Reading demos",
+	"maps": "Converting maps",
+	"catalog": "Writing the overlay index",
+}
 
 
 ## What one cycle did.
@@ -40,6 +49,10 @@ class Result:
 	var fingerprint: String = ""
 	## The overlay folder.
 	var index_root: String = ""
+	## The root the overlay falls back to.
+	var fallback_root: String = ""
+	## [method file_state] of the folder when the cycle began.
+	var source_state: String = ""
 	## [method ImportedAssets.source_summary] of the overlay.
 	var source_summary: String = ""
 	## The files the import wrote or rewrote.
@@ -91,13 +104,27 @@ static func file_state(data_dir: String) -> String:
 
 
 ## Imports the pair in [param data_dir] with [param steps] (empty for
-## [constant DEFAULT_STEPS]) into an overlay under [param root_parent] and
-## points [param pointer_path] at it when the import is clean.
+## [constant DEFAULT_STEPS]) into an overlay under [param root_parent] over
+## [param fallback_root] and points [param pointer_path] at it when the import
+## is clean. [param progress] is called as
+## [code]progress.call(fraction: float, label: String)[/code] before each step
+## and once at the end; the cycle stops with a problem soon after
+## [code]cancelled.call()[/code] returns true. Either may be an empty
+## [Callable].
 static func run(data_dir: String, steps: PackedStringArray = PackedStringArray(),
-		root_parent: String = DEFAULT_ROOT_PARENT, pointer_path: String = FrogLordPointer.DEFAULT_PATH) -> Result:
+		root_parent: String = DEFAULT_ROOT_PARENT, pointer_path: String = FrogLordPointer.DEFAULT_PATH,
+		fallback_root: String = FALLBACK_ROOT, progress: Callable = Callable(),
+		cancelled: Callable = Callable()) -> Result:
 	var started: int = Time.get_ticks_msec()
 	var result := Result.new()
-	_import(result, data_dir, steps if not steps.is_empty() else DEFAULT_STEPS, root_parent, pointer_path)
+	result.fallback_root = fallback_root.strip_edges()
+	if result.fallback_root.ends_with("/") and not result.fallback_root.ends_with("://"):
+		result.fallback_root = result.fallback_root.trim_suffix("/")
+	result.source_state = file_state(data_dir) if DirAccess.dir_exists_absolute(data_dir) else ""
+	var chosen: PackedStringArray = steps if not steps.is_empty() else DEFAULT_STEPS
+	_import(result, data_dir, chosen, root_parent, pointer_path, progress, cancelled)
+	if result.is_ok() and progress.is_valid():
+		progress.call(1.0, "Done")
 	result.folders = overlay_folders(root_parent).size()
 	result.milliseconds = Time.get_ticks_msec() - started
 	return result
@@ -114,13 +141,17 @@ static func overlay_folders(root_parent: String) -> PackedStringArray:
 	return found
 
 
-static func _import(result: Result, data_dir: String, steps: PackedStringArray, root_parent: String, pointer_path: String) -> void:
+static func _import(result: Result, data_dir: String, steps: PackedStringArray, root_parent: String,
+		pointer_path: String, progress: Callable, cancelled: Callable) -> void:
 	for step: String in steps:
 		if not ALLOWED_STEPS.has(step):
 			result.error = "step %s needs Godot's import; a watched overlay runs only %s" % [step, ",".join(ALLOWED_STEPS)]
 			return
 	if data_dir.is_empty() or not DirAccess.dir_exists_absolute(data_dir):
 		result.error = "no folder %s" % data_dir
+		return
+	if result.fallback_root.is_empty() or not ImportedAssets.has_index(result.fallback_root):
+		result.error = "the fallback root %s has no %s" % [result.fallback_root, ImportedAssets.INDEX_FILE]
 		return
 	var source: GameDataSource = GameDataLocator.open_directory(data_dir)
 	if source == null:
@@ -140,13 +171,21 @@ static func _import(result: Result, data_dir: String, steps: PackedStringArray, 
 	result.index_root = root_parent.path_join(result.fingerprint)
 	var context := ImportContext.new()
 	context.assets_root = result.index_root
-	context.fallback_root = FALLBACK_ROOT
+	context.fallback_root = result.fallback_root
+	context.cancelled = cancelled
 	context.data = GameData.open(source, detection.version, library)
 	if not context.data.is_valid():
 		result.retry = "%s: %s" % [source.describe(), context.data.error]
 		context.data.close()
 		return
-	ImportRun.new().run(context, ImportStep.PHASE_RESOURCES, steps)
+	var importer := ImportRun.new()
+	if progress.is_valid():
+		var done: Array[int] = [0]
+		importer.on_step = func(step_name: String, _phase: String) -> void:
+			var label: String = STEP_LABELS[step_name] if STEP_LABELS.has(step_name) else step_name
+			progress.call(done[0] / float(steps.size() + 1), label)
+			done[0] += 1
+	importer.run(context, ImportStep.PHASE_RESOURCES, steps)
 	result.written = context.written.size()
 	result.problems.append_array(context.problems)
 	_report_support(result, context.data)
@@ -157,7 +196,9 @@ static func _import(result: Result, data_dir: String, steps: PackedStringArray, 
 		return
 	if not result.problems.is_empty():
 		return
-	var overlay := ImportedAssets.open(FALLBACK_ROOT, "", result.index_root)
+	if progress.is_valid():
+		progress.call(steps.size() / float(steps.size() + 1), "Checking the overlay")
+	var overlay := ImportedAssets.open(result.fallback_root, "", result.index_root)
 	if not overlay.is_valid():
 		result.problems.append("the overlay does not open: %s" % overlay.error)
 		return
@@ -169,6 +210,9 @@ static func _import(result: Result, data_dir: String, steps: PackedStringArray, 
 	pointer.source_summary = result.source_summary
 	pointer.report_path = result.report_path
 	pointer.written_at = int(Time.get_unix_time_from_system())
+	pointer.data_dir = data_dir
+	pointer.fallback_root = result.fallback_root
+	pointer.source_state = result.source_state
 	var written: Error = pointer.write(pointer_path)
 	if written != OK:
 		result.problems.append("cannot write %s (%s)" % [pointer_path, error_string(written)])

@@ -57,8 +57,13 @@ view and an entry in both orders.
    (`ImportedAssets.installed_texture_sets`): retail always, `x4` only over the
    committed assets.
 4. **FrogLord** (`SetupFrogLord`). An on/off switch and an existing save
-   folder, stored in the launcher settings. The in-game watch is phase L4;
-   until then only `--froglord` launches follow a save.
+   folder, stored in the launcher settings. The folder goes through
+   `AssetImporter.detect_froglord`, and the page says what it holds: a
+   FrogLord save (`modded_FROGGER.EXE` and `modded_FROGPSX.MWD`) of
+   `pc-retail-v3.0e` with its FrogLord version, the retail pair (followed
+   until FrogLord saves), or nothing yet. Only a pair of another or an unknown
+   build blocks Next. The page also states what happens
+   [while playing](#froglord-while-playing).
 5. **Play** (`SetupPlay`). A summary, the "show this setup every time"
    choice, the desktop shortcut and how to reopen the setup. Play saves the
    three files, replaces the live `GraphicsProfile`, applies the window
@@ -101,6 +106,41 @@ start and after a cancel, `ImportProcess.clean_up` removes `<root>.partial` and
 restores a `<root>.old` that was moved aside but not replaced. Closing the
 screen during an import cancels it.
 
+## FrogLord while playing
+
+With FrogLord on, the front end and the game scene start the process's one
+`FrogLordWatcher` over the base root `AssetLocation` chose; it lives under the
+tree's root for the session and runs in no other scene. Once a second it
+reads the save folder's source state (each file's name, modification time
+and size). A state that differs from the one the current overlay was
+imported from and stays the same for one more second starts an overlay
+import of the save's name lists, tables, demos and maps into
+`user://froglord/` (overlays over the committed assets) or
+`user://froglord/over-<key>/` (over any other base root, keyed by its path),
+each save in a folder named by its fingerprint, with an index that names the
+base root for everything else. The import runs on a worker thread, so the
+menu and the level keep running. A clean import rewrites
+`user://froglord/current.cfg`; a level that follows FrogLord reopens from its
+start when it changes, F5 reopens it by hand, and a level-complete page
+waits for the next level. At start, a pointer of the same files over the same
+base counts as imported, so nothing is imported again.
+
+Levels started from the menu, and direct launches, open the overlay when the
+pointer names one of the chosen folder over this base root; otherwise they
+play the base root until the first import. The menus and the attract demos
+always draw from the base root: the demos are recordings of the retail
+levels. A save the import is not ready for (an unfinished write, another
+build) is tried again when its files change or after five seconds; a failed
+import is not repeated until they change. A missing folder, a folder without
+a save, each import, the save's unmapped support-report rows and any problem
+show as a line at the bottom of the window for eight seconds and are printed;
+none stops play. When a level opens from an overlay, the rows of its own
+`LevelSupportReport` the port cannot play show the same way.
+
+`--froglord` and `archive/import/froglord_watch.sh` stay the developer path:
+the external watch imports over the committed assets and a `--froglord`
+launch follows whatever overlay the pointer names.
+
 ## Desktop shortcut
 
 `DesktopShortcut` builds the content and commands as pure functions and
@@ -126,7 +166,12 @@ the game suite's builder tests.
 The game suite checks the opening rules, page transitions, import outcomes,
 the progress protocol, the command line, the child entry function with a
 fake importer, the shortcut builders, the launcher migration and the screen
-with a fake importer and process. The archive suite's
-`test_retail_setup_import` starts a real child on `FROGGER_DATA_DIR`, follows
-it to a complete root under `user://setup_child_import/` and cancels a second
-one part way.
+with a fake importer and process, and for FrogLord the page's detection
+text, the watch's state machine, the watcher with a fake importer inline and
+on a thread, the overlay a level chooses and a pointer change in menu-started
+play. The archive suite's `test_retail_setup_import` starts a real child on
+`FROGGER_DATA_DIR`, follows it to a complete root under
+`user://setup_child_import/` and cancels a second one part way;
+`test_retail_froglord_overlay_import` imports the synthetic FrogLord save
+through the seam over a runtime-imported `user://` root and plays ORG1 from
+it.

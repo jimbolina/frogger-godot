@@ -1,7 +1,8 @@
 class_name RuntimeImport
 extends AssetImporter
 ## The importer as the game runs it: one in-process pass of every step in
-## [member ImportContext.runtime] mode, with no editor import.
+## [member ImportContext.runtime] mode, with no editor import, and FrogLord
+## overlays through [FrogLordWatchCycle].
 ##
 ## [method run] writes the root under [code]<target_root>.partial[/code], every
 ## saved reference and the index naming files under [code]<target_root>[/code],
@@ -17,6 +18,10 @@ extends AssetImporter
 ## runs it on the main thread. Do not run it while the game has the same
 ## target root open, since the new resources take over the paths of loaded
 ## ones.
+##
+## [method import_overlay] runs one [FrogLordWatchCycle] over the given base
+## root. Its steps save only records (names, tables, demos, maps and the
+## index), never meshes or materials, so it may run on a worker thread.
 
 ## The suffix of the folder a run writes before it is renamed.
 const STAGING_SUFFIX: String = ".partial"
@@ -108,6 +113,47 @@ static func inspect(data_dir: String) -> Inspected:
 	if detection.build != SUPPORTED_BUILD:
 		detection.error = "%s is %s; only %s can be imported" % [inspected.source.describe(), detection.build, SUPPORTED_BUILD]
 	return inspected
+
+
+func detect_froglord(froglord_dir: String) -> AssetImporter.Detection:
+	var inspected: Inspected = inspect(froglord_dir)
+	var detection: AssetImporter.Detection = inspected.detection
+	if inspected.source == null:
+		return detection
+	detection.files = "%s + %s" % [inspected.source.exe_file_name(), inspected.source.mwd_file_name()]
+	if inspected.source is FrogLordModSource:
+		detection.froglord = true
+		var trailer: FrogLordExeTrailer = (inspected.source as FrogLordModSource).get_trailer()
+		if trailer != null and trailer.error.is_empty():
+			detection.froglord_version = trailer.froglord_version
+	return detection
+
+
+func source_state(froglord_dir: String) -> String:
+	if froglord_dir.is_empty() or not DirAccess.dir_exists_absolute(froglord_dir):
+		return ""
+	return FrogLordWatchCycle.file_state(froglord_dir)
+
+
+func import_overlay(froglord_dir: String, base_root: String,
+		progress: Callable, cancelled: Callable) -> AssetImporter.OverlayResult:
+	var cycle: FrogLordWatchCycle.Result = FrogLordWatchCycle.run(froglord_dir, PackedStringArray(),
+		overlay_parent, pointer_path, base_root, progress, cancelled)
+	var result := AssetImporter.OverlayResult.new()
+	result.error = cycle.error
+	result.retry = cycle.retry
+	result.key = cycle.fingerprint
+	result.index_root = cycle.index_root
+	result.fallback_root = cycle.fallback_root
+	result.source_state = cycle.source_state
+	result.source_summary = cycle.source_summary
+	result.problems = cycle.problems
+	result.support_summary = cycle.support_summary
+	result.unmapped = cycle.unmapped
+	result.support_problems = cycle.support_problems
+	result.report_path = cycle.report_path
+	result.milliseconds = cycle.milliseconds
+	return result
 
 
 func run(data_dir: String, disc_path: String, target_root: String,

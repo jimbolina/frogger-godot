@@ -31,6 +31,9 @@ func _pointer(key: String, stamp: int) -> FrogLordPointer:
 	pointer.source_summary = "FrogLord mod modded_FROGGER.EXE + modded_FROGPSX.MWD over res://assets"
 	pointer.report_path = pointer.index_root.path_join("support_report.tsv")
 	pointer.written_at = stamp
+	pointer.data_dir = "/FrogLord/save"
+	pointer.fallback_root = "user://assets/fedcba9876543210"
+	pointer.source_state = "modded_FROGGER.EXE:1762000000:4096"
 	return pointer
 
 
@@ -53,6 +56,9 @@ func test_the_fields_round_trip() -> void:
 	assert_eq(read.source_summary, written.source_summary)
 	assert_eq(read.report_path, written.report_path)
 	assert_eq(read.written_at, written.written_at)
+	assert_eq(read.data_dir, written.data_dir)
+	assert_eq(read.fallback_root, written.fallback_root)
+	assert_eq(read.source_state, written.source_state)
 	assert_false(FileAccess.file_exists(PATH + ".tmp"))
 
 

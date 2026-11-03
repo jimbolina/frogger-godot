@@ -5,10 +5,13 @@ extends GameplayWorldView
 ## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); R restarts a
 ## direct launch unless a binding claims the key. The saved music and effects volumes are applied
 ## when the scene opens. The level is read from the imported assets the
-## [AssetLocation] resolves ([method asset_location]). A direct launch with [code]--froglord[/code]
-## reads the overlay the [FrogLordPointer] names over that base root instead and reopens the level
+## [AssetLocation] resolves ([method asset_location]). A level that follows FrogLord
+## ([method froglord_overlay]: a [code]--froglord[/code] launch, or any level but an attract demo
+## while FrogLord is on in the setup) reads the overlay the [FrogLordPointer] names over that base
+## root instead, shows the level's unmapped support-report rows as a warning, and reopens the level
 ## from a new catalog whenever an [AssetReloadWatcher] sees the pointer change or F5 is pressed
-## ([method reload_assets]).
+## ([method reload_assets]); a pointer change while the level-complete page shows waits for the
+## next level. With FrogLord on, opening the scene also keeps the [FrogLordWatcher] running.
 ##
 ## Escape opens retail's pause page ([PausePage], pause.c:163-527) when the pause is allowed and
 ## closes it again from its menu; the page ticks at 30 Hz from [method _process] while the game
@@ -46,6 +49,9 @@ const BOOT_SCENE: String = "res://scenes/boot.tscn"
 var auto_open: bool = true
 ## The pointer file a [code]--froglord[/code] launch opens and watches.
 var froglord_pointer_path: String = FrogLordPointer.DEFAULT_PATH
+## Whether the level follows the pointer whatever base its overlay was imported over, as a
+## [code]--froglord[/code] launch does; set from the command line on opening.
+var froglord_flag: bool = false
 ## The launcher settings file [method asset_location] reads.
 var launcher_path: String = LauncherStore.DEFAULT_PATH
 var level_code: String = "ORG1"
@@ -101,6 +107,7 @@ var _loading: TextureRect = null
 var _fade: ColorRect = null
 var _texture_set_name: String = ""
 var _reload_watcher: AssetReloadWatcher = null
+var _froglord_notice: FrogLordNotice = null
 var _pause_view: PauseView
 ## The open pause page, or null.
 var _pause_page: PausePage = null
@@ -134,20 +141,22 @@ func _ready() -> void:
 				level_code = "ORG1"
 		FrontEndSession.selected_level = ""
 		_texture_set_name = ViewerArguments.texture_set(arguments)
-		var froglord: bool = not attract and not FrontEndSession.active and ViewerArguments.froglord(arguments)
-		var data: ImportedAssets
-		if froglord:
-			data = open_froglord_assets()
+		froglord_flag = ViewerArguments.froglord(arguments)
+		var location: AssetLocation = asset_location()
+		if location.is_usable():
+			FrogLordWatcher.follow(get_tree(), LauncherStore.load_from(launcher_path).settings, location.base_root)
+		var choice: FrogLordOverlay = froglord_overlay(attract)
+		var data: ImportedAssets = open_overlay_assets(choice)
+		if choice.follows:
 			watch_froglord()
-		else:
-			data = asset_location().open(_texture_set_name)
 		data.note_renderer(RenderingServer.get_current_rendering_method())
 		for warning: String in data.warnings:
 			push_warning(warning)
 		if attract:
 			open_attract(data)
 		elif data.is_valid():
-			open_data(data, level_code, true)
+			if open_data(data, level_code, true).is_empty() and choice.follows:
+				support_warnings(data)
 		else:
 			_show_error("The imported assets cannot be opened: %s" % data.error)
 
@@ -159,36 +168,62 @@ func _exit_tree() -> void:
 func asset_location() -> AssetLocation:
 	return AssetLocation.resolve(OS.get_cmdline_user_args(), LauncherStore.load_from(launcher_path))
 
-## Opens the catalog from the overlay the [FrogLordPointer] at [member froglord_pointer_path] names,
-## or from the base root alone with a line in its warnings when there is no pointer.
-func open_froglord_assets() -> ImportedAssets:
+## How this launch follows FrogLord ([FrogLordOverlay.choose]): from [member froglord_flag] or the
+## command line's [code]--froglord[/code], the launcher settings at [member launcher_path], the pointer at
+## [member froglord_pointer_path] and the base root; [param attract] for an attract demo.
+func froglord_overlay(attract: bool = false) -> FrogLordOverlay:
 	var location: AssetLocation = asset_location()
-	var pointer: FrogLordPointer = location.resolve_overlay(froglord_pointer_path)
-	if pointer.exists():
-		return location.open(_texture_set_name, pointer.index_root)
+	return FrogLordOverlay.choose(froglord_flag or ViewerArguments.froglord(OS.get_cmdline_user_args()),
+		LauncherStore.load_from(launcher_path).settings, attract,
+		location.resolve_overlay(froglord_pointer_path), location.base_root)
+
+## Opens the catalog [param choice] names: the base root with the overlay's index, or the base root
+## alone with the choice's note, or with the reason in its warnings when the overlay does not open.
+func open_overlay_assets(choice: FrogLordOverlay) -> ImportedAssets:
+	var location: AssetLocation = asset_location()
+	if not choice.index_root.is_empty():
+		var overlay: ImportedAssets = location.open(_texture_set_name, choice.index_root)
+		if overlay.is_valid():
+			return overlay
+		overlay.close()
+		var base: ImportedAssets = location.open(_texture_set_name)
+		base.warnings.append("The FrogLord overlay %s cannot be opened (%s); playing %s" % [choice.index_root, overlay.error, location.base_root])
+		return base
 	var data: ImportedAssets = location.open(_texture_set_name)
-	data.warnings.append("No FrogLord overlay pointer at %s; playing %s until archive/import/froglord_watch.sh writes one" % [froglord_pointer_path, location.base_root])
+	if not choice.note.is_empty():
+		data.warnings.append(choice.note)
 	return data
 
-## Adds the [AssetReloadWatcher] on [member froglord_pointer_path] that calls [method reload_assets]
-## and lets F5 call it too. Does nothing when already watching.
+## Opens the catalog a [code]--froglord[/code] launch plays: the overlay the [FrogLordPointer] at
+## [member froglord_pointer_path] names, or the base root alone with a line in its warnings when
+## there is no pointer.
+func open_froglord_assets() -> ImportedAssets:
+	var location: AssetLocation = asset_location()
+	return open_overlay_assets(FrogLordOverlay.choose(true, null, false,
+		location.resolve_overlay(froglord_pointer_path), location.base_root))
+
+## Adds the [AssetReloadWatcher] on [member froglord_pointer_path] that reopens the level when the
+## pointer changes and lets F5 call [method reload_assets]. Does nothing when already watching.
 func watch_froglord() -> void:
 	if _reload_watcher != null:
 		return
 	_reload_watcher = AssetReloadWatcher.new()
 	_reload_watcher.pointer_path = froglord_pointer_path
-	_reload_watcher.pointer_changed.connect(reload_assets)
+	_reload_watcher.pointer_changed.connect(_on_pointer_changed)
 	add_child(_reload_watcher)
 
+## True when the level follows FrogLord's pointer.
+func follows_froglord() -> bool:
+	return _reload_watcher != null
+
 ## Reopens the current level from a new catalog over the overlay the pointer names, releasing the
-## previous catalog. A missing pointer or an overlay that does not open shows the error and keeps
-## the current level. Returns the error or "".
+## previous catalog. A pointer that names no overlay this level may follow, or an overlay that does
+## not open, shows the error and keeps the current level. Returns the error or "".
 func reload_assets() -> String:
-	var location: AssetLocation = asset_location()
-	var pointer: FrogLordPointer = location.resolve_overlay(froglord_pointer_path)
-	if not pointer.exists():
-		return _show_error("No FrogLord overlay to reload: %s is missing" % froglord_pointer_path)
-	var data: ImportedAssets = location.open(_texture_set_name, pointer.index_root)
+	var choice: FrogLordOverlay = froglord_overlay()
+	if choice.index_root.is_empty():
+		return _show_error("No FrogLord overlay to reload: %s" % (choice.note if not choice.note.is_empty() else "FrogLord is off"))
+	var data: ImportedAssets = asset_location().open(_texture_set_name, choice.index_root)
 	if not data.is_valid():
 		return _show_error("The FrogLord overlay cannot be opened: %s" % data.error)
 	for warning: String in data.warnings:
@@ -196,8 +231,39 @@ func reload_assets() -> String:
 	var issue: String = open_data(data, level_code, true)
 	if not issue.is_empty():
 		return issue
-	print("froglord: reloaded %s from %s (%s)" % [level_code, data.source_summary(), pointer.fingerprint])
+	print("froglord: reloaded %s from %s" % [level_code, data.source_summary()])
+	support_warnings(data)
 	return ""
+
+## The rows of [param data]'s [LevelSupportReport] for the open level that the port cannot play,
+## shown as a warning when [param data] reads an overlay index; empty for the base root alone.
+func support_warnings(data: AssetCatalog) -> PackedStringArray:
+	var rows := PackedStringArray()
+	var imported: ImportedAssets = data as ImportedAssets
+	if imported == null or imported.index_root == imported.root:
+		return rows
+	var report: LevelSupportReport = LevelSupportReport.from_catalog(data, PackedStringArray([level_code]))
+	for row: LevelSupportReport.Row in report.unmapped():
+		rows.append("%s %s%s" % [row.kind, row.key, (" (%s)" % row.reason) if not row.reason.is_empty() else ""])
+	if not rows.is_empty():
+		_show_froglord_notice("FrogLord: %s uses %d things the port cannot play: %s." % [level_code, rows.size(), "; ".join(rows)])
+	return rows
+
+func _on_pointer_changed() -> void:
+	if _complete_page != null or _session_finished or is_attract():
+		return
+	var choice: FrogLordOverlay = froglord_overlay()
+	if choice.index_root.is_empty():
+		print("froglord: the pointer changed but names no overlay this level follows")
+		return
+	reload_assets()
+
+func _show_froglord_notice(text: String) -> void:
+	print(text)
+	if _froglord_notice == null:
+		_froglord_notice = FrogLordNotice.new()
+		add_child(_froglord_notice)
+	_froglord_notice.show_text(text, true)
 
 ## Opens an explicitly selected level, borrowing the data unless ownership is transferred.
 func open_data(data: AssetCatalog, code: String, take_ownership: bool = false) -> String:

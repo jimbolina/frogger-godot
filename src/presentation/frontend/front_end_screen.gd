@@ -25,6 +25,10 @@ extends Control
 ## the camera snapped to MAIN; the INTRO slot opens it afresh on Start. [code]--attract[/code]
 ## ends the first dwell at once. A page the game scene asks for from a running demo
 ## ([member FrontEndSession.start_page] LEVEL_SELECT or OPTIONS) opens directly.
+##
+## With FrogLord on in the setup, opening the front end starts or keeps the [FrogLordWatcher] over
+## the base root; the menus and the attract demos keep drawing from the base root, and levels the
+## menu starts open the overlay ([GameplayScreen]).
 
 ## The front-end scene.
 const SCENE: String = "res://scenes/front_end.tscn"
@@ -59,6 +63,8 @@ const LANGUAGE_ARGUMENT: String = "--language="
 const OPTIONS_SOUNDS: PackedStringArray = [HOP_SOUND, SPLASH_SOUND, HOP_SOUND, CROAK_SOUND, "", "", "", "", "", ""]
 
 var page: int = FrontEndPage.Page.MAIN_MENU
+## The launcher settings file whose FrogLord choice the screen follows.
+var launcher_path: String = LauncherStore.DEFAULT_PATH
 var assets: FrontEndAssets
 ## The options page's models, frog, sprite images and lights.
 var options_models: OptionsModels
@@ -119,6 +125,7 @@ func _ready() -> void:
 	if not data.is_valid():
 		_show_message("The imported assets cannot be opened: %s" % data.error)
 		return
+	FrogLordWatcher.follow(get_tree(), LauncherStore.load_from(launcher_path).settings, data.root)
 	var issue: String = FrontEndSession.load_progress(data)
 	assets = FrontEndAssets.from_data(data, session_language(arguments))
 	if issue.is_empty():

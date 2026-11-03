@@ -1,10 +1,11 @@
 # Archive: retail readers, importer and retail goldens
 
 Everything here reads the owner's retail Frogger files or verifies that
-reading. The game depends on it in one place only: the setup screen's
-`AssetImporterFactory` (`src/application/setup/asset_importer_factory.gd`)
-loads `import/runtime_import.gd`, which implements the `AssetImporter`
-interface ([runtime import](#runtime-import)). The architecture check allows
+reading. The game depends on it in one place only:
+`AssetImporterFactory` (`src/application/setup/asset_importer_factory.gd`),
+used by the setup screen and the in-game FrogLord watcher, loads
+`import/runtime_import.gd`, which implements the `AssetImporter` interface
+([runtime import](#runtime-import)). The architecture check allows
 that one dependency and rejects any other script, scene or resource under
 `src/`, `scenes/`, `assets/`, `tests/` or `tools/` that references
 `res://archive/`.
@@ -51,9 +52,22 @@ cycle (`FrogLordWatchCycle`) is an overlay run of `names,tables,demos,maps,catal
 into `user://froglord/<key>/`, keyed by the first 16 hex digits of the source
 fingerprint, with `support_report.tsv` beside its index; earlier folders stay,
 since a running game loads maps lazily. Last, it rewrites the pointer
-`user://froglord/current.cfg` (`FrogLordPointer`), which a game launched with
+`user://froglord/current.cfg` (`FrogLordPointer`), recording the save folder,
+the fallback root and the files' state, which a game launched with
 `--froglord` opens and reloads. Files FrogLord has not finished writing are
 retried on the next poll; `--once` exits 1 when the cycle was not clean.
+
+The cycle's fallback root defaults to `res://assets`, which the developer
+watch keeps; it must hold an index. `RuntimeImport.import_overlay` runs the
+same cycle over the base root the game plays from, such as a runtime import
+under `user://assets/<fingerprint>/`, into the folder
+`AssetImporter.overlay_parent_for` gives that root, and reports the step
+labels as progress and honours cancel between steps and items. With FrogLord
+on in the setup, the game runs it itself
+([FrogLord while playing](../docs/reference/setup.md#froglord-while-playing)).
+The cycle saves only records, never meshes or materials, so the game runs it
+on a worker thread; a windowed run imported a save on one while the front end
+and a level kept drawing.
 
 A complete run without a fallback root prints `import: note stale <path>` for
 every file under `textures/banks`, `textures/images`, `maps`, `demos`,
@@ -87,7 +101,11 @@ the main thread.
 
 `AssetImporter.run` reports progress as a fraction and a label and checks
 its cancel callable between items; `detect` reports the build, the
-fingerprint and a summary. `import/disc_tracks.tsv` is read with
+fingerprint and a summary, and `detect_froglord` also whether the pair is
+FrogLord's and the trailer's FrogLord version. The archive suite's
+`test_retail_froglord_overlay_import` imports the round trip's synthetic save
+through the seam over a runtime import under `user://` and plays ORG1 from
+it. `import/disc_tracks.tsv` is read with
 `FileAccess`, so an export preset must include `*.tsv` under
 `archive/import/`. The editor-import path stays the default for the committed
 `assets/`. The archive suite's `test_retail_runtime_import` compares a

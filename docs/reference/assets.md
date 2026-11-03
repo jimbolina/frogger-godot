@@ -59,7 +59,9 @@ When none is usable, the catalog's error lists each candidate and why it was
 rejected; the [setup screen](setup.md) then imports the player's files. A source checkout without a
 launcher file therefore plays the committed `assets/` as before. A
 `--froglord` launch reads the overlay the `FrogLordPointer` names over the
-chosen base root.
+chosen base root; with FrogLord on in the setup, a level reads it only when
+the overlay was imported from the chosen save folder over that same base root
+([FrogLord while playing](setup.md#froglord-while-playing)).
 
 The catalog reads from two roots. The base root holds the retail-derived
 records: the index, tables, maps, models, banks, sounds, music, demos and the
@@ -99,11 +101,20 @@ reads that folder as a plain `ConfigFile` and suggests it once.
 ## Layout
 
 An importer run may also write an overlay index outside `assets/`: its paths
-point into its own folder for what the run wrote and into `assets/` for the
-rest, and `ImportedAssets.open` reads it through its index-root argument while
-texture sets and models still come from the base root and fonts and lettering
+point into its own folder for what the run wrote and into its fallback root
+for the rest, and `ImportedAssets.open` reads it through its index-root
+argument while texture sets and models still come from the base root and
+fonts and lettering
 from the shippable root
-([archive](../../archive/README.md#regenerating-the-assets)).
+([archive](../../archive/README.md#regenerating-the-assets)). The fallback
+root is `assets/` for the developer watch and the base root the game plays
+from for the in-game watch, which may be an import made at runtime under
+`user://assets/<fingerprint>/`; an overlay therefore holds only the save's
+name lists, tables, demos and maps, `support_report.tsv` and its index, and
+names textures, models and sounds of its fallback root. Overlays over
+`assets/` live in `user://froglord/<key>/`, overlays over any other root in
+`user://froglord/over-<root key>/<key>/`, and `user://froglord/current.cfg`
+names the newest.
 
 | Path | Content |
 |---|---|
