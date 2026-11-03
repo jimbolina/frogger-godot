@@ -327,10 +327,25 @@ requires a FrogLord save to add exactly its deliberate probe
 [assets reference](assets.md#asset-location) gives and opens `ImportedAssets`
 over it with the shippable root beside it; scenes reach it through
 `GameplayScreen.asset_location` or `ViewerArguments.open_assets`, which read
-`LauncherStore` from `user://launcher.cfg` into a `LauncherSettings` record.
+`LauncherStore` from `user://launcher.cfg` into a `LauncherSettings` record;
+`ViewerArguments.texture_set` takes the launcher's texture set when the
+launch names none.
 An unusable location yields a catalog whose error lists the rejected
 candidates. `MusicPlayer.folder_of` takes the music folder from the catalog's
 base root.
+
+The [setup screen](setup.md) is the main scene. `SetupFlow`
+(`src/application/setup`) orders the page models (`SetupPage`:
+`SetupGameFiles`, `SetupImport`, `SetupOptions`, `SetupFrogLord`,
+`SetupPlay`) and decides whether the screen opens; `ImportCommand` and
+`ImportProgress` are the import child's command line and progress-file
+format. None touches files. `SetupScreen` and one `SetupPageView` per page
+(`src/presentation/setup`) read and save the settings stores, detect game
+files through `AssetImporterFactory`, and run the import through
+`ImportProcess`, which spawns the game headless on the setup scene, where
+`ImportChild` runs `AssetImporter.run` on the main thread.
+`DesktopShortcut` builds and writes the desktop shortcut and
+`SetupFileDialog` opens the folder and file pickers.
 
 `FrogLordPointer` (`src/application/loaders`) reads and atomically writes the
 file naming the overlay the FrogLord watcher imported last;

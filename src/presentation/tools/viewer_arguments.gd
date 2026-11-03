@@ -45,12 +45,21 @@ static func has_flag(arguments: PackedStringArray, flag: String) -> bool:
 
 
 ## The name of the texture set a launch asked for: [code]--texture-set=[/code]
-## in [param arguments], else the project setting
-## [code]frogger/textures/default_set[/code], else the retail set.
+## in [param arguments], else the [member LauncherSettings.texture_set] the
+## setup screen chose in [code]user://launcher.cfg[/code], else the project
+## setting [code]frogger/textures/default_set[/code], else the retail set.
 static func texture_set(arguments: PackedStringArray) -> String:
+	return texture_set_from(arguments, LauncherStore.load_from().settings)
+
+
+## [method texture_set] with the launcher settings given as [param launcher].
+static func texture_set_from(arguments: PackedStringArray, launcher: LauncherSettings) -> String:
 	var requested: String = value(arguments, TEXTURE_SET_ARGUMENT).strip_edges().to_lower()
 	if not requested.is_empty():
 		return requested
+	var chosen: String = launcher.texture_set.strip_edges().to_lower() if launcher != null else ""
+	if not chosen.is_empty():
+		return chosen
 	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
 
 
@@ -58,7 +67,8 @@ static func texture_set(arguments: PackedStringArray) -> String:
 ## [param arguments] and the launcher settings, drawn in the [method texture_set] the launch names.
 ## When no root is usable, the catalog's [member AssetCatalog.error] says why.
 static func open_assets(arguments: PackedStringArray) -> ImportedAssets:
-	return AssetLocation.resolve(arguments, LauncherStore.load_from()).open(texture_set(arguments))
+	var store: LauncherStore = LauncherStore.load_from()
+	return AssetLocation.resolve(arguments, store).open(texture_set_from(arguments, store.settings))
 
 
 ## The shadow-effect choice a launch asked for, for [ShadowEffectPolicy]:

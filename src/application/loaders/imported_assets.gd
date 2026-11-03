@@ -110,6 +110,16 @@ static func resolve_texture_set(assets_root: String, texture_set_name: String,
 	return wanted
 
 
+## The names of the texture sets installed under [param assets_root]: the
+## retail set always, and each other named set whose images folder exists.
+static func installed_texture_sets(assets_root: String) -> PackedStringArray:
+	var installed := PackedStringArray([TextureSet.RETAIL])
+	var x4: TextureSet = TextureSet.x4()
+	if DirAccess.dir_exists_absolute(assets_root.path_join("textures").path_join(x4.images_dir)):
+		installed.append(x4.set_name)
+	return installed
+
+
 ## The texture set the catalog draws from.
 func texture_set() -> TextureSet:
 	return textures

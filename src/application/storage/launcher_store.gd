@@ -4,24 +4,35 @@ extends RefCounted
 ## them, FrogLord and whether the setup screen opens on start.
 ##
 ## A missing file gives the defaults without an error, and a missing key takes
-## its default. An unreadable, malformed or other-version file, or any value of
-## the wrong type, gives all the defaults and sets [member error]. Saving writes
-## a temporary file beside the target and renames it over the target, so an
-## interrupted save leaves the previous file intact.
+## its default. A file of an earlier version from [constant OLDEST_FORMAT_VERSION]
+## on is read the same way, so the keys it lacks take their defaults, and the
+## next save writes [constant FORMAT_VERSION]. An unreadable, malformed or
+## unknown-version file, or any value of the wrong type, gives all the defaults
+## and sets [member error]. Saving writes a temporary file beside the target and
+## renames it over the target, so an interrupted save leaves the previous file
+## intact.
 
 ## Default settings file.
 const DEFAULT_PATH: String = "user://launcher.cfg"
 ## Version written to and expected in the file.
-const FORMAT_VERSION: int = 1
+const FORMAT_VERSION: int = 2
+## The earliest version still read: version 1 had no [code]textures[/code] section.
+const OLDEST_FORMAT_VERSION: int = 1
+## The settings file of the archive's [code]GameDataLocator[/code], whose
+## remembered game folder [method legacy_game_folder] reads.
+const LEGACY_SETTINGS_PATH: String = "user://settings.cfg"
 ## [LauncherSettings] fields by file section.
 const LAYOUT: Dictionary[String, Array] = {
 	"game_data": ["game_data_dir", "disc_image_path"],
 	"import": ["fingerprint", "imported_root"],
 	"froglord": ["froglord_enabled", "froglord_dir"],
 	"start": ["show_setup_on_start"],
+	"textures": ["texture_set"],
 }
 const _TEMP_SUFFIX: String = ".tmp"
 const _META: String = "meta"
+const _LEGACY_SECTION: String = "game_data"
+const _LEGACY_KEY: String = "directory"
 
 ## The loaded settings, or the defaults.
 var settings: LauncherSettings = LauncherSettings.new()
@@ -29,6 +40,8 @@ var settings: LauncherSettings = LauncherSettings.new()
 var error: String = ""
 ## Whether the file existed when it was read.
 var found: bool = false
+## The format version of the file read, or 0 when none was read.
+var read_version: int = 0
 
 
 ## Reads [param path]; any problem yields the defaults (see the class notes).
@@ -74,14 +87,28 @@ static func save(values: LauncherSettings, path: String = DEFAULT_PATH) -> Strin
 	return ""
 
 
+## The game folder the archive's locator remembered in [param path]
+## ([constant LEGACY_SETTINGS_PATH]), or "" when there is none. The setup
+## screen offers it once when the launcher records no game folder.
+static func legacy_game_folder(path: String = LEGACY_SETTINGS_PATH) -> String:
+	if not FileAccess.file_exists(path):
+		return ""
+	var file := ConfigFile.new()
+	if file.load(path) != OK:
+		return ""
+	var value: Variant = file.get_value(_LEGACY_SECTION, _LEGACY_KEY, "")
+	return value if value is String else ""
+
+
 func _read(file: ConfigFile) -> String:
 	if not file.has_section_key(_META, "format_version"):
 		return "has no format version"
 	var version: Variant = file.get_value(_META, "format_version")
 	if typeof(version) != TYPE_INT:
 		return "has a non-integer format version"
-	if version != FORMAT_VERSION:
+	if version < OLDEST_FORMAT_VERSION or version > FORMAT_VERSION:
 		return "has format version %d, expected %d" % [version, FORMAT_VERSION]
+	read_version = version
 	for section: String in LAYOUT:
 		for field: String in LAYOUT[section]:
 			if not file.has_section_key(section, field):

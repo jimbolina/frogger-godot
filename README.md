@@ -81,6 +81,23 @@ assets. The frog's shadow, hop trail, slide, bubble and fire particles, death
 ring, splash, drowning tints and score popups are drawn from the player's
 data; entity particles, pops and glows follow. Forest bee swarms are visible gameplay hazards.
 
+### Setup and first run
+
+The game starts on its setup screen when it has nothing to play from. On the
+first run, choose the folder of your own Frogger PC game (version
+`pc-retail-v3.0e`, with `FROGGER.EXE` and `FROGPSX.MWD`) and, for the music,
+its Alcohol 120% disc image (the `.mds` file with its `.mdf` beside it). The
+game imports them into its user folder (about twenty seconds, with a progress
+bar and Cancel), then lets you choose the language, window, volumes and
+texture set and, optionally, a FrogLord save folder; Play saves the choices
+and opens the main menu. Later starts go straight to the menu. Hold Shift while
+the game starts, or start it with `-- --setup`, to open the setup again, for
+example `godot --path . -- --setup`; the last page can also make it open every
+time. On Windows and Linux the last page puts a shortcut on the desktop; on
+macOS drag the exported app to Applications or the Dock. A source checkout
+plays the committed `assets/` and skips the setup unless asked. See
+[first-run setup](docs/reference/setup.md).
+
 ### Audio
 
 Sound effects play from the imported banks under `assets/audio/sfx/` and
@@ -442,10 +459,10 @@ commit.
 | `src/data/` | The typed `Resource` records the game plays from: `archive/` (index and WADs), `textures/`, `models/`, `maps/`, `tables/` (the executable's tables), `sound/`, `demos/`, `names/`, `AssetCatalog` (the abstract data provider) and `AssetIndex`. No scene tree, no file access. |
 | `src/rendering/` | Turning game data and committed gameplay state into Godot resources: model meshes and materials, the shaders that draw them, scene-lighting and tint specifications, effect geometry, and the conversion between the game's space and Godot's. |
 | `src/game/` | Gameplay definitions, run state and rules: terrain, frog, entities, paths, camera, animation, sound logic, level flow, and the front-end rules (`frontend/`, `options/`). No scene tree, no file access. |
-| `src/application/` | Adapters from data records to gameplay definitions, the behavior and callback catalogs, `ImportedAssets` (`loaders/`) and the save files (`storage/`). |
+| `src/application/` | Adapters from data records to gameplay definitions, the behavior and callback catalogs, `ImportedAssets` (`loaders/`), the save files (`storage/`) and the setup's asset location, importer interface and page rules (`setup/`). |
 | `src/inspection/` | Developer scenarios, validated options, guards, presets and their manifests, and the sandbox arena. |
-| `src/presentation/` | The game and front-end screens (`frontend/`), the sandbox screen (`sandbox/`), audio, input and effect views, and development tools (`tools/`: the model, map, terrain and camera-zone viewers). |
-| `scenes/` | Godot scenes (`front_end.tscn` is the main scene and `boot.tscn` the developer tools menu; `game/` holds the game and sandbox scenes, `tools/` the viewers). |
+| `src/presentation/` | The game and front-end screens (`frontend/`), the setup screen (`setup/`), the sandbox screen (`sandbox/`), audio, input and effect views, and development tools (`tools/`: the model, map, terrain and camera-zone viewers). |
+| `scenes/` | Godot scenes (`setup.tscn` is the main scene, which opens `front_end.tscn` once the game is set up, and `boot.tscn` the developer tools menu; `game/` holds the game and sandbox scenes, `tools/` the viewers). |
 | `tests/unit/` | The game suite's unit tests, one folder per layer. |
 | `tests/golden/` | Golden tests over committed synthetic facts and keyboard fixtures, and the retail text facts the archive suite compares with. |
 | `archive/` | Everything that reads the retail files, which the game never loads: `source/` (the readers and the retail-backed `GameData`), `import/` (the one-time importer that writes `assets/`), `tests/` (the archive suite, run only with `FROGGER_DATA_DIR`), `tools/`, `docs/formats/` (the retail format references) and `third_party/froglord_cfg/` (FrogLord's configuration files, unmodified; see `archive/third_party/README.md`). |

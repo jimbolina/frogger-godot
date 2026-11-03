@@ -56,7 +56,7 @@ this order:
 3. otherwise `res://assets`, when it holds `catalog.tres`.
 
 When none is usable, the catalog's error lists each candidate and why it was
-rejected; the setup screen is to act on that. A source checkout without a
+rejected; the [setup screen](setup.md) then imports the player's files. A source checkout without a
 launcher file therefore plays the committed `assets/` as before. A
 `--froglord` launch reads the overlay the `FrogLordPointer` names over the
 chosen base root.
@@ -79,18 +79,22 @@ into a `LauncherSettings` record (`src/data/settings/`):
 
 | Section | Keys |
 |---|---|
-| `meta` | `format_version` (1) |
+| `meta` | `format_version` (2) |
 | `game_data` | `game_data_dir`, `disc_image_path` |
 | `import` | `fingerprint`, `imported_root` |
 | `froglord` | `froglord_enabled`, `froglord_dir` |
 | `start` | `show_setup_on_start` |
+| `textures` | `texture_set` (`retail`, `x4`, or empty for the project default) |
 
-A missing file gives the defaults without an error; another version, a
-missing version or a value of the wrong type gives all the defaults, and the
-reason joins the catalog's warnings. Saving writes `launcher.cfg.tmp` and
-renames it over the file. The archive's `GameDataLocator` keeps its own
-remembered folder in `user://settings.cfg`; the launcher file does not share it,
-because shipped code may not depend on `archive/`.
+A missing file gives the defaults without an error, and so does a missing key.
+A version-1 file, which had no `textures` section, is read the same way and
+the next save writes version 2. An unknown version, a missing version or a
+value of the wrong type gives all the defaults, and the reason joins the
+catalog's warnings. Saving writes `launcher.cfg.tmp` and renames it over the
+file. The archive's `GameDataLocator` keeps its own remembered folder in
+`user://settings.cfg`; the launcher file does not share it, because shipped
+code may not depend on `archive/`, but the [setup screen](setup.md#pages)
+reads that folder as a plain `ConfigFile` and suggests it once.
 
 ## Layout
 

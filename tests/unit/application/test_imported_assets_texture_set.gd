@@ -4,7 +4,8 @@ extends GutTest
 ## or unknown set falls back to retail with a warning, and tests that open the
 ## catalog without a name get the retail set. A lettering image under the
 ## shippable root replaces its retail image in every set, whatever the retail
-## image's extension. A launch on another
+## image's extension. The setup screen offers retail and each set whose images
+## are installed. A launch on another
 ## renderer than Forward+ leaves a warning.
 
 const SCRATCH: String = "user://texture_set_test"
@@ -51,6 +52,13 @@ func test_the_default_is_the_retail_set() -> void:
 	assert_true(assets.is_valid())
 	assert_true(assets.texture_set().is_retail())
 	assert_eq(assets.warnings, PackedStringArray())
+
+
+func test_the_installed_sets_are_retail_and_each_set_with_images() -> void:
+	assert_eq(DirAccess.make_dir_recursive_absolute(SCRATCH.path_join("textures/images")), OK)
+	assert_eq(ImportedAssets.installed_texture_sets(SCRATCH), PackedStringArray([TextureSet.RETAIL]))
+	assert_eq(DirAccess.make_dir_recursive_absolute(SCRATCH.path_join("textures/images_x4")), OK)
+	assert_eq(ImportedAssets.installed_texture_sets(SCRATCH), PackedStringArray([TextureSet.RETAIL, TextureSet.X4]))
 
 
 func test_an_uninstalled_or_unknown_set_falls_back_to_retail() -> void:

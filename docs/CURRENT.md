@@ -28,8 +28,9 @@ from it. Reload on change (P14b):
 `archive/import/froglord_watch.sh --data-dir=<FrogLord folder>` re-imports a
 save into `user://froglord/<fingerprint>/` and `tools/play.sh --level=ORG1
 --froglord` reopens the level when it does (`F5` on demand), accepted by the
-owner's play check. Next: the first-run setup
-([L3–L6](PORTING.md#status)) after L1 and L2. A FrogLord save replacing the retail
+owner's play check. First-run
+[setup](reference/setup.md) (L3) awaits a play check; L4–L6 follow
+([roadmap](PORTING.md#status)). A FrogLord save replacing the retail
 `assets/` waits on the owner's facts-folder decision.
 
 Effects never replay the frozen generators' random draws. Replays and
