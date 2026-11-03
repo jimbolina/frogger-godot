@@ -52,10 +52,12 @@ view and an entry in both orders.
    the music and effects volumes (0 to 8) go to `progress.cfg` through
    `ProgressStore`; windowed or fullscreen, the windowed size and vsync go to
    `graphics.cfg` through `GraphicsStore`, keeping every other field; the
-   texture set goes to the launcher settings. Only sets whose images exist
-   under the root the game will play from are offered
-   (`ImportedAssets.installed_texture_sets`): retail always, `x4` only over the
-   committed assets.
+   [texture pack](assets.md#texture-packs) goes to the launcher settings. The
+   list offers "None (original textures)" and each pack
+   `TexturePackReader.list` finds in `SetupScreen.texture_pack_folders`
+   (`user://texture_packs/`, and beside an exported executable), by name with
+   its author, read again each time the page shows; a saved pack that is no
+   longer installed is shown as none.
 4. **FrogLord** (`SetupFrogLord`). An on/off switch and an existing save
    folder, stored in the launcher settings. The folder goes through
    `AssetImporter.detect_froglord`, and the page says what it holds: a
@@ -69,9 +71,9 @@ view and an entry in both orders.
    three files, replaces the live `GraphicsProfile`, applies the window
    through `GraphicsApplier.apply_window` and opens the front end.
 
-`ViewerArguments.texture_set` reads the launcher's texture set after
-`--texture-set=` and before the `frogger/textures/default_set` project
-setting, so every scene draws the chosen set.
+`ViewerArguments.texture_set` names the pack from `--texture-pack=` after
+`--` (an empty value draws none), else the launcher's `texture_pack`, so every
+scene draws the chosen pack.
 
 ## Import process
 

@@ -98,7 +98,8 @@ of `albedo × frogger_model_ambient`, and the depth bias and projection scale
 are skipped in shadow passes (`IN_SHADOW_PASS`) so casters keep their true
 shape; lighting uses view-space positions, which the clip scale does not
 touch. `ModelMeshCopy` gives a view its own material copies (swapping in the
-`_linear` variants for the x4 set) and lit parts join the shadow-caster layer.
+`_linear` variants for each upscaled texture-pack or lettering image) and lit
+parts join the shadow-caster layer.
 
 The committed colour scale and custom ambient
 ([animated part lighting](gameplay-projection.md#animated-part-lighting))
@@ -131,8 +132,10 @@ pages are format knowledge in the archive (`VramPages`). `MapMeshBuilder`
 adds corner normals (`MapNormals`: clockwise front faces, flat types keep the
 face normal, Gouraud types blend within 60° at shared vertices) and writes the
 water rank and the sky tile layer in `UV2`. `MapShaders` binds the per-image
-texture through `TextureLibrary.texture_for`, so `--texture-set=x4` draws
-from `images_x4/`. The family
+texture through `TextureLibrary.texture_for`, so a
+[texture pack](../assets.md#texture-packs) draws its own images; an upscaled
+image samples linearly with mipmaps whatever the instance's filter switch
+says. The family
 `map_{opaque,average,add,subtract,add_quarter}{,_far}.gdshader` plus
 `map_sky.gdshader` shares `map.gdshaderinc`: a polygon keeps the
 retail byte wrap around its page origin (`mod(p + origin [+ animation], 256)
@@ -174,11 +177,13 @@ The sky samples a `Texture2DArray` of the sky-land tile images
 (`MapSkyTiles`), one layer per distinct tile texture in first-seen row-major
 order, with the layer index in `UV2.x`. Each tile's image-relative,
 HIT-trimmed pixel is normalised into the shared 40×40 padded layer,
-`(pixel + 4) / 40`, so sky levels load no page set and `--texture-set=x4`
-draws 160×160 layers. The tiles stay in one unshaded surface in source
+`(pixel + 4) / 40`, so sky levels load no page set and a texture pack's tiles
+draw at their own scale: the layers take the largest tile scale (160×160 for a
+4x tile), a smaller tile is enlarged by repeating pixels, and an upscaled sky
+always samples linearly with mipmaps. The tiles stay in one unshaded surface in source
 row-major order with the original's far push, sky colour, drift and camera
 placement; a missing or differently sized tile draws as a magenta layer with
-a diagnostic. The golden is
+a diagnostic; so does one whose texture is no whole multiple of its padded size. The golden is
 [map UVs](../../../tests/golden/specs/rendering.md#map-uvs).
 
 ## Water
@@ -415,7 +420,7 @@ and keep what reads best. None affects gameplay.
 | Lava emission | How strongly lava and hot rock glow and bloom. | Settings `lava_emission` 1.0, scaling each entry of `emissive_images.tres` ([lava](#lava)); molten lava at 1.5 saturated the red channel over about 30% of the VOL2 overview and flattened its texture; molten is 1.0 now that the lava lights also brighten it | VOL1 cracks, VOL2 lava lake, VOL3 lava pit: a red-orange glow with visible texture, not a flat sheet |
 | Lava lights | Soft red-orange lights over lava that tint nearby rocks, walls, entities and the frog. | On: settings `lava_lights`, energy scaled by `lava_emission`; `EmissiveClusters.ENERGY` 0.6, `LIGHT_HEIGHT` 1.0, `CELL_SQUARES` 4, `MAX_LIGHTS` 24, `EmissiveLightSet.ATTENUATION` 0.25 ([lava](#lava)). Lights half a square up with attenuation 0.75 left bright patches on the lava and barely reached raised blocks | VOL1 blocks and gears beside the lava, the VOL2 walkway, the VOL3 pit walls: a warm tint, not a wash |
 | Baked terrain shading | The maps carry per-vertex shading from the original artists, which now doubles with real light on slopes. | Settings `vertex_tint` 1.0 (full), 0 ignores it; `MapMesh.Instance.set_vertex_tint` ([terrain](#terrain)); cave terrain stays at 0 | DES1, VOL1 slopes: dark bands under real light |
-| Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` and `fix_alpha_border` on `images_x4` would change the pinned import policy (`test_asset_import_settings`). | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain under `--texture-set=x4` and retail |
+| Texture filtering | Retail images sample nearest without mipmaps and shimmer at distance; mipmaps on `images/` would change the pinned import policy (`test_asset_import_settings`). Texture-pack images above scale 1 are mipmapped and linear. | Unchanged; an owner decision recorded in the [roadmap](../../PORTING.md#needed-from-the-owner) | Far terrain with and without a texture pack |
 
 ## Verification
 

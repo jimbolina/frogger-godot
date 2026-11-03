@@ -43,8 +43,8 @@ func close() -> void:
 	pass
 
 
-## The texture set the catalog draws from: the retail set unless a concrete
-## catalog chose another.
+## The texture set the catalog draws from: the original textures unless a
+## concrete catalog chose a texture pack.
 func texture_set() -> TextureSet:
 	return TextureSet.retail()
 
@@ -60,20 +60,19 @@ func note_renderer(current_method: String) -> String:
 	return note
 
 
-## The Godot texture of [param image] in the catalog's texture set: the
-## record's own texture here, or null for null.
+## The Godot texture the catalog draws for [param image]: the record's own
+## texture here, or null for null.
 func texture_of(image: VloImage) -> Texture2D:
 	return image.texture if image != null else null
 
 
-## The texture set's counterpart of the retail [param texture]: unchanged here.
+## The texture the catalog draws in place of the retail [param texture]: unchanged here.
 func texture_counterpart(texture: Texture2D) -> Texture2D:
 	return texture
 
 
-## The bitmap font called [param _name] in the catalog's texture set, or null
-## when the catalog has no font files (only catalogs over committed assets
-## serve one).
+## The bitmap font called [param _name], or null when the catalog has no
+## font files (only catalogs over committed assets serve one).
 func font(_name: String) -> Font:
 	return null
 

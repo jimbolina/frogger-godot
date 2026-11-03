@@ -226,10 +226,11 @@ func test_the_settings_stay_valid() -> void:
 	graphics.window_size = Vector2i(1000, 700)
 	graphics.vsync = GraphicsSettings.Vsync.MAILBOX
 	var launcher := LauncherSettings.new()
-	options.read(progress, graphics, launcher, PackedStringArray(["retail"]), "x4")
+	launcher.texture_pack = "gone"
+	options.read(progress, graphics, launcher, [_pack("crisp", "Crisp Frogs", "")])
 	assert_eq(options.language, GameLanguage.Id.GERMAN)
-	assert_eq(options.texture_set, TextureSet.RETAIL, "a set that is not installed falls back to retail")
-	assert_eq(options.texture_sets, PackedStringArray(["retail"]))
+	assert_eq(options.texture_pack, "", "a pack that is not installed falls back to none")
+	assert_eq(options.texture_packs.size(), 1)
 	assert_true(options.window_sizes().has(Vector2i(1000, 700)), "the saved size stays on offer")
 	options.set_fullscreen(true)
 	assert_eq(options.window_mode, GraphicsSettings.WindowMode.EXCLUSIVE_FULLSCREEN, "a chosen fullscreen mode is kept")
@@ -255,17 +256,36 @@ func test_the_settings_stay_valid() -> void:
 	assert_eq(graphics.window_size, Vector2i.ZERO)
 
 
-func test_only_installed_texture_sets_are_offered() -> void:
+func _pack(name: String, title: String, author: String) -> TexturePack:
+	var pack := TexturePack.new()
+	pack.pack_name = name
+	pack.title = title
+	pack.author = author
+	return pack
+
+
+func test_only_installed_texture_packs_are_offered() -> void:
 	var options := SetupOptions.new()
-	options.offer_texture_sets(PackedStringArray(["retail", "x4", "x9"]))
-	assert_eq(options.texture_sets, PackedStringArray(["retail", "x4"]), "unknown sets are not offered")
-	options.set_texture_set("X4")
-	assert_eq(options.texture_set, "x4")
-	options.offer_texture_sets(PackedStringArray(["retail"]))
-	assert_eq(options.texture_set, TextureSet.RETAIL, "a set that is no longer installed falls back")
+	assert_eq(options.texture_pack, "", "no pack until one is chosen")
+	options.offer_texture_packs([_pack("crisp", "Crisp Frogs", "A. Artist"), _pack("plain", "", "")])
+	assert_eq(options.texture_packs.size(), 2)
+	options.set_texture_pack("CRISP")
+	assert_eq(options.texture_pack, "crisp", "a pack is matched ignoring case")
+	options.set_texture_pack("x4")
+	assert_eq(options.texture_pack, "", "a pack that is not offered chooses none")
+	options.set_texture_pack("plain")
+	options.offer_texture_packs([_pack("crisp", "Crisp Frogs", "A. Artist")])
+	assert_eq(options.texture_pack, "", "a pack that is no longer installed falls back to none")
+	options.set_texture_pack("crisp")
 	var launcher := LauncherSettings.new()
 	options.write_launcher(launcher)
-	assert_eq(launcher.texture_set, TextureSet.RETAIL)
+	assert_eq(launcher.texture_pack, "crisp")
+
+
+func test_packs_are_listed_by_name_and_author() -> void:
+	assert_eq(SetupOptions.pack_label(null), "None (original textures)")
+	assert_eq(SetupOptions.pack_label(_pack("crisp", "Crisp Frogs", "A. Artist")), "Crisp Frogs, by A. Artist")
+	assert_eq(SetupOptions.pack_label(_pack("plain", "", "")), "plain", "a pack without a name shows its folder")
 
 
 func test_froglord_needs_an_existing_folder_when_on() -> void:
@@ -287,8 +307,8 @@ func test_play_saves_every_page_into_the_launcher_settings() -> void:
 	flow.import_page.finish(PackedStringArray(), PackedStringArray())
 	flow.record_import()
 	flow.next()
-	flow.options.offer_texture_sets(PackedStringArray(["retail", "x4"]))
-	flow.options.set_texture_set("x4")
+	flow.options.offer_texture_packs([_pack("crisp", "Crisp Frogs", "")])
+	flow.options.set_texture_pack("crisp")
 	flow.next()
 	flow.froglord.enabled = true
 	assert_false(flow.next(), "FrogLord on without a folder blocks")
@@ -299,7 +319,7 @@ func test_play_saves_every_page_into_the_launcher_settings() -> void:
 	assert_true(flow.can_play())
 	flow.play.show_setup_on_start = false
 	var saved: LauncherSettings = flow.finish()
-	assert_eq(saved.texture_set, "x4")
+	assert_eq(saved.texture_pack, "crisp")
 	assert_true(saved.froglord_enabled)
 	assert_eq(saved.froglord_dir, "/FrogLord/save")
 	assert_false(saved.show_setup_on_start, "Play completes the setup")

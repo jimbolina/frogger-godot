@@ -101,7 +101,7 @@ func test_nothing_usable_is_reported() -> void:
 	assert_eq(location.origin_name(), "none")
 	assert_string_contains(location.error, "no imported assets")
 	assert_string_contains(location.error, MISSING.path_join("committed"))
-	assert_false(location.open("x4").is_valid())
+	assert_false(location.open("a_pack").is_valid())
 
 
 func test_a_damaged_launcher_file_warns_and_still_resolves() -> void:

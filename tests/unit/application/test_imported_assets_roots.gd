@@ -1,11 +1,13 @@
 extends GutTest
 ## A catalog over a base root under user:// still reads fonts, lettering and the
-## emissive table from the shippable root, and an x4 launch over a base root
-## without upscaled images draws the retail set with a warning instead of failing.
+## emissive table from the shippable root, draws a texture pack's image over a
+## runtime-imported texture, and a launch naming a pack that is not installed
+## draws the original textures with a warning instead of failing.
 
 const BASE: String = "user://imported_assets_roots/assets/0123456789abcdef"
 const SHIPPABLE: String = "res://assets"
 const RUNTIME_IMAGE: String = BASE + "/textures/images/t0263.res"
+const PACKS: String = "user://imported_assets_roots/texture_packs"
 
 
 func before_each() -> void:
@@ -61,15 +63,33 @@ func test_the_base_root_does_not_serve_shippable_files() -> void:
 	assert_eq(catalog.problems.size(), 2, "\n".join(catalog.problems))
 
 
-func test_x4_without_upscaled_images_under_the_base_root_draws_retail_with_a_warning() -> void:
-	var catalog: ImportedAssets = ImportedAssets.open(BASE, TextureSet.X4, "", SHIPPABLE)
+func test_a_missing_pack_over_the_base_root_draws_the_original_textures_with_a_warning() -> void:
+	var catalog: ImportedAssets = ImportedAssets.open(BASE, "absent", "", SHIPPABLE, PackedStringArray([PACKS]))
 	assert_true(catalog.is_valid(), catalog.error)
 	assert_true(catalog.texture_set().is_retail())
 	assert_eq(catalog.warnings.size(), 1, "\n".join(catalog.warnings))
-	assert_string_contains(catalog.warnings[0], "texture set x4 is not installed at %s" % BASE.path_join("textures/images_x4"))
+	assert_string_contains(catalog.warnings[0], "texture pack absent is not installed in %s" % PACKS)
 	assert_eq(catalog.font("newfont").resource_path, SHIPPABLE.path_join("fonts/retail/newfont.fnt"),
-		"the fallback draws the retail font too")
-	var located: ImportedAssets = AssetLocation.resolve(PackedStringArray(["--assets-root=" + BASE, "--texture-set=x4"]), null).open(TextureSet.X4)
+		"the original textures draw the committed font")
+	var located: ImportedAssets = AssetLocation.resolve(PackedStringArray(["--assets-root=" + BASE]), null).open("absent")
 	assert_true(located.is_valid(), located.error)
 	assert_true(located.texture_set().is_retail())
 	assert_eq(located.root, BASE)
+
+
+func test_a_pack_image_replaces_a_runtime_imported_texture() -> void:
+	var image: Image = Image.create_empty(4, 4, false, Image.FORMAT_RGBA8)
+	var path: String = BASE.path_join("textures/images/t0012.res")
+	assert_eq(ResourceSaver.save(ImageTexture.create_from_image(image), path), OK)
+	var retail: Texture2D = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as Texture2D
+	retail.take_over_path(path)
+	assert_eq(DirAccess.make_dir_recursive_absolute(PACKS.path_join("crisp")), OK)
+	var config := ConfigFile.new()
+	config.set_value("pack", "name", "Crisp")
+	config.set_value("pack", "base_build", "pc-retail-v3.0e")
+	assert_eq(config.save(PACKS.path_join("crisp/pack.cfg")), OK)
+	assert_eq(Image.create(12, 12, false, Image.FORMAT_RGBA8).save_png(PACKS.path_join("crisp/t0012.png")), OK)
+	var catalog: ImportedAssets = ImportedAssets.open(BASE, "crisp", "", SHIPPABLE, PackedStringArray([PACKS]))
+	assert_eq(catalog.warnings, PackedStringArray())
+	assert_eq(catalog.texture_counterpart(retail).get_size(), Vector2(12, 12), "a .res record is replaced by tNNNN.png")
+	assert_eq(catalog.texture_set().scale_of(12), 3)

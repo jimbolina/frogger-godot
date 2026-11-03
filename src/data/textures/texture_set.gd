@@ -1,98 +1,139 @@
 class_name TextureSet
 extends RefCounted
-## Which committed texture images the game draws from: the retail-resolution
-## set, or an upscaled set stored beside it.
+## Which image the game draws for each retail texture: the base root's own
+## image, or the image a [TexturePack] supplies in its place.
 ##
 ## Records and materials keep pointing at the retail files under
-## [code]textures/images/[/code]; a catalog that chose another set maps each
-## retail path through
-## [method counterpart_path] where a texture leaves a record. A set whose
-## [member scale] is above 1 samples with linear filtering and mipmaps in 3D,
-## and 2D draws scale it back to retail pixels.
+## [code]textures/images/[/code]. A set with a pack maps a texture id to the
+## pack's file through [member sources]; each file may be any whole multiple
+## from 1 to [constant MAX_SCALE] of the retail padded size, so the scale is
+## per texture and is recorded in [member scales] once the image is accepted.
+## A texture the pack does not supply, or whose image is rejected, draws the
+## retail image. A texture drawn at a scale above 1 samples with linear
+## filtering and mipmaps, and 2D draws scale it back to retail pixels.
 ##
-## Every set draws a lettering image under [code]textures/lettering/[/code]
-## in place of the retail image it replaces ([method lettering_path]): a
-## high-resolution rendering of the vector font at a whole multiple of the
-## retail padded size, sampled with linear filtering and mipmaps.
+## A lettering image under [code]textures/lettering/[/code]
+## ([method lettering_path]) replaces the retail image it stands for unless
+## the pack supplies that texture itself: the pack wins over the lettering,
+## and the lettering over the retail image.
 
-## The retail set's name.
-const RETAIL: String = "retail"
-## The four-times upscaled set's name.
-const X4: String = "x4"
 ## The retail images folder under [code]textures/[/code].
 const IMAGES_DIR: String = "images"
 ## The lettering images folder under [code]textures/[/code].
 const LETTERING_DIR: String = "lettering"
-## Vector fonts by name, with their paths under the assets root; every set
-## draws the same file.
+## The folder of the bitmap fonts under the shippable root.
+const FONTS_DIR: String = "fonts/retail"
+## The largest scale a pack image may have over its retail padded size.
+const MAX_SCALE: int = 16
+## Vector fonts by name, with their paths under the assets root.
 const VECTOR_FONTS: Dictionary[String, String] = {
 	"angular": "fonts/angular/frogger_angular.ttf",
 }
 
-## [constant RETAIL] or [constant X4].
-var set_name: String = RETAIL
-## The set's images folder under [code]textures/[/code].
-var images_dir: String = IMAGES_DIR
-## The set's font folder under [code]fonts/[/code].
-var fonts_dir: String = "retail"
-## Pixels per retail pixel on each axis.
-var scale: int = 1
+## The pack whose images replace the retail ones, or null for the original textures.
+var pack: TexturePack
+## The pack's image file for each texture id it supplies.
+var sources: Dictionary[int, String] = {}
+## The scale of each pack image accepted so far, by texture id.
+var scales: Dictionary[int, int] = {}
 
 
-## The retail-resolution set.
+## The original textures, with no pack.
 static func retail() -> TextureSet:
 	return TextureSet.new()
 
 
-## The four-times upscaled set under [code]images_x4/[/code].
-static func x4() -> TextureSet:
+## The set drawing [param texture_pack]'s images given in [param pack_sources]
+## (texture id to file path) in place of the retail ones.
+static func of_pack(texture_pack: TexturePack, pack_sources: Dictionary[int, String]) -> TextureSet:
 	var made := TextureSet.new()
-	made.set_name = X4
-	made.images_dir = "images_x4"
-	made.fonts_dir = "x4"
-	made.scale = 4
+	made.pack = texture_pack
+	made.sources = pack_sources.duplicate()
 	return made
 
 
-## The set called [param name] ("" and [constant RETAIL] give the retail set),
-## or null for an unknown name.
-static func named(name: String) -> TextureSet:
-	match name:
-		"", RETAIL:
-			return retail()
-		X4:
-			return x4()
-	return null
-
-
-## True for the retail set.
+## True when no pack replaces any texture.
 func is_retail() -> bool:
-	return scale == 1
+	return pack == null
 
 
-## True when the set's textures are sampled with linear filtering and mipmaps.
-func linear_filter() -> bool:
-	return scale > 1
+## The pack's folder name, or "" for the original textures.
+func pack_name() -> String:
+	return pack.pack_name if pack != null else ""
 
 
-## [param path] with its retail images folder replaced by this set's, keeping
-## the file name and extension ([code].png[/code] for committed images,
-## [code].res[/code] for images imported at runtime); unchanged for the retail
-## set or a path outside that folder.
-func counterpart_path(path: String) -> String:
-	if is_retail():
-		return path
-	var retail_folder: String = "/textures/%s/" % IMAGES_DIR
-	var at: int = path.find(retail_folder)
-	if at < 0:
-		return path
-	return path.substr(0, at) + "/textures/%s/" % images_dir + path.substr(at + retail_folder.length())
+## A key telling sets apart for caches: "" for the original textures,
+## otherwise the pack's folder.
+func key() -> String:
+	return pack.folder if pack != null else ""
+
+
+## True when the pack supplies an image for [param texture_id].
+func has_source(texture_id: int) -> bool:
+	return sources.has(texture_id)
+
+
+## The pack's image file for [param texture_id], or "".
+func source_of(texture_id: int) -> String:
+	return sources.get(texture_id, "")
+
+
+## The scale of the image drawn for [param texture_id] once accepted: the
+## pack image's, or 1 for a retail image or one not loaded yet.
+func scale_of(texture_id: int) -> int:
+	return scales.get(texture_id, 1)
+
+
+## Records that the pack image for [param texture_id] was accepted at [param scale].
+func accept(texture_id: int, scale: int) -> void:
+	scales[texture_id] = scale
+
+
+## Drops the pack image for [param texture_id], so the texture draws its retail image.
+func reject(texture_id: int) -> void:
+	sources.erase(texture_id)
+	scales.erase(texture_id)
+
+
+## The scale of an image of [param image_size] over the padded size
+## [param padded_size]: the same whole multiple from 1 to [constant MAX_SCALE]
+## on both axes, or 0 when it is not one.
+static func scale_for(image_size: Vector2i, padded_size: Vector2i) -> int:
+	if padded_size.x <= 0 or padded_size.y <= 0 or image_size.x % padded_size.x != 0 or image_size.y % padded_size.y != 0:
+		return 0
+	@warning_ignore("integer_division")
+	var scale: int = image_size.x / padded_size.x
+	@warning_ignore("integer_division")
+	var scale_y: int = image_size.y / padded_size.y
+	if scale < 1 or scale > MAX_SCALE or scale_y != scale:
+		return 0
+	return scale
+
+
+## The texture id of a retail image path such as [code].../textures/images/t0310.png[/code]
+## (any extension), or -1 for a path outside the retail images folder.
+static func texture_id_of(retail_path: String) -> int:
+	if not retail_path.contains("/textures/%s/" % IMAGES_DIR):
+		return -1
+	return texture_id_of_file(retail_path.get_file())
+
+
+## The texture id a file called [code]tNNNN[/code] with any extension stands
+## for, or -1 for any other name.
+static func texture_id_of_file(file_name: String) -> int:
+	var stem: String = file_name.get_basename().to_lower()
+	if stem.length() != 5 or not stem.begins_with("t"):
+		return -1
+	for digit: String in stem.substr(1):
+		if not digit in "0123456789":
+			return -1
+	return stem.substr(1).to_int()
 
 
 ## The path under the shippable root of the lettering image that replaces
-## the retail image at [param retail_path] in every set, or "" for a path
-## outside the retail images folder. Lettering images are always
-## [code].png[/code], whatever the retail image's extension.
+## the retail image at [param retail_path], or "" for a path outside the
+## retail images folder. Lettering images are always [code].png[/code],
+## whatever the retail image's extension.
 static func lettering_path(retail_path: String) -> String:
 	if not retail_path.contains("/textures/%s/" % IMAGES_DIR):
 		return ""
@@ -104,9 +145,9 @@ static func is_lettering_path(path: String) -> bool:
 	return path.contains("/textures/%s/" % LETTERING_DIR)
 
 
-## The path under the shippable root of the font called [param name]: one of the
-## [constant VECTOR_FONTS], the same in every set, or the set's bitmap font.
-func font_path(name: String) -> String:
+## The path under the shippable root of the font called [param name]: one of
+## the [constant VECTOR_FONTS], or the bitmap font under [constant FONTS_DIR].
+static func font_path(name: String) -> String:
 	if VECTOR_FONTS.has(name):
 		return VECTOR_FONTS[name]
-	return "fonts/%s/%s.fnt" % [fonts_dir, name]
+	return "%s/%s.fnt" % [FONTS_DIR, name]

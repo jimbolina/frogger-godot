@@ -1,12 +1,12 @@
 class_name SetupOptions
 extends SetupPage
-## The settings page: the language, the window, the volumes and the texture set.
+## The settings page: the language, the window, the volumes and the texture pack.
 ##
 ## [method read] takes the saved values from the progress, graphics and
 ## launcher records; the setters keep every value valid; [method write_progress],
 ## [method write_graphics] and [method write_launcher] put the choices back
-## into those records, leaving every other field as it was. Only texture sets
-## installed under the assets root the game will play from are offered.
+## into those records, leaving every other field as it was. The installed
+## texture packs are offered after "none", which draws the original textures.
 
 ## The windowed sizes offered, smallest first; [constant Vector2i.ZERO] keeps the project's size.
 const WINDOW_SIZES: Array[Vector2i] = [
@@ -26,10 +26,10 @@ var vsync: GraphicsSettings.Vsync = GraphicsSettings.Vsync.ENABLED
 var music_volume: int = ProgressStore.DEFAULT_MUSIC_VOLUME
 ## The sound-effect volume step, 0 to [constant ProgressStore.MAX_VOLUME].
 var sound_volume: int = ProgressStore.DEFAULT_SOUND_VOLUME
-## The chosen texture set's name, one of [member texture_sets].
-var texture_set: String = TextureSet.RETAIL
-## The texture sets installed under the assets root, retail first.
-var texture_sets := PackedStringArray([TextureSet.RETAIL])
+## The chosen texture pack's folder name, one of [member texture_packs], or "" for none.
+var texture_pack: String = ""
+## The installed texture packs offered, sorted by folder name.
+var texture_packs: Array[TexturePack] = []
 
 
 func title() -> String:
@@ -37,28 +37,42 @@ func title() -> String:
 
 
 ## Takes the saved choices from [param progress], [param graphics] and
-## [param launcher], offering the texture sets [param installed_sets].
-## [param default_set] is the set a launcher without a choice draws.
+## [param launcher], offering the texture packs [param installed_packs].
 func read(progress: ProgressStore, graphics: GraphicsSettings, launcher: LauncherSettings,
-		installed_sets: PackedStringArray, default_set: String) -> void:
+		installed_packs: Array[TexturePack]) -> void:
 	set_language(progress.language)
 	set_music_volume(progress.music_volume)
 	set_sound_volume(progress.sound_volume)
 	window_mode = graphics.window_mode
 	window_size = graphics.window_size
 	vsync = graphics.vsync
-	offer_texture_sets(installed_sets)
-	set_texture_set(launcher.texture_set if not launcher.texture_set.is_empty() else default_set)
+	offer_texture_packs(installed_packs)
+	set_texture_pack(launcher.texture_pack)
 
 
-## Offers [param installed_sets] (retail is always offered) and keeps the
-## chosen set when it is still installed, otherwise chooses retail.
-func offer_texture_sets(installed_sets: PackedStringArray) -> void:
-	texture_sets = PackedStringArray([TextureSet.RETAIL])
-	for name: String in installed_sets:
-		if not texture_sets.has(name) and TextureSet.named(name) != null:
-			texture_sets.append(name)
-	set_texture_set(texture_set)
+## Offers [param installed_packs] and keeps the chosen pack when it is still
+## installed, otherwise chooses none.
+func offer_texture_packs(installed_packs: Array[TexturePack]) -> void:
+	texture_packs = installed_packs.duplicate()
+	set_texture_pack(texture_pack)
+
+
+## The offered pack called [param name], or null.
+func offered_pack(name: String) -> TexturePack:
+	for pack: TexturePack in texture_packs:
+		if pack.pack_name == name:
+			return pack
+	return null
+
+
+## The line naming [param pack] in the list: its name, with its author when
+## it gives one; "None (original textures)" for null.
+static func pack_label(pack: TexturePack) -> String:
+	if pack == null:
+		return "None (original textures)"
+	if pack.author.is_empty():
+		return pack.display_name()
+	return "%s, by %s" % [pack.display_name(), pack.author]
 
 
 ## Chooses [param value] when it is a language or [constant GameLanguage.AUTO].
@@ -107,10 +121,20 @@ func set_vsync(enabled: bool) -> void:
 		vsync = GraphicsSettings.Vsync.ENABLED
 
 
-## Chooses the texture set [param name] when it is offered, otherwise retail.
-func set_texture_set(name: String) -> void:
-	var wanted: String = name.strip_edges().to_lower()
-	texture_set = wanted if texture_sets.has(wanted) else TextureSet.RETAIL
+## Chooses the texture pack [param name] when it is offered, matching its
+## folder name exactly or else ignoring case; otherwise none.
+func set_texture_pack(name: String) -> void:
+	var wanted: String = name.strip_edges()
+	texture_pack = ""
+	if wanted.is_empty():
+		return
+	if offered_pack(wanted) != null:
+		texture_pack = wanted
+		return
+	for pack: TexturePack in texture_packs:
+		if pack.pack_name.to_lower() == wanted.to_lower():
+			texture_pack = pack.pack_name
+			return
 
 
 ## The sizes offered, with [member window_size] among them.
@@ -135,6 +159,6 @@ func write_graphics(graphics: GraphicsSettings) -> void:
 	graphics.vsync = vsync
 
 
-## Puts the texture set into [param launcher].
+## Puts the texture pack into [param launcher].
 func write_launcher(launcher: LauncherSettings) -> void:
-	launcher.texture_set = texture_set
+	launcher.texture_pack = texture_pack

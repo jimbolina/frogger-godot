@@ -1,7 +1,10 @@
 class_name SetupOptionsView
 extends SetupPageView
 ## The settings page: language, window mode and size, vsync, the music and
-## effects volumes and the texture set.
+## effects volumes and the texture pack.
+
+## Where the note says texture packs are installed.
+const TEXTURE_PACKS_FOLDER: String = "texture_packs in the game's user folder"
 
 var _language: OptionButton
 var _mode: OptionButton
@@ -66,7 +69,8 @@ func build() -> void:
 		edited.emit())
 	_textures = _option_row(grid, "Textures")
 	_textures.item_selected.connect(func(index: int) -> void:
-		flow.options.set_texture_set(_textures.get_item_text(index))
+		var chosen: String = _textures.get_item_metadata(index)
+		flow.options.set_texture_pack(chosen)
 		edited.emit())
 	_textures_note = add_text(self, "", true)
 
@@ -91,16 +95,22 @@ func refresh() -> void:
 	_sound.set_value_no_signal(options.sound_volume)
 	_sound_value.text = str(options.sound_volume)
 	_textures.clear()
-	for set_name: String in options.texture_sets:
-		_textures.add_item(set_name)
-		if set_name == options.texture_set:
+	_textures.add_item(SetupOptions.pack_label(null))
+	_textures.set_item_metadata(0, "")
+	for pack: TexturePack in options.texture_packs:
+		_textures.add_item(SetupOptions.pack_label(pack))
+		_textures.set_item_metadata(_textures.item_count - 1, pack.pack_name)
+		if pack.pack_name == options.texture_pack:
 			_textures.select(_textures.item_count - 1)
-	_textures_note.text = "Volumes run from 0 (off) to 8. Only the retail textures are installed." \
-		if options.texture_sets.size() == 1 else "Volumes run from 0 (off) to 8. x4 draws the upscaled textures."
+	if options.texture_pack.is_empty():
+		_textures.select(0)
+	_textures_note.text = "Volumes run from 0 (off) to 8. No texture packs are installed in %s." \
+		% TEXTURE_PACKS_FOLDER if options.texture_packs.is_empty() \
+		else "Volumes run from 0 (off) to 8. A texture pack draws its own images; the rest stay original."
 
 
 func shown() -> void:
-	screen.offer_texture_sets()
+	screen.offer_texture_packs()
 	refresh()
 
 

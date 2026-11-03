@@ -1,21 +1,6 @@
 extends GutTest
-## The sky's tile array: layer order, texture-set scale, magenta fallbacks and layer coordinates.
-
-class UpscaledCatalog extends AssetCatalog:
-	var scaled: Dictionary[VloImage, Texture2D] = {}
-
-	func texture_set() -> TextureSet:
-		return TextureSet.x4()
-
-	func texture_of(image: VloImage) -> Texture2D:
-		if image == null:
-			return null
-		if not scaled.has(image):
-			var pixels: Image = image.texture.get_image()
-			pixels.resize(image.padded_width * 4, image.padded_height * 4, Image.INTERPOLATE_NEAREST)
-			scaled[image] = ImageTexture.create_from_image(pixels)
-		return scaled[image]
-
+## The sky's tile array: layer order, per-texture scale with mixed scales
+## sharing the largest, magenta fallbacks and layer coordinates.
 
 const COLOURS: Array[Color] = [Color(1, 0, 0), Color(0, 1, 0), Color(0, 0, 1)]
 
@@ -44,17 +29,39 @@ func test_linear_layers_carry_mipmaps() -> void:
 		assert_true(made.has_mipmaps())
 
 
-func test_x4_layers_come_from_the_texture_set() -> void:
+func test_upscaled_layers_come_from_the_catalog_with_mipmaps() -> void:
 	var library := TextureLibrary.new()
-	library.catalog = UpscaledCatalog.new()
+	library.catalog = ScaledTextureCatalog.new()
 	var images: Array[VloImage] = [_tile(301, COLOURS[0]), _tile(302, COLOURS[1])]
 	var diagnostics := PackedStringArray()
-	var tiles: Texture2DArray = MapSkyTiles.build(images, library, true, diagnostics)
+	var tiles: Texture2DArray = MapSkyTiles.build(images, library, false, diagnostics)
 	assert_true(diagnostics.is_empty(), ", ".join(diagnostics))
 	assert_eq(Vector2(tiles.get_width(), tiles.get_height()), Vector2(160, 160))
-	var made: Array[Image] = MapSkyTiles.layers(images, library, true, diagnostics)
+	assert_true(tiles.has_mipmaps(), "upscaled layers always carry mipmaps")
+	var made: Array[Image] = MapSkyTiles.layers(images, library, false, diagnostics)
 	assert_eq(made[1].get_size(), Vector2i(160, 160))
 	assert_eq(made[1].get_pixel(80, 80), COLOURS[1])
+
+
+func test_mixed_scales_share_the_largest() -> void:
+	var library := TextureLibrary.new()
+	var catalog := ScaledTextureCatalog.new()
+	catalog.scale = 2
+	catalog.only = {302: true}
+	library.catalog = catalog
+	var corner: VloImage = _tile(301, COLOURS[0])
+	var pixels: Image = corner.texture.get_image()
+	pixels.set_pixel(0, 0, COLOURS[2])
+	corner.texture = ImageTexture.create_from_image(pixels)
+	var images: Array[VloImage] = [corner, _tile(302, COLOURS[1])]
+	var diagnostics := PackedStringArray()
+	var made: Array[Image] = MapSkyTiles.layers(images, library, false, diagnostics)
+	assert_true(diagnostics.is_empty(), ", ".join(diagnostics))
+	assert_eq(made[0].get_size(), Vector2i(80, 80), "the retail tile is enlarged to the pack tile's scale")
+	assert_eq(made[0].get_pixel(1, 1), COLOURS[2], "by repeating pixels")
+	assert_eq(made[0].get_pixel(2, 2), COLOURS[0])
+	assert_eq(made[1].get_size(), Vector2i(80, 80))
+	assert_true(made[0].has_mipmaps())
 
 
 func test_missing_and_mismatched_tiles_become_magenta_with_one_line_each() -> void:

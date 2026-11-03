@@ -167,8 +167,8 @@ static func cloud_texture(data: AssetCatalog) -> ImageTexture:
 	return ImageTexture.create_from_image(TextureBuilder.build_unpadded_image(record, bank_library.texture_for(record)))
 
 
-## The unpadded texture of named image [param symbol] from [member images] in the catalog's
-## texture set, or null; it is the texture set's scale times the record's in-game size.
+## The unpadded texture of named image [param symbol] from [member images] as the catalog
+## draws it, or null; it is that texture's scale times the record's in-game size.
 func image_texture(symbol: String) -> ImageTexture:
 	var record: VloImage = images.get(symbol, null)
 	if record == null:

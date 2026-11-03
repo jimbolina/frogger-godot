@@ -12,11 +12,10 @@ extends RefCounted
 ## parameter set on the part's materials reaches them, and a track's frames are
 ## the track's own. Geometry, cel atlases and textures stay shared.
 ##
-## Given a [param catalog], the copy's materials draw the catalog's
-## counterpart of each image through the linear, mipmapped shader variant
-## wherever the counterpart is upscaled: every image in an upscaled
-## [TextureSet], and each lettering image in the retail set. The shared mesh
-## keeps its retail textures.
+## Given a [param catalog], the copy's materials draw the texture the catalog
+## draws in place of each image (a texture pack's image or a lettering
+## image), through the linear, mipmapped shader variant wherever that texture
+## is larger than the retail one. The shared mesh keeps its retail textures.
 
 
 ## A copy of [param shared] with its own materials, or null for null; the
@@ -97,8 +96,9 @@ static func _duplicate(material: ShaderMaterial, converting: AssetCatalog) -> Sh
 	if image == null:
 		return copy
 	var drawn: Texture2D = converting.texture_counterpart(image)
-	if drawn == image and converting.texture_set().is_retail():
+	if drawn == image or drawn == null:
 		return copy
 	copy.set_shader_parameter("image", drawn)
-	copy.shader = ModelShaders.linear_variant(copy.shader)
+	if drawn.get_width() > image.get_width():
+		copy.shader = ModelShaders.linear_variant(copy.shader)
 	return copy

@@ -3,20 +3,17 @@
 
 `newfont` is texture id 310: assets/textures/images/t0310.png holds the 96
 glyphs of ASCII 32..127 in 8 x 8 cells, 32 to a row in three rows, with no
-padding. assets/textures/images_x4/t0310.png is the same grid at four times
-the size. For each texture set whose PNG exists this tool writes a BMFont v3
-text file that Godot's font_data_bmfont importer turns into a FontFile, and
-the font's page beside it:
+padding. This tool writes a BMFont v3 text file that Godot's font_data_bmfont
+importer turns into a FontFile, and the font's page beside it:
 
     assets/fonts/retail/newfont.fnt and newfont.png  (from textures/images/t0310.png)
-    assets/fonts/x4/newfont.fnt and newfont.png      (from textures/images_x4/t0310.png)
 
 The page is a separate file because the importer marks every page image of
 a font as not imported (importer "skip"), which would take t0310.png away
 from the texture banks. Every page is built at 4 times the retail size so
-that linear filtering keeps the glyph pixels even at any window scale: a PNG
-of scale S (its width divided by 256; the height must be 24 * S, and S must
-divide 4) is enlarged 4 / S times by repeating pixels. Each 32 x 32 glyph
+that linear filtering keeps the glyph pixels even at any window scale: the
+retail PNG is enlarged 4 times by repeating pixels. The game builds the same
+page at runtime from a texture pack's t0310.png (NewfontPage). Each 32 x 32 glyph
 cell is then surrounded by a 4-pixel transparent border, giving 40 x 40
 cells on a 1280 x 120 page. The two rings of transparent pixels around the
 glyph's opaque pixels, within its cell, take the per-channel maximum colour
@@ -30,8 +27,7 @@ page must change the .fnt to be imported again.
 
 --check writes nothing, prints a unified diff for each font file, names each
 page whose size or pixels differ or that is missing, and exits 1. --quiet
-prints nothing on success. A missing x4 PNG skips the x4 font. The tool uses
-only the standard library.
+prints nothing on success. The tool uses only the standard library.
 """
 
 import argparse
@@ -61,7 +57,7 @@ BORDER = PAGE_SCALE
 STRIDE = GLYPH + 2 * BORDER
 FILL_RINGS = 2
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
-SETS = (("retail", "images", True), ("x4", "images_x4", False))
+SETS = (("retail", "images"),)
 
 
 def read_png(path):
@@ -193,14 +189,12 @@ def font_text(page):
 
 
 def outputs():
-    """The path, kind and contents of every font file and page of the sets whose PNG exists."""
+    """The path, kind and contents of every font file and page."""
     result = []
-    for set_name, images_dir, required in SETS:
+    for set_name, images_dir in SETS:
         png = os.path.join(TEXTURES, images_dir, TEXTURE)
         if not os.path.exists(png):
-            if required:
-                raise SystemExit("%s is missing" % png)
-            continue
+            raise SystemExit("%s is missing" % png)
         folder = os.path.join(FONTS, set_name)
         page = page_pixels(png)
         result.append((os.path.join(folder, NAME + ".fnt"), "fnt", font_text(page).encode("ascii")))

@@ -90,18 +90,18 @@ func resolve_overlay(pointer_path: String = FrogLordPointer.DEFAULT_PATH) -> Fro
 	return overlay
 
 
-## Opens the catalog over [member base_root] in the texture set called
-## [param texture_set_name], with its index read from [param index_root] when
-## that is not empty. The location's warnings join the catalog's. When no base
+## Opens the catalog over [member base_root] drawing the texture pack called
+## [param texture_pack_name] ("" for none), with its index read from
+## [param index_root] when that is not empty. The location's warnings join the catalog's. When no base
 ## root is usable, the catalog's [member AssetCatalog.error] is [member error].
-func open(texture_set_name: String = "", index_root: String = "") -> ImportedAssets:
+func open(texture_pack_name: String = "", index_root: String = "") -> ImportedAssets:
 	if not is_usable():
 		var unusable := ImportedAssets.new()
 		unusable.shippable_root = shippable_root
 		unusable.error = error
 		unusable.warnings.append_array(warnings)
 		return unusable
-	var catalog: ImportedAssets = ImportedAssets.open(base_root, texture_set_name, index_root, shippable_root)
+	var catalog: ImportedAssets = ImportedAssets.open(base_root, texture_pack_name, index_root, shippable_root)
 	catalog.warnings.append_array(warnings)
 	return catalog
 

@@ -31,14 +31,13 @@ func _characters(text: String) -> PackedStringArray:
 	return result
 
 
-func test_both_texture_sets_serve_the_font_by_name() -> void:
-	for set_name: String in [TextureSet.RETAIL, TextureSet.X4]:
-		var assets: ImportedAssets = ImportedAssets.open(ASSETS, set_name)
-		var served: FontFile = assets.font("angular") as FontFile
-		assert_not_null(served, "the %s set serves the angular font" % set_name)
-		if served != null:
-			assert_eq(served.resource_path, FONT_PATH, "the %s set draws the committed font" % set_name)
-		assert_eq(assets.problems, PackedStringArray(), "the %s set serves the font without problems" % set_name)
+func test_the_catalog_serves_the_font_by_name() -> void:
+	var assets: ImportedAssets = ImportedAssets.open(ASSETS)
+	var served: FontFile = assets.font("angular") as FontFile
+	assert_not_null(served, "the catalog serves the angular font")
+	if served != null:
+		assert_eq(served.resource_path, FONT_PATH, "the catalog draws the committed font")
+	assert_eq(assets.problems, PackedStringArray(), "the catalog serves the font without problems")
 
 
 func test_the_font_draws_with_msdf() -> void:

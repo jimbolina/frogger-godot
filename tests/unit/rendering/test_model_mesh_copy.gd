@@ -143,33 +143,63 @@ func test_a_flipbook_copy_draws_its_part_materials_so_the_projection_reaches_its
 			checked += 1
 	assert_gt(checked, 0)
 
-func test_an_x4_catalog_retextures_the_copy_and_leaves_the_shared_mesh_retail() -> void:
+func _remove(path: String) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for child: String in DirAccess.get_directories_at(path):
+		_remove(path.path_join(child))
+	for child: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(child))
+	DirAccess.remove_absolute(path)
+
+func test_a_texture_pack_retextures_the_copy_per_texture_and_leaves_the_shared_mesh_retail() -> void:
+	var packs: String = "user://test_model_mesh_copy_packs"
+	var folder: String = packs.path_join("frog_pack")
+	_remove(packs)
+	assert_eq(DirAccess.make_dir_recursive_absolute(folder), OK)
+	var config := ConfigFile.new()
+	config.set_value("pack", "name", "Frog pack")
+	config.set_value("pack", "base_build", _data.version_name)
+	assert_eq(config.save(folder.path_join("pack.cfg")), OK)
 	var shared: ModelMesh = _committed_frog()
-	var x4: ImportedAssets = ImportedAssets.open("res://assets", "x4")
-	assert_eq(x4.warnings, PackedStringArray())
-	var copy: ModelMesh = ModelMeshCopy.of(shared, x4)
-	var copied: Array[ShaderMaterial] = _surface_materials(copy)
 	var shared_materials: Array[ShaderMaterial] = _surface_materials(shared)
+	var retail_paths := PackedStringArray()
+	for material: ShaderMaterial in shared_materials:
+		var retail: Texture2D = material.get_shader_parameter("image")
+		if retail != null and not retail_paths.has(retail.resource_path):
+			retail_paths.append(retail.resource_path)
+	assert_gt(retail_paths.size(), 1, "the frog draws several textures")
+	var kept: String = retail_paths[0]
+	for path: String in retail_paths.slice(1):
+		var pixels: Image = (load(path) as Texture2D).get_image()
+		pixels.resize(pixels.get_width() * 2, pixels.get_height() * 2, Image.INTERPOLATE_NEAREST)
+		assert_eq(pixels.save_png(folder.path_join(path.get_file())), OK)
+	var catalog: ImportedAssets = ImportedAssets.open("res://assets", "frog_pack", "", "res://assets", PackedStringArray([packs]))
+	assert_eq(catalog.warnings, PackedStringArray())
+	var copy: ModelMesh = ModelMeshCopy.of(shared, catalog)
+	var copied: Array[ShaderMaterial] = _surface_materials(copy)
 	assert_eq(copied.size(), shared_materials.size())
-	var textured: int = 0
+	var replaced: int = 0
 	for index: int in copied.size():
 		var retail: Texture2D = shared_materials[index].get_shader_parameter("image")
 		var image: Texture2D = copied[index].get_shader_parameter("image")
-		if retail == null:
-			assert_null(image)
-			assert_same(copied[index].shader, shared_materials[index].shader, "a flat material keeps its shader")
+		if retail == null or retail.resource_path == kept:
+			assert_same(image, retail, "a texture the pack omits stays retail")
+			assert_same(copied[index].shader, shared_materials[index].shader, "and keeps its shader")
 			continue
-		textured += 1
-		assert_true(retail.resource_path.begins_with("res://assets/textures/images/"), retail.resource_path)
-		assert_eq(image.resource_path, retail.resource_path.replace("/images/", "/images_x4/"))
-		assert_eq(image.get_size(), retail.get_size() * 4)
+		replaced += 1
+		assert_eq(image.get_size(), retail.get_size() * 2)
+		assert_true(image.get_image().has_mipmaps(), "a scaled pack image has mipmaps")
 		assert_true(copied[index].shader.resource_path.contains("_linear"), copied[index].shader.resource_path)
 		assert_false(shared_materials[index].shader.resource_path.contains("_linear"))
-	assert_gt(textured, 0, "the frog has textured surfaces")
-	var again: ModelMesh = ModelMeshLibrary.mesh_for(x4, _data.find_resource(FROG).index, null, null)
-	assert_same(ModelMeshLibrary.mesh_for(x4, _data.find_resource(FROG).index, null, null), again, "the x4 mesh loads once per set")
+	assert_gt(replaced, 0, "the pack retextures the frog")
+	assert_eq(catalog.texture_set().scale_of(TextureSet.texture_id_of(retail_paths[1])), 2)
+	var again: ModelMesh = ModelMeshLibrary.mesh_for(catalog, _data.find_resource(FROG).index, null, null)
+	assert_same(ModelMeshLibrary.mesh_for(catalog, _data.find_resource(FROG).index, null, null), again,
+		"the pack's mesh converts once per pack")
 	assert_ne(again, shared)
 	assert_same(_committed_frog(), shared, "the retail mesh is untouched")
+	_remove(packs)
 
 func test_the_linear_variant_is_found_from_the_shader_file() -> void:
 	var opaque: Shader = ModelShaders.shader(true, ModelShaders.Blend.OPAQUE, false, false)

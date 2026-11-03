@@ -30,6 +30,8 @@ var progress_path: String = FrontEndSession.store_path
 var graphics_path: String = GraphicsStore.DEFAULT_PATH
 ## The archive's settings file, whose remembered game folder is suggested once.
 var legacy_settings_path: String = LauncherStore.LEGACY_SETTINGS_PATH
+## The folders the settings page lists texture packs from.
+var texture_pack_folders: PackedStringArray = TexturePackReader.search_folders()
 ## Whether [method _ready] starts the screen from the launch's own arguments;
 ## tests call [method begin] themselves.
 var auto_begin: bool = true
@@ -102,10 +104,8 @@ func open_pages(root: String) -> void:
 		_store = LauncherStore.load_from(launcher_path)
 	var saved: LauncherSettings = _store.settings
 	flow = SetupFlow.create(saved, root, opening)
-	var installed: PackedStringArray = ImportedAssets.installed_texture_sets(root) if not root.is_empty() \
-		else PackedStringArray()
 	flow.options.read(ProgressStore.load_from(progress_path), GraphicsStore.load_from(graphics_path).settings,
-		saved, installed, ViewerArguments.texture_set_from(PackedStringArray(), null))
+		saved, TexturePackReader.list(texture_pack_folders))
 	flow.froglord.read(saved, not saved.froglord_dir.is_empty() and DirAccess.dir_exists_absolute(saved.froglord_dir))
 	_build()
 	var folder: String = saved.game_data_dir
@@ -120,11 +120,9 @@ func open_pages(root: String) -> void:
 	_show_page()
 
 
-## Offers the texture sets installed under the root the game will play from.
-func offer_texture_sets() -> void:
-	var root: String = flow.play_root()
-	flow.options.offer_texture_sets(ImportedAssets.installed_texture_sets(root) if not root.is_empty()
-		else PackedStringArray())
+## Offers the texture packs installed in [member texture_pack_folders].
+func offer_texture_packs() -> void:
+	flow.options.offer_texture_packs(TexturePackReader.list(texture_pack_folders))
 
 
 ## Shows the next page when the shown one allows it.

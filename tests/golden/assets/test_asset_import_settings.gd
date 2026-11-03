@@ -29,7 +29,6 @@ const OWN_POLICIES: Dictionary[String, Dictionary] = {
 }
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
-	"res://assets/textures/images_x4/": {"mipmaps/generate": true},
 	"res://assets/textures/lettering/": {"mipmaps/generate": true},
 }
 

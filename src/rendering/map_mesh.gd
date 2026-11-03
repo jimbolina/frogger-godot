@@ -10,13 +10,17 @@ var surface_specs: Array[Array] = []
 var sky_mesh: ArrayMesh
 ## The sky's tile images, one layer per sky slot ([MapSkyTiles]); null without a sky.
 var sky_tiles: Texture2DArray
+## True when the sky's layers are larger than its tiles' padded size, so the
+## sky always samples linearly with mipmaps.
+var sky_upscaled: bool = false
 var group_count: int = 0
 var triangle_count: int = 0
 var surface_count: int = 0
 var missing_texture_ids := PackedInt32Array()
 var bounds := AABB()
 var diagnostics := PackedStringArray()
-## True when instances start with linear, mipmapped sampling.
+## True when instances start with linear, mipmapped sampling of every
+## texture; upscaled textures sample that way either way.
 var linear_filter: bool = false
 
 ## One surface's prepared image variants and identity.
@@ -218,7 +222,8 @@ class Instance extends Node3D:
 	func emission_scale() -> float:
 		return _emission_scale
 
-	## Switches nearest or linear, mipmapped sampling; textures and geometry are retained.
+	## Switches nearest or linear, mipmapped sampling of the textures drawn at
+	## retail size; upscaled textures stay linear. Textures and geometry are retained.
 	func set_filtering(value: bool) -> void:
 		_linear_filter = value
 		_configured.clear()
@@ -268,7 +273,7 @@ class Instance extends Node3D:
 				var original: ShaderMaterial = source.sky_mesh.surface_get_material(index)
 				var material: ShaderMaterial = _material_copies[original]
 				if not _configured.has(material):
-					material.set_shader_parameter("linear_filter", _linear_filter)
+					material.set_shader_parameter("linear_filter", _linear_filter or source.sky_upscaled)
 					material.set_shader_parameter("projection_scale", projection_scale)
 					_configured[material] = true
 			_refresh_sky_drift()
@@ -280,7 +285,7 @@ class Instance extends Node3D:
 		material.shader = MapShaders.shader(blend, spec.layer >= 0)
 		var texture: Texture2D = material.get_shader_parameter("image_nearest") if image != null else null
 		material.set_shader_parameter("missing_image", spec.textured and (image == null or texture == null))
-		material.set_shader_parameter("linear_filter", _linear_filter)
+		material.set_shader_parameter("linear_filter", _linear_filter or TextureBuilder.is_upscaled(image, texture))
 		material.set_shader_parameter("environment_uv", spec.environment)
 		material.set_shader_parameter("camera_game", _camera_presentation)
 		if spec.environment:

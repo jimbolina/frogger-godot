@@ -365,7 +365,7 @@ func _build() -> void:
 		box.mesh = StackMeshBuilder.row_mesh(layout, row, _world_image_height(row), stack_row.local_level,
 			stack_row.levels_in_world)
 		var tint: int = selector.tint(row)
-		var material: ShaderMaterial = StackMeshBuilder.box_material(image, scale, _assets.texture_library.linear_filter())
+		var material: ShaderMaterial = StackMeshBuilder.box_material(image, scale)
 		box.set_surface_override_material(0, material)
 		box.set_surface_override_material(1, material)
 		StackMeshBuilder.set_instance_tint(box, tint)
@@ -385,7 +385,7 @@ func _build() -> void:
 		var quad := MeshInstance3D.new()
 		quad.name = "GoldFrog%d" % slot
 		quad.mesh = StackMeshBuilder.quad_mesh(corners)
-		quad.set_surface_override_material(0, StackMeshBuilder.quad_material(gold, scale, _assets.texture_library.linear_filter()))
+		quad.set_surface_override_material(0, StackMeshBuilder.quad_material(gold, scale))
 		quad.visible = _progress.gold_frogs & (1 << (slot + 1)) != 0
 		_world.add_child(quad)
 		gold_frogs.append(quad)
@@ -481,8 +481,8 @@ func _build_spin(row: int) -> void:
 	var scale: Vector2 = GameplayProjection.clip_scale(DISPLAY_SIZE)
 	var screenshot: Texture2D = _assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.SCREENSHOT)
 	var tint: int = selector.tint(row)
-	_spin_materials = [StackMeshBuilder.box_material(image, scale, _assets.texture_library.linear_filter()),
-		StackMeshBuilder.box_material(screenshot, scale, _assets.texture_library.linear_filter())]
+	_spin_materials = [StackMeshBuilder.box_material(image, scale),
+		StackMeshBuilder.box_material(screenshot, scale)]
 	_build_spin_parts(mesh, tint)
 	panel.set_level_name(_assets.level_texture(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME),
 		_assets.level_retail_size(stack_row.level, FrontEndAssets.LevelImage.STACK_NAME))

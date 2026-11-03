@@ -39,7 +39,6 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 rendering/effect_shadows="off"
 rendering/shadows="on"
-textures/default_set="retail"
 
 [importer_defaults]
 

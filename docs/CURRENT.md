@@ -13,8 +13,7 @@ Continue/Quit at once) and its [cheat phrases](reference/gameplay/front-end.md#c
 (P13j) await the owner's play check. See the [roadmap](PORTING.md).
 
 Everything plays from the committed `assets/` through `ImportedAssets`
-([assets](reference/assets.md)); readers and importer live in `archive/`. `--texture-set=x4` draws the upscaled set (hand-made replacements
-on hold); text is the `newfont` bitmap font and the vector angular lettering
+([assets](reference/assets.md)); readers and importer live in `archive/`. [Texture packs](reference/assets.md#texture-packs) replace the upscaled set; text is the `newfont` bitmap font and the vector angular lettering
 (S2h), both accepted. The
 [look choices](reference/rendering/lighting.md#look-choices) keep their
 defaults until the owner tunes them.

@@ -6,7 +6,10 @@ extends RefCounted
 ## A missing file gives the defaults without an error, and a missing key takes
 ## its default. A file of an earlier version from [constant OLDEST_FORMAT_VERSION]
 ## on is read the same way, so the keys it lacks take their defaults, and the
-## next save writes [constant FORMAT_VERSION]. An unreadable, malformed or
+## next save writes [constant FORMAT_VERSION]. Version 2's
+## [code]textures/texture_set[/code] ([code]retail[/code] or the removed
+## [code]x4[/code]) names no texture pack, so it is dropped and the game draws
+## the original textures. An unreadable, malformed or
 ## unknown-version file, or any value of the wrong type, gives all the defaults
 ## and sets [member error]. Saving writes a temporary file beside the target and
 ## renames it over the target, so an interrupted save leaves the previous file
@@ -15,7 +18,7 @@ extends RefCounted
 ## Default settings file.
 const DEFAULT_PATH: String = "user://launcher.cfg"
 ## Version written to and expected in the file.
-const FORMAT_VERSION: int = 2
+const FORMAT_VERSION: int = 3
 ## The earliest version still read: version 1 had no [code]textures[/code] section.
 const OLDEST_FORMAT_VERSION: int = 1
 ## The settings file of the archive's [code]GameDataLocator[/code], whose
@@ -27,7 +30,7 @@ const LAYOUT: Dictionary[String, Array] = {
 	"import": ["fingerprint", "imported_root"],
 	"froglord": ["froglord_enabled", "froglord_dir"],
 	"start": ["show_setup_on_start"],
-	"textures": ["texture_set"],
+	"textures": ["texture_pack"],
 }
 const _TEMP_SUFFIX: String = ".tmp"
 const _META: String = "meta"

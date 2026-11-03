@@ -1,10 +1,12 @@
 extends GutTest
-## SetupScreen over scratch settings files, a fake importer and a fake import
-## process: the skip to the front end, the reopen, the first run, a whole walk
-## from the game folder to Play, and a cancelled import.
+## SetupScreen over scratch settings files, a scratch texture packs folder, a
+## fake importer and a fake import process: the skip to the front end, the
+## reopen, the first run, a whole walk from the game folder to Play choosing a
+## texture pack, the settings page's pack list, and a cancelled import.
 
 const ROOT: String = "user://test_setup_screen"
 const FINGERPRINT: String = "0123456789abcdef"
+const PACKS: String = ROOT + "/texture_packs"
 
 
 class FakeImporter:
@@ -75,6 +77,7 @@ func _screen() -> SetupScreen:
 	screen.progress_path = ROOT.path_join("progress.cfg")
 	screen.graphics_path = ROOT.path_join("graphics.cfg")
 	screen.legacy_settings_path = ROOT.path_join("settings.cfg")
+	screen.texture_pack_folders = PackedStringArray([PACKS])
 	screen.importer = _importer
 	screen.import_process = _process
 	add_child_autofree(screen)
@@ -87,6 +90,29 @@ func _files_view(screen: SetupScreen) -> SetupGameFilesView:
 
 func _import_view(screen: SetupScreen) -> SetupImportView:
 	return screen.views[1] as SetupImportView
+
+
+func _options_view(screen: SetupScreen) -> SetupOptionsView:
+	return screen.views[2] as SetupOptionsView
+
+
+func _install_pack(folder: String, title: String, author: String) -> void:
+	assert_eq(DirAccess.make_dir_recursive_absolute(PACKS.path_join(folder)), OK)
+	var config := ConfigFile.new()
+	config.set_value("pack", "name", title)
+	config.set_value("pack", "author", author)
+	config.set_value("pack", "base_build", "pc-retail-v3.0e")
+	assert_eq(config.save(PACKS.path_join(folder).path_join("pack.cfg")), OK)
+
+
+func _texture_items(screen: SetupScreen) -> PackedStringArray:
+	var items := PackedStringArray()
+	for child: Node in _options_view(screen).find_children("*", "OptionButton", true, false):
+		var option: OptionButton = child as OptionButton
+		if option.item_count > 0 and option.get_item_text(0) == SetupOptions.pack_label(null):
+			for index: int in option.item_count:
+				items.append(option.get_item_text(index) + (" *" if index == option.selected else ""))
+	return items
 
 
 func test_a_source_checkout_without_a_launcher_file_goes_straight_to_the_front_end() -> void:
@@ -124,6 +150,8 @@ func test_the_first_run_waits_for_game_files_and_offers_the_remembered_folder() 
 
 
 func test_a_whole_setup_imports_saves_and_opens_the_front_end() -> void:
+	_install_pack("crisp", "Crisp Frogs", "A. Artist")
+	assert_eq(DirAccess.make_dir_recursive_absolute(PACKS.path_join("not_a_pack")), OK)
 	var screen: SetupScreen = _screen()
 	screen.begin(PackedStringArray(["--assets-root=%s/missing" % ROOT]))
 	assert_false(screen.flow.can_continue())
@@ -146,6 +174,9 @@ func test_a_whole_setup_imports_saves_and_opens_the_front_end() -> void:
 	assert_eq(recorded.settings.imported_root, AssetImporter.root_for(FINGERPRINT), "the import is recorded at once")
 	assert_true(recorded.settings.show_setup_on_start, "until Play the setup opens again")
 	screen.next_page()
+	assert_eq(_texture_items(screen), PackedStringArray(["None (original textures) *", "Crisp Frogs, by A. Artist"]),
+		"the settings page lists none and each installed pack")
+	screen.flow.options.set_texture_pack("crisp")
 	screen.flow.options.set_music_volume(6)
 	screen.flow.options.set_language(GameLanguage.Id.FRENCH)
 	screen.flow.options.set_fullscreen(true)
@@ -158,7 +189,7 @@ func test_a_whole_setup_imports_saves_and_opens_the_front_end() -> void:
 	assert_eq(launcher.error, "")
 	assert_false(launcher.settings.show_setup_on_start)
 	assert_eq(launcher.settings.game_data_dir, "/Games/Frogger")
-	assert_eq(launcher.settings.texture_set, TextureSet.RETAIL)
+	assert_eq(launcher.settings.texture_pack, "crisp")
 	var progress: ProgressStore = ProgressStore.load_from(screen.progress_path)
 	assert_eq(progress.music_volume, 6)
 	assert_eq(progress.language, GameLanguage.Id.FRENCH)
@@ -195,14 +226,31 @@ func test_a_process_that_ends_without_finishing_fails_the_import() -> void:
 	assert_eq(screen.flow.import_page.problems, PackedStringArray(["the import process ended without finishing"]))
 
 
-func test_the_launch_draws_the_texture_set_the_setup_chose() -> void:
+func test_the_launch_draws_the_texture_pack_the_setup_chose() -> void:
 	var launcher := LauncherSettings.new()
-	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(), launcher),
-		str(ProjectSettings.get_setting(ViewerArguments.TEXTURE_SET_SETTING, TextureSet.RETAIL)))
-	launcher.texture_set = "X4"
-	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(), launcher), "x4")
-	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(["--texture-set=retail"]), launcher), "retail",
-		"the launch argument still wins")
+	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(), launcher), "", "no pack by default")
+	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(), null), "")
+	launcher.texture_pack = " Crisp Frogs "
+	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(), launcher), "Crisp Frogs")
+	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(["--texture-pack=other"]), launcher), "other",
+		"the launch argument wins")
+	assert_eq(ViewerArguments.texture_set_from(PackedStringArray(["--texture-pack="]), launcher), "",
+		"an empty argument draws the original textures")
+
+
+func test_the_settings_page_follows_the_installed_packs() -> void:
+	var screen: SetupScreen = _screen()
+	screen.begin(PackedStringArray([SetupFlow.SETUP_FLAG]))
+	screen.next_page()
+	screen.next_page()
+	assert_eq(screen.flow.page(), screen.flow.options)
+	assert_eq(_texture_items(screen), PackedStringArray(["None (original textures) *"]))
+	_install_pack("b_pack", "Beta", "B. Artist")
+	_install_pack("a_pack", "Alpha", "")
+	screen.previous_page()
+	screen.next_page()
+	assert_eq(_texture_items(screen), PackedStringArray(["None (original textures) *", "Alpha", "Beta, by B. Artist"]),
+		"packs are listed by folder name each time the page shows")
 
 
 func test_shift_during_the_grace_wait_opens_the_setup() -> void:

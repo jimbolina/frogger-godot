@@ -1,22 +1,6 @@
 extends GutTest
 ## Synthetic map group geometry, per-image lit materials and independent instance playback.
 
-class UpscaledCatalog extends AssetCatalog:
-	var scaled: Dictionary[VloImage, Texture2D] = {}
-
-	func texture_set() -> TextureSet:
-		return TextureSet.x4()
-
-	func texture_of(image: VloImage) -> Texture2D:
-		if image == null:
-			return null
-		if not scaled.has(image):
-			var pixels: Image = image.texture.get_image()
-			pixels.resize(image.padded_width * 4, image.padded_height * 4, Image.INTERPOLATE_NEAREST)
-			scaled[image] = ImageTexture.create_from_image(pixels)
-		return scaled[image]
-
-
 func test_map_strip_corner_order_uvs_and_polygon_blend_flag() -> void:
 	var scene: MapSceneData = _scene()
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
@@ -86,11 +70,11 @@ func test_material_binds_the_padded_image_texture() -> void:
 	assert_true(_unset(material, "texel_inset"))
 
 
-func test_build_filters_as_the_library_texture_set_asks() -> void:
+func test_upscaled_textures_filter_linearly_whatever_the_instance_asks() -> void:
 	var scene: MapSceneData = _scene()
-	scene.library.catalog = UpscaledCatalog.new()
+	scene.library.catalog = ScaledTextureCatalog.new()
 	var built: MapMesh = MapMeshBuilder.new().build(scene)
-	assert_true(built.linear_filter)
+	assert_false(built.linear_filter, "instances start nearest for retail-size textures")
 	var material: ShaderMaterial = built.groups[0].surface_get_material(0)
 	var texture: Texture2D = material.get_shader_parameter("image_linear")
 	var linear_filter: bool = material.get_shader_parameter("linear_filter")
@@ -102,17 +86,27 @@ func test_build_filters_as_the_library_texture_set_asks() -> void:
 	instance.set_tick(0)
 	var node: MeshInstance3D = instance.get_child(0)
 	var prepared: ShaderMaterial = node.get_surface_override_material(0)
+	linear_filter = prepared.get_shader_parameter("linear_filter")
+	assert_true(linear_filter, "the instance keeps an upscaled texture linear")
 	instance.set_filtering(false)
 	linear_filter = prepared.get_shader_parameter("linear_filter")
-	assert_false(linear_filter)
+	assert_true(linear_filter, "switching filtering off leaves upscaled textures linear")
 	assert_eq(prepared.shader.resource_path, MapShaders.shader_path(ModelShaders.Blend.OPAQUE, false),
 		"filtering changes a uniform, not the variant")
 	instance.free()
-	built = MapMeshBuilder.new().build(scene, false)
+	scene.library.catalog = null
+	built = MapMeshBuilder.new().build(scene, true)
 	material = built.groups[0].surface_get_material(0)
 	linear_filter = material.get_shader_parameter("linear_filter")
-	assert_false(built.linear_filter, "an explicit choice wins")
-	assert_false(linear_filter)
+	assert_true(built.linear_filter, "asking filters retail textures linearly")
+	assert_true(linear_filter)
+	instance = built.create_instance()
+	instance.set_tick(0)
+	prepared = (instance.get_child(0) as MeshInstance3D).get_surface_override_material(0)
+	instance.set_filtering(false)
+	linear_filter = prepared.get_shader_parameter("linear_filter")
+	assert_false(linear_filter, "a retail texture follows the switch")
+	instance.free()
 
 
 func test_polygon_flags_pick_variants_and_priorities() -> void:
@@ -452,6 +446,28 @@ func test_sky_samples_a_tile_array() -> void:
 	var padded_size: Vector2 = material.get_shader_parameter("tile_padded_size")
 	assert_eq(padding, Vector2(1, 1))
 	assert_eq(padded_size, Vector2(10, 6))
+
+
+func test_an_upscaled_sky_stays_linear() -> void:
+	var scene: MapSceneData = _rich_scene()
+	var built: MapMesh = MapMeshBuilder.new().build(scene)
+	assert_false(built.sky_upscaled)
+	scene.library.catalog = ScaledTextureCatalog.new()
+	built = MapMeshBuilder.new().build(scene)
+	assert_true(built.sky_upscaled)
+	assert_eq(built.sky_tiles.get_width(), 40)
+	var material: ShaderMaterial = built.sky_mesh.surface_get_material(0)
+	var linear: bool = material.get_shader_parameter("linear_filter")
+	var padded_size: Vector2 = material.get_shader_parameter("tile_padded_size")
+	assert_true(linear)
+	assert_eq(padded_size, Vector2(10, 6), "coordinates stay normalised over retail pixels")
+	var instance: MapMesh.Instance = built.create_instance()
+	instance.set_tick(0)
+	instance.set_filtering(false)
+	var prepared: ShaderMaterial = (instance.get_node("SkyLand") as MeshInstance3D).get_surface_override_material(0)
+	linear = prepared.get_shader_parameter("linear_filter")
+	assert_true(linear, "the switch leaves an upscaled sky linear")
+	instance.free()
 
 
 func test_sky_rotations_camera_translation_and_fixed_height() -> void:

@@ -12,7 +12,7 @@ extends AssetCatalog
 ## same object. Records are shared and must not be changed. The retail archive
 ## is not kept, so no raw resource bytes are available.
 ##
-## Records, models, maps, sounds, music and texture sets come from the base
+## Records, models, maps, sounds and music come from the base
 ## [member root]. Fonts, lettering and the emissive table are the port's own
 ## work and come from [member shippable_root], which stays
 ## [constant SHIPPABLE_ROOT] when the base root is an import under
@@ -20,10 +20,13 @@ extends AssetCatalog
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
 ## textures, and [method texture_of], [method texture_counterpart] and
-## [method font] answer with the chosen set's files,
-## falling back to the retail file (noted in [member problems]) when the set
-## lacks one. A lettering image ([method TextureSet.lettering_path]) replaces
-## its retail texture in every set.
+## [method font] answer with the image drawn in their place. A texture pack
+## ([TexturePackReader]) wins where it supplies the texture and its image is
+## accepted; otherwise a lettering image ([method TextureSet.lettering_path])
+## replaces its retail texture; otherwise the retail texture is drawn. A
+## pack image that is rejected is noted in [member problems] and the
+## texture falls back as if the pack lacked it. A pack that redraws texture
+## 310 is drawn by the [code]newfont[/code] font too ([NewfontPage]).
 
 ## The hand-authored glowing-image table under the shippable root.
 const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
@@ -35,7 +38,7 @@ const INDEX_FILE: String = "catalog.tres"
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
-## The base folder the assets were opened from: texture sets and models are
+## The base folder the assets were opened from: records and models are
 ## read from here, and an index of its own points into it.
 var root: String = ""
 ## The folder fonts, lettering and the emissive table are read from.
@@ -52,20 +55,20 @@ var _fonts: Dictionary[String, Font] = {}
 var _emissive: EmissiveImageTable
 
 
-## Opens the assets under [param assets_root], drawing from the texture set
-## called [param texture_set_name] ("" for retail). The index is read from
-## [param index_folder] when it is not empty, otherwise from
-## [param assets_root]; fonts, lettering and the emissive table from
-## [param shippable_folder]. Check [member AssetCatalog.error]; a set that is
-## not installed under [param assets_root] falls back to retail with a line in
+## Opens the assets under [param assets_root], drawing the texture pack
+## called [param texture_pack_name] ("" for none) found in [param pack_folders].
+## The index is read from [param index_folder] when it is not empty, otherwise
+## from [param assets_root]; fonts, lettering and the emissive table from
+## [param shippable_folder]. Check [member AssetCatalog.error]; a pack that is
+## not installed draws the original textures with a line in
 ## [member AssetCatalog.warnings].
-static func open(assets_root: String = SHIPPABLE_ROOT, texture_set_name: String = "",
-		index_folder: String = "", shippable_folder: String = SHIPPABLE_ROOT) -> ImportedAssets:
+static func open(assets_root: String = SHIPPABLE_ROOT, texture_pack_name: String = "",
+		index_folder: String = "", shippable_folder: String = SHIPPABLE_ROOT,
+		pack_folders: PackedStringArray = TexturePackReader.search_folders()) -> ImportedAssets:
 	var catalog := ImportedAssets.new()
 	catalog.root = assets_root
 	catalog.shippable_root = shippable_folder
 	catalog.index_root = index_folder if not index_folder.is_empty() else assets_root
-	catalog.textures = resolve_texture_set(assets_root, texture_set_name, catalog.warnings)
 	var index_path: String = catalog.index_root.path_join(INDEX_FILE)
 	catalog.index = catalog._load(index_path) as AssetIndex
 	if catalog.index == null:
@@ -84,6 +87,8 @@ static func open(assets_root: String = SHIPPABLE_ROOT, texture_set_name: String 
 	catalog.names = catalog._load(catalog.index.names_path) as GameNameLists
 	if catalog.names == null:
 		catalog.error = "no name lists at %s" % catalog.index.names_path
+		return catalog
+	catalog.textures = catalog.resolve_texture_pack(texture_pack_name, pack_folders)
 	return catalog
 
 
@@ -92,32 +97,31 @@ static func has_index(folder: String) -> bool:
 	return not folder.is_empty() and ResourceLoader.exists(folder.path_join(INDEX_FILE))
 
 
-## The texture set called [param texture_set_name] when its images folder
-## exists under [param assets_root]; otherwise the retail set, with the reason
-## appended to [param warnings_out].
-static func resolve_texture_set(assets_root: String, texture_set_name: String,
-		warnings_out: PackedStringArray) -> TextureSet:
-	var wanted: TextureSet = TextureSet.named(texture_set_name)
-	if wanted == null:
-		warnings_out.append("unknown texture set %s; drawing the retail set" % texture_set_name)
+## The texture set drawing the pack called [param texture_pack_name] from
+## [param pack_folders], its files resolved against the catalog's image
+## names; the original textures for "". A pack that is not installed or is
+## not a valid pack gives the original textures; that, a pack drawn for
+## another build than [member AssetCatalog.version_name] and each pack file
+## naming no texture add a line to [member AssetCatalog.warnings].
+func resolve_texture_pack(texture_pack_name: String,
+		pack_folders: PackedStringArray = TexturePackReader.search_folders()) -> TextureSet:
+	if texture_pack_name.is_empty():
 		return TextureSet.retail()
-	if wanted.is_retail():
-		return wanted
-	var images: String = assets_root.path_join("textures").path_join(wanted.images_dir)
-	if not DirAccess.dir_exists_absolute(images):
-		warnings_out.append("texture set %s is not installed at %s; drawing the retail set" % [wanted.set_name, images])
+	var notes := PackedStringArray()
+	var pack: TexturePack = TexturePackReader.find(texture_pack_name, pack_folders, notes)
+	warnings.append_array(notes)
+	if pack == null:
+		var reason: String = "is not installed in %s" % ", ".join(pack_folders) if notes.is_empty() else "cannot be used"
+		warnings.append("texture pack %s %s; drawing the original textures" % [texture_pack_name, reason])
 		return TextureSet.retail()
-	return wanted
-
-
-## The names of the texture sets installed under [param assets_root]: the
-## retail set always, and each other named set whose images folder exists.
-static func installed_texture_sets(assets_root: String) -> PackedStringArray:
-	var installed := PackedStringArray([TextureSet.RETAIL])
-	var x4: TextureSet = TextureSet.x4()
-	if DirAccess.dir_exists_absolute(assets_root.path_join("textures").path_join(x4.images_dir)):
-		installed.append(x4.set_name)
-	return installed
+	if pack.base_build != version_name:
+		warnings.append("texture pack %s was drawn for %s, not %s; its images may not match"
+			% [pack.pack_name, pack.base_build, version_name])
+	notes.clear()
+	var image_names: NameBank = names.images if names != null else null
+	var pack_sources: Dictionary[int, String] = TexturePackReader.sources(pack, image_names, notes)
+	warnings.append_array(notes)
+	return TextureSet.of_pack(pack, pack_sources)
 
 
 ## The texture set the catalog draws from.
@@ -130,56 +134,81 @@ func texture_of(image: VloImage) -> Texture2D:
 	return texture_counterpart(image.texture) if image != null else null
 
 
-## The file the catalog draws for the retail [param texture]: its lettering
-## image under the shippable root when one exists, in every set; otherwise the
-## texture set's file, which is the same texture for the retail set, a texture
-## outside the retail folders, or a set file that is missing (noted once in
-## [member problems]). The answer is cached per retail path.
+## The texture the catalog draws for the retail [param texture]: the
+## texture pack's image when the pack supplies the texture and the image is
+## accepted, else its lettering image under the shippable root when one
+## exists, else [param texture] itself (also for a texture outside the retail
+## images folder). A rejected pack image is noted once in [member problems]
+## and pushed as a warning, so it shows in the log.
+## The answer is cached per retail path.
 func texture_counterpart(texture: Texture2D) -> Texture2D:
 	if texture == null or texture.resource_path.is_empty():
 		return texture
 	var retail_path: String = texture.resource_path
 	if _counterparts.has(retail_path):
 		return _counterparts[retail_path]
-	var lettering: String = TextureSet.lettering_path(retail_path)
-	var found: Texture2D = _load(shippable_root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
+	var found: Texture2D = _pack_texture(texture)
 	if found == null:
-		found = _set_counterpart(texture)
+		var lettering: String = TextureSet.lettering_path(retail_path)
+		found = _load(shippable_root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
+	if found == null:
+		found = texture
 	_counterparts[retail_path] = found
 	return found
 
 
-## The bitmap font called [param name] under [code]fonts/<set>/[/code] of the
-## shippable root, the
-## retail set's font when the chosen set lacks it (noted once in
-## [member problems]), or null with a line in [member problems] when neither
-## exists. The answer is cached per name.
+## The bitmap font called [param name] under [constant TextureSet.FONTS_DIR]
+## of the shippable root, or null with a line in [member problems] when it is
+## missing. When the texture pack redraws texture 310 and its image is
+## accepted, [code]newfont[/code] draws a page built from it. The answer is
+## cached per name.
 func font(name: String) -> Font:
 	if _fonts.has(name):
 		return _fonts[name]
-	var path: String = shippable_root.path_join(textures.font_path(name))
+	var path: String = shippable_root.path_join(TextureSet.font_path(name))
 	var found: Font = _load(path) as Font
-	if found == null and not textures.is_retail():
-		var retail_path: String = shippable_root.path_join(TextureSet.retail().font_path(name))
-		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
-		path = retail_path
-		found = _load(path) as Font
 	if found == null:
 		problems.append("no font %s at %s" % [name, path])
+	elif name == NewfontPage.FONT_NAME and found is FontFile:
+		found = _pack_font(found as FontFile)
 	_fonts[name] = found
 	return found
 
 
-func _set_counterpart(texture: Texture2D) -> Texture2D:
-	var retail_path: String = texture.resource_path
-	var path: String = textures.counterpart_path(retail_path)
-	if path == retail_path:
-		return texture
-	var found: Texture2D = _load(path) as Texture2D
-	if found == null:
-		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
-		return texture
-	return found
+func _pack_texture(texture: Texture2D) -> Texture2D:
+	var texture_id: int = TextureSet.texture_id_of(texture.resource_path)
+	if texture_id < 0 or not textures.has_source(texture_id):
+		return null
+	var rejected := PackedStringArray()
+	var padded_size := Vector2i(texture.get_size())
+	var loaded: Texture2D = TexturePackReader.load_texture(textures.source_of(texture_id), padded_size, rejected)
+	if loaded == null:
+		_reject(texture_id, rejected)
+		return null
+	@warning_ignore("integer_division")
+	var scale: int = loaded.get_width() / padded_size.x
+	textures.accept(texture_id, scale)
+	return loaded
+
+
+func _pack_font(retail_font: FontFile) -> Font:
+	var texture_id: int = NewfontPage.TEXTURE_ID
+	if not textures.has_source(texture_id):
+		return retail_font
+	var rejected := PackedStringArray()
+	var image: Image = TexturePackReader.load_image(textures.source_of(texture_id), NewfontPage.RETAIL_SIZE, rejected)
+	if image == null:
+		_reject(texture_id, rejected)
+		return retail_font
+	return NewfontPage.font_with_page(retail_font, NewfontPage.build(image))
+
+
+func _reject(texture_id: int, reasons: PackedStringArray) -> void:
+	for reason: String in reasons:
+		var line: String = "texture pack %s: %s; drawing texture %d without the pack" % [textures.pack_name(), reason, texture_id]
+		problems.append(line)
+		push_warning(line)
+	textures.reject(texture_id)
 
 
 ## The glowing-image table at [constant EMISSIVE_IMAGES_PATH] under the

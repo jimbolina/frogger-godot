@@ -15,10 +15,11 @@ var _material_cache: Dictionary[String, ShaderMaterial] = {}
 
 
 ## Converts immutable parsed maps and texture dependencies to shared geometry
-## with normals, filtered as the scene's texture set asks unless
-## [param linear_filter] says otherwise. Each material samples its image's own
-## padded texture under Godot lights ([MapShaders]).
-func build(scene: MapSceneData, linear_filter: bool = scene.library.linear_filter()) -> MapMesh:
+## with normals, every texture filtered linearly with mipmaps when
+## [param linear_filter], otherwise only the upscaled ones
+## ([method TextureBuilder.is_upscaled]). Each material samples its image's
+## own padded texture under Godot lights ([MapShaders]).
+func build(scene: MapSceneData, linear_filter: bool = false) -> MapMesh:
 	var result := MapMesh.new()
 	result.scene = scene
 	result.linear_filter = linear_filter
@@ -208,7 +209,9 @@ func _build_sky(scene: MapSceneData, linear_filter: bool, result: MapMesh) -> Ar
 	if reference != null:
 		padding = Vector2(reference.left_padding(), reference.top_padding())
 		padded_size = Vector2(reference.padded_width, reference.padded_height)
-	var material: ShaderMaterial = MapShaders.sky_material(result.sky_tiles, linear_filter, padding, padded_size)
+	result.sky_upscaled = reference != null and result.sky_tiles.get_width() > reference.padded_width
+	var material: ShaderMaterial = MapShaders.sky_material(result.sky_tiles, linear_filter or result.sky_upscaled,
+		padding, padded_size)
 	var rotation_orders: Array[PackedInt32Array] = [PackedInt32Array([0, 1, 2, 3]),
 		PackedInt32Array([2, 0, 3, 1]), PackedInt32Array([3, 2, 1, 0]), PackedInt32Array([1, 3, 0, 2])]
 	var colour: Color = sky_colour(scene.level)

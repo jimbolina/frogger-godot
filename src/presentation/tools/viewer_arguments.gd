@@ -2,10 +2,8 @@ class_name ViewerArguments
 extends RefCounted
 ## Shared tool arguments. Callers supply user arguments, keeping tests independent of OS state.
 
-## The launch argument naming the texture set to draw.
-const TEXTURE_SET_ARGUMENT: String = "--texture-set="
-## The project setting holding the default texture set name.
-const TEXTURE_SET_SETTING: String = "frogger/textures/default_set"
+## The launch argument naming the texture pack to draw; an empty value draws none.
+const TEXTURE_PACK_ARGUMENT: String = "--texture-pack="
 ## The launch argument choosing whether the retail blob shadow effects draw beside the real shadows.
 const EFFECT_SHADOWS_ARGUMENT: String = "--effect-shadows="
 ## The project setting holding the default shadow-effect choice.
@@ -44,27 +42,23 @@ static func has_flag(arguments: PackedStringArray, flag: String) -> bool:
 	return arguments.has(flag)
 
 
-## The name of the texture set a launch asked for: [code]--texture-set=[/code]
-## in [param arguments], else the [member LauncherSettings.texture_set] the
-## setup screen chose in [code]user://launcher.cfg[/code], else the project
-## setting [code]frogger/textures/default_set[/code], else the retail set.
+## The name of the texture pack a launch draws its texture set with:
+## [code]--texture-pack=[/code] in [param arguments] (an empty value draws
+## none), else the [member LauncherSettings.texture_pack] the setup screen
+## chose in [code]user://launcher.cfg[/code], else "" for the original textures.
 static func texture_set(arguments: PackedStringArray) -> String:
 	return texture_set_from(arguments, LauncherStore.load_from().settings)
 
 
 ## [method texture_set] with the launcher settings given as [param launcher].
 static func texture_set_from(arguments: PackedStringArray, launcher: LauncherSettings) -> String:
-	var requested: String = value(arguments, TEXTURE_SET_ARGUMENT).strip_edges().to_lower()
-	if not requested.is_empty():
-		return requested
-	var chosen: String = launcher.texture_set.strip_edges().to_lower() if launcher != null else ""
-	if not chosen.is_empty():
-		return chosen
-	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
+	if has_prefix(arguments, TEXTURE_PACK_ARGUMENT):
+		return value(arguments, TEXTURE_PACK_ARGUMENT).strip_edges()
+	return launcher.texture_pack.strip_edges() if launcher != null else ""
 
 
 ## The imported assets a launch asked for: the base root [AssetLocation] resolves from
-## [param arguments] and the launcher settings, drawn in the [method texture_set] the launch names.
+## [param arguments] and the launcher settings, drawn with the texture pack [method texture_set] names.
 ## When no root is usable, the catalog's [member AssetCatalog.error] says why.
 static func open_assets(arguments: PackedStringArray) -> ImportedAssets:
 	var store: LauncherStore = LauncherStore.load_from()

@@ -16,10 +16,10 @@
 - The black-is-transparent rule was a colour key over a whole 256x256 texture
   page in the original; the per-image PNGs carry each image's own alpha.
 - Models use one clamped texture per VLO image and maps one repeating texture
-  per image, UVs in retail pixels at any texture-set scale. The retail texture
-  set samples nearest without mipmaps; the upscaled `x4` set samples through
-  the `_linear` variants with mipmaps, and 2D draws scale it back to retail
-  pixels. Filtering is a viewer option; `newfont` text is always linear
+  per image, UVs in retail pixels at any texture scale. Retail images sample
+  nearest without mipmaps; an upscaled texture-pack or lettering image samples
+  through the `_linear` variants with mipmaps, and 2D draws scale it back to
+  retail pixels ([texture packs](../assets.md#texture-packs)). Filtering is a viewer option; `newfont` text is always linear
   over its 4x page ([fonts](../assets.md#fonts)).
 - One mesh per map group, split by material. Polygons with animated textures
   get their own surfaces.
@@ -130,7 +130,7 @@ The shared world view keeps interpolation separate from the 30 Hz rules clock.
 
 HUD textures resolve by FrogLord image names from the player's GENERAL, English
 fixed-UI and level-select banks. Text draws with `draw_string` from the
-texture set's `newfont` bitmap font ([fonts](../assets.md#fonts));
+`newfont` bitmap font ([fonts](../assets.md#fonts));
 `NewfontText` fixes the cell size and baseline, so retail glyphs land where the
 hand-drawn cells did. Grey panels
 average with the background; the timer panel draws over its coloured fill. Timers, spare-life groups,

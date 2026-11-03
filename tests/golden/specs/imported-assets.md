@@ -21,13 +21,11 @@ every texture id has one size and padding in every bank that holds it.
 
 `newfont` is texture 310, 96 glyphs of ASCII 32 to 127 in square cells, 32
 to a row in three rows, with no padding: `textures/images/t0310.png` is
-256 x 24 (8-pixel cells), `textures/images_x4/t0310.png` 1024 x 96. Its
-scale S is the PNG width divided by 256, and the height must be 24 x S.
-`tools/make_font_newfont.py` writes, for each set whose PNG exists,
-`fonts/retail/` and `fonts/x4/` holding `newfont.fnt`, a BMFont v3 text file,
-and `newfont.png`, the page the font names as its only page. S must divide 4.
-The page enlarges the set's PNG 4 / S times by repeating pixels, so every
-glyph is 32 x 32, and sets each glyph inside a 4-pixel transparent border:
+256 x 24 (8-pixel cells). `tools/make_font_newfont.py` writes
+`fonts/retail/newfont.fnt`, a BMFont v3 text file, and `newfont.png`, the
+page the font names as its only page. The page enlarges the PNG 4 times by
+repeating pixels, so every glyph is 32 x 32, and sets each glyph inside a
+4-pixel transparent border:
 40 x 40 cells, 32 to a row, on a 1280 x 120 page. The two rings of
 transparent pixels around each glyph's opaque pixels, within its cell, take
 the per-channel maximum colour of their already filled 8-neighbours, ring by
@@ -49,22 +47,32 @@ generator's `--check` is the comparison (page pixels, not bytes). It writes
 nothing, prints a diff for each differing `.fnt`, names each differing or
 missing file and exits 1;
 both test wrappers run it before importing and stop with exit 2 on a
-difference. Without `images_x4/t0310.png` the x4 font is skipped. A hand
-edit of a set's `t0310.png` is carried into its font by rerunning the
-generator.
+difference. A hand edit of `t0310.png` is carried into the font by rerunning
+the generator.
 
 Each `.fnt` is imported by `font_data_bmfont` with the `importer_defaults`
 entry in `project.godot`: `compress` true, no `fallbacks` and
-`scaling_mode` 2 (fractional), so both fonts, whose fixed size is 32, draw
+`scaling_mode` 2 (fractional), so the font, whose fixed size is 32, draws
 at size 8 scaled by a quarter. Its page `newfont.png` has the `skip`
 importer. The golden checks the grid (fixed size, ascent, UV rectangles,
 glyph size, advance and offset (-4, -36)), that every glyph pixel's alpha,
 and colour where opaque, equals the source PNG pixel it repeats and every
 border pixel is transparent, the retail source's digest, and that "1 UP"
-measures 32 x 8 at size 8 in both sets. The catalog's texture set chooses the font:
-`ImportedAssets.font(name)` loads `fonts/<set>/<name>.fnt`, falls back to
-the retail set's file with a line in `problems` when the set has none, and
-returns null with a problem line when neither exists.
+measures 32 x 8 at size 8. `ImportedAssets.font(name)` loads
+`fonts/retail/<name>.fnt` and returns null with a problem line when it is
+missing.
+
+A texture pack's `t0310.png` (any whole scale S from 1 to 16 of 256 x 24)
+is drawn by a copy of the committed font whose page `NewfontPage` builds at
+runtime by the same rule: an S dividing 4 is enlarged 4 / S times by
+repeating pixels, any other S is resampled with Lanczos to 1024 x 96, then
+the borders and the two fill rings are applied. The golden writes a
+synthetic pack holding the retail `t0310.png` enlarged four times with its
+opaque pixels tinted, and checks that pack's font against the same grid,
+pixel and string-size rules, with the tinted PNG as the source. It also
+checks that `NewfontPage.build` of the retail PNG enlarged 1, 2 and 4 times
+equals the committed page pixel for pixel, so the runtime builder and the
+generator agree, and that a size that is no multiple builds nothing.
 
 ## Angular font
 
@@ -104,7 +112,8 @@ lowercase, and requires its own character list to equal the SVG names plus
 `textures/lettering/tNNNN.png` replaces the retail texture `tNNNN` wherever
 the angular face is baked into it (words in five languages, level names, HUD
 digits, the high-score pads, rank turtles and score logs). The game draws it
-in every texture set. `uv run tools/make_lettering.py` writes one PNG per row
+unless a texture pack supplies that texture itself
+([texture packs](../../../docs/reference/assets.md#texture-packs)). `uv run tools/make_lettering.py` writes one PNG per row
 of `fonts/angular/lettering.tsv`, drawn from the glyphs of
 `tools/angular_glyphs.py`. The table's columns are `id`, `name` (FrogLord's
 name or `-`), `language` (`en`, `s`, `g`, `i`, `f` or `-`), `text` (`|`
@@ -131,7 +140,7 @@ file access. It requires:
   a row;
 - each imported texture to carry mipmaps;
 - `ImportedAssets.texture_counterpart` of the retail texture to return the
-  lettering image in the retail and x4 sets, with no problems;
+  lettering image, with no problems;
 - `frogger_angular.ttf` to hold every character the table writes.
 
 The import-settings test holds the folder to mipmaps on.
@@ -205,10 +214,10 @@ overrides. They need no retail files.
 | Test | Compares |
 |---|---|
 | `test_asset_textures.gd` | Every `vlo_images.tsv` row with its bank resource's image: texture id, VRAM position, sizes, `u`, `v`, flags, blend mode and page, and that `texture` is `textures/images/tNNNN.png` with no stored pixels. Each PNG, decoded from the file and through its imported texture, is RGBA8 at the padded size with `padded_rgba_sha256`; its in-game region has `rgba_sha256`. The front-end and HUD images load from the catalog. |
-| `test_asset_fonts.gd` | For the retail and x4 catalogs, `font("newfont")` is a `FontFile` under `fonts/<set>/` with fixed size, ascent 8 x S, descent 0 and fractional fixed-size scaling; every glyph 32 to 127 has the grid rule's UV rect, size, advance and offset (0, -8S); texture image 0 is 256S x 24S RGBA8 without mipmaps and equals `textures/images[_x4]/t0310.png`, and the retail one has texture 310's `padded_rgba_sha256` from `vlo_images.tsv`; `"1 UP"` measures 32 x 8 at size 8 in both sets. The x4 catalog opens without problems, and an unknown font name gives null and a problem line. |
+| `test_asset_fonts.gd` | For the committed catalog and one drawing a synthetic texture pack with a tinted 4x `t0310.png`, `font("newfont")` is a `FontFile` (under `fonts/retail/`, or built at runtime for the pack) with fixed size 32, ascent 32, descent 0 and fractional fixed-size scaling; every glyph 32 to 127 has the grid rule's UV rect, size, advance and offset (-4, -36); texture image 0 is the 1280 x 120 RGBA8 page without mipmaps whose glyph pixels repeat the source PNG and whose borders are transparent, and the retail PNG has texture 310's `padded_rgba_sha256` from `vlo_images.tsv`; `"1 UP"` measures 32 x 8 at size 8 in both. `NewfontPage.build` rebuilds the committed page exactly from the retail PNG at scales 1, 2 and 4. The pack catalog opens without problems, and an unknown font name gives null and a problem line. |
 | `test_asset_tables.gd` | Every row of `exe_map_book`, `exe_theme_book`, `exe_forms`, `exe_remaps`, `exe_scripts`, `exe_music`, `exe_level_select`, `exe_demos` and `exe_pickups` built from the imported tables as the archive suite builds them from the executable; the high-score row counts; each table in its own file; the name lists. Every `*.DAT` entry has a demo resource, and each demo of `demos.tsv` has its duration, start square, input count and input digest. |
 | `test_asset_census.gd` | The `asset_census.txt` counts against the files present: MWI entries, map and sky-land resources, bank resources, images, texture PNGs, models by kind with incomplete models and parts, sound banks and WAVs, the demo table and the demos it names, and music tracks. |
-| `test_asset_import_settings.gd` | Every `.png`, `.wav`, `.ogg` and `.fnt` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`images_x4/` generates mipmaps). A font page `fonts/*/newfont.png` must have the `skip` importer (`FOLDER_IMPORTERS`). |
+| `test_asset_import_settings.gd` | Every `.png`, `.wav`, `.ogg` and `.fnt` under `assets/` has a sidecar from the expected importer whose `[params]` equal each key of the matching `importer_defaults` entry in `project.godot`, except the keys `FOLDER_POLICIES` sets for a folder (`textures/lettering/` generates mipmaps). A font page `fonts/*/newfont.png` must have the `skip` importer (`FOLDER_IMPORTERS`). |
 | `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
 | `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
@@ -298,15 +307,15 @@ import test. Then restore the fact and rerun.
 - **Tables and demos:** change a map id in `exe_map_book.tsv`, then a
   duration in `demos.tsv`.
 - **Import settings:** set `mipmaps/generate=true` in one `.png.import`;
-  the test must name the PNG and key. Set `mipmaps/generate=false` in one
-  `images_x4/*.png.import`; the test must name it.
+  the test must name the PNG and key.
 - **Bitmap fonts:** change one `x=` in `fonts/retail/newfont.fnt`:
   `tools/make_font_newfont.py --check` must exit 1 with a diff, and the font
   test must name the set and glyph. Set `scaling_mode=0` in
-  `fonts/x4/newfont.fnt.import`: the x4 string-size check must fail and the
+  `fonts/retail/newfont.fnt.import`: the string-size check must fail and the
   import-settings test must name the file and key. Change one digit of
   texture 310's `padded_rgba_sha256` in `vlo_images.tsv`: the retail font
-  texture check must name the font.
+  texture check must name the font. Set `NewfontPage.FILL_RINGS` to 1: the
+  runtime page check must fail at every scale.
 - **Angular font:** change one coordinate in one `svg/*.svg`:
   `tools/make_angular_font.py --check` must exit 1 naming the glyph.
   Remove one derived glyph from `derived.json` and rebuild the font: the

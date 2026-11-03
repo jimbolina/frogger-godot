@@ -22,9 +22,8 @@ extends Resource
 @export var froglord_dir: String = ""
 ## Whether the setup screen opens on every start, not only before the first import.
 @export var show_setup_on_start: bool = false
-## The texture set the game draws ([code]retail[/code] or [code]x4[/code]), or ""
-## for the project's [code]frogger/textures/default_set[/code].
-@export var texture_set: String = ""
+## The folder name of the texture pack the game draws, or "" for the original textures.
+@export var texture_pack: String = ""
 
 
 ## True when an import has been recorded.

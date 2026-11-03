@@ -16,7 +16,7 @@ states what each layer may use.
   Godot math types are allowed.
 - `src/application/` owns the adapters from data records to gameplay
   definitions and the behavior and callback catalogs. Only `loaders/`
-  (`ImportedAssets`, `FrogLordPointer`) and `storage/` (`ProgressStore`,
+  (`ImportedAssets`, `TexturePackReader`, `FrogLordPointer`) and `storage/` (`ProgressStore`,
   `HighScoreStore`, `GraphicsStore`, `LauncherStore`) may touch files or the
   environment. `setup/AssetLocation` chooses the assets root from the launch
   arguments and the read `LauncherStore` it is given, checking folders through
@@ -329,8 +329,8 @@ requires a FrogLord save to add exactly its deliberate probe
 over it with the shippable root beside it; scenes reach it through
 `GameplayScreen.asset_location` or `ViewerArguments.open_assets`, which read
 `LauncherStore` from `user://launcher.cfg` into a `LauncherSettings` record;
-`ViewerArguments.texture_set` takes the launcher's texture set when the
-launch names none.
+`ViewerArguments.texture_set` takes the launcher's texture pack when the
+launch names none ([texture packs](assets.md#texture-packs)).
 An unusable location yields a catalog whose error lists the rejected
 candidates. `MusicPlayer.folder_of` takes the music folder from the catalog's
 base root.

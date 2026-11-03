@@ -64,9 +64,9 @@ static func slots_bias(slots: int) -> float:
 
 
 ## A clamped image material with the HIT texel trim of the other sprite views,
-## filtered as [param library]'s texture set asks.
+## filtered linearly with mipmaps when the image is upscaled.
 static func textured(library: TextureLibrary, image: VloImage, blend: ModelShaders.Blend, depth_bias: float, projection_scale: Vector2) -> ShaderMaterial:
-	var material: ShaderMaterial = ModelShaders.material(library.texture_for(image), blend, library.linear_filter(), true, false)
+	var material: ShaderMaterial = ModelShaders.material(library.texture_for(image), blend, false, true, false)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
 	uv.size.y -= (1.0 / image.padded_height) if image.has_flag(VloImage.FLAG_HIT_Y) else 0.0

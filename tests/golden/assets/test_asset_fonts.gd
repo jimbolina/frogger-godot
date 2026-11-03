@@ -1,10 +1,13 @@
 extends AssetTest
-## The committed newfont bitmap fonts (assets/fonts/<set>/newfont.fnt and its
-## page newfont.png, written by tools/make_font_newfont.py) import as the glyph
+## The committed newfont bitmap font (assets/fonts/retail/newfont.fnt and its
+## page newfont.png, written by tools/make_font_newfont.py) imports as the glyph
 ## grid of texture 310: 96 glyphs of ASCII 32..127, 32 to a row, each a
-## 32-pixel glyph (the set's texture enlarged to 4 page pixels per retail
-## pixel) inside a 4-pixel transparent border, with the texture's pixels kept
-## exactly and a string measured at size 8 the same in both sets.
+## 32-pixel glyph (the texture enlarged to 4 page pixels per retail pixel)
+## inside a 4-pixel transparent border, with the texture's pixels kept exactly.
+## A texture pack's t0310.png is drawn by a font with the same grid, its page
+## built at runtime by NewfontPage, and a string measures the same in both.
+## NewfontPage rebuilds the committed page exactly from the retail texture at
+## scales 1, 2 and 4, so the runtime builder and the generator agree.
 
 const FONT: String = "newfont"
 const TEXTURE_ID: int = 310
@@ -17,17 +20,54 @@ const GLYPH: int = RETAIL_CELL * PAGE_SCALE
 const BORDER: int = PAGE_SCALE
 const STRIDE: int = GLYPH + 2 * BORDER
 
-var _x4: ImportedAssets
+const PACKS: String = "user://test_asset_fonts_packs"
+const RETAIL_PNG: String = "res://assets/textures/images/t0310.png"
+const PACK_PNG: String = PACKS + "/tinted/t0310.png"
+
+var _pack: ImportedAssets
 
 
 func before_all() -> void:
-	_x4 = ImportedAssets.open(ASSETS, TextureSet.X4)
+	_remove(PACKS)
+	assert_eq(DirAccess.make_dir_recursive_absolute(PACK_PNG.get_base_dir()), OK)
+	var config := ConfigFile.new()
+	config.set_value("pack", "name", "Tinted newfont")
+	config.set_value("pack", "base_build", catalog().version_name)
+	assert_eq(config.save(PACK_PNG.get_base_dir().path_join("pack.cfg")), OK)
+	var tinted: Image = _scaled_retail(4)
+	for y: int in tinted.get_height():
+		for x: int in tinted.get_width():
+			var pixel: Color = tinted.get_pixel(x, y)
+			if pixel.a8 != 0:
+				tinted.set_pixel(x, y, Color8(pixel.r8, pixel.g8 / 2, 255 - pixel.b8, pixel.a8))
+	assert_eq(tinted.save_png(PACK_PNG), OK)
+	_pack = ImportedAssets.open(ASSETS, "tinted", "", ASSETS, PackedStringArray([PACKS]))
+
+
+func after_all() -> void:
+	_remove(PACKS)
+
+
+func _remove(path: String) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for child: String in DirAccess.get_directories_at(path):
+		_remove(path.path_join(child))
+	for child: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(child))
+	DirAccess.remove_absolute(path)
+
+
+func _scaled_retail(scale: int) -> Image:
+	var image: Image = _png(RETAIL_PNG)
+	image.resize(image.get_width() * scale, image.get_height() * scale, Image.INTERPOLATE_NEAREST)
+	return image
 
 
 func _sets() -> Array[Dictionary]:
 	return [
-		{"name": "retail", "catalog": catalog(), "scale": 1, "png": "res://assets/textures/images/t0310.png"},
-		{"name": "x4", "catalog": _x4, "scale": 4, "png": "res://assets/textures/images_x4/t0310.png"},
+		{"name": "retail", "catalog": catalog(), "scale": 1, "png": RETAIL_PNG},
+		{"name": "pack", "catalog": _pack, "scale": 4, "png": PACK_PNG},
 	]
 
 
@@ -46,10 +86,37 @@ func _font_of(set_name: String, assets: ImportedAssets) -> FontFile:
 	return font
 
 
-func test_the_x4_catalog_opens_cleanly() -> void:
-	assert_eq(_x4.error, "")
-	assert_eq(_x4.warnings, PackedStringArray())
-	assert_eq(_x4.texture_set().set_name, TextureSet.X4)
+func test_the_pack_catalog_opens_cleanly() -> void:
+	assert_eq(_pack.error, "")
+	assert_eq(_pack.warnings, PackedStringArray())
+	assert_eq(_pack.texture_set().pack_name(), "tinted")
+	assert_true(_pack.texture_set().has_source(TEXTURE_ID))
+
+
+func test_the_runtime_page_rebuilds_the_committed_page() -> void:
+	var committed: FontFile = load("res://assets/fonts/retail/newfont.fnt") as FontFile
+	var page: Image = committed.get_texture_image(0, Vector2i(GLYPH, 0), 0)
+	page.convert(Image.FORMAT_RGBA8)
+	for scale: int in [1, 2, 4]:
+		var built: Image = NewfontPage.build(_scaled_retail(scale))
+		assert_not_null(built, "scale %d builds a page" % scale)
+		if built == null:
+			continue
+		assert_eq(built.get_size(), page.get_size(), "scale %d page size" % scale)
+		var differing: int = 0
+		for y: int in page.get_height():
+			for x: int in page.get_width():
+				if built.get_pixel(x, y) != page.get_pixel(x, y):
+					differing += 1
+		assert_eq(differing, 0, "scale %d: the runtime page matches tools/make_font_newfont.py pixel for pixel" % scale)
+	assert_null(NewfontPage.build(Image.create(300, 24, false, Image.FORMAT_RGBA8)), "a size that is no multiple builds nothing")
+
+
+func test_a_pack_without_its_own_newfont_draws_the_committed_font() -> void:
+	assert_same(_pack.font("angular"), catalog().font("angular"))
+	assert_eq(catalog().font(FONT).resource_path, "res://assets/fonts/retail/newfont.fnt")
+	assert_ne(_pack.font(FONT), catalog().font(FONT), "the pack's t0310 gives its own font")
+	assert_eq(_pack.font(FONT).resource_path, "", "built at runtime")
 
 
 func test_fonts_hold_the_glyph_grid() -> void:
@@ -60,8 +127,8 @@ func test_fonts_hold_the_glyph_grid() -> void:
 		var font: FontFile = _font_of(set_name, assets)
 		if font == null:
 			continue
-		var prefix: String = "res://assets/fonts/%s/" % set_name
-		if not font.resource_path.begins_with(prefix):
+		var prefix: String = "res://assets/fonts/retail/" if set_name == "retail" else ""
+		if not font.resource_path.begins_with(prefix) or prefix.is_empty() != font.resource_path.is_empty():
 			mismatches.append("%s: font loads from %s, not %s" % [set_name, font.resource_path, prefix])
 		var cell: int = GLYPH
 		var size := Vector2i(cell, 0)
@@ -92,7 +159,7 @@ func test_fonts_hold_the_glyph_grid() -> void:
 				mismatches.append("%s glyph %d: offset %s, expected (%d, %d)" % [set_name, code, got_offset, -BORDER, -cell - BORDER])
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)
-	assert_eq(mismatches.size(), 0, "both newfont fonts hold the %d-glyph grid" % COUNT)
+	assert_eq(mismatches.size(), 0, "the committed and pack newfont fonts hold the %d-glyph grid" % COUNT)
 
 
 func test_fonts_keep_the_texture_pixels() -> void:
@@ -153,10 +220,10 @@ func test_fonts_keep_the_texture_pixels() -> void:
 					mismatches.append("%s: %s RGBA digest differs from texture %d" % [set_name, png, TEXTURE_ID])
 	for mismatch: String in mismatches.slice(0, 10):
 		fail_test(mismatch)
-	assert_eq(mismatches.size(), 0, "both newfont fonts keep their texture's pixels")
+	assert_eq(mismatches.size(), 0, "the committed and pack newfont fonts keep their texture's pixels")
 
 
-func test_a_string_measures_the_same_in_both_sets() -> void:
+func test_a_string_measures_the_same_with_and_without_the_pack() -> void:
 	for entry: Dictionary in _sets():
 		var set_name: String = entry["name"]
 		var assets: ImportedAssets = entry["catalog"]
@@ -165,7 +232,7 @@ func test_a_string_measures_the_same_in_both_sets() -> void:
 			continue
 		var measured: Vector2 = font.get_string_size("1 UP", HORIZONTAL_ALIGNMENT_LEFT, -1, 8)
 		assert_eq(measured, Vector2(32, 8), "%s font measures \"1 UP\" at size 8" % set_name)
-	assert_eq(_x4.problems, PackedStringArray())
+	assert_eq(_pack.problems, PackedStringArray())
 
 
 func test_an_unknown_font_is_null_with_a_problem() -> void:

@@ -89,7 +89,7 @@ first run, choose the folder of your own Frogger PC game (version
 its Alcohol 120% disc image (the `.mds` file with its `.mdf` beside it). The
 game imports them into its user folder (about twenty seconds, with a progress
 bar and Cancel), then lets you choose the language, window, volumes and
-texture set and, optionally, a FrogLord save folder; Play saves the choices
+[texture pack](#texture-packs) and, optionally, a FrogLord save folder; Play saves the choices
 and opens the main menu. Later starts go straight to the menu. Hold Shift while
 the game starts, or start it with `-- --setup`, to open the setup again, for
 example `godot --path . -- --setup`; the last page can also make it open every
@@ -224,18 +224,15 @@ about 180 MB on disk. The test wrapper refuses to run while any asset is still
 an LFS pointer. The assets are the source of truth and are edited directly;
 hand-edited assets get reviewed golden overrides. See [assets](docs/reference/assets.md).
 
-`assets/textures/images_x4/` holds every texture upscaled four times. Play
-from it with `--texture-set=x4` after `--`, for example
-`tools/play.sh --level=ORG1 --texture-set=x4`; the default is the retail set.
 The game draws on Godot's Forward+ renderer (Metal on Apple Silicon, Vulkan
 or Direct3D 12 on Windows, Vulkan on Linux) with scene lights and real
 shadows from the map light records, lit model materials and lit terrain; see
 [lighting](docs/reference/rendering/lighting.md). On another renderer it
 still runs and logs a warning that shadows and lighting differ.
 `--shadows=off` compares without real shadows, and `--effect-shadows=retail`
-keeps the original's blob shadows beside them. In-game text draws with the bitmap fonts under
-`assets/fonts/`, one per texture set, generated from the `newfont` glyph
-texture by `tools/make_font_newfont.py`.
+keeps the original's blob shadows beside them. In-game text draws with the bitmap font under
+`assets/fonts/retail/`, generated from the `newfont` glyph texture by
+`tools/make_font_newfont.py`.
 
 The importer and the retail readers live in `archive/`, which the game never
 loads. `archive/import/import_assets.sh --data-dir=<game-folder> --disc=<FROGGER.mds>`
@@ -252,6 +249,26 @@ To edit a level while it runs, start `archive/import/froglord_watch.sh --data-di
 in one terminal and `tools/play.sh --level=ORG1 --froglord` in another; each
 save in FrogLord is imported and the level reopens with the edit. `F5` reloads
 on demand. Textures and sounds need a full import and a relaunch.
+
+### Texture packs
+
+A texture pack swaps some or all of the game's textures for redrawn,
+higher-resolution images. To install one, copy its folder (the one holding
+`pack.cfg`) into `texture_packs` in the game's user folder:
+
+- macOS: `~/Library/Application Support/Godot/app_userdata/Frogger/texture_packs/`
+- Windows: `%APPDATA%\Godot\app_userdata\Frogger\texture_packs\`
+- Linux: `~/.local/share/godot/app_userdata/Frogger/texture_packs/`
+
+An exported game also finds packs in a `texture_packs` folder beside its
+executable. Choose the pack on the setup screen's settings page (hold Shift
+at start, or start with `-- --setup`); "None (original textures)" turns it
+off. For one launch, `--texture-pack=<folder name>` after `--` picks a pack
+and `--texture-pack=` draws none, for example
+`tools/play.sh --level=ORG1 --texture-pack=crisp`. Textures a pack leaves
+out keep their original look, and an image of the wrong size is skipped with
+a note in the log. To make a pack, see
+[texture packs](docs/reference/assets.md#texture-packs).
 
 ### Sandbox
 

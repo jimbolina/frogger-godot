@@ -3,9 +3,10 @@ extends RefCounted
 ## Reads [VloImage]s' textures back as images and maps the in-game region.
 ##
 ## Each game texture holds the whole stored image including its padding: the
-## record's own [member VloImage.texture], or its counterpart in another
-## [TextureSet], which keeps the layout at a whole multiple of the padded
-## size. Filtering and mipmaps are chosen by the texture set. [method uv_rect]
+## record's own [member VloImage.texture], or the image a catalog draws in its
+## place (a texture pack's or a lettering image), which keeps the layout at a
+## whole multiple of the padded size. An upscaled texture
+## ([method is_upscaled]) samples linearly with mipmaps. [method uv_rect]
 ## says where the in-game image sits inside it, for mapping game UVs;
 ## [method texture_rect] says the same in a given texture's pixels, and 2D
 ## draws crop that region and draw it at the record's retail size. A
@@ -80,6 +81,13 @@ static func texture_scale(image: VloImage, texture: Texture2D) -> Vector2:
 	if texture == null:
 		return Vector2.ONE
 	return Vector2(texture.get_size()) / Vector2(image.padded_width, image.padded_height)
+
+
+## True when [param texture] is larger than [param image]'s padded size: a
+## texture pack's image at a scale above 1 or a lettering image, drawn with
+## linear filtering and mipmaps. False for null or a record without a size.
+static func is_upscaled(image: VloImage, texture: Texture2D) -> bool:
+	return texture != null and image != null and image.padded_width > 0 and texture.get_width() > image.padded_width
 
 
 ## The in-game region inside [param texture], a whole padded texture of

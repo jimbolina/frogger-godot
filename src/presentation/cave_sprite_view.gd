@@ -263,7 +263,7 @@ func _image_for_id(scene: MapSceneData, identity: int) -> VloImage:
 	return image
 
 func _sprite(scene: MapSceneData, image: VloImage, blend: ModelShaders.Blend, depth_bias: float) -> Sprite:
-	var material: ShaderMaterial = ModelShaders.material(scene.library.texture_for(image), blend, scene.library.linear_filter(), true, false)
+	var material: ShaderMaterial = ModelShaders.material(scene.library.texture_for(image), blend, false, true, false)
 	var uv: Rect2 = TextureBuilder.uv_rect(image)
 	uv.size.x -= (1.0 / image.padded_width) if image.has_flag(VloImage.FLAG_HIT_X) else 0.0
 	uv.size.y -= (1.0 / image.padded_height) if image.has_flag(VloImage.FLAG_HIT_Y) else 0.0

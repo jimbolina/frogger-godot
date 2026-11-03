@@ -13,12 +13,13 @@ extends RefCounted
 ## local number into a global id ([method image_for_local]). Tables that point
 ## at texture records directly go through [BmpPointers] ([method image_for_pointer]).
 ## Each image brings its own [member VloImage.texture]; a [member catalog]
-## that chose another [TextureSet] answers [method texture_for] with that
-## set's counterpart instead. A lettering image comes wrapped in a
-## [CanvasTexture] that filters linearly with mipmaps, so a 2D node that draws
-## pixel art with nearest filtering still shrinks the lettering smoothly; 3D
+## answers [method texture_for] with the texture it draws in its place, such
+## as a texture pack's image or a lettering image. A texture larger than its
+## record's padded size ([method TextureBuilder.is_upscaled]) comes wrapped
+## in a [CanvasTexture] that filters linearly with mipmaps, so a 2D node that
+## draws pixel art with nearest filtering still shrinks it smoothly, and 3D
 ## materials draw its [member CanvasTexture.diffuse_texture]
-## ([method TextureBuilder.source_texture]).
+## ([method TextureBuilder.source_texture]) with the linear shader variants.
 
 ## The catalog whose texture set the textures come from, or null for the
 ## records' own textures.
@@ -26,7 +27,7 @@ var catalog: AssetCatalog
 var _banks: Array[VloFile] = []
 var _bank_names: PackedStringArray = PackedStringArray()
 var _by_texture_id: Dictionary[int, VloImage] = {}
-var _lettering: Dictionary[Texture2D, CanvasTexture] = {}
+var _wrapped: Dictionary[Texture2D, CanvasTexture] = {}
 
 
 ## Adds [param bank] (called [param bank_name], e.g. "SUB_VRAM.VLO"); its
@@ -81,31 +82,21 @@ func image_for_pointer(pointers: BmpPointers, pointer: int, preferred: VloFile =
 	return image_for_id(texture_id, preferred) if texture_id >= 0 else null
 
 
-## The Godot texture of [param image] in the catalog's texture set (its
-## [member VloImage.texture] without a catalog), or null. A lettering image
+## The Godot texture the catalog draws for [param image] (its
+## [member VloImage.texture] without a catalog), or null. An upscaled texture
 ## comes as one linear, mipmapped [CanvasTexture] over it.
 func texture_for(image: VloImage) -> Texture2D:
 	if image == null:
 		return null
 	var found: Texture2D = catalog.texture_of(image) if catalog != null else image.texture
-	if found == null or not TextureSet.is_lettering_path(found.resource_path):
+	if not TextureBuilder.is_upscaled(image, found):
 		return found
-	if not _lettering.has(found):
+	if not _wrapped.has(found):
 		var wrapped := CanvasTexture.new()
 		wrapped.diffuse_texture = found
 		wrapped.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-		_lettering[found] = wrapped
-	return _lettering[found]
-
-
-## The texture set the textures come from.
-func texture_set() -> TextureSet:
-	return catalog.texture_set() if catalog != null else TextureSet.retail()
-
-
-## True when the texture set samples with linear filtering and mipmaps in 3D.
-func linear_filter() -> bool:
-	return texture_set().linear_filter()
+		_wrapped[found] = wrapped
+	return _wrapped[found]
 
 
 ## The Godot texture for global [param texture_id], or null.

@@ -3,7 +3,7 @@ extends AssetTest
 ## tools/make_lettering.py from assets/fonts/angular/lettering.tsv) replace
 ## their retail textures: every table row has one PNG at exactly eight times
 ## the retail padded size recorded in vlo_images.tsv, imported with mipmaps,
-## that the catalog draws for the retail texture in the retail and x4 sets;
+## that the catalog draws for the retail texture without a texture pack;
 ## no PNG lacks a row, and the angular font holds every character the table
 ## writes. The tables are read with Godot's own file access, independent of
 ## the generator; the pixels themselves are the generator's --check.
@@ -100,10 +100,8 @@ func test_lettering_images_import_with_mipmaps() -> void:
 	_report(mismatches, "%d lettering textures carry mipmaps" % rows.size())
 
 
-func test_both_texture_sets_draw_the_lettering() -> void:
-	var catalogs: Array[ImportedAssets] = [
-		ImportedAssets.open(ASSETS, TextureSet.RETAIL), ImportedAssets.open(ASSETS, TextureSet.X4)]
-	assert_eq(catalogs[1].texture_set().scale, 4, "the x4 set is installed")
+func test_the_catalog_draws_the_lettering() -> void:
+	var catalogs: Array[ImportedAssets] = [ImportedAssets.open(ASSETS)]
 	var mismatches := PackedStringArray()
 	var rows: Array[PackedStringArray] = _rows()
 	for row: PackedStringArray in rows:
@@ -117,11 +115,10 @@ func test_both_texture_sets_draw_the_lettering() -> void:
 			var drawn: Texture2D = assets.texture_counterpart(retail)
 			var got: String = drawn.resource_path if drawn != null else "null"
 			if got != wanted:
-				mismatches.append("t%04d: the %s set draws %s, not %s"
-					% [texture_id, assets.texture_set().set_name, got, wanted])
+				mismatches.append("t%04d: the catalog draws %s, not %s" % [texture_id, got, wanted])
 	for assets: ImportedAssets in catalogs:
-		assert_eq(assets.problems, PackedStringArray(), "%s set problems" % assets.texture_set().set_name)
-	_report(mismatches, "%d lettering images replace their retail textures in both sets" % rows.size())
+		assert_eq(assets.problems, PackedStringArray(), "catalog problems")
+	_report(mismatches, "%d lettering images replace their retail textures" % rows.size())
 
 
 func test_the_font_holds_every_character_of_the_table() -> void:

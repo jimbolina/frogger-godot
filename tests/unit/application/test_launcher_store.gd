@@ -1,8 +1,10 @@
 extends GutTest
 ## LauncherStore round trips every launcher setting, gives the defaults for a
-## missing file without an error, reads a version-1 file with the texture set
-## defaulted, falls back to the defaults with an error for an unknown version
-## or a value of the wrong type, and reads the archive's remembered folder.
+## missing file without an error, reads a version-1 file with no texture pack,
+## drops a version-2 file's texture set (retail or the removed x4) so the
+## original textures draw, falls back to the defaults with an error for an
+## unknown version or a value of the wrong type, and reads the archive's
+## remembered folder.
 
 const ROOT: String = "user://test_launcher_store"
 
@@ -43,7 +45,7 @@ func _sample() -> LauncherSettings:
 	settings.froglord_enabled = true
 	settings.froglord_dir = "/Games/FrogLord"
 	settings.show_setup_on_start = true
-	settings.texture_set = "x4"
+	settings.texture_pack = "Crisp Frogs"
 	return settings
 
 
@@ -55,7 +57,7 @@ func test_a_missing_file_gives_the_defaults_without_an_error() -> void:
 	assert_false(store.settings.has_import())
 	assert_false(store.settings.froglord_enabled)
 	assert_false(store.settings.show_setup_on_start)
-	assert_eq(store.settings.texture_set, "")
+	assert_eq(store.settings.texture_pack, "")
 	assert_eq(store.read_version, 0)
 
 
@@ -111,13 +113,31 @@ func test_a_version_1_file_is_migrated() -> void:
 	assert_eq(store.settings.game_data_dir, "/Games/Frogger")
 	assert_eq(store.settings.imported_root, "user://assets/0123456789abcdef")
 	assert_true(store.settings.froglord_enabled)
-	assert_eq(store.settings.texture_set, "", "version 1 had no texture set, so the project default stands")
+	assert_eq(store.settings.texture_pack, "", "version 1 had no texture set, so no pack is drawn")
 	assert_eq(LauncherStore.save(store.settings, _path), "")
 	var saved: LauncherStore = LauncherStore.load_from(_path)
 	assert_eq(saved.read_version, LauncherStore.FORMAT_VERSION, "the next save writes the current version")
 	assert_eq(saved.settings.fingerprint, "0123456789abcdef")
 	_write_text("[meta]\nformat_version=0\n")
 	assert_string_contains(LauncherStore.load_from(_path).error, "format version 0")
+
+
+func test_a_version_2_texture_set_is_dropped() -> void:
+	for texture_set: String in ["x4", "retail", ""]:
+		_write_text("[meta]\nformat_version=2\n[import]\nimported_root=\"user://assets/0123456789abcdef\"\n"
+			+ "[textures]\ntexture_set=\"%s\"\n" % texture_set)
+		var store: LauncherStore = LauncherStore.load_from(_path)
+		assert_eq(store.error, "", texture_set)
+		assert_eq(store.read_version, 2)
+		assert_eq(store.settings.texture_pack, "", "%s names no texture pack" % texture_set)
+		assert_eq(store.settings.imported_root, "user://assets/0123456789abcdef")
+		assert_eq(LauncherStore.save(store.settings, _path), "")
+		var file := ConfigFile.new()
+		assert_eq(file.load(_path), OK)
+		var version: int = file.get_value("meta", "format_version")
+		assert_eq(version, 3)
+		assert_false(file.has_section_key("textures", "texture_set"), "the next save drops the old key")
+		assert_true(file.has_section_key("textures", "texture_pack"))
 
 
 func test_the_archive_remembered_folder_is_read_without_the_archive() -> void:

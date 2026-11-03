@@ -2,11 +2,6 @@ extends GutTest
 ## Turning models into Godot meshes: positions, corner order, texture
 ## coordinates, surfaces and shaders. Needs no game files.
 
-class UpscaledCatalog extends AssetCatalog:
-	func texture_set() -> TextureSet:
-		return TextureSet.x4()
-
-
 func _bank(flags: int = 0, blend_mode: int = 0) -> VloFile:
 	var pixels: Array[int] = []
 	for _i: int in 10 * 6:
@@ -114,12 +109,27 @@ func test_parts_stay_apart_and_empty_ones_have_no_mesh() -> void:
 	assert_false(built.is_empty())
 
 
-func test_filtering_starts_as_the_library_texture_set_asks() -> void:
+func test_only_upscaled_textures_filter_linearly_unless_asked() -> void:
 	var library := TextureLibrary.new()
 	assert_false(ModelMeshBuilder.new(library).linear_filter)
 	assert_false(ModelMeshBuilder.new(null).linear_filter)
-	library.catalog = UpscaledCatalog.new()
-	assert_true(ModelMeshBuilder.new(library).linear_filter)
+	var bank: VloFile = _bank()
+	library.add_bank(bank, "bank")
+	var file: MofFile = SyntheticMof.static_file([SyntheticMof.square(MofPolygonType.FT4, Color8(128, 128, 128), 7)])
+	var retail := ModelMeshBuilder.new(library, bank).build(file.static_models[0]).part_meshes[0].surface_get_material(0) as ShaderMaterial
+	assert_string_contains(retail.shader.code, "filter_nearest")
+	library.catalog = ScaledTextureCatalog.new()
+	var builder := ModelMeshBuilder.new(library, bank)
+	assert_false(builder.linear_filter, "the builder no longer follows a set-wide choice")
+	var upscaled := builder.build(file.static_models[0]).part_meshes[0].surface_get_material(0) as ShaderMaterial
+	assert_string_contains(upscaled.shader.code, "filter_linear_mipmap")
+	var drawn: Texture2D = upscaled.get_shader_parameter("image")
+	assert_eq(drawn.get_size(), Vector2(40, 24), "the material draws the upscaled image itself")
+	library.catalog = null
+	builder = ModelMeshBuilder.new(library, bank)
+	builder.linear_filter = true
+	var chosen := builder.build(file.static_models[0]).part_meshes[0].surface_get_material(0) as ShaderMaterial
+	assert_string_contains(chosen.shader.code, "filter_linear_mipmap", "asking filters retail textures linearly too")
 
 
 func test_shader_choices() -> void:

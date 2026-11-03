@@ -6,9 +6,9 @@ extends RefCounted
 ##
 ## A committed mesh is the shared loaded resource, so every caller asking for
 ## the same model gets the same [ModelMesh] and the same materials. When the
-## catalog draws from an upscaled [TextureSet], or a retail-set mesh draws a
-## lettering image, the shared mesh is one converted [ModelMeshCopy] per model
-## and set, kept here.
+## catalog draws another texture for any of the mesh's images (a texture
+## pack's or a lettering image), the shared mesh is one converted
+## [ModelMeshCopy] per model and [TextureSet], kept here.
 
 ## The file of each model's mesh inside its folder under [code]models/[/code].
 const MESH_FILE: String = "mesh.res"
@@ -51,16 +51,14 @@ static func mesh_for(catalog: AssetCatalog, resource_id: int, library: TextureLi
 
 
 static func _for_drawing(loaded: ModelMesh, path: String, imported: ImportedAssets) -> ModelMesh:
-	var set: TextureSet = imported.texture_set()
-	var key: String = "%s|%s" % [path, set.set_name]
+	var key: String = "%s|%s" % [path, imported.texture_set().key()]
 	if not _converted.has(key):
-		var converts: bool = not set.is_retail() or _draws_lettering(loaded, imported)
-		_converted[key] = ModelMeshCopy.of(loaded, imported) if converts else null
+		_converted[key] = ModelMeshCopy.of(loaded, imported) if _draws_replacement(loaded, imported) else null
 	var converted: ModelMesh = _converted[key]
 	return converted if converted != null else loaded
 
 
-static func _draws_lettering(mesh: ModelMesh, imported: ImportedAssets) -> bool:
+static func _draws_replacement(mesh: ModelMesh, imported: ImportedAssets) -> bool:
 	var materials: Array[ShaderMaterial] = []
 	for part: ArrayMesh in mesh.part_meshes:
 		_add_materials(part, materials)
