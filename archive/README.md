@@ -1,14 +1,18 @@
 # Archive: retail readers, importer and retail goldens
 
 Everything here reads the owner's retail Frogger files or verifies that
-reading. The game never depends on it: the architecture check rejects any
-script, scene or resource under `src/`, `scenes/`, `assets/`, `tests/` or
-`tools/` that references `res://archive/`.
+reading. The game depends on it in one place only: the setup screen's
+`AssetImporterFactory` (`src/application/setup/asset_importer_factory.gd`)
+loads `import/runtime_import.gd`, which implements the `AssetImporter`
+interface ([runtime import](#runtime-import)). The architecture check allows
+that one dependency and rejects any other script, scene or resource under
+`src/`, `scenes/`, `assets/`, `tests/` or `tools/` that references
+`res://archive/`.
 
 | Path | What |
 |---|---|
 | `source/` | The readers that decode `FROGGER.EXE` and `FROGPSX.MWD` into the `src/data` records (`io/`, `config/`, `source/`, `formats/`, `exe/`, `sound/`), and `GameData`, the retail-backed `AssetCatalog`. |
-| `import/` | The importer: `import_assets.sh` runs the raw and resource phases of `import_assets.gd` with Godot's import between them and `encode_music.sh` for the CD tracks; `ImportRun` runs the steps of one phase; `steps/` holds one step per asset kind; `ImportContext` fixes the path conventions. It reads the retail files or FrogLord's `modded_FROGGER.EXE` and `modded_FROGPSX.MWD` when their trailer names `pc-retail-v3.0e`. |
+| `import/` | The importer: `import_assets.sh` runs the raw and resource phases of `import_assets.gd` with Godot's import between them and `encode_music.sh` for the CD tracks; `RuntimeImport` runs both phases in-process without the editor import; `ImportRun` runs the steps of one phase; `steps/` holds one step per asset kind; `ImportContext` fixes the path conventions; `disc_tracks.tsv` holds the disc's audio-track facts the music step checks. It reads the retail files or FrogLord's `modded_FROGGER.EXE` and `modded_FROGPSX.MWD` when their trailer names `pc-retail-v3.0e`. |
 | `tests/golden/` | The archive suite's retail goldens (`test_retail_*.gd`), comparing decoded values with `tests/golden/pc-retail-v3.0e/`. |
 | `tests/unit/` | Reader unit tests and the synthetic byte builders. |
 | `tests/support/` | `RetailTest`, the base class that opens `FROGGER_DATA_DIR`. |
@@ -55,3 +59,37 @@ A complete run without a fallback root prints `import: note stale <path>` for
 every file under `textures/banks`, `textures/images`, `maps`, `demos`,
 `tables`, `models` and `audio/sfx` that it neither wrote nor found unchanged;
 it deletes nothing. Godot's `.import` files are not listed.
+
+## Runtime import
+
+A packaged build ships no retail content, and Godot's editor import (the
+`--import` step, `.import` sidecars and `.godot/imported`) does not exist in
+it. `RuntimeImport` (`import/runtime_import.gd`) imports the player's copy
+into `user://assets/<fingerprint>/` in one in-process pass of every step in
+`ImportContext.runtime` mode, which writes the
+[runtime layout](../docs/reference/assets.md#runtime-import): textures,
+sound effects and music as resources Godot loads directly. Music is read
+from the `.mds`/`.mdf` image only when one is given, each track checked
+against `import/disc_tracks.tsv`; without a disc the run notes that it has
+no music and still succeeds. No `oggenc` is involved.
+
+The run writes into `<root>.partial`. Every saved resource takes over its
+path under the final root, so references and the index name that root, and
+the folder is renamed to it only when the run had no problems; an earlier
+root is moved to `<root>.old` and removed after the rename. A failed or
+cancelled run removes its folder. Steps touch no scene tree, and textures
+are saved as `PortableCompressedTexture2D` because an `ImageTexture` reads
+its pixels back from the RenderingServer when saved. Saving meshes and
+shader materials still queries the RenderingServer: a headless run on a
+worker thread stalls at the first model mesh that embeds shader materials,
+even with the main loop iterating, so the archive suite runs the import on
+the main thread.
+
+`AssetImporter.run` reports progress as a fraction and a label and checks
+its cancel callable between items; `detect` reports the build, the
+fingerprint and a summary. `import/disc_tracks.tsv` is read with
+`FileAccess`, so an export preset must include `*.tsv` under
+`archive/import/`. The editor-import path stays the default for the committed
+`assets/`. The archive suite's `test_retail_runtime_import` compares a
+runtime import with them
+([runtime import golden](../tests/golden/specs/imported-assets.md#runtime-import)).

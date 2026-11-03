@@ -1,11 +1,12 @@
 extends AssetTest
 ## Every audio track of the disc is an Ogg Vorbis file under assets/audio/music
-## as long as disc_tracks.tsv says (Vorbis is lossy, so only the length is
-## checked), and every track the executable's music list plays is present.
+## without a baked loop, one per track asset_census.txt counts, and every
+## track the executable's music list plays is present. The archive suite's
+## test_retail_disc_tracks.gd checks their lengths against the importer's
+## disc_tracks.tsv.
 
-const FAMILY: String = "disc_tracks"
-const RATE: float = 44100.0
-const TOLERANCE: float = 0.001
+## The first audio track; track 1 is the data track.
+const FIRST_TRACK: int = 2
 
 
 ## The committed Ogg of disc track [param track].
@@ -13,24 +14,19 @@ static func ogg_path(track: int) -> String:
 	return "%s/audio/music/track_%02d.ogg" % [ASSETS, track]
 
 
-func test_every_disc_track_is_an_ogg_of_its_length() -> void:
-	var rows: Array[PackedStringArray] = fact_rows("disc_tracks.tsv")
-	assert_eq(rows.size(), 31)
+func test_every_disc_track_is_an_unlooped_ogg() -> void:
+	var count: int = int(fact_values("asset_census.txt")["disc_audio_tracks"])
+	assert_eq(count, 31)
 	var failures := PackedStringArray()
-	for row: PackedStringArray in rows:
-		var path: String = ogg_path(int(row[0]))
-		var asset: String = path.trim_prefix("res://")
+	for track: int in range(FIRST_TRACK, FIRST_TRACK + count):
+		var path: String = ogg_path(track)
 		var stream: AudioStreamOggVorbis = load(path) as AudioStreamOggVorbis if ResourceLoader.exists(path) else null
 		if stream == null:
-			failures.append("%s does not load" % asset)
-			continue
-		var seconds: float = float(int(expected(asset, FAMILY, "frames", row[4]))) / RATE
-		if absf(stream.get_length() - seconds) > TOLERANCE:
-			failures.append("%s lasts %.4f s, not %.4f" % [asset, stream.get_length(), seconds])
-		if stream.loop:
-			failures.append("%s has a baked loop" % asset)
+			failures.append("%s does not load" % path.trim_prefix("res://"))
+		elif stream.loop:
+			failures.append("%s has a baked loop" % path.trim_prefix("res://"))
 	assert_eq(failures, PackedStringArray())
-	assert_eq(files_under(ASSETS.path_join("audio/music"), ".ogg").size(), rows.size(), "one Ogg per track")
+	assert_eq(files_under(ASSETS.path_join("audio/music"), ".ogg").size(), count, "one Ogg per track")
 
 
 func test_every_music_list_track_is_present() -> void:

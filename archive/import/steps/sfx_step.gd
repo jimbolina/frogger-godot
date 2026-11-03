@@ -3,9 +3,11 @@ extends ImportStep
 ##
 ## The raw phase writes one mono 16-bit 11,025 Hz WAV per present row of each
 ## bank the executable's sound tables name (unsigned 8-bit rows are widened as
-## [method SoundBankPcm.to_signed_16] does). The resources phase saves the
-## bank's header rows with each present row's [member SoundBankEntry.stream]
-## pointing at its imported WAV; the resource holds no PCM.
+## [method SoundBankPcm.to_signed_16] does); a runtime run saves the
+## [AudioStreamWAV] Godot's import makes of that WAV instead (16-bit, mono,
+## no loop). The resources phase saves the bank's header rows with each
+## present row's [member SoundBankEntry.stream] pointing at its loaded sound;
+## the resource holds no PCM.
 
 const MIX_RATE: int = 11025
 
@@ -23,7 +25,11 @@ func run(context: ImportContext, phase: String) -> void:
 	if not tables.error.is_empty():
 		context.report("sound tables: %s" % tables.error)
 		return
-	for bank: Vector2i in tables.banks:
+	for at: int in tables.banks.size():
+		if context.is_cancelled():
+			return
+		context.advance(at, tables.banks.size())
+		var bank: Vector2i = tables.banks[at]
 		if bank.x < 0 or bank.y < 0:
 			continue
 		var bank_name: String = context.entry_name(bank.y)
@@ -64,6 +70,18 @@ static func wav_bytes(pcm: PackedByteArray, rate: int) -> PackedByteArray:
 	return bytes
 
 
+## The [AudioStreamWAV] the editor import makes of [method wav_bytes] for
+## [param pcm] at [param rate]: 16-bit mono, no loop.
+static func wav_stream(pcm: PackedByteArray, rate: int) -> AudioStreamWAV:
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = rate
+	stream.stereo = false
+	stream.loop_mode = AudioStreamWAV.LOOP_DISABLED
+	stream.data = pcm
+	return stream
+
+
 func _sample_name(context: ImportContext, sound_id: int) -> String:
 	var names: NameBank = context.data.names.sounds
 	return names.name_of(sound_id) if names != null and names.has_name(sound_id) else ""
@@ -78,7 +96,10 @@ func _write_samples(context: ImportContext, bank_name: String, header: SoundBank
 			context.report("sound bank %s: %s" % [bank_name, pcm.error])
 			continue
 		var path: String = context.sfx_path(bank_name, entry.sound_id, _sample_name(context, entry.sound_id))
-		context.write_if_changed(path, wav_bytes(pcm.to_signed_16(), MIX_RATE))
+		if context.runtime:
+			context.save_resource(wav_stream(pcm.to_signed_16(), MIX_RATE), path)
+		else:
+			context.write_if_changed(path, wav_bytes(pcm.to_signed_16(), MIX_RATE))
 
 
 func _save_bank(context: ImportContext, bank_name: String, header: SoundBankHeader) -> void:
@@ -90,7 +111,7 @@ func _save_bank(context: ImportContext, bank_name: String, header: SoundBankHead
 		if not entry.audio_present:
 			continue
 		var path: String = context.sfx_path(bank_name, entry.sound_id, sample_name)
-		var stream: AudioStreamWAV = load(path) as AudioStreamWAV
+		var stream: AudioStreamWAV = context.load_written(path) as AudioStreamWAV
 		if stream == null:
 			context.report("sound bank %s: %s did not import" % [bank_name, path])
 			continue

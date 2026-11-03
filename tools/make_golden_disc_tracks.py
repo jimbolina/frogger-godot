@@ -8,7 +8,8 @@ the last ending at the .mdf's size. Each audio track's raw sectors (signed
 16-bit little-endian stereo at 44100 Hz) are streamed from the .mdf, never
 loaded whole, and described by frame count, seconds and SHA-256. The music
 column lists the levels whose entry in the executable's music table plays
-the track.
+the track. The facts live with the importer, which checks every decoded
+track against them: archive/import/disc_tracks.tsv.
 
 Usage:
     python3 tools/make_golden_disc_tracks.py [--data-dir DIR] [--disc FILE.mds] [--output FILE] [--check]
@@ -22,7 +23,7 @@ import time
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from imported_assets_common import Archive, arguments, finish, tsv
+from imported_assets_common import ROOT, Archive, arguments, finish, tsv
 from make_golden_exe_tables import LEVEL_CODES, MUSIC_TRACKS, read_music
 
 SECTOR = 2352
@@ -30,6 +31,7 @@ FRAME_BYTES = 4
 RATE = 44100
 MODE_DATA, MODE_AUDIO = 0xEC, 0xA9
 CHUNK = 8 * 1024 * 1024
+FACTS_DIR = os.path.join(ROOT, "archive", "import")
 
 
 def parse_mds(table):
@@ -87,7 +89,7 @@ def extra_options(parser):
 
 
 def main():
-    args = arguments(__doc__, "disc_tracks.tsv", extra_options)
+    args = arguments(__doc__, "disc_tracks.tsv", extra_options, FACTS_DIR)
     if not args.disc:
         sys.exit("no disc image: pass --disc or set FROGGER_DISC")
     started = time.time()

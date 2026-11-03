@@ -16,7 +16,8 @@ extends ImportStep
 ##   part's [code]transform[/code] once per game frame (30 a second). It is a
 ##   preview only: the game samples [MofAnimated] itself.
 ## [br]A model is built with every texture bank, its WAD's bank first, every
-## image's texture being its imported PNG. An ordinary textured surface uses the
+## image's texture being its loaded image file
+## ([method ImportContext.texture_image_path]). An ordinary textured surface uses the
 ## shared material at [method ImportContext.material_path]; untextured
 ## surfaces share one material inside the mesh, and texture-animation surfaces
 ## keep their own original and frame materials there.
@@ -39,7 +40,12 @@ func run(context: ImportContext, phase: String) -> void:
 	var library: TextureLibrary = imported_library(context)
 	var materials: Dictionary[String, ShaderMaterial] = {}
 	var folders: Dictionary[String, int] = {}
-	for entry: MwiEntry in context.data.model_entries():
+	var entries: Array[MwiEntry] = context.data.model_entries()
+	for at: int in entries.size():
+		if context.is_cancelled():
+			return
+		context.advance(at, entries.size())
+		var entry: MwiEntry = entries[at]
 		var model_name: String = context.entry_name(entry.index)
 		if folders.has(model_name):
 			context.report("models: %s names resources %d and %d" % [model_name, folders[model_name], entry.index])
@@ -57,7 +63,7 @@ func run(context: ImportContext, phase: String) -> void:
 
 ## Every texture bank of the archive by MWI display name without extension
 ## ([member ImportContext.banks]), each image's [member VloImage.texture] set
-## to its imported PNG. Banks the textures step left there are reused.
+## to its loaded image file. Banks the textures step left there are reused.
 static func imported_banks(context: ImportContext) -> Dictionary[String, VloFile]:
 	for entry: MwiEntry in context.data.texture_bank_entries():
 		var bank_name: String = context.entry_name(entry.index)
@@ -70,10 +76,10 @@ static func imported_banks(context: ImportContext) -> Dictionary[String, VloFile
 				continue
 			context.banks[bank_name] = bank
 		for image: VloImage in bank.images:
-			var path: String = context.texture_png_path(image.texture_id)
-			if image.texture != null and image.texture.resource_path == path:
+			var path: String = context.texture_image_path(image.texture_id)
+			if image.texture != null and image.texture.resource_path == context.published_path(path):
 				continue
-			image.texture = load(path) as Texture2D if ResourceLoader.exists(path) else null
+			image.texture = context.load_written(path) as Texture2D
 			if image.texture == null:
 				context.report("models: texture %d of %s is not imported at %s" % [image.texture_id, bank_name, path])
 	return context.banks
@@ -167,7 +173,7 @@ static func _shared_material(context: ImportContext, model_name: String, key: St
 		return materials[path]
 	var image: Variant = built.get_shader_parameter("image")
 	var texture: Texture2D = image if image is Texture2D else null
-	if texture == null or texture.resource_path != context.texture_png_path(texture_id):
+	if texture == null or texture.resource_path != context.published_path(context.texture_image_path(texture_id)):
 		context.report("models: %s surface %s does not use the imported texture" % [model_name, key])
 		return null
 	built.resource_name = path.get_file().get_basename()

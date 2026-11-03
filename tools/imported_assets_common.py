@@ -34,13 +34,13 @@ def multiset_digest(digests):
     return list_digest(sorted(digests))
 
 
-def arguments(description, output_name, extra=None):
-    """Parses --data-dir, --output and --check, plus any options added by extra(parser)."""
+def arguments(description, output_name, extra=None, output_dir=FACTS_DIR):
+    """Parses --data-dir, --output (default output_name in output_dir) and --check, plus any options added by extra(parser)."""
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--data-dir", default=os.environ.get("FROGGER_DATA_DIR", ""),
                         help="folder with FROGGER.EXE and FROGPSX.MWD (default: $FROGGER_DATA_DIR)")
-    parser.add_argument("--output", default=os.path.join(FACTS_DIR, output_name),
-                        help="file to write (default: tests/golden/pc-retail-v3.0e/%s)" % output_name)
+    parser.add_argument("--output", default=os.path.join(output_dir, output_name),
+                        help="file to write (default: %s)" % os.path.relpath(os.path.join(output_dir, output_name), ROOT))
     parser.add_argument("--check", action="store_true", help="compare with --output instead of writing it")
     if extra is not None:
         extra(parser)

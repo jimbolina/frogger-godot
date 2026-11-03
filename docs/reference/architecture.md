@@ -32,7 +32,10 @@ states what each layer may use.
   not authoritative state.
 - `archive/` holds the retail readers (`source/`, which depend only on
   `src/data`), the retail-backed `GameData`, the importer and the retail
-  goldens. Nothing outside `archive/` depends on it.
+  goldens. Nothing outside `archive/` depends on it, with one exception:
+  `src/application/setup/AssetImporterFactory` loads
+  `archive/import/runtime_import.gd`, the importer's implementation of the
+  `AssetImporter` interface the setup screen is typed against.
 - Simulation uses direct calls for ordered updates. Notifications follow
   state changes; subscriber order must not decide collision outcomes or RNG use.
   Rendering interpolation cannot feed back into authoritative state.
@@ -393,7 +396,12 @@ is file I/O; literal preloads of permitted script definitions are allowed.
 
 The scanner also enforces archive isolation. No script under `src/`, `scenes/`,
 `assets/`, `tests/` or `tools/` may depend on anything under `archive/`, directly
-or through other scripts, by class name, literal load path or base. Scene and
+or through other scripts, by class name, literal load path or base. The single
+allowed seam is `src/application/setup/asset_importer_factory.gd` depending on
+`archive/import/runtime_import.gd` (`ARCHIVE_SEAM` and `ARCHIVE_SEAM_TARGET`);
+scripts that use the factory are not tainted by it, any other archive
+dependency of the factory still fails, and so does any other script that
+reaches the adapter. Scene and
 resource files under `scenes/` and `assets/` must not reference `res://archive/`;
 these are found by a line scan. Archive scripts are scanned so their class names
 resolve, but they are not restricted themselves.

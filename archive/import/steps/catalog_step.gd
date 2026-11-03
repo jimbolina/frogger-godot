@@ -6,7 +6,8 @@ extends ImportStep
 ## SHA-256 of its executable and archive, the archive index, the asset file of
 ## every resource id that has one (found at the path conventions of
 ## [ImportContext] by checking which files exist, under
-## [member ImportContext.assets_root] first and then under
+## [member ImportContext.assets_root] first, named by their
+## [method ImportContext.published_path], and then under
 ## [member ImportContext.fallback_root]), every WAD's children without their
 ## bytes, the counterpart of every incomplete model and the levels the game
 ## plays.
@@ -48,8 +49,8 @@ func run(context: ImportContext, phase: String) -> void:
 	index.mwi = context.data.mwi
 	index.tables_path = _existing(context, context.table_path("game_tables"))
 	index.names_path = _existing(context, context.table_path("names"))
-	for path: String in [index.tables_path, index.names_path]:
-		if not FileAccess.file_exists(path):
+	for path: String in [context.table_path("game_tables"), context.table_path("names")]:
+		if _first_existing(context, PackedStringArray([context.relative_to_assets(path)])).is_empty():
 			context.report("catalog: %s is missing" % path)
 	for entry: MwiEntry in context.data.mwi.entries:
 		var found: String = _asset_path(context, entry)
@@ -86,7 +87,7 @@ func _describe_source(context: ImportContext, index: AssetIndex) -> void:
 
 func _existing(context: ImportContext, path: String) -> String:
 	var found: String = _first_existing(context, PackedStringArray([context.relative_to_assets(path)]))
-	return found if not found.is_empty() else path
+	return found if not found.is_empty() else context.published_path(path)
 
 
 func _first_existing(context: ImportContext, relative_paths: PackedStringArray) -> String:
@@ -97,7 +98,7 @@ func _first_existing(context: ImportContext, relative_paths: PackedStringArray) 
 		for relative: String in relative_paths:
 			var candidate: String = root.path_join(relative)
 			if FileAccess.file_exists(candidate):
-				return candidate
+				return context.published_path(candidate)
 	return ""
 
 

@@ -13,8 +13,9 @@ The game plays from committed assets under `assets/`, imported once from the
 owner's `pc-retail-v3.0e` copy and edited directly afterwards. `archive/`
 holds the retail readers, the importer, the retail-format goldens and
 FrogLord's configuration; nothing under `src/`, `scenes/`, `assets/`,
-`tests/` or `tools/` may depend on it. FrogLord compatibility and runtime
-loading of the player's files are deferred, not discarded. Mods may repoint
+`tests/` or `tools/` may depend on it, except the one runtime-import seam
+(`src/application/setup/asset_importer_factory.gd`). Packaged builds import
+the player's own copy at first run; FrogLord saves import as overlays. Mods may repoint
 existing entity behaviors, not introduce code.
 
 - Commit retail-derived content only as imported assets under `assets/`

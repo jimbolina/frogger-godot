@@ -9,6 +9,11 @@ extends RefCounted
 ## unchanged; [method keep_record] and [method restore_record] carry it, with
 ## [member complete_phases], between the phases of one run through the
 ## scratch folder.
+##
+## A [member runtime] run needs no editor import: textures, sound effects and
+## music are written as binary resources Godot loads directly, and every saved
+## resource names its external resources by their [member published_root]
+## path, so the folder can be written under one name and renamed to that root.
 
 ## The scratch file holding the record of earlier phases.
 const RECORD_FILE: String = "import_record.json"
@@ -43,6 +48,20 @@ var touched: PackedStringArray = PackedStringArray()
 var complete_phases: PackedStringArray = PackedStringArray()
 ## Remarks that do not fail the run.
 var notes: PackedStringArray = PackedStringArray()
+## Write textures as [PortableCompressedTexture2D], sound effects and music as
+## [AudioStreamWAV] binary resources instead of the PNG and WAV files Godot's
+## editor import turns into resources, so one pass writes a complete root.
+var runtime: bool = false
+## Where [member assets_root] will live once the run is over; saved
+## references and the index name files under it. Empty when the run writes
+## in place.
+var published_root: String = ""
+## Called as [code]on_progress.call(done, total)[/code] by long steps as they
+## work through their items; unset when nobody follows the run.
+var on_progress: Callable = Callable()
+## Returns true when the run should stop; steps check it between items.
+var cancelled: Callable = Callable()
+var _loaded: Dictionary[String, Resource] = {}
 
 
 ## Records a problem; the run exits non-zero when any exists.
@@ -104,6 +123,49 @@ func keep_record() -> void:
 	file.close()
 
 
+## True when [member cancelled] asks the run to stop.
+func is_cancelled() -> bool:
+	if not cancelled.is_valid():
+		return false
+	var answer: Variant = cancelled.call()
+	return answer is bool and answer
+
+
+## Tells [member on_progress] that [param done] of [param total] items of the
+## current step are finished.
+func advance(done: int, total: int) -> void:
+	if on_progress.is_valid():
+		on_progress.call(done, total)
+
+
+## [param path], a file under [member assets_root], as it will be named under
+## [member published_root]; unchanged when the run writes in place.
+func published_path(path: String) -> String:
+	if published_root.is_empty():
+		return path
+	var relative: String = relative_to_assets(path)
+	return published_root.path_join(relative) if not relative.is_empty() else path
+
+
+## The resource at [param path], a file this run wrote under
+## [member assets_root] (or Godot imported from one), named by its
+## [method published_path] so that resources referring to it are saved with
+## that path. Returns null when it does not load.
+func load_written(path: String) -> Resource:
+	if _loaded.has(path):
+		return _loaded[path]
+	if not ResourceLoader.exists(path):
+		return null
+	var resource: Resource = load(path)
+	if resource == null:
+		return null
+	var published: String = published_path(path)
+	if published != path:
+		resource.take_over_path(published)
+	_loaded[path] = resource
+	return resource
+
+
 ## Creates [param path] (a [code]res://[/code] folder) and its parents.
 func ensure_dir(path: String) -> void:
 	var absolute: String = ProjectSettings.globalize_path(path)
@@ -131,12 +193,13 @@ func write_if_changed(path: String, bytes: PackedByteArray) -> bool:
 
 
 ## Saves [param resource] at [param path], overwriting in place so its UID
-## survives; binary [code].res[/code] files are compressed. Returns false and
-## reports on failure.
+## survives; binary [code].res[/code] files are compressed. The resource takes
+## over its [method published_path], so later saves refer to it there.
+## Returns false and reports on failure.
 func save_resource(resource: Resource, path: String) -> bool:
 	ensure_dir(path.get_base_dir())
 	var flags: int = ResourceSaver.FLAG_COMPRESS if path.ends_with(".res") else 0
-	resource.take_over_path(path)
+	resource.take_over_path(published_path(path))
 	var result: Error = ResourceSaver.save(resource, path, flags)
 	if result != OK:
 		report("cannot save %s (%s)" % [path, error_string(result)])
@@ -153,10 +216,11 @@ func relative_to_assets(path: String) -> String:
 	return path.substr(prefix.length()) if path.begins_with(prefix) else ""
 
 
-## The committed PNG for texture [param texture_id] (pixels are identical for
-## every bank holding the id).
-func texture_png_path(texture_id: int) -> String:
-	return "%s/textures/images/t%04d.png" % [assets_root, texture_id]
+## The image file for texture [param texture_id] (pixels are identical for
+## every bank holding the id): a PNG, or a [PortableCompressedTexture2D]
+## resource in a [member runtime] run.
+func texture_image_path(texture_id: int) -> String:
+	return "%s/textures/images/t%04d.%s" % [assets_root, texture_id, "res" if runtime else "png"]
 
 
 ## The bank resource for VLO [param bank_name] (the MWI display name without
@@ -182,10 +246,11 @@ func map_path(map_name: String) -> String:
 	return "%s/maps/%s.res" % [assets_root, map_name]
 
 
-## The WAV of sample [param index] in sound bank [param bank_name].
+## The sound of sample [param index] in sound bank [param bank_name]: a WAV,
+## or an [AudioStreamWAV] resource in a [member runtime] run.
 func sfx_path(bank_name: String, index: int, sample_name: String) -> String:
 	var label: String = sample_name if not sample_name.is_empty() else "sample"
-	return "%s/audio/sfx/%s/%03d_%s.wav" % [assets_root, bank_name, index, label]
+	return "%s/audio/sfx/%s/%03d_%s.%s" % [assets_root, bank_name, index, label, "res" if runtime else "wav"]
 
 
 ## The sound bank resource for [param bank_name].
@@ -193,9 +258,10 @@ func sound_bank_path(bank_name: String) -> String:
 	return "%s/audio/sfx/%s.tres" % [assets_root, bank_name]
 
 
-## The Ogg Vorbis file for CD track [param track].
+## The music of CD track [param track]: an Ogg Vorbis file, or an
+## [AudioStreamWAV] resource in a [member runtime] run.
 func music_path(track: int) -> String:
-	return "%s/audio/music/track_%02d.ogg" % [assets_root, track]
+	return "%s/audio/music/track_%02d.%s" % [assets_root, track, "res" if runtime else "ogg"]
 
 
 ## The scratch WAV decoded from the disc for CD track [param track].

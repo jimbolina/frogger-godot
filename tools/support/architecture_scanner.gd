@@ -30,6 +30,10 @@ const APPLICATION_IO: PackedStringArray = [
 ]
 const ARCHIVE: String = "res://archive/"
 const SOURCE_ROOTS: PackedStringArray = ["res://src/source/", "res://archive/source/"]
+## The one shipped script that may reach the archive, and the one archive
+## script it may reach: the setup screen's importer factory and its adapter.
+const ARCHIVE_SEAM: String = "res://src/application/setup/asset_importer_factory.gd"
+const ARCHIVE_SEAM_TARGET: String = "res://archive/import/runtime_import.gd"
 const ARCHIVE_GUARDED: PackedStringArray = [
 	"res://src/", "res://scenes/", "res://assets/", "res://tests/", "res://tools/",
 ]
@@ -193,6 +197,8 @@ func _check_archive(paths: Array[String], records: Dictionary[String, Source],
 			if tainted.has(path) or path.begins_with(ARCHIVE):
 				continue
 			for edge: Edge in records[path].edges:
+				if is_archive_seam(path, edge.path):
+					continue
 				if edge.path.begins_with(ARCHIVE) or tainted.has(edge.path):
 					tainted[path] = true
 					changed = true
@@ -209,11 +215,19 @@ func _visit_archive(path: String, origin: String, records: Dictionary[String, So
 		return
 	visited[path] = true
 	for edge: Edge in records[path].edges:
+		if is_archive_seam(path, edge.path):
+			continue
 		if edge.path.begins_with(ARCHIVE):
 			into.append(Violation.new(path, edge.line, "archive",
 				"shipped code must not depend on archived %s" % edge.path, origin))
 		elif tainted.has(edge.path):
 			_visit_archive(edge.path, origin, records, tainted, visited, into)
+
+
+## Whether the dependency of [param path] on [param target] is the single
+## allowed one: [constant ARCHIVE_SEAM] on [constant ARCHIVE_SEAM_TARGET].
+static func is_archive_seam(path: String, target: String) -> bool:
+	return path == ARCHIVE_SEAM and target == ARCHIVE_SEAM_TARGET
 
 
 func _archive_guarded(path: String) -> bool:

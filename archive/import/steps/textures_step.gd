@@ -1,12 +1,14 @@
 extends ImportStep
-## Writes one PNG per distinct texture id and one [VloFile] resource per bank.
+## Writes one image per distinct texture id and one [VloFile] resource per bank.
 ##
 ## The raw phase writes each texture's padded RGBA8 pixels, alpha from the
-## black-is-transparent rule, as [code]textures/images/tNNNN.png[/code]; a
-## texture id held by several banks has identical pixels in every one, which
-## is checked. The resources phase saves each bank's headers with every
-## image's [member VloImage.texture] set to its imported PNG and its
-## [member VloImage.pixels] left empty, so the pixels live only in the PNG.
+## black-is-transparent rule, as [code]textures/images/tNNNN.png[/code], or in
+## a runtime run as [code]tNNNN.res[/code], a lossless
+## [PortableCompressedTexture2D] without mipmaps (see [method runtime_texture]);
+## a texture id held by several banks has identical pixels in every
+## one, which is checked. The resources phase saves each bank's headers with
+## every image's [member VloImage.texture] set to its loaded image and its
+## [member VloImage.pixels] left empty, so the pixels live only in the image file.
 ## Both phases leave the decoded banks, pixels included, in
 ## [member ImportContext.banks] for later steps.
 
@@ -20,7 +22,12 @@ func phases() -> PackedStringArray:
 
 func run(context: ImportContext, phase: String) -> void:
 	var digests: Dictionary[int, String] = {}
-	for entry: MwiEntry in context.data.texture_bank_entries():
+	var entries: Array[MwiEntry] = context.data.texture_bank_entries()
+	for at: int in entries.size():
+		if context.is_cancelled():
+			return
+		context.advance(at, entries.size())
+		var entry: MwiEntry = entries[at]
 		var bank_name: String = context.entry_name(entry.index)
 		var problems := PackedStringArray()
 		var bank: VloFile = context.data.read_texture_bank(entry.index, problems)
@@ -47,7 +54,22 @@ func _write_images(context: ImportContext, bank_name: String, bank: VloFile, dig
 			continue
 		digests[image.texture_id] = digest
 		var pixels: Image = Image.create_from_data(image.padded_width, image.padded_height, false, Image.FORMAT_RGBA8, image.pixels)
-		context.write_if_changed(context.texture_png_path(image.texture_id), pixels.save_png_to_buffer())
+		if context.runtime:
+			context.save_resource(runtime_texture(pixels), context.texture_image_path(image.texture_id))
+		else:
+			context.write_if_changed(context.texture_image_path(image.texture_id), pixels.save_png_to_buffer())
+
+
+## The texture a runtime run saves for [param pixels]: a
+## [PortableCompressedTexture2D] holding them losslessly, with no mipmaps, as
+## the editor import of the PNG holds them. Unlike an [ImageTexture], it keeps
+## its compressed data, so saving it reads nothing back from the
+## RenderingServer and does not wait on the main thread.
+static func runtime_texture(pixels: Image) -> PortableCompressedTexture2D:
+	var texture := PortableCompressedTexture2D.new()
+	texture.keep_compressed_buffer = true
+	texture.create_from_image(pixels, PortableCompressedTexture2D.COMPRESSION_MODE_LOSSLESS)
+	return texture
 
 
 func _save_bank(context: ImportContext, entry: MwiEntry, bank_name: String, bank: VloFile) -> void:
@@ -61,8 +83,8 @@ func _save_bank(context: ImportContext, entry: MwiEntry, bank_name: String, bank
 		var image: VloImage = saved.images[at]
 		image.resource_name = "t%04d" % image.texture_id
 		image.resource_scene_unique_id = "image_%03d" % at
-		var path: String = context.texture_png_path(image.texture_id)
-		var texture: Texture2D = load(path) as Texture2D
+		var path: String = context.texture_image_path(image.texture_id)
+		var texture: Texture2D = context.load_written(path) as Texture2D
 		if texture == null:
 			context.report("texture bank %s: %s did not import" % [bank_name, path])
 			continue

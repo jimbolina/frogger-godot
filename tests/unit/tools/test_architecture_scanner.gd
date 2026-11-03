@@ -348,6 +348,54 @@ func test_archive_tests_may_use_archived_source_but_shipped_tests_may_not() -> v
 	assert_eq(violations[0].origin, "res://tests/unit/test_reader.gd")
 
 
+const FACTORY: String = "res://src/application/setup/asset_importer_factory.gd"
+const ADAPTER: String = "res://archive/import/runtime_import.gd"
+
+
+func _adapter_sources() -> Dictionary[String, String]:
+	return {
+		ADAPTER: "class_name RuntimeImport\nextends RefCounted\n",
+		"res://archive/import/import_run.gd": "class_name ImportRun\nextends RefCounted\n",
+	}
+
+
+func test_importer_factory_may_load_the_runtime_adapter() -> void:
+	var sources: Dictionary[String, String] = _adapter_sources()
+	sources[FACTORY] = "class_name AssetImporterFactory\nextends RefCounted\n" \
+		+ "static func create():\n\treturn load(\"" + ADAPTER + "\")\n"
+	sources["res://scenes/setup.gd"] = "extends Node\nfunc f():\n\treturn AssetImporterFactory.create()\n"
+	sources["res://tests/unit/test_setup.gd"] = "extends Node\nfunc f():\n\treturn AssetImporterFactory.create()\n"
+	assert_eq(_rule_count(_check(sources), "archive"), 0)
+	sources[FACTORY] = "class_name AssetImporterFactory\nextends RefCounted\n" \
+		+ "static func create():\n\treturn RuntimeImport.new()\n"
+	assert_eq(_rule_count(_check(sources), "archive"), 0)
+
+
+func test_importer_factory_may_not_reach_other_archive_scripts() -> void:
+	for body: String in ["return load(\"res://archive/import/import_run.gd\")", "return ImportRun.new()"]:
+		var sources: Dictionary[String, String] = _adapter_sources()
+		sources[FACTORY] = "class_name AssetImporterFactory\nextends RefCounted\nstatic func create():\n\t" + body + "\n"
+		sources["res://scenes/setup.gd"] = "extends Node\nfunc f():\n\treturn AssetImporterFactory.create()\n"
+		var violations: Array[Scanner.Violation] = _check(sources)
+		assert_eq(_rule_count(violations, "archive"), 2, body)
+		for violation: Scanner.Violation in violations:
+			assert_eq(violation.path, FACTORY, body)
+			assert_eq(violation.line, 4, body)
+
+
+func test_only_the_importer_factory_may_reach_the_runtime_adapter() -> void:
+	for path: String in ["res://src/application/setup/other_factory.gd", "res://src/presentation/setup/screen.gd",
+			"res://scenes/setup.gd", "res://tests/unit/test_setup.gd", "res://tools/setup_tool.gd"]:
+		for body: String in ["return load(\"" + ADAPTER + "\")", "return RuntimeImport.new()"]:
+			var sources: Dictionary[String, String] = _adapter_sources()
+			sources[path] = "extends RefCounted\nfunc f():\n\t" + body + "\n"
+			var paths := PackedStringArray()
+			for violation: Scanner.Violation in _check(sources):
+				if violation.rule == "archive":
+					paths.append(violation.path)
+			assert_eq(paths, PackedStringArray([path]), body)
+
+
 func test_scene_and_resource_archive_references_are_rejected() -> void:
 	var scene: String = "res://scenes/level.tscn"
 	var text: String = "[gd_scene format=3]\n\n" \

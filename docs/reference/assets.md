@@ -126,6 +126,26 @@ material copy (a flipbook part's morph surface shares its part's copy, so the
 view's projection reaches it) and leaves geometry, cel atlases and textures
 shared.
 
+## Runtime import
+
+A packaged build imports the player's copy at first run into
+`user://assets/<fingerprint>/`, named by the first 16 hex digits of the
+SHA-256 over the game files, with no editor import
+([archive](../../archive/README.md#runtime-import)). The root has the
+[layout](#layout) of the importer-written part of `assets/` (the index,
+tables, banks, maps, models, materials, sound banks and demos are the same
+files) with these differences:
+
+| Path | Content |
+|---|---|
+| `textures/images/tNNNN.res` | A `PortableCompressedTexture2D` holding the padded RGBA8 pixels losslessly, without mipmaps; it keeps its compressed data. |
+| `audio/sfx/<BANK>/NNN_<name>.res` | An `AudioStreamWAV`: 16-bit mono 11,025 Hz PCM, no loop. |
+| `audio/music/track_NN.res` | Present only when the player gave a disc image: an `AudioStreamWAV` of the CD track's 16-bit stereo 44,100 Hz PCM, saved without a loop. |
+
+Every external reference and every index path names the root itself. Nothing
+under it is a `.png`, `.wav`, `.ogg` or `.import` file, and the fonts,
+lettering, emissive table and `images_x4/` are not written there.
+
 ## Upscaled textures
 
 `textures/images_x4/` holds an ML-upscaled counterpart of every image, made

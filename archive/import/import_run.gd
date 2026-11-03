@@ -7,7 +7,8 @@ extends RefCounted
 ## is skipped. Each step's time and the phase totals are printed as
 ## [code]import:[/code] lines. Before the steps run, the context restores what
 ## earlier phases of the same run recorded in its scratch folder; afterwards it
-## keeps this phase's record there.
+## keeps this phase's record there. A run whose context is cancelled stops
+## before its next step with a problem.
 
 ## The steps in the order they run.
 const STEP_SCRIPTS: Array[String] = [
@@ -22,6 +23,10 @@ const STEP_SCRIPTS: Array[String] = [
 	"res://archive/import/steps/options_models_step.gd",
 	"res://archive/import/steps/catalog_step.gd",
 ]
+
+## Called as [code]on_step.call(step_name, phase)[/code] before each step runs;
+## unset when nobody follows the run.
+var on_step: Callable = Callable()
 
 
 ## Runs every step of [param phase] ([constant ImportStep.PHASE_RAW] or
@@ -50,8 +55,16 @@ func run(context: ImportContext, phase: String, only: PackedStringArray = Packed
 			context.report("step %s names itself %s" % [script_path, step.step_name()])
 		if not step.phases().has(phase):
 			continue
+		if context.is_cancelled():
+			context.report("the import was cancelled")
+			break
+		if on_step.is_valid():
+			on_step.call(step.step_name(), phase)
 		var step_started: int = Time.get_ticks_msec()
 		step.run(context, phase)
+		if context.is_cancelled():
+			context.report("the import was cancelled")
+			break
 		print("import: %s (%s) %d ms" % [step.step_name(), phase, Time.get_ticks_msec() - step_started])
 	context.keep_record()
 	print("import: phase %s wrote %d files, %d unchanged, %d problems, %d ms" % [

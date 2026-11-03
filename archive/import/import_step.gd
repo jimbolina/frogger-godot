@@ -3,7 +3,8 @@ extends RefCounted
 ## One stage of the importer, run in a fixed order by [code]import_assets.gd[/code].
 ##
 ## A step declares the phases it takes part in: [code]raw[/code] writes files
-## that Godot must import first (PNG, WAV), [code]resources[/code] writes
+## that Godot must import first (PNG, WAV; a runtime run writes the resources
+## themselves), [code]resources[/code] writes
 ## resources that reference imported files. Steps report problems through
 ## [method ImportContext.report] and never throw.
 

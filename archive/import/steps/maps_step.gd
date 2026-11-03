@@ -22,7 +22,12 @@ func phases() -> PackedStringArray:
 func run(context: ImportContext, phase: String) -> void:
 	if phase != PHASE_RESOURCES:
 		return
-	for entry: MwiEntry in context.data.map_entries():
+	var entries: Array[MwiEntry] = context.data.map_entries()
+	for at: int in entries.size():
+		if context.is_cancelled():
+			return
+		context.advance(at, entries.size())
+		var entry: MwiEntry = entries[at]
 		var problems := PackedStringArray()
 		var map: MapFile = context.data.read_map(entry.index, problems)
 		if map == null:

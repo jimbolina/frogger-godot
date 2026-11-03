@@ -1,4 +1,4 @@
-# Imported assets (`pc-retail-v3.0e/model_meshes.tsv`, `sound_samples.tsv`, `disc_tracks.tsv`, `asset_census.txt`)
+# Imported assets (`pc-retail-v3.0e/model_meshes.tsv`, `sound_samples.tsv`, `asset_census.txt`, `archive/import/disc_tracks.tsv`)
 
 S1c imports every retail asset into `assets/`. These facts say what each
 imported file must hold. They are derived from the retail bytes by
@@ -11,7 +11,7 @@ every texture id has one size and padding in every bank that holds it.
 |---|---|---|
 | `model_meshes.tsv` | part of a static model (1,009, the keys of `mof_parts.tsv`) | resource id, file name, static model inside the file, part, surfaces, triangles, cels, `unresolved_textured_polygons`, `positions_sha256`, `colours_sha256`, `uvs_sha256` |
 | `sound_samples.tsv` | present sound-bank row (174) | sound id, bank, body file name, FrogLord sound name, `source_bits`, `source_rate`, frames, `rate` (always 11025), `pcm16_sha256` |
-| `disc_tracks.tsv` | audio track of the disc image (31) | track, FrogLord music name (`-` if none), first sector (from the table, pregap included), sectors, frames (44.1 kHz stereo), seconds (3 decimals), `pcm_sha256`, the levels whose music-table entry plays it (`-` if none) |
+| `archive/import/disc_tracks.tsv` | audio track of the disc image (31); it lives with the importer, whose music step checks every decoded track against it | track, FrogLord music name (`-` if none), first sector (from the table, pregap included), sectors, frames (44.1 kHz stereo), seconds (3 decimals), `pcm_sha256`, the levels whose music-table entry plays it (`-` if none) |
 | `asset_census.txt` | count, `key=value` | MWI entries, maps (FROG and sky land), VLO banks, images, distinct texture ids, models by kind and incomplete models, model parts, sound banks and samples, demo tables, rows and distinct demos, disc tracks, rows of every EXE table (`rows[exe_*]`, as `make_golden_exe_tables.py` writes them, plus the two high-score tables) |
 
 `-` is an empty list. List digests follow the
@@ -187,7 +187,7 @@ The WAV is mono, 16-bit and 11025 Hz. The engine plays every sample at
 that rate, so the six rows whose header says 22050 still import at 11025.
 `source_rate` records the header rate.
 
-The disc table is read as `src/source/sound/disc_audio.gd` documents. Track
+The disc table is read as `archive/source/sound/disc_audio.gd` documents. Track
 bytes come from each track's start offset, never its start sector. The
 image stores no pregap. `pcm_sha256` hashes the raw 2352-byte sectors, which
 are signed 16-bit little-endian stereo. Music is committed as Ogg Vorbis,
@@ -212,7 +212,13 @@ overrides. They need no retail files.
 | `test_asset_maps.gd` | Every map entry (78 maps and the two sky-land files) is a compressed binary resource at `maps/<NAME>.res` whose sub-resources are numbered `<Class>_<n>` in walk order, so a rerun writes identical bytes. Each file is compared with every column of `map_facts.tsv`, the per-type rows of `map_polygons.tsv`, `map_animations.tsv` and `sky_land.tsv`, and its rebuilt groups, grid stacks and squares, forms, zones and paths with the header counts. |
 | `test_asset_models.gd` | Every `model_meshes.tsv` row and its options-page copy against `models/<NAME>/mesh.res`: surfaces, triangles, cels and the position, colour and pixel-UV digests (track UVs through `uv_scale`/`uv_offset`); every multi-cel part's atlas loads; `model.res` part counts match `mof_parts.tsv` and `model.tscn` instantiates with that many `Part_NN` nodes; 78 `preview.res` libraries with one track per part; the catalog serves the frog and options meshes. |
 | `test_asset_sounds.gd` | Every `sound_samples.tsv` row has `audio/sfx/<BANK>/<NNN>_<name>.wav` (`<name>` is `sample` when unnamed): mono, 16-bit, at `rate`, no loop, with `frames` and `pcm16_sha256`; the bank's `SoundBankHeader` resource holds every header row, no PCM, and points present rows at their WAV through `ImportedAssets.read_sound_bank`. |
-| `test_asset_music.gd` | Every `disc_tracks.tsv` audio track has `audio/music/track_NN.ogg` (`oggenc -q 6 --serial NN`, byte-identical on re-encode) whose `get_length()` is within 1 ms of `frames / 44100` with no baked loop, and every `exe_music.tsv` track is present. The PCM digest is checked on the decoded WAV at import time only; no music table resource is written, a track's Ogg is found by its number. |
+| `test_asset_music.gd` | Each of the `disc_audio_tracks` tracks of `asset_census.txt` has `audio/music/track_NN.ogg` (`oggenc -q 6 --serial NN`, byte-identical on re-encode) with no baked loop, and every `exe_music.tsv` track is present. No music table resource is written; a track's Ogg is found by its number. |
+
+The game suite cannot read `archive/`, so the archive suite's
+`test_retail_disc_tracks.gd` checks the lengths: every
+`archive/import/disc_tracks.tsv` track's Ogg has a `get_length()` within 1 ms
+of `frames / 44100`. The PCM digest is checked on the decoded track at import
+time only.
 
 `test_asset_emissive_images.gd` sits beside them as a consistency check of
 the hand-authored `rendering/emissive_images.tres`, not a retail-fact golden:
@@ -248,7 +254,7 @@ edited to match an asset.
 ```
 python3 tools/make_golden_model_meshes.py --data-dir <retail folder>
 python3 tools/make_golden_sound_samples.py --data-dir <retail folder>
-python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROGGER.mds>
+python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROGGER.mds>  # writes archive/import/disc_tracks.tsv
 python3 tools/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
 ```
 
@@ -279,7 +285,9 @@ import test. Then restore the fact and rerun.
   test must name the part.
 - **Sound samples:** change a `frames` value, then a `pcm16_sha256`; the
   test must name the WAV.
-- **Disc tracks:** change a `frames` value. The Ogg length check must fail.
+- **Disc tracks:** change a `frames` value in `archive/import/disc_tracks.tsv`
+  by more than 44 (1 ms); the Ogg length check of `test_retail_disc_tracks.gd`
+  must name the track.
 - **Maps:** change a `polygon_count` in `map_facts.tsv`, then one digit of
   a `sky_land.tsv` digest; the test must name the map and column.
 - **Census:** change one count, e.g. `images`.
@@ -381,6 +389,45 @@ compares with the output, prints a diff and exits 1 on a difference.
 Deliberate break: change `outside_scroll` of `SWP5_WIN95`. The generator
 without `--write` must exit 1 with the diff, and the test must name the map
 and column. Restore with `--write` and rerun both.
+
+## Runtime import
+
+`archive/tests/golden/test_retail_runtime_import.gd` runs `RuntimeImport`
+once through `AssetImporterFactory` on the main thread, from `FROGGER_DATA_DIR`
+into `user://runtime_import_golden/assets`, and compares it with the
+committed `assets/`. There is no generator: the committed assets are the
+oracle, since Godot's editor import produced them from the same retail files
+and the import goldens above check them against the independent facts.
+
+- The run reports no problems, leaves no `.partial` or `.old` folder, reports
+  rising progress that ends at 1, and notes that it has no music exactly when
+  `FROGGER_DISC` is unset. Detection names `pc-retail-v3.0e` and a 16-digit
+  fingerprint and rejects a missing folder; a run cancelled at once returns
+  only `the import was cancelled` and leaves no folder.
+- No `.png`, `.wav`, `.ogg` or `.import` file is written.
+- `tables`, `demos`, `maps`, `textures/banks`, `textures/images`, `audio/sfx`,
+  `models` and `materials` hold the same files, extensions aside.
+- `catalog.tres` and every `.tres`, `.res` and `.tscn` under those folders
+  except the images and sounds is resource-equal: every stored property
+  compared recursively, embedded resources by their own properties, external
+  ones and path strings by their path below the root without extension. This
+  covers the index's keys and paths.
+- Every texture is a `PortableCompressedTexture2D` whose image equals the
+  committed texture's in size, format, mipmaps and bytes (1,858).
+- Every sound effect equals the committed `AudioStreamWAV` in format, rate,
+  channels, loop mode and points and PCM (174).
+- `ImportedAssets.open` of the root loads ORG1's map without problems.
+- With `FROGGER_DISC` set, each `archive/import/disc_tracks.tsv` track is a
+  16-bit stereo 44,100 Hz `AudioStreamWAV` without a loop, `frames` x 4 bytes
+  long, with `pcm_sha256`; without it, the root has no `audio/music` folder.
+  The suite passes either way, with no skip.
+
+Deliberate breaks, each in a runtime run only: change one pixel of texture
+1 in `textures_step.gd`, and the pixel check names `t0001.res`; add one to
+ORG1DEMO.DAT's `duration` in `demos_step.gd` and set GEN_FROG's `signature`
+in `models_step.gd`, and the record comparison names
+`demos/ORG1DEMO.tres.duration` and `models/GEN_FROG/model.res.signature`.
+Each was restored and the test rerun.
 
 ## FrogLord round trip
 
