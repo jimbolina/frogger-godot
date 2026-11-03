@@ -105,9 +105,10 @@ The owner's PlayStation disc image of a pre-recode build (MWD created 19 March
 1997) is at `~/Downloads/alpha/FROGGER.bin`; FrogLord's old-format MWI entries
 in its `PSX.EXE` index `FROGGER.MWD`, whose `FRONT_0.WAD` holds the flat letter
 models `A.XMR`–`Z.XMR` and `0.XMR`–`9.XMR`. Nothing reads it; it is reference
-only. The 36 SVGs in `assets/fonts/angular/svg/` are a community trace of
-those models, received by the owner on 2026-11-01 (author and licence not
-recorded; the repository is private). They match the models to 98–99% of
+only. The 36 SVGs in `assets/fonts/angular/svg/` are a trace of those
+models by StarmanUltra, received by the owner on 2026-11-01; the font and the
+lettering images built from them carry that credit in packaged builds. No
+licence terms are recorded. They match the models to 98–99% of
 their area ([lettering](assets.md#lettering)).
 
 ## The retail game files
