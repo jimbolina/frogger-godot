@@ -1,18 +1,23 @@
 class_name MusicPlayer
 extends Node
-## Plays the level's music track on the [constant BUS] bus, looping, from the imported Ogg.
+## Plays the level's music track on the [constant BUS] bus, looping, from the imported track.
 ##
 ## The track number comes from the executable's music list
-## ([method MusicTable.track_for_level]). The imported
-## [code]track_NN.ogg[/code] under [member imported_dir] is loaded through
-## Godot's threaded resource loader unless [member threaded] is false. A track
-## is read once per selection and replayed from memory on each restart.
-## Without the track the level is silent and [member diagnostics] says why.
+## ([method MusicTable.track_for_level]). The imported track under
+## [member imported_dir], the [constant MUSIC_FOLDER] of the catalog's base root
+## ([method folder_of]), is [code]track_NN.ogg[/code] (Ogg Vorbis, the committed
+## assets) or [code]track_NN.res[/code] (an [AudioStreamWAV] saved without a loop
+## by an import at runtime). It is loaded through Godot's threaded resource
+## loader unless [member threaded] is false. A track is read once per selection
+## and replayed from memory on each restart, from a copy that loops the whole
+## track. Without the track the level is silent and [member diagnostics] says why.
 
 ## Bus the music plays on.
 const BUS: StringName = &"Music"
-## Where the importer writes the level music.
-const IMPORTED_DIR: String = "res://assets/audio/music"
+## The music folder under an assets root.
+const MUSIC_FOLDER: String = "audio/music"
+## Track file extensions, in the order they are tried.
+const TRACK_EXTENSIONS: PackedStringArray = ["ogg", "res"]
 
 ## Why the selected track is silent, newest last.
 var diagnostics := PackedStringArray()
@@ -20,8 +25,8 @@ var diagnostics := PackedStringArray()
 var threaded: bool = true
 ## Selected CD track number, or -1.
 var track: int = -1
-## Folder of imported [code]track_NN.ogg[/code] files.
-var imported_dir: String = IMPORTED_DIR
+## Folder of imported tracks, or "" before one is chosen ([method use_folder]).
+var imported_dir: String = ""
 var _player: AudioStreamPlayer = null
 var _stream: AudioStream = null
 var _wanted: bool = false
@@ -42,6 +47,21 @@ func _process(_delta: float) -> void:
 
 func _exit_tree() -> void:
 	clear()
+
+## Reads tracks from [param folder]; a new folder stops and forgets the selected track.
+func use_folder(folder: String) -> void:
+	if folder == imported_dir:
+		return
+	clear()
+	imported_dir = folder
+
+## The music folder under the base root of [param catalog], or "" for a catalog
+## that is not [ImportedAssets].
+static func folder_of(catalog: AssetCatalog) -> String:
+	var imported: ImportedAssets = catalog as ImportedAssets
+	if imported == null or imported.root.is_empty():
+		return ""
+	return imported.root.path_join(MUSIC_FOLDER)
 
 ## Selects track [param number]; a new selection stops the old one.
 func select(number: int) -> void:
@@ -108,21 +128,43 @@ func clear() -> void:
 	_stream = null
 	track = -1
 
-## The imported Ogg of track [param number] under [param folder], or "" when there is none.
+## The imported track [param number] under [param folder], trying each of
+## [constant TRACK_EXTENSIONS] in turn, or "" when there is none.
 static func imported_track_path(folder: String, number: int) -> String:
 	if folder.is_empty() or number < 0 or number > 99:
 		return ""
-	var path: String = folder.path_join("track_%02d.ogg" % number)
-	return path if ResourceLoader.exists(path) else ""
+	for extension: String in TRACK_EXTENSIONS:
+		var path: String = folder.path_join("track_%02d.%s" % [number, extension])
+		if ResourceLoader.exists(path):
+			return path
+	return ""
 
-## A looping copy of an imported track, leaving the shared resource unchanged; null when [param loaded] is not Ogg Vorbis.
+## A copy of an imported track that loops the whole track, leaving the shared resource
+## unchanged; null when [param loaded] is neither Ogg Vorbis nor WAV.
 static func looping_copy(loaded: Resource) -> AudioStream:
 	var ogg: AudioStreamOggVorbis = loaded as AudioStreamOggVorbis
-	if ogg == null:
+	if ogg != null:
+		var copy: AudioStreamOggVorbis = ogg.duplicate() as AudioStreamOggVorbis
+		copy.loop = true
+		return copy
+	var wav: AudioStreamWAV = loaded as AudioStreamWAV
+	if wav == null:
 		return null
-	var copy: AudioStreamOggVorbis = ogg.duplicate() as AudioStreamOggVorbis
-	copy.loop = true
-	return copy
+	var looped: AudioStreamWAV = wav.duplicate() as AudioStreamWAV
+	looped.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	looped.loop_begin = 0
+	looped.loop_end = wav_frames(wav)
+	return looped
+
+## The number of sample frames in [param wav].
+static func wav_frames(wav: AudioStreamWAV) -> int:
+	var channels: int = 2 if wav.stereo else 1
+	match wav.format:
+		AudioStreamWAV.FORMAT_8_BITS:
+			return wav.data.size() / channels
+		AudioStreamWAV.FORMAT_16_BITS:
+			return wav.data.size() / (2 * channels)
+	return roundi(wav.get_length() * wav.mix_rate)
 
 func _accept(path: String, loaded: Resource) -> void:
 	_stream = looping_copy(loaded)

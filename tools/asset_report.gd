@@ -1,10 +1,11 @@
 extends SceneTree
 ## Prints which forms, entities, scripts, callbacks and remaps of a build the port can play.
 ##
-##   godot --headless --path . -s res://tools/asset_report.gd -- [--assets-root=res://assets]
+##   godot --headless --path . -s res://tools/asset_report.gd -- [--assets-root=<folder>]
 ##       [--index-root=<folder>] [--levels=ORG1,CAV3] [--strict] [--output=<file>]
 ##
-## Prints the report as tab-separated lines, then its summary, and writes the
+## Without --assets-root the build is the one [AssetLocation] resolves. Prints the
+## report as tab-separated lines, then its summary, and writes the
 ## lines to --output when given. Exits 1 with --strict when a selected level
 ## uses an unmapped item or could not be read (unplaced forms do not count),
 ## 2 when the catalog cannot open or the output cannot be written.
@@ -16,13 +17,12 @@ func _initialize() -> void:
 
 func _report() -> void:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
-	var assets_root: String = ViewerArguments.value(args, "--assets-root=")
 	var index_root: String = ViewerArguments.value(args, "--index-root=")
 	var output: String = ViewerArguments.value(args, "--output=")
 	var levels := PackedStringArray()
 	for code: String in ViewerArguments.value(args, "--levels=").split(",", false):
 		levels.append(code.strip_edges().to_upper())
-	var data: AssetCatalog = ImportedAssets.open(assets_root if not assets_root.is_empty() else "res://assets", "", index_root)
+	var data: AssetCatalog = AssetLocation.resolve(args, LauncherStore.load_from()).open("", index_root)
 	if not data.is_valid():
 		printerr("asset_report: %s" % data.error)
 		quit(2)

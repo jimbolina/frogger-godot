@@ -46,7 +46,7 @@ func _ready() -> void:
 	_build_sandbox_interface()
 	if not auto_open:
 		return
-	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args()))
+	var data: ImportedAssets = asset_location().open(ViewerArguments.texture_set(OS.get_cmdline_user_args()))
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	for warning: String in data.warnings:
 		push_warning(warning)

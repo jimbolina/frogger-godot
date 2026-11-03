@@ -152,7 +152,7 @@ func test_the_emissive_image_table_loads_and_the_base_catalog_has_none() -> void
 
 func test_a_missing_emissive_image_table_is_empty_and_noted() -> void:
 	var catalog := ImportedAssets.new()
-	catalog.root = "res://no_such_assets"
+	catalog.shippable_root = "res://no_such_assets"
 	assert_eq(catalog.emissive_images().entries.size(), 0)
 	assert_eq(catalog.problems.size(), 1)
 	assert_string_contains(catalog.problems[0], "res://no_such_assets/rendering/emissive_images.tres")

@@ -54,6 +54,13 @@ static func texture_set(arguments: PackedStringArray) -> String:
 	return str(ProjectSettings.get_setting(TEXTURE_SET_SETTING, TextureSet.RETAIL))
 
 
+## The imported assets a launch asked for: the base root [AssetLocation] resolves from
+## [param arguments] and the launcher settings, drawn in the [method texture_set] the launch names.
+## When no root is usable, the catalog's [member AssetCatalog.error] says why.
+static func open_assets(arguments: PackedStringArray) -> ImportedAssets:
+	return AssetLocation.resolve(arguments, LauncherStore.load_from()).open(texture_set(arguments))
+
+
 ## The shadow-effect choice a launch asked for, for [ShadowEffectPolicy]:
 ## [code]--effect-shadows=[/code] in [param arguments], else the project setting
 ## [code]frogger/rendering/effect_shadows[/code], else [constant ShadowEffectPolicy.DEFAULT].

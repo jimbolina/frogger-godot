@@ -3,7 +3,8 @@ extends GutTest
 ## set's files stand in for the retail ones where they exist, an uninstalled
 ## or unknown set falls back to retail with a warning, and tests that open the
 ## catalog without a name get the retail set. A lettering image under the
-## assets root replaces its retail image in every set. A launch on another
+## shippable root replaces its retail image in every set, whatever the retail
+## image's extension. A launch on another
 ## renderer than Forward+ leaves a warning.
 
 const SCRATCH: String = "user://texture_set_test"
@@ -19,7 +20,7 @@ func after_each() -> void:
 
 func _lettered(texture_set_name: String) -> ImportedAssets:
 	var catalog := ImportedAssets.new()
-	catalog.root = LETTERING_ROOT
+	catalog.shippable_root = LETTERING_ROOT
 	catalog.textures = TextureSet.named(texture_set_name)
 	return catalog
 
@@ -103,8 +104,10 @@ func test_retail_textures_stay_retail() -> void:
 	assert_same(assets.texture_counterpart(image.texture), image.texture)
 
 
-func test_the_lettering_path_sits_under_the_assets_root() -> void:
+func test_the_lettering_path_sits_under_the_shippable_root() -> void:
 	assert_eq(TextureSet.lettering_path(LETTERED), "textures/lettering/t0263.png")
+	assert_eq(TextureSet.lettering_path("user://assets/0123456789abcdef/textures/images/t0263.res"),
+		"textures/lettering/t0263.png", "a runtime-imported image still finds the committed lettering")
 	assert_eq(TextureSet.lettering_path("res://assets/textures/images_x4/t0263.png"), "")
 	assert_eq(TextureSet.lettering_path("res://assets/models/HI_A/mesh.res"), "")
 	assert_true(TextureSet.is_lettering_path(LETTERING_ROOT.path_join("textures/lettering/t0263.png")))

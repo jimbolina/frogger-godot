@@ -112,7 +112,7 @@ func _ready() -> void:
 	if ViewerArguments.attract(arguments) and not _attract_flag_used:
 		_attract_flag_used = true
 		_attract_immediate = true
-	var data: ImportedAssets = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+	var data: ImportedAssets = ViewerArguments.open_assets(arguments)
 	data.note_renderer(RenderingServer.get_current_rendering_method())
 	for warning: String in data.warnings:
 		push_warning(warning)
@@ -140,6 +140,7 @@ func _ready() -> void:
 	_apply_sound_volumes()
 	if audio:
 		_music = MusicPlayer.new()
+		_music.use_folder(MusicPlayer.folder_of(data))
 		add_child(_music)
 		_music.select(MENU_TRACK)
 		_music.restart()

@@ -23,6 +23,10 @@ func test_x4_set_maps_images_only() -> void:
 		"res://assets/textures/pages/GEN_VRAM+CAV_VRAM/page_03.png", "only the images folder has a counterpart")
 	assert_eq(set.counterpart_path("res://assets/textures/banks/CAV_VRAM.tres"), "res://assets/textures/banks/CAV_VRAM.tres")
 	assert_eq(set.counterpart_path(""), "")
+	assert_eq(set.counterpart_path("user://assets/0123456789abcdef/textures/images/t0012.res"),
+		"user://assets/0123456789abcdef/textures/images_x4/t0012.res", "a runtime-imported record keeps its extension")
+	assert_eq(TextureSet.retail().counterpart_path("user://assets/0123456789abcdef/textures/images/t0012.res"),
+		"user://assets/0123456789abcdef/textures/images/t0012.res")
 
 
 func test_sets_are_found_by_name() -> void:

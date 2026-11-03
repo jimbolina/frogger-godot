@@ -34,7 +34,7 @@ func _ready() -> void:
 	if lifetime not in ["", "all-attached", "visibility"]:
 		_fail("Camera probe entity-lifecycle must be all-attached or visibility")
 		return
-	var issue: String = open(ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments)), lifetime == "visibility", true)
+	var issue: String = open(ViewerArguments.open_assets(arguments), lifetime == "visibility", true)
 	if not issue.is_empty():
 		_fail(issue)
 		return

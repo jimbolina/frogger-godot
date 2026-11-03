@@ -209,7 +209,7 @@ func test_the_retail_set_keeps_the_shared_mesh_and_its_shaders() -> void:
 
 func _lettered() -> ImportedAssets:
 	var catalog := ImportedAssets.new()
-	catalog.root = LETTERING_ROOT
+	catalog.shippable_root = LETTERING_ROOT
 	return catalog
 
 func _all_materials(mesh: ModelMesh) -> Array[ShaderMaterial]:

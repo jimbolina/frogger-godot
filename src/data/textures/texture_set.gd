@@ -75,8 +75,10 @@ func linear_filter() -> bool:
 	return scale > 1
 
 
-## [param path] with its retail images folder replaced by this set's;
-## unchanged for the retail set or a path outside that folder.
+## [param path] with its retail images folder replaced by this set's, keeping
+## the file name and extension ([code].png[/code] for committed images,
+## [code].res[/code] for images imported at runtime); unchanged for the retail
+## set or a path outside that folder.
 func counterpart_path(path: String) -> String:
 	if is_retail():
 		return path
@@ -87,13 +89,14 @@ func counterpart_path(path: String) -> String:
 	return path.substr(0, at) + "/textures/%s/" % images_dir + path.substr(at + retail_folder.length())
 
 
-## The path under the assets root of the lettering image that replaces the
-## retail image at [param retail_path] in every set, or "" for a path outside
-## the retail images folder.
+## The path under the shippable root of the lettering image that replaces
+## the retail image at [param retail_path] in every set, or "" for a path
+## outside the retail images folder. Lettering images are always
+## [code].png[/code], whatever the retail image's extension.
 static func lettering_path(retail_path: String) -> String:
 	if not retail_path.contains("/textures/%s/" % IMAGES_DIR):
 		return ""
-	return "textures/%s/%s" % [LETTERING_DIR, retail_path.get_file()]
+	return "textures/%s/%s.png" % [LETTERING_DIR, retail_path.get_file().get_basename()]
 
 
 ## True when [param path] is a lettering image.
@@ -101,7 +104,7 @@ static func is_lettering_path(path: String) -> bool:
 	return path.contains("/textures/%s/" % LETTERING_DIR)
 
 
-## The path under the assets root of the font called [param name]: one of the
+## The path under the shippable root of the font called [param name]: one of the
 ## [constant VECTOR_FONTS], the same in every set, or the set's bitmap font.
 func font_path(name: String) -> String:
 	if VECTOR_FONTS.has(name):

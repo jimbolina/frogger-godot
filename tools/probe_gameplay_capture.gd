@@ -53,7 +53,7 @@ func _run() -> void:
 	if ticks <= 0 or ticks > 10000:
 		_finish("Capture duration must be 1..10000")
 		return
-	_data = ImportedAssets.open("res://assets", ViewerArguments.texture_set(arguments))
+	_data = ViewerArguments.open_assets(arguments)
 	_data.note_renderer(RenderingServer.get_current_rendering_method())
 	if not _data.is_valid():
 		_finish(_data.error)

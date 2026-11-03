@@ -1,7 +1,8 @@
 class_name ImportedAssets
 extends AssetCatalog
-## The [AssetCatalog] read from the committed resources under
-## [code]res://assets[/code], written once by the importer.
+## The [AssetCatalog] read from imported resources: the committed
+## [code]res://assets[/code], written once by the importer, or a folder the
+## player's own copy was imported into ([AssetLocation]).
 ##
 ## [method open] loads the [AssetIndex] ([code]catalog.tres[/code]), from the
 ## assets root or from a separate index root holding an overlay index whose
@@ -11,6 +12,12 @@ extends AssetCatalog
 ## same object. Records are shared and must not be changed. The retail archive
 ## is not kept, so no raw resource bytes are available.
 ##
+## Records, models, maps, sounds, music and texture sets come from the base
+## [member root]. Fonts, lettering and the emissive table are the port's own
+## work and come from [member shippable_root], which stays
+## [constant SHIPPABLE_ROOT] when the base root is an import under
+## [code]user://[/code].
+##
 ## The catalog draws from one [TextureSet]: the records keep their retail
 ## textures, and [method texture_of], [method texture_counterpart] and
 ## [method font] answer with the chosen set's files,
@@ -18,14 +25,21 @@ extends AssetCatalog
 ## lacks one. A lettering image ([method TextureSet.lettering_path]) replaces
 ## its retail texture in every set.
 
-## The hand-authored glowing-image table under the assets root.
+## The hand-authored glowing-image table under the shippable root.
 const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
+## The committed assets, which also hold the shippable fonts, lettering and
+## emissive table.
+const SHIPPABLE_ROOT: String = "res://assets"
+## The asset index file inside an assets or index root.
+const INDEX_FILE: String = "catalog.tres"
 
 ## The asset index the catalog answers from.
 var index: AssetIndex
-## The folder the assets were opened from: fonts, lettering, the emissive
-## table and texture sets are read from here.
+## The base folder the assets were opened from: texture sets and models are
+## read from here, and an index of its own points into it.
 var root: String = ""
+## The folder fonts, lettering and the emissive table are read from.
+var shippable_root: String = SHIPPABLE_ROOT
 ## The folder the asset index was read from; [member root] unless
 ## [method open] was given another.
 var index_root: String = ""
@@ -41,15 +55,18 @@ var _emissive: EmissiveImageTable
 ## Opens the assets under [param assets_root], drawing from the texture set
 ## called [param texture_set_name] ("" for retail). The index is read from
 ## [param index_folder] when it is not empty, otherwise from
-## [param assets_root]. Check [member AssetCatalog.error]; a set that is not
-## installed falls back to retail with a line in [member AssetCatalog.warnings].
-static func open(assets_root: String = "res://assets", texture_set_name: String = "",
-		index_folder: String = "") -> ImportedAssets:
+## [param assets_root]; fonts, lettering and the emissive table from
+## [param shippable_folder]. Check [member AssetCatalog.error]; a set that is
+## not installed under [param assets_root] falls back to retail with a line in
+## [member AssetCatalog.warnings].
+static func open(assets_root: String = SHIPPABLE_ROOT, texture_set_name: String = "",
+		index_folder: String = "", shippable_folder: String = SHIPPABLE_ROOT) -> ImportedAssets:
 	var catalog := ImportedAssets.new()
 	catalog.root = assets_root
+	catalog.shippable_root = shippable_folder
 	catalog.index_root = index_folder if not index_folder.is_empty() else assets_root
 	catalog.textures = resolve_texture_set(assets_root, texture_set_name, catalog.warnings)
-	var index_path: String = catalog.index_root.path_join("catalog.tres")
+	var index_path: String = catalog.index_root.path_join(INDEX_FILE)
 	catalog.index = catalog._load(index_path) as AssetIndex
 	if catalog.index == null:
 		catalog.error = "no asset index at %s" % index_path
@@ -68,6 +85,11 @@ static func open(assets_root: String = "res://assets", texture_set_name: String 
 	if catalog.names == null:
 		catalog.error = "no name lists at %s" % catalog.index.names_path
 	return catalog
+
+
+## True when [param folder] holds an asset index ([constant INDEX_FILE]).
+static func has_index(folder: String) -> bool:
+	return not folder.is_empty() and ResourceLoader.exists(folder.path_join(INDEX_FILE))
 
 
 ## The texture set called [param texture_set_name] when its images folder
@@ -99,7 +121,7 @@ func texture_of(image: VloImage) -> Texture2D:
 
 
 ## The file the catalog draws for the retail [param texture]: its lettering
-## image under the assets root when one exists, in every set; otherwise the
+## image under the shippable root when one exists, in every set; otherwise the
 ## texture set's file, which is the same texture for the retail set, a texture
 ## outside the retail folders, or a set file that is missing (noted once in
 ## [member problems]). The answer is cached per retail path.
@@ -110,24 +132,25 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 	if _counterparts.has(retail_path):
 		return _counterparts[retail_path]
 	var lettering: String = TextureSet.lettering_path(retail_path)
-	var found: Texture2D = _load(root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
+	var found: Texture2D = _load(shippable_root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
 	if found == null:
 		found = _set_counterpart(texture)
 	_counterparts[retail_path] = found
 	return found
 
 
-## The bitmap font called [param name] under [code]fonts/<set>/[/code], the
+## The bitmap font called [param name] under [code]fonts/<set>/[/code] of the
+## shippable root, the
 ## retail set's font when the chosen set lacks it (noted once in
 ## [member problems]), or null with a line in [member problems] when neither
 ## exists. The answer is cached per name.
 func font(name: String) -> Font:
 	if _fonts.has(name):
 		return _fonts[name]
-	var path: String = root.path_join(textures.font_path(name))
+	var path: String = shippable_root.path_join(textures.font_path(name))
 	var found: Font = _load(path) as Font
 	if found == null and not textures.is_retail():
-		var retail_path: String = root.path_join(TextureSet.retail().font_path(name))
+		var retail_path: String = shippable_root.path_join(TextureSet.retail().font_path(name))
 		problems.append("texture set %s has no %s; drawing %s" % [textures.set_name, path, retail_path])
 		path = retail_path
 		found = _load(path) as Font
@@ -149,12 +172,13 @@ func _set_counterpart(texture: Texture2D) -> Texture2D:
 	return found
 
 
-## The glowing-image table at [constant EMISSIVE_IMAGES_PATH], loaded once;
+## The glowing-image table at [constant EMISSIVE_IMAGES_PATH] under the
+## shippable root, loaded once;
 ## an empty table, with a line in [member problems], when it is missing.
 func emissive_images() -> EmissiveImageTable:
 	if _emissive != null:
 		return _emissive
-	var path: String = root.path_join(EMISSIVE_IMAGES_PATH)
+	var path: String = shippable_root.path_join(EMISSIVE_IMAGES_PATH)
 	_emissive = _load(path) as EmissiveImageTable
 	if _emissive == null:
 		problems.append("no emissive image table at %s" % path)

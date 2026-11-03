@@ -3,7 +3,8 @@
 `assets/` holds the game's content as committed Godot resources, imported
 once from the owner's `pc-retail-v3.0e` copy by the importer under
 `archive/import/` and edited directly afterwards. The game, sandbox, viewers
-and inspection tools read only these resources; see the
+and inspection tools read these resources, or another root the
+[asset location](#asset-location) chooses; see the
 [roadmap](../PORTING.md#s1-and-s2-native-asset-and-modern-rendering-spikes)
 and the [domain model](domain-model.md#asset-identities) for how they are keyed.
 
@@ -39,15 +40,65 @@ rebuilds the record arrays on first access, which keeps SUB1 under 1.7 MB as
 a binary resource; compressed saving brings it under 0.4 MB.
 
 `AssetCatalog` is the abstract provider the game is typed against.
-`ImportedAssets` implements it over `assets/`; `GameData` in `archive/source/`
+`ImportedAssets` implements it over an assets root; `GameData` in `archive/source/`
 implements it over the retail files for the importer and the archive suite.
+
+## Asset location
+
+Every scene, viewer and inspection tool opens its catalog through
+`AssetLocation` (`src/application/setup/`), which chooses the base root in
+this order:
+
+1. the folder given with `--assets-root=<folder>` after `--`, used as given;
+   a folder without `catalog.tres` is reported, not skipped;
+2. otherwise the imported root recorded in `user://launcher.cfg`, when it
+   holds `catalog.tres`;
+3. otherwise `res://assets`, when it holds `catalog.tres`.
+
+When none is usable, the catalog's error lists each candidate and why it was
+rejected; the setup screen is to act on that. A source checkout without a
+launcher file therefore plays the committed `assets/` as before. A
+`--froglord` launch reads the overlay the `FrogLordPointer` names over the
+chosen base root.
+
+The catalog reads from two roots. The base root holds the retail-derived
+records: the index, tables, maps, models, banks, sounds, music, demos and the
+texture sets. The shippable root, `res://assets` in every scene, holds the port's own
+work: the fonts, the lettering images and the emissive table. A base root
+under `user://` therefore still finds them. A texture set whose images folder
+is missing under the base root, such as `x4` over an import made at runtime,
+falls back to retail with a warning. An import made at runtime stores each
+image as `textures/images/tNNNN.res` (a lossless `PortableCompressedTexture2D`) and each music track
+as `audio/music/track_NN.res` (an `AudioStreamWAV` saved without a loop);
+texture-set mapping keeps the record's extension, lettering is always looked
+up as `.png`, and the music player loops a copy of either track kind over the
+whole track.
+
+`user://launcher.cfg` is a `ConfigFile` read and written by `LauncherStore`
+into a `LauncherSettings` record (`src/data/settings/`):
+
+| Section | Keys |
+|---|---|
+| `meta` | `format_version` (1) |
+| `game_data` | `game_data_dir`, `disc_image_path` |
+| `import` | `fingerprint`, `imported_root` |
+| `froglord` | `froglord_enabled`, `froglord_dir` |
+| `start` | `show_setup_on_start` |
+
+A missing file gives the defaults without an error; another version, a
+missing version or a value of the wrong type gives all the defaults, and the
+reason joins the catalog's warnings. Saving writes `launcher.cfg.tmp` and
+renames it over the file. The archive's `GameDataLocator` keeps its own
+remembered folder in `user://settings.cfg`; the launcher file does not share it,
+because shipped code may not depend on `archive/`.
 
 ## Layout
 
 An importer run may also write an overlay index outside `assets/`: its paths
 point into its own folder for what the run wrote and into `assets/` for the
 rest, and `ImportedAssets.open` reads it through its index-root argument while
-fonts, lettering and texture sets still come from the assets root
+texture sets and models still come from the base root and fonts and lettering
+from the shippable root
 ([archive](../../archive/README.md#regenerating-the-assets)).
 
 | Path | Content |
@@ -64,7 +115,7 @@ fonts, lettering and texture sets still come from the assets root
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
-| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number. |
+| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number (`track_NN.res` WAV streams in an import made at runtime). |
 | `demos/<NAME>.tres` | The recorded demos. |
 | `rendering/emissive_images.tres` | Hand-authored, not imported: the `EmissiveImageTable` of texture images that glow, by FrogLord image name, each with a colour, strength and light settings ([lava](rendering/lighting.md#lava)). Edit it as text; `test_asset_emissive_images` checks that it validates and every name resolves. |
 

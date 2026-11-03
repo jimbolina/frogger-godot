@@ -1,22 +1,25 @@
 extends GutTest
-## MusicPlayer plays the imported Ogg once per selection, loops a copy and stays silent with diagnostics otherwise.
+## MusicPlayer plays the imported Ogg or WAV track of its folder once per selection, loops a copy of the
+## whole track and stays silent with diagnostics otherwise.
 
 const TRACK: int = 2
+const COMMITTED: String = "res://assets/audio/music"
 
 var _player: MusicPlayer
 
 func before_each() -> void:
 	_player = MusicPlayer.new()
 	_player.threaded = false
+	_player.use_folder(COMMITTED)
 	add_child_autofree(_player)
 
 func test_imported_track_paths_exist_only_for_imported_tracks() -> void:
-	assert_eq(MusicPlayer.imported_track_path(MusicPlayer.IMPORTED_DIR, TRACK), "res://assets/audio/music/track_02.ogg")
-	assert_eq(MusicPlayer.imported_track_path(MusicPlayer.IMPORTED_DIR, 99), "")
+	assert_eq(MusicPlayer.imported_track_path(COMMITTED, TRACK), "res://assets/audio/music/track_02.ogg")
+	assert_eq(MusicPlayer.imported_track_path(COMMITTED, 99), "")
 	assert_eq(MusicPlayer.imported_track_path("", TRACK), "")
 
 func test_the_imported_ogg_is_read_once_and_loops_a_copy() -> void:
-	var path: String = MusicPlayer.imported_track_path(MusicPlayer.IMPORTED_DIR, TRACK)
+	var path: String = MusicPlayer.imported_track_path(COMMITTED, TRACK)
 	for threaded: bool in [false, true]:
 		_player.clear()
 		_player.threaded = threaded
@@ -79,3 +82,78 @@ func test_no_track_plays_nothing_and_clear_forgets_the_selection() -> void:
 	assert_eq(_player.track, -1)
 	_player.restart()
 	assert_false(_player.is_playing())
+
+func _wav(frames: int, format: AudioStreamWAV.Format, stereo: bool) -> AudioStreamWAV:
+	var wav := AudioStreamWAV.new()
+	wav.format = format
+	wav.stereo = stereo
+	wav.mix_rate = 22050
+	var bytes: int = frames * (2 if stereo else 1) * (2 if format == AudioStreamWAV.FORMAT_16_BITS else 1)
+	var data := PackedByteArray()
+	data.resize(bytes)
+	wav.data = data
+	return wav
+
+func _remove(path: String) -> void:
+	if not DirAccess.dir_exists_absolute(path):
+		return
+	for child: String in DirAccess.get_files_at(path):
+		DirAccess.remove_absolute(path.path_join(child))
+	DirAccess.remove_absolute(path)
+
+func test_a_wav_track_loops_the_whole_track_from_a_copy() -> void:
+	for sample: Array in [[1000, AudioStreamWAV.FORMAT_16_BITS, false], [1000, AudioStreamWAV.FORMAT_16_BITS, true],
+			[750, AudioStreamWAV.FORMAT_8_BITS, true]]:
+		var frames: int = sample[0]
+		var format: AudioStreamWAV.Format = sample[1]
+		var stereo: bool = sample[2]
+		var wav: AudioStreamWAV = _wav(frames, format, stereo)
+		assert_eq(MusicPlayer.wav_frames(wav), frames)
+		var looped: AudioStreamWAV = MusicPlayer.looping_copy(wav) as AudioStreamWAV
+		assert_not_null(looped)
+		assert_ne(looped, wav)
+		assert_eq(looped.loop_mode, AudioStreamWAV.LOOP_FORWARD)
+		assert_eq(looped.loop_begin, 0)
+		assert_eq(looped.loop_end, frames)
+		assert_eq(looped.data.size(), wav.data.size())
+		assert_eq(wav.loop_mode, AudioStreamWAV.LOOP_DISABLED, "the shared track keeps its settings")
+	assert_null(MusicPlayer.looping_copy(Resource.new()))
+
+func test_a_runtime_imported_wav_track_is_found_and_played_looping() -> void:
+	var folder: String = "user://music_player_test/audio/music"
+	_remove(folder)
+	assert_eq(DirAccess.make_dir_recursive_absolute(folder), OK)
+	var path: String = folder.path_join("track_05.res")
+	assert_eq(ResourceSaver.save(_wav(2205, AudioStreamWAV.FORMAT_16_BITS, true), path), OK)
+	assert_eq(MusicPlayer.imported_track_path(folder, 5), path)
+	assert_eq(MusicPlayer.imported_track_path(folder, TRACK), "")
+	_player.use_folder(folder)
+	assert_eq(_player.imported_dir, folder)
+	_player.select(5)
+	_player.restart()
+	var stream: AudioStreamWAV = _player.stream() as AudioStreamWAV
+	assert_not_null(stream)
+	assert_eq(stream.loop_mode, AudioStreamWAV.LOOP_FORWARD)
+	assert_eq(stream.loop_end, 2205)
+	assert_true(_player.is_playing())
+	_player.use_folder(COMMITTED)
+	assert_eq(_player.track, -1, "a new folder forgets the selected track")
+	assert_null(_player.stream())
+	_player.clear()
+	_remove(folder)
+	_remove("user://music_player_test/audio")
+	_remove("user://music_player_test")
+
+func test_the_music_folder_follows_the_catalog_base_root() -> void:
+	var catalog := ImportedAssets.new()
+	catalog.root = "user://assets/0123456789abcdef"
+	assert_eq(MusicPlayer.folder_of(catalog), "user://assets/0123456789abcdef/audio/music")
+	assert_eq(MusicPlayer.folder_of(AssetCatalog.new()), "")
+	assert_eq(MusicPlayer.folder_of(null), "")
+	var fresh := MusicPlayer.new()
+	fresh.threaded = false
+	add_child_autofree(fresh)
+	fresh.select(TRACK)
+	fresh.restart()
+	assert_false(fresh.is_playing())
+	assert_eq(fresh.diagnostics.size(), 1, "no folder chosen is silent with a diagnostic")

@@ -182,7 +182,7 @@ static func frame_path(viewer: MapViewer, definition: PathDefinition) -> void:
 	viewer.set_camera_pose(midpoint + Vector3i(0, -span, -span * 2), midpoint, 256)
 
 static func _open_level(viewer: MapViewer) -> String:
-	viewer.open_data(ImportedAssets.open("res://assets", ViewerArguments.texture_set(OS.get_cmdline_user_args())), true)
+	viewer.open_data(ViewerArguments.open_assets(OS.get_cmdline_user_args()), true)
 	viewer.data.note_renderer(RenderingServer.get_current_rendering_method())
 	if viewer.data == null or not viewer.data.is_valid():
 		return viewer.data.error if viewer.data != null else "No game data"

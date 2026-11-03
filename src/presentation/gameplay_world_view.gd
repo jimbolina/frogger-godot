@@ -737,9 +737,12 @@ func configure_audio(resources: AudioResources, sound_ids: PackedInt32Array = Pa
 	_voice_view.configure(resources)
 	_voice_view.preload_sounds(sound_ids)
 
-## Selects the level music played from each run start: imported CD track [param track]; -1 plays none.
-func configure_music(track: int) -> void:
+## Selects the level music played from each run start: imported CD track [param track] under
+## [param folder] ("" keeps the current folder); -1 plays none.
+func configure_music(track: int, folder: String = "") -> void:
 	if _music_player != null:
+		if not folder.is_empty():
+			_music_player.use_folder(folder)
 		_music_player.select(track)
 
 ## Holds or resumes every sound effect and the music where they are.

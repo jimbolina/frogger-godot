@@ -16,9 +16,11 @@ states what each layer may use.
   Godot math types are allowed.
 - `src/application/` owns the adapters from data records to gameplay
   definitions and the behavior and callback catalogs. Only `loaders/`
-  (`ImportedAssets`) and `storage/` (`ProgressStore`, `HighScoreStore`,
-  `GraphicsStore`) may
-  touch files or the environment.
+  (`ImportedAssets`, `FrogLordPointer`) and `storage/` (`ProgressStore`,
+  `HighScoreStore`, `GraphicsStore`, `LauncherStore`) may touch files or the
+  environment. `setup/AssetLocation` chooses the assets root from the launch
+  arguments and the read `LauncherStore` it is given, checking folders through
+  `ImportedAssets.has_index`, so it touches no files itself.
 - `src/rendering/` builds render resources (meshes, materials, shaders, texture
   pages, effect geometry) from data records and committed gameplay state.
 - `src/inspection/` owns scenarios, validated options, corridor guards, presets
@@ -318,9 +320,20 @@ them) or unplaced. The importer prints it after the catalog step and
 requires a FrogLord save to add exactly its deliberate probe
 ([golden](../../tests/golden/specs/imported-assets.md#froglord-round-trip)).
 
+`AssetLocation` resolves the base root in the order the
+[assets reference](assets.md#asset-location) gives and opens `ImportedAssets`
+over it with the shippable root beside it; scenes reach it through
+`GameplayScreen.asset_location` or `ViewerArguments.open_assets`, which read
+`LauncherStore` from `user://launcher.cfg` into a `LauncherSettings` record.
+An unusable location yields a catalog whose error lists the rejected
+candidates. `MusicPlayer.folder_of` takes the music folder from the catalog's
+base root.
+
 `FrogLordPointer` (`src/application/loaders`) reads and atomically writes the
-file naming the overlay the FrogLord watcher imported last; `AssetReloadWatcher`
-(`src/presentation`) polls it and signals `GameplayScreen` under `--froglord`.
+file naming the overlay the FrogLord watcher imported last;
+`AssetLocation.resolve_overlay` reads it beside the base root, and
+`AssetReloadWatcher` (`src/presentation`) polls it and signals `GameplayScreen`
+under `--froglord`.
 A reload opens a new `ImportedAssets` over the new overlay folder, whose
 records lie at new paths, and hands it to `open_data` with ownership, which
 releases the previous catalog; loaded records are never replaced in place.
