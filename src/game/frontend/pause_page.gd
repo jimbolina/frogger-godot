@@ -11,9 +11,9 @@ extends RefCounted
 ## pause). [member quit_selection] keeps retail's numbering: [constant QUIT_YES] 0 and
 ## [constant QUIT_NO] 1 (pause.h:30-35), so Left moves to No and Right to Yes.
 ##
-## Port differences: retail shows Continue and Quit (the hidden menu, pause.c:559-603) only after
-## a SELECT release (:300-308), which no retail PC key reaches; the port shows them at INIT, so
-## the PAUSED sprite never glows. Escape stands for FRR_START, as in the retail PC executable
+## Port differences: the frozen C shows Continue and Quit (the hidden menu, pause.c:559-603)
+## only after a SELECT release (:300-308), which no retail PC key reaches; retail PC shows them
+## as soon as the page opens, and the port does so at INIT, so the PAUSED sprite never glows. Escape stands for FRR_START, as in the retail PC executable
 ## (0x0042f428). Visibility and glow follow the mode after the tick, so each is one tick early
 ## against retail: the sprites show from the press tick (retail creates them in the INIT arm) and
 ## go at KILL_SPRITES (retail kills them in that arm), the glow starts on the tick that enters MENU

@@ -173,10 +173,11 @@ pause quit (`:502`): an unfinished level skips name entry. The selected word
 glows `(frame & 7) << 5` as the options sprites do (`OPTIONS.C:381-414`), capped
 at neutral.
 
-Port differences: retail opens the Continue/Quit menu only on a SELECT release
-(`:303`), which no retail PC key reaches (its keyboard binds no START, SELECT or
-TRIANGLE), so the port shows the menu at once (owner decision 2026-11-02), and
-Space, which every cheat phrase contains, is never fire. Space no longer pauses
+Port differences: the frozen C opens the Continue/Quit menu only on a SELECT
+release (`:303`), which no retail PC key reaches (its keyboard binds no START,
+SELECT or TRIANGLE); retail PC shows the menu as soon as the page opens (owner
+observation 2026-11-02), so its executable opens it itself and the port shows
+it at once. Space, which every cheat phrase contains, is never fire. Space no longer pauses
 outside the sandbox. The sprites show from INIT and the glow from the MENU tick,
 each one tick before retail. Retail kills the playing effects (`:187`) and dims
 only the moving entities' voices; the port holds every gameplay voice and
@@ -316,7 +317,7 @@ scores on eight-digit logs with leading zeros blank, five extras and the frog th
 hops from turtle to turtle (18 ticks' wait, 12 ticks' hop) with hop and splash sounds.
 `HighScoreTableView` draws it; `LevelStackView` and `StackPanel` draw the stack mode
 with the checker background and the three score lines (`HighScoreText`) beside the
-spun-out picture, drawn white with `draw_string` from the texture set's `newfont`
+spun-out picture, drawn white with `draw_string` from the `newfont`
 [bitmap font](../assets.md#fonts), centred in the score box by `NewfontText.width` and
 nearest filtered. After name entry the tour spins out ORG1 first, then every
 level with a new row (camera creeping 20 a tick, a ten-tick wait, a 90-tick hold), then
