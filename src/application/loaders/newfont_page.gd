@@ -2,8 +2,8 @@ class_name NewfontPage
 extends RefCounted
 ## Builds the page of the [code]newfont[/code] bitmap font from an image of
 ## texture 310 at runtime, the way [code]tools/make_font_newfont.py[/code]
-## builds the committed page, so a texture pack that redraws the font is
-## drawn by the font too.
+## builds its golden page, so a texture pack that redraws the font is drawn
+## by the font too.
 ##
 ## Texture 310 holds the 96 glyphs of ASCII 32..127 in 8 x 8 cells, 32 to a
 ## row in three rows. The page holds them at [constant PAGE_SCALE] page
@@ -12,8 +12,8 @@ extends RefCounted
 ## sits inside a [constant BORDER]-pixel transparent border, and the
 ## [constant FILL_RINGS] rings of transparent pixels around its opaque pixels
 ## within its cell take the per-channel maximum colour of their filled
-## neighbours, so linear filtering does not darken the edges. The committed
-## font's glyph layout therefore fits the page unchanged.
+## neighbours, so linear filtering does not darken the edges. The glyph
+## layout of [NewfontFont] therefore fits the page at any source scale.
 
 ## The bitmap font's name in the catalog.
 const FONT_NAME: String = "newfont"
@@ -86,14 +86,6 @@ static func build(source: Image) -> Image:
 	for ring: int in FILL_RINGS:
 		_fill_ring(page, filled, width, height)
 	return Image.create_from_data(width, height, false, Image.FORMAT_RGBA8, page)
-
-
-## A copy of [param retail_font], the committed [code]newfont[/code] font,
-## drawing [param page] in place of its own page.
-static func font_with_page(retail_font: FontFile, page: Image) -> FontFile:
-	var made: FontFile = retail_font.duplicate(true) as FontFile
-	made.set_texture_image(0, CACHE_SIZE, 0, page)
-	return made
 
 
 static func _fill_ring(page: PackedByteArray, filled: PackedByteArray, width: int, height: int) -> void:

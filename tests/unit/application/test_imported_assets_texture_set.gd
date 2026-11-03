@@ -140,7 +140,7 @@ func test_a_wrong_size_image_is_rejected_and_falls_back_to_retail() -> void:
 func test_a_pack_wins_over_lettering_which_wins_over_retail() -> void:
 	var lettered: Texture2D = _retail(263, LETTERED_SIZE)
 	var lettering: Texture2D = _catalog("").texture_counterpart(lettered)
-	assert_eq(lettering.resource_path, LETTERING_ROOT.path_join("textures/lettering/t0263.png"))
+	assert_eq(lettering.resource_path, LETTERING_ROOT.path_join("lettering/t0263.png"))
 	assert_eq(Vector2i(lettering.get_size()), LETTERED_SIZE * LETTERING_SCALE)
 	_pack("lettered", {"hi_a.png": LETTERED_SIZE * 2})
 	var drawn: Texture2D = _catalog("lettered").texture_counterpart(lettered)
@@ -206,11 +206,13 @@ func test_upscaled_pack_images_draw_linearly_at_their_retail_size() -> void:
 
 
 func test_the_lettering_path_sits_under_the_shippable_root() -> void:
-	assert_eq(TextureSet.lettering_path(LETTERED), "textures/lettering/t0263.png")
+	assert_eq(TextureSet.lettering_path(LETTERED), "lettering/t0263.png")
 	assert_eq(TextureSet.lettering_path("user://assets/0123456789abcdef/textures/images/t0263.res"),
-		"textures/lettering/t0263.png", "a runtime-imported image still finds the committed lettering")
+		"lettering/t0263.png", "a runtime-imported image still finds the committed lettering")
 	assert_eq(TextureSet.lettering_path("res://assets/models/HI_A/mesh.res"), "")
-	assert_true(TextureSet.is_lettering_path(LETTERING_ROOT.path_join("textures/lettering/t0263.png")))
+	assert_eq(TextureSet.lettering_mask_path(LETTERED, "green_pad"), "lettering/masks/green_pad/t0263.png")
+	assert_eq(TextureSet.lettering_mask_path("res://assets/models/HI_A/mesh.res", "log"), "")
+	assert_true(TextureSet.is_lettering_path(LETTERING_ROOT.path_join("lettering/t0263.png")))
 	assert_false(TextureSet.is_lettering_path(LETTERED))
 
 

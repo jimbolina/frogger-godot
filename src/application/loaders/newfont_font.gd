@@ -2,12 +2,12 @@ class_name NewfontFont
 extends RefCounted
 ## Builds the [code]newfont[/code] bitmap font at runtime around a page from
 ## [NewfontPage], with the glyph layout that [code]tools/make_font_newfont.py[/code]
-## writes into the committed [code]newfont.fnt[/code] and Godot's BMFont
+## writes into its golden [code]newfont.fnt[/code] and Godot's BMFont
 ## importer reads from it.
 ##
-## A packaged build ships no font page, because the page holds texture 310's
-## retail pixels; the catalog then builds the font from the player's imported
-## texture 310. The layout is fixed by the page geometry alone: 96 glyphs of
+## No build ships a font page, because the page holds texture 310's retail
+## pixels; the catalog always builds the font from the imported texture 310
+## or a texture pack's. The layout is fixed by the page geometry alone: 96 glyphs of
 ## ASCII 32..127, 32 to a row, each a [constant NewfontPage.STRIDE]-pixel cell
 ## drawn [constant NewfontPage.BORDER] pixels up and left of its pen position
 ## and advancing one glyph width, at a fixed size of one glyph height with

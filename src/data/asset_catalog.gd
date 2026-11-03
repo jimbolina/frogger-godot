@@ -71,8 +71,8 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 	return texture
 
 
-## The bitmap font called [param _name], or null when the catalog has no
-## font files (only catalogs over committed assets serve one).
+## The font called [param _name], or null when the catalog serves no fonts
+## (only catalogs over imported assets serve them).
 func font(_name: String) -> Font:
 	return null
 

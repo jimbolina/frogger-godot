@@ -7,6 +7,9 @@ extends GutTest
 
 ## Where the imported assets live.
 const ASSETS: String = AssetTestCache.ASSETS
+## The environment variable naming the folder [code]tools/run_tests[/code]
+## writes the Python golden generators' output into from the imported assets.
+const GENERATED_VARIABLE: String = "FROGGER_GENERATED_DIR"
 ## Where the facts about locally derived assets live.
 const IMPORTED_DIR: String = "res://tests/golden/imported"
 
@@ -49,6 +52,16 @@ func files_under(folder: String, suffix: String) -> PackedStringArray:
 	_collect(folder, suffix, found)
 	found.sort()
 	return found
+
+
+## The folder [param name] of the generators' output under
+## [constant GENERATED_VARIABLE], or "" with a failed test when it is unset.
+func generated_folder(name: String) -> String:
+	var folder: String = OS.get_environment(GENERATED_VARIABLE)
+	if folder.is_empty():
+		fail_test("%s is not set; run the suite through tools/run_tests" % GENERATED_VARIABLE)
+		return ""
+	return folder.path_join(name)
 
 
 ## SHA-256 of [param bytes] as lower-case hex.

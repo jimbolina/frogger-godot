@@ -1,0 +1,321 @@
+[gd_resource type="Resource" script_class="EmissiveImageTable" load_steps=42 format=3]
+
+[ext_resource type="Script" path="res://src/data/textures/emissive_image.gd" id="1_emimg"]
+[ext_resource type="Script" path="res://src/data/textures/emissive_image_table.gd" id="2_emtab"]
+
+[sub_resource type="Resource" id="EmissiveImage_1"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava2"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_2"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava3"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_3"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava5"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_4"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava5a"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_5"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavacent"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_6"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavacent2"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_7"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani1"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_8"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani2"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_9"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani3"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_10"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani4"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_11"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani5"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_12"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani6"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_13"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani7"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_14"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani8"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_15"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavani9"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 1.0
+
+[sub_resource type="Resource" id="EmissiveImage_16"]
+script = ExtResource("1_emimg")
+image_name = "vol_lavaedge"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 0.6
+
+[sub_resource type="Resource" id="EmissiveImage_17"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava6"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 0.6
+
+[sub_resource type="Resource" id="EmissiveImage_18"]
+script = ExtResource("1_emimg")
+image_name = "vol_lava7"
+colour = Color(1, 0.6, 0.4, 1)
+strength = 1.0
+light = true
+light_energy = 0.6
+
+[sub_resource type="Resource" id="EmissiveImage_19"]
+script = ExtResource("1_emimg")
+image_name = "vol_hhotrock1"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_20"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka1"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_21"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka2"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_22"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka3"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_23"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka4"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_24"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka5"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_25"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrocka6"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_26"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb1"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_27"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb2"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_28"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb3"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_29"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb4"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_30"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb5"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_31"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockb6"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_32"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc1"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_33"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc2"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_34"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc3"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_35"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc4"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_36"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc5"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_37"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrockc6"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 1.8
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_38"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrock1"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 0.5
+light = false
+light_energy = 0.0
+
+[sub_resource type="Resource" id="EmissiveImage_39"]
+script = ExtResource("1_emimg")
+image_name = "vol_hotrock3"
+colour = Color(1, 0.5, 0.3, 1)
+strength = 0.5
+light = false
+light_energy = 0.0
+
+[resource]
+resource_name = "emissive_images"
+script = ExtResource("2_emtab")
+entries = Array[ExtResource("1_emimg")]([SubResource("EmissiveImage_1"), SubResource("EmissiveImage_2"), SubResource("EmissiveImage_3"), SubResource("EmissiveImage_4"), SubResource("EmissiveImage_5"), SubResource("EmissiveImage_6"), SubResource("EmissiveImage_7"), SubResource("EmissiveImage_8"), SubResource("EmissiveImage_9"), SubResource("EmissiveImage_10"), SubResource("EmissiveImage_11"), SubResource("EmissiveImage_12"), SubResource("EmissiveImage_13"), SubResource("EmissiveImage_14"), SubResource("EmissiveImage_15"), SubResource("EmissiveImage_16"), SubResource("EmissiveImage_17"), SubResource("EmissiveImage_18"), SubResource("EmissiveImage_19"), SubResource("EmissiveImage_20"), SubResource("EmissiveImage_21"), SubResource("EmissiveImage_22"), SubResource("EmissiveImage_23"), SubResource("EmissiveImage_24"), SubResource("EmissiveImage_25"), SubResource("EmissiveImage_26"), SubResource("EmissiveImage_27"), SubResource("EmissiveImage_28"), SubResource("EmissiveImage_29"), SubResource("EmissiveImage_30"), SubResource("EmissiveImage_31"), SubResource("EmissiveImage_32"), SubResource("EmissiveImage_33"), SubResource("EmissiveImage_34"), SubResource("EmissiveImage_35"), SubResource("EmissiveImage_36"), SubResource("EmissiveImage_37"), SubResource("EmissiveImage_38"), SubResource("EmissiveImage_39")])

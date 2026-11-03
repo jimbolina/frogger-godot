@@ -32,7 +32,8 @@ $targets = @{
     "Windows" = @("build/windows", "build/windows/Frogger.exe", "windows-x86_64")
     "Linux" = @("build/linux", "build/linux/Frogger.x86_64", "linux-x86_64")
 }
-$allowed = '^res://(assets/fonts/angular/frogger_angular\.ttf\.import|assets/rendering/emissive_images\.tres\.remap|assets/textures/lettering/t[0-9]{4}\.png\.import|\.godot/imported/(frogger_angular\.ttf|frogger_icon\.(png|svg))-[0-9a-f]+\.[a-z]+)$'
+$lettering = '^res://content/lettering/(masks/(green_pad|log|turtle)/)?t[0-9]{4}\.png\.import$'
+$allowed = '^res://(content/fonts/angular/frogger_angular\.ttf\.import|content/rendering/emissive_images\.tres\.remap|content/lettering/(masks/(green_pad|log|turtle)/)?t[0-9]{4}\.png\.import|\.godot/imported/(frogger_angular\.ttf|frogger_icon\.(png|svg))-[0-9a-f]+\.[a-z]+)$'
 $rc = 0
 foreach ($preset in $Presets) {
     if (-not $targets.ContainsKey($preset)) {
@@ -54,14 +55,14 @@ foreach ($preset in $Presets) {
     }
     $plain = $text -replace "`e\[[0-9;]*m", ""
     $stored = [regex]::Matches($plain, 'Storing File: (res://\S+)') | ForEach-Object { $_.Groups[1].Value }
-    $letteringImported = $stored | Where-Object { $_ -match '^res://assets/textures/lettering/t[0-9]{4}\.png\.import$' } |
+    $letteringImported = $stored | Where-Object { $_ -match $lettering } |
         ForEach-Object { Select-String -Path $_.Substring(6) -Pattern '^path="(res://\.godot/imported/[^"]*)"$' } |
         ForEach-Object { $_.Matches[0].Groups[1].Value }
     $leaked = $stored |
-        Where-Object { $_ -match '^res://(assets/|\.godot/imported/)' -and $_ -notmatch $allowed -and $letteringImported -notcontains $_ }
+        Where-Object { $_ -match '^res://(assets/|content/|\.godot/imported/)' -and $_ -notmatch $allowed -and $letteringImported -notcontains $_ }
     if ($leaked) {
         Remove-Item -Recurse -Force $folder
-        Write-Output "export: $preset would ship files outside the shippable assets:"
+        Write-Output "export: $preset would ship files outside the shippable content:"
         $leaked | ForEach-Object { Write-Output $_ }
         $rc = 1
         continue

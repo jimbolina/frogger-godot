@@ -2,7 +2,7 @@
 
 The face is the hand-cut capital alphabet the retail lettering textures and the
 March 1997 alpha's letter models share. Its sources live under
-assets/fonts/angular/:
+content/fonts/angular/:
 
     svg/<char>.svg   A-Z and 0-9, third-party traces of the alpha's models
     derived.json     the punctuation, the arrow and the accented capitals
@@ -42,7 +42,7 @@ import sys
 sys.dont_write_bytecode = True
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FACE = os.path.join(ROOT, "assets", "fonts", "angular")
+FACE = os.path.join(ROOT, "content", "fonts", "angular")
 SVG_DIR = os.path.join(FACE, "svg")
 DERIVED = os.path.join(FACE, "derived.json")
 CAP_HEIGHT = 800

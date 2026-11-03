@@ -1,0 +1,320 @@
+# id	name	language	text	style	background	layout
+64	32x32_9	-	9	W2	transparent	line
+65	32x32_1	-	1	W2	transparent	line
+66	32x32_2	-	2	W2	transparent	line
+67	32x32_3	-	3	W2	transparent	line
+68	32x32_4	-	4	W2	transparent	line
+69	32x32_5	-	5	W2	transparent	line
+70	32x32_6	-	6	W2	transparent	line
+71	32x32_7	-	7	W2	transparent	line
+72	32x32_8	-	8	W2	transparent	line
+73	32x32_0	-	0	W2	transparent	line
+235	hi_z	-	Z	TILE	green_pad	line
+236	hi_b	-	B	TILE	green_pad	line
+237	hi_back	-	◀◀	TILE	green_pad	line
+238	hi_c	-	C	TILE	green_pad	line
+239	hi_d	-	D	TILE	green_pad	line
+240	hi_dot	-	.	TILE	green_pad	line
+241	hi_e	-	E	TILE	green_pad	line
+242	hi_end	-	END	TILE	green_pad	components
+243	hi_f	-	F	TILE	green_pad	line
+244	hi_g	-	G	TILE	green_pad	line
+245	hi_h	-	H	TILE	green_pad	line
+246	hi_i	-	I	TILE	green_pad	line
+247	hi_j	-	J	TILE	green_pad	line
+248	hi_k	-	K	TILE	green_pad	line
+249	hi_l	-	L	TILE	green_pad	line
+250	hi_m	-	M	TILE	green_pad	line
+251	hi_n	-	N	TILE	green_pad	line
+252	hi_o	-	O	TILE	green_pad	line
+253	hi_p	-	P	TILE	green_pad	line
+254	hi_q	-	Q	TILE	green_pad	line
+255	hi_r	-	R	TILE	green_pad	line
+256	hi_s	-	S	TILE	green_pad	line
+257	hi_t	-	T	TILE	green_pad	line
+258	hi_u	-	U	TILE	green_pad	line
+259	hi_v	-	V	TILE	green_pad	line
+260	hi_w	-	W	TILE	green_pad	line
+261	hi_x	-	X	TILE	green_pad	line
+262	hi_y	-	Y	TILE	green_pad	line
+263	hi_a	-	A	TILE	green_pad	line
+486	hop_to_it_f	f	SAUTE FROGGER!	CK	transparent	line
+487	hop_to_it_s	s	¡SALTA FROGGER!	CK	transparent	line
+488	hop_to_it_i	i	SALTA FROGGER!	CK	transparent	line
+489	hop_to_it_g	g	AUF GEHT'S!	CK	transparent	line
+490	go_frogger_s	s	¡VAMOS FROGGER !	CK	transparent	line
+491	go_frogger_g	g	GO FROGGER!	CK	transparent	line
+492	go_frogger_i	i	VAI FROGGER !	CK	transparent	line
+493	go_frogger_f	f	VAS-Y FROGGER!	CK	transparent	line
+494	go_s	s	¡ VAMOS !	C-	transparent	line
+495	go_g	g	UND LOS!	C-	transparent	line
+496	go_i	i	VAI !	C-	transparent	line
+497	go_f	f	VAS-Y !	C-	transparent	line
+498	go_get_em_s	s	¡ A POR ELLOS !	C-	transparent	line
+499	go_get_em_g	g	SCHNAPP SIE DIR !	C-	transparent	line
+500	go_get_em_i	i	ACCHIAPPALI !	C-	transparent	line
+501	go_get_em_f	f	CHOPPE-LES!	C-	transparent	line
+502	jump_to_it_s	s	¡ SALTA !	C-	transparent	line
+503	jump_to_it_f	f	ET QUE ÇA SAUTE !	C-	transparent	line
+504	jump_to_it_g	g	FERTIG!	C-	transparent	line
+505	jump_to_it_i	i	SALTA!	C-	transparent	line
+506	optf_yes	f	OUI	CK	transparent	line
+507	optg_no	g	NEIN	CK	transparent	line
+508	optg_yes	g	JA	CK	transparent	line
+509	opti_no	i	NO	CK	transparent	line
+510	opti_yes	i	SÍ	CK	transparent	line
+511	opts_no	s	NO	CK	transparent	line
+512	opts_yes	s	SÍ	CK	transparent	line
+513	optf_no	f	NON	CK	transparent	line
+514	zone_complete_g	g	WELT BEENDET	CK	transparent	line
+515	zone_complete_f	f	ZONE TERMINÉE	CK	transparent	line
+516	zone_complete_i	i	ZONA COMPLETATA	CK	transparent	line
+517	zone_complete_s	s	ZONA COMPLETA	CK	transparent	line
+518	next_s	s	SIGUIENTE	CK	transparent	line
+519	next_g	g	ES FOLGT:	CK	transparent	line
+520	next_i	i	SUCCESSIVO	CK	transparent	line
+521	next_f	f	SUIVANT	CK	transparent	line
+522	bonus_s	s	BONO	CK	transparent	line
+523	bonus_g	g	BONUS	CK	transparent	line
+524	bonus_i	i	BONUS	CK	transparent	line
+525	bonus_f	f	BONUS	CK	transparent	line
+526	total_time_s	s	TIEMPO TOTAL	CK	transparent	line
+527	total_time_g	g	GESAMTZEIT	CK	transparent	line
+528	total_time_i	i	TEMPO TOTALE	CK	transparent	line
+529	total_time_f	f	TOTAL TEMPS	CK	transparent	line
+530	total_score_f	f	TOTAL SCORE	CK	transparent	line
+531	total_score_g	g	GESAMTPUNKTE	CK	transparent	line
+532	total_score_i	i	PUNTEGGIO TOTALE	CK	transparent	line
+533	total_score_s	s	PUNTUACIÓN TOTAL	CK	transparent	line
+534	opts_paused	s	EN PAUSA	CK	transparent	line
+535	optg_paused	g	PAUSE	CK	transparent	line
+536	opti_paused	i	PAUSA	CK	transparent	line
+537	optf_paused	f	PAUSE	CK	transparent	line
+538	quit_g	g	BEENDEN	CK	transparent	line
+539	quit_i	i	ABBANDONA	CK	transparent	line
+540	quit_s	s	SALIR	CK	transparent	line
+541	quit_f	f	QUITTER	CK	transparent	line
+542	croak_s	s	¡ CROAC !	C-	transparent	line
+543	croak_f	f	COA !	C-	transparent	line
+544	croak_g	g	QUAK !	C-	transparent	line
+545	croak_i	i	GRACIDA !	C-	transparent	line
+554	opts_start	s	INICIO	CK	transparent	line
+555	optf_race	f	MODE COURSE	CK	transparent	line
+556	optf_start	f	DEMARRER	CK	transparent	line
+557	optg_options	g	OPTIONEN	CK	transparent	line
+558	optg_race	g	WETTRENNEN	CK	transparent	line
+559	optg_start	g	START	CK	transparent	line
+560	opti_options	i	OPZIONI	CK	transparent	line
+561	opti_race	i	CORSA	CK	transparent	line
+562	opti_start	i	START	CK	transparent	line
+563	opts_options	s	OPCIONES	CK	transparent	line
+564	opts_race	s	CARRERA	CK	transparent	line
+565	optf_options	f	OPTIONS	CK	transparent	line
+566	opt_log_0	-	0	TILE	log	line
+567	opt_log_1	-	1	TILE	log	line
+568	opt_log_2	-	2	TILE	log	line
+569	opt_log_3	-	3	TILE	log	line
+570	opt_log_4	-	4	TILE	log	line
+571	opt_log_5	-	5	TILE	log	line
+572	opt_log_6	-	6	TILE	log	line
+573	opt_log_7	-	7	TILE	log	line
+574	opt_log_8	-	8	TILE	log	line
+575	opt_log_9	-	9	TILE	log	line
+580	optf_insert_pad	f	INSERER|LA MANETTE	C-	transparent	line
+581	optf_ctrl_config	f	CONFIGURATION COMMANDES	CK	transparent	line
+582	optf_exit	f	RETOUR	CK	transparent	line
+583	optf_view_hs	f	MEILLEURS SCORES	C-	transparent	line
+584	optg_insert_pad	g	CONTROLLER|ANSCHLIESSEN	C-	transparent	line
+585	optg_ctrl_config	g	JOYPAD KONFIGURIEREN	CK	transparent	line
+586	optg_exit	g	ZURÜCK	CK	transparent	line
+587	optg_view_hs	g	HIGH-SCORES ANSEHEN	CK	transparent	line
+589	opti_insert_pad	i	INSERIRE IL|CONTROLLER	C-	transparent	line
+590	opti_ctrl_config	i	CONFIGURAZIONE|DEI COMANDI	CK	transparent	line
+591	opti_exit	i	ESCI	CK	transparent	line
+592	opti_view_hs	i	VISUALIZZA I PUNTEGGI PIÙ ALTI	C-	transparent	line
+594	opts_insert_pad	s	INSERTAR MANDO	C-	transparent	line
+595	opts_ctrl_config	s	CONFIGURACIÓN DE CONTROL	CK	transparent	line
+596	opts_exit	s	SALIR	CK	transparent	line
+597	opts_view_hs	s	VER MEJORES PUNTUACIONES	C-	transparent	line
+638	opt_turtle_0	-	1	TILE	turtle	line
+639	opt_turtle_1	-	2	TILE	turtle	line
+640	opt_turtle_2	-	3	TILE	turtle	line
+641	opt_turtle_3	-	4	TILE	turtle	line
+642	opt_turtle_4	-	5	TILE	turtle	line
+643	opt_turtle_5	-	6	TILE	turtle	line
+644	opt_turtle_6	-	7	TILE	turtle	line
+645	opt_turtle_7	-	8	TILE	turtle	line
+646	opt_turtle_8	-	9	TILE	turtle	line
+647	opt_turtle_9	-	10	TILE	turtle	line
+785	jump_to_it	en	JUMP TO IT !	CK	transparent	line
+786	croak	en	CROAK !	EK	transparent	line
+787	go	en	GO !	C-	transparent	line
+788	go_frogger	en	GO FROGGER	CK	transparent	line
+789	go_get_em	en	GO GET EM !	CK	transparent	line
+790	hop_to_it	en	HOP TO IT !	CK	transparent	line
+791	quit	en	QUIT	CK	transparent	line
+792	timeout	en	TIME OUT!	CK	transparent	line
+793	total_score	en	TOTAL SCORE	CK	transparent	line
+794	total_time	en	TOTAL TIME	C-	transparent	line
+795	zone_complete	en	ZONE COMPLETE	CK	transparent	line
+796	opt_no	en	NO	CK	transparent	line
+797	opt_options	en	OPTIONS	CK	transparent	line
+798	opt_paused	en	PAUSED	CK	transparent	line
+799	opt_start	en	START	CK	transparent	line
+800	opt_yes	en	YES	CK	transparent	line
+801	next	en	NEXT	CK	transparent	line
+802	opt_ctrl_config	en	CONTROL CONFIGURATION	CK	transparent	line
+803	opt_exit	en	EXIT	CK	transparent	line
+804	opt_insert_pad	en	INSERT|CONTROLLER	C-	transparent	line
+805	opt_view_hs	en	VIEW HIGH SCORES	CK	transparent	line
+807	opt_gameover	en	GAME OVER	GO	transparent	line
+808	timeout_s	s	¡SE ACABÓ EL TIEMPO!	CK	transparent	line
+809	timeout_g	g	TIME OUT!	CK	transparent	line
+810	timeout_i	i	TEMPO ESAURITO!	CK	transparent	line
+811	timeout_f	f	TROP TARD	CK	transparent	line
+832	bonus	en	BONUS	CK	transparent	line
+833	select_level	en	SELECT LEVEL	CK	transparent	line
+888	32x32_colon	-	:	W2	transparent	line
+1071	won	en	WON	CK	transparent	line
+1072	lost	en	LOST	CK	transparent	line
+1073	play_again	en	PLAY AGAIN	CK	transparent	line
+1074	played	en	PLAYED	CK	transparent	line
+1075	choose_course	en	CHOOSE COURSE	CK	transparent	line
+1076	won_f	f	GAGNÉ	CK	transparent	line
+1077	lost_f	f	PERDU	CK	transparent	line
+1078	play_again_f	f	RECOMMENCER	CK	transparent	line
+1079	played_f	f	TERMINÉ	CK	transparent	line
+1080	choose_course_f	f	CHOIX DU CIRCUIT	CK	transparent	line
+1081	won_g	g	GEWONNEN	CK	transparent	line
+1082	lost_g	g	VERLOREN	CK	transparent	line
+1083	play_again_g	g	NEUES SPIEL	CK	transparent	line
+1084	played_g	g	GESPIELT	CK	transparent	line
+1085	choose_course_g	g	STRECKE AUSWÄHLEN	CK	transparent	line
+1086	won_i	i	VINTA	CK	transparent	line
+1087	lost_i	i	PERSA	CK	transparent	line
+1088	play_again_i	i	GIOCA DI NUOVO	CK	transparent	line
+1089	played_i	i	FINITA	CK	transparent	line
+1090	choose_course_i	i	SELEZIONA CORSA	CK	transparent	line
+1091	won_s	s	GANADO	CK	transparent	line
+1092	lost_s	s	PERDIDO	CK	transparent	line
+1093	play_again_s	s	JUGAR DE NUEVO	CK	transparent	line
+1094	played_s	s	JUGADO	CK	transparent	line
+1095	choose_course_s	s	ELEGIR CARRERA	CK	transparent	line
+1148	sel_loading	en	LOADING	C-	transparent	line
+1149	self_loading	f	CHARGEMENT	C-	transparent	line
+1150	selg_loading	g	LADE	C-	transparent	line
+1151	seli_loading	i	CARICAMENTO	C-	transparent	line
+1152	sels_loading	s	CARGA	C-	transparent	line
+1153	opt_big_continue	en	CONTINUE	CK	transparent	line
+1154	optf_big_continue	f	CONTINUER	CK	transparent	line
+1155	optg_big_continue	g	WEITER	CK	transparent	line
+1156	opti_big_continue	i	CONTINUA	CK	transparent	line
+1157	opts_big_continue	s	CONTINUAR	CK	transparent	line
+1169	vol1name	en	SCORCHING SWITCHES	WK	transparent	line
+1170	vol2name	en	LAVA CRUSH	WK	transparent	line
+1171	vol3name	en	PLATFORM MADNESS	WK	transparent	line
+1172	volmname	en	MECHANICAL MAYHEM	WK	transparent	line
+1173	des5name	en	BIG BOULDER ALLEY	WK	transparent	line
+1174	des2name	en	BOULDER ALLEY	WK	transparent	line
+1175	des3name	en	TUMBLING VALLEY	WK	transparent	line
+1176	des4name	en	CRUMBLED POINT	WK	transparent	line
+1177	des1name	en	CACTUS POINT	WK	transparent	line
+1178	sky4name	en	LOONIER BALLOONS	WK	transparent	line
+1179	sky2name	en	AIRSHOW ANTICS	WK	transparent	line
+1180	sky3name	en	TIME FLIES	WK	transparent	line
+1181	sky1name	en	LOONEY BALLOONS	WK	transparent	line
+1182	formname	en	SWARMING FROGS	WK	transparent	line
+1183	for2name	en	CANOPY CAPERS	WK	transparent	line
+1184	for1name	en	HONEY BEE HOLLOW	WK	transparent	line
+1185	jun1name	en	TROPICAL TROUBLE	WK	transparent	line
+1186	junmname	en	JUNGLE RUMBLE	WK	transparent	line
+1187	cav4name	en	WEBS CAVERN	WK	transparent	line
+1188	cav3name	en	FROGGER GOES SKIING	WK	transparent	line
+1189	cav1name	en	DARK DARK CAVERN	WK	transparent	line
+1190	submname	en	TRAFFIC TURMOIL	WK	transparent	line
+1191	sub2name	en	BOW WOW FALLS	WK	transparent	line
+1192	sub3name	en	MOWER MANIA	WK	transparent	line
+1193	sub4name	en	SPINNING LILIES	WK	transparent	line
+1194	sub5name	en	BOW WOW REVENGE	WK	transparent	line
+1195	sub1name	en	LILY ISLANDS	WK	transparent	line
+1196	orgmname	en	RETRO RACERS	WK	transparent	line
+1197	org2name	en	RETRO LEVEL 2	WK	transparent	line
+1198	org3name	en	RETRO LEVEL 3	WK	transparent	line
+1199	org4name	en	RETRO LEVEL 4	WK	transparent	line
+1200	org5name	en	RETRO LEVEL 5	WK	transparent	line
+1201	org1name	en	RETRO LEVEL 1	WK	transparent	line
+1202	swp4name	en	SLIME SLIDING	WK	transparent	line
+1203	swp2name	en	BOOM BOOM BARREL	WK	transparent	line
+1204	swp3name	en	UNCANNY CRUSHER	WK	transparent	line
+1205	swp1name	en	BANG BANG BARREL	WK	transparent	line
+1206	med_9	-	9	WK	transparent	line
+1207	med_1	-	1	WK	transparent	line
+1208	med_2	-	2	WK	transparent	line
+1209	med_3	-	3	WK	transparent	line
+1210	med_4	-	4	WK	transparent	line
+1211	med_5	-	5	WK	transparent	line
+1212	med_7	-	7	WK	transparent	line
+1213	med_8	-	8	WK	transparent	line
+1214	med_0	-	0	WK	transparent	line
+1215	med_6	-	6	WK	transparent	line
+1216	swp5name	en	RESERVOIR FROGS	WK	transparent	line
+1220	select_level_f	f	SELECTION DU NIVEAU	CK	transparent	line
+1221	select_level_g	g	EBENE AUSWÄHLEN	CK	transparent	line
+1222	select_level_i	i	SELEZIONA LIVELLO	CK	transparent	line
+1223	select_level_s	s	SELECCIONAR NIVEL	CK	transparent	line
+1242	opt_race	en	RACE	CK	transparent	line
+1260	opt_sec	en	SEC	WK	transparent	line
+1261	optf_sec	f	SEC	WK	transparent	line
+1262	optg_sec	g	SEK	WK	transparent	line
+1263	opti_sec	i	SEC	WK	transparent	line
+1264	opts_sec	s	SEG	WK	transparent	line
+1265	rank_equal	-	=	W2	transparent	line
+1266	rank_2	-	2	W2	transparent	line
+1267	rank_3	-	3	W2	transparent	line
+1268	rank_4	-	4	W2	transparent	line
+1269	rank_1	-	1	W2	transparent	line
+1270	play_off	en	PLAY OFF!	C-	transparent	line
+1271	play_off_f	f	JOUER LA BELLE	C-	transparent	line
+1272	play_off_g	g	PLAY-OFF	C-	transparent	line
+1273	play_off_i	i	PLAY-OFF	C-	transparent	line
+1274	play_off_s	s	DESEMPATE	C-	transparent	line
+1479	for_altname2	en	CANOPY CAPERS	PALE	transparent	line
+1590	-	en	NO CONTROLS CONFIGURED	PK	transparent	line
+1591	-	f	AUCUN CONTROLES|CONFIGURES	PK	transparent	line
+1592	-	g	KEINE STEUERUNG|KONFIGURIERT	PK	transparent	line
+1593	-	i	CONTROLLI NO|CONFIGURATO	PK	transparent	line
+1594	-	s	CONTROLES NO|CONFIGURADOS	PK	transparent	line
+1678	opts_wait_sync	s	ESPERANDO SINCRONIZACION	PK	transparent	line
+1679	opt_wait_sync	en	WAITING FOR SYNCRONISATION	CK	transparent	line
+1680	optf_lost_conn	f	CONNEXION PERDUE	C-	transparent	line
+1681	optf_wait_sync	f	ATTENTE DE SYNCRONISATION	PK	transparent	line
+1682	optg_lost_conn	g	VERBINDUNG VERLOREN	C-	transparent	line
+1683	optg_wait_sync	g	WARTE AUF SYNCHRONISATION	PK	transparent	line
+1684	opti_lost_conn	i	COLLEGAMENTO CADUTO	C-	transparent	line
+1685	opti_wait_sync	i	IN ATTESA SINCRONIZZAZIONE	PK	transparent	line
+1686	opts_lost_conn	s	SE PERDIÓ CONEXIÓN	C-	transparent	line
+1687	opt_lost_conn	en	LOST CONNECTION	C-	transparent	line
+1688	opt_network_race	en	NETWORK RACE	CK	transparent	line
+1689	opt_local_race	en	LOCAL RACE	CK	transparent	line
+1690	optf_network_race	f	COURSE RESEAU	CK	transparent	line
+1691	optf_local_race	f	COURSE LOCAL	CK	transparent	line
+1692	optg_network_race	g	NETZWERK-RENNEN	CK	transparent	line
+1693	optg_local_race	g	LOKALES RENNEN	CK	transparent	line
+1694	opti_network_race	i	CORSA IN RETE	CK	transparent	line
+1695	opti_local_race	i	CORSA LOCALE	CK	transparent	line
+1696	opts_network_race	s	CARRER EN RED	CK	transparent	line
+1697	opts_local_race	s	CARRER LOCAL	CK	transparent	line
+1795	-	-	1UP	EK	transparent	line
+1796	-	-	4UP	EK	transparent	line
+1797	-	-	3UP	EK	transparent	line
+1798	-	-	2UP	EK	transparent	line
+1800	-	en	REDEFINE KEYS	CK	transparent	line
+1801	-	f	REDEFINIR TOUCHES	CK	transparent	line
+1802	-	g	TASTEN NEU BELEGEN	CK	transparent	line
+1803	-	i	RIDEFINIR TASTI	CK	transparent	line
+1804	-	s	VOLVER A DEFINIR TECLAS	CK	transparent	line
+1822	-	en	SEC	WK	transparent	line
+1823	-	f	SEC	WK	transparent	line
+1824	-	g	SEK	WK	transparent	line
+1825	-	i	SEC	WK	transparent	line
+1826	-	s	SEG	WK	transparent	line

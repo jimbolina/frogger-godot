@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Write the Godot bitmap fonts of the retail `newfont` glyph texture.
+"""Write the Godot bitmap font of the retail `newfont` glyph texture.
 
 `newfont` is texture id 310: assets/textures/images/t0310.png holds the 96
 glyphs of ASCII 32..127 in 8 x 8 cells, 32 to a row in three rows, with no
-padding. This tool writes a BMFont v3 text file that Godot's font_data_bmfont
-importer turns into a FontFile, and the font's page beside it:
+padding. This tool is the golden generator of the font the game builds at
+runtime (NewfontPage and NewfontFont): it writes a BMFont v3 text file in
+the layout Godot's font_data_bmfont importer reads, and the font's page
+beside it, into the folder given with --out:
 
-    assets/fonts/retail/newfont.fnt and newfont.png  (from textures/images/t0310.png)
+    <out>/newfont.fnt and <out>/newfont.png  (from --images/t0310.png)
 
-The page is a separate file because the importer marks every page image of
-a font as not imported (importer "skip"), which would take t0310.png away
-from the texture banks. Every page is built at 4 times the retail size so
-that linear filtering keeps the glyph pixels even at any window scale: the
-retail PNG is enlarged 4 times by repeating pixels. The game builds the same
-page at runtime from a texture pack's t0310.png (NewfontPage). Each 32 x 32 glyph
+Nothing is committed: the page holds the retail pixels. Every page is built
+at 4 times the retail size so that linear filtering keeps the glyph pixels
+even at any window scale: the retail PNG is enlarged 4 times by repeating
+pixels. Each 32 x 32 glyph
 cell is then surrounded by a 4-pixel transparent border, giving 40 x 40
 cells on a 1280 x 120 page. The two rings of transparent pixels around the
 glyph's opaque pixels, within its cell, take the per-channel maximum colour
@@ -22,16 +22,12 @@ x = ((id - 32) % 32) * 40, y = ((id - 32) // 32) * 40 with width and height
 40, offsets -4 and advance 32; the size, line height and base are 32. The
 colour channels carry the glyph (alphaChnl=0 keeps the RGBA pixels as they
 are). The info line ends with page_sha256, the SHA-256 of the page's RGBA
-rows, which Godot ignores: Godot does not track a font's page, so a changed
-page must change the .fnt to be imported again.
+rows, which Godot ignores.
 
---check writes nothing, prints a unified diff for each font file, names each
-page whose size or pixels differ or that is missing, and exits 1. --quiet
-prints nothing on success. The tool uses only the standard library.
+--quiet prints nothing on success. The tool uses only the standard library.
 """
 
 import argparse
-import difflib
 import hashlib
 import os
 import struct
@@ -41,8 +37,7 @@ import zlib
 sys.dont_write_bytecode = True
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEXTURES = os.path.join(ROOT, "assets", "textures")
-FONTS = os.path.join(ROOT, "assets", "fonts")
+IMAGES = os.path.join(ROOT, "assets", "textures", "images")
 NAME = "newfont"
 TEXTURE = "t0310.png"
 PAGE = NAME + ".png"
@@ -57,7 +52,6 @@ BORDER = PAGE_SCALE
 STRIDE = GLYPH + 2 * BORDER
 FILL_RINGS = 2
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
-SETS = (("retail", "images"),)
 
 
 def read_png(path):
@@ -188,63 +182,28 @@ def font_text(page):
     return "\n".join(lines) + "\n"
 
 
-def outputs():
-    """The path, kind and contents of every font file and page."""
-    result = []
-    for set_name, images_dir in SETS:
-        png = os.path.join(TEXTURES, images_dir, TEXTURE)
-        if not os.path.exists(png):
-            raise SystemExit("%s is missing" % png)
-        folder = os.path.join(FONTS, set_name)
-        page = page_pixels(png)
-        result.append((os.path.join(folder, NAME + ".fnt"), "fnt", font_text(page).encode("ascii")))
-        result.append((os.path.join(folder, PAGE), "page", page))
-    return result
-
-
-def matches(path, kind, contents):
-    """Whether the committed file at path holds contents: equal bytes, or equal page pixels."""
-    if not os.path.exists(path):
-        return False
-    if kind == "page":
-        return read_png(path) == contents
-    with open(path, "rb") as f:
-        return f.read() == contents
+def outputs(images, out):
+    """The path, kind and contents of the font file and its page."""
+    png = os.path.join(images, TEXTURE)
+    if not os.path.exists(png):
+        raise SystemExit("%s is missing" % png)
+    page = page_pixels(png)
+    return [(os.path.join(out, NAME + ".fnt"), "fnt", font_text(page).encode("ascii")),
+            (os.path.join(out, PAGE), "page", page)]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--check", action="store_true", help="compare with the committed fonts instead of writing")
+    parser.add_argument("--out", required=True, help="the folder the font and its page are written into")
+    parser.add_argument("--images", default=IMAGES, help="the retail images folder holding %s" % TEXTURE)
     parser.add_argument("--quiet", action="store_true", help="print nothing on success")
     args = parser.parse_args()
-    files = outputs()
-    differing = 0
-    for path, kind, contents in files:
-        relative = os.path.relpath(path, ROOT)
-        if matches(path, kind, contents):
-            continue
-        exists = os.path.exists(path)
-        if args.check:
-            differing += 1
-            if kind == "fnt" and exists:
-                with open(path, "rb") as f:
-                    old_lines = f.read().decode("utf-8", "replace").splitlines(True)
-                diff = list(difflib.unified_diff(old_lines, contents.decode("ascii").splitlines(True),
-                                                 relative, "generated", n=0))
-                sys.stdout.writelines(diff[:80])
-            print("%s: %s" % (relative, "differs from the generator" if exists else "missing"))
-            continue
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(args.out, exist_ok=True)
+    for path, kind, contents in outputs(args.images, args.out):
         with open(path, "wb") as f:
             f.write(write_png(*contents) if kind == "page" else contents)
         if not args.quiet:
-            print("wrote %s" % relative)
-    if differing:
-        print("%d of %d newfont font files differ from the generator" % (differing, len(files)))
-        sys.exit(1)
-    if not args.quiet:
-        verb = "match" if args.check else "are up to date with"
-        print("%d newfont font files %s the generator" % (len(files), verb))
+            print("wrote %s" % path)
 
 
 if __name__ == "__main__":

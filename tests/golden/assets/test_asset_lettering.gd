@@ -1,21 +1,27 @@
 extends AssetTest
-## The lettering images (assets/textures/lettering/tNNNN.png, written by
-## tools/make_lettering.py from assets/fonts/angular/lettering.tsv) replace
-## their retail textures: every table row has one PNG at exactly eight times
-## the retail padded size recorded in vlo_images.tsv, imported with mipmaps,
-## that the catalog draws for the retail texture without a texture pack;
-## no PNG lacks a row, and the angular font holds every character the table
-## writes. The tables are read with Godot's own file access, independent of
-## the generator; the pixels themselves are the generator's --check.
+## The lettering (written by tools/make_lettering.py from
+## content/fonts/angular/lettering.tsv) replaces its retail textures: every
+## transparent row has one image content/lettering/tNNNN.png, imported with
+## mipmaps, and every tile row one grey mask
+## content/lettering/masks/<background>/tNNNN.png, imported as an exact
+## [Image], each at exactly eight times the retail padded size recorded in
+## vlo_images.tsv. Without a texture pack the catalog draws the image, or a
+## mipmapped tile composited from the mask, for the retail texture with no
+## problems; no file lacks a row, and the angular font holds every character
+## the table writes. The tables are read with Godot's own file access,
+## independent of the generator; the pixels themselves are the generator's
+## --check and the composited tiles test_asset_lettering_tiles.gd's.
 
-const TABLE_PATH: String = "res://assets/fonts/angular/lettering.tsv"
-const FONT_PATH: String = "res://assets/fonts/angular/frogger_angular.ttf"
-const LETTERING: String = "res://assets/textures/lettering"
+const TABLE_PATH: String = "res://content/fonts/angular/lettering.tsv"
+const FONT_PATH: String = "res://content/fonts/angular/frogger_angular.ttf"
+const LETTERING: String = "res://content/lettering"
 const IMAGES: String = "res://assets/textures/images"
+const TRANSPARENT: String = "transparent"
 const SCALE: int = 8
 const COLUMNS: int = 7
 const ID_COLUMN: int = 0
 const TEXT_COLUMN: int = 3
+const BACKGROUND_COLUMN: int = 5
 const VLO_TEXTURE_ID: int = 2
 const VLO_PADDED_WIDTH: int = 5
 const VLO_PADDED_HEIGHT: int = 6
@@ -32,6 +38,13 @@ func _rows() -> Array[PackedStringArray]:
 
 func _file(texture_id: int) -> String:
 	return "t%04d.png" % texture_id
+
+
+func _path(row: PackedStringArray) -> String:
+	var file: String = _file(row[ID_COLUMN].to_int())
+	if row[BACKGROUND_COLUMN] == TRANSPARENT:
+		return LETTERING.path_join(file)
+	return LETTERING.path_join(TextureSet.MASKS_DIR).path_join(row[BACKGROUND_COLUMN]).path_join(file)
 
 
 func _padded_sizes() -> Dictionary[int, Vector2i]:
@@ -63,13 +76,13 @@ func test_the_table_is_well_formed() -> void:
 	_report(mismatches, "%d lettering rows are well formed" % rows.size())
 
 
-func test_every_row_has_an_image_eight_times_its_padded_size() -> void:
+func test_every_row_has_an_image_or_mask_eight_times_its_padded_size() -> void:
 	var sizes: Dictionary[int, Vector2i] = _padded_sizes()
 	var mismatches := PackedStringArray()
 	var rows: Array[PackedStringArray] = _rows()
 	for row: PackedStringArray in rows:
 		var texture_id: int = row[ID_COLUMN].to_int()
-		var path: String = LETTERING.path_join(_file(texture_id))
+		var path: String = _path(row)
 		if not sizes.has(texture_id):
 			mismatches.append("t%04d is not a retail texture in vlo_images.tsv" % texture_id)
 			continue
@@ -86,18 +99,27 @@ func test_every_row_has_an_image_eight_times_its_padded_size() -> void:
 	_report(mismatches, "%d lettering images are %d times their padded size" % [rows.size(), SCALE])
 
 
-func test_lettering_images_import_with_mipmaps() -> void:
+func test_images_import_with_mipmaps_and_masks_as_exact_images() -> void:
 	var mismatches := PackedStringArray()
 	var rows: Array[PackedStringArray] = _rows()
 	for row: PackedStringArray in rows:
 		var texture_id: int = row[ID_COLUMN].to_int()
-		var path: String = LETTERING.path_join(_file(texture_id))
-		var texture: Texture2D = load(path) as Texture2D if ResourceLoader.exists(path) else null
+		var path: String = _path(row)
+		var loaded: Resource = load(path) if ResourceLoader.exists(path) else null
+		if row[BACKGROUND_COLUMN] != TRANSPARENT:
+			var mask: Image = loaded as Image
+			var raw: Image = Image.load_from_file(ProjectSettings.globalize_path(path))
+			if mask == null:
+				mismatches.append("t%04d: %s does not import as an image" % [texture_id, path])
+			elif mask.get_format() != Image.FORMAT_L8 or raw == null or mask.get_data() != raw.get_data():
+				mismatches.append("t%04d: %s does not import as its exact grey PNG" % [texture_id, path])
+			continue
+		var texture: Texture2D = loaded as Texture2D
 		if texture == null:
 			mismatches.append("t%04d: %s does not import as a texture" % [texture_id, path])
 		elif not texture.get_image().has_mipmaps():
 			mismatches.append("t%04d: %s is imported without mipmaps" % [texture_id, path])
-	_report(mismatches, "%d lettering textures carry mipmaps" % rows.size())
+	_report(mismatches, "%d lettering images and masks import as wanted" % rows.size())
 
 
 func test_the_catalog_draws_the_lettering() -> void:
@@ -110,12 +132,15 @@ func test_the_catalog_draws_the_lettering() -> void:
 		if retail == null:
 			mismatches.append("t%04d has no retail texture" % texture_id)
 			continue
-		var wanted: String = LETTERING.path_join(_file(texture_id))
+		var wanted: String = _path(row) if row[BACKGROUND_COLUMN] == TRANSPARENT else ""
 		for assets: ImportedAssets in catalogs:
 			var drawn: Texture2D = assets.texture_counterpart(retail)
 			var got: String = drawn.resource_path if drawn != null else "null"
 			if got != wanted:
 				mismatches.append("t%04d: the catalog draws %s, not %s" % [texture_id, got, wanted])
+			elif drawn.get_size() != retail.get_size() * SCALE or not drawn.get_image().has_mipmaps():
+				mismatches.append("t%04d: the catalog draws %s without mipmaps or at another size than %d times %s"
+					% [texture_id, drawn.get_size(), SCALE, retail.get_size()])
 	for assets: ImportedAssets in catalogs:
 		assert_eq(assets.problems, PackedStringArray(), "catalog problems")
 	_report(mismatches, "%d lettering images replace their retail textures" % rows.size())
@@ -143,14 +168,14 @@ func test_the_font_holds_every_character_of_the_table() -> void:
 	_report(mismatches, "the angular font holds every character of the lettering table")
 
 
-func test_no_lettering_image_lacks_a_row() -> void:
+func test_no_lettering_file_lacks_a_row() -> void:
 	var listed: Dictionary[String, bool] = {}
 	for row: PackedStringArray in _rows():
-		listed[_file(row[ID_COLUMN].to_int())] = true
+		listed[_path(row)] = true
 	var mismatches := PackedStringArray()
 	var found: PackedStringArray = files_under(LETTERING, ".png")
 	for path: String in found:
-		if not listed.has(path.get_file()):
+		if not listed.has(path):
 			mismatches.append("%s has no row in %s" % [path, TABLE_PATH])
-	assert_gt(found.size(), 0, "lettering images exist")
-	_report(mismatches, "%d lettering images all have rows" % found.size())
+	assert_eq(found.size(), listed.size(), "one file per row")
+	_report(mismatches, "%d lettering files all have rows" % found.size())

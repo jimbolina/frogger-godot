@@ -1,14 +1,14 @@
 extends AssetTest
-## The committed angular vector font (assets/fonts/angular/frogger_angular.ttf,
+## The committed angular vector font (content/fonts/angular/frogger_angular.ttf,
 ## written by tools/make_angular_font.py) imports as an MSDF [FontFile] that
 ## holds every capital, digit and derived character with a positive advance
 ## and no lowercase. The character list here is independent of the generator:
 ## it must equal the SVG sources' names plus derived.json's keys, both read
 ## with Godot's own directory listing and JSON parser.
 
-const FONT_PATH: String = "res://assets/fonts/angular/frogger_angular.ttf"
-const SVG_DIR: String = "res://assets/fonts/angular/svg"
-const DERIVED_PATH: String = "res://assets/fonts/angular/derived.json"
+const FONT_PATH: String = "res://content/fonts/angular/frogger_angular.ttf"
+const SVG_DIR: String = "res://content/fonts/angular/svg"
+const DERIVED_PATH: String = "res://content/fonts/angular/derived.json"
 const LETTERS: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const DIGITS: String = "0123456789"
 ## The derived characters: punctuation, the back arrow and the accented capitals.

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Write the lettering images that replace the retail angular-face textures.
+"""Write the lettering that replaces the retail angular-face textures.
 
-Reads assets/fonts/angular/lettering.tsv, one row per retail texture id, and
-the glyph outlines of tools/angular_glyphs.py, and writes
+Reads content/fonts/angular/lettering.tsv, one row per retail texture id,
+content/fonts/angular/lettering_layout.tsv, the geometry of every row, and the
+glyph outlines of tools/angular_glyphs.py, and writes
 
-    assets/textures/lettering/tNNNN.png         (NNNN = the texture id)
-    assets/textures/lettering/tNNNN.png.import  (a seed import sidecar)
+    content/lettering/tNNNN.png                   a transparent row's image
+    content/lettering/masks/<background>/tNNNN.png  a tile row's fill coverage
+    and a seed import sidecar beside each
 
-Run it through uv so the pinned Pillow draws the pixels:
-`uv run tools/make_lettering.py`, then `godot --headless --path . --import`
-completes the seed sidecars.
+(NNNN = the texture id). No retail image is read. Run it through uv so the
+pinned Pillow draws the pixels: `uv run tools/make_lettering.py`, then
+`godot --headless --path . --import` completes the seed sidecars.
 
 lettering.tsv columns (tab separated; lines starting with "#" are notes):
 
@@ -22,20 +24,32 @@ lettering.tsv columns (tab separated; lines starting with "#" are notes):
     layout      line, or components: each letter fitted to its own retail
                 ink component, left to right
 
-Each image is exactly SCALE times the retail padded size of
-assets/textures/images/tNNNN.png. The retail ink box is the alpha box of a
-transparent image, or the box of the pixels whose channels differ from the
-background by more than TILE_THRESHOLD. A text of N lines splits that box
-into N row bands at its fully empty rows; when the lines touch, each split
-is the row with the least ink within SPLIT_WINDOW rows of the equal split,
-which starts the next band. Each line keeps the ink extent of its band.
+lettering_layout.tsv columns, one row per lettering.tsv row:
 
-A line is laid out with the glyph advances (each glyph SIDE_BEARING after the
-pen, a space SPACE_ADVANCE). Every line takes one uniform scale, the largest
-that fits each line's laid-out ink (accents and the cedilla included) into
-its band's ink box less one retail pixel of outline on every side, and is
-centred on that box. A components layout fits and centres each letter on
-its own component instead.
+    id          the retail texture id
+    width       the retail padded width
+    height      the retail padded height
+    boxes       the retail ink box of each line (line layout) or letter
+                (components layout) as x0,y0,x1,y1 with exclusive ends,
+                separated by ";"
+
+--layout measures that geometry from the retail images once
+(assets/textures/images/tNNNN.png, or --images) and writes the layout file;
+it holds sizes and boxes only, never colours or pixels. The retail ink box is
+the alpha box of a transparent image, or the box of the pixels whose
+channels differ from the background by more than TILE_THRESHOLD. A text of N
+lines splits that box into N row bands at its fully empty rows; when the
+lines touch, each split is the row with the least ink within SPLIT_WINDOW
+rows of the equal split, which starts the next band. Each line keeps the ink
+extent of its band. A components layout splits the ink into one component per
+letter (components()).
+
+Each output is exactly SCALE times the retail padded size. A line is laid
+out with the glyph advances (each glyph SIDE_BEARING after the pen, a space
+SPACE_ADVANCE). Every line takes one uniform scale, the largest that fits
+each line's laid-out ink (accents and the cedilla included) into its box less
+one retail pixel of outline on every side, and is centred on that box. A
+components layout fits and centres each letter on its own box instead.
 
 Glyphs fill even-odd and are drawn with Pillow's ImageDraw at SUPERSAMPLE
 times the output size, then box-reduced. The outline is the fill dilated by
@@ -44,28 +58,38 @@ contour edge and a disc on every vertex, drawn under the fill in the outline
 colour. Transparent images keep straight alpha (the dilated coverage); the
 colour is the fill and outline coverage mix, and the outermost colour (the
 outline, or the fill without one) under alpha 0, so filtering draws no dark
-fringe. Tiles are opaque: the fill over the background, whose colour is the
-most common colour of t0263 (green_pad) or t0566 (log), or for turtle the
-shell of TURTLES: per pixel the most common shell colour (red channel at
-most SHELL_RED) among the ten digit tiles, earlier tiles winning ties, and
-where every tile shows a digit the mirrored pixel of the same row. A tile's
-fill is the most common colour of its retail ink. Every channel is at least
-MIN_CHANNEL.
+fringe. A tile row writes only its fill coverage as an 8-bit grey mask; the
+game composites the opaque tile from it and the player's retail images
+(LetteringTile).
 
-The sidecar asks the texture importer for mipmaps and otherwise the project
-defaults (SIDECAR_POLICY); an existing sidecar that already holds that policy
-is kept. A PNG or sidecar in the folder without a row is removed.
+--composite ASSETS --out DIR is the golden generator of those tiles: it
+measures the geometry from ASSETS/textures/images itself and writes each
+finished tile to DIR/tNNNN.png, the fill over the background, whose colour is
+the most common colour of t0263 (green_pad) or t0566 (log), or for turtle the
+shell of TURTLES: per pixel the most common shell colour (red channel at most
+SHELL_RED) among the ten digit tiles, earlier tiles winning ties, and where
+every tile shows a digit the mirrored pixel of the same row. A tile's fill is
+the most common colour of its retail ink. The background is enlarged by
+repeating pixels, the fill laid over it with Pillow's Image.composite, every
+channel raised to at least MIN_CHANNEL and the alpha set to 255.
+
+The image sidecar asks the texture importer for mipmaps and otherwise the
+project defaults (SIDECAR_POLICY); a mask sidecar asks for the image importer,
+which keeps the PNG's grey values exactly. An existing sidecar that already
+holds its policy is kept. A file under content/lettering/ without a row is
+removed.
 
 Pillow's polygon rasteriser rounds edge crossings in floating point, and
 Pillow's wheels fuse multiply-adds on some CPUs and not others, so the same
 build may differ by one supersample on a few pixels between arm64 and x86_64.
-A committed image therefore counts as the generator's when no channel of any
-pixel differs by more than one coverage step (RASTER_STEP) and at most
-RASTER_PIXELS pixels differ at all; such an image is neither rewritten nor
+A committed image or mask therefore counts as the generator's when no channel
+of any pixel differs by more than one coverage step (RASTER_STEP) and at most
+RASTER_PIXELS pixels differ at all; such a file is neither rewritten nor
 reported. Any larger difference is a real change.
 
 --check writes nothing; it names each id whose decoded pixels or sidecar
-differ, or that is missing or extra, and exits 1. --quiet prints nothing on
+differ, or that is missing or extra (with --layout, whose measured geometry
+differs from the layout file), and exits 1. --quiet prints nothing on
 success.
 """
 
@@ -82,8 +106,11 @@ from PIL import Image, ImageChops, ImageDraw, ImageMath
 
 ROOT = angular_glyphs.ROOT
 TABLE = os.path.join(angular_glyphs.FACE, "lettering.tsv")
+LAYOUT = os.path.join(angular_glyphs.FACE, "lettering_layout.tsv")
 IMAGES = os.path.join(ROOT, "assets", "textures", "images")
-OUTPUT = os.path.join(ROOT, "assets", "textures", "lettering")
+OUTPUT = os.path.join(ROOT, "content", "lettering")
+MASKS = "masks"
+LAYOUT_COLUMNS = ("id", "width", "height", "boxes")
 SCALE = 8
 SUPERSAMPLE = 4
 PIXEL = SCALE * SUPERSAMPLE
@@ -122,6 +149,7 @@ SIDECAR_POLICY = {
 }
 SIDECAR_SEED = '[remap]\n\nimporter="texture"\ntype="CompressedTexture2D"\n\n[params]\n\n' + "".join(
     "%s=%s\n" % item for item in sorted(SIDECAR_POLICY.items()))
+MASK_SIDECAR_SEED = '[remap]\n\nimporter="image"\ntype="Image"\n\n[params]\n\n'
 
 
 class Row:
@@ -170,9 +198,9 @@ def file_name(ident):
     return "t%04d.png" % ident
 
 
-def retail_image(ident):
-    """The retail RGBA image of texture id ident."""
-    with Image.open(os.path.join(IMAGES, file_name(ident))) as image:
+def retail_image(ident, images=IMAGES):
+    """The retail RGBA image of texture id ident in the folder images."""
+    with Image.open(os.path.join(images, file_name(ident))) as image:
         return image.convert("RGBA")
 
 
@@ -185,9 +213,9 @@ def most_common(colours):
     return max(counts, key=lambda colour: (counts[colour], -order[colour]))
 
 
-def turtle_shell():
+def turtle_shell(images=IMAGES):
     """The turtle shell behind the rank digits, as an RGB image the size of the digit tiles."""
-    tiles = [retail_image(ident).convert("RGB") for ident in TURTLES]
+    tiles = [retail_image(ident, images).convert("RGB") for ident in TURTLES]
     width, height = tiles[0].size
     if any(tile.size != (width, height) for tile in tiles):
         raise ValueError("the turtle tiles differ in size")
@@ -212,9 +240,10 @@ def turtle_shell():
 
 
 class Backgrounds:
-    """The tile backgrounds, measured once from the retail images."""
+    """The tile backgrounds, measured once from the retail images in the folder images."""
 
-    def __init__(self):
+    def __init__(self, images=IMAGES):
+        self.images = images
         self._flat = {}
         self._shell = None
 
@@ -222,13 +251,13 @@ class Backgrounds:
         """The retail-resolution RGB background called name, at size."""
         if name == "turtle":
             if self._shell is None:
-                self._shell = turtle_shell()
+                self._shell = turtle_shell(self.images)
             if self._shell.size != size:
                 raise ValueError("a turtle tile is %s, the shell %s" % (size, self._shell.size))
             return self._shell
         if name not in self._flat:
             source = PAD_SOURCE if name == "green_pad" else LOG_SOURCE
-            self._flat[name] = most_common(list(retail_image(source).convert("RGB").get_flattened_data()))
+            self._flat[name] = most_common(list(retail_image(source, self.images).convert("RGB").get_flattened_data()))
         return Image.new("RGB", size, self._flat[name])
 
 
@@ -420,21 +449,106 @@ def fit_scale(placed, box):
     return min((box[2] - box[0]) / (x1 - x0), (box[3] - box[1]) / (y1 - y0))
 
 
-def fits(row, mask, glyphs, margin):
-    """The Fit of every line (or letter, for a components layout) of row."""
+def letters(row):
+    """The letters of row's text, without spaces and line breaks."""
+    return [char for char in row.text if char not in " |"]
+
+
+def ink_boxes(row, mask):
+    """The retail ink box of every line (or letter, for a components layout) of row."""
     if row.layout == "components":
-        letters = [char for char in row.text if char not in " |"]
-        boxes = components(row, mask, len(letters))
+        return components(row, mask, len(letters(row)))
+    return line_boxes(row, mask)
+
+
+def fits(row, boxes, glyphs, margin):
+    """The Fit of every line (or letter, for a components layout) of row in its ink box of boxes."""
+    if row.layout == "components":
         result = []
-        for char, box in zip(letters, boxes):
+        for char, box in zip(letters(row), boxes):
             placed = layout(char, glyphs)
             target = inset(box, margin)
             result.append(Fit(placed, fit_scale(placed, target), target))
         return result
-    boxes = [inset(box, margin) for box in line_boxes(row, mask)]
+    boxes = [inset(box, margin) for box in boxes]
     lines = [layout(text, glyphs) for text in row.lines()]
     scale = min(fit_scale(placed, box) for placed, box in zip(lines, boxes))
     return [Fit(placed, scale, box) for placed, box in zip(lines, boxes)]
+
+
+class Geometry:
+    """A row's retail padded size and the ink box of each of its lines or letters."""
+
+    def __init__(self, size, boxes):
+        self.size = size
+        self.boxes = [tuple(box) for box in boxes]
+
+    def __eq__(self, other):
+        return isinstance(other, Geometry) and self.size == other.size and self.boxes == other.boxes
+
+    def text(self):
+        """The layout file's columns after the id."""
+        return "%d\t%d\t%s" % (self.size[0], self.size[1], ";".join(",".join(str(v) for v in box) for box in self.boxes))
+
+
+def measure(row, backgrounds):
+    """(geometry, source, background) of row measured from its retail image.
+
+    background is the tile's retail-resolution RGB background, or None for a
+    transparent row."""
+    source = retail_image(row.id, backgrounds.images)
+    background = None
+    if row.background != "transparent":
+        background = backgrounds.image(row.background, source.size)
+    mask = ink_mask(row, source, background)
+    return Geometry(source.size, ink_boxes(row, mask)), source, background
+
+
+def read_layout(rows, path=LAYOUT):
+    """{id: Geometry} of the layout file; every row of rows must have exactly one entry."""
+    found = {}
+    by_id = {row.id: row for row in rows}
+    with open(path, "r", encoding="utf-8") as f:
+        for number, line in enumerate(f, 1):
+            line = line.rstrip("\n")
+            if not line or line.startswith("#"):
+                continue
+            fields = line.split("\t")
+            if len(fields) != len(LAYOUT_COLUMNS) or not all(v.isdigit() for v in fields[:3]):
+                raise ValueError("lettering_layout.tsv line %d is malformed" % number)
+            ident = int(fields[0])
+            if ident in found:
+                raise ValueError("t%04d appears twice in lettering_layout.tsv" % ident)
+            if ident not in by_id:
+                raise ValueError("t%04d in lettering_layout.tsv has no row in lettering.tsv" % ident)
+            boxes = []
+            for text in fields[3].split(";"):
+                box = text.split(",")
+                if len(box) != 4 or not all(v.isdigit() for v in box):
+                    raise ValueError("lettering_layout.tsv line %d has a malformed box %r" % (number, text))
+                boxes.append(tuple(int(v) for v in box))
+            row = by_id[ident]
+            wanted = len(letters(row)) if row.layout == "components" else len(row.lines())
+            if len(boxes) != wanted:
+                raise ValueError("t%04d has %d boxes in lettering_layout.tsv, not %d" % (ident, len(boxes), wanted))
+            found[ident] = Geometry((int(fields[1]), int(fields[2])), boxes)
+    for row in rows:
+        if row.id not in found:
+            raise ValueError("t%04d has no row in lettering_layout.tsv" % row.id)
+    return found
+
+
+def layout_text(rows, geometries):
+    """The contents of the layout file holding geometries (by id) in the order of rows."""
+    lines = [
+        "# The retail geometry the lettering is fitted to, measured from the retail",
+        "# images by `uv run tools/make_lettering.py --layout`: the padded size and the",
+        "# ink box x0,y0,x1,y1 (exclusive ends) of each line or letter. Sizes and boxes only.",
+        "# " + "\t".join(LAYOUT_COLUMNS),
+    ]
+    for row in rows:
+        lines.append("%d\t%s" % (row.id, geometries[row.id].text()))
+    return "\n".join(lines) + "\n"
 
 
 def _edge_quad(a, b, radius):
@@ -501,43 +615,76 @@ def lift(image):
     return image.point(lambda value: max(value, MIN_CHANNEL))
 
 
-def render(row, glyphs, backgrounds):
-    """(image, fits) for row: the RGBA lettering image and the Fit of each line or letter."""
-    source = retail_image(row.id)
-    width, height = source.size
+def draw(row, geometry, glyphs):
+    """(fill, alpha, fits) for row at geometry: the fill and dilated coverage ("L" images at output size)
+    and the Fit of each line or letter. alpha is fill when the style has no outline."""
+    width, height = geometry.size
     output = (width * SCALE, height * SCALE)
     canvas = (output[0] * SUPERSAMPLE, output[1] * SUPERSAMPLE)
-    fill_colour, outline_colour = STYLES[row.style]
-    background = None
-    if row.background != "transparent":
-        background = backgrounds.image(row.background, (width, height))
-    mask = ink_mask(row, source, background)
-    if background is not None:
-        pixels = source.load()
-        fill_colour = most_common([pixels[x, y][:3] for y in range(height) for x in range(width) if mask[y][x]])
+    outline_colour = STYLES[row.style][1]
     margin = OUTLINE if outline_colour is not None else 0
-    fit_list = fits(row, mask, glyphs, margin)
+    fit_list = fits(row, geometry.boxes, glyphs, margin)
     radius = OUTLINE * PIXEL if outline_colour is not None else 0
     fill_mask, dilated_mask = rasterise(fit_list, canvas, radius)
     fill = coverage(fill_mask)
-    solid_fill = Image.new("RGB", output, fill_colour)
-    if background is not None:
-        behind = background.resize(output, Image.NEAREST)
-        rgb = lift(Image.composite(solid_fill, behind, fill))
-        image = rgb.convert("RGBA")
-        image.putalpha(255)
-        return image, fit_list
+    alpha = coverage(dilated_mask) if radius else fill
+    return fill, alpha, fit_list
+
+
+def lettering_image(row, fill, alpha):
+    """The RGBA lettering image of the transparent row from its fill and dilated coverage."""
+    fill_colour, outline_colour = STYLES[row.style]
+    solid_fill = Image.new("RGB", fill.size, fill_colour)
     if outline_colour is None:
         rgb = solid_fill
-        alpha = fill
     else:
-        alpha = coverage(dilated_mask)
         share = ImageMath.lambda_eval(
             lambda a: a["convert"](a["min"](a["f"] * 255 / a["max"](a["d"], 1), 255), "L"), f=fill, d=alpha)
-        rgb = Image.composite(solid_fill, Image.new("RGB", output, outline_colour), share)
+        rgb = Image.composite(solid_fill, Image.new("RGB", fill.size, outline_colour), share)
     image = lift(rgb).convert("RGBA")
     image.putalpha(alpha)
-    return image, fit_list
+    return image
+
+
+def tile_image(row, fill, source, background):
+    """The opaque RGBA tile of the tile row: its fill coverage over background in the colour of source's ink."""
+    width, height = source.size
+    mask = ink_mask(row, source, background)
+    pixels = source.load()
+    fill_colour = most_common([pixels[x, y][:3] for y in range(height) for x in range(width) if mask[y][x]])
+    solid_fill = Image.new("RGB", fill.size, fill_colour)
+    behind = background.resize(fill.size, Image.NEAREST)
+    image = lift(Image.composite(solid_fill, behind, fill)).convert("RGBA")
+    image.putalpha(255)
+    return image
+
+
+def content_files(rows, geometries, glyphs):
+    """(path relative to OUTPUT, kind, image) for every row: an RGBA "image" or an "L" "mask"."""
+    result = []
+    for row in rows:
+        for char in row.text:
+            if char not in "| " and char not in glyphs:
+                raise ValueError("t%04d: no glyph for %r" % (row.id, char))
+        fill, alpha, _ = draw(row, geometries[row.id], glyphs)
+        if row.background == "transparent":
+            result.append((file_name(row.id), "image", lettering_image(row, fill, alpha)))
+        else:
+            result.append((os.path.join(MASKS, row.background, file_name(row.id)), "mask", fill))
+    return result
+
+
+def composite_tiles(rows, images, glyphs):
+    """(id, image) of the finished tile of every tile row, measured and coloured from the retail images."""
+    backgrounds = Backgrounds(images)
+    result = []
+    for row in rows:
+        if row.background == "transparent":
+            continue
+        geometry, source, background = measure(row, backgrounds)
+        fill, _, _ = draw(row, geometry, glyphs)
+        result.append((row.id, tile_image(row, fill, source, background)))
+    return result
 
 
 def read_sidecar(path):
@@ -555,15 +702,18 @@ def read_sidecar(path):
     return sections
 
 
-def sidecar_problems(path):
-    """Why the sidecar at path does not hold SIDECAR_POLICY (empty when it does)."""
+def sidecar_problems(path, kind):
+    """Why the sidecar at path does not hold the policy of kind (empty when it does)."""
     if not os.path.exists(path):
         return ["no sidecar"]
     sections = read_sidecar(path)
     problems = []
     importer = sections.get("remap", {}).get("importer")
-    if importer != '"texture"':
-        problems.append("sidecar importer is %s, not \"texture\"" % importer)
+    wanted = '"image"' if kind == "mask" else '"texture"'
+    if importer != wanted:
+        problems.append("sidecar importer is %s, not %s" % (importer, wanted))
+    if kind == "mask":
+        return problems
     params = sections.get("params", {})
     for key, value in SIDECAR_POLICY.items():
         got = params.get(key)
@@ -572,12 +722,12 @@ def sidecar_problems(path):
     return problems
 
 
-def committed(path):
-    """The decoded RGBA image of the PNG at path, or None."""
+def committed(path, mode):
+    """The decoded image of the PNG at path in mode, or None."""
     if not os.path.exists(path):
         return None
     with Image.open(path) as image:
-        return image.convert("RGBA")
+        return image.convert(mode)
 
 
 def same_rasterisation(old, new):
@@ -594,94 +744,138 @@ def same_rasterisation(old, new):
     return changed.point(lambda value: 255 if value else 0).histogram()[255] <= RASTER_PIXELS
 
 
-def build(rows=None):
-    """(id, image, fits) for every row of the table, in table order."""
-    rows = read_table() if rows is None else rows
-    glyphs = angular_glyphs.glyphs()
-    backgrounds = Backgrounds()
-    result = []
-    for row in rows:
-        for char in row.text:
-            if char not in "| " and char not in glyphs:
-                raise ValueError("t%04d: no glyph for %r" % (row.id, char))
-        image, fit_list = render(row, glyphs, backgrounds)
-        result.append((row, image, fit_list))
-    return result
-
-
 def extra_files(wanted):
-    """The files in the output folder that belong to no row."""
-    if not os.path.isdir(OUTPUT):
-        return []
+    """The files under the output folder, relative to it, that belong to no row."""
     extras = []
-    for name in sorted(os.listdir(OUTPUT)):
-        base = name[:-len(".import")] if name.endswith(".import") else name
-        if base not in wanted:
-            extras.append(name)
-    return extras
+    for folder, _, names in os.walk(OUTPUT):
+        for name in names:
+            relative = os.path.relpath(os.path.join(folder, name), OUTPUT)
+            base = relative[:-len(".import")] if relative.endswith(".import") else relative
+            if base not in wanted:
+                extras.append(relative)
+    return sorted(extras)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--check", action="store_true", help="compare with the committed images instead of writing")
-    parser.add_argument("--quiet", action="store_true", help="print nothing on success")
-    args = parser.parse_args()
-    try:
-        built = build()
-    except (ValueError, OSError) as error:
-        print("make_lettering: %s" % error)
-        sys.exit(1)
-    wanted = {file_name(row.id) for row, _, _ in built}
+def report(differing, relative):
+    """Prints the differing lines and exits 1."""
+    for line in differing[:60]:
+        print("%s: %s" % (relative, line))
+    if len(differing) > 60:
+        print("%s: ... and %d more" % (relative, len(differing) - 60))
+    print("%s differs from the generator in %d places" % (relative, len(differing)))
+    sys.exit(1)
+
+
+def run_layout(rows, images, check, quiet):
+    """Measures the layout from the retail images and writes or checks the layout file."""
+    backgrounds = Backgrounds(images)
+    geometries = {row.id: measure(row, backgrounds)[0] for row in rows}
+    text = layout_text(rows, geometries)
+    relative = os.path.relpath(LAYOUT, ROOT)
+    old = None
+    if os.path.exists(LAYOUT):
+        with open(LAYOUT, "r", encoding="utf-8") as f:
+            old = f.read()
+    if check:
+        if old != text:
+            differing = []
+            stored = read_layout(rows) if old is not None else {}
+            for row in rows:
+                if stored.get(row.id) != geometries[row.id]:
+                    differing.append("t%04d: measured %s" % (row.id, geometries[row.id].text().replace("\t", " ")))
+            report(differing or ["the notes differ"], relative)
+        if not quiet:
+            print("%s (%d rows) matches the retail images" % (relative, len(rows)))
+        return
+    if old != text:
+        with open(LAYOUT, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+    if not quiet:
+        print("%s %s (%d rows)" % ("wrote" if old != text else "kept", relative, len(rows)))
+
+
+def run_composite(rows, assets, out, quiet):
+    """Writes the finished tile of every tile row, from the retail images under assets, into out."""
+    tiles = composite_tiles(rows, os.path.join(assets, "textures", "images"), angular_glyphs.glyphs())
+    os.makedirs(out, exist_ok=True)
+    for ident, image in tiles:
+        image.save(os.path.join(out, file_name(ident)))
+    if not quiet:
+        print("wrote %d tiles to %s" % (len(tiles), out))
+
+
+def run_content(rows, check, quiet):
+    """Writes or checks the lettering images and tile masks under OUTPUT."""
+    built = content_files(rows, read_layout(rows), angular_glyphs.glyphs())
+    wanted = {path for path, _, _ in built}
     relative = os.path.relpath(OUTPUT, ROOT)
     differing = []
     written = 0
     seeded = 0
-    for row, image, _ in built:
-        path = os.path.join(OUTPUT, file_name(row.id))
+    for name, kind, image in built:
+        path = os.path.join(OUTPUT, name)
         sidecar = path + ".import"
-        old = committed(path)
-        new = image.convert("RGBA")
+        old = committed(path, image.mode)
         problems = []
         if old is None:
             problems.append("missing")
-        elif old.size != new.size:
-            problems.append("is %dx%d, expected %dx%d" % (old.size + new.size))
-        elif not same_rasterisation(old, new):
+        elif old.size != image.size:
+            problems.append("is %dx%d, expected %dx%d" % (old.size + image.size))
+        elif not same_rasterisation(old, image):
             problems.append("pixels differ")
-        if args.check:
-            problems.extend(sidecar_problems(sidecar))
+        if check:
+            problems.extend(sidecar_problems(sidecar, kind))
             if problems:
-                differing.append("t%04d: %s" % (row.id, "; ".join(problems)))
+                differing.append("%s: %s" % (name, "; ".join(problems)))
             continue
         if problems:
-            os.makedirs(OUTPUT, exist_ok=True)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             image.save(path)
             written += 1
-        if sidecar_problems(sidecar):
+        if sidecar_problems(sidecar, kind):
             with open(sidecar, "w", encoding="utf-8", newline="\n") as f:
-                f.write(SIDECAR_SEED)
+                f.write(MASK_SIDECAR_SEED if kind == "mask" else SIDECAR_SEED)
             seeded += 1
     extras = extra_files(wanted)
-    if args.check:
+    if check:
         for name in extras:
             differing.append("%s has no row in lettering.tsv" % name)
         if differing:
-            for line in differing[:60]:
-                print("%s: %s" % (relative, line))
-            if len(differing) > 60:
-                print("%s: ... and %d more" % (relative, len(differing) - 60))
-            print("%s differs from the generator in %d places" % (relative, len(differing)))
-            sys.exit(1)
-        if not args.quiet:
-            print("%s (%d images) matches the generator" % (relative, len(built)))
+            report(differing, relative)
+        if not quiet:
+            print("%s (%d images and masks) matches the generator" % (relative, len(built)))
         return
     for name in extras:
         os.remove(os.path.join(OUTPUT, name))
-    if not args.quiet:
-        print("wrote %d images and %d seed sidecars, removed %d extra files under %s"
+    if not quiet:
+        print("wrote %d images and masks and %d seed sidecars, removed %d extra files under %s"
               % (written, seeded, len(extras), relative))
         if seeded:
             print("run `godot --headless --path . --import` to complete the seed sidecars")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--check", action="store_true", help="compare with the committed files instead of writing")
+    parser.add_argument("--quiet", action="store_true", help="print nothing on success")
+    parser.add_argument("--layout", action="store_true", help="measure the layout file from the retail images")
+    parser.add_argument("--images", default=IMAGES, help="the retail images folder --layout reads")
+    parser.add_argument("--composite", metavar="ASSETS", help="write the finished tiles from this assets folder")
+    parser.add_argument("--out", help="the folder --composite writes into")
+    args = parser.parse_args()
+    if args.composite is not None and (args.out is None or args.layout or args.check):
+        parser.error("--composite needs --out and takes neither --layout nor --check")
+    try:
+        rows = read_table()
+        if args.layout:
+            run_layout(rows, args.images, args.check, args.quiet)
+        elif args.composite is not None:
+            run_composite(rows, args.composite, args.out, args.quiet)
+        else:
+            run_content(rows, args.check, args.quiet)
+    except (ValueError, OSError) as error:
+        print("make_lettering: %s" % error)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

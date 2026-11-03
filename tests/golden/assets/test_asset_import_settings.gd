@@ -1,10 +1,10 @@
 extends AssetTest
-## Every imported texture, WAV, Ogg and bitmap font under assets/ uses the
-## import policy in project.godot's [code]importer_defaults[/code]: the
+## Every imported texture, WAV, Ogg and font under assets/ and content/ uses
+## the import policy in project.godot's [code]importer_defaults[/code]: the
 ## importer and each policy key in its sidecar's [code][params][/code] equal
-## the project default, except the keys the upscaled and lettering texture
-## folders override (their textures carry mipmaps) and the font pages, which
-## the font importer marks as not imported. A vector font follows [constant OWN_POLICIES]
+## the project default, except the keys the lettering folder overrides (its
+## images carry mipmaps) and the lettering tile masks, which the image
+## importer keeps exactly. A vector font follows [constant OWN_POLICIES]
 ## instead: MSDF glyphs, no hinting and no system fallback.
 
 ## Importer name and project default section by source extension; an
@@ -13,7 +13,6 @@ const POLICIES: Dictionary[String, Array] = {
 	".png": ["texture", "texture"],
 	".wav": ["wav", "wav"],
 	".ogg": ["oggvorbisstr", "oggvorbisstr"],
-	".fnt": ["font_data_bmfont", "font_data_bmfont"],
 	".ttf": ["font_data_dynamic", ""],
 }
 ## Policy keys by source extension for the importers project.godot sets no default for.
@@ -29,14 +28,16 @@ const OWN_POLICIES: Dictionary[String, Dictionary] = {
 }
 ## Policy keys a folder (by path prefix) sets differently from the project default.
 const FOLDER_POLICIES: Dictionary[String, Dictionary] = {
-	"res://assets/textures/lettering/": {"mipmaps/generate": true},
+	"res://content/lettering/": {"mipmaps/generate": true},
 }
 
 ## Importers a folder (by path prefix) uses instead of an extension's: the
-## bitmap font importer sets each font's page image to [code]skip[/code].
+## lettering tile masks load as exact [Image]s.
 const FOLDER_IMPORTERS: Dictionary[String, Dictionary] = {
-	"res://assets/fonts/": {".png": "skip"},
+	"res://content/lettering/masks/": {".png": "image"},
 }
+## The roots whose files are checked.
+const ROOTS: PackedStringArray = [ASSETS, ImportedAssets.SHIPPABLE_ROOT]
 
 
 ## The importer of [param source], whose extension is [param extension]: its
@@ -68,7 +69,9 @@ func test_sidecars_follow_the_project_policy() -> void:
 			else project.get_value("importer_defaults", section_key, {})
 		assert_false(policy.is_empty(), "an import policy exists for %s" % extension)
 		var mismatches := PackedStringArray()
-		var sources: PackedStringArray = files_under(ASSETS, extension)
+		var sources := PackedStringArray()
+		for root: String in ROOTS:
+			sources.append_array(files_under(root, extension))
 		for source: String in sources:
 			var sidecar := ConfigFile.new()
 			if sidecar.load(source + ".import") != OK:

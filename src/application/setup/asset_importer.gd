@@ -21,8 +21,8 @@ const SUPPORTED_BUILD: String = "pc-retail-v3.0e"
 ## The folder FrogLord overlays over the committed assets live in, one
 ## sub-folder per save.
 const OVERLAY_PARENT: String = "user://froglord"
-## The committed assets root, which overlays fall back to by default.
-const COMMITTED_ROOT: String = "res://assets"
+## The developer's local import, which overlays fall back to by default.
+const COMMITTED_ROOT: String = ImportedAssets.COMMITTED_ROOT
 
 
 ## What [method detect] found in a game folder.

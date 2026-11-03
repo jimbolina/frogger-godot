@@ -13,8 +13,7 @@ static func text(version: String, importer_notice: String) -> String:
 	var sections := PackedStringArray()
 	sections.append("Frogger (1997) in Godot, version %s\n\n" % version
 		+ "A rewrite of the 1997 PC game. The game's levels, models, sounds and textures "
-		+ "are imported from the player's own copy; only the lily-pad, log and turtle "
-		+ "lettering images keep backgrounds taken from the original textures.\n\n"
+		+ "are imported from the player's own copy; this build holds none of them.\n\n"
 		+ "The angular lettering font and images are traced from the 1997 alpha's letter models by StarmanUltra.")
 	if not importer_notice.is_empty():
 		sections.append(_heading("FrogLord") + importer_notice.strip_edges())

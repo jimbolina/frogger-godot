@@ -8,7 +8,8 @@ const SCRATCH: String = "user://asset_location_test"
 const IMPORTED: String = SCRATCH + "/assets/0123456789abcdef"
 const OTHER: String = SCRATCH + "/other"
 const MISSING: String = SCRATCH + "/missing"
-const COMMITTED: String = "res://assets"
+const COMMITTED: String = ImportedAssets.COMMITTED_ROOT
+const SHIPPABLE: String = ImportedAssets.SHIPPABLE_ROOT
 
 
 func before_each() -> void:
@@ -48,7 +49,7 @@ func test_the_argument_wins_over_the_launcher_settings_and_the_committed_assets(
 	assert_true(location.is_usable(), location.error)
 	assert_eq(location.base_root, OTHER, "a trailing slash is dropped")
 	assert_eq(location.origin, AssetLocation.Origin.ARGUMENT)
-	assert_eq(location.shippable_root, COMMITTED)
+	assert_eq(location.shippable_root, SHIPPABLE)
 
 
 func test_an_argument_without_an_index_is_not_usable_and_does_not_fall_back() -> void:
@@ -90,7 +91,7 @@ func test_no_launcher_settings_open_the_committed_assets() -> void:
 	var catalog: ImportedAssets = AssetLocation.resolve(PackedStringArray(), null).open()
 	assert_true(catalog.is_valid(), catalog.error)
 	assert_eq(catalog.root, COMMITTED)
-	assert_eq(catalog.shippable_root, COMMITTED)
+	assert_eq(catalog.shippable_root, SHIPPABLE)
 
 
 func test_nothing_usable_is_reported() -> void:

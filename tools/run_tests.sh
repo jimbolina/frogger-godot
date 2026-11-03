@@ -10,15 +10,8 @@ if ! command -v "$GODOT" >/dev/null 2>&1 && [ ! -x "$GODOT" ]; then
     exit 2
 fi
 
-if [ -d assets/fonts ]; then
-    if ! "${PYTHON:-python3}" tools/make_font_newfont.py --check --quiet; then
-        echo "run_tests: the committed newfont fonts differ from their generator" >&2
-        exit 2
-    fi
-fi
-
-if [ -d assets/fonts/angular ]; then
-    UV="${UV:-uv}"
+UV="${UV:-uv}"
+if [ -d content/fonts/angular ]; then
     if ! command -v "$UV" >/dev/null 2>&1 && [ ! -x "$UV" ]; then
         echo "run_tests: uv not found; install uv or set UV=/path/to/uv" >&2
         exit 2
@@ -38,18 +31,16 @@ if ! "${PYTHON:-python3}" tools/test_capture_tools.py >/dev/null 2>&1; then
     exit 2
 fi
 
-if [ -d assets ]; then
-    while IFS= read -r -d '' asset; do
-        first_line=""
-        IFS= read -r first_line <"$asset" || true
-        case "$first_line" in
-            "version https://git-lfs.github.com/spec"*)
-                echo "run_tests: assets contain git LFS pointers; run git lfs pull" >&2
-                exit 2
-                ;;
-        esac
-    done < <(find assets -type f -size -1024c -print0)
-fi
+while IFS= read -r -d '' asset; do
+    first_line=""
+    IFS= read -r first_line <"$asset" || true
+    case "$first_line" in
+        "version https://git-lfs.github.com/spec"*)
+            echo "run_tests: assets contain git LFS pointers; run git lfs pull" >&2
+            exit 2
+            ;;
+    esac
+done < <(find assets content -type f -size -1024c -print0 2>/dev/null)
 
 archive_requested=0
 archive_data_dir=""
@@ -81,6 +72,19 @@ case "$(uname -s)" in
         ;;
 esac
 echo "run_tests: logs and isolated profile: $run_directory"
+
+if [ -d assets/textures/images ]; then
+    generated="$run_directory/generated"
+    if ! "${PYTHON:-python3}" tools/make_font_newfont.py --out "$generated/newfont" --quiet; then
+        echo "run_tests: the newfont generator failed" >&2
+        exit 2
+    fi
+    if ! "$UV" run --locked --quiet tools/make_lettering.py --composite assets --out "$generated/lettering" --quiet; then
+        echo "run_tests: the lettering tile generator failed" >&2
+        exit 2
+    fi
+    export FROGGER_GENERATED_DIR="$generated"
+fi
 script_errors='SCRIPT ERROR|Parse Error|Failed to load script|Failed loading resource|Could not load|CHECK FAILED'
 
 run_stage() {

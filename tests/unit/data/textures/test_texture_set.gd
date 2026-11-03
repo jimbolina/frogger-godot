@@ -58,7 +58,7 @@ func test_a_scale_is_a_whole_multiple_from_1_to_16_on_both_axes() -> void:
 func test_retail_paths_and_file_names_name_their_texture_id() -> void:
 	assert_eq(TextureSet.texture_id_of("res://assets/textures/images/t0012.png"), 12)
 	assert_eq(TextureSet.texture_id_of("user://assets/0123456789abcdef/textures/images/t1857.res"), 1857)
-	assert_eq(TextureSet.texture_id_of("res://assets/textures/lettering/t0012.png"), -1)
+	assert_eq(TextureSet.texture_id_of("res://content/lettering/t0012.png"), -1)
 	assert_eq(TextureSet.texture_id_of("res://assets/textures/banks/CAV_VRAM.tres"), -1)
 	assert_eq(TextureSet.texture_id_of(""), -1)
 	assert_eq(TextureSet.texture_id_of_file("T0310.PNG"), 310)
@@ -69,5 +69,5 @@ func test_retail_paths_and_file_names_name_their_texture_id() -> void:
 
 
 func test_fonts_are_found_by_name() -> void:
-	assert_eq(TextureSet.font_path("newfont"), "fonts/retail/newfont.fnt")
+	assert_eq(TextureSet.font_path("newfont"), "", "newfont is built at runtime, not read from a file")
 	assert_eq(TextureSet.font_path("angular"), "fonts/angular/frogger_angular.ttf")

@@ -2,9 +2,9 @@
 """Write the TrueType font of the angular letter face.
 
 Reads the glyph outlines through tools/angular_glyphs.py (the SVGs under
-assets/fonts/angular/svg/ and assets/fonts/angular/derived.json) and writes
+content/fonts/angular/svg/ and content/fonts/angular/derived.json) and writes
 
-    assets/fonts/angular/frogger_angular.ttf
+    content/fonts/angular/frogger_angular.ttf
 
 with fontTools' FontBuilder. Run it through uv so the pinned fontTools builds
 the bytes: `uv run tools/make_angular_font.py`.

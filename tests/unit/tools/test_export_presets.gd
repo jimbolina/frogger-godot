@@ -1,23 +1,31 @@
 extends GutTest
-## The committed export presets ship no retail-derived file: every file under
-## res://assets except the port's own shippable files (the angular font, the
-## emissive table and the lettering images) matches an exclude filter of
-## every preset, as do the tests, tools, documentation and GUT;
-## the archive's import facts and FrogLord's configuration with its licence
-## are included as plain files. Filters are matched the way Godot's exporter
-## matches them, against the path with and without res://.
+## The committed export presets ship no retail-derived file: nothing under
+## res://assets, the local import, and of res://content only the port's own
+## shippable files (the angular font, the emissive table, the lettering
+## images and the lettering tile masks), never their sources; the tests,
+## tools, documentation and GUT are excluded too, and the archive's import
+## facts and FrogLord's configuration with its licence are included as plain
+## files. Filters are matched the way Godot's exporter matches them, against
+## the path with and without res://.
 
 const PRESETS: String = "res://export_presets.cfg"
-const ASSETS: String = "res://assets"
-## The files under res://assets a packaged build carries: the port's own work.
+const CONTENT: String = "res://content"
+## The files under res://content a packaged build carries besides the lettering.
 const SHIPPABLE: PackedStringArray = [
-	"res://assets/fonts/angular/frogger_angular.ttf",
+	"res://content/fonts/angular/frogger_angular.ttf",
+	"res://content/rendering/emissive_images.tres",
+]
+## The folder of lettering images and tile masks, every one of which a
+## packaged build carries.
+const LETTERING: String = "res://content/lettering"
+const LETTERING_IMAGES: int = 270
+const LETTERING_MASKS: int = 49
+## Paths of the local import, present or not, that every preset excludes.
+const IMPORTED_SAMPLES: PackedStringArray = [
+	"res://assets/catalog.tres", "res://assets/textures/images/t0310.png", "res://assets/maps/ORG1.res",
+	"res://assets/audio/music/track_02.ogg", "res://assets/fonts/retail/newfont.fnt",
 	"res://assets/rendering/emissive_images.tres",
 ]
-## The folder of shippable lettering images: vector text, every image of
-## which a packaged build carries.
-const LETTERING: String = "res://assets/textures/lettering"
-const LETTERING_IMAGES: int = 319
 ## Folders no build carries.
 const EXCLUDED_FOLDERS: PackedStringArray = [
 	"res://tests", "res://tools", "res://addons", "res://docs", "res://archive/tests", "res://archive/docs",
@@ -90,18 +98,33 @@ func test_the_three_platforms_export_everything_but_the_filters_to_build() -> vo
 	assert_eq(names, PackedStringArray(["Linux", "Windows", "macOS"]))
 
 
-func test_every_retail_derived_asset_is_excluded() -> void:
-	var assets: PackedStringArray = _files(ASSETS, PackedStringArray())
-	assert_gt(assets.size(), 1000, "the committed assets are present")
+func test_the_local_import_is_excluded() -> void:
+	for preset: Dictionary in _presets():
+		var excluded: PackedStringArray = _filters(preset, "exclude_filter")
+		for path: String in IMPORTED_SAMPLES:
+			assert_true(_matches(path, excluded), "%s would ship %s" % [preset["name"], path])
+
+
+func test_only_the_shippable_content_ships() -> void:
 	var lettering: PackedStringArray = _files(LETTERING, PackedStringArray())
-	assert_eq(lettering.size(), LETTERING_IMAGES, "lettering images")
+	var images: int = 0
+	var masks: int = 0
+	for path: String in lettering:
+		if path.get_base_dir().get_base_dir().get_file() == "masks":
+			masks += 1
+		elif path.get_base_dir() == LETTERING and path.get_extension() == "png":
+			images += 1
+	assert_eq(images, LETTERING_IMAGES, "lettering images")
+	assert_eq(masks, LETTERING_MASKS, "lettering tile masks")
+	assert_eq(lettering.size(), LETTERING_IMAGES + LETTERING_MASKS, "nothing else under the lettering")
 	var shippable: PackedStringArray = SHIPPABLE.duplicate()
 	shippable.append_array(lettering)
+	var content: PackedStringArray = _files(CONTENT, PackedStringArray())
 	for preset: Dictionary in _presets():
 		var excluded: PackedStringArray = _filters(preset, "exclude_filter")
 		var leaked := PackedStringArray()
-		for path: String in assets:
-			if not shippable.has(path) and not _matches(path, excluded):
+		for path: String in content:
+			if not shippable.has(path) and not _matches(path, excluded) and path.get_extension() != "uid":
 				leaked.append(path)
 		assert_eq(leaked, PackedStringArray(), "%s would ship: %s" % [preset["name"], ", ".join(leaked.slice(0, 10))])
 		var missing := PackedStringArray()

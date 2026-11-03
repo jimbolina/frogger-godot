@@ -1,15 +1,15 @@
 class_name AssetLocation
 extends RefCounted
 ## Where the game reads its assets from: the base root holding the imported
-## records, the shippable root holding the port's own fonts, lettering and
-## emissive table, and the FrogLord overlay index when one is asked for.
+## records, the shippable root holding the port's own angular font, lettering
+## and emissive table, and the FrogLord overlay index when one is asked for.
 ##
 ## [method resolve] picks the base root in this order:
 ## [br]1. the folder given with [constant ASSETS_ROOT_ARGUMENT], used as given;
 ## [br]2. the [member LauncherSettings.imported_root] recorded in the launcher
 ## settings, when it holds an asset index;
-## [br]3. the committed [constant ImportedAssets.SHIPPABLE_ROOT], when it holds
-## an asset index.
+## [br]3. the developer's local import [constant ImportedAssets.COMMITTED_ROOT],
+## when it holds an asset index.
 ## [br]When none is usable, [method is_usable] is false and [member error] says
 ## why; the setup screen then imports the player's files. The arguments and the
 ## launcher settings are inputs, so the order can be checked without a launch.
@@ -22,7 +22,7 @@ enum Origin { NONE, ARGUMENT, LAUNCHER, COMMITTED }
 
 ## The base folder the assets are read from, or "" when none is usable.
 var base_root: String = ""
-## The folder fonts, lettering and the emissive table are read from.
+## The folder the angular font, the lettering and the emissive table are read from.
 var shippable_root: String = ImportedAssets.SHIPPABLE_ROOT
 ## How [member base_root] was chosen.
 var origin: Origin = Origin.NONE
@@ -40,7 +40,7 @@ var overlay: FrogLordPointer = null
 ## and [param store] (the read launcher settings, or null for none), checking
 ## indexes under [param committed_root].
 static func resolve(arguments: PackedStringArray, store: LauncherStore,
-		committed_root: String = ImportedAssets.SHIPPABLE_ROOT) -> AssetLocation:
+		committed_root: String = ImportedAssets.COMMITTED_ROOT) -> AssetLocation:
 	var location := AssetLocation.new()
 	if store != null and not store.error.is_empty():
 		location.warnings.append(store.error)

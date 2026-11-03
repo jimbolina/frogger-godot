@@ -269,7 +269,7 @@ func test_a_retail_mesh_with_lettering_draws_it_through_the_linear_shader() -> v
 			assert_same(copied[index].shader, shared_materials[index].shader, "other images keep their shader")
 			continue
 		swapped += 1
-		assert_eq(image.resource_path, LETTERING_ROOT.path_join("textures/lettering/t0263.png"))
+		assert_eq(image.resource_path, LETTERING_ROOT.path_join("lettering/t0263.png"))
 		assert_same(copied[index].shader, ModelShaders.linear_variant(shared_materials[index].shader))
 		assert_true(copied[index].shader.resource_path.contains("_linear"), copied[index].shader.resource_path)
 		assert_false(shared_materials[index].shader.resource_path.contains("_linear"))

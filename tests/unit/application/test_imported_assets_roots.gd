@@ -1,19 +1,23 @@
 extends GutTest
-## A catalog over a base root under user:// still reads fonts, lettering and the
-## emissive table from the shippable root, draws a texture pack's image over a
-## runtime-imported texture, and a launch naming a pack that is not installed
-## draws the original textures with a warning instead of failing.
+## A catalog over a base root under user:// still reads the angular font,
+## lettering and the emissive table from the shippable root, composites a
+## lettering tile from the base root's runtime-imported images, draws a
+## texture pack's image over a runtime-imported texture, and a launch naming a
+## pack that is not installed draws the original textures with a warning
+## instead of failing.
 
 const BASE: String = "user://imported_assets_roots/assets/0123456789abcdef"
-const SHIPPABLE: String = "res://assets"
-const RUNTIME_IMAGE: String = BASE + "/textures/images/t0263.res"
+const COMMITTED: String = ImportedAssets.COMMITTED_ROOT
+const SHIPPABLE: String = ImportedAssets.SHIPPABLE_ROOT
+const RUNTIME_IMAGE: String = BASE + "/textures/images/t0064.res"
+const PAD_TILE: int = 263
 const PACKS: String = "user://imported_assets_roots/texture_packs"
 
 
 func before_each() -> void:
 	_remove("user://imported_assets_roots")
 	assert_eq(DirAccess.make_dir_recursive_absolute(BASE.path_join("textures/images")), OK)
-	assert_eq(DirAccess.copy_absolute(SHIPPABLE.path_join(ImportedAssets.INDEX_FILE), BASE.path_join(ImportedAssets.INDEX_FILE)), OK)
+	assert_eq(DirAccess.copy_absolute(COMMITTED.path_join(ImportedAssets.INDEX_FILE), BASE.path_join(ImportedAssets.INDEX_FILE)), OK)
 
 
 func after_all() -> void:
@@ -36,10 +40,9 @@ func test_the_shippable_files_come_from_the_shippable_root() -> void:
 	assert_eq(catalog.root, BASE)
 	assert_eq(catalog.index_root, BASE)
 	assert_eq(catalog.shippable_root, SHIPPABLE)
-	var font: Font = catalog.font("newfont")
+	var font: Font = catalog.font("angular")
 	assert_not_null(font)
-	assert_eq(font.resource_path, SHIPPABLE.path_join("fonts/retail/newfont.fnt"))
-	assert_not_null(catalog.font("angular"))
+	assert_eq(font.resource_path, SHIPPABLE.path_join("fonts/angular/frogger_angular.ttf"))
 	assert_gt(catalog.emissive_images().entries.size(), 0)
 	assert_eq(catalog.problems, PackedStringArray())
 
@@ -52,11 +55,32 @@ func test_a_runtime_imported_image_draws_the_committed_lettering() -> void:
 	retail.take_over_path(RUNTIME_IMAGE)
 	var catalog: ImportedAssets = ImportedAssets.open(BASE, "", "", SHIPPABLE)
 	var drawn: Texture2D = catalog.texture_counterpart(retail)
-	assert_eq(drawn.resource_path, SHIPPABLE.path_join("textures/lettering/t0263.png"))
+	assert_eq(drawn.resource_path, SHIPPABLE.path_join("lettering/t0064.png"))
+
+
+func test_a_lettering_tile_is_composited_from_the_runtime_imported_images() -> void:
+	for texture_id: int in [PAD_TILE, LetteringTile.PAD_SOURCE]:
+		var source: String = COMMITTED.path_join("textures/images/t%04d.png" % texture_id)
+		var image: Image = (load(source) as Texture2D).get_image()
+		var path: String = BASE.path_join("textures/images/t%04d.res" % texture_id)
+		assert_eq(ResourceSaver.save(ImageTexture.create_from_image(image), path), OK)
+	var path: String = BASE.path_join("textures/images/t%04d.res" % PAD_TILE)
+	var retail: Texture2D = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE) as Texture2D
+	retail.take_over_path(path)
+	var catalog: ImportedAssets = ImportedAssets.open(BASE, "", "", SHIPPABLE)
+	var drawn: Texture2D = catalog.texture_counterpart(retail)
+	assert_true(drawn is ImageTexture, "a tile composited at runtime")
+	assert_eq(Vector2i(drawn.get_size()), Vector2i(retail.get_size()) * LetteringTile.SCALE)
+	assert_true(drawn.get_image().has_mipmaps())
+	var committed: Texture2D = load(COMMITTED.path_join("textures/images/t%04d.png" % PAD_TILE)) as Texture2D
+	var from_committed: Texture2D = ImportedAssets.open(COMMITTED).texture_counterpart(committed)
+	assert_true(drawn.get_image().get_data() == from_committed.get_image().get_data(),
+		"the same tile as from the committed import")
+	assert_eq(catalog.problems, PackedStringArray())
 
 
 func test_the_base_root_does_not_serve_shippable_files() -> void:
-	var catalog: ImportedAssets = ImportedAssets.open(SHIPPABLE, "", "", BASE)
+	var catalog: ImportedAssets = ImportedAssets.open(COMMITTED, "", "", BASE)
 	assert_true(catalog.is_valid(), catalog.error)
 	assert_eq(catalog.font("newfont").resource_path, "", "newfont is built from the base root's texture 310")
 	assert_null(catalog.font("angular"))
@@ -70,8 +94,7 @@ func test_a_missing_pack_over_the_base_root_draws_the_original_textures_with_a_w
 	assert_true(catalog.texture_set().is_retail())
 	assert_eq(catalog.warnings.size(), 1, "\n".join(catalog.warnings))
 	assert_string_contains(catalog.warnings[0], "texture pack absent is not installed in %s" % PACKS)
-	assert_eq(catalog.font("newfont").resource_path, SHIPPABLE.path_join("fonts/retail/newfont.fnt"),
-		"the original textures draw the committed font")
+	assert_not_null(catalog.font("angular"), "the original textures draw the shipped font")
 	var located: ImportedAssets = AssetLocation.resolve(PackedStringArray(["--assets-root=" + BASE]), null).open("absent")
 	assert_true(located.is_valid(), located.error)
 	assert_true(located.texture_set().is_retail())

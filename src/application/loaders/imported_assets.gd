@@ -1,8 +1,8 @@
 class_name ImportedAssets
 extends AssetCatalog
-## The [AssetCatalog] read from imported resources: the committed
-## [code]res://assets[/code], written once by the importer, or a folder the
-## player's own copy was imported into ([AssetLocation]).
+## The [AssetCatalog] read from imported resources: the developer's local
+## import [constant COMMITTED_ROOT], or a folder the player's own copy was
+## imported into ([AssetLocation]).
 ##
 ## [method open] loads the [AssetIndex] ([code]catalog.tres[/code]), from the
 ## assets root or from a separate index root holding an overlay index whose
@@ -13,28 +13,32 @@ extends AssetCatalog
 ## is not kept, so no raw resource bytes are available.
 ##
 ## Records, models, maps, sounds and music come from the base
-## [member root]. Fonts, lettering and the emissive table are the port's own
-## work and come from [member shippable_root], which stays
-## [constant SHIPPABLE_ROOT] when the base root is an import under
-## [code]user://[/code]. A packaged build ships only the angular font, the
-## emissive table and the lettering images there: [code]newfont[/code] is
-## then built from the player's texture 310.
+## [member root]. The angular font, the lettering and the emissive table are
+## the port's own work and come from [member shippable_root],
+## [constant SHIPPABLE_ROOT] whatever the base root. Nothing there holds a
+## retail pixel: [code]newfont[/code] is always built from texture 310
+## ([NewfontFont]), and the lettering tiles from their masks and the base
+## root's retail images ([LetteringTile]).
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
 ## textures, and [method texture_of], [method texture_counterpart] and
 ## [method font] answer with the image drawn in their place. A texture pack
 ## ([TexturePackReader]) wins where it supplies the texture and its image is
-## accepted; otherwise a lettering image ([method TextureSet.lettering_path])
-## replaces its retail texture; otherwise the retail texture is drawn. A
-## pack image that is rejected is noted in [member problems] and the
-## texture falls back as if the pack lacked it. A pack that redraws texture
-## 310 is drawn by the [code]newfont[/code] font too ([NewfontPage]).
+## accepted; otherwise the lettering replaces its retail texture (a
+## transparent image, [method TextureSet.lettering_path], or a tile
+## composited from its mask, [method TextureSet.lettering_mask_path]);
+## otherwise the retail texture is drawn. A pack image that is rejected, or a
+## tile that cannot be composited, is noted in [member problems] and the
+## texture falls back as if the pack or the lettering lacked it. A pack that
+## redraws texture 310 is drawn by the [code]newfont[/code] font too.
 
 ## The hand-authored glowing-image table under the shippable root.
 const EMISSIVE_IMAGES_PATH: String = "rendering/emissive_images.tres"
-## The committed assets, which also hold the shippable fonts, lettering and
-## emissive table.
-const SHIPPABLE_ROOT: String = "res://assets"
+## The port's own content: the angular font, the lettering and the emissive
+## table, shipped in every build.
+const SHIPPABLE_ROOT: String = "res://content"
+## The developer's local import of the retail copy, the default base root.
+const COMMITTED_ROOT: String = "res://assets"
 ## The asset index file inside an assets or index root.
 const INDEX_FILE: String = "catalog.tres"
 
@@ -43,7 +47,7 @@ var index: AssetIndex
 ## The base folder the assets were opened from: records and models are
 ## read from here, and an index of its own points into it.
 var root: String = ""
-## The folder fonts, lettering and the emissive table are read from.
+## The folder the angular font, the lettering and the emissive table are read from.
 var shippable_root: String = SHIPPABLE_ROOT
 ## The folder the asset index was read from; [member root] unless
 ## [method open] was given another.
@@ -55,16 +59,17 @@ var problems: PackedStringArray = PackedStringArray()
 var _counterparts: Dictionary[String, Texture2D] = {}
 var _fonts: Dictionary[String, Font] = {}
 var _emissive: EmissiveImageTable
+var _tiles: LetteringTile
 
 
 ## Opens the assets under [param assets_root], drawing the texture pack
 ## called [param texture_pack_name] ("" for none) found in [param pack_folders].
 ## The index is read from [param index_folder] when it is not empty, otherwise
-## from [param assets_root]; fonts, lettering and the emissive table from
-## [param shippable_folder]. Check [member AssetCatalog.error]; a pack that is
-## not installed draws the original textures with a line in
+## from [param assets_root]; the angular font, lettering and the emissive
+## table from [param shippable_folder]. Check [member AssetCatalog.error]; a
+## pack that is not installed draws the original textures with a line in
 ## [member AssetCatalog.warnings].
-static func open(assets_root: String = SHIPPABLE_ROOT, texture_pack_name: String = "",
+static func open(assets_root: String = COMMITTED_ROOT, texture_pack_name: String = "",
 		index_folder: String = "", shippable_folder: String = SHIPPABLE_ROOT,
 		pack_folders: PackedStringArray = TexturePackReader.search_folders()) -> ImportedAssets:
 	var catalog := ImportedAssets.new()
@@ -138,10 +143,12 @@ func texture_of(image: VloImage) -> Texture2D:
 
 ## The texture the catalog draws for the retail [param texture]: the
 ## texture pack's image when the pack supplies the texture and the image is
-## accepted, else its lettering image under the shippable root when one
-## exists, else [param texture] itself (also for a texture outside the retail
-## images folder). A rejected pack image is noted once in [member problems]
-## and pushed as a warning, so it shows in the log.
+## accepted, else its lettering under the shippable root when there is one
+## (a transparent image, or a tile composited from its mask and the base
+## root's retail images), else [param texture] itself (also for a texture
+## outside the retail images folder). A rejected pack image is noted once in
+## [member problems] and pushed as a warning, so it shows in the log; a tile
+## that cannot be composited is noted in [member problems].
 ## The answer is cached per retail path.
 func texture_counterpart(texture: Texture2D) -> Texture2D:
 	if texture == null or texture.resource_path.is_empty():
@@ -151,35 +158,33 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 		return _counterparts[retail_path]
 	var found: Texture2D = _pack_texture(texture)
 	if found == null:
-		var lettering: String = TextureSet.lettering_path(retail_path)
-		found = _load(shippable_root.path_join(lettering)) as Texture2D if not lettering.is_empty() else null
+		found = _lettering(retail_path)
 	if found == null:
 		found = texture
 	_counterparts[retail_path] = found
 	return found
 
 
-## The bitmap font called [param name] under [constant TextureSet.FONTS_DIR]
-## of the shippable root, or null with a line in [member problems] when it is
-## missing. When the texture pack redraws texture 310 and its image is
-## accepted, [code]newfont[/code] draws a page built from it. A shippable root
-## without [code]newfont[/code], as in a packaged build, gets the font built by
-## [NewfontFont] from the pack's texture 310 or else the base root's
-## ([method base_image]). The answer is cached per name.
+## The font called [param name], or null with a line in [member problems]
+## when it is missing: [code]newfont[/code] is built by [NewfontFont] from the
+## texture pack's texture 310 when the pack redraws it and its image is
+## accepted, else from the base root's ([method base_image]); a vector font
+## ([constant TextureSet.VECTOR_FONTS]) is read from the shippable root. The
+## answer is cached per name.
 func font(name: String) -> Font:
 	if _fonts.has(name):
 		return _fonts[name]
-	var path: String = shippable_root.path_join(TextureSet.font_path(name))
-	var found: Font = _load(path) as Font
-	if found == null and name == NewfontPage.FONT_NAME:
+	var found: Font = null
+	if name == NewfontPage.FONT_NAME:
 		found = _built_newfont()
 		if found == null:
-			problems.append("no font %s at %s, and no texture %d under %s to build it from"
-				% [name, path, NewfontPage.TEXTURE_ID, root])
-	elif found == null:
-		problems.append("no font %s at %s" % [name, path])
-	elif name == NewfontPage.FONT_NAME and found is FontFile:
-		found = _pack_font(found as FontFile)
+			problems.append("no font %s: no texture %d under %s to build it from"
+				% [name, NewfontPage.TEXTURE_ID, root])
+	else:
+		var path: String = TextureSet.font_path(name)
+		found = _load(shippable_root.path_join(path)) as Font if not path.is_empty() else null
+		if found == null:
+			problems.append("no font %s under %s" % [name, shippable_root])
 	_fonts[name] = found
 	return found
 
@@ -193,6 +198,34 @@ func base_image(texture_id: int) -> Image:
 		var texture: Texture2D = _load(path) as Texture2D
 		if texture != null:
 			return texture.get_image()
+	return null
+
+
+func _lettering(retail_path: String) -> Texture2D:
+	var image_path: String = TextureSet.lettering_path(retail_path)
+	if image_path.is_empty():
+		return null
+	var image: Texture2D = _load(shippable_root.path_join(image_path)) as Texture2D
+	if image != null:
+		return image
+	for background: String in LetteringTile.BACKGROUNDS:
+		var mask: Image = _load(shippable_root.path_join(TextureSet.lettering_mask_path(retail_path, background))) as Image
+		if mask == null:
+			continue
+		if _tiles == null:
+			_tiles = LetteringTile.new()
+		var sources: Dictionary[int, Image] = {}
+		if not _tiles.has_background(background):
+			for source_id: int in LetteringTile.sources_of(background):
+				var source: Image = base_image(source_id)
+				if source != null:
+					sources[source_id] = source
+		var texture_id: int = TextureSet.texture_id_of(retail_path)
+		var reasons := PackedStringArray()
+		var tile: ImageTexture = _tiles.build(mask, background, texture_id, base_image(texture_id), sources, reasons)
+		for reason: String in reasons:
+			problems.append("lettering tile %d: %s; drawing the retail texture" % [texture_id, reason])
+		return tile
 	return null
 
 
@@ -210,13 +243,6 @@ func _pack_texture(texture: Texture2D) -> Texture2D:
 	var scale: int = loaded.get_width() / padded_size.x
 	textures.accept(texture_id, scale)
 	return loaded
-
-
-func _pack_font(retail_font: FontFile) -> Font:
-	var image: Image = _pack_newfont_image()
-	if image == null:
-		return retail_font
-	return NewfontPage.font_with_page(retail_font, NewfontPage.build(image))
 
 
 func _built_newfont() -> Font:

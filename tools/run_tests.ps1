@@ -36,19 +36,9 @@ function Invoke-GodotStage([string] $name, [string[]] $stageArguments) {
     return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output; LogPath = $logPath }
 }
 
-$fontDirectory = Join-Path $projectDirectory "assets\fonts"
-if (Test-Path -LiteralPath $fontDirectory -PathType Container) {
-    $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
-    & $python (Join-Path $projectDirectory "tools\make_font_newfont.py") --check --quiet
-    if ($LASTEXITCODE -ne 0) {
-        Write-Output "run_tests: the committed newfont fonts differ from their generator"
-        exit 2
-    }
-}
-
-$angularDirectory = Join-Path $projectDirectory "assets\fonts\angular"
+$uv = if ($env:UV) { $env:UV } else { "uv" }
+$angularDirectory = Join-Path $projectDirectory "content\fonts\angular"
 if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
-    $uv = if ($env:UV) { $env:UV } else { "uv" }
     if (-not (Get-Command $uv -CommandType Application -ErrorAction SilentlyContinue)) {
         Write-Output "run_tests: uv not found; install uv or set `$env:UV to the uv executable"
         exit 2
@@ -72,9 +62,10 @@ if ($LASTEXITCODE -ne 0) {
     exit 2
 }
 
-$assetDirectory = Join-Path $projectDirectory "assets"
-if (Test-Path -LiteralPath $assetDirectory -PathType Container) {
-    $pointerPrefix = "version https://git-lfs.github.com/spec"
+$pointerPrefix = "version https://git-lfs.github.com/spec"
+foreach ($folder in @("assets", "content")) {
+    $assetDirectory = Join-Path $projectDirectory $folder
+    if (-not (Test-Path -LiteralPath $assetDirectory -PathType Container)) { continue }
     foreach ($asset in Get-ChildItem -LiteralPath $assetDirectory -Recurse -File | Where-Object { $_.Length -lt 1024 }) {
         $bytes = [IO.File]::ReadAllBytes($asset.FullName)
         $start = [Text.Encoding]::ASCII.GetString($bytes, 0, [Math]::Min($bytes.Length, $pointerPrefix.Length))
@@ -106,7 +97,7 @@ function Test-Suite([string] $suite, [string[]] $suiteArguments) {
 }
 
 $savedEnvironment = @{}
-foreach ($name in @("APPDATA", "TEMP", "TMP", "FROGGER_DATA_DIR", "FROGGER_TEST_SUITE")) {
+foreach ($name in @("APPDATA", "TEMP", "TMP", "FROGGER_DATA_DIR", "FROGGER_TEST_SUITE", "FROGGER_GENERATED_DIR")) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, "Process")
 }
 
@@ -122,6 +113,22 @@ try {
     $env:TMP = $temporaryDirectory
     Remove-Item Env:FROGGER_DATA_DIR, Env:FROGGER_TEST_SUITE -ErrorAction SilentlyContinue
     Write-Output "run_tests: logs and isolated profile: $runDirectory"
+
+    if (Test-Path -LiteralPath (Join-Path $projectDirectory "assets\textures\images") -PathType Container) {
+        $generated = Join-Path $runDirectory "generated"
+        $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
+        & $python (Join-Path $projectDirectory "tools\make_font_newfont.py") --out (Join-Path $generated "newfont") --quiet
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "run_tests: the newfont generator failed"
+            exit 2
+        }
+        & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_lettering.py") --composite (Join-Path $projectDirectory "assets") --out (Join-Path $generated "lettering") --quiet
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "run_tests: the lettering tile generator failed"
+            exit 2
+        }
+        $env:FROGGER_GENERATED_DIR = $generated
+    }
 
     $import = Invoke-GodotStage "import" @("--import")
     if ($import.ExitCode -ne 0 -or -not $import.Output -or $import.Output -cmatch $scriptErrorPattern) {

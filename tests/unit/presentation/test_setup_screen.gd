@@ -130,7 +130,7 @@ func test_the_setup_flag_opens_the_pages_on_the_committed_assets() -> void:
 	assert_eq(screen.opening, SetupFlow.Opening.REQUESTED)
 	assert_eq(screen.left_for, "")
 	assert_not_null(screen.flow)
-	assert_eq(screen.flow.base_root, ImportedAssets.SHIPPABLE_ROOT)
+	assert_eq(screen.flow.base_root, ImportedAssets.COMMITTED_ROOT)
 	assert_eq(screen.views.size(), screen.flow.pages.size(), "one view per page")
 	assert_true(screen.views[0].visible)
 	assert_false(screen.views[1].visible)

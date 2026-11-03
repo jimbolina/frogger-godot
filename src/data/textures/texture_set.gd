@@ -12,20 +12,22 @@ extends RefCounted
 ## retail image. A texture drawn at a scale above 1 samples with linear
 ## filtering and mipmaps, and 2D draws scale it back to retail pixels.
 ##
-## A lettering image under [code]textures/lettering/[/code]
-## ([method lettering_path]) replaces the retail image it stands for unless
-## the pack supplies that texture itself: the pack wins over the lettering,
-## and the lettering over the retail image.
+## The lettering under [code]lettering/[/code] of the shippable root (a
+## transparent image, [method lettering_path], or a tile composited from its
+## mask, [method lettering_mask_path]) replaces the retail image it stands for
+## unless the pack supplies that texture itself: the pack wins over the
+## lettering, and the lettering over the retail image.
 
 ## The retail images folder under [code]textures/[/code].
 const IMAGES_DIR: String = "images"
-## The lettering images folder under [code]textures/[/code].
+## The lettering folder under the shippable root.
 const LETTERING_DIR: String = "lettering"
-## The folder of the bitmap fonts under the shippable root.
-const FONTS_DIR: String = "fonts/retail"
+## The folder of the tile masks under [constant LETTERING_DIR], one
+## sub-folder per tile background.
+const MASKS_DIR: String = "masks"
 ## The largest scale a pack image may have over its retail padded size.
 const MAX_SCALE: int = 16
-## Vector fonts by name, with their paths under the assets root.
+## Vector fonts by name, with their paths under the shippable root.
 const VECTOR_FONTS: Dictionary[String, String] = {
 	"angular": "fonts/angular/frogger_angular.ttf",
 }
@@ -137,17 +139,24 @@ static func texture_id_of_file(file_name: String) -> int:
 static func lettering_path(retail_path: String) -> String:
 	if not retail_path.contains("/textures/%s/" % IMAGES_DIR):
 		return ""
-	return "textures/%s/%s.png" % [LETTERING_DIR, retail_path.get_file().get_basename()]
+	return "%s/%s.png" % [LETTERING_DIR, retail_path.get_file().get_basename()]
 
 
-## True when [param path] is a lettering image.
+## The path under the shippable root of the mask of the lettering tile on
+## [param background] that replaces the retail image at [param retail_path],
+## or "" for a path outside the retail images folder.
+static func lettering_mask_path(retail_path: String, background: String) -> String:
+	if not retail_path.contains("/textures/%s/" % IMAGES_DIR):
+		return ""
+	return "%s/%s/%s/%s.png" % [LETTERING_DIR, MASKS_DIR, background, retail_path.get_file().get_basename()]
+
+
+## True when [param path] is a lettering image under a shippable root.
 static func is_lettering_path(path: String) -> bool:
-	return path.contains("/textures/%s/" % LETTERING_DIR)
+	return path.contains("/%s/" % LETTERING_DIR)
 
 
-## The path under the shippable root of the font called [param name]: one of
-## the [constant VECTOR_FONTS], or the bitmap font under [constant FONTS_DIR].
+## The path under the shippable root of the vector font called [param name]
+## (one of the [constant VECTOR_FONTS]), or "" for any other name.
 static func font_path(name: String) -> String:
-	if VECTOR_FONTS.has(name):
-		return VECTOR_FONTS[name]
-	return "%s/%s.fnt" % [FONTS_DIR, name]
+	return VECTOR_FONTS.get(name, "")

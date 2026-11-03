@@ -1,6 +1,5 @@
 extends GutTest
-## A catalog whose shippable root holds no bitmap font, as in a packaged
-## build, builds newfont from texture 310 (a texture pack's, else the base
+## A catalog builds newfont from texture 310 (a texture pack's, else the base
 ## root's runtime-imported image), and one without lettering images draws
 ## every retail image, with no problems. Synthetic images only.
 
@@ -72,7 +71,7 @@ func test_a_page_of_another_size_builds_nothing() -> void:
 	assert_null(NewfontFont.build(Image.create_empty(16, 16, false, Image.FORMAT_RGBA8)))
 
 
-func test_the_built_font_lays_out_the_grid_of_the_committed_font() -> void:
+func test_the_built_font_lays_out_the_glyph_grid() -> void:
 	var page: Image = NewfontPage.build(_grid(1, 0))
 	var font: FontFile = NewfontFont.build(page)
 	assert_not_null(font)
@@ -93,7 +92,7 @@ func test_the_built_font_lays_out_the_grid_of_the_committed_font() -> void:
 	assert_true(_same_pixels(font.get_texture_image(0, size, 0), page))
 
 
-func test_a_build_without_the_committed_font_builds_it_from_the_imported_texture() -> void:
+func test_the_font_is_built_from_the_imported_texture() -> void:
 	var grid: Image = _grid(1, 1)
 	_save_runtime_texture(NewfontPage.TEXTURE_ID, grid)
 	var catalog: ImportedAssets = _catalog()
