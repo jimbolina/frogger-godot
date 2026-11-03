@@ -22,9 +22,8 @@ defaults until the owner tunes them.
 FrogLord is the level editor (P14a): the importer accepts a FrogLord save and
 writes it as an overlay beside `assets/` (`--assets-root`, `--fallback-root`),
 `AssetIndex` records the source, and `tools/asset_report.sh` lists what a
-build uses that the port cannot play (nothing, for the committed assets). The
-archive suite's round trip imports a synthetic save and loads ORG1 and CAV3
-from it. Reload on change (P14b):
+build uses that the port cannot play (nothing, for the committed assets).
+Reload on change (P14b):
 `archive/import/froglord_watch.sh --data-dir=<FrogLord folder>` re-imports a
 save into `user://froglord/<fingerprint>/` and `tools/play.sh --level=ORG1
 --froglord` reopens the level when it does (`F5` on demand), accepted by the
@@ -38,5 +37,6 @@ native comparisons are on-demand
 [diagnostics](reference/testing/README.md#diagnostics-demo-playback-and-native-comparison);
 the sandbox and play checks are the system checks.
 
-Multiplayer, exports, hosted CI and tuning are separate; the FMV decision
-gates P16. Never push.
+Exports and hosted CI (P17) await the owner's verification on GitHub;
+multiplayer and tuning are separate, and the FMV decision gates P16. Never
+push.

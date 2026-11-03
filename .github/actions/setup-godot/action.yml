@@ -1,0 +1,87 @@
+name: Set up Godot 4.5.1
+description: Installs the pinned Godot editor from the official release, with checksum verification, and optionally the export templates this runner's presets need.
+inputs:
+  templates:
+    description: Install the release export templates ("true" or "false").
+    required: false
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - name: Resolve paths
+      id: paths
+      shell: bash
+      run: |
+        version=4.5.1-stable
+        case "$RUNNER_OS" in
+          Linux)
+            editor_zip="Godot_v${version}_linux.x86_64.zip"
+            editor_sha=5bccbed65a94b82c7c319fdb15719ee8113a6e503976cc54e16f1c61fe95f3d74e5e40b8449b5bb89ff7f424574c20af01a4f5ef08b389e4dc338b245185b0b9
+            godot="$HOME/godot/Godot_v${version}_linux.x86_64"
+            templates_dir="$HOME/.local/share/godot/export_templates/4.5.1.stable"
+            templates="templates/linux_release.x86_64 templates/windows_release_x86_64.exe templates/windows_release_x86_64_console.exe"
+            ;;
+          macOS)
+            editor_zip="Godot_v${version}_macos.universal.zip"
+            editor_sha=a91a7c3bb2faefafef41624fbd75705b91aec509823d41db595a38b79819e0f2e9c85eecdc7429c3159d8070604a3f4b4425aaa6094d7bcac147f52c89181ce9
+            godot="$HOME/godot/Godot.app/Contents/MacOS/Godot"
+            templates_dir="$HOME/Library/Application Support/Godot/export_templates/4.5.1.stable"
+            templates="templates/macos.zip"
+            ;;
+          *)
+            echo "setup-godot: unsupported runner $RUNNER_OS" >&2
+            exit 1
+            ;;
+        esac
+        {
+          echo "version=$version"
+          echo "editor_zip=$editor_zip"
+          echo "editor_sha=$editor_sha"
+          echo "godot=$godot"
+          echo "templates_dir=$templates_dir"
+          echo "templates=$templates"
+        } >>"$GITHUB_OUTPUT"
+    - name: Restore Godot
+      id: cache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/godot
+          ${{ steps.paths.outputs.templates_dir }}
+        key: godot-${{ steps.paths.outputs.version }}-${{ runner.os }}-templates-${{ inputs.templates }}
+    - name: Download Godot
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        VERSION: ${{ steps.paths.outputs.version }}
+        EDITOR_ZIP: ${{ steps.paths.outputs.editor_zip }}
+        EDITOR_SHA: ${{ steps.paths.outputs.editor_sha }}
+        TEMPLATES_DIR: ${{ steps.paths.outputs.templates_dir }}
+        TEMPLATES: ${{ steps.paths.outputs.templates }}
+        INSTALL_TEMPLATES: ${{ inputs.templates }}
+      run: |
+        set -euo pipefail
+        base="https://github.com/godotengine/godot/releases/download/$VERSION"
+        work="$RUNNER_TEMP/godot-download"
+        mkdir -p "$work" "$HOME/godot"
+        curl -fsSL -o "$work/$EDITOR_ZIP" "$base/$EDITOR_ZIP"
+        echo "$EDITOR_SHA  $work/$EDITOR_ZIP" | shasum -a 512 -c -
+        unzip -q "$work/$EDITOR_ZIP" -d "$HOME/godot"
+        if [ "$INSTALL_TEMPLATES" = true ]; then
+          tpz="Godot_v${VERSION}_export_templates.tpz"
+          curl -fsSL -o "$work/$tpz" "$base/$tpz"
+          echo "8a65c73541184fbcf1a7afedb37c9c15ed0f3babdaafe36ff47ccc515548ac84bc7563ba5b94c253e6085b121ac608b7e03d35dfc0b2c8c690a646a8755b57e5  $work/$tpz" | shasum -a 512 -c -
+          # shellcheck disable=SC2086
+          unzip -q "$work/$tpz" templates/version.txt $TEMPLATES -d "$work"
+          mkdir -p "$TEMPLATES_DIR"
+          mv "$work"/templates/* "$TEMPLATES_DIR"/
+        fi
+        rm -rf "$work"
+    - name: Export GODOT
+      shell: bash
+      env:
+        GODOT_PATH: ${{ steps.paths.outputs.godot }}
+      run: |
+        chmod +x "$GODOT_PATH"
+        echo "GODOT=$GODOT_PATH" >>"$GITHUB_ENV"
+        "$GODOT_PATH" --version

@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      pr: ${{ steps.release.outputs.pr }}
+    steps:
+      - uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4.4.1
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  sync-version:
+    needs: release-please
+    if: needs.release-please.outputs.pr != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ fromJSON(needs.release-please.outputs.pr).headBranchName }}
+          lfs: false
+      - name: Write config/version from the manifest
+        run: |
+          set -euo pipefail
+          version="$(python3 -c 'import json; print(json.load(open(".release-please-manifest.json"))["."])')"
+          sed -i "s|^config/version=.*|config/version=\"$version\"|" project.godot
+          if git diff --quiet -- project.godot; then
+            echo "config/version is already $version"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(main): set config/version to $version" -- project.godot
+          git push
+
+  build:
+    needs: release-please
+    if: ${{ !cancelled() && (needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            presets: Windows Linux
+          - os: macos-latest
+            presets: macOS
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          lfs: false
+      - uses: ./.github/actions/lfs-cache
+      - uses: ./.github/actions/setup-godot
+        with:
+          templates: "true"
+      - name: Check config/version against the release
+        if: needs.release-please.outputs.release_created == 'true'
+        env:
+          RELEASE_VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          version="$(sed -n 's/^config\/version="\(.*\)"$/\1/p' project.godot)"
+          if [ "$version" != "$RELEASE_VERSION" ]; then
+            echo "project.godot config/version is $version, the release is $RELEASE_VERSION" >&2
+            exit 1
+          fi
+      - name: Export
+        run: tools/export.sh ${{ matrix.presets }}
+      - name: Retain the export logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: export-logs-${{ matrix.os }}
+          path: build/logs/*.log
+          retention-days: 14
+          if-no-files-found: ignore
+      - name: Retain the packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages-${{ matrix.os }}
+          path: build/Frogger-*.zip
+          retention-days: 30
+          if-no-files-found: error
+      - name: Attach the packages to the release
+        if: needs.release-please.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release upload "$TAG" build/Frogger-*.zip --clobber
+
+  publish:
+    needs: [release-please, build]
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false

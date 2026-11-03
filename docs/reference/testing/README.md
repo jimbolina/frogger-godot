@@ -47,6 +47,30 @@ unchanged. A checkout-local `override.cfg` must be removed before isolated runs.
 Retained run folders and their matching user-data directories may be deleted
 after diagnosis. Sandbox environments must allow the unique Library directory.
 
+## Hosted CI
+
+`.github/workflows/tests.yml` runs `tools/run_tests.sh` unchanged on an Ubuntu
+runner for every push to any branch and on manual dispatch; a newer push to the
+same ref cancels a run in progress. `FROGGER_DATA_DIR` is never set there, so
+only the game suite runs: retail data never leaves the owner's machine, and
+the archive suite stays a local check. A green hosted run therefore does not
+replace the local run before a commit.
+
+The runner installs Python 3.12, uv 0.11.19 and Godot 4.5.1-stable, which
+`.github/actions/setup-godot` downloads from the official release, checks
+against a pinned SHA-512 and caches. `.github/actions/lfs-cache` restores
+`.git/lfs` from the Actions cache, keyed on the commit's LFS object list, and
+pulls only what is missing, so a run spends the repository's
+[Git LFS bandwidth](../../PORTING.md#needed-from-the-owner) only when the
+assets change or the cache has expired.
+The run's logs are kept as the artifact `test-logs-<commit sha>` for 14 days.
+
+The release pull request gets no run, because GitHub starts no workflow for
+commits made with the workflow's own token; it changes only the changelog, the
+manifest and `config/version`, and the push run of the `main` commit beneath
+it covers the rest. The release workflow is described under
+[packaging](../setup.md#packaging).
+
 ## Feature checks
 
 - [Whole-map keyboard playthrough](terrain-inspection.md#whole-map-keyboard-playthrough):
@@ -314,8 +338,7 @@ summary. The wrapper's independent check (`check_test_results.gd -- <log>
 <exit> [--suite=archive]`) recounts the records and checks the suite, named
 skips, summary and process exit. Missing, duplicate, inconsistent or empty
 reports fail. New tests that read retail files live in `archive/tests/` and
-extend `RetailTest`. Retain the printed run folder for diagnosis. Hosted CI
-remains deferred.
+extend `RetailTest`. Retain the printed run folder for diagnosis.
 
 On macOS each isolated project starts from an APFS clone of the checkout's
 `.godot/imported`, `uid_cache.bin` and `global_script_class_cache.cfg`, so only

@@ -501,7 +501,8 @@ stay outside the repository, and Git retains development history.
 
 A packaged build holds the game's code and its own files, and no part of the
 original game: on the first start the [setup screen](#setup-and-first-run)
-imports your own copy of Frogger into the game's user folder.
+imports your own copy of Frogger into the game's user folder. Each release on
+the repository's GitHub Releases page carries the three zips below.
 
 - **macOS** (Apple Silicon and Intel): unzip `Frogger-<version>-macos.zip` and
   move `Frogger.app` to Applications. The app is signed ad hoc, not by a

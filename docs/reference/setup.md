@@ -182,7 +182,34 @@ macOS as a `.zip`) imports the project, exports each preset, fails when the
 export log stores any file under `assets/` or `.godot/imported/` other than
 the shippable ones below, and zips each build as
 `build/Frogger-<version>-<platform>.zip`; logs go to `build/logs/`.
-`config/version` in `project.godot` is the version.
+The version is `config/version` in `project.godot`; the release pull request
+writes it, never a hand edit.
+
+Releases come from `.github/workflows/release.yml` and release-please
+(`release-please-config.json`, `.release-please-manifest.json`, release type
+`simple`). On every push to `main`, release-please reads the Conventional
+Commits since its bootstrap commit and keeps one release pull request open,
+titled `chore(main): release X.Y.Z`, which updates `CHANGELOG.md` and the
+manifest. A second job writes the same version into `config/version` on that
+pull request's branch, because Godot strips comments from `project.godot` and
+release-please cannot annotate it. `feat:` raises the minor version and `fix:`
+the patch; below 1.0 a breaking change (`!` or `BREAKING CHANGE`) also raises
+only the minor. Other types (`docs:`, `chore:`, `ci:`, `refactor:`, `test:`)
+and untyped summaries neither bump the version nor appear in the changelog.
+
+A release happens only when the owner merges that pull request. release-please
+then tags `vX.Y.Z` and creates a draft GitHub Release, and the same workflow
+builds it: an Ubuntu runner runs `tools/export.sh Windows Linux` and a
+`macos-latest` runner runs `tools/export.sh macOS` natively, signed ad hoc by
+Godot's built-in signer. Both use the pinned Godot of
+[hosted CI](testing/README.md#hosted-ci) with export templates extracted from
+the official `.tpz`, checksummed and cached. A build fails when
+`config/version` differs from the release version; otherwise it attaches its
+`Frogger-<version>-windows-x86_64.zip`, `-linux-x86_64.zip` or `-macos.zip`
+with `gh release upload`, and a last job publishes the draft. Dispatching the
+workflow by hand is a dry run: it builds the same zips as workflow artifacts
+(`packages-<runner os>`, kept 30 days) and makes no release. Export logs are
+kept as `export-logs-<runner os>` for 14 days.
 
 A packaged build carries no retail-derived file. It ships `src/` (shaders
 included), `scenes/`, `archive/import/` with `disc_tracks.tsv`,

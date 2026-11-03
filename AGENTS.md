@@ -35,7 +35,10 @@ existing entity behaviors, not introduce code.
 - Keep only genuine docstrings in project code, plus required directives and
   licence notices. Omit ordinary comments.
 - Write plainly. Do not import reference-repository bookkeeping.
-- Commits use descriptive summaries, no attribution trailers. Never push.
+- Commit summaries are descriptive and carry a Conventional Commits type
+  (`feat:`, `fix:`, `docs:`, `chore:`, `ci:`, `refactor:`, `test:`; `!` for
+  breaking), with no attribution trailers. Never push. Only the release pull
+  request changes `config/version` and `CHANGELOG.md`.
 
 ## Verification and delivery
 
@@ -66,7 +69,7 @@ messages and commit bodies; keep raw logs external.
 | Data, gameplay and rendering | [Domain index](docs/reference/domain.md), [architecture](docs/reference/architecture.md) |
 | Assets and the archive | [Assets](docs/reference/assets.md), [archive](archive/README.md) |
 | External sources | [Sources](docs/reference/sources.md) |
-| Verification | [Testing](docs/reference/testing/README.md), [golden index](tests/golden/README.md) |
+| Verification | [Testing](docs/reference/testing/README.md), [hosted CI](docs/reference/testing/README.md#hosted-ci), [golden index](tests/golden/README.md) |
 
 ## Keep documentation small
 

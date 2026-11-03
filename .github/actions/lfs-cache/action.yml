@@ -1,0 +1,20 @@
+name: Pull Git LFS objects through the cache
+description: Restores .git/lfs from the Actions cache, keyed on the LFS object list of the checked-out commit, then pulls whatever is still missing.
+runs:
+  using: composite
+  steps:
+    - name: List LFS objects
+      id: objects
+      shell: bash
+      run: |
+        set -euo pipefail
+        key="$(git lfs ls-files -l | cut -d' ' -f1 | sort | shasum -a 256 | cut -d' ' -f1)"
+        echo "key=$key" >>"$GITHUB_OUTPUT"
+    - name: Restore LFS objects
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: .git/lfs
+        key: lfs-${{ steps.objects.outputs.key }}
+    - name: Pull LFS objects
+      shell: bash
+      run: git lfs pull
