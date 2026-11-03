@@ -27,8 +27,8 @@ archive suite's round trip imports a synthetic save and loads ORG1 and CAV3
 from it. Reload on change (P14b):
 `archive/import/froglord_watch.sh --data-dir=<FrogLord folder>` re-imports a
 save into `user://froglord/<fingerprint>/` and `tools/play.sh --level=ORG1
---froglord` reopens the level when it does (`F5` on demand); the owner's play
-check is pending. Next: the owner's call among P15, P16 and
+--froglord` reopens the level when it does (`F5` on demand), accepted by the
+owner's play check. Next: the owner's call among P15, P16 and
 P17 ([roadmap](PORTING.md#status)). A FrogLord save replacing the retail
 `assets/` waits on the owner's facts-folder decision.
 
