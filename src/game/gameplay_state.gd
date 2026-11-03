@@ -20,6 +20,8 @@ var rng_state: int = 1
 var sky_drift: SkyDriftState = null
 ## Frozen unsigned32 Game_timer: advanced once per level-play frame and never reset in a level.
 var game_timer: int = 0
+## Retail cheat switches; they survive in-level death and checkpoint resets.
+var cheats: CheatState = CheatState.new()
 
 ## Copies the complete candidate; entity state may be replaced by its own aggregate.
 func copy(include_entities: bool = true) -> GameplayState:
@@ -40,4 +42,5 @@ func copy(include_entities: bool = true) -> GameplayState:
 	result.rng_state = rng_state
 	result.sky_drift = sky_drift.copy() if sky_drift != null else null
 	result.game_timer = game_timer
+	result.cheats = cheats.copy()
 	return result

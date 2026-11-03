@@ -36,7 +36,7 @@ commands run from the repository root; generated facts live in
 | Recorded demo headers and decoded-input summaries | [Demos](specs/demos.md) |
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
-| Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census and reviewed overrides | [Imported assets](specs/imported-assets.md) |
+| Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census, reviewed overrides and the runtime import | [Imported assets](specs/imported-assets.md) |
 | `newfont` bitmap fonts generated from texture 310 per texture set (`assets/fonts/<set>/newfont.fnt`) | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
 | Angular vector font generated from the SVG traces and derived glyphs (`assets/fonts/angular/frogger_angular.ttf`) | [Angular font](specs/imported-assets.md#angular-font) |
 | Lettering images drawn from the angular font in place of the retail lettering textures (`assets/textures/lettering/`, `assets/fonts/angular/lettering.tsv`) | [Lettering](specs/imported-assets.md#lettering) |
@@ -73,6 +73,7 @@ commands run from the repository root; generated facts live in
 | High-score view layout, log digit cels, scrolly frog, camera follow, manual and automatic stack tours and scripted traces | [High-score view](specs/frontend.md#high-score-view) |
 | Level-complete count-down, fire and back, checkpoint seconds, digits, cels, sprite layout and scripted page traces | [Level complete](specs/frontend.md#level-complete) |
 | Attract demo order and intro rows, main-menu dwell, demo loading, fade-out and fire gate | [Attract cycle](specs/frontend.md#attract-cycle) |
+| In-game pause press rule, fade-down and fade-up, sound-volume ramp, Continue/Quit and Yes/No menus, glow, sprite layout and scripted traces | [Pause page](specs/frontend.md#pause-page) |
 | Synthetic bounded entity script updates and requests | [Entity scripts](specs/entities.md#entity-script-components) |
 | Combined camera zones and visibility: synthetic gameplay and JUN1 log probes | [Zone/lifecycle integration](specs/entities.md#combined-camera-zones-and-lifecycle) |
 | Synthetic grid surface and layer queries | [Grid queries](specs/grid.md) |

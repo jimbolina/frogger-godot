@@ -34,7 +34,7 @@ that beats the main table or a level's table, the name-entry page opens: hop the
 frog over the letter lilies with the arrow keys, Enter picks a letter (BACK rubs
 one out, END finishes), then the tour shows the new rows and the scrolling table
 (Escape skips it); scores are saved to `user://high_scores.cfg`. Escape during a
-level returns to the menu without name entry. The older start screen lets a level be played fresh without the menu. In a level the retail keys apply: arrow keys hop; Return super-hops in the current facing
+level pauses it; Quit on the pause page returns to the menu without name entry. The older start screen lets a level be played fresh without the menu. In a level the retail keys apply: arrow keys hop; Return super-hops in the current facing
 direction (or skips the current checkpoint bonus stage). Right Ctrl uses the tongue,
 right Shift croaks (the throat swells, in Cave levels the light swells, and the nearest
 baby frog or gold frog within sixteen squares answers), and `'` and `;` turn the
@@ -46,8 +46,9 @@ table behind its buttons. Menu images follow your system language, or pass `--la
 Left alone for 27 seconds, the main menu plays the attract demos in the game scene and
 returns between them; Start and Options still work over a demo. Pass `--attract` to
 start the first demo as soon as the menu has flown on. The inspection
-tools and sandbox keep their own keys. Space pauses/resumes,
-R restarts, and Escape returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
+tools and sandbox keep their own keys. Escape pauses: PAUSED shows over the level
+with Continue and Quit (arrows move, Enter picks, Escape resumes); R restarts a
+direct launch, and Quit returns to the start screen. From the menu, completion offers **Next level** or **Level select** and game over
 **Continue**; a direct launch offers **Replay** and **Return**. The game starts automatically after loading.
 
 The 0 key (top row) opens the debug graphics panel on the right: display, quality, shadows, bloom,

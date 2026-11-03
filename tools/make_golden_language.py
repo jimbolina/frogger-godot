@@ -65,7 +65,7 @@ LOCALE_CASES = ['de_DE', 'de-AT', 'DE', 'it_IT', 'it', 'fr_FR', 'FR_ca', 'es_ES'
 FRONT_END_BANKS = ['OPT_VRAM.VLO', 'STARTNTSC.VLO', 'FIXE_VRAM.VLO', 'OPTE_RAM.VLO', 'LS_ALL.VLO']
 FRONT_END_NAMES = [
     'opt_start', 'opt_options', 'opt_exit', 'opt_race', 'select_level', 'zone_complete',
-    'press_fire', 'sel_loading', 'opt_big_continue', 'opt_yes', 'opt_no', 'opt_paused',
+    'press_fire', 'sel_loading', 'opt_big_continue', 'opt_yes', 'opt_no', 'opt_paused', 'quit',
     'froglogo', 'newfont', 'select1', 'select2', 'select5', 'ls_gold_frog',
     'opt_view_hs', 'opt_ctrl_config', 'opt_insert_pad', 'select7', 'opt_keyboard',
     'opt_arrow_small_left', 'opt_arrow_small_right', 'select3', 'skip_hi_score', 'opt_arrow',

@@ -9,8 +9,25 @@ extends RefCounted
 const COMPLETED: int = 1 << 0
 const SELECTABLE: int = 1 << 1
 const ZONE_ACCESSIBLE: int = 1 << 2
+const LEVEL_CAVES1: int = 0
+const LEVEL_CAVES3: int = 2
+const LEVEL_CAVES4: int = 3
+const LEVEL_DESERT1: int = 6
+const LEVEL_DESERT2: int = 7
+const LEVEL_DESERT3: int = 8
+const LEVEL_DESERT4: int = 9
+const LEVEL_DESERT5: int = 10
 const LEVEL_JUNGLE1: int = 18
 const LEVEL_JUNGLE2: int = 19
+const LEVEL_SWAMP1: int = 36
+const LEVEL_SWAMP2: int = 37
+const LEVEL_SWAMP3: int = 38
+const LEVEL_SWAMP4: int = 39
+const LEVEL_SWAMP5: int = 40
+const LEVEL_SKY1: int = 42
+const LEVEL_SKY2: int = 43
+const LEVEL_SKY3: int = 44
+const LEVEL_SKY4: int = 45
 const THEME_JUNGLE: int = 4
 const ALL_GOLD_FROGS: int = (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5) | (1 << 7) | (1 << 8) | (1 << 9) | (1 << 10)
 const INITIAL_SELECTABLE: PackedInt32Array = [24, 48, 12, 54]
@@ -180,6 +197,46 @@ func open_level(level: int) -> void:
 func open_level_if_closed(level: int) -> void:
 	if not is_selectable(level):
 		set_flags(level, SELECTABLE | ZONE_ACCESSIBLE)
+
+
+## GameCheatModeUnlockAllZones (pause.c:933-965): opens CAV1, SKY1, SWP1, DES1 and JUN1 by
+## assignment, which clears an earlier COMPLETED, and makes CAV3, CAV4, SKY2-4, SWP2-5 and DES2-5
+## zone-accessible where they are not selectable, in the C's order. A JUN1 row already rewritten
+## to JUN2 ignores the JUN1 write.
+func unlock_all_zones() -> void:
+	set_flags(LEVEL_CAVES1, SELECTABLE | ZONE_ACCESSIBLE)
+	unlock_level_zone(LEVEL_CAVES3)
+	unlock_level_zone(LEVEL_CAVES4)
+	set_flags(LEVEL_SKY1, SELECTABLE | ZONE_ACCESSIBLE)
+	unlock_level_zone(LEVEL_SKY2)
+	unlock_level_zone(LEVEL_SKY3)
+	unlock_level_zone(LEVEL_SKY4)
+	set_flags(LEVEL_SWAMP1, SELECTABLE | ZONE_ACCESSIBLE)
+	unlock_level_zone(LEVEL_SWAMP2)
+	unlock_level_zone(LEVEL_SWAMP3)
+	unlock_level_zone(LEVEL_SWAMP4)
+	unlock_level_zone(LEVEL_SWAMP5)
+	set_flags(LEVEL_DESERT1, SELECTABLE | ZONE_ACCESSIBLE)
+	unlock_level_zone(LEVEL_DESERT2)
+	unlock_level_zone(LEVEL_DESERT3)
+	unlock_level_zone(LEVEL_DESERT4)
+	unlock_level_zone(LEVEL_DESERT5)
+	set_flags(LEVEL_JUNGLE1, SELECTABLE | ZONE_ACCESSIBLE)
+
+
+## GameCheatModeUnlockLevelZone (pause.c:1017-1021): assigns ZONE_ACCESSIBLE alone to
+## [param level] when it is not selectable.
+func unlock_level_zone(level: int) -> void:
+	if not is_selectable(level):
+		set_flags(level, ZONE_ACCESSIBLE)
+
+
+## GameCheatModeUnlockAllLevels (pause.c:983-998): ORs SELECTABLE and ZONE_ACCESSIBLE into every
+## arcade row in stack order, keeping COMPLETED.
+func unlock_all_levels() -> void:
+	for index: int in arcade_levels.size():
+		var level: int = arcade_levels[index]
+		set_flags(level, flags_of(level) | ZONE_ACCESSIBLE | SELECTABLE)
 
 
 ## True when the gold frog of [param theme] has ever been collected.

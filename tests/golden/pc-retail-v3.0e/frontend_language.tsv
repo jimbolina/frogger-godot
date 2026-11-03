@@ -12,6 +12,7 @@
 0	opt_yes	opt_yes	800	FIXE_VRAM.VLO
 0	opt_no	opt_no	796	FIXE_VRAM.VLO
 0	opt_paused	opt_paused	798	FIXE_VRAM.VLO
+0	quit	quit	791	FIXE_VRAM.VLO
 0	froglogo	froglogo	1256	STARTNTSC.VLO
 0	newfont	newfont	310	LS_ALL.VLO
 0	select1	select1	145	OPTE_RAM.VLO
@@ -45,6 +46,7 @@
 1	opt_yes	opti_yes	510	FIXI_VRAM.VLO
 1	opt_no	opti_no	509	FIXI_VRAM.VLO
 1	opt_paused	opti_paused	536	FIXI_VRAM.VLO
+1	quit	quit_i	539	FIXI_VRAM.VLO
 1	froglogo	froglogo	1256	STARTNTSC.VLO
 1	newfont	newfont	310	LS_ALL.VLO
 1	select1	select1_i	548	OPTI_RAM.VLO
@@ -78,6 +80,7 @@
 2	opt_yes	optg_yes	508	FIXG_VRAM.VLO
 2	opt_no	optg_no	507	FIXG_VRAM.VLO
 2	opt_paused	optg_paused	535	FIXG_VRAM.VLO
+2	quit	quit_g	538	FIXG_VRAM.VLO
 2	froglogo	froglogo	1256	STARTNTSC.VLO
 2	newfont	newfont	310	LS_ALL.VLO
 2	select1	select1_g	547	OPTG_RAM.VLO
@@ -111,6 +114,7 @@
 3	opt_yes	optf_yes	506	FIXF_VRAM.VLO
 3	opt_no	optf_no	513	FIXF_VRAM.VLO
 3	opt_paused	optf_paused	537	FIXF_VRAM.VLO
+3	quit	quit_f	541	FIXF_VRAM.VLO
 3	froglogo	froglogo	1256	STARTNTSC.VLO
 3	newfont	newfont	310	LS_ALL.VLO
 3	select1	select1_f	553	OPTF_RAM.VLO
@@ -144,6 +148,7 @@
 4	opt_yes	opts_yes	512	FIXS_VRAM.VLO
 4	opt_no	opts_no	511	FIXS_VRAM.VLO
 4	opt_paused	opts_paused	534	FIXS_VRAM.VLO
+4	quit	quit_s	540	FIXS_VRAM.VLO
 4	froglogo	froglogo	1256	STARTNTSC.VLO
 4	newfont	newfont	310	LS_ALL.VLO
 4	select1	select1_s	549	OPTS_RAM.VLO

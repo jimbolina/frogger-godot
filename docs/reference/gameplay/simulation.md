@@ -127,7 +127,10 @@ committed result; a failed tick advances neither counter and marks playback
 incomplete with its diagnostic. An exhausted stream may continue non-consuming
 ticks through `recorded_input_exhausted`; the next read fails safely. Reset the
 session only after resetting the run succeeds. Worker consumers accept a result
-only once after host handoff. Pause offers no commands and advances no counters.
+only once after host handoff. Pause offers no commands and advances no counters;
+`CheatState` on the state carries the pause cheats, infinite lives in
+`Frog.kill` and no death on timeout in the level flow
+([cheats](front-end.md#cheats)), and the host swaps them in between ticks.
 Duration completion means the authored tick count elapsed, not that missing
 level flow or reference agreement has been established. Reference global driver
 call numbers are separate from local logic tick numbers.

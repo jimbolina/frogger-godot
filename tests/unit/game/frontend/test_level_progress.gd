@@ -245,3 +245,50 @@ func test_stack_rows_are_read_only_and_ordered() -> void:
 	var shared: LevelStack = LevelStack.create(rows, [])
 	rows.clear()
 	assert_eq(shared.arcade_count(), 33, "The stack keeps its own row list")
+
+func test_unlock_all_zones_opens_the_five_closed_worlds() -> void:
+	var progress: LevelProgress = _progress()
+	progress.unlock_all_zones()
+	for level: int in [0, 42, 36, 6, 18]:
+		assert_eq(progress.flags_of(level), S | Z, "%d opens" % level)
+	for level: int in [2, 3, 43, 44, 45, 37, 38, 39, 40, 7, 8, 9, 10]:
+		assert_eq(progress.flags_of(level), Z, "%d becomes zone-accessible" % level)
+	assert_eq(progress.flags_of(24), S | Z, "ORG1 is untouched")
+	assert_eq(progress.flags_of(25), Z, "ORG2 is untouched")
+	assert_eq(progress.race_flags, PackedInt32Array([S | Z, S | Z, S | Z, S | Z, S | Z]))
+
+func test_unlock_all_zones_assigns_the_first_levels_and_keeps_selectable_rows() -> void:
+	var progress: LevelProgress = _progress()
+	for level: int in [0, 42, 36, 6]:
+		progress.complete_level(level)
+	progress.arcade_flags[32] = C | S | Z
+	progress.complete_level(2)
+	progress.open_level_if_closed(2)
+	progress.arcade_flags[17] = C
+	progress.unlock_all_zones()
+	for level: int in [0, 42, 36, 6, 18]:
+		assert_eq(progress.flags_of(level), S | Z, "%d loses COMPLETED to the assignment" % level)
+	assert_eq(progress.flags_of(2), C | S | Z, "A selectable CAV3 keeps its flags")
+	assert_eq(progress.flags_of(3), Z, "A completed but closed CAV4 becomes zone-accessible only")
+
+func test_unlock_all_levels_ors_both_bits_into_every_row() -> void:
+	var progress: LevelProgress = _progress()
+	progress.complete_level(24)
+	progress.arcade_flags[16] = C
+	progress.unlock_all_levels()
+	for index: int in LEVELS.size():
+		var expected: int = S | Z
+		if index == 0 or index == 16:
+			expected |= C
+		assert_eq(progress.arcade_flags[index], expected, "row %d" % index)
+	assert_eq(progress.race_flags, PackedInt32Array([S | Z, S | Z, S | Z, S | Z, S | Z]))
+
+func test_unlocks_on_the_rewritten_jungle_row() -> void:
+	var progress: LevelProgress = _progress()
+	progress.complete_level(18)
+	assert_eq(progress.arcade_levels[32], 19)
+	progress.unlock_all_zones()
+	assert_eq(progress.arcade_flags[32], C | S | Z, "The JUN1 write misses the JUN2 row")
+	progress.arcade_flags[32] = C
+	progress.unlock_all_levels()
+	assert_eq(progress.arcade_flags[32], C | S | Z, "The level unlock reaches the JUN2 row")

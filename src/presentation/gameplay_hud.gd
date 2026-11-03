@@ -13,6 +13,8 @@ var _state: GameplayState
 var _tick: int = 0
 var _gold_tick: int = -1
 var _help_tick: int = -100
+## Display frames shown while the game is paused; only the help text's fade counts them.
+var _paused_ticks: int = 0
 var _help_text: String = ""
 var _help_seen: Dictionary[String, bool] = {}
 var _rewards: Array[RewardDefinition] = []
@@ -27,6 +29,8 @@ func clear() -> void:
 	_rewards.clear()
 	_help_seen.clear()
 	_help_text = ""
+	_help_tick = -100
+	_paused_ticks = 0
 	_gold_tick = -1
 	if _score_popups != null:
 		_score_popups.release()
@@ -62,25 +66,26 @@ func score_popups() -> ScorePopupView:
 func present(state: GameplayState, tick: int, events: Array[TickEvent] = []) -> void:
 	if _state == null or tick < _tick:
 		_help_tick = -100
+		_paused_ticks = 0
 		_help_text = ""
 		_help_seen.clear()
 		_popup_view().clear()
 	if _state != null and tick > _tick:
 		_present_score_sprites(state, events)
 	if _state != null and state.tongue.mode != TongueState.Mode.IDLE and _state.tongue.mode == TongueState.Mode.IDLE:
-		_help("TONGUE", tick, false, true)
+		_help("TONGUE", tick + _paused_ticks, false, true)
 	for event: TickEvent in events:
 		if event.kind == TickEvent.Kind.SUPER_HOP:
-			_help("SUPERHOP", tick, false, true)
+			_help("SUPERHOP", tick + _paused_ticks, false, true)
 		elif event.kind == TickEvent.Kind.REWARD and event.reward_id >= 0 and event.reward_id < _rewards.size():
 			var reward: RewardDefinition = _rewards[event.reward_id]
 			if reward.flags & RewardDefinition.POWERUP:
 				match reward.value:
-					PowerupFlags.AUTO_HOP: _help("AUTO-HOP", tick, true, false)
-					PowerupFlags.SUPER_TONGUE: _help("SUPER TONGUE", tick, true, false)
-					PowerupFlags.QUICK_JUMP: _help("QUICK JUMP", tick, true, false)
-					PowerupFlags.TIMER_SPEED: _help("LOSE TIME", tick, true, false)
-					PowerupFlags.SUPER_LIGHT: _help("BRIGHTEN", tick, true, false)
+					PowerupFlags.AUTO_HOP: _help("AUTO-HOP", tick + _paused_ticks, true, false)
+					PowerupFlags.SUPER_TONGUE: _help("SUPER TONGUE", tick + _paused_ticks, true, false)
+					PowerupFlags.QUICK_JUMP: _help("QUICK JUMP", tick + _paused_ticks, true, false)
+					PowerupFlags.TIMER_SPEED: _help("LOSE TIME", tick + _paused_ticks, true, false)
+					PowerupFlags.SUPER_LIGHT: _help("BRIGHTEN", tick + _paused_ticks, true, false)
 	if _state == null or tick < _tick or not state.flow.gold_collected:
 		_gold_tick = -1
 	if state.flow.gold_collected and (_state == null or not _state.flow.gold_collected):
@@ -88,6 +93,30 @@ func present(state: GameplayState, tick: int, events: Array[TickEvent] = []) -> 
 	_state = state.copy(false)
 	_tick = tick
 	queue_redraw()
+
+## Advances the help text's fade by one paused display frame. Frozen C keeps calling UpdateHUD
+## while paused but holds sprite animation, score sprites and effects, so lives, checkpoints,
+## popups and the gold frog stay on the committed tick.
+func advance_paused() -> void:
+	_paused_ticks += 1
+	queue_redraw()
+
+## Shows [param message] as help text from the current display frame; [param once] keeps it from
+## showing again this run, and without [param overwrite] a help text still on screen keeps it out.
+func show_help(message: String, once: bool, overwrite: bool = false) -> void:
+	_help(message, _tick + _paused_ticks, overwrite, once)
+	queue_redraw()
+
+## The help text's age in display frames, counting paused frames; on screen while 0..55.
+func help_age() -> int:
+	return _tick + _paused_ticks - _help_tick
+
+## The help text's brightness (0..1) on the current display frame; 0 when none is on screen.
+func help_brightness() -> float:
+	var age: int = help_age()
+	if age < 0 or age >= 56:
+		return 0.0
+	return float(age) / 16.0 if age < 16 else 1.0 if age < 40 else float(56 - age) / 16.0
 
 ## Score_library slots AddFrogScore receives this tick: the tick's reward
 ## requests, the hop scores (SCORE_10 for a super jump, SCORE_50 for a quick
@@ -177,9 +206,8 @@ func _draw() -> void:
 	_text("%8d" % flow.score, Vector2(560, 24))
 	_timer(flow)
 	_checkpoints(flow)
-	var help_age: int = _tick - _help_tick
-	if help_age >= 0 and help_age < 56:
-		var brightness: float = float(help_age) / 16.0 if help_age < 16 else 1.0 if help_age < 40 else float(56 - help_age) / 16.0
+	if help_age() >= 0 and help_age() < 56:
+		var brightness: float = help_brightness()
 		_text(_help_text, Vector2(320 - NewfontText.width(_help_text) / 2, 436), Color(brightness, brightness, brightness))
 	var icons: Vector2i = life_icons(_state.frog.lives)
 	var frame: int = PlatformMath.divide(_tick, 2) % 5 + 1

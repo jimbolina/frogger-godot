@@ -7,6 +7,8 @@ const FROGLORD_FOLDER: String = "user://gameplay_screen_froglord"
 var _screen: GameplayScreen
 
 func before_each() -> void:
+	FrontEndSession.cheats = CheatState.new()
+	FrontEndSession.pause_cheats = PauseCheats.new()
 	_screen = GameplayScreen.new()
 	_screen.auto_open = false
 	add_child_autofree(_screen)
@@ -27,18 +29,106 @@ func test_explicit_commands_match_the_same_detached_run() -> void:
 		_screen.draw_state(0.8)
 		assert_eq(_screen.run.snapshot().frog.position_16, expected.final_snapshot.frog.position_16)
 
-func test_pause_joins_pending_work_and_clears_held_input() -> void:
+func test_escape_opens_the_pause_page_after_joining_pending_work_and_resumes_from_the_menu() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
 	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
 	assert_true(_screen._host.submit(scenario.command_at(0)))
 	_screen._held = TickCommand.NORTH
-	_screen.set_paused(true)
+	_key(KEY_ESCAPE, true)
+	assert_not_null(_screen._pause_page)
+	assert_true(_screen._pause_page.active())
 	assert_false(_screen._host.pending())
 	assert_false(_screen.playing)
 	assert_eq(_screen._held, 0)
 	assert_eq(_screen.run.snapshot().tick_index, 1)
-	_screen._process(10.0)
+	assert_eq(_screen._status.text, "", "the page draws PAUSED itself")
+	_key(KEY_ESCAPE, false)
+	for tick: int in 9:
+		_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.MENU)
+	assert_eq(_screen.run.snapshot().tick_index, 1, "the game holds while paused")
+	assert_eq(_screen._pause_view.fade_level(), PausePage.FADE_END)
+	_key(KEY_ESCAPE, true)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.KILL_SPRITES)
+	assert_false(_screen.playing, "play waits for the fade-up")
+	for tick: int in 10:
+		_screen._process(GameplayHost.PERIOD)
+	assert_null(_screen._pause_page, "DEINIT resumes")
+	assert_true(_screen.playing)
+	assert_eq(_screen._pause_view.fade_level(), 0)
 	assert_eq(_screen.run.snapshot().tick_index, 1)
+
+func test_refused_escape_opens_no_pause_page() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	var start := RunStart.new()
+	start.start_timer = 30
+	assert_eq(_screen.open_run(scenario.level, start), "")
+	assert_gt(_screen._current.frog.start_timer, 0)
+	_key(KEY_ESCAPE, true)
+	assert_null(_screen._pause_page, "the start timer refuses the pause")
+	assert_true(_screen.playing)
+	assert_eq(_screen.left_for, "", "Escape does not leave the level")
+
+func test_quit_then_yes_leaves_the_front_end_game_as_a_quit() -> void:
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.board = null
+	FrontEndSession.active = true
+	_screen.switches_scene = false
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(24)
+	_key(KEY_ESCAPE, true)
+	for tick: int in 9:
+		_screen._process(GameplayHost.PERIOD)
+	_key(KEY_DOWN, true)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.selection, PausePage.QUIT_SELECTED)
+	_key(KEY_ENTER, true)
+	assert_false(_screen._pause_buttons.fire_released, "fire is the release")
+	_key(KEY_ENTER, false)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.menu_mode, PausePage.MenuMode.QUIT)
+	_key(KEY_RIGHT, true)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.quit_selection, PausePage.QUIT_YES)
+	_key(KEY_ENTER, false)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.DEINIT)
+	_screen._process(GameplayHost.PERIOD)
+	var quit: bool = FrontEndSession.game_quit
+	var page: int = FrontEndSession.start_page
+	var still_active: bool = FrontEndSession.active
+	FrontEndSession.progress = null
+	_reset_front_end_session()
+	assert_null(_screen._pause_page)
+	assert_null(_screen.run, "leaving closes the level")
+	assert_eq(_screen.left_for, FrontEndScreen.SCENE)
+	assert_true(quit)
+	assert_eq(page, FrontEndPage.Page.HIGH_SCORE_INPUT)
+	assert_false(still_active)
+
+func test_paused_keys_reach_only_the_page() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_key(KEY_ESCAPE, true)
+	var before: GameplayRun = _screen.run
+	_key(KEY_APOSTROPHE, true)
+	_key(KEY_UP, true)
+	_key(KEY_R, true)
+	assert_eq(_screen._held, 0, "a bound key does not reach the run")
+	assert_same(_screen.run, before, "R does not restart while paused")
+	assert_true(_screen._pause_buttons.up)
+	_key(KEY_SPACE, false)
+	assert_false(_screen._pause_buttons.fire_released, "Space is not fire")
+	_key(KEY_ENTER, false)
+	assert_true(_screen._pause_buttons.fire_released)
+	_screen._process(GameplayHost.PERIOD)
+	assert_false(_screen._pause_buttons.up, "the tick consumes the latches")
+	_screen.close_data()
+	assert_null(_screen._pause_page, "detaching closes the page")
 
 func test_failed_tick_preserves_state_and_new_run_clears_failure() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
@@ -74,7 +164,7 @@ func test_hud_fills_reference_viewport_and_terminal_actions_are_hidden_during_pl
 	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
 	_screen.set_paused(true)
 	assert_false(_screen._actions.visible)
-	assert_eq(_screen._status.text, "Paused — Space to resume")
+	assert_eq(_screen._status.text, "")
 
 func test_failed_launch_has_no_stale_run_or_replay_action() -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
@@ -84,6 +174,25 @@ func test_failed_launch_has_no_stale_run_or_replay_action() -> void:
 	assert_null(_screen._hud._state)
 	assert_true(_screen._actions.visible)
 	assert_false(_screen._replay.visible)
+
+func _open_pause_menu() -> void:
+	_key(KEY_ESCAPE, true)
+	_key(KEY_ESCAPE, false)
+	for tick: int in 9:
+		_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.MENU)
+
+func _letter(letter: String) -> Key:
+	return KEY_SPACE if letter == " " else (KEY_A + letter.unicode_at(0) - 65) as Key
+
+## Types [param phrase] one key per pause tick and returns the events of the last key's tick.
+func _type(phrase: String) -> Array[PausePage.Event]:
+	var events: Array[PausePage.Event] = []
+	for letter: String in phrase:
+		_key(_letter(letter), true)
+		_key(_letter(letter), false)
+		events = _screen.step_pause()
+	return events
 
 func _key(code: Key, pressed: bool, location: KeyLocation = KEY_LOCATION_UNSPECIFIED) -> void:
 	var event := InputEventKey.new()
@@ -122,7 +231,8 @@ func test_player_one_bindings_drive_play_and_fixed_keys_stay() -> void:
 	_key(KEY_C, true)
 	assert_eq(_screen._held & TickCommand.CROAK, TickCommand.CROAK, "a rebound key takes the action")
 	_key(KEY_SPACE, true)
-	assert_false(_screen.playing, "Space still pauses")
+	assert_true(_screen.playing, "Space does not pause")
+	assert_null(_screen._pause_page)
 
 func test_front_end_completion_opens_the_next_level_page_and_fire_opens_the_level() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
@@ -279,6 +389,8 @@ func _reset_front_end_session() -> void:
 	FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
 	FrontEndSession.final_score = 0
 	FrontEndSession.game_quit = false
+	FrontEndSession.cheats = CheatState.new()
+	FrontEndSession.pause_cheats = PauseCheats.new()
 
 func test_front_end_jungle1_completion_is_recorded_like_any_level() -> void:
 	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(LevelProgress.LEVEL_JUNGLE1, 7, 0, 4, 0, 1)]
@@ -442,6 +554,7 @@ func test_attract_demo_hides_the_hud_and_plays_the_recorded_commands() -> void:
 	assert_eq(_screen._held, 0, "live keys never reach the run")
 	assert_true(_screen.playing, "Space does not pause a demo")
 	assert_eq(_screen.left_for, "", "Escape does not leave a demo")
+	assert_null(_screen._pause_page, "Escape does not pause a demo")
 	var consumed: int = -1
 	for tick: int in 40:
 		var result: TickResult = _screen.step_attract()
@@ -625,3 +738,86 @@ func test_froglord_opens_the_pointer_overlay_and_reloads_the_level_from_a_new_ca
 	assert_not_null(_screen.run, "a failed reload keeps the current level")
 	_screen.close_data()
 	_remove_froglord_folder()
+
+func test_typing_no_more_road_splats_in_the_pause_menu_toggles_infinite_lives() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_open_pause_menu()
+	var events: Array[PausePage.Event] = _type("NO MORE ROAD SPLATS")
+	assert_true(PausePage.Event.CROAK in events, "the cheat croaks")
+	assert_true(PausePage.Event.CHEAT_INFINITE_LIVES in events)
+	assert_true(FrontEndSession.cheats.infinite_lives)
+	assert_eq(_screen._hud._help_text, "INFINITE LIVES ON")
+	assert_false(_screen.run.snapshot().cheats.infinite_lives, "the run sees the cheat at the resume")
+	_key(KEY_ESCAPE, true)
+	for tick: int in 11:
+		_screen._process(GameplayHost.PERIOD)
+	assert_null(_screen._pause_page)
+	assert_true(_screen.playing)
+	assert_true(_screen.run.snapshot().cheats.infinite_lives)
+	_open_pause_menu()
+	for tick: int in 20:
+		_screen.step_pause()
+	events = _type("NO MORE ROAD SPLATS")
+	assert_true(PausePage.Event.CHEAT_INFINITE_LIVES in events)
+	assert_false(FrontEndSession.cheats.infinite_lives)
+	assert_eq(_screen._hud._help_text, "INFINITE LIVES OFF")
+	_screen.restart()
+	assert_false(_screen.run.snapshot().cheats.infinite_lives, "a direct launch restarts with the session cheats")
+
+func test_session_cheats_seed_a_direct_launch_restart() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	FrontEndSession.cheats.no_death_on_timeout = true
+	assert_eq(_screen.restart(), "")
+	assert_true(_screen.run.snapshot().cheats.no_death_on_timeout)
+	FrontEndSession.cheats = CheatState.new()
+
+func test_typing_show_me_more_zones_please_opens_the_zones_and_saves() -> void:
+	var path: String = "user://test_pause_cheats_progress_%d.cfg" % Time.get_ticks_usec()
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(LevelProgress.LEVEL_CAVES1, 0, 0, 1, 0, 1), LevelStack.Row.new(24, 1, 1, 5, 0, 1)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.progress.set_flags(LevelProgress.LEVEL_CAVES1, 0)
+	FrontEndSession.store = ProgressStore.new()
+	FrontEndSession.store_path = path
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_open_pause_menu()
+	var events: Array[PausePage.Event] = _type("SHOW ME MORE ZONES PLEASE")
+	var flags: int = FrontEndSession.progress.flags_of(LevelProgress.LEVEL_CAVES1)
+	var written: bool = FileAccess.file_exists(path)
+	FrontEndSession.store = null
+	FrontEndSession.store_path = ProgressStore.DEFAULT_PATH
+	FrontEndSession.progress = null
+	if written:
+		DirAccess.remove_absolute(path)
+	assert_true(PausePage.Event.CHEAT_ALL_ZONES in events)
+	assert_true(PausePage.Event.CROAK in events)
+	assert_eq(flags, LevelProgress.SELECTABLE | LevelProgress.ZONE_ACCESSIBLE)
+	assert_true(written, "the unlocked flags are saved")
+	assert_eq(_screen._hud._help_text, "ALL ZONES OPEN")
+
+func test_letters_typed_during_play_set_the_gate_and_a_wrong_letter_resets_the_cursor() -> void:
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	var cheats: PauseCheats = FrontEndSession.pause_cheats
+	_key(KEY_N, true)
+	_key(KEY_N, false)
+	assert_true(cheats.gate, "a letter during play sets the gate")
+	assert_true(_screen.playing)
+	_key(KEY_ESCAPE, true)
+	_key(KEY_ESCAPE, false)
+	for tick: int in 9:
+		_screen._process(GameplayHost.PERIOD)
+	assert_true(cheats.gate, "the stale gate reaches the first menu tick")
+	_screen.step_pause()
+	assert_false(cheats.gate)
+	assert_eq(cheats.cursors[PauseCheats.Cheat.INFINITE_LIVES], 0, "nothing is down at the menu tick")
+	_type("NO")
+	assert_eq(cheats.cursors[PauseCheats.Cheat.INFINITE_LIVES], 2)
+	_type("X")
+	assert_eq(cheats.cursors[PauseCheats.Cheat.INFINITE_LIVES], 0, "a wrong letter resets the cursor")
+	_key(KEY_N, true)
+	_key(KEY_META, true)
+	_screen.step_pause()
+	assert_eq(cheats.cursors[PauseCheats.Cheat.INFINITE_LIVES], 0, "Cmd forgets the keys down")

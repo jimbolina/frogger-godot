@@ -36,3 +36,25 @@ func test_host_preserves_pending_command_and_requires_acceptance_before_sync_ste
 	assert_null(host.poll())
 	host.close()
 	assert_null(host.worker)
+
+func test_set_cheats_waits_for_the_pending_command_then_reaches_the_next_step() -> void:
+	var host := GameplayHost.new()
+	var cheats := CheatState.new()
+	cheats.infinite_lives = true
+	assert_ne(host.set_cheats(cheats), "")
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	host.open(GameplayRun.create(scenario.level, scenario.initial))
+	assert_true(host.submit(scenario.command_at(0)))
+	assert_ne(host.set_cheats(cheats), "")
+	assert_false(host.run.snapshot().cheats.infinite_lives)
+	var first: TickResult = host.finish()
+	assert_eq(first.error, "")
+	assert_false(first.final_snapshot.cheats.infinite_lives)
+	assert_eq(host.set_cheats(cheats), "")
+	assert_null(host.worker)
+	assert_true(host.run.snapshot().cheats.infinite_lives)
+	var second: TickResult = host.step(scenario.command_at(1), false)
+	assert_eq(second.error, "")
+	if second.error.is_empty():
+		assert_true(second.final_snapshot.cheats.infinite_lives)
+	host.close()

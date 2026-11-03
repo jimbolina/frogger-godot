@@ -270,6 +270,14 @@ func _send_key(code: Key) -> void:
 	event.pressed = true
 	_screen._unhandled_key_input(event)
 
+func test_space_pauses_the_sandbox_without_the_pause_page() -> void:
+	_send_key(KEY_SPACE)
+	assert_false(_screen.playing)
+	assert_null(_screen._pause_page)
+	assert_eq(_screen._status.text, "Paused — Space to resume")
+	_send_key(KEY_SPACE)
+	assert_true(_screen.playing)
+
 func test_boot_flags_and_scene_select_the_sandbox() -> void:
 	assert_true(BootScreen.wants_sandbox(PackedStringArray(["--sandbox"])))
 	assert_true(BootScreen.wants_sandbox(PackedStringArray(["--level=sandbox", "--no-audio"])))

@@ -462,6 +462,8 @@ image, and reads the map and arm stores from the supplied executable.
   the language banks after the English ones and English fills any gap.
 - **Not covered.** Retail's `Options_text_textures` pointer table is not read;
   level-stack names, the water and the HUD stay English.
+- **Pause page.** `quit` (`im_quit`, texture 791) follows `opt_paused` for the
+  [pause page](#pause-page); its variants append the letter (`quit_g`).
 - **Level complete.** `next`, `total_time`, `total_score`, `select4` and
   `opt_sec` close the list for the [level-complete page](#level-complete);
   `opt_sec`'s variants take the prefix form and every language finds them in
@@ -1548,5 +1550,186 @@ Set `SCORE_TIME = 30 * 27` to 811 in the generator: `--check` exits 1 (the C
 cross-check reports the define; with `--c-reference` pointing nowhere the diff
 shows `score_time` 811 and `view_main_calls` 820), and after writing with the
 cross-check skipped the Godot test fails. Restore it and rewrite (exit 0).
+
+## Pause page
+
+`make_golden_pause.py` replays the in-game pause from the frozen C at the PC's
+640x480 display. It never reads Godot output.
+
+```sh
+python3 tools/make_golden_pause.py           # write the file
+python3 tools/make_golden_pause.py --check   # diff against the committed file, exit 1 on change
+```
+
+Standard library only. It checks the two sound ids against FrogLord's retail
+sound list. `--c-reference <dir>` names the frozen C `source/` folder (default
+`../froggy/engine/vendor/frogger-psx-src/source`); a missing folder skips the
+cross-checks. They compare the press conditions, every `GamePause` arm built
+from the generator's fade step, fade end and sounds, the hidden-menu sprite
+statements with their +32/+48/+64 rises and ±48 offsets from
+`Game_display_height>>1` (`pause.c`, comments stripped), the three hidden-menu
+enums (`pause.h`), the glow (`OPTIONS.C`), the five option images
+(`tempopt.c`), the `sound.h` generic enum, the MENU arm's arcade-only
+`GameCheatModeCheck` call and the three cheat routines with
+`GameCheatModeUnlockLevelZone` (`pause.c:900-1021`), and that `PC/winsys.h`
+leaves `PSX_MASTER` commented out. `--froggy-reference <dir>` names froggy's
+`engine` folder (default `../froggy/engine`); when
+`asset_pipeline/include/frogger_cheat_sequences.h` exists there, the four
+scancode lists, their file offsets, the terminator, the count, the longest
+length and the `FROGGER_CHEAT_SEQ_LIST` phrases are compared with it, and each
+list is spelt through the DIK letter table against its phrase.
+
+`test_frontend_pause.gd` replays the file through `PausePage`, `PauseCheats`
+and `LevelProgress`, asset-free; `test_pause_page.gd`, `test_pause_cheats.gd`
+and `test_level_progress.gd` cover the press rule and the edge cases.
+
+### Pause file (`synthetic/frontend_pause.json`)
+
+| Key | Content |
+|---|---|
+| `constants` | fade step 0x10, fade end 0x80, sounds 6 (hop) and 3 (croak), y 240/272/288/304, Yes/No offset 48, quit Yes 0 and No 1, Continue 0 and Quit 1 |
+| `images` | sprite name to image |
+| `glow` | `[frame, grey]` |
+| `positions` | sprite, image width and top-left corner |
+| `scenes` | pause runs, below |
+| `cheats` | the pause-cheat dispatcher, its traces and the unlock flags, below |
+
+A scene has `sound_volume` (`PausePage.create`), `startup_events`, `inputs`
+(1-based tick to `escape`, `up`, `down`, `left`, `right`, `fire`), `ticks`,
+`trace` and `sprites_at`. Tick 1 is the tick after the press. A trace row is
+`[frame, mode, menu_mode, fade, volume, selection, quit_selection, glowing,
+events]` after that tick, with names for the enums; once the mode is
+`NO_PAUSE` further rows repeat it with no events and the frame held.
+`sprites_at` gives, after `frame` ticks, the image widths used for centring
+and the shown sprites in order (`sprite`, `image`, `x`, `y`).
+
+| Scene | Shows |
+|---|---|
+| `resume_by_escape` | fade-down, Escape, fade-up and RESUMED with the volume ramp from 5 |
+| `menu_continue` | fire on Continue, volume 12 back to 12 |
+| `quit_no` | Quit, then No resumes |
+| `quit_yes` | Quit, Right to Yes, QUIT with no fade-up |
+| `moves_clamp` | Up/Down and Left/Right clamp and hop; both keys on one tick; Escape wins in the Yes/No menu |
+| `escape_during_fade` | Escape ignored in INIT, FADE_DOWN, KILL_SPRITES and FADE_UP |
+| `volume_from_zero` | the volume stays 0 down and up |
+
+### Rules replayed
+
+- **Press** (`pause.c:166-193`): only with `Game_start_timer` 0, the game not
+  flagged `GAME_FLAG_NO_PAUSE_ALLOWED` and the frog `FROG_ACTIVE`; the press
+  plays `SFX_GEN_FROG_HOP` (6). The port reads the frog's start timer, the
+  completed flag and the level's START phase.
+- **INIT** (:203-230): the PAUSED sprite and the volume set to `Sound_volume`.
+- **Fade-down** (:233-266): the polygon colour rises 0x10 a tick and the
+  volume falls by one to 0; colour 0x80 enters MENU, so eight ticks.
+- **Menu** (:268-432): Escape (FRR_START) leaves through KILL_SPRITES with a
+  hop. Otherwise Down then Up move Continue/Quit and Left then Right move the
+  Yes/No choice, each clamped, hopping on a move; both run on one tick. Fire
+  release croaks: Continue or No go to KILL_SPRITES, Quit opens Yes/No at No,
+  Yes goes straight to DEINIT. The hidden-menu enums give Yes 0 and No 1, so
+  Left moves to No (left of centre) and Right to Yes.
+- **Fade-up** (:455-490): the colour falls 0x10 a tick and the volume rises by
+  one to `Sound_volume`; colour 0 enters DEINIT. KILL_SPRITES (:436-452) only
+  moves on.
+- **DEINIT** (:493-527): QUIT after Yes, else RESUMED; the pause ends.
+- **Sprites** (:207, :559-603): PAUSED at y 240, Continue 272, Quit 288, Yes
+  and No 304, centred on x 320 (`width >> 1`), Yes 48 right and No 48 left.
+- **Glow** (`OPTIONS.C:381-414`): grey `(frame & 7) << 5` on the selected
+  item while in MENU.
+
+### Cheats (`cheats`)
+
+The retail PC pause-menu cheats come from the executable's dispatcher
+(`0x0042fda0`, `../froggy/engine/docs/evidence/m50_v3_exe_probe.txt` leg H3),
+not from the vendored `pause.c:843-882`, whose joypad `Sequence[]` is dead on
+the PC (`PSX_MASTER` off, `PC/winsys.h:33`). The window procedure sets a gate on
+any WM_KEYDOWN of a letter or Space, at any time and auto-repeat included; each
+MENU tick on an arcade level, with Escape not pressed and before the hidden
+menu (`pause.c:288-292`), runs the dispatcher: without the gate nothing
+happens; otherwise the gate clears and each of four sequences, in order, tests
+only the key its cursor names against the keys down (held or pressed): down
+advances the cursor, and the sequence's end fires the cheat and resets it; not
+down resets the cursor without re-testing the key as element 0. The cursors
+and the gate are process globals, so they persist across pauses and levels.
+
+| Key | Content |
+|---|---|
+| `gate_keys` | the DIK scancodes that set the gate: A-Z and Space (`space` 0x39) |
+| `terminator` | 0xFFFFFFFF, which the port's lists omit (the length stands for it) |
+| `sequences` | per cheat in dispatch order: `cheat`, `phrase`, `source`, `file_offset` in the exe, `croaks` and `scancodes` |
+| `events` | the `PausePage` events a fired cheat adds: `CROAK` then the `CHEAT_` event, no croak for `TIMEOUT_DEATHS` |
+| `traces` | `PauseCheats` alone: `steps` of `gate`, `down`, then the `cursors` and `fired` names after the check |
+| `scenes` | pauses with a shared dispatcher: `sound_volume`, `arcade`, `pages` |
+| `unlock` | the zone unlock's order (`zone_unlock`: `assign` or `zone`, level), the retail stack rows and the unlock cases |
+
+A cheat scene's page has `inputs` and `ticks` as a pause scene, `keys` (tick to
+`gate` and the scancodes `down`) and a `trace` of
+`[frame, mode, events, cursors, gate]` after each tick. The dispatcher carries
+over from page to page. The phrases are "NO MORE ROAD SPLATS" (infinite lives,
+`pause.c:900-915`), "SHOW ME MORE ZONES PLEASE" (`:933-965`), "WAY TOO HARD
+FOR THE LIKES OF ME" (`:983-998`) and "NO MORE TIMEOUT DEATHS PLEASE" (the
+PC-only death-on-timeout toggle at `0x00430040`, which does not croak).
+
+| Trace or scene | Shows |
+|---|---|
+| `type_*` | each phrase typed one key per gated tick fires its cheat once; the trailing S of SPLATS leaves SHOW's cursor at 1 |
+| `shared_prefix_parts_at_r_or_t` | "NO MORE " advances the lives and timeout sequences together until R or T parts them |
+| `wrong_key_resets`, `wrong_key_is_not_element_zero` | a wrong key resets the cursor and is not re-tested as the first element |
+| `held_key_advances`, `held_o_in_too` | a held key counts as down while another goes down; the second O of TOO is the held O, the gating X is not tested |
+| `stale_gate_resets`, `gate_off_ignored` | a gated tick with nothing down resets every cursor; keys down without the gate change nothing |
+| `two_cheats_in_a_row` | a fired sequence starts again from 0 |
+| `cheats_in_menu` | infinite lives croaks, the timeout toggle does not, Escape then resumes |
+| `cheat_before_menu_events` | the cheat's CROAK and event precede the hidden menu's HOP on the same tick; keys typed while fading are not checked and the gate stays set |
+| `escape_skips_the_check`, `not_arcade` | Escape and a non-arcade level leave the gate set and the cursors alone |
+| `gate_before_menu` | a key-down during the fade is a stale gate that the first MENU tick consumes with the keys then down |
+| `cursors_persist` | ten keys in one pause and the rest after a resume fire the zone unlock |
+| `stale_gate_on_the_first_menu_tick` | a stale gate with nothing down on the first MENU tick resets the cursors kept from an earlier pause |
+
+An unlock case starts from `LevelProgress.create` on the retail rows
+(`arcade_rows`, `race_rows`: `level`, `world`, `stack`, `theme`, `local`,
+`levels_in_world`), applies `setup` (`complete`, `open_if_closed` and `set_row`
+with a row index and flags) and records `levels`, `flags` and `race_flags`,
+then `after_all_zones`, `after_all_levels` and `after_both` (zones then levels).
+`GameCheatModeUnlockAllZones` assigns `SELECTABLE | ZONEACCESSIBLE` to CAV1,
+SKY1, SWP1, DES1 and JUN1, clearing COMPLETED, and `GameCheatModeUnlockLevelZone`
+(`:1017-1021`) assigns `ZONEACCESSIBLE` alone to CAV3, CAV4, SKY2-4, SWP2-5
+and DES2-5 where the level is not selectable (`first_levels_completed`:
+a selectable CAV3 keeps its flags, a completed closed CAV4 becomes
+zone-accessible only). `GameCheatModeUnlockAllLevels` ORs both bits into every
+arcade row in stack order, keeping COMPLETED (`completed_rows`). A JUN1 row
+rewritten to JUN2 ignores the JUN1 write but takes the row-wise OR
+(`jungle_rewritten*`). Race rows are untouched.
+
+### Port differences
+
+- The Continue/Quit menu shows at INIT; retail opens it on a SELECT release
+  (:300-308), which no PC key reaches, so PAUSED never glows.
+- Visibility and glow follow the mode after the tick: sprites show from the
+  press tick and go at KILL_SPRITES, the glow starts on the tick that enters
+  MENU and No glows on the tick Quit is chosen, each one tick early against
+  retail. The glow counts the pause's own ticks where retail reads the
+  options viewport's frame count.
+- The fade polygon and music pause are drawn by the view; the file records the
+  fade level only.
+- The gate is set by the presentation layer through `PauseCheats.note_key_down`
+  for the keys `PauseCheats.gates` names; the file records gate ticks, not key
+  events. The cheats' effects (lives, the timeout toggle, the HUD help) belong
+  to the game host; the file records the events and the flag words.
+
+### Deliberate break
+
+Change `fade_end` to 112 in the JSON: `--check` exits 1 with the diff and
+`test_frontend_pause.gd` fails `test_constants`. Setting `FADE_END = 0x70` in
+the generator fails the C cross-check, and with `--c-reference` pointing
+nowhere the diff shows MENU entered on tick 8. Restore and rewrite (exit 0).
+
+Drop one scancode from a committed list, say the final 0x1F of
+`SEQUENCE_INFINITE_LIVES` in `src/game/frontend/pause_cheats.gd`:
+`test_frontend_pause.gd` fails `test_cheat_sequences` on the list and every
+lives trace and scene on the cursors and events. Dropping it from the
+generator's `CHEATS` instead fails the froggy cross-check (the list differs),
+and with `--froggy-reference` pointing nowhere the generator's own spelling
+check stops it ("does not spell NO MORE ROAD SPLATS", exit 1) before any
+diff. Restore and rewrite (exit 0).
 
 [Golden data index and shared rules](../README.md).

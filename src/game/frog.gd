@@ -556,16 +556,25 @@ func bounce_from_entity(state: GameplayState, entity_index: int, entity_matrix12
 	return bounce(state, events)
 
 
+## Reports whether FrogKill clears FROG_ACTIVE, judged from the lives held before its decrement.
+## FrogKill (FROG.C:3157-3166) decrements a positive fr_lives unless
+## Cheat_infinite_lives_toggle is set, then clears FROG_ACTIVE when fr_lives is zero.
+static func kill_deactivates(lives: int, infinite_lives: bool) -> bool:
+	return lives <= (0 if infinite_lives else 1)
+
+
 ## Requests death animation and updates the candidate death state.
+## With infinite lives FrogKill skips the decrement and its HUD request (FROG.C:3157-3163).
 func kill(state: GameplayState, animation: int, down_velocity: bool, events: Array[TickEvent]) -> void:
 	if state.frog.mode in [FrogMode.DYING, FrogMode.HIT_CHECKPOINT] or state.frog.flags & FrogFlags.MUST_DIE:
 		return
 	state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
-	if state.frog.lives > 0:
+	var deactivates: bool = kill_deactivates(state.frog.lives, state.cheats.infinite_lives)
+	if state.frog.lives > 0 and not state.cheats.infinite_lives:
 		state.requests.life_decrement_requested = true
 		if flow_enabled:
 			state.frog.lives -= 1
-	if state.frog.lives <= (0 if flow_enabled else 1):
+	if deactivates:
 		state.frog.flags &= ~FrogFlags.ACTIVE
 	state.frog.flags |= FrogFlags.MUST_DIE
 	state.requests.animation_requests += 1

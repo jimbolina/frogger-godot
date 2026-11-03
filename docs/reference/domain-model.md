@@ -163,8 +163,9 @@ immutable after setup and may be shared read-only; state is copied.
   presentation because it carries one game across scene changes; the rules it
   calls are gameplay classes.
 - **Members:** `LevelProgress` with its `LevelStack`, `HighScoreBoard`,
-  `KeyBindings`, volumes, language, and the lives, score and life-bonus
-  threshold carried between levels (handed to the next run through `RunStart`).
+  `KeyBindings`, volumes, language, the lives, score and life-bonus
+  threshold carried between levels (handed to the next run through `RunStart`),
+  and the pause cheats: a `CheatState` and the `PauseCheats` cursors, never saved.
 - **Invariants:** page changes follow `FrontEndFlow`'s table; unlocks change
   only through `LevelProgress` methods; high-score insertion follows
   `HighScoreBoard`'s strict comparisons.

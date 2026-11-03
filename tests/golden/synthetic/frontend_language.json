@@ -150,6 +150,11 @@
    "shared": false
   },
   {
+   "name": "quit",
+   "localized": ["quit_i", "quit_g", "quit_f", "quit_s"],
+   "shared": false
+  },
+  {
    "name": "froglogo",
    "localized": [null, null, null, null],
    "shared": true

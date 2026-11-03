@@ -1,0 +1,926 @@
+{
+ "source": "pause.c:163-527 GamePause, :559-603 hidden menus, pause.h, OPTIONS.C:381-414",
+ "constants": {
+  "fade_step": 16,
+  "fade_end": 128,
+  "hop_sound": 6,
+  "croak_sound": 3,
+  "paused_y": 240,
+  "continue_y": 272,
+  "quit_y": 288,
+  "yes_no_y": 304,
+  "yes_no_offset": 48,
+  "quit_yes": 0,
+  "quit_no": 1,
+  "continue_selected": 0,
+  "quit_selected": 1
+ },
+ "images": {"PAUSED": "opt_paused", "CONTINUE": "opt_big_continue", "QUIT": "quit", "YES": "opt_yes", "NO": "opt_no"},
+ "glow": [[0, 0], [1, 32], [2, 64], [7, 224], [8, 0], [9, 32], [15, 224], [100, 128]],
+ "positions": [
+  {"sprite": "PAUSED", "width": 0, "x": 320, "y": 240},
+  {"sprite": "PAUSED", "width": 1, "x": 320, "y": 240},
+  {"sprite": "PAUSED", "width": 64, "x": 288, "y": 240},
+  {"sprite": "PAUSED", "width": 65, "x": 288, "y": 240},
+  {"sprite": "CONTINUE", "width": 0, "x": 320, "y": 272},
+  {"sprite": "CONTINUE", "width": 1, "x": 320, "y": 272},
+  {"sprite": "CONTINUE", "width": 64, "x": 288, "y": 272},
+  {"sprite": "CONTINUE", "width": 65, "x": 288, "y": 272},
+  {"sprite": "QUIT", "width": 0, "x": 320, "y": 288},
+  {"sprite": "QUIT", "width": 1, "x": 320, "y": 288},
+  {"sprite": "QUIT", "width": 64, "x": 288, "y": 288},
+  {"sprite": "QUIT", "width": 65, "x": 288, "y": 288},
+  {"sprite": "YES", "width": 0, "x": 368, "y": 304},
+  {"sprite": "YES", "width": 1, "x": 368, "y": 304},
+  {"sprite": "YES", "width": 64, "x": 336, "y": 304},
+  {"sprite": "YES", "width": 65, "x": 336, "y": 304},
+  {"sprite": "NO", "width": 0, "x": 272, "y": 304},
+  {"sprite": "NO", "width": 1, "x": 272, "y": 304},
+  {"sprite": "NO", "width": 64, "x": 240, "y": 304},
+  {"sprite": "NO", "width": 65, "x": 240, "y": 304}
+ ],
+ "scenes": [
+  {
+   "name": "resume_by_escape",
+   "sound_volume": 5,
+   "startup_events": ["HOP"],
+   "inputs": {"12": ["escape"]},
+   "ticks": 24,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 5, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 4, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 3, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 2, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 1, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [11, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [12, "KILL_SPRITES", "CONTINUE", 128, 0, 0, 1, "NONE", ["HOP"]], [13, "FADE_UP", "CONTINUE", 128, 0, 0, 1, "NONE", []], [14, "FADE_UP", "CONTINUE", 112, 1, 0, 1, "NONE", []], [15, "FADE_UP", "CONTINUE", 96, 2, 0, 1, "NONE", []], [16, "FADE_UP", "CONTINUE", 80, 3, 0, 1, "NONE", []], [17, "FADE_UP", "CONTINUE", 64, 4, 0, 1, "NONE", []], [18, "FADE_UP", "CONTINUE", 48, 5, 0, 1, "NONE", []], [19, "FADE_UP", "CONTINUE", 32, 5, 0, 1, "NONE", []], [20, "FADE_UP", "CONTINUE", 16, 5, 0, 1, "NONE", []], [21, "DEINIT", "CONTINUE", 0, 5, 0, 1, "NONE", []], [22, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", ["RESUMED"]], [22, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", []], [22, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", []]],
+   "sprites_at": [
+    {
+     "frame": 0,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288}
+     ]
+    },
+    {
+     "frame": 1,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288}
+     ]
+    },
+    {
+     "frame": 9,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288}
+     ]
+    },
+    {
+     "frame": 12,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": []
+    }
+   ]
+  },
+  {
+   "name": "menu_continue",
+   "sound_volume": 12,
+   "startup_events": ["HOP"],
+   "inputs": {"10": ["fire"]},
+   "ticks": 20,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 12, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 11, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 10, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 9, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 8, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 7, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 6, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 5, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 4, 0, 1, "CONTINUE", []], [10, "KILL_SPRITES", "CONTINUE", 128, 4, 0, 1, "NONE", ["CROAK"]], [11, "FADE_UP", "CONTINUE", 128, 4, 0, 1, "NONE", []], [12, "FADE_UP", "CONTINUE", 112, 5, 0, 1, "NONE", []], [13, "FADE_UP", "CONTINUE", 96, 6, 0, 1, "NONE", []], [14, "FADE_UP", "CONTINUE", 80, 7, 0, 1, "NONE", []], [15, "FADE_UP", "CONTINUE", 64, 8, 0, 1, "NONE", []], [16, "FADE_UP", "CONTINUE", 48, 9, 0, 1, "NONE", []], [17, "FADE_UP", "CONTINUE", 32, 10, 0, 1, "NONE", []], [18, "FADE_UP", "CONTINUE", 16, 11, 0, 1, "NONE", []], [19, "DEINIT", "CONTINUE", 0, 12, 0, 1, "NONE", []], [20, "NO_PAUSE", "CONTINUE", 0, 12, 0, 1, "NONE", ["RESUMED"]]],
+   "sprites_at": [
+    {
+     "frame": 10,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": []
+    }
+   ]
+  },
+  {
+   "name": "quit_no",
+   "sound_volume": 3,
+   "startup_events": ["HOP"],
+   "inputs": {"10": ["down"], "11": ["fire"], "12": ["fire"]},
+   "ticks": 24,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 3, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 2, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 1, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 0, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 0, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", ["HOP"]], [11, "MENU", "QUIT", 128, 0, 1, 1, "NO", ["CROAK"]], [12, "KILL_SPRITES", "QUIT", 128, 0, 1, 1, "NONE", ["CROAK"]], [13, "FADE_UP", "QUIT", 128, 0, 1, 1, "NONE", []], [14, "FADE_UP", "QUIT", 112, 1, 1, 1, "NONE", []], [15, "FADE_UP", "QUIT", 96, 2, 1, 1, "NONE", []], [16, "FADE_UP", "QUIT", 80, 3, 1, 1, "NONE", []], [17, "FADE_UP", "QUIT", 64, 3, 1, 1, "NONE", []], [18, "FADE_UP", "QUIT", 48, 3, 1, 1, "NONE", []], [19, "FADE_UP", "QUIT", 32, 3, 1, 1, "NONE", []], [20, "FADE_UP", "QUIT", 16, 3, 1, 1, "NONE", []], [21, "DEINIT", "QUIT", 0, 3, 1, 1, "NONE", []], [22, "NO_PAUSE", "QUIT", 0, 3, 1, 1, "NONE", ["RESUMED"]], [22, "NO_PAUSE", "QUIT", 0, 3, 1, 1, "NONE", []], [22, "NO_PAUSE", "QUIT", 0, 3, 1, 1, "NONE", []]],
+   "sprites_at": [
+    {
+     "frame": 11,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288},
+      {"sprite": "YES", "image": "opt_yes", "x": 337, "y": 304},
+      {"sprite": "NO", "image": "opt_no", "x": 248, "y": 304}
+     ]
+    }
+   ]
+  },
+  {
+   "name": "quit_yes",
+   "sound_volume": 5,
+   "startup_events": ["HOP"],
+   "inputs": {"10": ["down"], "12": ["fire"], "14": ["right"], "15": ["fire"]},
+   "ticks": 18,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 5, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 4, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 3, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 2, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 1, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", ["HOP"]], [11, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", []], [12, "MENU", "QUIT", 128, 0, 1, 1, "NO", ["CROAK"]], [13, "MENU", "QUIT", 128, 0, 1, 1, "NO", []], [14, "MENU", "QUIT", 128, 0, 1, 0, "YES", ["HOP"]], [15, "DEINIT", "QUIT", 128, 0, 1, 0, "NONE", ["CROAK"]], [16, "NO_PAUSE", "QUIT", 128, 0, 1, 0, "NONE", ["QUIT"]], [16, "NO_PAUSE", "QUIT", 128, 0, 1, 0, "NONE", []], [16, "NO_PAUSE", "QUIT", 128, 0, 1, 0, "NONE", []]],
+   "sprites_at": [
+    {
+     "frame": 14,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288},
+      {"sprite": "YES", "image": "opt_yes", "x": 337, "y": 304},
+      {"sprite": "NO", "image": "opt_no", "x": 248, "y": 304}
+     ]
+    },
+    {
+     "frame": 15,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": []
+    }
+   ]
+  },
+  {
+   "name": "moves_clamp",
+   "sound_volume": 4,
+   "startup_events": ["HOP"],
+   "inputs": {
+    "10": ["up"],
+    "11": ["down"],
+    "12": ["down"],
+    "13": ["down", "up"],
+    "14": ["down"],
+    "15": ["fire"],
+    "16": ["left"],
+    "17": ["right"],
+    "18": ["right"],
+    "19": ["left", "right"],
+    "20": ["up", "down"],
+    "21": ["escape", "right", "fire"]
+   },
+   "ticks": 34,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 4, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 3, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 2, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 1, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 0, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [11, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", ["HOP"]], [12, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", []], [13, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", ["HOP"]], [14, "MENU", "CONTINUE", 128, 0, 1, 1, "QUIT", ["HOP"]], [15, "MENU", "QUIT", 128, 0, 1, 1, "NO", ["CROAK"]], [16, "MENU", "QUIT", 128, 0, 1, 1, "NO", []], [17, "MENU", "QUIT", 128, 0, 1, 0, "YES", ["HOP"]], [18, "MENU", "QUIT", 128, 0, 1, 0, "YES", []], [19, "MENU", "QUIT", 128, 0, 1, 0, "YES", ["HOP", "HOP"]], [20, "MENU", "QUIT", 128, 0, 1, 0, "YES", []], [21, "KILL_SPRITES", "QUIT", 128, 0, 1, 0, "NONE", ["HOP"]], [22, "FADE_UP", "QUIT", 128, 0, 1, 0, "NONE", []], [23, "FADE_UP", "QUIT", 112, 1, 1, 0, "NONE", []], [24, "FADE_UP", "QUIT", 96, 2, 1, 0, "NONE", []], [25, "FADE_UP", "QUIT", 80, 3, 1, 0, "NONE", []], [26, "FADE_UP", "QUIT", 64, 4, 1, 0, "NONE", []], [27, "FADE_UP", "QUIT", 48, 4, 1, 0, "NONE", []], [28, "FADE_UP", "QUIT", 32, 4, 1, 0, "NONE", []], [29, "FADE_UP", "QUIT", 16, 4, 1, 0, "NONE", []], [30, "DEINIT", "QUIT", 0, 4, 1, 0, "NONE", []], [31, "NO_PAUSE", "QUIT", 0, 4, 1, 0, "NONE", ["RESUMED"]], [31, "NO_PAUSE", "QUIT", 0, 4, 1, 0, "NONE", []], [31, "NO_PAUSE", "QUIT", 0, 4, 1, 0, "NONE", []], [31, "NO_PAUSE", "QUIT", 0, 4, 1, 0, "NONE", []]],
+   "sprites_at": [
+    {
+     "frame": 13,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288}
+     ]
+    },
+    {
+     "frame": 19,
+     "widths": {"opt_paused": 160, "opt_big_continue": 193, "quit": 96, "opt_yes": 63, "opt_no": 48},
+     "sprites": [
+      {"sprite": "PAUSED", "image": "opt_paused", "x": 240, "y": 240},
+      {"sprite": "CONTINUE", "image": "opt_big_continue", "x": 224, "y": 272},
+      {"sprite": "QUIT", "image": "quit", "x": 272, "y": 288},
+      {"sprite": "YES", "image": "opt_yes", "x": 337, "y": 304},
+      {"sprite": "NO", "image": "opt_no", "x": 248, "y": 304}
+     ]
+    }
+   ]
+  },
+  {
+   "name": "escape_during_fade",
+   "sound_volume": 5,
+   "startup_events": ["HOP"],
+   "inputs": {"1": ["escape"], "5": ["escape"], "10": ["escape"], "11": ["escape"], "13": ["escape", "fire"]},
+   "ticks": 22,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 5, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 4, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 3, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 2, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 1, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "KILL_SPRITES", "CONTINUE", 128, 0, 0, 1, "NONE", ["HOP"]], [11, "FADE_UP", "CONTINUE", 128, 0, 0, 1, "NONE", []], [12, "FADE_UP", "CONTINUE", 112, 1, 0, 1, "NONE", []], [13, "FADE_UP", "CONTINUE", 96, 2, 0, 1, "NONE", []], [14, "FADE_UP", "CONTINUE", 80, 3, 0, 1, "NONE", []], [15, "FADE_UP", "CONTINUE", 64, 4, 0, 1, "NONE", []], [16, "FADE_UP", "CONTINUE", 48, 5, 0, 1, "NONE", []], [17, "FADE_UP", "CONTINUE", 32, 5, 0, 1, "NONE", []], [18, "FADE_UP", "CONTINUE", 16, 5, 0, 1, "NONE", []], [19, "DEINIT", "CONTINUE", 0, 5, 0, 1, "NONE", []], [20, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", ["RESUMED"]], [20, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", []], [20, "NO_PAUSE", "CONTINUE", 0, 5, 0, 1, "NONE", []]],
+   "sprites_at": []
+  },
+  {
+   "name": "volume_from_zero",
+   "sound_volume": 0,
+   "startup_events": ["HOP"],
+   "inputs": {"10": ["escape"]},
+   "ticks": 20,
+   "trace": [[1, "FADE_DOWN", "CONTINUE", 0, 0, 0, 1, "NONE", []], [2, "FADE_DOWN", "CONTINUE", 16, 0, 0, 1, "NONE", []], [3, "FADE_DOWN", "CONTINUE", 32, 0, 0, 1, "NONE", []], [4, "FADE_DOWN", "CONTINUE", 48, 0, 0, 1, "NONE", []], [5, "FADE_DOWN", "CONTINUE", 64, 0, 0, 1, "NONE", []], [6, "FADE_DOWN", "CONTINUE", 80, 0, 0, 1, "NONE", []], [7, "FADE_DOWN", "CONTINUE", 96, 0, 0, 1, "NONE", []], [8, "FADE_DOWN", "CONTINUE", 112, 0, 0, 1, "NONE", []], [9, "MENU", "CONTINUE", 128, 0, 0, 1, "CONTINUE", []], [10, "KILL_SPRITES", "CONTINUE", 128, 0, 0, 1, "NONE", ["HOP"]], [11, "FADE_UP", "CONTINUE", 128, 0, 0, 1, "NONE", []], [12, "FADE_UP", "CONTINUE", 112, 0, 0, 1, "NONE", []], [13, "FADE_UP", "CONTINUE", 96, 0, 0, 1, "NONE", []], [14, "FADE_UP", "CONTINUE", 80, 0, 0, 1, "NONE", []], [15, "FADE_UP", "CONTINUE", 64, 0, 0, 1, "NONE", []], [16, "FADE_UP", "CONTINUE", 48, 0, 0, 1, "NONE", []], [17, "FADE_UP", "CONTINUE", 32, 0, 0, 1, "NONE", []], [18, "FADE_UP", "CONTINUE", 16, 0, 0, 1, "NONE", []], [19, "DEINIT", "CONTINUE", 0, 0, 0, 1, "NONE", []], [20, "NO_PAUSE", "CONTINUE", 0, 0, 0, 1, "NONE", ["RESUMED"]]],
+   "sprites_at": []
+  }
+ ],
+ "cheats": {
+  "source": "exe 0x0042fda0 (m50_v3_exe_probe.txt leg H3), frogger_cheat_sequences.h, pause.c:900-1021",
+  "gate_keys": [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 30, 31, 32, 33, 34, 35, 36, 37, 38, 44, 45, 46, 47, 48, 49, 50, 57],
+  "space": 57,
+  "terminator": 4294967295,
+  "sequences": [
+   {
+    "cheat": "INFINITE_LIVES",
+    "phrase": "NO MORE ROAD SPLATS",
+    "source": "pause.c:900",
+    "file_offset": 488312,
+    "croaks": true,
+    "scancodes": [49, 24, 57, 50, 24, 19, 18, 57, 19, 24, 30, 32, 57, 31, 25, 38, 30, 20, 31]
+   },
+   {
+    "cheat": "ALL_ZONES",
+    "phrase": "SHOW ME MORE ZONES PLEASE",
+    "source": "pause.c:933",
+    "file_offset": 488392,
+    "croaks": true,
+    "scancodes": [31, 35, 24, 17, 57, 50, 18, 57, 50, 24, 19, 18, 57, 44, 24, 49, 18, 31, 57, 25, 38, 18, 30, 31, 18]
+   },
+   {
+    "cheat": "ALL_LEVELS",
+    "phrase": "WAY TOO HARD FOR THE LIKES OF ME",
+    "source": "pause.c:986",
+    "file_offset": 488496,
+    "croaks": true,
+    "scancodes": [17, 30, 21, 57, 20, 24, 24, 57, 35, 30, 19, 32, 57, 33, 24, 19, 57, 20, 35, 18, 57, 38, 23, 37, 18, 31, 57, 24, 33, 57, 50, 18]
+   },
+   {
+    "cheat": "TIMEOUT_DEATHS",
+    "phrase": "NO MORE TIMEOUT DEATHS PLEASE",
+    "source": "exe 0x00430040",
+    "file_offset": 488632,
+    "croaks": false,
+    "scancodes": [49, 24, 57, 50, 24, 19, 18, 57, 20, 23, 50, 18, 24, 22, 20, 57, 32, 18, 30, 20, 35, 31, 57, 25, 38, 18, 30, 31, 18]
+   }
+  ],
+  "events": {
+   "INFINITE_LIVES": ["CROAK", "CHEAT_INFINITE_LIVES"],
+   "ALL_ZONES": ["CROAK", "CHEAT_ALL_ZONES"],
+   "ALL_LEVELS": ["CROAK", "CHEAT_ALL_LEVELS"],
+   "TIMEOUT_DEATHS": ["CHEAT_TIMEOUT_DEATHS"]
+  },
+  "traces": [
+   {
+    "name": "type_lives",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [10, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [11, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [12, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [13, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [14, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [15, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [16, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [17, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [18, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": ["INFINITE_LIVES"]}
+    ]
+   },
+   {
+    "name": "type_zones",
+    "steps": [
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 2, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 3, 0, 0], "fired": []},
+     {"gate": true, "down": [17], "cursors": [0, 4, 1, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 5, 0, 0], "fired": []},
+     {"gate": true, "down": [50], "cursors": [0, 6, 0, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 7, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 8, 0, 0], "fired": []},
+     {"gate": true, "down": [50], "cursors": [0, 9, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 10, 0, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [0, 11, 0, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 12, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 13, 0, 0], "fired": []},
+     {"gate": true, "down": [44], "cursors": [0, 14, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 15, 0, 0], "fired": []},
+     {"gate": true, "down": [49], "cursors": [1, 16, 0, 1], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 17, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 18, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 19, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [0, 20, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [0, 21, 0, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 22, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 23, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 24, 0, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 0], "fired": ["ALL_ZONES"]}
+    ]
+   },
+   {
+    "name": "type_levels",
+    "steps": [
+     {"gate": true, "down": [17], "cursors": [0, 0, 1, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 2, 0], "fired": []},
+     {"gate": true, "down": [21], "cursors": [0, 0, 3, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 4, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 5, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 6, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 7, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 8, 0], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 0, 9, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 10, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [0, 0, 11, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [0, 0, 12, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 13, 0], "fired": []},
+     {"gate": true, "down": [33], "cursors": [0, 0, 14, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 15, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [0, 0, 16, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 17, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 18, 0], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 0, 19, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 20, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 21, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [0, 0, 22, 0], "fired": []},
+     {"gate": true, "down": [23], "cursors": [0, 0, 23, 0], "fired": []},
+     {"gate": true, "down": [37], "cursors": [0, 0, 24, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 25, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 26, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 27, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 28, 0], "fired": []},
+     {"gate": true, "down": [33], "cursors": [0, 0, 29, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 30, 0], "fired": []},
+     {"gate": true, "down": [50], "cursors": [0, 0, 31, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 0], "fired": ["ALL_LEVELS"]}
+    ]
+   },
+   {
+    "name": "type_timeout",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 0, 9], "fired": []},
+     {"gate": true, "down": [23], "cursors": [0, 0, 0, 10], "fired": []},
+     {"gate": true, "down": [50], "cursors": [0, 0, 0, 11], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 12], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 0, 13], "fired": []},
+     {"gate": true, "down": [22], "cursors": [0, 0, 0, 14], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 0, 15], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 0, 16], "fired": []},
+     {"gate": true, "down": [32], "cursors": [0, 0, 0, 17], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 18], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 0, 19], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 0, 20], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 0, 0, 21], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 22], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 0, 23], "fired": []},
+     {"gate": true, "down": [25], "cursors": [0, 0, 0, 24], "fired": []},
+     {"gate": true, "down": [38], "cursors": [0, 0, 0, 25], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 26], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 0, 27], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 28], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 0], "fired": ["TIMEOUT_DEATHS"]}
+    ]
+   },
+   {
+    "name": "shared_prefix_parts_at_r_or_t",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 0, 9], "fired": []},
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []}
+    ]
+   },
+   {
+    "name": "wrong_key_resets",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [45], "cursors": [0, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [10, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [11, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [12, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [13, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [14, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [15, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [16, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [17, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [18, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": ["INFINITE_LIVES"]}
+    ]
+   },
+   {
+    "name": "wrong_key_is_not_element_zero",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [49], "cursors": [0, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []}
+    ]
+   },
+   {
+    "name": "held_key_advances",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [49, 24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [24, 57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [57, 50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [50, 45], "cursors": [0, 0, 0, 0], "fired": []}
+    ]
+   },
+   {
+    "name": "held_o_in_too",
+    "steps": [
+     {"gate": true, "down": [17], "cursors": [0, 0, 1, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 2, 0], "fired": []},
+     {"gate": true, "down": [21], "cursors": [0, 0, 3, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 4, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 5, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 6, 0], "fired": []},
+     {"gate": true, "down": [24, 45], "cursors": [0, 0, 7, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 8, 0], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 0, 9, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [0, 0, 10, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [0, 0, 11, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [0, 0, 12, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 13, 0], "fired": []},
+     {"gate": true, "down": [33], "cursors": [0, 0, 14, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 15, 0], "fired": []},
+     {"gate": true, "down": [19], "cursors": [0, 0, 16, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 17, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [0, 0, 18, 0], "fired": []},
+     {"gate": true, "down": [35], "cursors": [0, 0, 19, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 20, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 21, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [0, 0, 22, 0], "fired": []},
+     {"gate": true, "down": [23], "cursors": [0, 0, 23, 0], "fired": []},
+     {"gate": true, "down": [37], "cursors": [0, 0, 24, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 25, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 26, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 27, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [0, 0, 28, 0], "fired": []},
+     {"gate": true, "down": [33], "cursors": [0, 0, 29, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [0, 0, 30, 0], "fired": []},
+     {"gate": true, "down": [50], "cursors": [0, 0, 31, 0], "fired": []},
+     {"gate": true, "down": [18], "cursors": [0, 0, 0, 0], "fired": ["ALL_LEVELS"]}
+    ]
+   },
+   {
+    "name": "stale_gate_resets",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [], "cursors": [0, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []}
+    ]
+   },
+   {
+    "name": "gate_off_ignored",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": false, "down": [57], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": false, "down": [], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [10, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [11, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [12, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [13, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [14, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [15, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [16, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [17, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [18, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": ["INFINITE_LIVES"]}
+    ]
+   },
+   {
+    "name": "two_cheats_in_a_row",
+    "steps": [
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [10, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [11, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [12, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [13, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [14, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [15, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [16, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [17, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [18, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": ["INFINITE_LIVES"]},
+     {"gate": true, "down": [49], "cursors": [1, 0, 0, 1], "fired": []},
+     {"gate": true, "down": [24], "cursors": [2, 0, 0, 2], "fired": []},
+     {"gate": true, "down": [57], "cursors": [3, 0, 0, 3], "fired": []},
+     {"gate": true, "down": [50], "cursors": [4, 0, 0, 4], "fired": []},
+     {"gate": true, "down": [24], "cursors": [5, 0, 0, 5], "fired": []},
+     {"gate": true, "down": [19], "cursors": [6, 0, 0, 6], "fired": []},
+     {"gate": true, "down": [18], "cursors": [7, 0, 0, 7], "fired": []},
+     {"gate": true, "down": [57], "cursors": [8, 0, 0, 8], "fired": []},
+     {"gate": true, "down": [19], "cursors": [9, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [24], "cursors": [10, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [11, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [32], "cursors": [12, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [57], "cursors": [13, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [14, 1, 0, 0], "fired": []},
+     {"gate": true, "down": [25], "cursors": [15, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [38], "cursors": [16, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [30], "cursors": [17, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [20], "cursors": [18, 0, 0, 0], "fired": []},
+     {"gate": true, "down": [31], "cursors": [0, 1, 0, 0], "fired": ["INFINITE_LIVES"]}
+    ]
+   }
+  ],
+  "scenes": [
+   {
+    "name": "cheats_in_menu",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {"59": ["escape"]},
+      "keys": {
+       "10": {"gate": true, "down": [49]},
+       "11": {"gate": true, "down": [24]},
+       "12": {"gate": true, "down": [57]},
+       "13": {"gate": true, "down": [50]},
+       "14": {"gate": true, "down": [24]},
+       "15": {"gate": true, "down": [19]},
+       "16": {"gate": true, "down": [18]},
+       "17": {"gate": true, "down": [57]},
+       "18": {"gate": true, "down": [19]},
+       "19": {"gate": true, "down": [24]},
+       "20": {"gate": true, "down": [30]},
+       "21": {"gate": true, "down": [32]},
+       "22": {"gate": true, "down": [57]},
+       "23": {"gate": true, "down": [31]},
+       "24": {"gate": true, "down": [25]},
+       "25": {"gate": true, "down": [38]},
+       "26": {"gate": true, "down": [30]},
+       "27": {"gate": true, "down": [20]},
+       "28": {"gate": true, "down": [31]},
+       "29": {"gate": true, "down": [49]},
+       "30": {"gate": true, "down": [24]},
+       "31": {"gate": true, "down": [57]},
+       "32": {"gate": true, "down": [50]},
+       "33": {"gate": true, "down": [24]},
+       "34": {"gate": true, "down": [19]},
+       "35": {"gate": true, "down": [18]},
+       "36": {"gate": true, "down": [57]},
+       "37": {"gate": true, "down": [20]},
+       "38": {"gate": true, "down": [23]},
+       "39": {"gate": true, "down": [50]},
+       "40": {"gate": true, "down": [18]},
+       "41": {"gate": true, "down": [24]},
+       "42": {"gate": true, "down": [22]},
+       "43": {"gate": true, "down": [20]},
+       "44": {"gate": true, "down": [57]},
+       "45": {"gate": true, "down": [32]},
+       "46": {"gate": true, "down": [18]},
+       "47": {"gate": true, "down": [30]},
+       "48": {"gate": true, "down": [20]},
+       "49": {"gate": true, "down": [35]},
+       "50": {"gate": true, "down": [31]},
+       "51": {"gate": true, "down": [57]},
+       "52": {"gate": true, "down": [25]},
+       "53": {"gate": true, "down": [38]},
+       "54": {"gate": true, "down": [18]},
+       "55": {"gate": true, "down": [30]},
+       "56": {"gate": true, "down": [31]},
+       "57": {"gate": true, "down": [18]}
+      },
+      "ticks": 70,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "MENU", [], [1, 0, 0, 1], false], [11, "MENU", [], [2, 0, 0, 2], false], [12, "MENU", [], [3, 0, 0, 3], false], [13, "MENU", [], [4, 0, 0, 4], false], [14, "MENU", [], [5, 0, 0, 5], false], [15, "MENU", [], [6, 0, 0, 6], false], [16, "MENU", [], [7, 0, 0, 7], false], [17, "MENU", [], [8, 0, 0, 8], false], [18, "MENU", [], [9, 0, 0, 0], false], [19, "MENU", [], [10, 0, 0, 0], false], [20, "MENU", [], [11, 0, 0, 0], false], [21, "MENU", [], [12, 0, 0, 0], false], [22, "MENU", [], [13, 0, 0, 0], false], [23, "MENU", [], [14, 1, 0, 0], false], [24, "MENU", [], [15, 0, 0, 0], false], [25, "MENU", [], [16, 0, 0, 0], false], [26, "MENU", [], [17, 0, 0, 0], false], [27, "MENU", [], [18, 0, 0, 0], false], [28, "MENU", ["CROAK", "CHEAT_INFINITE_LIVES"], [0, 1, 0, 0], false], [29, "MENU", [], [1, 0, 0, 1], false], [30, "MENU", [], [2, 0, 0, 2], false], [31, "MENU", [], [3, 0, 0, 3], false], [32, "MENU", [], [4, 0, 0, 4], false], [33, "MENU", [], [5, 0, 0, 5], false], [34, "MENU", [], [6, 0, 0, 6], false], [35, "MENU", [], [7, 0, 0, 7], false], [36, "MENU", [], [8, 0, 0, 8], false], [37, "MENU", [], [0, 0, 0, 9], false], [38, "MENU", [], [0, 0, 0, 10], false], [39, "MENU", [], [0, 0, 0, 11], false], [40, "MENU", [], [0, 0, 0, 12], false], [41, "MENU", [], [0, 0, 0, 13], false], [42, "MENU", [], [0, 0, 0, 14], false], [43, "MENU", [], [0, 0, 0, 15], false], [44, "MENU", [], [0, 0, 0, 16], false], [45, "MENU", [], [0, 0, 0, 17], false], [46, "MENU", [], [0, 0, 0, 18], false], [47, "MENU", [], [0, 0, 0, 19], false], [48, "MENU", [], [0, 0, 0, 20], false], [49, "MENU", [], [0, 0, 0, 21], false], [50, "MENU", [], [0, 1, 0, 22], false], [51, "MENU", [], [0, 0, 0, 23], false], [52, "MENU", [], [0, 0, 0, 24], false], [53, "MENU", [], [0, 0, 0, 25], false], [54, "MENU", [], [0, 0, 0, 26], false], [55, "MENU", [], [0, 0, 0, 27], false], [56, "MENU", [], [0, 1, 0, 28], false], [57, "MENU", ["CHEAT_TIMEOUT_DEATHS"], [0, 0, 0, 0], false], [58, "MENU", [], [0, 0, 0, 0], false], [59, "KILL_SPRITES", ["HOP"], [0, 0, 0, 0], false], [60, "FADE_UP", [], [0, 0, 0, 0], false], [61, "FADE_UP", [], [0, 0, 0, 0], false], [62, "FADE_UP", [], [0, 0, 0, 0], false], [63, "FADE_UP", [], [0, 0, 0, 0], false], [64, "FADE_UP", [], [0, 0, 0, 0], false], [65, "FADE_UP", [], [0, 0, 0, 0], false], [66, "FADE_UP", [], [0, 0, 0, 0], false], [67, "FADE_UP", [], [0, 0, 0, 0], false], [68, "DEINIT", [], [0, 0, 0, 0], false], [69, "NO_PAUSE", ["RESUMED"], [0, 0, 0, 0], false], [69, "NO_PAUSE", [], [0, 0, 0, 0], false]]
+     }
+    ]
+   },
+   {
+    "name": "cheat_before_menu_events",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {"28": ["down"], "29": ["fire"], "30": ["fire"]},
+      "keys": {
+       "10": {"gate": true, "down": [49]},
+       "11": {"gate": true, "down": [24]},
+       "12": {"gate": true, "down": [57]},
+       "13": {"gate": true, "down": [50]},
+       "14": {"gate": true, "down": [24]},
+       "15": {"gate": true, "down": [19]},
+       "16": {"gate": true, "down": [18]},
+       "17": {"gate": true, "down": [57]},
+       "18": {"gate": true, "down": [19]},
+       "19": {"gate": true, "down": [24]},
+       "20": {"gate": true, "down": [30]},
+       "21": {"gate": true, "down": [32]},
+       "22": {"gate": true, "down": [57]},
+       "23": {"gate": true, "down": [31]},
+       "24": {"gate": true, "down": [25]},
+       "25": {"gate": true, "down": [38]},
+       "26": {"gate": true, "down": [30]},
+       "27": {"gate": true, "down": [20]},
+       "28": {"gate": true, "down": [31]},
+       "31": {"gate": true, "down": [49]},
+       "32": {"gate": true, "down": [24]},
+       "33": {"gate": true, "down": [57]},
+       "34": {"gate": true, "down": [50]},
+       "35": {"gate": true, "down": [24]},
+       "36": {"gate": true, "down": [19]},
+       "37": {"gate": true, "down": [18]},
+       "38": {"gate": true, "down": [57]},
+       "39": {"gate": true, "down": [19]},
+       "40": {"gate": true, "down": [24]},
+       "41": {"gate": true, "down": [30]},
+       "42": {"gate": true, "down": [32]},
+       "43": {"gate": true, "down": [57]},
+       "44": {"gate": true, "down": [31]},
+       "45": {"gate": true, "down": [25]},
+       "46": {"gate": true, "down": [38]},
+       "47": {"gate": true, "down": [30]},
+       "48": {"gate": true, "down": [20]},
+       "49": {"gate": true, "down": [31]}
+      },
+      "ticks": 50,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "MENU", [], [1, 0, 0, 1], false], [11, "MENU", [], [2, 0, 0, 2], false], [12, "MENU", [], [3, 0, 0, 3], false], [13, "MENU", [], [4, 0, 0, 4], false], [14, "MENU", [], [5, 0, 0, 5], false], [15, "MENU", [], [6, 0, 0, 6], false], [16, "MENU", [], [7, 0, 0, 7], false], [17, "MENU", [], [8, 0, 0, 8], false], [18, "MENU", [], [9, 0, 0, 0], false], [19, "MENU", [], [10, 0, 0, 0], false], [20, "MENU", [], [11, 0, 0, 0], false], [21, "MENU", [], [12, 0, 0, 0], false], [22, "MENU", [], [13, 0, 0, 0], false], [23, "MENU", [], [14, 1, 0, 0], false], [24, "MENU", [], [15, 0, 0, 0], false], [25, "MENU", [], [16, 0, 0, 0], false], [26, "MENU", [], [17, 0, 0, 0], false], [27, "MENU", [], [18, 0, 0, 0], false], [28, "MENU", ["CROAK", "CHEAT_INFINITE_LIVES", "HOP"], [0, 1, 0, 0], false], [29, "MENU", ["CROAK"], [0, 1, 0, 0], false], [30, "KILL_SPRITES", ["CROAK"], [0, 1, 0, 0], false], [31, "FADE_UP", [], [0, 1, 0, 0], true], [32, "FADE_UP", [], [0, 1, 0, 0], true], [33, "FADE_UP", [], [0, 1, 0, 0], true], [34, "FADE_UP", [], [0, 1, 0, 0], true], [35, "FADE_UP", [], [0, 1, 0, 0], true], [36, "FADE_UP", [], [0, 1, 0, 0], true], [37, "FADE_UP", [], [0, 1, 0, 0], true], [38, "FADE_UP", [], [0, 1, 0, 0], true], [39, "DEINIT", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", ["RESUMED"], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true], [40, "NO_PAUSE", [], [0, 1, 0, 0], true]]
+     }
+    ]
+   },
+   {
+    "name": "escape_skips_the_check",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {"10": ["escape"]},
+      "keys": {
+       "10": {"gate": true, "down": [49]}
+      },
+      "ticks": 12,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "KILL_SPRITES", ["HOP"], [0, 0, 0, 0], true], [11, "FADE_UP", [], [0, 0, 0, 0], true], [12, "FADE_UP", [], [0, 0, 0, 0], true]]
+     }
+    ]
+   },
+   {
+    "name": "not_arcade",
+    "sound_volume": 5,
+    "arcade": false,
+    "pages": [
+     {
+      "inputs": {},
+      "keys": {
+       "10": {"gate": true, "down": [49]},
+       "11": {"gate": true, "down": [24]},
+       "12": {"gate": true, "down": [57]},
+       "13": {"gate": true, "down": [50]},
+       "14": {"gate": true, "down": [24]},
+       "15": {"gate": true, "down": [19]},
+       "16": {"gate": true, "down": [18]},
+       "17": {"gate": true, "down": [57]},
+       "18": {"gate": true, "down": [19]},
+       "19": {"gate": true, "down": [24]},
+       "20": {"gate": true, "down": [30]},
+       "21": {"gate": true, "down": [32]},
+       "22": {"gate": true, "down": [57]},
+       "23": {"gate": true, "down": [31]},
+       "24": {"gate": true, "down": [25]},
+       "25": {"gate": true, "down": [38]},
+       "26": {"gate": true, "down": [30]},
+       "27": {"gate": true, "down": [20]},
+       "28": {"gate": true, "down": [31]}
+      },
+      "ticks": 30,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "MENU", [], [0, 0, 0, 0], true], [11, "MENU", [], [0, 0, 0, 0], true], [12, "MENU", [], [0, 0, 0, 0], true], [13, "MENU", [], [0, 0, 0, 0], true], [14, "MENU", [], [0, 0, 0, 0], true], [15, "MENU", [], [0, 0, 0, 0], true], [16, "MENU", [], [0, 0, 0, 0], true], [17, "MENU", [], [0, 0, 0, 0], true], [18, "MENU", [], [0, 0, 0, 0], true], [19, "MENU", [], [0, 0, 0, 0], true], [20, "MENU", [], [0, 0, 0, 0], true], [21, "MENU", [], [0, 0, 0, 0], true], [22, "MENU", [], [0, 0, 0, 0], true], [23, "MENU", [], [0, 0, 0, 0], true], [24, "MENU", [], [0, 0, 0, 0], true], [25, "MENU", [], [0, 0, 0, 0], true], [26, "MENU", [], [0, 0, 0, 0], true], [27, "MENU", [], [0, 0, 0, 0], true], [28, "MENU", [], [0, 0, 0, 0], true], [29, "MENU", [], [0, 0, 0, 0], true], [30, "MENU", [], [0, 0, 0, 0], true]]
+     }
+    ]
+   },
+   {
+    "name": "gate_before_menu",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {},
+      "keys": {
+       "3": {"gate": true, "down": [49]},
+       "10": {"gate": false, "down": [49]},
+       "11": {"gate": false, "down": [24]}
+      },
+      "ticks": 12,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], true], [4, "FADE_DOWN", [], [0, 0, 0, 0], true], [5, "FADE_DOWN", [], [0, 0, 0, 0], true], [6, "FADE_DOWN", [], [0, 0, 0, 0], true], [7, "FADE_DOWN", [], [0, 0, 0, 0], true], [8, "FADE_DOWN", [], [0, 0, 0, 0], true], [9, "MENU", [], [0, 0, 0, 0], true], [10, "MENU", [], [1, 0, 0, 1], false], [11, "MENU", [], [1, 0, 0, 1], false], [12, "MENU", [], [1, 0, 0, 1], false]]
+     }
+    ]
+   },
+   {
+    "name": "cursors_persist",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {"20": ["escape"]},
+      "keys": {
+       "10": {"gate": true, "down": [31]},
+       "11": {"gate": true, "down": [35]},
+       "12": {"gate": true, "down": [24]},
+       "13": {"gate": true, "down": [17]},
+       "14": {"gate": true, "down": [57]},
+       "15": {"gate": true, "down": [50]},
+       "16": {"gate": true, "down": [18]},
+       "17": {"gate": true, "down": [57]},
+       "18": {"gate": true, "down": [50]},
+       "19": {"gate": true, "down": [24]}
+      },
+      "ticks": 30,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "MENU", [], [0, 1, 0, 0], false], [11, "MENU", [], [0, 2, 0, 0], false], [12, "MENU", [], [0, 3, 0, 0], false], [13, "MENU", [], [0, 4, 1, 0], false], [14, "MENU", [], [0, 5, 0, 0], false], [15, "MENU", [], [0, 6, 0, 0], false], [16, "MENU", [], [0, 7, 0, 0], false], [17, "MENU", [], [0, 8, 0, 0], false], [18, "MENU", [], [0, 9, 0, 0], false], [19, "MENU", [], [0, 10, 0, 0], false], [20, "KILL_SPRITES", ["HOP"], [0, 10, 0, 0], false], [21, "FADE_UP", [], [0, 10, 0, 0], false], [22, "FADE_UP", [], [0, 10, 0, 0], false], [23, "FADE_UP", [], [0, 10, 0, 0], false], [24, "FADE_UP", [], [0, 10, 0, 0], false], [25, "FADE_UP", [], [0, 10, 0, 0], false], [26, "FADE_UP", [], [0, 10, 0, 0], false], [27, "FADE_UP", [], [0, 10, 0, 0], false], [28, "FADE_UP", [], [0, 10, 0, 0], false], [29, "DEINIT", [], [0, 10, 0, 0], false], [30, "NO_PAUSE", ["RESUMED"], [0, 10, 0, 0], false]]
+     },
+     {
+      "inputs": {},
+      "keys": {
+       "10": {"gate": true, "down": [19]},
+       "11": {"gate": true, "down": [18]},
+       "12": {"gate": true, "down": [57]},
+       "13": {"gate": true, "down": [44]},
+       "14": {"gate": true, "down": [24]},
+       "15": {"gate": true, "down": [49]},
+       "16": {"gate": true, "down": [18]},
+       "17": {"gate": true, "down": [31]},
+       "18": {"gate": true, "down": [57]},
+       "19": {"gate": true, "down": [25]},
+       "20": {"gate": true, "down": [38]},
+       "21": {"gate": true, "down": [18]},
+       "22": {"gate": true, "down": [30]},
+       "23": {"gate": true, "down": [31]},
+       "24": {"gate": true, "down": [18]}
+      },
+      "ticks": 26,
+      "trace": [[1, "FADE_DOWN", [], [0, 10, 0, 0], false], [2, "FADE_DOWN", [], [0, 10, 0, 0], false], [3, "FADE_DOWN", [], [0, 10, 0, 0], false], [4, "FADE_DOWN", [], [0, 10, 0, 0], false], [5, "FADE_DOWN", [], [0, 10, 0, 0], false], [6, "FADE_DOWN", [], [0, 10, 0, 0], false], [7, "FADE_DOWN", [], [0, 10, 0, 0], false], [8, "FADE_DOWN", [], [0, 10, 0, 0], false], [9, "MENU", [], [0, 10, 0, 0], false], [10, "MENU", [], [0, 11, 0, 0], false], [11, "MENU", [], [0, 12, 0, 0], false], [12, "MENU", [], [0, 13, 0, 0], false], [13, "MENU", [], [0, 14, 0, 0], false], [14, "MENU", [], [0, 15, 0, 0], false], [15, "MENU", [], [1, 16, 0, 1], false], [16, "MENU", [], [0, 17, 0, 0], false], [17, "MENU", [], [0, 18, 0, 0], false], [18, "MENU", [], [0, 19, 0, 0], false], [19, "MENU", [], [0, 20, 0, 0], false], [20, "MENU", [], [0, 21, 0, 0], false], [21, "MENU", [], [0, 22, 0, 0], false], [22, "MENU", [], [0, 23, 0, 0], false], [23, "MENU", [], [0, 24, 0, 0], false], [24, "MENU", ["CROAK", "CHEAT_ALL_ZONES"], [0, 0, 0, 0], false], [25, "MENU", [], [0, 0, 0, 0], false], [26, "MENU", [], [0, 0, 0, 0], false]]
+     }
+    ]
+   },
+   {
+    "name": "stale_gate_on_the_first_menu_tick",
+    "sound_volume": 5,
+    "arcade": true,
+    "pages": [
+     {
+      "inputs": {"12": ["escape"]},
+      "keys": {
+       "10": {"gate": true, "down": [49]},
+       "11": {"gate": true, "down": [24]}
+      },
+      "ticks": 22,
+      "trace": [[1, "FADE_DOWN", [], [0, 0, 0, 0], false], [2, "FADE_DOWN", [], [0, 0, 0, 0], false], [3, "FADE_DOWN", [], [0, 0, 0, 0], false], [4, "FADE_DOWN", [], [0, 0, 0, 0], false], [5, "FADE_DOWN", [], [0, 0, 0, 0], false], [6, "FADE_DOWN", [], [0, 0, 0, 0], false], [7, "FADE_DOWN", [], [0, 0, 0, 0], false], [8, "FADE_DOWN", [], [0, 0, 0, 0], false], [9, "MENU", [], [0, 0, 0, 0], false], [10, "MENU", [], [1, 0, 0, 1], false], [11, "MENU", [], [2, 0, 0, 2], false], [12, "KILL_SPRITES", ["HOP"], [2, 0, 0, 2], false], [13, "FADE_UP", [], [2, 0, 0, 2], false], [14, "FADE_UP", [], [2, 0, 0, 2], false], [15, "FADE_UP", [], [2, 0, 0, 2], false], [16, "FADE_UP", [], [2, 0, 0, 2], false], [17, "FADE_UP", [], [2, 0, 0, 2], false], [18, "FADE_UP", [], [2, 0, 0, 2], false], [19, "FADE_UP", [], [2, 0, 0, 2], false], [20, "FADE_UP", [], [2, 0, 0, 2], false], [21, "DEINIT", [], [2, 0, 0, 2], false], [22, "NO_PAUSE", ["RESUMED"], [2, 0, 0, 2], false]]
+     },
+     {
+      "inputs": {},
+      "keys": {
+       "2": {"gate": true, "down": []}
+      },
+      "ticks": 11,
+      "trace": [[1, "FADE_DOWN", [], [2, 0, 0, 2], false], [2, "FADE_DOWN", [], [2, 0, 0, 2], true], [3, "FADE_DOWN", [], [2, 0, 0, 2], true], [4, "FADE_DOWN", [], [2, 0, 0, 2], true], [5, "FADE_DOWN", [], [2, 0, 0, 2], true], [6, "FADE_DOWN", [], [2, 0, 0, 2], true], [7, "FADE_DOWN", [], [2, 0, 0, 2], true], [8, "FADE_DOWN", [], [2, 0, 0, 2], true], [9, "MENU", [], [2, 0, 0, 2], true], [10, "MENU", [], [0, 0, 0, 0], false], [11, "MENU", [], [0, 0, 0, 0], false]]
+     }
+    ]
+   }
+  ],
+  "unlock": {
+   "zone_unlock": [["assign", 0], ["zone", 2], ["zone", 3], ["assign", 42], ["zone", 43], ["zone", 44], ["zone", 45], ["assign", 36], ["zone", 37], ["zone", 38], ["zone", 39], ["zone", 40], ["assign", 6], ["zone", 7], ["zone", 8], ["zone", 9], ["zone", 10], ["assign", 18]],
+   "arcade_rows": [
+    {"level": 24, "world": 1, "stack": 0, "theme": 5, "local": 0, "levels_in_world": 5},
+    {"level": 25, "world": 1, "stack": 0, "theme": 5, "local": 1, "levels_in_world": 5},
+    {"level": 26, "world": 1, "stack": 0, "theme": 5, "local": 2, "levels_in_world": 5},
+    {"level": 27, "world": 1, "stack": 0, "theme": 5, "local": 3, "levels_in_world": 5},
+    {"level": 28, "world": 1, "stack": 0, "theme": 5, "local": 4, "levels_in_world": 5},
+    {"level": 48, "world": 0, "stack": 1, "theme": 9, "local": 0, "levels_in_world": 5},
+    {"level": 49, "world": 0, "stack": 1, "theme": 9, "local": 1, "levels_in_world": 5},
+    {"level": 50, "world": 0, "stack": 1, "theme": 9, "local": 2, "levels_in_world": 5},
+    {"level": 51, "world": 0, "stack": 1, "theme": 9, "local": 3, "levels_in_world": 5},
+    {"level": 52, "world": 0, "stack": 1, "theme": 9, "local": 4, "levels_in_world": 5},
+    {"level": 12, "world": 4, "stack": 2, "theme": 3, "local": 0, "levels_in_world": 2},
+    {"level": 13, "world": 4, "stack": 2, "theme": 3, "local": 1, "levels_in_world": 2},
+    {"level": 54, "world": 5, "stack": 3, "theme": 10, "local": 0, "levels_in_world": 3},
+    {"level": 56, "world": 5, "stack": 3, "theme": 10, "local": 1, "levels_in_world": 3},
+    {"level": 55, "world": 5, "stack": 3, "theme": 10, "local": 2, "levels_in_world": 3},
+    {"level": 0, "world": 7, "stack": 4, "theme": 1, "local": 0, "levels_in_world": 3},
+    {"level": 2, "world": 7, "stack": 4, "theme": 1, "local": 1, "levels_in_world": 3},
+    {"level": 3, "world": 7, "stack": 4, "theme": 1, "local": 2, "levels_in_world": 3},
+    {"level": 42, "world": 3, "stack": 5, "theme": 8, "local": 0, "levels_in_world": 4},
+    {"level": 44, "world": 3, "stack": 5, "theme": 8, "local": 1, "levels_in_world": 4},
+    {"level": 45, "world": 3, "stack": 5, "theme": 8, "local": 2, "levels_in_world": 4},
+    {"level": 43, "world": 3, "stack": 5, "theme": 8, "local": 3, "levels_in_world": 4},
+    {"level": 36, "world": 2, "stack": 6, "theme": 7, "local": 0, "levels_in_world": 5},
+    {"level": 39, "world": 2, "stack": 6, "theme": 7, "local": 1, "levels_in_world": 5},
+    {"level": 38, "world": 2, "stack": 6, "theme": 7, "local": 2, "levels_in_world": 5},
+    {"level": 37, "world": 2, "stack": 6, "theme": 7, "local": 3, "levels_in_world": 5},
+    {"level": 40, "world": 2, "stack": 6, "theme": 7, "local": 4, "levels_in_world": 5},
+    {"level": 6, "world": 6, "stack": 7, "theme": 2, "local": 0, "levels_in_world": 5},
+    {"level": 7, "world": 6, "stack": 7, "theme": 2, "local": 1, "levels_in_world": 5},
+    {"level": 8, "world": 6, "stack": 7, "theme": 2, "local": 2, "levels_in_world": 5},
+    {"level": 9, "world": 6, "stack": 7, "theme": 2, "local": 3, "levels_in_world": 5},
+    {"level": 10, "world": 6, "stack": 7, "theme": 2, "local": 4, "levels_in_world": 5},
+    {"level": 18, "world": 8, "stack": 8, "theme": 4, "local": 0, "levels_in_world": 1}
+   ],
+   "race_rows": [
+    {"level": 29, "world": 1, "stack": 0, "theme": 5, "local": 0, "levels_in_world": 1},
+    {"level": 53, "world": 0, "stack": 1, "theme": 9, "local": 0, "levels_in_world": 1},
+    {"level": 17, "world": 4, "stack": 2, "theme": 3, "local": 0, "levels_in_world": 1},
+    {"level": 59, "world": 5, "stack": 3, "theme": 10, "local": 0, "levels_in_world": 1},
+    {"level": 23, "world": 8, "stack": 4, "theme": 4, "local": 0, "levels_in_world": 1}
+   ],
+   "cases": [
+    {
+     "name": "fresh",
+     "setup": [],
+     "levels": [24, 25, 26, 27, 28, 48, 49, 50, 51, 52, 12, 13, 54, 56, 55, 0, 2, 3, 42, 44, 45, 43, 36, 39, 38, 37, 40, 6, 7, 8, 9, 10, 18],
+     "flags": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+     "race_flags": [6, 6, 6, 6, 6],
+     "after_all_zones": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 6, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6],
+     "after_all_levels": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+     "after_both": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+    },
+    {
+     "name": "first_levels_completed",
+     "setup": [["complete", 0], ["complete", 42], ["complete", 36], ["complete", 6], ["set_row", 32, 7], ["complete", 2], ["open_if_closed", 2], ["set_row", 17, 1]],
+     "levels": [24, 25, 26, 27, 28, 48, 49, 50, 51, 52, 12, 13, 54, 56, 55, 0, 2, 3, 42, 44, 45, 43, 36, 39, 38, 37, 40, 6, 7, 8, 9, 10, 18],
+     "flags": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 7, 7, 1, 7, 0, 0, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 7],
+     "race_flags": [6, 6, 6, 6, 6],
+     "after_all_zones": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 6, 7, 4, 6, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6],
+     "after_all_levels": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 6, 6, 6, 7, 6, 6, 6, 6, 7, 6, 6, 6, 6, 7],
+     "after_both": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+    },
+    {
+     "name": "completed_rows",
+     "setup": [["complete", 24], ["set_row", 16, 1], ["set_row", 5, 3]],
+     "levels": [24, 25, 26, 27, 28, 48, 49, 50, 51, 52, 12, 13, 54, 56, 55, 0, 2, 3, 42, 44, 45, 43, 36, 39, 38, 37, 40, 6, 7, 8, 9, 10, 18],
+     "flags": [7, 4, 4, 4, 4, 3, 4, 4, 4, 4, 6, 4, 6, 4, 4, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+     "race_flags": [6, 6, 6, 6, 6],
+     "after_all_zones": [7, 4, 4, 4, 4, 3, 4, 4, 4, 4, 6, 4, 6, 4, 4, 6, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6],
+     "after_all_levels": [7, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6],
+     "after_both": [7, 6, 6, 6, 6, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6]
+    },
+    {
+     "name": "jungle_rewritten",
+     "setup": [["complete", 18]],
+     "levels": [24, 25, 26, 27, 28, 48, 49, 50, 51, 52, 12, 13, 54, 56, 55, 0, 2, 3, 42, 44, 45, 43, 36, 39, 38, 37, 40, 6, 7, 8, 9, 10, 19],
+     "flags": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7],
+     "race_flags": [6, 6, 6, 6, 6],
+     "after_all_zones": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 6, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 7],
+     "after_all_levels": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7],
+     "after_both": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7]
+    },
+    {
+     "name": "jungle_rewritten_then_completed_cleared",
+     "setup": [["complete", 18], ["set_row", 32, 1]],
+     "levels": [24, 25, 26, 27, 28, 48, 49, 50, 51, 52, 12, 13, 54, 56, 55, 0, 2, 3, 42, 44, 45, 43, 36, 39, 38, 37, 40, 6, 7, 8, 9, 10, 19],
+     "flags": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+     "race_flags": [6, 6, 6, 6, 6],
+     "after_all_zones": [6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 6, 4, 4, 6, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4, 4, 6, 4, 4, 4, 4, 1],
+     "after_all_levels": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7],
+     "after_both": [6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7]
+    }
+   ]
+  }
+ }
+}

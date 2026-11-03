@@ -317,6 +317,10 @@ func _respawn(start: RunStart) -> String:
 func _opens_level_complete_page() -> bool:
 	return false
 
+## The sandbox pauses with Space and leaves with Escape instead of opening the pause page.
+func _opens_pause_page() -> bool:
+	return false
+
 func _keep_alive() -> void:
 	if spawner == null or _current == null or not _current.completed or not last_error.is_empty():
 		return

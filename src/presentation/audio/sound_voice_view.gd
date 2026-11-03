@@ -150,6 +150,12 @@ func pause(paused: bool) -> void:
 		player.stream_paused = paused
 	page_player.stream_paused = paused
 
+## Holds or resumes the voice-slot players where they are, leaving [member page_player] free so a
+## page sound can play while the voices are held.
+func hold_voices(held: bool) -> void:
+	for player: AudioStreamPlayer in players:
+		player.stream_paused = held
+
 ## The identifier the player of [param slot] was started for, or 0 when none is tracked.
 func identifier(slot: int) -> int:
 	return _identifiers[slot]

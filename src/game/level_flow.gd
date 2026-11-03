@@ -7,6 +7,8 @@ var error: String = ""
 var reset: Reset = Reset.NONE
 
 ## Advances source timer and checkpoint bonus clocks without presentation callbacks.
+## Retail PC's Cheat_no_death_on_timeout skips the whole timeout block (gamesys.C:1822-1879),
+## so the frog keeps control and survives; the timer sounds and game-over checks still run.
 ## The start timer stays unchanged while FrogState.start_timer_hold is positive, so the
 ## first three logic ticks after a death or checkpoint reset all read 30, as frozen C's
 ## catch-up frame does; control can therefore return no earlier than the 33rd tick.
@@ -54,7 +56,7 @@ static func advance(frog: Frog, state: GameplayState, entities: EntityRun, event
 		state.completed = true
 		events.append(TickEvent.transition(LevelFlowState.Phase.COMPLETE))
 		return result
-	if state.flow.remaining_time == 0:
+	if state.flow.remaining_time == 0 and not state.cheats.no_death_on_timeout:
 		state.frog.flags &= ~FrogFlags.CONTROL_ACTIVE
 		if state.frog.mode != FrogMode.JUMPING:
 			if state.flow.timeout_ticks > 0:

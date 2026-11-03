@@ -28,7 +28,7 @@ const BANKS: PackedStringArray = ["OPT_VRAM.VLO", "STARTNTSC.VLO", "FIXE_VRAM.VL
 ## English names of the images every front-end page may draw.
 const NAMES: PackedStringArray = [
 	"opt_start", "opt_options", "opt_exit", "opt_race", "select_level", "zone_complete",
-	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused",
+	"press_fire", "sel_loading", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "quit",
 	"froglogo", "newfont", "select1", "select2", "select5", "ls_gold_frog",
 	"opt_view_hs", "opt_ctrl_config", "opt_insert_pad", "select7", "opt_keyboard",
 	"opt_arrow_small_left", "opt_arrow_small_right", "select3", "skip_hi_score", "opt_arrow",

@@ -2,13 +2,25 @@ class_name GameplayScreen
 extends GameplayWorldView
 ## Dedicated single-player scene sharing the transactional host and world renderer.
 ##
-## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); Space pauses,
-## R restarts and Escape leaves unless a binding claims the key. The saved music and effects
-## volumes are applied when the scene opens. The level is read from the imported assets the
+## Player 1's saved key bindings drive the nine gameplay actions ([BindingInput]); R restarts a
+## direct launch unless a binding claims the key. The saved music and effects volumes are applied
+## when the scene opens. The level is read from the imported assets the
 ## [AssetLocation] resolves ([method asset_location]). A direct launch with [code]--froglord[/code]
 ## reads the overlay the [FrogLordPointer] names over that base root instead and reopens the level
 ## from a new catalog whenever an [AssetReloadWatcher] sees the pointer change or F5 is pressed
 ## ([method reload_assets]).
+##
+## Escape opens retail's pause page ([PausePage], pause.c:163-527) when the pause is allowed and
+## closes it again from its menu; the page ticks at 30 Hz from [method _process] while the game
+## holds, the sound effects hold and the music plays on (pause.c:215-221). Continue and Quit show
+## at once; the arrow keys move the selection and releasing the bound super-hop key or Enter is
+## fire. Quit then Yes leaves: a front-end game as a quit, a direct launch to the boot scene.
+## Space no longer pauses, and Escape no longer leaves the level. The sandbox keeps its own Space
+## pause and Escape leave ([method _opens_pause_page]). Every letter or Space key-down, play and
+## auto-repeat included, sets the shared [member FrontEndSession.pause_cheats] gate, and each menu
+## tick checks the cheat phrases against the keys down or tapped since the last tick; fired cheats
+## change [member FrontEndSession.cheats], which seeds every run start and reaches the paused run
+## when it resumes.
 ##
 ## A completed level opens the retail level-complete page ([LevelCompletePage]) over the map
 ## alone, as LevelEnd leaves it (gamesys.C:872-894, tempopt.c:5792-6067): the HUD, frog and
@@ -28,6 +40,8 @@ extends GameplayWorldView
 
 ## Command-line flag that skips creating sound-effect and music players.
 const NO_AUDIO_FLAG: String = "--no-audio"
+## The scene a direct launch returns to when the player leaves.
+const BOOT_SCENE: String = "res://scenes/boot.tscn"
 
 var auto_open: bool = true
 ## The pointer file a [code]--froglord[/code] launch opens and watches.
@@ -87,6 +101,14 @@ var _loading: TextureRect = null
 var _fade: ColorRect = null
 var _texture_set_name: String = ""
 var _reload_watcher: AssetReloadWatcher = null
+var _pause_view: PauseView
+## The open pause page, or null.
+var _pause_page: PausePage = null
+var _pause_elapsed: float = 0.0
+var _pause_buttons := PausePage.Buttons.new()
+var _sound_volume: int = ProgressStore.DEFAULT_SOUND_VOLUME
+var _keys_down := PackedInt32Array()
+var _keys_tapped := PackedInt32Array()
 
 func _ready() -> void:
 	audio_enabled = not ViewerArguments.has_flag(OS.get_cmdline_user_args(), NO_AUDIO_FLAG)
@@ -97,6 +119,7 @@ func _ready() -> void:
 	if auto_open:
 		var settings: ProgressStore = FrontEndSession.settings()
 		input = BindingInput.from_array(settings.key_bindings)
+		_sound_volume = settings.sound_volume
 		if audio_enabled:
 			AudioLevels.apply(settings.music_volume, settings.sound_volume, voice_view())
 		var arguments: PackedStringArray = OS.get_cmdline_user_args()
@@ -250,6 +273,7 @@ func _configure_level_audio(data: AssetCatalog, level_number: int) -> void:
 
 func _detach_game() -> void:
 	_close_level_complete()
+	_close_pause_page()
 	_host.close()
 	_host.run = null
 	run = null
@@ -306,7 +330,9 @@ func open_attract_run(definition: LevelDefinition, demo: SourceDemoFile, timer: 
 	definition.demo_playback = true
 	var issue: String = attract_session.configure(demo.duration, demo.input_bytes, -1)
 	if issue.is_empty():
-		issue = open_run(definition, DemoSetup.start_for(demo), _model_origins)
+		var demo_start: RunStart = DemoSetup.start_for(demo)
+		demo_start.cheats = FrontEndSession.cheats.copy()
+		issue = open_run(definition, demo_start, _model_origins)
 	if not issue.is_empty():
 		return issue
 	_hud.visible = false
@@ -334,6 +360,7 @@ func restart() -> String:
 		start.start_mode = RunStart.Mode.SINGLE_START
 		start.camera_startup = true
 		start.start_timer = 120
+		start.cheats = FrontEndSession.cheats.copy()
 	_session_finished = false
 	return open_run(_definition, start, _model_origins)
 
@@ -347,6 +374,7 @@ func open_run(definition: LevelDefinition, start: RunStart, origins: EntityModel
 	_definition = definition
 	set_effect_grid(definition.grid)
 	_close_level_complete()
+	_close_pause_page()
 	_start_score = start.score
 	run = replacement
 	_host.open(run)
@@ -382,9 +410,12 @@ func step_command(command: TickCommand, capture_phases: bool = true) -> TickResu
 
 ## Pauses only after joining a pending command and collapses drawing history.
 func set_paused(paused: bool) -> void:
+	_hold_play(paused)
+	pause_audio(paused)
+
+func _hold_play(paused: bool) -> void:
 	_finish_pending()
 	playing = not paused and run != null and _current != null and not _current.completed and last_error.is_empty()
-	pause_audio(paused)
 	_held = 0
 	_host.sampled_held = 0
 	_host.elapsed = 0.0
@@ -403,6 +434,15 @@ func _process(delta: float) -> void:
 			if exit_event >= 0:
 				_leave_level_complete(exit_event)
 				return
+		draw_state(1.0)
+		return
+	if _pause_page != null:
+		_pause_elapsed += delta
+		if _pause_elapsed >= GameplayHost.PERIOD:
+			_pause_elapsed = 0.0 if _pause_elapsed > GameplayHost.PERIOD * 2.0 else _pause_elapsed - GameplayHost.PERIOD
+			step_pause()
+		if run == null or _current == null:
+			return
 		draw_state(1.0)
 		return
 	_host.begin_frame(delta)
@@ -489,11 +529,17 @@ func _finish_pending() -> void:
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key: InputEventKey = event as InputEventKey
-	if key == null or key.echo or is_attract():
+	if key == null:
+		return
+	_track_key(key)
+	if key.echo or is_attract():
 		return
 	if _complete_page != null:
 		if key.pressed:
 			_press_on_level_complete(key)
+		return
+	if _pause_page != null and _pause_page.active():
+		_press_on_pause(key)
 		return
 	var action: int = input.command(key)
 	if action != 0:
@@ -503,14 +549,20 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			_held &= ~action
 	elif key.pressed:
 		match key.physical_keycode:
-			KEY_SPACE: set_paused(playing)
+			KEY_SPACE:
+				if not _opens_pause_page():
+					set_paused(playing)
 			KEY_R:
 				if not FrontEndSession.active:
 					restart()
 			KEY_F5:
 				if _reload_watcher != null:
 					reload_assets()
-			KEY_ESCAPE: _return_to_menu()
+			KEY_ESCAPE:
+				if _opens_pause_page():
+					open_pause()
+				else:
+					_return_to_menu()
 
 func _build_interface() -> void:
 	var layer := CanvasLayer.new()
@@ -523,6 +575,9 @@ func _build_interface() -> void:
 	_complete_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_complete_view)
 	_complete_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pause_view = PauseView.new()
+	layer.add_child(_pause_view)
+	_pause_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_status = Label.new()
 	_status.position = Vector2(16, 200)
 	_status.size = Vector2(608, 70)
@@ -569,7 +624,7 @@ func _update_interface(events: Array[TickEvent] = []) -> void:
 	elif terminal:
 		_status.text = "Level complete" if _current.flow.phase == LevelFlowState.Phase.COMPLETE else "Game over"
 	else:
-		_status.text = "" if playing else "Paused — Space to resume"
+		_status.text = "" if playing or _opens_pause_page() else "Paused — Space to resume"
 
 ## Builds the overlay over the world once: the score sprites, the subtractive fade, the main
 ## menu's sprites and the LOADING sprite centred as the level select draws it.
@@ -706,7 +761,7 @@ func _return_to_menu() -> void:
 	var in_game: bool = FrontEndSession.active
 	leave_front_end_level()
 	close_data()
-	get_tree().change_scene_to_file(FrontEndScreen.SCENE if in_game else "res://scenes/boot.tscn")
+	_leave_for(FrontEndScreen.SCENE if in_game else BOOT_SCENE)
 
 ## Settles the front-end game when the player leaves the level: a completed level returns to the
 ## level select as the page's triangle does; a game over still reaches name entry, and only
@@ -782,6 +837,152 @@ func _advance_front_end() -> void:
 func _opens_level_complete_page() -> bool:
 	return true
 
+## Whether Escape opens the pause page; the sandbox pauses with Space and leaves with Escape instead.
+func _opens_pause_page() -> bool:
+	return true
+
+## Opens the pause page on Escape's press (pause.c:166-200) after joining pending work, when
+## [method PausePage.allowed] lets the committed state pause and no other page, error or demo
+## holds the screen: play holds with the sound effects, the music plays on, the hop sounds and
+## the page shows. Returns whether the page opened.
+func open_pause() -> bool:
+	if is_attract() or _pause_page != null or _complete_page != null or not playing:
+		return false
+	_finish_pending()
+	if run == null or _current == null or _complete_page != null or not last_error.is_empty() or not PausePage.allowed(_current):
+		return false
+	_hold_play(true)
+	_pause_page = PausePage.create(_sound_volume)
+	_pause_page.cheats = FrontEndSession.pause_cheats
+	_pause_elapsed = 0.0
+	_pause_buttons = PausePage.Buttons.new()
+	var voices: SoundVoiceView = voice_view()
+	if voices != null:
+		voices.hold_voices(true)
+	_play_pause_sounds(_pause_page.startup_events())
+	_ensure_text_assets()
+	_pause_view.present(_pause_page)
+	return true
+
+## One 30 Hz update of the open pause page with the keys latched since the last one and the
+## scancodes down or tapped since it for the cheats: plays its sounds, applies fired cheats to
+## [member FrontEndSession.cheats] and the progress with their HUD help, counts the HUD's paused
+## frame and redraws; the page's end hands the session cheats to the run and resumes play or
+## leaves. Returns the tick's events.
+func step_pause() -> Array[PausePage.Event]:
+	if _pause_page == null:
+		return []
+	var buttons: PausePage.Buttons = _pause_buttons
+	_pause_buttons = PausePage.Buttons.new()
+	buttons.arcade = true
+	buttons.keys_down = _keys_down.duplicate()
+	for code: int in _keys_tapped:
+		if not buttons.keys_down.has(code):
+			buttons.keys_down.append(code)
+	_keys_tapped.clear()
+	var events: Array[PausePage.Event] = _pause_page.tick(buttons)
+	_play_pause_sounds(events)
+	_hud.advance_paused()
+	for event: PausePage.Event in events:
+		_apply_cheat(event)
+	_pause_view.present(_pause_page)
+	if PausePage.Event.QUIT in events:
+		_apply_session_cheats()
+		_close_pause_page()
+		_return_to_menu()
+	elif PausePage.Event.RESUMED in events:
+		_close_pause_page()
+		_apply_session_cheats()
+		set_paused(false)
+	return events
+
+func _play_pause_sounds(events: Array[PausePage.Event]) -> void:
+	var voices: SoundVoiceView = voice_view()
+	if voices == null:
+		return
+	for event: PausePage.Event in events:
+		if event == PausePage.Event.HOP:
+			voices.play_page_sound(PausePage.HOP_SOUND)
+		elif event == PausePage.Event.CROAK:
+			voices.play_page_sound(PausePage.CROAK_SOUND)
+
+func _press_on_pause(key: InputEventKey) -> void:
+	if not key.pressed:
+		if bool(input.command(key) & TickCommand.SUPER_HOP) or key.physical_keycode in [KEY_ENTER, KEY_KP_ENTER]:
+			_pause_buttons.fire_released = true
+		return
+	match key.physical_keycode:
+		KEY_ESCAPE: _pause_buttons.escape = true
+		KEY_UP: _pause_buttons.up = true
+		KEY_DOWN: _pause_buttons.down = true
+		KEY_LEFT: _pause_buttons.left = true
+		KEY_RIGHT: _pause_buttons.right = true
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_keys_down.clear()
+		_keys_tapped.clear()
+
+func _track_key(key: InputEventKey) -> void:
+	if key.pressed and (_gates(key.keycode) or _gates(key.physical_keycode)):
+		FrontEndSession.pause_cheats.note_key_down()
+	if key.echo:
+		return
+	if key.pressed and (key.keycode == KEY_META or key.physical_keycode == KEY_META):
+		_keys_down.clear()
+		_keys_tapped.clear()
+		return
+	var code: int = BindingInput.scancode(key)
+	if code == KeyScancodes.UNKNOWN:
+		return
+	var index: int = _keys_down.find(code)
+	if key.pressed:
+		if index < 0:
+			_keys_down.append(code)
+		if not _keys_tapped.has(code):
+			_keys_tapped.append(code)
+	elif index >= 0:
+		_keys_down.remove_at(index)
+
+func _gates(code: Key) -> bool:
+	return code == KEY_SPACE or (code >= KEY_A and code <= KEY_Z)
+
+func _apply_cheat(event: PausePage.Event) -> void:
+	var cheats: CheatState = FrontEndSession.cheats
+	match event:
+		PausePage.Event.CHEAT_INFINITE_LIVES:
+			cheats.infinite_lives = not cheats.infinite_lives
+			_hud.show_help("INFINITE LIVES ON" if cheats.infinite_lives else "INFINITE LIVES OFF", false)
+		PausePage.Event.CHEAT_TIMEOUT_DEATHS:
+			cheats.no_death_on_timeout = not cheats.no_death_on_timeout
+			_hud.show_help("NO DEATH ON TIMEOUT" if cheats.no_death_on_timeout else "DEATH ON TIMEOUT", true)
+		PausePage.Event.CHEAT_ALL_ZONES:
+			if FrontEndSession.progress != null:
+				FrontEndSession.progress.unlock_all_zones()
+				_warn(FrontEndSession.save())
+			_hud.show_help("ALL ZONES OPEN", true)
+		PausePage.Event.CHEAT_ALL_LEVELS:
+			if FrontEndSession.progress != null:
+				FrontEndSession.progress.unlock_all_levels()
+				_warn(FrontEndSession.save())
+			_hud.show_help("ALL LEVELS OPEN", true)
+
+func _apply_session_cheats() -> void:
+	if run != null:
+		_warn(_host.set_cheats(FrontEndSession.cheats))
+
+func _close_pause_page() -> void:
+	if _pause_page == null:
+		return
+	_pause_page = null
+	_pause_elapsed = 0.0
+	_pause_buttons = PausePage.Buttons.new()
+	_pause_view.clear()
+	var voices: SoundVoiceView = voice_view()
+	if voices != null:
+		voices.hold_voices(false)
+	_update_interface()
+
 ## Opens the page for the completed level (tempopt.c:5792-5964): the next-level or zone-complete
 ## variant of a front-end game, else the statistics alone; hides the HUD, frog and entities,
 ## plays the startup sound and pauses the music as retail does.
@@ -832,6 +1033,7 @@ func _ensure_text_assets() -> void:
 		else:
 			push_warning("Level-complete images are unavailable: " + text.error)
 	_complete_view.configure(_hud.assets, _text_assets)
+	_pause_view.configure(_text_assets)
 
 func _press_on_level_complete(key: InputEventKey) -> void:
 	var fire: bool = bool(input.command(key) & TickCommand.SUPER_HOP) or key.physical_keycode in [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]

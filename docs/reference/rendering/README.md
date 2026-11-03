@@ -121,7 +121,10 @@ for the original's terrain sampling and ordering.
 
 The game scene uses a 640×480 canvas with proportional scaling and letterboxing.
 `GameplayHud` reads detached committed state and events; its sprite animation,
-help fade and counters never advance gameplay. Pause freezes the display clock.
+help fade and counters never advance gameplay. While paused only the help text
+keeps fading (frozen C runs `UpdateHUD` every frame but gates sprite animation,
+score sprites and effects on the paused flag, `gamesys.C:1319-1346`, `:1564`);
+the rest of the display holds.
 Restart clears presentation history; source replacement releases HUD textures.
 The shared world view keeps interpolation separate from the 30 Hz rules clock.
 

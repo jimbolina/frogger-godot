@@ -192,6 +192,7 @@ func reset(initial: RunStart = null) -> String:
 		state.flow.score = initial.score
 		state.flow.old_score = initial.old_score
 		state.flow.life_bonus_score = initial.life_bonus_score
+	state.cheats = initial.cheats.copy() if initial != null and initial.cheats != null else CheatState.new()
 	state.frog.start_timer = initial.start_timer if initial != null else 0
 	if state.frog.start_timer < 0:
 		return "Start timer must be nonnegative"
@@ -212,6 +213,15 @@ func reset(initial: RunStart = null) -> String:
 	_random = random
 	_animation = animation
 	_entities = candidate_entities
+	return ""
+
+## Replaces the committed cheat switches; call it only while no tick is in flight.
+func set_cheats(value: CheatState) -> String:
+	if _state == null:
+		return "Reset the gameplay run before setting cheats"
+	if value == null:
+		return "Cheat switches must be provided"
+	_state.cheats = value.copy()
 	return ""
 
 ## Returns detached state; changing it has no effect on the run.

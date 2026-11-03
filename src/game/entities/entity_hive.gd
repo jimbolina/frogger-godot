@@ -5,6 +5,8 @@ extends RefCounted
 enum Mode { WAITING, CHASING, MILLING, RETURNING }
 
 ## Advances a private swarm against committed source entity and terrain geometry.
+## A sting that will deactivate the frog removes it from the following visibility query,
+## modelling C's in-tick order after FrogKill.
 static func update(definition: EntityDefinition, result: EntityCustomResult, frog: GameplayState, neighbors: Array[EntitySnapshot], definitions: Array[EntityDefinition], contacts: Array[FormContactDefinition], grid: GridDefinition, collision: EntityCollisionDefinition, frame_number: int) -> String:
 	if definition.forest == null or result.entity.custom_state.swarm == null or frog == null:
 		return "Hive requires authored operands, swarm state and a frog"
@@ -46,7 +48,7 @@ static func update(definition: EntityDefinition, result: EntityCustomResult, fro
 					custom.mode = Mode.RETURNING
 					entity.requests.append(TickEvent.sound(65))
 			var query_frog: GameplayState = frog
-			if result.death_animation >= 0 and frog.frog.lives <= 1 and not frog.frog.flags & FrogFlags.MUST_DIE:
+			if result.death_animation >= 0 and Frog.kill_deactivates(frog.frog.lives, frog.cheats.infinite_lives) and not frog.frog.flags & FrogFlags.MUST_DIE:
 				query_frog = frog.copy(false)
 				query_frog.frog.flags &= ~FrogFlags.ACTIVE
 			if ForestVisibilityQuery.first_hit(swarm.matrix12, direction, query_frog, neighbors, definitions, contacts, collision) == ForestVisibilityQuery.Hit.ENTITY:

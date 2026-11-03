@@ -30,7 +30,7 @@ func test_the_imported_catalog_serves_the_newfont_bitmap_font() -> void:
 
 func test_names_are_the_english_front_end_set() -> void:
 	for image_name: String in ["opt_start", "opt_options", "opt_exit", "select_level", "zone_complete",
-			"press_fire", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "froglogo", "newfont",
+			"press_fire", "opt_big_continue", "opt_yes", "opt_no", "opt_paused", "quit", "froglogo", "newfont",
 			"select1", "select2", "select5", "sel_loading", "ls_gold_frog"]:
 		assert_has(FrontEndAssets.NAMES, image_name)
 	assert_eq(FrontEndAssets.LEVEL_IMAGES.size(), 5)
@@ -69,3 +69,13 @@ func test_unknown_language_is_reported_and_drawn_in_english() -> void:
 	assert_eq(assets.language, GameLanguage.Id.ENGLISH)
 	assert_string_contains(assets.diagnostics[0], "Language 9 is unknown")
 	assert_eq(assets.source_name("opt_start"), "")
+
+
+func test_the_pause_quit_label_localises_without_a_prefix_family() -> void:
+	assert_eq(GameLanguage.localized_name("quit", GameLanguage.Id.GERMAN), "quit_g")
+	assert_eq(GameLanguage.localized_name("quit", GameLanguage.Id.FRENCH), "quit_f")
+	var assets: FrontEndAssets = FrontEndAssets.from_data(ImportedAssets.open(), GameLanguage.Id.ITALIAN)
+	assert_eq(assets.error, "")
+	assert_eq(assets.source_name("quit"), "quit_i")
+	assert_not_null(assets.texture("quit"))
+	assert_gt(assets.retail_size("quit").x, 0.0)

@@ -142,7 +142,9 @@ func test_last_life_sting_removes_frog_from_following_visibility_query() -> void
 	collision.group_size = Vector2i(1024, 1024)
 	var grid := GridDefinition.new()
 	grid.dimensions = Vector2i.ZERO
-	for lives: int in [1, 2]:
+	for case: Vector2i in [Vector2i(1, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(0, 1)]:
+		var lives: int = case.x
+		var infinite: bool = case.y == 1
 		var entity := EntitySnapshot.new()
 		entity.custom_state = EntityCustomState.new()
 		entity.custom_state.mode = 1
@@ -153,6 +155,7 @@ func test_last_life_sting_removes_frog_from_following_visibility_query() -> void
 		var frog := GameplayState.new()
 		frog.frog.flags = FrogFlags.ACTIVE | FrogFlags.CONTROL_ACTIVE
 		frog.frog.lives = lives
+		frog.cheats.infinite_lives = infinite
 		frog.frog.matrix12[9] = 100
 		var neighbors: Array[EntitySnapshot] = [EntitySnapshot.new()]
 		var definitions: Array[EntityDefinition] = [stump]
@@ -160,7 +163,9 @@ func test_last_life_sting_removes_frog_from_following_visibility_query() -> void
 		var result: EntityCustomResult = EntityCustomUpdate.update(definition, entity, environment, SourceRandom.create(1), Vector3i.ZERO, false, false, null, null, frog, neighbors, definitions, 0, grid, collision, contacts)
 		assert_eq(result.error, "")
 		assert_eq(result.death_animation, FrogAnimationCatalog.FLOP)
-		assert_eq(result.entity.custom_state.mode, 2 if lives == 1 else 3)
+		var removed: bool = Frog.kill_deactivates(lives, infinite)
+		assert_eq(removed, lives == (0 if infinite else 1))
+		assert_eq(result.entity.custom_state.mode, 2 if removed else 3, "lives %d infinite %s" % [lives, infinite])
 		assert_true(bool(frog.frog.flags & FrogFlags.ACTIVE))
 
 func test_missing_hedgehog_projection_grid_rolls_back_action_and_timer() -> void:

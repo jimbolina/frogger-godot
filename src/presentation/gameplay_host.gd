@@ -56,6 +56,15 @@ func step(command: TickCommand, capture_phases: bool) -> TickResult:
 	last_tick_usec = Time.get_ticks_usec() - started
 	return result
 
+## Applies cheat switches to the run between ticks, joining an idle worker first.
+func set_cheats(value: CheatState) -> String:
+	if run == null:
+		return "Open a gameplay run before setting cheats"
+	if pending():
+		return "Finish the pending command before setting cheats"
+	close()
+	return run.set_cheats(value)
+
 ## Submits one detached command, creating the worker on first use.
 func submit(command: TickCommand) -> bool:
 	error = ""

@@ -63,6 +63,11 @@ static var attract_return: bool = false
 static var attract_intro: bool = false
 ## The main menu's focused row (Option_number) kept across the demo.
 static var attract_option: int = 0
+## The cheat switches every run starts with, process globals never saved or reset by a new game
+## (MAIN.C:92).
+static var cheats: CheatState = CheatState.new()
+## The pause-menu cheat gate and cursors, kept across pauses, levels and games.
+static var pause_cheats: PauseCheats = PauseCheats.new()
 
 
 ## Builds the stack and the saved progress from the executable's level-select table.
@@ -189,7 +194,8 @@ static func settings() -> ProgressStore:
 	return store if store != null else ProgressStore.load_from(store_path)
 
 
-## Starts a game: forgets the current game's gold frogs and resets lives and score (GameInitialise).
+## Starts a game: forgets the current game's gold frogs and resets lives and score (GameInitialise);
+## the cheats stay.
 static func begin_game() -> void:
 	active = true
 	progress.start_game()
@@ -288,4 +294,5 @@ static func run_start() -> RunStart:
 	start.score = score
 	start.old_score = old_score
 	start.life_bonus_score = life_bonus_score
+	start.cheats = cheats.copy()
 	return start

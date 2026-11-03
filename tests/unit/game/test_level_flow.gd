@@ -175,7 +175,7 @@ func test_start_phrase_rng_and_hud_clock_roll_back_with_late_failure() -> void:
 	assert_eq(run.step(next).error, "")
 	assert_eq(run.snapshot().rng_state, expected.state)
 
-func test_five_checkpoint_transitions_preserve_progress_and_complete_after_bonus() -> void:
+func _checkpoint_level() -> LevelDefinition:
 	var level: LevelDefinition = _level()
 	level.level_time = 30
 	level.collision_enabled = true
@@ -202,6 +202,11 @@ func test_five_checkpoint_transitions_preserve_progress_and_complete_after_bonus
 		collision.entities.append(entity)
 		collision.contacts.append(contact)
 	level.entity_collision = collision
+	return level
+
+func test_five_checkpoint_transitions_preserve_progress_and_complete_after_bonus() -> void:
+	var level: LevelDefinition = _checkpoint_level()
+	var collision: EntityCollisionDefinition = level.entity_collision
 	var run: GameplayRun = GameplayRun.create(level)
 	assert_eq(run.error, "")
 	if not run.error.is_empty():
@@ -354,3 +359,99 @@ func test_run_start_carries_score_lives_and_life_bonus_into_a_new_level() -> voi
 	assert_eq(run.snapshot().flow.score, 4200)
 	assert_eq(run.snapshot().flow.old_score, 4000)
 	assert_eq(run.snapshot().flow.life_bonus_score, 20000)
+
+func test_kill_deactivation_before_decrement_matches_the_post_decrement_rule() -> void:
+	for flow_enabled: bool in [false, true]:
+		for lives: int in range(-1, 5):
+			var after: int = lives - 1 if flow_enabled and lives > 0 else lives
+			var previous: bool = after <= (0 if flow_enabled else 1)
+			assert_eq(Frog.kill_deactivates(lives, false), previous, "flow %s lives %d" % [flow_enabled, lives])
+	assert_false(Frog.kill_deactivates(1, true))
+	assert_true(Frog.kill_deactivates(0, true))
+
+func test_infinite_lives_kill_keeps_lives_and_skips_the_decrement_request() -> void:
+	var frog := Frog.new()
+	frog.flow_enabled = true
+	for lives: int in [0, 1, 3]:
+		var state := GameplayState.new()
+		state.cheats.infinite_lives = true
+		state.frog.lives = lives
+		var events: Array[TickEvent] = []
+		frog.kill(state, FrogAnimationCatalog.SQUISHED, false, events)
+		assert_eq(state.frog.lives, lives)
+		assert_false(state.requests.life_decrement_requested)
+		assert_ne(state.frog.flags & FrogFlags.MUST_DIE, 0)
+		assert_eq(state.frog.flags & FrogFlags.CONTROL_ACTIVE, 0)
+		assert_eq(bool(state.frog.flags & FrogFlags.ACTIVE), lives > 0, "lives %d" % lives)
+
+func test_kill_without_cheat_decrements_and_deactivates_on_the_last_life() -> void:
+	for flow_enabled: bool in [false, true]:
+		var frog := Frog.new()
+		frog.flow_enabled = flow_enabled
+		for lives: int in [0, 1, 2]:
+			var state := GameplayState.new()
+			state.frog.lives = lives
+			var events: Array[TickEvent] = []
+			frog.kill(state, FrogAnimationCatalog.SQUISHED, false, events)
+			assert_eq(state.frog.lives, lives - 1 if flow_enabled and lives > 0 else lives)
+			assert_eq(state.requests.life_decrement_requested, lives > 0)
+			assert_eq(bool(state.frog.flags & FrogFlags.ACTIVE), lives > 1, "flow %s lives %d" % [flow_enabled, lives])
+
+func test_no_death_on_timeout_skips_the_whole_timeout_block() -> void:
+	var frog := Frog.new()
+	frog.flow_enabled = true
+	var state := GameplayState.new()
+	state.cheats.no_death_on_timeout = true
+	state.flow.remaining_time = 1
+	var events: Array[TickEvent] = []
+	for tick: int in 70:
+		var result: LevelFlow = LevelFlow.advance(frog, state, null, events, false)
+		assert_eq(result.error, "")
+		assert_eq(result.reset, LevelFlow.Reset.NONE)
+	assert_eq(state.flow.remaining_time, 0)
+	assert_eq(state.flow.timeout_ticks, 60)
+	assert_ne(state.frog.flags & FrogFlags.CONTROL_ACTIVE, 0)
+	assert_ne(state.frog.flags & FrogFlags.ACTIVE, 0)
+	assert_eq(state.frog.flags & FrogFlags.MUST_DIE, 0)
+	assert_eq(state.frog.lives, 3)
+	assert_eq(state.flow.phase, LevelFlowState.Phase.PLAY)
+	assert_false(state.completed)
+	for event: TickEvent in events:
+		assert_ne(event.kind, TickEvent.Kind.DEATH_ANIMATION)
+
+func test_cheats_survive_death_and_checkpoint_resets() -> void:
+	var initial := RunStart.new()
+	initial.cheats = CheatState.new()
+	initial.cheats.infinite_lives = true
+	initial.cheats.no_death_on_timeout = true
+	var run: GameplayRun = GameplayRun.create(_level(), initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	run._state.frog.mode = FrogMode.DYING
+	run._state.frog.death_count = 1
+	var result: TickResult = run.step(TickCommand.new())
+	assert_eq(result.error, "")
+	if not result.error.is_empty():
+		return
+	assert_eq(result.final_snapshot.frog.start_timer_hold, 2, "the death reset ran")
+	assert_true(result.final_snapshot.cheats.infinite_lives)
+	assert_true(result.final_snapshot.cheats.no_death_on_timeout)
+	var level: LevelDefinition = _checkpoint_level()
+	run = GameplayRun.create(level, initial)
+	assert_eq(run.error, "")
+	if not run.error.is_empty():
+		return
+	var events: Array[TickEvent] = []
+	assert_eq(CheckpointCollection.collect(run._frog, run._state, level.entity_collision.entities[0], events), "")
+	for tick: int in 140:
+		var command := TickCommand.new()
+		command.tick_index = run.snapshot().tick_index
+		result = run.step(command)
+		assert_eq(result.error, "")
+		if not result.error.is_empty() or result.final_snapshot.flow.phase != LevelFlowState.Phase.CHECKPOINT:
+			break
+	assert_eq(run.snapshot().flow.phase, LevelFlowState.Phase.PLAY)
+	assert_eq(run.snapshot().frog.start_timer_hold, 2, "the checkpoint reset ran")
+	assert_true(run.snapshot().cheats.infinite_lives)
+	assert_true(run.snapshot().cheats.no_death_on_timeout)

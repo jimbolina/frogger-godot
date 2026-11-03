@@ -27,3 +27,5 @@ var start_timer: int = 0
 var start_mode: int = Mode.COMPONENT
 ## Frozen Game_timer at level start; a demo harness may align it with a native trace.
 var game_timer: int = 0
+## Retail cheat switches for the new level; null starts with both off.
+var cheats: CheatState = null

@@ -26,6 +26,8 @@ func after_each() -> void:
 	FrontEndSession.attract_return = false
 	FrontEndSession.level_chosen = false
 	FrontEndSession.level = -1
+	FrontEndSession.cheats = CheatState.new()
+	FrontEndSession.pause_cheats = PauseCheats.new()
 
 
 func _rows(count: int, first_score: int) -> Array[HighScoreRow]:
@@ -167,3 +169,17 @@ func test_menu_start_opens_a_fresh_game_on_the_level_select() -> void:
 	assert_eq(FrontEndSession.lives, 3)
 	assert_false(FrontEndSession.level_chosen, "the level list may still go back")
 	assert_eq(FrontEndSession.start_page, FrontEndPage.Page.LEVEL_SELECT)
+
+
+func test_run_start_carries_the_cheats_and_a_new_game_keeps_them() -> void:
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create([LevelStack.Row.new(24, 1, 0, 5, 0, 1)], []))
+	FrontEndSession.cheats.infinite_lives = true
+	FrontEndSession.pause_cheats.cursors[PauseCheats.Cheat.ALL_ZONES] = 3
+	FrontEndSession.begin_game()
+	assert_true(FrontEndSession.cheats.infinite_lives, "a new game keeps the process-global cheats")
+	assert_eq(FrontEndSession.pause_cheats.cursors[PauseCheats.Cheat.ALL_ZONES], 3)
+	var start: RunStart = FrontEndSession.run_start()
+	assert_not_null(start.cheats)
+	assert_true(start.cheats.infinite_lives)
+	assert_false(start.cheats.no_death_on_timeout)
+	assert_ne(start.cheats, FrontEndSession.cheats, "the run start holds a copy")

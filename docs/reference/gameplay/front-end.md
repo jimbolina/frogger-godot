@@ -148,6 +148,91 @@ the sandbox restarts instead; JUN1 shows the zone-complete variant as a stand-in
 the P16 ending, whose fire follows the ending flow to name entry. The game-over page
 is still the placeholder label.
 
+## Pause page
+
+`PausePage` (`src/game/frontend/`) is the 30 Hz machine of `GamePause`
+(`pause.c:163-527`), drawn by `PauseView` (`src/presentation/`) over the HUD.
+Escape (a pressed edge; it cannot be bound) pauses when the frog's start timer is
+0, the frog is active and the level is neither complete nor in its start phase
+(`pause.c:170-180`, `gamesys.C:1482-1490`), with a hop; a refused press is
+dropped. PAUSED then sits centred with its top at y 240 (`:208`) while a black
+poly brightens 0x10 a tick to 0x80 over eight ticks (`:240-257`) and the pause
+volume steps down one level a tick (`:260-266`); the page then waits in its
+menu. Escape there un-pauses with a hop (retail PC reads Escape at both sites,
+exe `0x0042f25a` and `0x0042f428`): the sprites go, the poly fades back over
+eight ticks and the game resumes on the tick after (`gamesys.C:1319` gates the
+logic before `:1490` runs the pause).
+
+The Continue/Quit menu follows `pause.c:300-432`: Continue at y 272 and Quit at
+y 288 (`:556-571`), Up and Down hop between them, and fire (the bound super-hop
+key, Enter or keypad Enter, on release) chooses with a croak. Quit shows YES 48
+right of centre and NO 48 left at y 304 with NO selected (`:590-606`); Left and
+Right swap with a hop; No resumes, Yes quits with a croak straight to the end of
+the game without the fade-up (`:400-421`), which `FrontEndFlow` carries as the
+pause quit (`:502`): an unfinished level skips name entry. The selected word
+glows `(frame & 7) << 5` as the options sprites do (`OPTIONS.C:381-414`), capped
+at neutral.
+
+Port differences: retail opens the Continue/Quit menu only on a SELECT release
+(`:303`), which no retail PC key reaches (its keyboard binds no START, SELECT or
+TRIANGLE), so the port shows the menu at once (owner decision 2026-11-02), and
+Space, which every cheat phrase contains, is never fire. Space no longer pauses
+outside the sandbox. The sprites show from INIT and the glow from the MENU tick,
+each one tick before retail. Retail kills the playing effects (`:187`) and dims
+only the moving entities' voices; the port holds every gameplay voice and
+resumes it, since a killed looping voice would not restart, and models the
+volume for the golden alone. The music keeps playing, as the PC build's frozen C
+never pauses it (`:215-221` is PSX-only); the owner's play check decides. The
+poly blends subtractively in the frozen C (`:822-823`, ABR 2); the retail PC
+executable passes ABR 1 there (`0x0042fd81`), which the reference engine read as
+"the paused background does not dim" without a picture, so the port darkens by
+0x80 of 255 until a retail check says otherwise. Only the HUD's help text keeps
+fading while paused (`gamesys.C:1319-1346`, `:1564`). The
+[specification](../../../tests/golden/specs/frontend.md#pause-page) lists the
+facts and their C lines.
+
+### Cheats
+
+Retail PC's pause menu reads four typed phrases (exe dispatcher `0x0042fda0`;
+the sequences are pinned to the executable's bytes at file offsets `0x77378`,
+`0x773C8`, `0x77430` and `0x774B8`). The vendored `GameCheatModeCheck`
+(`pause.c:843-882`) is dead on PC: `PSX_MASTER` is off (`PC/winsys.h:33`), so
+its compiled `Sequence[]` carries no marker and reaches no cheat; retail
+replaced the body. `PauseCheats` (`src/game/frontend/`) keeps the four
+DirectInput-scancode lists with a cursor each, which live for the session in
+`FrontEndSession` as retail's globals live for the process. A letter A–Z or
+Space going down at any time, during play too, sets a gate; each pause-menu tick
+with the gate set consumes it and, for each phrase in order, advances its cursor
+when the key it names is down (held or pressed), fires at the end, and otherwise
+resets that cursor to 0 without re-testing the key. A stale gate therefore fires
+on the first menu tick, and the trailing S of SPLATS primes SHOW's cursor.
+
+| Phrase | Effect |
+|---|---|
+| `NO MORE ROAD SPLATS` | toggles infinite lives (`pause.c:900-915`): croak, INFINITE LIVES ON or OFF |
+| `SHOW ME MORE ZONES PLEASE` | opens every zone (`:933-965`): croak, ALL ZONES OPEN |
+| `WAY TOO HARD FOR THE LIKES OF ME` | opens every level (`:983-998`): croak, ALL LEVELS OPEN |
+| `NO MORE TIMEOUT DEATHS PLEASE` | toggles death on timeout (retail `0x00430040`): no croak, NO DEATH ON TIMEOUT or DEATH ON TIMEOUT |
+
+Infinite lives (`CheatState`, `src/game/`, carried on `GameplayState` and
+`RunStart`) skips the lives decrement in `Frog.kill` as `FrogKill` does
+(`FROG.C:3157-3163`); the frog still goes inactive at 0 lives. No death on
+timeout skips the whole timeout block of the level flow (`gamesys.C:1822-1879`,
+tested before the timer as retail's `0x00431805` does), so the frog keeps
+control. All zones assigns `ZONEACCESSIBLE | SELECTABLE` to CAV1, SKY1, SWP1,
+DES1 and JUN1, clearing COMPLETED, and `ZONEACCESSIBLE` to the other cave, sky,
+swamp and desert levels not yet selectable (`:1017-1021`); all levels ORs both
+bits into every arcade row. The messages go through the HUD help: INFINITE
+LIVES ON and OFF may repeat, the others show once per level (`HUD.C:2470-2495`).
+
+Port differences: the toggles reach the running level when the page closes
+(the host swaps the flags between ticks); unlocks are saved at once, where
+retail writes the registry on exit, because the front end reloads progress from
+the file; a tap shorter than a tick counts as down; the sandbox and the attract
+demos never read phrases. The
+[specification](../../../tests/golden/specs/frontend.md#cheats-cheats) lists
+the lists, traces and unlock cases.
+
 ## Saves
 
 Progress is saved to `user://progress.cfg` (`ProgressStore`) after each finished
@@ -265,7 +350,7 @@ the in-game HUD stay English; the level-complete labels are localized.
 `FrontEndAssets` reads `STARTNTSC.VLO`, `FIXE_VRAM.VLO`, `OPTE_RAM.VLO` and
 `LS_ALL.VLO`. The English names are `opt_start`, `opt_options`, `opt_exit`,
 `opt_race`, `select_level`, `zone_complete`, `press_fire`, `sel_loading`,
-`opt_big_continue`, `opt_yes`, `opt_no`, `opt_paused`, `froglogo`, `newfont` and the
+`opt_big_continue`, `opt_yes`, `opt_no`, `opt_paused`, `quit`, `froglogo`, `newfont` and the
 level-complete labels `next`, `total_time`, `total_score`, `select4` and `opt_sec`;
 each arcade row also resolves its world, screenshot, stack-name and in-game name images.
 Race rows keep their images in `LS_ALLM.VLO` and belong to the multiplayer pages.

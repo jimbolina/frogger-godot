@@ -176,6 +176,22 @@ func test_pause_holds_players_and_stopping_releases_the_hold() -> void:
 	_view.collapse()
 	assert_false(_view.players[0].stream_paused)
 
+func test_holding_the_voices_leaves_the_page_sound_free() -> void:
+	var state: GameplayState = _state(1)
+	_voice(state, 0, 1, 1)
+	_view.accept_state(_state(0), state)
+	_view.hold_voices(true)
+	assert_true(_view.players[0].stream_paused)
+	assert_false(_view.page_player.stream_paused)
+	_view.play_page_sound(1)
+	assert_true(_view.page_player.playing)
+	assert_false(_view.page_player.stream_paused)
+	assert_true(_view.players[0].stream_paused, "a page sound does not release the held voices")
+	_view.hold_voices(false)
+	assert_false(_view.players[0].stream_paused)
+	assert_true(_view.players[0].playing)
+	assert_true(_view.page_player.playing)
+
 func test_missing_state_resources_or_streams_stay_silent() -> void:
 	var state: GameplayState = _state(1)
 	_voice(state, 0, 0, 1)
