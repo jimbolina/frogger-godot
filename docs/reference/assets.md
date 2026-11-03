@@ -66,7 +66,8 @@ The catalog reads from two roots. The base root holds the retail-derived
 records: the index, tables, maps, models, banks, sounds, music, demos and the
 retail images. The shippable root, `res://assets` in every scene, holds the port's own
 work: the fonts, the lettering images and the emissive table. A base root
-under `user://` therefore still finds them. [Texture packs](#texture-packs)
+under `user://` therefore still finds them. A packaged build ships only the
+angular font and the emissive table there ([packaging](setup.md#packaging)). [Texture packs](#texture-packs)
 live apart from both, in the player's user data. An import made at runtime stores each
 image as `textures/images/tNNNN.res` (a lossless `PortableCompressedTexture2D`) and each music track
 as `audio/music/track_NN.res` (an `AudioStreamWAV` saved without a loop);
@@ -255,8 +256,10 @@ HUD ink layer and the stack panel draw the text linearly filtered (their
 sprites stay nearest), so every retail pixel of a glyph covers the same
 screen area at any window scale: exactly at whole-number scales up to 4, and
 otherwise with an edge under one screen pixel soft.
-`AssetCatalog.font("newfont")` returns that font, or null with a problem line
-when the file is missing; `NewfontText` (`src/rendering/`) owns the cell size
+`AssetCatalog.font("newfont")` returns that font; when the shippable root
+lacks it, as in a packaged build, `NewfontFont` builds the same font around a
+page made from the base root's texture 310, and only without that texture
+is the answer null with a problem line; `NewfontText` (`src/rendering/`) owns the cell size
 and the baseline. The import golden is
 [bitmap fonts](../../tests/golden/specs/imported-assets.md#bitmap-fonts).
 After a hand edit of `t0310.png`, rerun the generator to rebuild the

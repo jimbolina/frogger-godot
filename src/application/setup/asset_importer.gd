@@ -141,6 +141,12 @@ func run(data_dir: String, disc_path: String, target_root: String,
 	return PackedStringArray(["no importer is available"])
 
 
+## The credit and licence of the third-party material the importer carries,
+## shown with the game's notices; "" when it carries none.
+func third_party_notice() -> String:
+	return ""
+
+
 ## Reports what FrogLord's save folder [param froglord_dir] holds: FrogLord's
 ## [code]modded_[/code] pair (preferred) or the retail pair, and its build.
 ## [member Detection.fingerprint] is empty when the folder holds neither.

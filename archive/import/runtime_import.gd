@@ -81,6 +81,14 @@ var _label: String = ""
 var _has_disc: bool = false
 
 
+## FrogLord's configuration files, which name the build's addresses and its
+## resources, credited with their MIT licence ([code]LICENSE.md[/code] beside them).
+func third_party_notice() -> String:
+	var licence: String = FileAccess.get_file_as_string(FrogLordConfigLibrary.DEFAULT_ROOT.path_join("LICENSE.md"))
+	return "FrogLord configuration files (build addresses and name lists)\n" \
+		+ "https://github.com/Kneesnap/FrogLord\n\n" + licence.strip_edges()
+
+
 func detect(data_dir: String) -> AssetImporter.Detection:
 	return inspect(data_dir).detection
 

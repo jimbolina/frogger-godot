@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <path d="M512 552 L590 126 A432 432 0 1 1 434 126 Z" fill="#1f6b2a"/>
+  <path d="M512 552 L592 150 A408 408 0 1 1 432 150 Z" fill="#2f9a3e"/>
+  <g stroke="#45b553" stroke-width="14" stroke-linecap="round" fill="none">
+    <path d="M512 552 L190 400"/>
+    <path d="M512 552 L834 400"/>
+    <path d="M512 552 L240 820"/>
+    <path d="M512 552 L784 820"/>
+    <path d="M512 552 L512 950"/>
+  </g>
+  <g stroke="#2f5e14" stroke-width="20" stroke-linejoin="round" stroke-linecap="round" fill="#8fd14f">
+    <path d="M404 640 Q286 628 270 740 Q262 812 350 818 L392 806" fill="none" stroke-width="70"/>
+    <path d="M620 640 Q738 628 754 740 Q762 812 674 818 L632 806" fill="none" stroke-width="70"/>
+    <path d="M420 480 Q340 474 320 392" fill="none" stroke-width="50"/>
+    <path d="M604 480 Q684 474 704 392" fill="none" stroke-width="50"/>
+  </g>
+  <g fill="#8fd14f">
+    <path d="M404 640 Q286 628 270 740 Q262 812 350 818 L392 806" fill="none" stroke="#8fd14f" stroke-width="40" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M620 640 Q738 628 754 740 Q762 812 674 818 L632 806" fill="none" stroke="#8fd14f" stroke-width="40" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M420 480 Q340 474 320 392" fill="none" stroke="#8fd14f" stroke-width="22" stroke-linecap="round"/>
+    <path d="M604 480 Q684 474 704 392" fill="none" stroke="#8fd14f" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <ellipse cx="512" cy="590" rx="150" ry="176" fill="#8fd14f" stroke="#2f5e14" stroke-width="20"/>
+  <ellipse cx="512" cy="420" rx="128" ry="112" fill="#8fd14f" stroke="#2f5e14" stroke-width="20"/>
+  <ellipse cx="512" cy="520" rx="118" ry="150" fill="#8fd14f"/>
+  <ellipse cx="512" cy="610" rx="86" ry="110" fill="#b5e47c"/>
+  <circle cx="446" cy="350" r="54" fill="#8fd14f" stroke="#2f5e14" stroke-width="18"/>
+  <circle cx="578" cy="350" r="54" fill="#8fd14f" stroke="#2f5e14" stroke-width="18"/>
+  <circle cx="446" cy="344" r="32" fill="#ffffff"/>
+  <circle cx="578" cy="344" r="32" fill="#ffffff"/>
+  <circle cx="450" cy="340" r="16" fill="#151515"/>
+  <circle cx="574" cy="340" r="16" fill="#151515"/>
+</svg>

@@ -67,7 +67,8 @@ view and an entry in both orders.
    build blocks Next. The page also states what happens
    [while playing](#froglord-while-playing).
 5. **Play** (`SetupPlay`). A summary, the "show this setup every time"
-   choice, the desktop shortcut and how to reopen the setup. Play saves the
+   choice, the desktop shortcut, how to reopen the setup and a **Credits and
+   licences** window ([packaging](#packaging)). Play saves the
    three files, replaces the live `GraphicsProfile`, applies the window
    through `GraphicsApplier.apply_window` and opens the front end.
 
@@ -155,13 +156,79 @@ with `--path <project>`; an exported game starts its own executable.
   (base64 UTF-16LE), so no quoting of the script itself is involved.
 - **Linux:** `frogger.desktop` in `$XDG_DATA_HOME/applications` (or
   `~/.local/share/applications`) and on the desktop, with `Exec` quoted per
-  the desktop entry specification, marked executable. It has no icon until the
-  game has one (L5); some desktops ask the player to trust the file.
+  the desktop entry specification, marked executable, with the icon
+  `DesktopShortcut.linux_icon` names (`frogger.png` beside an exported
+  executable, `icon/frogger_icon.png` from source) when it exists; some
+  desktops ask the player to trust the file.
 - **macOS:** no button; the page says to drag the app to Applications or the
   Dock, or to use `tools/launch_macos.command` from source.
 
 Only the macOS path has been run; the Windows and Linux content is checked by
 the game suite's builder tests.
+
+## Packaging
+
+`export_presets.cfg` holds three release presets that export everything in
+the project except their exclude filters, into `build/` (git-ignored):
+
+| Preset | Output | Notes |
+|---|---|---|
+| macOS | `build/macos/Frogger.app` | Universal (x86_64 and arm64), ad-hoc signed by Godot's built-in signer with the hardened runtime, not notarised; `icon/frogger.icns`. Universal export needs `rendering/textures/vram_compression/import_etc2_astc`. |
+| Windows | `build/windows/Frogger.exe` and `Frogger.pck` | x86_64; `application/modify_resources` writes `icon/frogger.ico`, the version and the names into the executable with Godot's own resource editor, so no rcedit or Wine is needed, on a macOS host too. Not code-signed. |
+| Linux | `build/linux/Frogger.x86_64` and `Frogger.pck` | x86_64; `tools/export.sh` adds `frogger.png` and a `frogger.desktop` that starts the game from its own folder. |
+
+`tools/export.sh [preset ...]` (`tools/export.ps1` on Windows, which exports
+macOS as a `.zip`) imports the project, exports each preset, fails when the
+export log stores any file under `assets/` or `.godot/imported/` other than
+the shippable ones below, and zips each build as
+`build/Frogger-<version>-<platform>.zip`; logs go to `build/logs/`.
+`config/version` in `project.godot` is the version.
+
+A packaged build carries no retail-derived file. It ships `src/` (shaders
+included), `scenes/`, `archive/import/` with `disc_tracks.tsv`,
+`archive/source/`, FrogLord's configuration files with their `LICENSE.md`,
+the icon, and from `assets/` only `fonts/angular/frogger_angular.ttf` and
+`rendering/emissive_images.tres`. It excludes `tests/`, `tools/`, `addons/`
+(GUT), `docs/`, `archive/tests/`, `archive/docs/` and every retail-derived
+asset: the index, tables, textures (with the lettering images, which trace
+the alpha's letter models over retail ink boxes), models, materials, maps,
+audio, demos, the `newfont` page and its `.fnt`, and the angular font's
+sources. The game suite's `test_export_presets` checks every committed
+asset against the filters of every preset.
+
+The catalog serves such a build without the missing shippable files
+([ImportedAssets](../../src/application/loaders/imported_assets.gd)):
+`newfont` is built at runtime by `NewfontFont` around a `NewfontPage` page
+from the player's imported texture 310 (a texture pack's, when it redraws
+it), with the glyph layout of the committed `.fnt`; the `.fnt` is not
+shipped because Godot's imported font embeds the page's retail pixels, and
+its layout follows from the page geometry alone.
+`test_asset_newfont_runtime` checks that the built font stores every property
+the imported one does and the same page. Without lettering images every
+texture draws its retail image, silently.
+
+The app icon is a placeholder: `icon/frogger_icon.svg`, an original frog on
+a lily pad, until an artist replaces it. `godot --headless --path . -s
+res://tools/make_icons.gd` renders it into `icon/frogger_icon.png` (256 px:
+`config/icon`, the window icon and the Linux icon), `icon/frogger.ico` (16
+to 256 px) and `icon/frogger.icns` (16 to 1024 px), PNG images in both;
+`-- --check` compares instead, and `test_app_icons` checks the files against
+the source.
+
+The setup's last page opens **Credits and licences**: `ThirdPartyNotices`
+joins the game's line, the importer's notice
+(`AssetImporter.third_party_notice`: FrogLord's credit and MIT licence, read
+from the shipped `LICENSE.md`), Godot's licence (`Engine.get_license_text`)
+and the engine's components and their licences.
+
+The exported macOS app was checked with an isolated user folder: an
+`override.cfg` beside the executable in `Contents/MacOS/` (where Godot reads
+it; it breaks the bundle's seal, so only on a copy) naming a custom user
+folder. The setup screen opened, detected the game folder, ran the child
+import from inside the app as an export template without `--path`, opened
+the front end on Play and played ORG1 with `newfont` text and the retail
+lettering; the next launch went to the menu. The Windows and Linux builds
+were exported but not run.
 
 ## Verification
 

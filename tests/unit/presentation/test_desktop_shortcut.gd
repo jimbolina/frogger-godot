@@ -89,3 +89,9 @@ func test_linux_shortcuts_go_to_the_applications_menu_and_the_desktop() -> void:
 		PackedStringArray(["/home/me/.local/share/applications/frogger.desktop", "/home/me/Desktop/frogger.desktop"]))
 	assert_eq(DesktopShortcut.linux_paths("/home/me", "/data", ""),
 		PackedStringArray(["/data/applications/frogger.desktop"]))
+
+
+func test_the_linux_icon_sits_beside_an_export_or_in_the_project() -> void:
+	assert_eq(DesktopShortcut.linux_icon("/opt/Frogger/Frogger.x86_64", false, "/ignored"), "/opt/Frogger/frogger.png")
+	assert_eq(DesktopShortcut.linux_icon("/usr/bin/godot", true, "/home/me/frogger-godot"),
+		"/home/me/frogger-godot/icon/frogger_icon.png")

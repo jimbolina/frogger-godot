@@ -1,11 +1,13 @@
 class_name SetupPlayView
 extends SetupPageView
 ## The last page: a summary, whether the setup opens on every start, the
-## desktop shortcut, and how to open the setup again.
+## desktop shortcut, how to open the setup again, and the credits and
+## licences ([ThirdPartyNotices]).
 
 var _summary: Label
 var _show: CheckBox
 var _shortcut_result: Label
+var _notices: AcceptDialog
 
 
 func build() -> void:
@@ -27,6 +29,12 @@ func build() -> void:
 		button.pressed.connect(create_shortcut)
 		add_child(button)
 	_shortcut_result = add_text(self, "", true)
+	add_child(HSeparator.new())
+	var credits := Button.new()
+	credits.text = "Credits and licences"
+	credits.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	credits.pressed.connect(show_notices)
+	add_child(credits)
 
 
 func refresh() -> void:
@@ -50,3 +58,19 @@ func create_shortcut() -> void:
 		lines.append("Shortcut written: " + path)
 	lines.append_array(problems)
 	_shortcut_result.text = "\n".join(lines)
+
+
+## Opens a window with the credits and licence notices.
+func show_notices() -> void:
+	if _notices == null:
+		_notices = AcceptDialog.new()
+		_notices.title = "Credits and licences"
+		var text := TextEdit.new()
+		text.editable = false
+		text.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+		text.custom_minimum_size = Vector2(560, 360)
+		text.text = ThirdPartyNotices.text(str(ProjectSettings.get_setting("application/config/version", "")),
+			screen.importer.third_party_notice() if screen != null else "")
+		_notices.add_child(text)
+		add_child(_notices)
+	_notices.popup_centered()

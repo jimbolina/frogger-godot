@@ -58,7 +58,8 @@ func test_a_runtime_imported_image_draws_the_committed_lettering() -> void:
 func test_the_base_root_does_not_serve_shippable_files() -> void:
 	var catalog: ImportedAssets = ImportedAssets.open(SHIPPABLE, "", "", BASE)
 	assert_true(catalog.is_valid(), catalog.error)
-	assert_null(catalog.font("newfont"))
+	assert_eq(catalog.font("newfont").resource_path, "", "newfont is built from the base root's texture 310")
+	assert_null(catalog.font("angular"))
 	assert_eq(catalog.emissive_images().entries.size(), 0)
 	assert_eq(catalog.problems.size(), 2, "\n".join(catalog.problems))
 

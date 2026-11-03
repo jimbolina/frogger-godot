@@ -105,9 +105,10 @@ fingerprint and a summary, and `detect_froglord` also whether the pair is
 FrogLord's and the trailer's FrogLord version. The archive suite's
 `test_retail_froglord_overlay_import` imports the round trip's synthetic save
 through the seam over a runtime import under `user://` and plays ORG1 from
-it. `import/disc_tracks.tsv` is read with
-`FileAccess`, so an export preset must include `*.tsv` under
-`archive/import/`. The editor-import path stays the default for the committed
+it. `third_party_notice` returns FrogLord's credit with the shipped
+`LICENSE.md` for the setup screen's credits. `import/disc_tracks.tsv` and the
+FrogLord `.cfg` files are read with `FileAccess`, so the export presets
+include them as plain files ([packaging](../docs/reference/setup.md#packaging)). The editor-import path stays the default for the committed
 `assets/`. The archive suite's `test_retail_runtime_import` compares a
 runtime import with them
 ([runtime import golden](../tests/golden/specs/imported-assets.md#runtime-import)).

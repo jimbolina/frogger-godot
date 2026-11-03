@@ -6,6 +6,10 @@ config/name="Frogger"
 config/description="A Godot rewrite of Frogger (1997, PC). Needs the player's own retail game files."
 run/main_scene="res://scenes/setup.tscn"
 config/features=PackedStringArray("4.5")
+config/icon="res://icon/frogger_icon.png"
+config/macos_native_icon="res://icon/frogger.icns"
+config/windows_native_icon="res://icon/frogger.ico"
+config/version="0.1.0"
 
 [autoload]
 
@@ -81,6 +85,7 @@ renderer/rendering_method.mobile="forward_plus"
 anti_aliasing/quality/msaa_3d=0
 environment/defaults/default_clear_color=Color(0, 0, 0, 1)
 textures/lossless_compression/force_png=true
+textures/vram_compression/import_etc2_astc=true
 
 [shader_globals]
 

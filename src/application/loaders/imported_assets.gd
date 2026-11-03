@@ -16,7 +16,10 @@ extends AssetCatalog
 ## [member root]. Fonts, lettering and the emissive table are the port's own
 ## work and come from [member shippable_root], which stays
 ## [constant SHIPPABLE_ROOT] when the base root is an import under
-## [code]user://[/code].
+## [code]user://[/code]. A packaged build ships only the angular font and
+## the emissive table there: [code]newfont[/code] is then built from the
+## player's texture 310 and every texture draws its retail image instead of
+## lettering.
 ##
 ## The catalog draws from one [TextureSet]: the records keep their retail
 ## textures, and [method texture_of], [method texture_counterpart] and
@@ -160,19 +163,38 @@ func texture_counterpart(texture: Texture2D) -> Texture2D:
 ## The bitmap font called [param name] under [constant TextureSet.FONTS_DIR]
 ## of the shippable root, or null with a line in [member problems] when it is
 ## missing. When the texture pack redraws texture 310 and its image is
-## accepted, [code]newfont[/code] draws a page built from it. The answer is
-## cached per name.
+## accepted, [code]newfont[/code] draws a page built from it. A shippable root
+## without [code]newfont[/code], as in a packaged build, gets the font built by
+## [NewfontFont] from the pack's texture 310 or else the base root's
+## ([method base_image]). The answer is cached per name.
 func font(name: String) -> Font:
 	if _fonts.has(name):
 		return _fonts[name]
 	var path: String = shippable_root.path_join(TextureSet.font_path(name))
 	var found: Font = _load(path) as Font
-	if found == null:
+	if found == null and name == NewfontPage.FONT_NAME:
+		found = _built_newfont()
+		if found == null:
+			problems.append("no font %s at %s, and no texture %d under %s to build it from"
+				% [name, path, NewfontPage.TEXTURE_ID, root])
+	elif found == null:
 		problems.append("no font %s at %s" % [name, path])
 	elif name == NewfontPage.FONT_NAME and found is FontFile:
 		found = _pack_font(found as FontFile)
 	_fonts[name] = found
 	return found
+
+
+## The base root's own image of texture [param texture_id]
+## ([code]textures/images/tNNNN.png[/code], or [code].res[/code] in an import
+## made at runtime), or null when there is none.
+func base_image(texture_id: int) -> Image:
+	for extension: String in ["png", "res"]:
+		var path: String = root.path_join("textures/%s/t%04d.%s" % [TextureSet.IMAGES_DIR, texture_id, extension])
+		var texture: Texture2D = _load(path) as Texture2D
+		if texture != null:
+			return texture.get_image()
+	return null
 
 
 func _pack_texture(texture: Texture2D) -> Texture2D:
@@ -192,15 +214,28 @@ func _pack_texture(texture: Texture2D) -> Texture2D:
 
 
 func _pack_font(retail_font: FontFile) -> Font:
+	var image: Image = _pack_newfont_image()
+	if image == null:
+		return retail_font
+	return NewfontPage.font_with_page(retail_font, NewfontPage.build(image))
+
+
+func _built_newfont() -> Font:
+	var image: Image = _pack_newfont_image()
+	if image == null:
+		image = base_image(NewfontPage.TEXTURE_ID)
+	return NewfontFont.build(NewfontPage.build(image))
+
+
+func _pack_newfont_image() -> Image:
 	var texture_id: int = NewfontPage.TEXTURE_ID
 	if not textures.has_source(texture_id):
-		return retail_font
+		return null
 	var rejected := PackedStringArray()
 	var image: Image = TexturePackReader.load_image(textures.source_of(texture_id), NewfontPage.RETAIL_SIZE, rejected)
 	if image == null:
 		_reject(texture_id, rejected)
-		return retail_font
-	return NewfontPage.font_with_page(retail_font, NewfontPage.build(image))
+	return image
 
 
 func _reject(texture_id: int, reasons: PackedStringArray) -> void:

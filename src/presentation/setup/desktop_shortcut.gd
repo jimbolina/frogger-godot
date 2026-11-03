@@ -23,6 +23,10 @@ const COMMENT: String = "Frogger (1997) in Godot"
 const WINDOWS_FILE: String = "Frogger.lnk"
 ## The Linux desktop entry file.
 const LINUX_FILE: String = "frogger.desktop"
+## The icon a Linux export ships beside its executable.
+const LINUX_ICON: String = "frogger.png"
+## The project's icon, which a source run's desktop entry shows.
+const PROJECT_ICON: String = "icon/frogger_icon.png"
 ## The PowerShell executable.
 const POWERSHELL: String = "powershell.exe"
 ## The permissions of a written desktop entry: rwxr-xr-x.
@@ -138,6 +142,13 @@ static func desktop_exec_quote(argument: String) -> String:
 	return "\"" + escaped + "\""
 
 
+## The icon file a Linux desktop entry shows: [constant LINUX_ICON] beside
+## [param executable] for an exported game, [constant PROJECT_ICON] under
+## [param project_dir] from source.
+static func linux_icon(executable: String, source_run: bool, project_dir: String) -> String:
+	return project_dir.path_join(PROJECT_ICON) if source_run else executable.get_base_dir().path_join(LINUX_ICON)
+
+
 ## The desktop entry starting [param command] (program first) in
 ## [param working_dir], with [param icon_path] when it is not empty.
 static func desktop_entry(command: PackedStringArray, working_dir: String, icon_path: String) -> String:
@@ -192,7 +203,8 @@ static func create(problems: PackedStringArray) -> PackedStringArray:
 			else:
 				written.append(link)
 		Platform.LINUX:
-			var entry: String = desktop_entry(command, working_dir, "")
+			var icon: String = linux_icon(executable, source_run, project_dir)
+			var entry: String = desktop_entry(command, working_dir, icon if FileAccess.file_exists(icon) else "")
 			for path: String in linux_paths(OS.get_environment("HOME"), OS.get_environment("XDG_DATA_HOME"), desktop):
 				var problem: String = _write_executable(path, entry)
 				if problem.is_empty():

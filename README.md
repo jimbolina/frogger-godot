@@ -210,8 +210,8 @@ Use `python3` for Python commands on macOS.
 For reference comparisons on this Mac, reuse the verified native arm64 build
 outside the frozen source tree. The [reference source instructions](docs/reference/sources.md#exporting-reference-material-from-the-engine)
 provide its location, export commands, provenance and comparison limits.
-The PowerShell oracle builders remain Windows-only. Packaged exports remain
-future work.
+The PowerShell oracle builders remain Windows-only. Packaged exports are
+described under [packaged builds](#packaged-builds).
 
 ## Assets
 
@@ -495,6 +495,43 @@ and rendering, and the [domain model](docs/reference/domain-model.md) maps the
 contexts, aggregates and asset identities; the [testing guide](docs/reference/testing/README.md) covers checks and
 inspection tools. Documentation describes current behavior and use. Run logs
 stay outside the repository, and Git retains development history.
+
+## Packaged builds
+
+A packaged build holds the game's code and its own files, and no part of the
+original game: on the first start the [setup screen](#setup-and-first-run)
+imports your own copy of Frogger into the game's user folder.
+
+- **macOS** (Apple Silicon and Intel): unzip `Frogger-<version>-macos.zip` and
+  move `Frogger.app` to Applications. The app is signed ad hoc, not by a
+  registered developer, so Gatekeeper refuses the first open of a downloaded
+  copy. Open it once, then choose **Open Anyway** in System Settings, Privacy &
+  Security (on older macOS, Control-click the app and choose Open), or run
+  `xattr -dr com.apple.quarantine /Applications/Frogger.app` in Terminal.
+  Start it from Launchpad or keep it in the Dock.
+- **Windows** (x86_64): unzip `Frogger-<version>-windows-x86_64.zip` and run
+  `Frogger.exe`, keeping `Frogger.pck` beside it. SmartScreen warns about an
+  unsigned program: choose More info, then Run anyway. The setup's last page
+  puts a shortcut on the desktop.
+- **Linux** (x86_64): unzip `Frogger-<version>-linux-x86_64.zip` and run
+  `./Frogger.x86_64`, keeping `Frogger.pck` beside it. The setup's last page
+  adds the game, with its icon, to the applications menu and the desktop;
+  `frogger.desktop` beside the program starts it from that folder too.
+
+Settings and the imported game live in the user folder:
+`~/Library/Application Support/Godot/app_userdata/Frogger` on macOS,
+`%APPDATA%\Godot\app_userdata\Frogger` on Windows and
+`~/.local/share/godot/app_userdata/Frogger` on Linux. The setup's last page
+shows the credits and licences.
+
+To build the packages, install the Godot 4.5.1 export templates (Editor,
+Manage Export Templates), then run `tools/export.sh` (or `tools/export.ps1`
+on Windows); `tools/export.sh macOS` builds one. The builds and their zips go
+to `build/`. The script stops when a build would carry any file under
+`assets/` except the angular font and the emissive table. The icon is a
+placeholder drawn for the port, `icon/frogger_icon.svg`; after editing it,
+run `godot --headless --path . -s res://tools/make_icons.gd`. See
+[packaging](docs/reference/setup.md#packaging).
 
 ## Licence
 
