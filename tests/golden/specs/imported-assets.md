@@ -115,7 +115,13 @@ digits, the high-score pads, rank turtles and score logs). The game draws it
 unless a texture pack supplies that texture itself
 ([texture packs](../../../docs/reference/assets.md#texture-packs)). `uv run tools/make_lettering.py` writes one PNG per row
 of `fonts/angular/lettering.tsv`, drawn from the glyphs of
-`tools/angular_glyphs.py`. The table's columns are `id`, `name` (FrogLord's
+`tools/angular_glyphs.py`. Pillow's polygon rasteriser rounds edge crossings
+differently on arm64 and x86_64 (its wheels fuse multiply-adds on one and not
+the other), so `--check` and the write path treat an image as the
+generator's when no channel differs by more than one coverage step
+(`RASTER_STEP`, 16 of 255 at four-times supersampling) on at most
+`RASTER_PIXELS` (16) pixels; anything larger is a real change.
+The table's columns are `id`, `name` (FrogLord's
 name or `-`), `language` (`en`, `s`, `g`, `i`, `f` or `-`), `text` (`|`
 breaks a line; retail spelling and spacing), `style`, `background`
 (`transparent`, `green_pad`, `log`, `turtle`) and `layout` (`line`, or

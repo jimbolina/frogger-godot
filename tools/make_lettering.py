@@ -56,6 +56,14 @@ The sidecar asks the texture importer for mipmaps and otherwise the project
 defaults (SIDECAR_POLICY); an existing sidecar that already holds that policy
 is kept. A PNG or sidecar in the folder without a row is removed.
 
+Pillow's polygon rasteriser rounds edge crossings in floating point, and
+Pillow's wheels fuse multiply-adds on some CPUs and not others, so the same
+build may differ by one supersample on a few pixels between arm64 and x86_64.
+A committed image therefore counts as the generator's when no channel of any
+pixel differs by more than one coverage step (RASTER_STEP) and at most
+RASTER_PIXELS pixels differ at all; such an image is neither rewritten nor
+reported. Any larger difference is a real change.
+
 --check writes nothing; it names each id whose decoded pixels or sidecar
 differ, or that is missing or extra, and exits 1. --quiet prints nothing on
 success.
@@ -84,6 +92,8 @@ TILE_THRESHOLD = 0x10
 SPLIT_WINDOW = 2
 SHELL_RED = 0x10
 MIN_CHANNEL = 8
+RASTER_STEP = -(-255 // (SUPERSAMPLE * SUPERSAMPLE))
+RASTER_PIXELS = 16
 PAD_SOURCE = 263
 LOG_SOURCE = 566
 TURTLES = tuple(range(638, 648))
@@ -562,17 +572,26 @@ def sidecar_problems(path):
     return problems
 
 
-def image_bytes(image):
-    """The RGBA pixel bytes and size of image."""
-    return image.convert("RGBA").tobytes(), image.size
-
-
 def committed(path):
-    """The decoded RGBA bytes and size of the PNG at path, or None."""
+    """The decoded RGBA image of the PNG at path, or None."""
     if not os.path.exists(path):
         return None
     with Image.open(path) as image:
-        return image_bytes(image)
+        return image.convert("RGBA")
+
+
+def same_rasterisation(old, new):
+    """Whether old and new (RGBA images of one size) differ at most by rasteriser rounding."""
+    channels = ImageChops.difference(old, new).split()
+    largest = max(channel.getextrema()[1] for channel in channels)
+    if largest == 0:
+        return True
+    if largest > RASTER_STEP:
+        return False
+    changed = channels[0]
+    for channel in channels[1:]:
+        changed = ImageChops.lighter(changed, channel)
+    return changed.point(lambda value: 255 if value else 0).histogram()[255] <= RASTER_PIXELS
 
 
 def build(rows=None):
@@ -621,13 +640,13 @@ def main():
         path = os.path.join(OUTPUT, file_name(row.id))
         sidecar = path + ".import"
         old = committed(path)
-        new = image_bytes(image)
+        new = image.convert("RGBA")
         problems = []
         if old is None:
             problems.append("missing")
-        elif old[1] != new[1]:
-            problems.append("is %dx%d, expected %dx%d" % (old[1] + new[1]))
-        elif old[0] != new[0]:
+        elif old.size != new.size:
+            problems.append("is %dx%d, expected %dx%d" % (old.size + new.size))
+        elif not same_rasterisation(old, new):
             problems.append("pixels differ")
         if args.check:
             problems.extend(sidecar_problems(sidecar))
