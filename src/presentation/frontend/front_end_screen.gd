@@ -3,6 +3,10 @@ extends Control
 ## Single-player main menu, options and controller pages, 3D level-select stack and high-score
 ## pages driven by [FrontEndFlow], drawn from the imported menu images in the chosen language.
 ##
+## Each page plays [FrontEndMusic]'s track: the menu tune carries on unbroken across the main
+## menu, options, controller and high-score view pages, the level select plays its own, a change
+## of track starts the new one from its beginning, and name entry is silent.
+##
 ## The pages play the generic menu sounds unless audio is turned off, at the saved effects
 ## volume; the saved music volume sets the music bus. Every page draws the front-end water: the
 ## main menu, options and controller pages through the shared [OptionsCamera], the level select
@@ -38,8 +42,9 @@ const TOOLS_SCENE: String = "res://scenes/boot.tscn"
 const GAME_SCENE: String = "res://scenes/game/gameplay.tscn"
 ## Side margin of the page content.
 const MARGIN: int = 24
-## CD track played on the menu pages (LEVEL_SELECT in the music table).
-const MENU_TRACK: int = 13
+## The pages the screen draws; any other page shows the main menu.
+const SHOWN_PAGES: Array[int] = [FrontEndPage.Page.MAIN_MENU, FrontEndPage.Page.LEVEL_SELECT, FrontEndPage.Page.OPTIONS,
+	FrontEndPage.Page.CONTROLS, FrontEndPage.Page.HIGH_SCORE_INPUT, FrontEndPage.Page.HIGH_SCORE_VIEW]
 ## Colour behind the messages shown when the imported assets cannot be used.
 const BACKGROUND_COLOUR: Color = Color(0.04, 0.12, 0.05)
 ## FrogLord name of the generic hop sound the level-select stack plays.
@@ -88,6 +93,7 @@ var _loading_backdrop: ColorRect
 var _tools_button: Button
 var _loading_sprite: TextureRect
 var _music: MusicPlayer
+var _music_track: int = FrontEndMusic.SILENT
 var _sounds: Dictionary[String, AudioStreamPlayer] = {}
 var _sound_definitions: Dictionary[String, LogicalSoundDefinition] = {}
 var _main_water: MenuWaterView
@@ -149,8 +155,6 @@ func _ready() -> void:
 		_music = MusicPlayer.new()
 		_music.use_folder(MusicPlayer.folder_of(data))
 		add_child(_music)
-		_music.select(MENU_TRACK)
-		_music.restart()
 	page = FrontEndSession.start_page
 	if page == FrontEndPage.Page.OPTIONS:
 		FrontEndSession.start_page = FrontEndPage.Page.MAIN_MENU
@@ -231,6 +235,7 @@ func _begin_loading() -> void:
 		_tools_button.visible = false
 	if _music != null:
 		_music.collapse()
+	_music_track = FrontEndMusic.SILENT
 
 
 ## One loading tick: the sprites slide 8 down and the LOADING sprite brightens 16 while the fly-off
@@ -299,6 +304,9 @@ func _show_page() -> void:
 	menu_scores = null
 	menu_scores_view = null
 	_background.visible = false
+	if page not in SHOWN_PAGES:
+		page = FrontEndPage.Page.MAIN_MENU
+	_play_music(FrontEndMusic.track_for_page(page))
 	match page:
 		FrontEndPage.Page.LEVEL_SELECT:
 			_build_level_select()
@@ -312,8 +320,19 @@ func _show_page() -> void:
 		FrontEndPage.Page.CONTROLS:
 			_build_controls()
 		_:
-			page = FrontEndPage.Page.MAIN_MENU
 			_build_main_menu()
+
+
+func _play_music(track: int) -> void:
+	if _music == null:
+		return
+	match FrontEndMusic.change(_music_track, track):
+		FrontEndMusic.Change.START:
+			_music.select(track)
+			_music.restart()
+		FrontEndMusic.Change.STOP:
+			_music.collapse()
+	_music_track = track
 
 
 func _build_main_menu() -> void:

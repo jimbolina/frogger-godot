@@ -76,7 +76,7 @@ func test_create_is_the_press_tick() -> void:
 
 func test_init_shows_the_menu_then_fades_down_eight_ticks() -> void:
 	var page: PausePage = PausePage.create(5)
-	assert_eq(page.tick(_buttons()), [] as Array[PausePage.Event])
+	assert_eq(page.tick(_buttons()), [PausePage.Event.STOP_MUSIC] as Array[PausePage.Event], "INIT stops the CD")
 	assert_eq(page.mode, PausePage.Mode.FADE_DOWN)
 	assert_true(page.shows_sprites())
 	assert_false(page.shows_quit())
@@ -106,7 +106,7 @@ func test_escape_in_menu_fades_up_and_resumes() -> void:
 	assert_eq(_press(page, ["escape"]), [PausePage.Event.HOP] as Array[PausePage.Event])
 	assert_eq(page.mode, PausePage.Mode.KILL_SPRITES)
 	assert_false(page.shows_sprites())
-	assert_eq(page.tick(_buttons()), [] as Array[PausePage.Event])
+	assert_eq(page.tick(_buttons()), [PausePage.Event.RESTART_MUSIC] as Array[PausePage.Event], "KILL_SPRITES restarts the CD")
 	assert_eq(page.mode, PausePage.Mode.FADE_UP)
 	var volumes: Array[int] = [1, 2, 3, 4, 5, 5, 5, 5]
 	for step: int in 8:
@@ -169,7 +169,7 @@ func test_fire_on_continue_resumes() -> void:
 	var page: PausePage = _in_menu()
 	assert_eq(_press(page, ["fire"]), [PausePage.Event.CROAK] as Array[PausePage.Event])
 	assert_eq(page.mode, PausePage.Mode.KILL_SPRITES)
-	assert_eq(_idle(page, 9), [] as Array[PausePage.Event])
+	assert_eq(_idle(page, 9), [PausePage.Event.RESTART_MUSIC] as Array[PausePage.Event])
 	assert_eq(page.mode, PausePage.Mode.DEINIT)
 	assert_eq(page.tick(_buttons()), [PausePage.Event.RESUMED] as Array[PausePage.Event])
 
@@ -181,7 +181,7 @@ func test_quit_then_no_resumes() -> void:
 	assert_eq(_press(page, ["fire"]), [PausePage.Event.CROAK] as Array[PausePage.Event])
 	assert_eq(page.mode, PausePage.Mode.KILL_SPRITES)
 	assert_false(page.quitting)
-	_idle(page, 9)
+	assert_eq(_idle(page, 9), [PausePage.Event.RESTART_MUSIC] as Array[PausePage.Event])
 	assert_eq(page.tick(_buttons()), [PausePage.Event.RESUMED] as Array[PausePage.Event])
 
 
@@ -190,7 +190,8 @@ func test_quit_then_yes_skips_the_fade_up() -> void:
 	_press(page, ["down"])
 	_press(page, ["fire"])
 	_press(page, ["right"])
-	assert_eq(_press(page, ["fire"]), [PausePage.Event.CROAK] as Array[PausePage.Event])
+	assert_eq(_press(page, ["fire"]), [PausePage.Event.CROAK, PausePage.Event.RESTART_MUSIC] as Array[PausePage.Event],
+		"Yes restarts the CD on its own tick")
 	assert_true(page.quitting)
 	assert_eq(page.mode, PausePage.Mode.DEINIT)
 	assert_false(page.shows_sprites())
@@ -295,7 +296,7 @@ func test_escape_skips_the_cheat_check() -> void:
 func test_no_cheat_check_outside_menu() -> void:
 	var page: PausePage = PausePage.create(5)
 	page.cheats = PauseCheats.new()
-	assert_eq(_typing(page, PackedInt32Array([0x31, 0x18, 0x39])), [] as Array[PausePage.Event])
+	assert_eq(_typing(page, PackedInt32Array([0x31, 0x18, 0x39])), [PausePage.Event.STOP_MUSIC] as Array[PausePage.Event])
 	assert_eq(page.mode, PausePage.Mode.FADE_DOWN)
 	assert_true(page.cheats.gate)
 	assert_eq(page.cheats.cursors, PackedInt32Array([0, 0, 0, 0]))

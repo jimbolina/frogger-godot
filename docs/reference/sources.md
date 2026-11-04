@@ -57,7 +57,11 @@ options-page rows to their startup, update and shutdown addresses; retail number
 the pages differently from the vendored enum (row 18 is GAME_OVER, 16 LEVEL_SELECT).
 `KEY_FACTS.md` names other recovered addresses (`PlayCD` `0x004300a0`,
 `MRSNDPlaySound` `0x0044c290`, `Option_page_request` `0x00498500`, `GameEnd`
-`0x00430560`). Pin executable facts to their bytes in a golden, as the cheats and
+`0x00430560`); the CD layer is `StopCD` `0x004300e0`, `PauseCD` `0x00430110` (a
+stop that remembers the track), `ResumeCD` `0x00430140` (a fresh looping `PlayCD`
+of it), `PlayLevelMusic` `0x0043e5a0`, `PlayOptionsMusic` `0x00446450`,
+`ShutdownOptionsMusic` `0x00446470` and `PlayZoneComplete` `0x0043e580`, with
+`Game_xa_tunes` at `0x00481400` and `Game_map_theme` at `0x00495118`. Pin executable facts to their bytes in a golden, as the cheats and
 the [game-over page](../../tests/golden/specs/frontend.md#game-over) do.
 
 ### Exporting reference material from the engine

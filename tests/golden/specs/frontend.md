@@ -1339,11 +1339,13 @@ cross-check (exit 1).
 ## Level complete
 
 `make_golden_level_complete.py` replays the level-complete page from the
-frozen C at the PC's 640x480 display. It never reads Godot output.
+frozen C at the PC's 640x480 display, with the music from the retail
+executable. It never reads Godot output.
 
 ```sh
 python3 tools/make_golden_level_complete.py           # write the file
 python3 tools/make_golden_level_complete.py --check   # diff against the committed file, exit 1 on change
+FROGGER_DATA_DIR=<retail folder> python3 tools/make_golden_level_complete.py --check   # also pin FROGGER.EXE
 ```
 
 Standard library only. It checks the two sound ids against FrogLord's retail
@@ -1354,7 +1356,9 @@ cross-checks. They compare `NUM_OPTION_TICKS`/`NUM_GAME_OVER_TICKS`
 statement and the count-down, fire and triangle statements built from the
 generator's offsets (`tempopt.c`, comments stripped), the gold-frog and five
 checkpoint animlists, `HUDGetDigits` (`HUD.C`), the seconds rounding
-(`FROG.C`), the overlay polygon (`gamesys.C`) and the `sound.h` generic enum.
+(`FROG.C`), the overlay polygon (`gamesys.C`), the theme enum (`gamesys.H`)
+and the `sound.h` generic enum. `--data-dir` pins `FROGGER.EXE` as for the
+[game over](#game-over), and also scans the zone-complete block for calls.
 
 `test_frontend_level_complete.gd` replays the file through
 `LevelCompletePage`, `LevelCompleteLayout` and
@@ -1364,17 +1368,21 @@ checkpoint animlists, `HUDGetDigits` (`HUD.C`), the seconds rounding
 
 | Key | Content |
 |---|---|
-| `constants` | start units 20, unit ticks 31, last units 17, fire units 19, blink bit 16, sounds 8 and 3, overlay RGB 0x60 at alpha 0.5, checkpoint cel ticks 2, gold cel ticks 1, 7 cels |
+| `constants` | start units 20, unit ticks 31, last units 17, fire units 19, blink bit 16, sounds 8 and 3, overlay RGB 0x60 at alpha 0.5, checkpoint cel ticks 2, gold cel ticks 1, 7 cels, zone track base 22 |
+| `zone_tracks` | each `gamesys.H` theme, its name and the zone tune (-1 for none) |
 | `seconds` | checkpoint ticks and the whole seconds shown |
 | `centring` | image width and the centred left edge |
 | `digits` | value, digit count and the shown text |
 | `frames` | frame, checkpoint, checkpoint image and gold image |
 | `scenes` | page runs, below |
+| `exe`, `exe_pins` | the executable's layout and the pinned music bytes, below |
+| `exe_absent_calls` | `start`, `end`, `target`: a block that calls no routine at `target` |
 
 A scene has the `LevelCompletePage.create` arguments (`variant`,
-`next_level`, `checkpoint_ticks`, `level_score`, `show_gold_frog`), the
-expected `checkpoint_seconds`, `total_seconds`, `startup_sounds`,
-`pauses_music` and `shows_prompt`, `inputs` (1-based tick to `fire`/`back`),
+`next_level`, `checkpoint_ticks`, `level_score`, `show_gold_frog`), the level's
+`theme`, the expected `checkpoint_seconds`, `total_seconds`, `startup_sounds`,
+`stops_music`, `startup_track` (for `theme`) and `shows_prompt`, `inputs`
+(1-based tick to `fire`/`back`),
 `ticks`, an optional `no_exit_after`, `trace` and `sprites_at`. A trace row
 is `[frame, units, ticks, accepts_fire, press_fire_visible, sounds, exit]`
 after that tick, with the exit as a `FrontEndFlow.Event` name or null. A
@@ -1410,9 +1418,14 @@ order (`image`, `x`, `y`, top-left corners).
   (304, 180), three digits at x 330/346/362, y 200, `opt_sec` at (378, 200);
   `total_score` at (298, 225), six digits at x 310..390 step 16, y 245; gold
   frog at (215, 270). Next level: `next`, the level name, press fire and
-  `select4` centred at y 390, 410, 430 and 450, `SFX_MUSIC_LEVEL_COMPLETE` (8)
-  and the music paused. Zone complete: `zone_complete` and press fire centred
-  at y 430 and 448, no sound on PC.
+  `select4` centred at y 390, 410, 430 and 450. Zone complete: `zone_complete`
+  and press fire centred at y 430 and 448.
+- **Music** (retail PC, below): next level plays `SFX_MUSIC_LEVEL_COMPLETE`
+  (8) and stops the level track; nothing resumes it, and the next level's
+  start plays its own track from the beginning. Zone complete plays no sound
+  and starts disc track `Game_map_theme + 22` once (CAV 23, DES 24, FOR 25,
+  JUN 26, ORG 27, ARN 28, SWP 29, SKY 30, SUB 31, VOL 32) in place of the
+  level track. The page's shutdown stops whatever still plays.
 - **Digits** (`HUD.C:2522`): `HUDGetDigits` fills ten digits; the page shows
   the last two, three or six.
 - **Seconds** (`FROG.C:2833-2842`): the checkpoint time rounds up to a whole
@@ -1428,13 +1441,42 @@ order (`image`, `x`, `y`, top-left corners).
   `gamesys.C:4459-4491`) at alpha 0.5; PlayStation subtracts it. The overlay
   is documented only; the test does not replay it.
 - `STATISTICS` is a port variant with no bottom block; it reads no keys and
-  never exits by itself.
+  never exits by itself. It leaves the level music playing.
+- The zone-complete block sets the CD volume to `127 * Sound_volume / 8` (the
+  effects volume) before the tune; the port plays the tune at the music volume.
+- `zone_track` gives -1, no tune, for GEN, TIT, HUD and FRG, which end no
+  zone; retail would play `theme + 22` regardless.
+
+### Executable facts
+
+The vendored `tempopt.c:5920-5940` plays sound 8 with an XA pause for the next
+level and leaves the zone tune to PlayStation (`#ifdef PSX`); the port's docs
+once read it that way. The retail PC build compiles the zone tune and stops
+the CD with `PauseCD`, a plain stop (`exe_pins`):
+
+| Address | Fact |
+|---|---|
+| `0x004454cc` | next level: `MRSNDPlaySound(8)` (`0x0044c290`), `PauseCD` (`0x00430110`), then past the zone block |
+| `0x00445561` | zone complete: with `Sound_volume` set, `MRSNDSetVolumeLevel(MRSND_CD_VOLUME, 127 * Sound_volume / 8)`, then `PlayZoneComplete` (`0x0043e580`), no `StopCD` first |
+| `0x0043e580` | `PlayZoneComplete`: `PlayCD(Game_map_theme + 0x16, 0)` |
+| `0x00445902` | shutdown: `GameEnd` (`0x00430560`) |
+| `0x00430560` | `GameEnd` begins with `StopCD` (`0x004300e0`) |
+| `0x004300e0` | `StopCD`: with a CD and a track playing, the MCI stop `0x00446580` |
+| `0x00430110` | `PauseCD`: unless already paused, sets the paused flag and jumps to the same stop; the track is kept |
+
+`exe_absent_calls` confirms the zone block (`0x004454e6`-`0x00445591`) calls
+no `MRSNDPlaySound`.
 
 ### Deliberate break
 
 Set `UNIT_TICKS = 31` to 30 in the generator: `--check` exits 1 (the C
 cross-check reports the define; with `--c-reference` pointing nowhere the
 diff shows the traces) and the Godot test fails. Restore it (exit 0).
+
+Set `ZONE_TRACK_BASE = 22` to 21 in the generator: with `--data-dir` the
+`0x0043e580` pin fails; without it the diff shows every zone track one lower
+and `test_frontend_level_complete.gd` fails `test_constants`,
+`test_zone_tracks` and `zone_fire_at_100`. Restore it (exit 0).
 
 ## Attract cycle
 
@@ -1577,7 +1619,9 @@ leaves `PSX_MASTER` commented out. `--froggy-reference <dir>` names froggy's
 `asset_pipeline/include/frogger_cheat_sequences.h` exists there, the four
 scancode lists, their file offsets, the terminator, the count, the longest
 length and the `FROGGER_CHEAT_SEQ_LIST` phrases are compared with it, and each
-list is spelt through the DIK letter table against its phrase.
+list is spelt through the DIK letter table against its phrase. `--data-dir`
+(default `$FROGGER_DATA_DIR`) pins the music's bytes in `FROGGER.EXE` as for
+the [game over](#game-over).
 
 `test_frontend_pause.gd` replays the file through `PausePage`, `PauseCheats`
 and `LevelProgress`, asset-free; `test_pause_page.gd`, `test_pause_cheats.gd`
@@ -1593,6 +1637,7 @@ and `test_level_progress.gd` cover the press rule and the edge cases.
 | `positions` | sprite, image width and top-left corner |
 | `scenes` | pause runs, below |
 | `cheats` | the pause-cheat dispatcher, its traces and the unlock flags, below |
+| `exe`, `exe_pins` | the executable's layout and the pinned music bytes, below |
 
 A scene has `sound_volume` (`PausePage.create`), `startup_events`, `inputs`
 (1-based tick to `escape`, `up`, `down`, `left`, `right`, `fire`), `ticks`,
@@ -1636,6 +1681,25 @@ and the shown sprites in order (`sprite`, `image`, `x`, `y`).
   and No 304, centred on x 320 (`width >> 1`), Yes 48 right and No 48 left.
 - **Glow** (`OPTIONS.C:381-414`): grey `(frame & 7) << 5` on the selected
   item while in MENU.
+- **Music** (retail PC, below; `pause.c:215-221` has an empty PC arm): the
+  INIT tick adds `STOP_MUSIC` (PauseCD stops the level track); the
+  KILL_SPRITES tick adds `RESTART_MUSIC`, and the Yes tick adds it after its
+  `CROAK` (ResumeCD: the kept track again from its beginning, looping, never
+  from where it stopped).
+
+### Music (`exe_pins`)
+
+Read with `llvm-objdump -d --x86-asm-syntax=intel` from `FROGGER.EXE`:
+
+| Address | Fact |
+|---|---|
+| `0x0042f207` | `GamePause` (`0x0042f200`): `Pause_mode` 0-6 indexes the arm table at `0x0042f91c` |
+| `0x0042f91c` | the arms of NO_PAUSE, INIT, FADE_DOWN, MENU, KILL_SPRITES, FADE_UP and DEINIT |
+| `0x0042f33b`, `0x0042f36e` | INIT: `Pause_mode = FADE_DOWN`, then `PauseCD` (`0x00430110`) |
+| `0x0042f721` | MENU, Yes: `MRSNDPlaySound(3)`, `ResumeCD` (`0x00430140`), then `Pause_mode = DEINIT` |
+| `0x0042f7e6` | KILL_SPRITES: `Pause_mode = FADE_UP`, then `ResumeCD` |
+| `0x00430140` | `ResumeCD`: only when paused, clears the flag and calls `PlayCD(kept track, 1)` (`0x004300a0`) |
+| `0x004300c6` | `PlayCD` keeps the track it starts |
 
 ### Cheats (`cheats`)
 
@@ -1709,8 +1773,15 @@ rewritten to JUN2 ignores the JUN1 write but takes the row-wise OR
   MENU and No glows on the tick Quit is chosen, each one tick early against
   retail. The glow counts the pause's own ticks where retail reads the
   options viewport's frame count.
-- The fade polygon and music pause are drawn by the view; the file records the
-  fade level only.
+- The fade polygon is drawn by the view; the file records the fade level only.
+- `GameplayScreen` stops and restarts the music on `STOP_MUSIC` and
+  `RESTART_MUSIC`, except the Yes tick's restart: retail's game-over page
+  stops it again on the next frame, so the port leaves the level track
+  silent until the jingle.
+- Retail's `PauseCD` does nothing while its paused flag is set, and a
+  next-level page leaves the flag set (its `PauseCD` is never resumed), so the
+  first pause of the next level leaves the CD playing and its unpause restarts
+  the track. The port stops and restarts on every pause.
 - The gate is set by the presentation layer through `PauseCheats.note_key_down`
   for the keys `PauseCheats.gates` names; the file records gate ticks, not key
   events. The cheats' effects (lives, the timeout toggle, the HUD help) belong
@@ -1719,7 +1790,10 @@ rewritten to JUN2 ignores the JUN1 write but takes the row-wise OR
 ### Deliberate break
 
 Change `fade_end` to 112 in the JSON: `--check` exits 1 with the diff and
-`test_frontend_pause.gd` fails `test_constants`. Setting `FADE_END = 0x70` in
+`test_frontend_pause.gd` fails `test_constants`. Move `RESTART_MUSIC` from
+`arm_kill_sprites` to `arm_fade_up` in the generator: the diff moves the
+event in every resuming trace and `test_frontend_pause.gd` fails
+`test_scene_traces` and `test_cheat_scenes`. Setting `FADE_END = 0x70` in
 the generator fails the C cross-check, and with `--c-reference` pointing
 nowhere the diff shows MENU entered on tick 8. Restore and rewrite (exit 0).
 

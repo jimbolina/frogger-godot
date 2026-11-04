@@ -1,5 +1,5 @@
 {
- "source": "tempopt.c:5792-6067 LevelCompleteStartup/Update, HUD.C:2522 HUDGetDigits, FROG.C:2833-2842",
+ "source": "tempopt.c:5792-6067 LevelCompleteStartup/Update, HUD.C:2522 HUDGetDigits, FROG.C:2833-2842; FROGGER.EXE 0x00444dc0 and 0x0043e580 for the music",
  "constants": {
   "start_units": 20,
   "unit_ticks": 31,
@@ -12,8 +12,25 @@
   "overlay_alpha": 0.5,
   "checkpoint_cel_ticks": 2,
   "gold_cel_ticks": 1,
-  "cels": 7
+  "cels": 7,
+  "zone_track_base": 22
  },
+ "zone_tracks": [
+  {"theme": 0, "name": "GEN", "track": -1},
+  {"theme": 1, "name": "CAV", "track": 23},
+  {"theme": 2, "name": "DES", "track": 24},
+  {"theme": 3, "name": "FOR", "track": 25},
+  {"theme": 4, "name": "JUN", "track": 26},
+  {"theme": 5, "name": "ORG", "track": 27},
+  {"theme": 6, "name": "ARN", "track": 28},
+  {"theme": 7, "name": "SWP", "track": 29},
+  {"theme": 8, "name": "SKY", "track": 30},
+  {"theme": 9, "name": "SUB", "track": 31},
+  {"theme": 10, "name": "VOL", "track": 32},
+  {"theme": 11, "name": "TIT", "track": -1},
+  {"theme": 12, "name": "HUD", "track": -1},
+  {"theme": 13, "name": "FRG", "track": -1}
+ ],
  "seconds": [
   {"ticks": 0, "seconds": 0},
   {"ticks": 1, "seconds": 1},
@@ -70,10 +87,12 @@
    "checkpoint_ticks": [30, 31, 60, 2971, 0],
    "level_score": 1850,
    "show_gold_frog": true,
+   "theme": 5,
    "checkpoint_seconds": [1, 2, 2, 99, 0],
    "total_seconds": 104,
    "startup_sounds": [8],
-   "pauses_music": true,
+   "stops_music": true,
+   "startup_track": -1,
    "shows_prompt": true,
    "inputs": {},
    "ticks": 200,
@@ -174,10 +193,12 @@
    "checkpoint_ticks": [30, 31, 60, 2971, 0],
    "level_score": 1850,
    "show_gold_frog": true,
+   "theme": 5,
    "checkpoint_seconds": [1, 2, 2, 99, 0],
    "total_seconds": 104,
    "startup_sounds": [8],
-   "pauses_music": true,
+   "stops_music": true,
+   "startup_track": -1,
    "shows_prompt": true,
    "inputs": {"61": ["fire"], "62": ["fire"]},
    "ticks": 200,
@@ -276,10 +297,12 @@
    "checkpoint_ticks": [0, 0, 0, 0, 0],
    "level_score": 0,
    "show_gold_frog": false,
+   "theme": 9,
    "checkpoint_seconds": [0, 0, 0, 0, 0],
    "total_seconds": 0,
    "startup_sounds": [8],
-   "pauses_music": true,
+   "stops_music": true,
+   "startup_track": -1,
    "shows_prompt": true,
    "inputs": {"1": ["back"]},
    "ticks": 200,
@@ -376,10 +399,12 @@
    "checkpoint_ticks": [450, 900, 1350, 1800, 2250],
    "level_score": 123456,
    "show_gold_frog": true,
+   "theme": 1,
    "checkpoint_seconds": [15, 30, 45, 60, 75],
    "total_seconds": 225,
    "startup_sounds": [8],
-   "pauses_music": true,
+   "stops_music": true,
+   "startup_track": -1,
    "shows_prompt": true,
    "inputs": {"70": ["fire", "back"]},
    "ticks": 200,
@@ -479,10 +504,12 @@
    "checkpoint_ticks": [29, 59, 89, 2940, 2941],
    "level_score": 9876543,
    "show_gold_frog": true,
+   "theme": 7,
    "checkpoint_seconds": [1, 2, 3, 98, 99],
    "total_seconds": 203,
    "startup_sounds": [],
-   "pauses_music": false,
+   "stops_music": false,
+   "startup_track": 29,
    "shows_prompt": true,
    "inputs": {"100": ["fire"]},
    "ticks": 200,
@@ -578,10 +605,12 @@
    "checkpoint_ticks": [300, 600, 900, 1200, 1500],
    "level_score": 42,
    "show_gold_frog": false,
+   "theme": 10,
    "checkpoint_seconds": [10, 20, 30, 40, 50],
    "total_seconds": 150,
    "startup_sounds": [],
-   "pauses_music": false,
+   "stops_music": false,
+   "startup_track": -1,
    "shows_prompt": false,
    "inputs": {"70": ["fire"], "80": ["back"]},
    "ticks": 200,
@@ -672,10 +701,12 @@
    "checkpoint_ticks": [30, 31, 60, 2971, 0],
    "level_score": 1850,
    "show_gold_frog": true,
+   "theme": 5,
    "checkpoint_seconds": [1, 2, 2, 99, 0],
    "total_seconds": 104,
    "startup_sounds": [8],
-   "pauses_music": true,
+   "stops_music": true,
+   "startup_track": -1,
    "shows_prompt": true,
    "inputs": {},
    "ticks": 130,
@@ -724,6 +755,44 @@
      ]
     }
    ]
+  }
+ ],
+ "exe": {"file": "FROGGER.EXE", "image_base": "0x00400000", "text_vma": "0x00401000"},
+ "exe_pins": [
+  {
+   "address": "0x004454cc",
+   "bytes_hex": "6a006a006a006a08e8b76d000083c410e82facfeffe93a010000",
+   "meaning": "LevelCompleteStartup, next level: MRSNDPlaySound(SFX_MUSIC_LEVEL_COMPLETE) at 0x0044c290, then PauseCD at 0x00430110, then past the zone-complete block"
+  },
+  {
+   "address": "0x00445561",
+   "bytes_hex": "a0dc53480084c0742233c0a0dc5348008bc8c1e0072bc19983e20703c2c1f803506a03e8b777000083c408e8ef8fffff",
+   "meaning": "LevelCompleteStartup, zone complete: with Sound_volume set, MRSNDSetVolumeLevel(MRSND_CD_VOLUME, 127 * Sound_volume / 8), then PlayZoneComplete at 0x0043e580, with no StopCD first"
+  },
+  {
+   "address": "0x0043e580",
+   "bytes_hex": "6a00a11851490083c01650e8101bffff83c408c3",
+   "meaning": "PlayZoneComplete: PlayCD(Game_map_theme + 22, 0): the zone tune once"
+  },
+  {"address": "0x00445902", "bytes_hex": "e859acfeff", "meaning": "LevelCompleteShutdown: GameEnd at 0x00430560"},
+  {"address": "0x00430560", "bytes_hex": "5657e879fbffff", "meaning": "GameEnd begins with StopCD at 0x004300e0"},
+  {
+   "address": "0x004300e0",
+   "bytes_hex": "a0806f490084c07422a14085470085c07419e889640100",
+   "meaning": "StopCD: with a CD and a track playing, the MCI stop at 0x00446580"
+  },
+  {
+   "address": "0x00430110",
+   "bytes_hex": "a0806f490084c07418a14885470085c0750fc7054885470001000000e94f640100",
+   "meaning": "PauseCD: unless already paused, set the paused flag and jump to the same MCI stop; the track is kept"
+  }
+ ],
+ "exe_absent_calls": [
+  {
+   "start": "0x004454e6",
+   "end": "0x00445591",
+   "target": "0x0044c290",
+   "meaning": "the zone-complete block plays no sound: no MRSNDPlaySound, so no sound 8"
   }
  ]
 }

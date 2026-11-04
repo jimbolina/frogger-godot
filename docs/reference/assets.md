@@ -136,7 +136,7 @@ An editor import (`assets/`) holds:
 | `models/<NAME>/model.res`, `part_NN.res`, `mesh.res`, `model.tscn`, `preview.res` | The `MofFile` record (gameplay, collision and animation source of truth), one `ArrayMesh` per drawn part, the `ModelMesh` with cel atlases and texture tracks, a preview scene, and for animated models an `AnimationLibrary` derived for the editor. `models/options/` holds the options-page models. |
 | `maps/<NAME>.res` | Each map and sky-land file as a compressed binary resource. |
 | `audio/sfx/<BANK>/NNN_<name>.wav`, `audio/sfx/<BANK>.tres` | 16-bit mono 11,025 Hz effects and the bank headers that reference them. |
-| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number (`track_NN.res` WAV streams in an import made at runtime). Tracks 2–21 are the level and menu music (`MusicTable`), 22 the game-over jingle and 23–32 the zone-complete tunes (`PlayCD(theme + 22)` in the retail executable; only 22 is played so far). |
+| `audio/music/track_NN.ogg` | The CD tracks, Ogg Vorbis quality 6, named by track number (`track_NN.res` WAV streams in an import made at runtime). Tracks 2–6, 8–10, 12 and 14–21 are the level music (`MusicTable`), 11 the menu tune, 13 the level-select tune, 22 the game-over jingle and 23–32 the zone-complete tunes (`PlayCD(theme + 22)`); 7 is played by nothing ([front-end music](gameplay/front-end.md#music)). |
 | `demos/<NAME>.tres` | The recorded demos. |
 
 Gameplay collision and hilites come from `model.res`; editing a part mesh

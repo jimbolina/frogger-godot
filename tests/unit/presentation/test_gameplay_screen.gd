@@ -1,6 +1,10 @@
 extends GutTest
 ## Dedicated play preserves host transactions, pause boundaries and fresh sessions.
 
+const MUSIC_TRACK: int = 2
+## A folder holding a silent synthetic track 2 as an imported Ogg.
+const MUSIC_FIXTURE: String = "res://tests/fixtures/music"
+
 var _screen: GameplayScreen
 
 func before_each() -> void:
@@ -510,8 +514,10 @@ func test_r_restarts_a_direct_launch_during_the_page() -> void:
 	assert_true(_screen._hud.visible)
 	assert_true(_screen.playing)
 
-func _finish_level(level: int, phase: LevelFlowState.Phase, score: int = 0) -> void:
+func _finish_level(level: int, phase: LevelFlowState.Phase, score: int = 0, theme: int = -1) -> void:
 	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	if theme >= 0:
+		scenario.level.theme = theme
 	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
 	_screen.level_code = FroggerIds.level_code(level)
 	var finished: GameplayState = _screen.run.snapshot()
@@ -909,3 +915,125 @@ func test_letters_typed_during_play_set_the_gate_and_a_wrong_letter_resets_the_c
 	_key(KEY_META, true)
 	_screen.step_pause()
 	assert_eq(cheats.cursors[PauseCheats.Cheat.INFINITE_LIVES], 0, "Cmd forgets the keys down")
+
+## Selects the synthetic track 2 as the level music, read without a loader thread.
+func _level_music() -> MusicPlayer:
+	var music: MusicPlayer = _screen.music_player()
+	assert_not_null(music, "tests run with audio")
+	music.threaded = false
+	_screen.configure_music(MUSIC_TRACK, MUSIC_FIXTURE)
+	return music
+
+func test_the_pause_stops_the_music_at_init_and_restarts_the_level_track_at_kill_sprites() -> void:
+	var music: MusicPlayer = _level_music()
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	assert_true(music.is_playing(), "the run start plays the level track")
+	_key(KEY_ESCAPE, true)
+	_key(KEY_ESCAPE, false)
+	assert_true(music.is_playing(), "the press tick leaves the CD alone")
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.FADE_DOWN)
+	assert_false(music.is_playing(), "INIT stops the CD (PauseCD)")
+	assert_eq(music.track, MUSIC_TRACK, "the stop remembers the track")
+	for tick: int in 8:
+		_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.MENU)
+	assert_false(music.is_playing())
+	_key(KEY_ESCAPE, true)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.KILL_SPRITES)
+	assert_false(music.is_playing())
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.FADE_UP)
+	assert_true(music.is_playing(), "KILL_SPRITES restarts the level track (ResumeCD)")
+	assert_eq(music.track, MUSIC_TRACK)
+	assert_true(music.looping)
+	assert_lt(music._player.get_playback_position(), 1.0, "from its beginning")
+	for tick: int in 9:
+		_screen._process(GameplayHost.PERIOD)
+	assert_null(_screen._pause_page)
+	assert_true(music.is_playing(), "the music plays on after the resume")
+	assert_eq(music.diagnostics, PackedStringArray())
+
+func test_quit_then_yes_keeps_the_level_track_silent_until_the_jingle() -> void:
+	var music: MusicPlayer = _level_music()
+	_start_front_end_game()
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	_screen.level_code = FroggerIds.level_code(24)
+	_open_pause_menu()
+	_key(KEY_DOWN, true)
+	_screen._process(GameplayHost.PERIOD)
+	_key(KEY_ENTER, false)
+	_screen._process(GameplayHost.PERIOD)
+	_key(KEY_RIGHT, true)
+	_screen._process(GameplayHost.PERIOD)
+	_key(KEY_ENTER, false)
+	_screen._process(GameplayHost.PERIOD)
+	assert_eq(_screen._pause_page.mode, PausePage.Mode.DEINIT)
+	assert_false(music.is_playing(), "Yes does not bring the level track back")
+	_screen._process(GameplayHost.PERIOD)
+	assert_null(_screen._pause_page)
+	assert_false(music.is_playing(), "the quit leaves the CD stopped for the game-over page")
+	_game_over_tick(0)
+	var track: int = music.track
+	var looping: bool = music.looping
+	var remembered: int = _screen._level_music_track
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+	assert_not_null(_screen._game_over_page)
+	assert_eq(track, GameOverPage.JINGLE_TRACK, "the game-over page plays the jingle")
+	assert_false(looping)
+	assert_eq(remembered, MUSIC_TRACK)
+
+func test_next_level_page_stops_the_music_and_the_next_run_plays_it_from_the_start() -> void:
+	var music: MusicPlayer = _level_music()
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 2), LevelStack.Row.new(25, 1, 0, 5, 1, 2)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE)
+	var variant: LevelCompletePage.Kind = _screen._complete_page.variant
+	var playing_on_page: bool = music.is_playing()
+	var track: int = music.track
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+	assert_eq(variant, LevelCompletePage.Kind.NEXT_LEVEL)
+	assert_false(playing_on_page, "PauseCD stops the level track and nothing resumes it")
+	assert_eq(track, MUSIC_TRACK)
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	assert_true(music.is_playing(), "the next level's start plays its track")
+	assert_true(music.looping)
+
+func test_zone_complete_page_plays_the_zone_tune_once_in_place_of_the_level_track() -> void:
+	var music: MusicPlayer = _level_music()
+	var rows: Array[LevelStack.Row] = [LevelStack.Row.new(24, 1, 0, 5, 0, 1), LevelStack.Row.new(25, 2, 1, 5, 0, 1)]
+	FrontEndSession.progress = LevelProgress.create(LevelStack.create(rows, []))
+	FrontEndSession.store = null
+	FrontEndSession.active = true
+	_finish_level(24, LevelFlowState.Phase.COMPLETE, 0, 7)
+	var variant: LevelCompletePage.Kind = _screen._complete_page.variant
+	var track: int = music.track
+	var looping: bool = music.looping
+	_reset_front_end_session()
+	FrontEndSession.progress = null
+	assert_eq(variant, LevelCompletePage.Kind.ZONE_COMPLETE)
+	assert_eq(track, 29, "THEME_SWP plays disc track 7 + 22")
+	assert_false(looping, "the zone tune plays once")
+	assert_false(music.is_playing(), "the fixture has no track 29, so it is silent")
+	var scenario: TerrainScenario = TerrainScenario.builtin("normal")
+	assert_eq(_screen.open_run(scenario.level, scenario.initial), "")
+	assert_eq(music.track, MUSIC_TRACK, "closing the page selects the level track again")
+	assert_true(music.looping)
+	assert_true(music.is_playing())
+
+func test_statistics_page_leaves_the_level_music_playing() -> void:
+	var music: MusicPlayer = _level_music()
+	FrontEndSession.active = false
+	_finish_level(24, LevelFlowState.Phase.COMPLETE, 0, 7)
+	assert_eq(_screen._complete_page.variant, LevelCompletePage.Kind.STATISTICS)
+	assert_true(music.is_playing())
+	assert_eq(music.track, MUSIC_TRACK)
+	assert_true(music.looping)

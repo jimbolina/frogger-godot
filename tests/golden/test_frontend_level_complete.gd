@@ -1,6 +1,7 @@
 extends GutTest
-## LevelCompletePage and LevelCompleteLayout agree with the independent frozen-C level-complete
-## facts in tests/golden/synthetic/frontend_level_complete.json (tools/make_golden_level_complete.py).
+## LevelCompletePage and LevelCompleteLayout agree with the independent frozen-C and retail-exe
+## level-complete facts in tests/golden/synthetic/frontend_level_complete.json
+## (tools/make_golden_level_complete.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_level_complete.json"
 
@@ -72,6 +73,14 @@ func test_constants() -> void:
 	assert_eq(LevelCompletePage.BLINK_BIT, _int(c.blink_bit))
 	assert_eq(LevelCompletePage.SOUND_LEVEL_COMPLETE, _int(c.sound_level_complete))
 	assert_eq(LevelCompletePage.SOUND_CROAK, _int(c.sound_croak))
+	assert_eq(LevelCompletePage.ZONE_TRACK_BASE, _int(c.zone_track_base))
+
+
+func test_zone_tracks() -> void:
+	for row: Dictionary in _rows(_document.zone_tracks):
+		var theme: int = _int(row.theme)
+		var label: String = row.name
+		assert_eq(LevelCompletePage.zone_track(theme), _int(row.track), label)
 
 
 func test_checkpoint_seconds() -> void:
@@ -104,7 +113,8 @@ func test_scene_traces() -> void:
 		assert_eq(page.checkpoint_seconds, _ints(scene.checkpoint_seconds), label)
 		assert_eq(page.total_seconds, _int(scene.total_seconds), label)
 		assert_eq(page.startup_sounds(), _ints(scene.startup_sounds), label)
-		assert_eq(page.pauses_music(), _flag(scene.pauses_music), label)
+		assert_eq(page.stops_music(), _flag(scene.stops_music), label)
+		assert_eq(page.startup_track(_int(scene.theme)), _int(scene.startup_track), label)
 		assert_eq(page.shows_prompt(), _flag(scene.shows_prompt), label)
 		var trace: Array = _rows(scene.trace)
 		var tick: int = 0

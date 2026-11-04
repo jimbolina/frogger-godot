@@ -25,6 +25,26 @@ translucent `opt_menu_cloud` poly, sliding up 8 a tick during the table's fly-on
 fire croaks (`:1712-1744`, `:1820`). Retail's rows are Start, Race and Options; the
 port's Exit takes the race row until P15.
 
+## Music
+
+`FrontEndMusic` (`src/game/frontend/`) gives each page its disc track, read from
+retail PC's executable (the vendored `PlayOptionsMusic` and `ShutdownOptionsMusic`
+are empty on WIN95). Track 11 is the menu tune: `PlayOptionsMusic` (`0x00446450`)
+starts it looping when the main menu comes to rest (`0x00440930`), and the
+options page (`0x00443894`) and high-score view (`0x0042c05f`) only re-assert it,
+so it plays on unbroken through the options, controller and high-score pages and
+back. Start stops it (`ShutdownOptionsMusic`, `0x00440c6b`) and the level-select
+page plays track 13 looping from its startup (`PlayCD(13, 1)`, `0x0040f079`) until
+its shutdown (`0x0040f27a`); leaving the list for the main menu starts track 11
+again from its beginning. A demo stops the menu tune when it loads (`0x00440375`),
+plays its level's track in the game scene and brings track 11 back from the top
+when the main menu returns. Name entry has no CD call and is silent, as are the
+version, logo, language and intro pages. In the game scene the level plays the
+music list's track ([assets](../assets.md#layout)), the
+[level-complete page](#level-complete) and [pause page](#pause-page) stop and
+replace it as described there, and [game over](#game-over) plays track 22 once.
+Track 7 is on the disc and in FrogLord's names but no retail code plays it.
+
 ## Attract cycle
 
 `MainMenuView` (`src/presentation/frontend/`) draws the three sprites and the cloud,
@@ -125,9 +145,14 @@ frog's whole seconds (`Frog_time_data`, the run's rounded-up seconds, 99 cap) in
 score the high-score run recorded (`Frog_score_data[map].he_score`, the better of two
 runs of the level in one game), not the running total. When the next arcade row is in
 the same world the page shows NEXT, the next level's name image, PRESS FIRE and the
-`select4` prompt ("[ESC] SELECT LEVEL"), plays the level-complete sting and pauses the
-music; at a world's end it shows ZONE COMPLETE and PRESS FIRE with the music playing
-(the zone music is PSX-only). The gold frog icon shows at (215, 270) when a gold frog
+`select4` prompt ("[ESC] SELECT LEVEL"), plays the level-complete sting and stops the
+music (`PauseCD`, `0x004454dc`, a stop that nothing resumes: the next level starts its
+own track); at a world's end it shows ZONE COMPLETE and PRESS FIRE without the sting and
+plays the zone's tune once in place of the level track, disc track `theme + 22`
+(`PlayCD` at `0x0043e58b` from `0x0044558c`: CAV 23, DES 24, FOR 25, JUN 26, ORG 27,
+ARN 28, SWP 29, SKY 30, SUB 31, VOL 32), which the page's end stops (`GameEnd`,
+`0x00445902`). The vendored `tempopt.c` pauses XA audio and plays no zone tune on PC;
+the executable wins. The gold frog icon shows at (215, 270) when a gold frog
 was found on the level or, at a world's end, anywhere in the zone.
 
 The count-down starts at 20 units of 31 ticks and the units stop at 17, so the page
@@ -224,8 +249,13 @@ outside the sandbox. The sprites show from INIT and the glow from the MENU tick,
 each one tick before retail. Retail kills the playing effects (`:187`) and dims
 only the moving entities' voices; the port holds every gameplay voice and
 resumes it, since a killed looping voice would not restart, and models the
-volume for the golden alone. The music keeps playing, as the PC build's frozen C
-never pauses it (`:215-221` is PSX-only); the owner's play check decides. The
+volume for the golden alone. The music stops when the page opens (`PauseCD`,
+exe `0x0042f36e`; the frozen C's `:215-221` is PSX-only) and starts again from the
+beginning of the level track when the page closes or Quit confirms (`ResumeCD`,
+`0x0042f7f5`, `0x0042f741`, a fresh `PlayCD` of the remembered track, never a resume
+from the paused position). Retail leaves its pause flag set after a level-complete
+page, so the first pause of the next level does not silence the music; the port
+pauses every time. The
 poly blends subtractively in the frozen C (`:822-823`, ABR 2); the retail PC
 executable passes ABR 1 there (`0x0042fd81`), which the reference engine read as
 "the paused background does not dim" without a picture, so the port darkens by

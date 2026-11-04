@@ -21,8 +21,10 @@ and archive suites run only with `FROGGER_DATA_DIR` set and an import
 ([testing](reference/testing/README.md)).
 
 Awaiting the owner's play check: the pause page, its cheat phrases and the
-game-over page (P13i–P13k), and first-run setup, FrogLord in play, packaged
-builds and texture packs (L3–L6).
+game-over page (P13i–P13k), the retail disc music across the front end, pause,
+level-complete and zone-complete pages
+([front-end music](reference/gameplay/front-end.md#music)), and first-run
+setup, FrogLord in play, packaged builds and texture packs (L3–L6).
 
 Owner decisions before publishing
 ([needed from the owner](PORTING.md#needed-from-the-owner)): the history

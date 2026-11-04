@@ -15,10 +15,13 @@ extends GameplayWorldView
 ##
 ## Escape opens retail's pause page ([PausePage], pause.c:163-527) when the pause is allowed and
 ## closes it again from its menu; the page ticks at 30 Hz from [method _process] while the game
-## holds, the sound effects hold and the music plays on (pause.c:215-221). Continue and Quit show
-## at once; the arrow keys move the selection and releasing the bound super-hop key or Enter is
-## fire. Quit then Yes croaks, resumes and removes the frog's control
-## ([method GameplayHost.quit_game]), so the next tick opens the game-over page as a quit. Space no
+## and the sound effects hold. The music stops on the page's INIT tick and the level track starts
+## again from its beginning, looping, on its KILL_SPRITES tick, as retail PC's PauseCD and ResumeCD
+## do. Continue and Quit show at once; the arrow keys move the selection and releasing the bound
+## super-hop key or Enter is fire. Quit then Yes croaks, resumes and removes the frog's control
+## ([method GameplayHost.quit_game]), so the next tick opens the game-over page as a quit; retail's
+## ResumeCD on Yes is cut off at once by the game-over page's StopCD, so the port leaves the music
+## stopped and the level track is not heard. Space no
 ## longer pauses, and Escape no longer leaves the level. The sandbox keeps its own Space pause and
 ## Escape leave ([method _opens_pause_page]). Every letter or Space key-down, play and
 ## auto-repeat included, sets the shared [member FrontEndSession.pause_cheats] gate, and each menu
@@ -31,7 +34,9 @@ extends GameplayWorldView
 ## entities hide, the page ticks at 30 Hz from [method _process], the bound super-hop key,
 ## Enter and Space are fire and Escape is triangle. A front-end game leaves through
 ## [method settle_level_complete]; a direct launch shows the statistics alone and keeps R and
-## Escape. The sandbox never opens the page.
+## Escape. Next level plays sound 8 and stops the music; zone complete plays the zone's tune, disc
+## track theme + 22, once in place of the level track; the statistics leave the music playing.
+## Leaving the scene stops the music, as the page's GameEnd does. The sandbox never opens the page.
 ##
 ## The last life lost, or the pause menu's Quit, opens retail PC's game-over page
 ## ([GameOverPage], GameOverStartup 0x00443630) on the tick the run enters
@@ -131,7 +136,7 @@ var _game_over_view: GameOverView
 var _game_over_page: GameOverPage = null
 var _game_over_shown: bool = false
 var _quit_requested: bool = false
-var _jingle_selected: bool = false
+var _once_selected: bool = false
 var _level_music_track: int = -1
 
 func _ready() -> void:
@@ -926,8 +931,8 @@ func _opens_pause_page() -> bool:
 
 ## Opens the pause page on Escape's press (pause.c:166-200) after joining pending work, when
 ## [method PausePage.allowed] lets the committed state pause and no other page, error or demo
-## holds the screen: play holds with the sound effects, the music plays on, the hop sounds and
-## the page shows. Returns whether the page opened.
+## holds the screen: play holds with the sound effects, the hop sounds and the page shows; the
+## music stops on the page's first tick. Returns whether the page opened.
 func open_pause() -> bool:
 	if is_attract() or _pause_page != null or _complete_page != null or _game_over_page != null or not playing:
 		return false
@@ -965,6 +970,7 @@ func step_pause() -> Array[PausePage.Event]:
 	_keys_tapped.clear()
 	var events: Array[PausePage.Event] = _pause_page.tick(buttons)
 	_play_pause_sounds(events)
+	_play_pause_music(events, _pause_page.quitting)
 	_hud.advance_paused()
 	for event: PausePage.Event in events:
 		_apply_cheat(event)
@@ -974,7 +980,10 @@ func step_pause() -> Array[PausePage.Event]:
 		_close_pause_page()
 		set_paused(false)
 		_quit_requested = true
-		_warn(_host.quit_game())
+		var issue: String = _host.quit_game()
+		_warn(issue)
+		if not issue.is_empty() and music_player() != null:
+			music_player().restart()
 	elif PausePage.Event.RESUMED in events:
 		_close_pause_page()
 		_apply_session_cheats()
@@ -990,6 +999,16 @@ func _play_pause_sounds(events: Array[PausePage.Event]) -> void:
 			voices.play_page_sound(PausePage.HOP_SOUND)
 		elif event == PausePage.Event.CROAK:
 			voices.play_page_sound(PausePage.CROAK_SOUND)
+
+func _play_pause_music(events: Array[PausePage.Event], quitting: bool) -> void:
+	var music: MusicPlayer = music_player()
+	if music == null:
+		return
+	for event: PausePage.Event in events:
+		if event == PausePage.Event.STOP_MUSIC:
+			music.collapse()
+		elif event == PausePage.Event.RESTART_MUSIC and not quitting:
+			music.restart()
 
 func _press_on_pause(key: InputEventKey) -> void:
 	if not key.pressed:
@@ -1070,7 +1089,7 @@ func _close_pause_page() -> void:
 
 ## Opens the page for the completed level (tempopt.c:5792-5964): the next-level or zone-complete
 ## variant of a front-end game, else the statistics alone; hides the HUD, frog and entities,
-## plays the startup sound and pauses the music as retail does.
+## plays the startup sound and stops the music or plays the zone's tune as retail PC does.
 func _open_level_complete() -> void:
 	var flow: LevelFlowState = _current.flow
 	var in_game: bool = FrontEndSession.active
@@ -1095,8 +1114,13 @@ func _open_level_complete() -> void:
 		voices.collapse()
 		for sound_id: int in _complete_page.startup_sounds():
 			voices.play_page_sound(sound_id)
-	if _complete_page.pauses_music() and music_player() != null:
-		music_player().pause(true)
+	var music: MusicPlayer = music_player()
+	if music != null:
+		if _complete_page.stops_music():
+			music.collapse()
+		var track: int = _complete_page.startup_track(_definition.theme if _definition != null else 0)
+		if track >= 0:
+			_play_once(track)
 	_ensure_text_assets()
 	_complete_view.open(_complete_page)
 
@@ -1109,6 +1133,7 @@ func _close_level_complete() -> void:
 	_complete_view.close()
 	_hud.visible = true
 	set_map_only(false)
+	_restore_level_music()
 
 func _ensure_text_assets() -> void:
 	if _text_assets == null and _data != null and _data.is_valid():
@@ -1236,13 +1261,7 @@ func _open_game_over() -> void:
 	var voices: SoundVoiceView = voice_view()
 	if voices != null and _game_over_page.mutes_effects():
 		voices.hold_voices(true)
-	var music: MusicPlayer = music_player()
-	if music != null:
-		if not _jingle_selected:
-			_level_music_track = music.track
-			_jingle_selected = true
-		music.select(_game_over_page.startup_track(), false)
-		music.restart()
+	_play_once(_game_over_page.startup_track())
 	_ensure_text_assets()
 	_game_over_view.open(_game_over_page)
 
@@ -1279,10 +1298,27 @@ func _close_game_over() -> void:
 	_game_over_view.close()
 	set_view_rect(Rect2i())
 	_hud.visible = true
+	_restore_level_music()
+
+## Plays disc track [param track] once from its start in place of the level music, remembering the
+## level track for [method _restore_level_music].
+func _play_once(track: int) -> void:
 	var music: MusicPlayer = music_player()
-	if _jingle_selected and music != null:
+	if music == null:
+		return
+	if not _once_selected:
+		_level_music_track = music.track
+		_once_selected = true
+	music.select(track, false)
+	music.restart()
+
+## Selects the level track again, looping and silent until the next restart, after a track played
+## once.
+func _restore_level_music() -> void:
+	var music: MusicPlayer = music_player()
+	if _once_selected and music != null:
 		music.select(_level_music_track)
-	_jingle_selected = false
+	_once_selected = false
 	_level_music_track = -1
 
 func _press_on_game_over(key: InputEventKey) -> void:

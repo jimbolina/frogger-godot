@@ -12,6 +12,12 @@ DirectInput scancode phrases with one cursor each and a key-down gate, pinned
 to the exe bytes in froggy's frogger_cheat_sequences.h), replays scripted key
 traces through it alone and through the pause, and applies the unlock cheats
 (pause.c:933-998, :1017-1021) to the retail level-select stack.
+
+The CD music comes from the retail executable, whose GamePause (0x0042f200)
+stops the CD at INIT (PauseCD) and restarts the level track at KILL_SPRITES
+and on Yes (ResumeCD, PlayCD of the kept track, looping), where pause.c's PC
+arm is empty. With FROGGER_DATA_DIR (or --data-dir) set, those facts are
+compared with the bytes of FROGGER.EXE through its PE section table.
 See tests/golden/specs/frontend.md#pause-page.
 """
 import copy
@@ -26,6 +32,8 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_golden_frontend as frontend
+import make_golden_game_over as game_over
+import make_golden_level_complete as level_complete
 import make_golden_stack as stack
 
 ROOT = frontend.ROOT
@@ -60,6 +68,14 @@ SPRITE_ORDER = ['PAUSED', 'CONTINUE', 'QUIT', 'YES', 'NO']
 WIDTHS = {'opt_paused': 160, 'opt_big_continue': 193, 'quit': 96, 'opt_yes': 63, 'opt_no': 48}
 
 BUTTONS = ('escape', 'up', 'down', 'left', 'right', 'fire')
+
+MODES = ['NO_PAUSE', 'INIT', 'FADE_DOWN', 'MENU', 'KILL_SPRITES', 'FADE_UP', 'DEINIT']
+GAME_PAUSE = 0x0042f200
+ARM_TABLE = 0x0042f91c
+ARMS = [0x0042f219, 0x0042f2e7, 0x0042f39a, 0x0042f401, 0x0042f7cb, 0x0042f805, 0x0042f874]
+PAUSE_MODE = 0x00478354
+PLAY_CD, PAUSE_CD, RESUME_CD = level_complete.PLAY_CD, level_complete.PAUSE_CD, level_complete.RESUME_CD
+PLAY_SOUND = level_complete.PLAY_SOUND
 
 DIK = {}
 for row, first in (('QWERTYUIOP', 0x10), ('ASDFGHJKL', 0x1E), ('ZXCVBNM', 0x2C), (' ', 0x39)):
@@ -123,6 +139,7 @@ class Pause:
         arm(keys)
 
     def arm_init(self, _keys):
+        self.events.append('STOP_MUSIC')
         self.paused_selection = 0
         self.mode = 'FADE_DOWN'
         self.volume = self.sound_volume
@@ -173,13 +190,15 @@ class Pause:
                 if self.quit_selection == QUIT_NO:
                     self.paused_selection = CONTINUE_SELECTED
                     self.mode = 'KILL_SPRITES'
+                    self.events.append('CROAK')
                 else:
                     self.paused_selection = QUIT_SELECTED
                     self.mode = 'DEINIT'
-                self.events.append('CROAK')
+                    self.events += ['CROAK', 'RESTART_MUSIC']
 
     def arm_kill_sprites(self, _keys):
         self.mode = 'FADE_UP'
+        self.events.append('RESTART_MUSIC')
 
     def arm_fade_up(self, _keys):
         self.fade = (self.fade - FADE_STEP) & 0xFF
@@ -446,6 +465,35 @@ def run(name, sound_volume, inputs, ticks, sprite_frames):
             'trace': trace, 'sprites_at': shots}
 
 
+def exe_pins():
+    """Retail instruction bytes the pause's music rests on: address, bytes and meaning."""
+    le32, call, at = level_complete.le32, level_complete.call, level_complete.absolute
+    mode = lambda value: 'c705' + at(PAUSE_MODE) + le32(MODES.index(value))
+    pins = [
+        (GAME_PAUSE + 0x07, '83f8%02x' '57' '55' '0f87' % (len(MODES) - 1) + le32(0x0042f916 - 0x0042f212)
+         + 'ff2485' + at(ARM_TABLE),
+         'GamePause: Pause_mode 0 to 6 selects an arm from the table at 0x0042f91c'),
+        (ARM_TABLE, ''.join(le32(arm) for arm in ARMS),
+         'The arms of NO_PAUSE, INIT, FADE_DOWN, MENU, KILL_SPRITES, FADE_UP and DEINIT'),
+        (0x0042f33b, mode('FADE_DOWN'), 'INIT: Pause_mode = FADE_DOWN'),
+        (0x0042f36e, call(0x0042f36e, PAUSE_CD), 'INIT: PauseCD at 0x00430110 stops the level track'),
+        (0x0042f721, '5353' '6a%02x' % CROAK_SOUND + call(0x0042f725, PLAY_SOUND) + '83c410' 'a13c834700' '50'
+         + call(0x0042f733, 0x00454080) + '83c404' '891d3c834700' + call(0x0042f741, RESUME_CD)
+         + call(0x0042f746, 0x0040d3d0) + call(0x0042f74b, 0x0042fb00) + mode('DEINIT'),
+         'MENU, Yes: croak, ResumeCD at 0x00430140, then Pause_mode = DEINIT'),
+        (0x0042f7e6, mode('FADE_UP') + call(0x0042f7f0, 0x0040d3d0) + call(0x0042f7f5, RESUME_CD),
+         'KILL_SPRITES: Pause_mode = FADE_UP, then ResumeCD'),
+        (RESUME_CD, 'a0' + at(level_complete.CD_PRESENT) + '84c0' '7424' 'a1' + at(level_complete.CD_PAUSED)
+         + '83f801' '751a' '6a01' 'a1' + at(level_complete.CD_TRACK) + 'c705' + at(level_complete.CD_PAUSED)
+         + le32(0) + '50' + call(0x00430165, PLAY_CD),
+         'ResumeCD: only when paused, clear the flag and PlayCD(kept track, 1): the track from its start, looping'),
+        (0x004300c6, '8935' + at(level_complete.CD_TRACK) + 'c705' + at(level_complete.CD_PLAYING) + le32(1),
+         'PlayCD keeps the track it starts for ResumeCD'),
+    ]
+    return [{'address': '0x%08x' % address, 'bytes_hex': data, 'meaning': meaning}
+            for address, data, meaning in pins]
+
+
 def document():
     return {
         'source': 'pause.c:163-527 GamePause, :559-603 hidden menus, pause.h, OPTIONS.C:381-414',
@@ -461,6 +509,9 @@ def document():
                       for name in SPRITE_ORDER for w in (0, 1, 64, 65)],
         'scenes': [run(*scene) for scene in SCENES],
         'cheats': cheats_document(),
+        'exe': {'file': 'FROGGER.EXE', 'image_base': '0x%08x' % level_complete.IMAGE_BASE,
+                'text_vma': '0x%08x' % level_complete.TEXT_VMA},
+        'exe_pins': exe_pins(),
     }
 
 
@@ -651,15 +702,29 @@ def main():
                         help='frozen C source folder (default: ../froggy/engine/vendor/frogger-psx-src/source)')
     parser.add_argument('--froggy-reference', type=Path, default=DEFAULT_FROGGY,
                         help='froggy engine folder (default: ../froggy/engine)')
+    parser.add_argument('--data-dir', default=os.environ.get('FROGGER_DATA_DIR', ''),
+                        help='retail folder with FROGGER.EXE (default: $FROGGER_DATA_DIR)')
     parser.add_argument('--check', action='store_true', help='compare with the committed file instead of writing')
     args = parser.parse_args()
     problems = check_sound_names()
     if args.c_reference.is_dir():
-        problems += check_c(args.c_reference)
-        if not problems:
+        c_problems = check_c(args.c_reference)
+        problems += c_problems
+        if not c_problems:
             print('C cross-check passed against %s' % args.c_reference)
     else:
         print('C source not found at %s; cross-checks skipped' % args.c_reference)
+    if args.data_dir:
+        exe = game_over.find_exe(Path(args.data_dir))
+        if exe is None:
+            problems.append('no FROGGER.EXE in %s' % args.data_dir)
+        else:
+            exe_problems = level_complete.check_exe(exe, exe_pins())
+            problems += exe_problems
+            if not exe_problems:
+                print('Executable pins passed against %s (%d pins)' % (exe, len(exe_pins())))
+    else:
+        print('FROGGER_DATA_DIR not set; executable pins skipped')
     if (args.froggy_reference / CHEAT_H).is_file():
         froggy_problems = check_froggy(args.froggy_reference)
         problems += froggy_problems

@@ -36,14 +36,26 @@ func test_missing_checkpoints_count_zero() -> void:
 	assert_eq(page.total_seconds, 2)
 
 
-func test_startup_sound_and_music_pause_belong_to_next_level_only() -> void:
+func test_startup_sound_and_music_stop_belong_to_next_level_only() -> void:
 	var next: LevelCompletePage = _page(LevelCompletePage.Kind.NEXT_LEVEL)
 	assert_eq(next.startup_sounds(), PackedInt32Array([LevelCompletePage.SOUND_LEVEL_COMPLETE]))
-	assert_true(next.pauses_music())
+	assert_true(next.stops_music())
+	assert_eq(next.startup_track(3), -1, "next level plays no disc track")
 	for variant: LevelCompletePage.Kind in [LevelCompletePage.Kind.ZONE_COMPLETE, LevelCompletePage.Kind.STATISTICS]:
 		var page: LevelCompletePage = _page(variant)
 		assert_eq(page.startup_sounds(), PackedInt32Array())
-		assert_false(page.pauses_music())
+		assert_false(page.stops_music())
+
+
+func test_zone_complete_plays_the_zone_tune_of_its_theme() -> void:
+	var zone: LevelCompletePage = _page(LevelCompletePage.Kind.ZONE_COMPLETE)
+	var tracks: PackedInt32Array = []
+	for theme: int in range(1, 11):
+		tracks.append(zone.startup_track(theme))
+	assert_eq(tracks, PackedInt32Array([23, 24, 25, 26, 27, 28, 29, 30, 31, 32]))
+	assert_eq(zone.startup_track(0), -1, "THEME_GEN ends no zone")
+	assert_eq(zone.startup_track(11), -1)
+	assert_eq(_page(LevelCompletePage.Kind.STATISTICS).startup_track(7), -1, "the statistics keep the level music")
 
 
 func test_units_fall_every_31_updates_down_to_17() -> void:

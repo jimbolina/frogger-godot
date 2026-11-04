@@ -11,6 +11,11 @@ extends RefCounted
 ## pause). [member quit_selection] keeps retail's numbering: [constant QUIT_YES] 0 and
 ## [constant QUIT_NO] 1 (pause.h:30-35), so Left moves to No and Right to Yes.
 ##
+## The CD music follows retail PC (GamePause 0x0042f200), not pause.c:215-221, whose PC arm is
+## empty: INIT requests STOP_MUSIC (PauseCD 0x0042f36e, a plain stop that remembers the track),
+## and KILL_SPRITES and the Yes tick request RESTART_MUSIC (ResumeCD 0x0042f7f5 and 0x0042f741,
+## which is PlayCD(track, 1): the level track again from its start, looping).
+##
 ## Port differences: the frozen C shows Continue and Quit (the hidden menu, pause.c:559-603)
 ## only after a SELECT release (:300-308), which no retail PC key reaches; retail PC shows them
 ## as soon as the page opens, and the port does so at INIT, so the PAUSED sprite never glows. Escape stands for FRR_START, as in the retail PC executable
@@ -34,8 +39,9 @@ enum Sprite { NONE, PAUSED, CONTINUE, QUIT, YES, NO }
 ## What a tick asks the game to do: HOP and CROAK play sounds, RESUMED and QUIT end the pause,
 ## and the CHEAT events apply a fired cheat: a toggle of infinite lives (pause.c:900-915), the
 ## zone unlock (:933-965), the level unlock (:983-998) and the PC-only toggle of death on timeout
-## (exe 0x00430040), which alone does not croak.
-enum Event { HOP, CROAK, RESUMED, QUIT, CHEAT_INFINITE_LIVES, CHEAT_ALL_ZONES, CHEAT_ALL_LEVELS, CHEAT_TIMEOUT_DEATHS }
+## (exe 0x00430040), which alone does not croak. STOP_MUSIC and RESTART_MUSIC are PauseCD and
+## ResumeCD.
+enum Event { HOP, CROAK, RESUMED, QUIT, CHEAT_INFINITE_LIVES, CHEAT_ALL_ZONES, CHEAT_ALL_LEVELS, CHEAT_TIMEOUT_DEATHS, STOP_MUSIC, RESTART_MUSIC }
 
 ## The fade polygon's colour step per tick (pause.c:240-242, :468-470).
 const FADE_STEP: int = 0x10
@@ -154,12 +160,14 @@ func tick(buttons: Buttons) -> Array[Event]:
 	match mode:
 		Mode.INIT:
 			_init_arm()
+			events.append(Event.STOP_MUSIC)
 		Mode.FADE_DOWN:
 			_fade_down()
 		Mode.MENU:
 			_menu(buttons, events)
 		Mode.KILL_SPRITES:
 			mode = Mode.FADE_UP
+			events.append(Event.RESTART_MUSIC)
 		Mode.FADE_UP:
 			_fade_up()
 		Mode.DEINIT:
@@ -306,3 +314,4 @@ func _quit_menu(buttons: Buttons, events: Array[Event]) -> void:
 	else:
 		quitting = true
 		mode = Mode.DEINIT
+		events.append(Event.RESTART_MUSIC)

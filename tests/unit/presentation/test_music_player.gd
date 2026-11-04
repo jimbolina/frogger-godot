@@ -192,3 +192,12 @@ func test_the_music_folder_follows_the_catalog_base_root() -> void:
 	fresh.restart()
 	assert_false(fresh.is_playing())
 	assert_eq(fresh.diagnostics.size(), 1, "no folder chosen is silent with a diagnostic")
+
+func test_a_restart_lifts_a_hold_of_the_same_selection() -> void:
+	_player.select(TRACK)
+	_player.restart()
+	_player.pause(true)
+	_player.select(TRACK)
+	_player.restart()
+	assert_true(_player.is_playing())
+	assert_false(_player._player.stream_paused, "a restart plays even after a hold")

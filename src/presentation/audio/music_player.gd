@@ -76,9 +76,10 @@ func select(number: int, loop: bool = true) -> void:
 	track = number
 	looping = loop
 
-## Plays the selected track from its start, reading it first when needed.
+## Plays the selected track from its start, reading it first when needed, and lifts a hold.
 func restart() -> void:
 	_player.stop()
+	_player.stream_paused = false
 	if track < 0:
 		return
 	_wanted = true
