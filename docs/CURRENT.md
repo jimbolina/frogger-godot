@@ -20,16 +20,19 @@ from texture 310. The game suite runs asset-free on hosted CI; the imported
 and archive suites run only with `FROGGER_DATA_DIR` set and an import
 ([testing](reference/testing/README.md)).
 
-Awaiting the owner's play check: the pause page, its cheat phrases and the
-game-over page (P13i–P13k), the retail disc music across the front end, pause,
-level-complete and zone-complete pages
-([front-end music](reference/gameplay/front-end.md#music)), and first-run
-setup, FrogLord in play, packaged builds and texture packs (L3–L6).
+The pause page with its cheat phrases, the game-over page (P13i–P13k), the
+retail disc music across the front end, pause, level-complete and
+zone-complete pages
+([front-end music](reference/gameplay/front-end.md#music)), first-run setup,
+FrogLord in play, packaged builds and texture packs (L3–L6) are accepted by
+the owner's play check. Next work: P15 split-screen multiplayer with the
+multiplayer front-end pages (P13f); P16 videos, credits and ending once the
+FMV decision is made.
 
 Owner decisions before publishing
-([needed from the owner](PORTING.md#needed-from-the-owner)): the history
-rewrite with the purge list, whether `tests/golden/pc-retail-v3.0e/` stays,
-and the licence for the project's own code. Also open: facts for a FrogLord
+([needed from the owner](PORTING.md#needed-from-the-owner)): whether
+`tests/golden/pc-retail-v3.0e/` stays, and the licence for the project's own
+code. Also open: facts for a FrogLord
 save replacing `assets/`, the
 [look choices](reference/rendering/lighting.md#look-choices), the FMV
 decision gating P16, and verification of exports and hosted CI (P17).
