@@ -35,7 +35,7 @@ Owner decisions before publishing
 code. Also open: facts for a FrogLord
 save replacing `assets/`, the
 [look choices](reference/rendering/lighting.md#look-choices), the FMV
-decision gating P16, and verification of exports and hosted CI (P17).
+decision gating P16, and verification of hosted CI and a first release (P17).
 
 Effects never replay the frozen generators' random draws; replays and native
 comparisons are
