@@ -1,6 +1,6 @@
 extends GutTest
 ## HighScoreTour and HighScoreScene agree with the independent frozen-C high-score view facts in
-## tests/golden/synthetic/frontend_high_score_view.json (tools/make_golden_high_score_view.py).
+## tests/golden/synthetic/frontend_high_score_view.json (tools/golden/make_golden_high_score_view.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_high_score_view.json"
 const EVENT_NAMES: PackedStringArray = ["hop", "croak", "splash", "spin_out", "spin_in", "switched", "back",

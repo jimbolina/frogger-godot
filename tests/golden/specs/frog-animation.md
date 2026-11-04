@@ -1,6 +1,6 @@
 # Frog animation component facts
 
-`tools/make_golden_frog_animation.py` extracts the 35 named script programs,
+`tools/golden/make_golden_frog_animation.py` extracts the 35 named script programs,
 request flags and 34 action names from frozen source. It checks this catalog
 against the compiled C tables, then independently interprets those programs.
 The C adapter calls the actual initialization, request, script update, action
@@ -26,7 +26,7 @@ still runs. This adapter uses no animation-rule or effect-factory wrappers.
 It proves component behavior with supplied metadata, not renderer pose geometry
 or whole-engine random draw ordering.
 
-Regenerate with `tools/build_animation_oracle.ps1` into an external directory,
+Regenerate with `tools/oracles/build_animation_oracle.ps1` into an external directory,
 then run the Python generator with `--c-oracle PATH`; `--verify` checks existing
 facts without rewriting them. `--runtime-catalog` also writes the named runtime
 catalog. Source-link provenance and binary hashes are saved beside the adapter.

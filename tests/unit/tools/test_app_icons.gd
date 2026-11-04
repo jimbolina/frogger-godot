@@ -1,10 +1,10 @@
 extends GutTest
 ## The committed app icon files are the renders of icon/frogger_icon.svg that
-## tools/make_icons.gd writes, and the project and export presets point at
+## tools/content/make_icons.gd writes, and the project and export presets point at
 ## them. Pixels are compared with a small tolerance, so a rasteriser
 ## difference between hosts does not fail the check.
 
-const AppIcons = preload("res://tools/support/app_icons.gd")
+const AppIcons = preload("res://tools/content/app_icons.gd")
 const TOLERANCE: int = 3
 
 
@@ -31,7 +31,7 @@ func _close(actual: Image, side: int) -> bool:
 func test_the_png_is_the_rendered_source() -> void:
 	var image: Image = _decoded(FileAccess.get_file_as_bytes(AppIcons.PNG))
 	assert_not_null(image)
-	assert_true(_close(image, AppIcons.PNG_SIZE), "icon/frogger_icon.png matches its SVG; run tools/make_icons.gd")
+	assert_true(_close(image, AppIcons.PNG_SIZE), "icon/frogger_icon.png matches its SVG; run tools/content/make_icons.gd")
 
 
 func test_the_ico_holds_each_size_as_a_png() -> void:

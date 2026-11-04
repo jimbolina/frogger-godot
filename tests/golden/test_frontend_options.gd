@@ -1,6 +1,6 @@
 extends GutTest
 ## OptionsMenu agrees with the independent frozen-C and retail options page facts in
-## tests/golden/synthetic/frontend_options.json (tools/make_golden_options.py).
+## tests/golden/synthetic/frontend_options.json (tools/golden/make_golden_options.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_options.json"
 const EVENT_NAMES: PackedStringArray = ["hop", "splash", "volume_step", "croak", "volume_test_sound",

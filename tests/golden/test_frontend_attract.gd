@@ -1,6 +1,6 @@
 extends GutTest
 ## AttractCycle and AttractTimer agree with the independent frozen-C attract facts in
-## tests/golden/synthetic/frontend_attract.json (tools/make_golden_attract.py).
+## tests/golden/synthetic/frontend_attract.json (tools/golden/make_golden_attract.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_attract.json"
 const StackLayoutTest := preload("res://tests/unit/game/frontend/test_stack_layout.gd")

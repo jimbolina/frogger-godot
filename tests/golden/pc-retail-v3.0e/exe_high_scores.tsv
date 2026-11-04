@@ -1,4 +1,4 @@
-# Default high-score tables read from FROGGER.EXE (tools/make_golden_high_scores.py).
+# Default high-score tables read from FROGGER.EXE (tools/golden/make_golden_high_scores.py).
 # entry rows: kind=entry, table (main|level), level (-1 for main), rank, initials, score, time_0..time_4
 # initials: printable ASCII except backslash as itself, other bytes as \xNN
 # fact rows: kind=fact, name, value

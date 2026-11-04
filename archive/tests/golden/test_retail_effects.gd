@@ -1,6 +1,6 @@
 extends RetailTest
 ## Retail MOF hilites, particle generator records, effect images, score library and pop colours
-## against tests/golden/pc-retail-v3.0e/effect_resources.tsv from tools/make_golden_effect_resources.py.
+## against tests/golden/pc-retail-v3.0e/effect_resources.tsv from tools/golden/make_golden_effect_resources.py.
 
 const GOLDEN: String = "effect_resources.tsv"
 ## Source ENTITY.H HILITE_TYPE_* names.

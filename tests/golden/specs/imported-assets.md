@@ -24,7 +24,7 @@ every texture id has one size and padding in every bank that holds it.
 to a row in three rows, with no padding: `textures/images/t0310.png` is
 256 x 24 (8-pixel cells). No font file is committed or shipped, since its
 page holds texture 310's pixels; the game builds the font at runtime
-(`NewfontFont` around a `NewfontPage` page). `tools/make_font_newfont.py
+(`NewfontFont` around a `NewfontPage` page). `tools/content/make_font_newfont.py
 --out <folder>` is the golden generator: from an import's `t0310.png`
 (`--images` names another images folder) it writes `newfont.fnt`, a BMFont
 v3 text file, and `newfont.png`, the page the font names as its only page.
@@ -76,7 +76,7 @@ is no multiple builds nothing.
 
 The angular letter face (the retail lettering and the alpha's letter
 models) is a TrueType font, `content/fonts/angular/frogger_angular.ttf`,
-written by `uv run tools/make_angular_font.py` from two sources beside it:
+written by `uv run tools/content/make_angular_font.py` from two sources beside it:
 
 - `svg/A.svg` to `svg/9.svg`: 36 third-party SVG traces, kept byte for byte
   (CRLF included, so `.gitattributes` marks them `-text`); `svg/.gdignore`
@@ -86,7 +86,7 @@ written by `uv run tools/make_angular_font.py` from two sources beside it:
 - `derived.json`: `! ¡ ' : - . = ◀ É Ó Í Ù Ä Ü Ç` as hand-cut polygons in
   font units, optionally on a `base` glyph (`rotate` 180 for `¡`).
 
-`tools/angular_glyphs.py` turns both into contours in font units (y up,
+`tools/content/angular_glyphs.py` turns both into contours in font units (y up,
 baseline 0, cap height 800, x from the ink box's left); the lettering
 generator reuses it. The font has 1000 units per em, so source units are
 font units; each glyph has side bearings of 40 units (`lsb` equals `xMin`)
@@ -116,9 +116,9 @@ is baked into it (words in five languages, level names, HUD digits, the
 high-score pads, rank turtles and score logs). The game draws it unless a
 texture pack supplies that texture itself
 ([texture packs](../../../docs/reference/assets.md#texture-packs)).
-`uv run tools/make_lettering.py` reads only `content/fonts/angular/lettering.tsv`,
+`uv run tools/content/make_lettering.py` reads only `content/fonts/angular/lettering.tsv`,
 `lettering_layout.tsv`, the SVGs and `derived.json` (no retail input),
-draws the glyphs of `tools/angular_glyphs.py` and writes one file per table
+draws the glyphs of `tools/content/angular_glyphs.py` and writes one file per table
 row: `content/lettering/tNNNN.png` for a transparent row and the 8-bit fill
 coverage `content/lettering/masks/<background>/tNNNN.png` for a tile row
 (`green_pad`, `log`, `turtle`). Pillow's polygon rasteriser rounds edge
@@ -277,15 +277,15 @@ empty.
 ## How they were generated
 
 ```
-python3 tools/make_golden_model_meshes.py --data-dir <retail folder>
-python3 tools/make_golden_sound_samples.py --data-dir <retail folder>
-python3 tools/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROGGER.mds>  # writes archive/import/disc_tracks.tsv
-python3 tools/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
+python3 tools/golden/make_golden_model_meshes.py --data-dir <retail folder>
+python3 tools/golden/make_golden_sound_samples.py --data-dir <retail folder>
+python3 tools/golden/make_golden_disc_tracks.py --data-dir <retail folder> --disc <FROGGER.mds>  # writes archive/import/disc_tracks.tsv
+python3 tools/golden/make_golden_asset_census.py --data-dir <retail folder> --disc <FROGGER.mds>
 ```
 
 The bitmap font is written from an import's `t0310.png` with
-`python3 tools/make_font_newfont.py --out <folder>`, and the lettering tiles
-with `uv run tools/make_lettering.py --composite assets --out <folder>`;
+`python3 tools/content/make_font_newfont.py --out <folder>`, and the lettering tiles
+with `uv run tools/content/make_lettering.py --composite assets --out <folder>`;
 the test wrappers run both into their run folder.
 
 `--data-dir` defaults to `FROGGER_DATA_DIR`, and `--disc` to
@@ -294,7 +294,7 @@ committed file, prints a diff and exits 1 on a difference. The four fact
 generators use only the Python standard library. The disc track generator streams the
 .mdf in 8 MB chunks.
 
-They share `tools/imported_assets_common.py`, which covers arguments, lazy
+They share `tools/golden/imported_assets_common.py`, which covers arguments, lazy
 archive access and write-or-check. They also reuse the existing FrogLord
 readers: `make_golden_manifest.py` (MWI, PP20, WAD), `make_golden_vlo.py`
 (texture decoding), `make_golden_mof.py` (models) and
@@ -331,16 +331,16 @@ import test. Then restore the fact and rerun.
   retail font texture check must name the font. Set `NewfontPage.FILL_RINGS`
   to 1: the runtime page checks must fail at every scale.
 - **Angular font:** change one coordinate in one `svg/*.svg`:
-  `tools/make_angular_font.py --check` must exit 1 naming the glyph.
+  `tools/content/make_angular_font.py --check` must exit 1 naming the glyph.
   Remove one derived glyph from `derived.json` and rebuild the font: the
   font test must name the character.
 - **Lettering:** change one text in `lettering.tsv`:
-  `tools/make_lettering.py --check` must exit 1 naming the id. Delete one
+  `tools/content/make_lettering.py --check` must exit 1 naming the id. Delete one
   lettering PNG: the content lettering test must name the id. Set
   `mipmaps/generate=false` in one lettering sidecar: the content
   import-settings test must name the file.
 - **Lettering layout and masks:** change one box in `lettering_layout.tsv`:
-  both `tools/make_lettering.py --check` and `--layout --check` must exit 1
+  both `tools/content/make_lettering.py --check` and `--layout --check` must exit 1
   naming the id. Change one pixel of one mask by more than `RASTER_STEP`:
   `make_lettering.py --check` must exit 1 and `test_asset_lettering_tiles.gd`
   must name the tile and its differing pixels. Both breaks were run (a mask
@@ -354,7 +354,7 @@ Restore each break and rerun the check.
 `imported/map_uv_ranges.tsv` pins the premise of map
 [terrain](../../../docs/reference/rendering/lighting.md#terrain): a
 textured map polygon drawn from its own padded image with repeat wrapping
-lands on the texels the retail page held. `tools/make_golden_map_uv_ranges.py`
+lands on the texels the retail page held. `tools/golden/make_golden_map_uv_ranges.py`
 measures it from the retail executable and archive.
 `test_asset_map_uv_ranges.gd` (imported suite) measures the imported maps
 and banks the same way through `MapAnimationPlayer` and compares. There is no tolerance.
@@ -408,7 +408,7 @@ has one row and that each ENVMAP image's PNG, through
 about 3 s.
 
 ```
-python3 tools/make_golden_map_uv_ranges.py [<retail folder>] [<output>] --write
+python3 tools/golden/make_golden_map_uv_ranges.py [<retail folder>] [<output>] --write
 ```
 
 The folder defaults to `FROGGER_DATA_DIR` and the output to
@@ -508,7 +508,7 @@ three files:
 ### Facts
 
 ```
-python3 tools/make_golden_froglord_roundtrip.py --data-dir <retail folder>
+python3 tools/golden/make_golden_froglord_roundtrip.py --data-dir <retail folder>
 ```
 
 `--data-dir` defaults to `FROGGER_DATA_DIR`, `--spec` to the shared

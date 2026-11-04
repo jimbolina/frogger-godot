@@ -62,7 +62,7 @@ Frogger PC is locked to 25 regardless of EU/NA. Entity delay editors use this
 editor convention and differs from the frozen C clock and clamp.
 
 The frozen engine builds transformed source, not byte-identical upstream C:
-`tools/sanitize_frogger_source.sh` applies lexical and semantic transforms.
+`../froggy/engine/tools/sanitize_frogger_source.sh` applies lexical and semantic transforms.
 The existing build's `CMakeCache.txt` selects `RelWithDebInfo` and the vendored
 source directory. Its sanitized `MAIN.C:820,857` still has the same timer
 request/counter increment; sanitized `gamesys.H:164-165` still declares 3/30.
@@ -149,14 +149,14 @@ the frozen engine cannot establish its cadence.
 Reproduce the identity-pinned static assertions with:
 
 ```powershell
-python -B tools/audit_pc_timing.py ../froggy/resources/pc-version/extracted/FROGGER/FROGGER.EXE --objdump C:/msys64/mingw64/bin/objdump.exe
+python -B tools/inspection/audit_pc_timing.py ../froggy/resources/pc-version/extracted/FROGGER/FROGGER.EXE --objdump C:/msys64/mingw64/bin/objdump.exe
 ```
 
 Once the owner has launched that game, substitute its known PID and an
 existing output directory outside the repository:
 
 ```powershell
-python -B tools/observe_pc_timing.py --pid 1234 --exe ../froggy/resources/pc-version/extracted/FROGGER/FROGGER.EXE --duration 30 --interval 0.01 --output C:/existing-evidence-directory/pc-timing.csv
+python -B tools/inspection/observe_pc_timing.py --pid 1234 --exe ../froggy/resources/pc-version/extracted/FROGGER/FROGGER.EXE --duration 30 --interval 0.01 --output C:/existing-evidence-directory/pc-timing.csv
 ```
 
 The sampler verifies the PID's image path and SHA-256 before reading three
@@ -179,4 +179,4 @@ that a launcher left process memory unpatched, or rule out a concurrent file
 replacement; document any wrapper in the observation environment. Outputs in
 the frozen `../froggy` tree are refused as well.
 
-Validate the tools with `python -B tools/test_pc_timing.py`. The repository test wrappers separately check gameplay compilation and tests.
+Validate the tools with `python -B tools/inspection/test_pc_timing.py`. The repository test wrappers separately check gameplay compilation and tests.

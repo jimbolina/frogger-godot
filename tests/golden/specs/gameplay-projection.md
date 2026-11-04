@@ -1,8 +1,8 @@
 # Gameplay projection corpus
 
 `synthetic/gameplay_projection.csv`:40 asset-free rows, independently generated
-by `tools/make_golden_gameplay_projection.py`, verified against the compiled
-frozen camera/view/GTE functions using `tools/gameplay_projection_oracle.c`.
+by `tools/golden/make_golden_gameplay_projection.py`, verified against the compiled
+frozen camera/view/GTE functions using `tools/oracles/gameplay_projection_oracle.c`.
 No Godot output is an input to the generator.
 
 Rows 0-9,10-19,20-29,30-39 use camera source positions

@@ -1,7 +1,7 @@
 extends RetailTest
 ## Needs the retail files: the default high-score tables read from FROGGER.EXE match the
 ## independent facts in tests/golden/pc-retail-v3.0e/exe_high_scores.tsv
-## (tools/make_golden_high_scores.py, see tests/golden/specs/frontend.md).
+## (tools/golden/make_golden_high_scores.py, see tests/golden/specs/frontend.md).
 
 var _data: GameData
 var _table: HighScoreTable

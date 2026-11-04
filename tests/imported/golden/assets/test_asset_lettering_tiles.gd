@@ -1,8 +1,8 @@
 extends AssetTest
 ## Every lettering tile the catalog composites at runtime from its committed
 ## mask and the imported retail images (LetteringTile) is the tile
-## tools/make_lettering.py --composite draws from the same import, generated
-## by tools/run_tests into the folder [constant AssetTest.GENERATED_VARIABLE]
+## tools/content/make_lettering.py --composite draws from the same import, generated
+## by tools/run_tests.* into the folder [constant AssetTest.GENERATED_VARIABLE]
 ## names. The generator measures its geometry and colours from the retail
 ## images itself, so the layout file and the masks are checked too. Pillow may
 ## round a few supersamples differently on another CPU, so a tile matches when

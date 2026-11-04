@@ -14,9 +14,9 @@ component are decimal integers. Component order is `control`, `move`.
 Reproduce independent Python facts and exhaustive compiled frozen C overlap:
 
 ```powershell
-tools/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run
-python tools/make_golden_terrain.py --c-oracle <external-folder>/terrain_oracle.exe --verify
-python tools/compare_terrain_trace.py tests/golden/synthetic/terrain_components.csv <external-folder>/trace.csv
+tools/oracles/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run
+python tools/golden/make_golden_terrain.py --c-oracle <external-folder>/terrain_oracle.exe --verify
+python tools/inspection/compare_terrain_trace.py tests/golden/synthetic/terrain_components.csv <external-folder>/trace.csv
 ```
 
 For deliberate-break validation, change one first-hop move Y by one, require

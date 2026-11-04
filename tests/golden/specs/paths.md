@@ -29,7 +29,7 @@ entity-list pointer is only a metadata value; FrogLord reads that list later,
 outside the PATH record sequence. To regenerate:
 
 ```powershell
-python -B tools/make_golden_paths.py --data-dir $env:FROGGER_DATA_DIR --out-dir tests\golden\pc-retail-v3.0e
+python -B tools/golden/make_golden_paths.py --data-dir $env:FROGGER_DATA_DIR --out-dir tests\golden\pc-retail-v3.0e
 ```
 
 `fixtures/paths.json` contains invented geometry and runner starts. Each case
@@ -37,16 +37,16 @@ has `name`, ordered `segments`, `start` with segment index, distance, speed and
 flags, and `tick_limit`. Segment types are spline `0`, arc `1`, line `2`; unused
 fields are omitted. `synthetic/paths_trace.tsv` records the initial state at
 tick `0`, then full position, tangent and runner state after each tick. Its
-expected rows come from `tools/make_golden_paths.py`'s independent Python
+expected rows come from `tools/golden/make_golden_paths.py`'s independent Python
 implementation of frozen `PATH.C`, `API.SRC/MR_SPLIN.C`, and backend vector/trig
 math. Before writing, the generator requires every Python row to equal the
-output of `tools/path_oracle_adapter.c`, which calls unchanged frozen objects.
+output of `tools/oracles/path_oracle_adapter.c`, which calls unchanged frozen objects.
 The C adapter only provides test geometry and prints state. It is never loaded
 by the game. Build provenance and raw logs remain outside the repositories.
 
 ```powershell
-& tools/build_path_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-path-oracle')
-python -B tools/make_golden_paths.py --oracle (Join-Path $env:TEMP 'frogger-path-oracle/path_oracle.exe') --out-dir tests\golden\synthetic
+& tools/oracles/build_path_oracle.ps1 -OutputDirectory (Join-Path $env:TEMP 'frogger-path-oracle')
+python -B tools/golden/make_golden_paths.py --oracle (Join-Path $env:TEMP 'frogger-path-oracle/path_oracle.exe') --out-dir tests\golden\synthetic
 ```
 
 The synthetic cases cover exact segment boundaries, both one-shot endpoints,

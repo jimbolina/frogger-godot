@@ -250,7 +250,7 @@ record: subscriber order never decides collisions, rewards or random draws
 
 ## Enforcement
 
-- `tools/support/architecture_scanner.gd`, run by both test wrappers, enforces
+- `tools/check/architecture_scanner.gd`, run by both test wrappers, enforces
   the dependency rules above, base classes (`RefCounted`, or `Resource` in
   data), the ban on nodes, tree calls, environment I/O and dynamic calls in
   protected layers, archive isolation including `res://archive/` paths in

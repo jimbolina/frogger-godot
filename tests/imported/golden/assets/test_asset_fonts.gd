@@ -5,7 +5,7 @@ extends AssetTest
 ## retail pixel) inside a 4-pixel transparent border, with the texture's
 ## pixels kept exactly. A texture pack's t0310.png is drawn by a font with the
 ## same grid, and a string measures the same in both. NewfontPage rebuilds the
-## page tools/make_font_newfont.py generates (into the folder
+## page tools/content/make_font_newfont.py generates (into the folder
 ## [constant AssetTest.GENERATED_VARIABLE] names) exactly from the retail
 ## texture at scales 1, 2 and 4, so the runtime builder and the generator agree.
 
@@ -113,7 +113,7 @@ func test_the_runtime_page_rebuilds_the_generated_page() -> void:
 			for x: int in page.get_width():
 				if built.get_pixel(x, y) != page.get_pixel(x, y):
 					differing += 1
-		assert_eq(differing, 0, "scale %d: the runtime page matches tools/make_font_newfont.py pixel for pixel" % scale)
+		assert_eq(differing, 0, "scale %d: the runtime page matches tools/content/make_font_newfont.py pixel for pixel" % scale)
 	assert_null(NewfontPage.build(Image.create(300, 24, false, Image.FORMAT_RGBA8)), "a size that is no multiple builds nothing")
 
 

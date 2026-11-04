@@ -1,5 +1,5 @@
 extends GutTest
-## LetteringTile composites a tile the way tools/make_lettering.py --composite
+## LetteringTile composites a tile the way tools/content/make_lettering.py --composite
 ## does: Pillow's composite rounding, the most common background and ink
 ## colours with the first seen winning a tie, the ink threshold, the turtle
 ## shell vote and mirror, the enlarged background and the channel floor. A

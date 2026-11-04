@@ -32,7 +32,7 @@ which restates FrogLord's reading of the PC format):
 ### How it was generated
 
 ```
-python3 tools/make_golden_vlo.py <folder with FROGGER.EXE and FROGPSX.MWD> tests/golden/pc-retail-v3.0e
+python3 tools/golden/make_golden_vlo.py <folder with FROGGER.EXE and FROGPSX.MWD> tests/golden/pc-retail-v3.0e
 ```
 
 (Python 3, standard library only; about 15 s.) Written from FrogLord's

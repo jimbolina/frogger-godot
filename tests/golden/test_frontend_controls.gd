@@ -1,6 +1,6 @@
 extends GutTest
 ## KeyBindings, KeyScancodes and ControlsPage agree with the independent retail page-25 facts
-## in tests/golden/synthetic/frontend_controls.json (tools/make_golden_controls.py).
+## in tests/golden/synthetic/frontend_controls.json (tools/golden/make_golden_controls.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_controls.json"
 const EVENT_NAMES: Dictionary = {

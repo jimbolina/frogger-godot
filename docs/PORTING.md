@@ -126,7 +126,7 @@ All in-game text is drawn by hand from one bitmap glyph grid, texture
 `newfont`: 96 ASCII glyphs in 8x8 cells, 32 per row, monospace, coloured by
 modulate, at three sites (the gameplay HUD, its ink layer and the
 level-stack score lines). S2b generates a Godot bitmap font from that grid
-with a small generator under `tools/` (a BMFont `.fnt` or `FontFile`, one
+with a small generator under `tools/content/` (a BMFont `.fnt` or `FontFile`, one
 for the retail texture and one for the x4 texture with 32-pixel cells drawn
 at size 8, chosen by the texture set) and draws the three sites with
 `draw_string` or `Label` nodes, pixel-identical at retail. Text then takes
@@ -155,7 +155,7 @@ code that only served runtime decoding of the retail files.
 | `.gdignore` on raw data folders | Only `tests/golden/synthetic/` (CSV facts) has one. `docs/`, `archive/docs/` and `archive/third_party/` hold nothing Godot imports; `archive/`, `tests/` and `tools/` hold scripts the suites and scanner load, so they stay visible. |
 | Layer-first split under `src/` rather than feature-first | Kept deliberately: the architecture scanner enforces the layers by path prefix. Features are folders inside a layer (`game/entities/`, `game/frontend/`, `presentation/frontend/`, `presentation/sandbox/`). |
 | Scenes beside their scripts | Deferred. The eight scenes in `scenes/` are entry points launched by literal path from `project.godot`, the play and capture wrappers and tests (28 files); views build their nodes in code. Revisit when S2 adds authored scenes. |
-| `tools/` (219 tracked files) | Owner decision. Proposed split: `tools/golden/` (the `make_*` generators), `tools/oracles/` (C oracles, headers and `build_*_oracle.ps1`), `tools/inspection/` (scenario runners, schedule verifiers, captures, comparisons and probes) and `tools/test/` (`check_*.gd`, `support/`, `godot_project.py`, `godot_profile.py`). Each Python test goes beside the tool it tests; `play.*`, `run_tests.*` and `launch_macos.command` stay at the root as entry points. About 100 files name tool paths, so the move is one mechanical commit with a link check. |
+| `tools/` (219 tracked files) | Done: split into `tools/golden/`, `tools/oracles/`, `tools/inspection/`, `tools/content/` and `tools/check/`; `play.*`, `run_tests.*`, `setup_dev.*`, `export.*`, `launch_macos.command` and `asset_report.sh` stay at the root as entry points ([tools layout](reference/testing/README.md#tools-layout)). |
 | `src/convert/` renamed `src/rendering/` | Done in S2f; the scanner's folder classification test guards the name. |
 | Per-corridor inspection presets (`Org1ExplorationSetup`, `Jun1ExplorationSetup`, `Jun1ZoneLifecycleSetup` and five JSON manifests) | Owner decision. Proposed: one preset reader over data keyed by level code, so a new supported scenario is a data file rather than a class. Until then they stay. |
 | `reference/gameplay/entities.md` (1,086 lines) | Deferred documentation work: move route narrative (tick numbers, index ranges) beside the golden specifications and keep the rules. |
@@ -188,7 +188,7 @@ application layer, `GameplayHost`, and the renames. Still open from it:
 | History rewrite | Done 2026-11-03 | Earlier commits held retail-derived files under `assets/`; the owner purged them and force-pushed, so every hash before that date changed. |
 | The retail text facts | Before publishing | `tests/golden/pc-retail-v3.0e/` holds text facts (names, sizes, counts, digests) decoded from the retail files and stays tracked for now; whether it stays in the public repository is the owner's call. |
 | Python dependency management | Decided 2026-11-01 | The font and lettering generators use fontTools and Pillow through a `pyproject.toml` and `uv.lock` run with `uv run` ([testing](reference/testing/README.md)); the other generators stay stdlib-only. |
-| S1e proposals: split `tools/` into four folders, and replace the per-corridor inspection presets with data keyed by level code | After S2 (decided 2026-10-31) | Both moves touch many files; the [audit](#s1e-layout-audit) recommends them and leaves the choice to the owner. |
+| S1e proposal: replace the per-corridor inspection presets with data keyed by level code | After S2 (decided 2026-10-31) | The move touches many files; the [audit](#s1e-layout-audit) recommends it and leaves the choice to the owner. |
 | Hand-made textures | Decided 2026-11-02 | The ML `x4` set is removed. An artist draws higher-resolution images delivered as [texture packs](reference/assets.md#texture-packs), loaded at runtime and falling back to the original images. |
 | Acceptance of the modern rendering | Decided 2026-10-31 | The owner retired the retail look in S2f; Forward+ is the project renderer. FrogLord stays the level editor and the import path stays runnable (P14). |
 | Look choices | Open, defaults in place | The tunables of the modern rendering: cave light mode, water glint, blob and real shadows, tone mapper, baked terrain shading and texture filtering, each with its default and where to change it in [look choices](reference/rendering/lighting.md#look-choices). |

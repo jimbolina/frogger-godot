@@ -267,7 +267,7 @@ a problem line only without that texture. The page holds the glyphs at four
 page pixels per retail pixel (the retail texture's pixels repeated), each
 cell inside a transparent border whose pixels next to the glyph carry the
 stroke grey; the font has fixed size 32 and fractional scaling and is drawn
-at size 8. `tools/make_font_newfont.py --out <folder>` writes the same font
+at size 8. `tools/content/make_font_newfont.py --out <folder>` writes the same font
 as a BMFont `newfont.fnt` and page `newfont.png` from an import's
 `t0310.png`; it is the golden generator, and the test wrappers run it into
 their run folder for the imported suite to compare with
@@ -299,7 +299,7 @@ the decorated `1up1`) is drawn from a vector rendering instead of its retail
 pixels. The glyphs are a community trace of the alpha's letter models (36
 SVGs under `content/fonts/angular/svg/`) plus punctuation and accented
 capitals built in `content/fonts/angular/derived.json`.
-`uv run tools/make_angular_font.py` writes
+`uv run tools/content/make_angular_font.py` writes
 `content/fonts/angular/frogger_angular.ttf`, which the catalog serves as
 `font("angular")` with or without a pack; nothing draws runtime text with it
 yet.
@@ -307,8 +307,8 @@ yet.
 `content/fonts/angular/lettering.tsv` holds each texture's text (retail
 spelling kept), style and background, and `lettering_layout.tsv` its padded
 size and the ink box of each line or letter, measured once from the retail
-images with `uv run tools/make_lettering.py --layout` (sizes and boxes only,
-never colours or pixels). `uv run tools/make_lettering.py` reads only those
+images with `uv run tools/content/make_lettering.py --layout` (sizes and boxes only,
+never colours or pixels). `uv run tools/content/make_lettering.py` reads only those
 two tables, the SVGs and `derived.json`, fits the text to the ink boxes at
 eight times the padded size and writes:
 

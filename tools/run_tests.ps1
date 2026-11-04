@@ -67,12 +67,12 @@ if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
         Write-Output "run_tests: uv not found; install uv or set `$env:UV to the uv executable"
         exit 2
     }
-    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_angular_font.py") --check --quiet
+    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\content\make_angular_font.py") --check --quiet
     if ($LASTEXITCODE -ne 0) {
         Write-Output "run_tests: the committed angular font differs from its generator"
         exit 2
     }
-    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_lettering.py") --check --quiet
+    & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\content\make_lettering.py") --check --quiet
     if ($LASTEXITCODE -ne 0) {
         Write-Output "run_tests: the committed lettering images differ from their generator"
         exit 2
@@ -80,9 +80,15 @@ if (Test-Path -LiteralPath $angularDirectory -PathType Container) {
 }
 
 $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
-& $python (Join-Path $projectDirectory "tools\test_capture_tools.py") *> $null
+& $python (Join-Path $projectDirectory "tools\inspection\test_capture_tools.py") *> $null
 if ($LASTEXITCODE -ne 0) {
     Write-Output "run_tests: capture tool self-test failed"
+    exit 2
+}
+
+& $python (Join-Path $projectDirectory "tools\check\test_tool_imports.py") *> $null
+if ($LASTEXITCODE -ne 0) {
+    Write-Output "run_tests: tool import self-test failed"
     exit 2
 }
 
@@ -112,7 +118,7 @@ function Test-Suite([string] $suite, [string[]] $suiteArguments) {
         Write-Output "run_tests: script errors found in the $suite suite; see $($tests.LogPath)"
         $passed = $false
     }
-    $validation = Invoke-GodotStage "$suite-results" @("-s", "res://tools/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode, "--suite=$suite")
+    $validation = Invoke-GodotStage "$suite-results" @("-s", "res://tools/check/check_test_results.gd", "--", $tests.LogPath, [string]$tests.ExitCode, "--suite=$suite")
     $validation.Output -split "`n" | Where-Object { $_ -cmatch "RESULT ERROR|test_results:" }
     if ($validation.ExitCode -ne 0 -or $validation.Output -cmatch $scriptErrorPattern -or $validation.Output -cnotmatch "(?m)^test_results: valid $suite suite, exit [01]\s*$") {
         Write-Output "run_tests: $suite suite result validation failed; see $($validation.LogPath)"
@@ -146,12 +152,12 @@ try {
     if ($dataRequested) {
         $generated = Join-Path $runDirectory "generated"
         $python = if ($env:PYTHON) { $env:PYTHON } else { "python3" }
-        & $python (Join-Path $projectDirectory "tools\make_font_newfont.py") --out (Join-Path $generated "newfont") --quiet
+        & $python (Join-Path $projectDirectory "tools\content\make_font_newfont.py") --out (Join-Path $generated "newfont") --quiet
         if ($LASTEXITCODE -ne 0) {
             Write-Output "run_tests: the newfont generator failed"
             exit 2
         }
-        & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\make_lettering.py") --composite (Join-Path $projectDirectory "assets") --out (Join-Path $generated "lettering") --quiet
+        & $uv run --locked --quiet --project $projectDirectory (Join-Path $projectDirectory "tools\content\make_lettering.py") --composite (Join-Path $projectDirectory "assets") --out (Join-Path $generated "lettering") --quiet
         if ($LASTEXITCODE -ne 0) {
             Write-Output "run_tests: the lettering tile generator failed"
             exit 2
@@ -165,7 +171,7 @@ try {
         exit 1
     }
 
-    $check = Invoke-GodotStage "check" @("-s", "res://tools/check_scripts.gd")
+    $check = Invoke-GodotStage "check" @("-s", "res://tools/check/check_scripts.gd")
     $check.Output -split "`n" | Where-Object { $_ -cmatch "SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:" }
     if ($check.ExitCode -ne 0 -or $check.Output -cmatch $scriptErrorPattern -or $check.Output -cnotmatch "(?m)^check_scripts: \d+ scripts, 0 failed\s*$") {
         Write-Output $check.Output
@@ -173,7 +179,7 @@ try {
         exit 1
     }
 
-    $architecture = Invoke-GodotStage "architecture" @("-s", "res://tools/check_architecture.gd")
+    $architecture = Invoke-GodotStage "architecture" @("-s", "res://tools/check/check_architecture.gd")
     $architecture.Output -split "`n" | Where-Object { $_ -cmatch "ARCHITECTURE|architecture_check:" }
     if ($architecture.ExitCode -ne 0 -or $architecture.Output -cmatch $scriptErrorPattern -or $architecture.Output -cnotmatch "(?m)^architecture_check: \d+ scripts, 0 failed\s*$") {
         Write-Output $architecture.Output
@@ -188,7 +194,7 @@ try {
 
     if ($dataRequested) {
         $env:FROGGER_DATA_DIR = $dataDirectory
-        $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check_test_results.gd", "--", "--input")
+        $inputCheck = Invoke-GodotStage "input" @("-s", "res://tools/check/check_test_results.gd", "--", "--input")
         if ($inputCheck.ExitCode -ne 0 -or $inputCheck.Output -cmatch $scriptErrorPattern -or $inputCheck.Output -cnotmatch "(?m)^test_input: valid\s*$") {
             Write-Output $inputCheck.Output
             Write-Output "run_tests: invalid archive input; see $($inputCheck.LogPath)"

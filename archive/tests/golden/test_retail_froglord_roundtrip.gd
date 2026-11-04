@@ -3,7 +3,7 @@ extends RetailTest
 ## tests/golden/synthetic/froglord_edits.tsv specifies, is recognised,
 ## decoded, imported into an overlay beside the committed assets and played.
 ## The edited rows match froglord_roundtrip.tsv, written by the independent
-## tools/make_golden_froglord_roundtrip.py (tests/golden/specs/imported-assets.md).
+## tools/golden/make_golden_froglord_roundtrip.py (tests/golden/specs/imported-assets.md).
 ## The watcher's cycle imports the same save and points the game at it.
 
 const SPEC_PATH: String = "res://tests/golden/synthetic/froglord_edits.tsv"

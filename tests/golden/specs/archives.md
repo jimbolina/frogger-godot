@@ -16,7 +16,7 @@ identical.
 ### How it was generated
 
 ```
-python3 tools/make_golden_manifest.py <folder with FROGGER.EXE and FROGPSX.MWD> tests/golden/pc-retail-v3.0e
+python3 tools/golden/make_golden_manifest.py <folder with FROGGER.EXE and FROGPSX.MWD> tests/golden/pc-retail-v3.0e
 ```
 
 (Python 3.11, standard library only; 13 s.) The script is an independent

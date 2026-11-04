@@ -46,8 +46,8 @@ table without creating a display. Python uses the documented libm `lround`
 equivalent and integer fixed12 rotation, truncating division and source damping.
 
 ```powershell
-tools/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run -Camera
-python tools/make_golden_camera.py --c-oracle <external-folder>/terrain_oracle.exe --verify
+tools/oracles/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run -Camera
+python tools/golden/make_golden_camera.py --c-oracle <external-folder>/terrain_oracle.exe --verify
 ```
 
 For deliberate-break validation, increment a committed source-X fact, require
@@ -85,9 +85,9 @@ player's archive and JUN1 GENE/ZONE records. Its two probe sequences use Y=0,
 180-degree modification matrix. These are camera stimuli, not supported frog routes.
 
 ```powershell
-tools/build_terrain_oracle.ps1 -OutputDirectory <external-oracle>
-python -B tools/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --verify
-python -B tools/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --data-dir <game-folder> --output tests/golden/pc-retail-v3.0e/camera_zones.json --verify
+tools/oracles/build_terrain_oracle.ps1 -OutputDirectory <external-oracle>
+python -B tools/golden/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --verify
+python -B tools/golden/make_golden_camera_zones.py --c-oracle <external-oracle>/terrain_oracle.exe --evidence <external-evidence> --data-dir <game-folder> --output tests/golden/pc-retail-v3.0e/camera_zones.json --verify
 ```
 
 Omit `--verify` to regenerate. For each file, increment an expected source-world

@@ -1,7 +1,7 @@
 extends GutTest
 ## LevelCompletePage and LevelCompleteLayout agree with the independent frozen-C and retail-exe
 ## level-complete facts in tests/golden/synthetic/frontend_level_complete.json
-## (tools/make_golden_level_complete.py).
+## (tools/golden/make_golden_level_complete.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_level_complete.json"
 

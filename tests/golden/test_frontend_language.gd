@@ -1,6 +1,6 @@
 extends GutTest
 ## GameLanguage and FrontEndAssets agree with the independent language facts in
-## tests/golden/synthetic/frontend_language.json (tools/make_golden_language.py);
+## tests/golden/synthetic/frontend_language.json (tools/golden/make_golden_language.py);
 ## the image-name facts, which need the imported name lists, are the imported
 ## suite's test_frontend_language_names.gd.
 

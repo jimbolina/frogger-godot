@@ -1,5 +1,5 @@
 # The retail geometry the lettering is fitted to, measured from the retail
-# images by `uv run tools/make_lettering.py --layout`: the padded size and the
+# images by `uv run tools/content/make_lettering.py --layout`: the padded size and the
 # ink box x0,y0,x1,y1 (exclusive ends) of each line or letter. Sizes and boxes only.
 # id	width	height	boxes
 64	36	36	4,2,32,33

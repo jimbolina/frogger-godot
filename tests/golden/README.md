@@ -16,7 +16,7 @@ facts in `tests/imported/golden/test_{sky,swamp,jungle}_script_names.gd` and
 read them with `FileAccess`; CSV columns are not translation locales. Importing
 these tables as translations can crash Godot 4.5.1's threaded Mac importer.
 
-Generators in `tools/` independently implement FrogLord's formats and the
+Generators in `tools/golden/` independently implement FrogLord's formats and the
 C reference's playback calculations in Python. They share no GDScript
 implementation. Never regenerate expected results from Godot output.
 Every new family requires a deliberate-break check: corrupt one fact,
@@ -42,7 +42,7 @@ commands run from the repository root; generated facts live in
 | VLO images | [Textures](specs/textures.md) |
 | Static models and stored MOF facts | [Models](specs/models.md) |
 | Imported assets: texture images, model meshes, sound samples, disc tracks, tables, demos, import settings, census and the runtime import | [Imported assets](specs/imported-assets.md) |
-| `newfont` bitmap font built at runtime from texture 310, against the font `tools/make_font_newfont.py` generates from the import, and the page built from a texture pack's `t0310.png` | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
+| `newfont` bitmap font built at runtime from texture 310, against the font `tools/content/make_font_newfont.py` generates from the import, and the page built from a texture pack's `t0310.png` | [Bitmap fonts](specs/imported-assets.md#bitmap-fonts) |
 | Angular vector font generated from the SVG traces and derived glyphs (`content/fonts/angular/frogger_angular.ttf`) | [Angular font](specs/imported-assets.md#angular-font) |
 | Lettering images and tile masks drawn from the angular font (`content/lettering/`, `content/fonts/angular/lettering.tsv` and `lettering_layout.tsv`), and the tiles composited at runtime from the import | [Lettering](specs/imported-assets.md#lettering) |
 | XAR, flipbooks and animated textures | [Animation](specs/animation.md) |

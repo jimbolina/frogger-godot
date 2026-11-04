@@ -62,7 +62,7 @@ On macOS, the Bash wrapper also finds `/Applications/Godot.app/Contents/MacOS/Go
 when `godot` is not on PATH. After strict compilation it imports the checkout
 itself once, so its `.godot/` class-name cache stays current for direct
 launches; the stage warns but does not fail the run when that import fails. Python 3 is required (`PYTHON` can select its executable).
-The Bash wrapper and Python inspection launchers use `tools/godot_project.py`:
+The Bash wrapper and Python inspection launchers use `tools/check/godot_project.py`:
 each run gets an external project file and import cache, with links to the current
 checkout's sources. A generated override selects a unique user-data directory in
 `~/Library/Application Support/Frogger Automation/`; `profile/user-data-path.txt`
@@ -113,12 +113,12 @@ it covers the rest. The release workflow is described under
 - [Entity transforms and FORM contact](../gameplay/entities.md): source-ordered
   setup, independently owned paths and a fixed world-point query against one
   selected entity, with unit tests and headless/rendered inspection.
-  `python tools/run_entities.py --godot <executable> --scenario shared-path
+  `python tools/inspection/run_entities.py --godot <executable> --scenario shared-path
   --output-directory <external-folder>` writes a trace; add `--viewer` for
   world and full-window captures. `--level ORG1`
   selects player data. The Entities tab has probe X/Y/Z controls and a
   first-cell placement button. `--tick-limit` and `--render-rate 30|60|144`
-  select duration and frame schedule. Use `tools/verify_entity_schedules.py`
+  select duration and frame schedule. Use `tools/inspection/verify_entity_schedules.py`
   with the same selection arguments to compare headless and rendered
   `entity-contact-v1` traces.
 - [POP entity inspection](terrain-inspection.md#pop-entity-inspection): optional
@@ -145,24 +145,24 @@ it covers the rest. The release workflow is described under
   synthetic gameplay and prescribed JUN1 logs, independent coupled reference
   facts, transaction failures and complete schedule parity.
 - [Front-end flow and unlock goldens](../../../tests/golden/specs/frontend.md):
-  `python3 tools/make_golden_frontend.py --check` diffs the committed facts;
-  `python3 tools/make_golden_attract.py --check` does the same for the
+  `python3 tools/golden/make_golden_frontend.py --check` diffs the committed facts;
+  `python3 tools/golden/make_golden_attract.py --check` does the same for the
   [attract cycle](../../../tests/golden/specs/frontend.md#attract-cycle).
 - [Golden specifications](../../../tests/golden/README.md): expected-data schemas
   and independent generator commands, grouped by feature.
 - [Bitmap fonts](../../../tests/golden/specs/imported-assets.md#bitmap-fonts)
   and [lettering tiles](../../../tests/golden/specs/imported-assets.md#lettering):
   before the imported suite, both wrappers run
-  `python3 tools/make_font_newfont.py --out` and
-  `uv run --locked tools/make_lettering.py --composite assets --out` into the
+  `python3 tools/content/make_font_newfont.py --out` and
+  `uv run --locked tools/content/make_lettering.py --composite assets --out` into the
   run folder's `generated/` and export it as `FROGGER_GENERATED_DIR`;
   `tests/imported/golden/assets/test_asset_newfont_runtime.gd`,
   `test_asset_fonts.gd` and `test_asset_lettering_tiles.gd` compare the
   runtime font and tiles with those files.
 - [Angular font](../../../tests/golden/specs/imported-assets.md#angular-font)
   and [lettering](../../../tests/golden/specs/imported-assets.md#lettering):
-  both wrappers run `uv run --locked tools/make_angular_font.py --check --quiet`
-  and `uv run --locked tools/make_lettering.py --check --quiet`, which need
+  both wrappers run `uv run --locked tools/content/make_angular_font.py --check --quiet`
+  and `uv run --locked tools/content/make_lettering.py --check --quiet`, which need
   [uv](https://docs.astral.sh/uv/) on PATH (`UV` can select it); the pinned
   fontTools and Pillow live in `pyproject.toml` and `uv.lock`. The lettering
   check allows the one-supersample rounding that differs between Pillow's
@@ -176,7 +176,7 @@ it covers the rest. The release workflow is described under
   of `content/` (every lettering image and tile mask among them, never their
   sources), and excludes the tests, tools, documentation and GUT; `test_app_icons` checks the icon files against
   `icon/frogger_icon.svg` (`godot --headless --path . -s
-  res://tools/make_icons.gd` rewrites them); `tools/export.sh` fails an
+  res://tools/content/make_icons.gd` rewrites them); `tools/export.sh` fails an
   export whose log stores any file under `assets/` or an unlisted file of
   `content/`.
 - [ORG1 admission checks](../../../tests/golden/specs/entities.md#org1-corridor-counterexample):
@@ -196,7 +196,7 @@ draw none of the original's shared random values (see
 [simulation](../gameplay/simulation.md#effects-and-the-random-stream)), so a
 replay that desyncs is a diagnostic to read, not a failure to fix.
 
-`tools/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
+`tools/inspection/run_demo.py` resolves the high-detail demo for `--level` (ORG1 by default)
 from the supplied executable and archive, then drives recorded commands through
 `GameplayHost`. ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1/CAV3/CAV4, DES1–DES5, JUN1, SWP1–SWP5 and SKY1–SKY4 share whole-map dependency setup; recorded
 playback uses the supplied demo starting cell and FAST_RESET initialization.
@@ -204,10 +204,10 @@ A level without an enabled demo reports that missing resource. Other themes
 retain explicit unsupported-dependency diagnostics.
 
 ```text
-python tools/run_demo.py --godot <executable> --output-directory <external-folder>
-python tools/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24 --segment 0
-python tools/verify_demo_schedules.py --godot <executable> --output-directory <external-folder>
-python -m unittest discover -s tools -p test_demo_trace.py
+python tools/inspection/run_demo.py --godot <executable> --output-directory <external-folder>
+python tools/inspection/compare_demo_trace.py <reference.csv> <run-folder>/frog.csv --status <run-folder>/playback.json --map 24 --segment 0
+python tools/inspection/verify_demo_schedules.py --godot <executable> --output-directory <external-folder>
+python3 -m unittest discover -s tools/inspection -t . -p test_demo_trace.py
 ```
 
 The launcher uses an isolated project/profile, explicit logs, hidden awaited
@@ -289,7 +289,7 @@ check; replays and demo comparisons are diagnostics. Bounded incomplete fixtures
 
 ## Dedicated game scene captures
 
-Use `python tools/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>` to capture
+Use `python tools/inspection/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>` to capture
 startup and normal play in the dedicated game scene. Select ORG1–ORG5, SUB1, FOR1–FOR2, VOL1–VOL3, CAV1, CAV3, CAV4, DES1–DES5, JUN1, SWP1–SWP5 or SKY1–SKY4;
 `--ticks` controls an idle inspection's duration. Add `--route <JSON-file>` to
 replay the existing sparse keyboard stimulus format through actual key events.
@@ -404,7 +404,7 @@ as `AssetTestCache` and `FrontEndSession` do.
 
 ## Tools and visual verification
 
-The game implementation is GDScript. `tools/*.c` files are offline validation
+The game implementation is GDScript. `tools/oracles/*.c` files are offline validation
 adapters that call unchanged frozen reference objects and emit text facts;
 they are not loaded by the game. Their builders need a developer compiler,
 but normal runtime use and the Godot test suites do not build or load them.
@@ -421,18 +421,18 @@ but normal runtime use and the Godot test suites do not build or load them.
   normalizes lexical paths; callers must not use filesystem links to redirect
   an external destination into the checkout.
 - After changing Godot, the renderer, the environment or the lighting, run
-  `godot --path . --script tools/probe_scene_lighting.gd -- --output=<external-folder>`
+  `godot --path . --script tools/inspection/probe_scene_lighting.gd -- --output=<external-folder>`
   with a window: it reports the lit, source-facing and ambient-only bytes and
   the `LAMBERT_SCALE` that makes the lit face exact
-  ([lighting](../rendering/lighting.md#verification)); `tools/probe_model_morph.gd`
+  ([lighting](../rendering/lighting.md#verification)); `tools/inspection/probe_model_morph.gd`
   checks cel geometry through both shader families.
 - Captures run on the project renderer, for example
-  `python3 tools/capture_map.py --output-directory <external-folder> --level SUB1`
-  or `python3 tools/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>`
+  `python3 tools/inspection/capture_map.py --output-directory <external-folder> --level SUB1`
+  or `python3 tools/inspection/run_gameplay_capture.py --godot <executable> --level ORG1 --output-directory <external-folder>`
   (`--game-argument=--shadows=off` and the like pass launch options through).
   The headless suites never compile shaders, so any `SHADER ERROR` in a
   capture log fails the capture, and a map capture also fails when its image is
-  a single colour. `python3 tools/test_capture_tools.py` checks the command
+  a single colour. `python3 tools/inspection/test_capture_tools.py` checks the command
   lines without Godot; the wrappers run it.
 - Every new golden family needs an independent generator and a deliberate-break
   check, with the original fact restored. See [golden rules](../../../tests/golden/README.md).
@@ -446,15 +446,32 @@ but normal runtime use and the Godot test suites do not build or load them.
   into the real `user://froglord/` and exits 1 when it was not clean; the round
   trip also runs a cycle in-process under `user://froglord_roundtrip_watch/`.
 
+### Tools layout
+
+`tools/` keeps only the entry points at its root: `play`, `run_tests`,
+`setup_dev`, `export`, `launch_macos.command` and `asset_report.sh`. The rest
+sits in five folders: `golden/` holds the independent golden generators and
+their route libraries, `oracles/` the frozen-C oracle adapters and builders,
+`inspection/` the launchers, verifiers, comparers, probes and captures,
+`content/` the font, lettering and icon generators, and `check/` the compile,
+architecture and result checks with the Godot project helpers. Scripts run
+from the repository root. Modules import each other as packages
+(`from tools.golden import make_golden_mof`) after the one-line bootstrap
+`sys.path.insert(0, str(Path(__file__).resolve().parents[2]))`; `tools`
+exports `REPO_ROOT` and `TOOLS_ROOT`. Run the Python tests with
+`python3 -m unittest discover -s tools -t . -p 'test_*.py'`.
+`tools/check/test_tool_imports.py`, run by the wrappers, resolves every import
+and pins this convention.
+
 ## GDScript and runner pitfalls
 
-- GUT's loader does not enforce strict typing. `tools/check_scripts.gd` is the only headless check that every script compiles with warnings as errors.
+- GUT's loader does not enforce strict typing. `tools/check/check_scripts.gd` is the only headless check that every script compiles with warnings as errors.
 - Godot's `--import` compiles nothing.
 - Files with extensions Godot does not treat as resources (`.cfg`, `.tsv`) need an include filter in export presets.
 - Running the boot scene saves the data folder to `user://settings.cfg`. Delete that file to test first-run behaviour.
-- A headless run draws nothing, so anything that reads the screen (`tools/probe_scene_lighting.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
+- A headless run draws nothing, so anything that reads the screen (`tools/inspection/probe_scene_lighting.gd`, the viewers' screenshot mode) needs a window and is not part of the test run.
 - A test script must not name a helper `_compare`: GUT has a member of that name.
-- Autoloads run in `-s` runs too, including GUT and `tools/check_scripts.gd`. `GraphicsDebug` is inert under the headless display server; tests call `GraphicsPanel.activate()` with their own settings path.
+- Autoloads run in `-s` runs too, including GUT and `tools/check/check_scripts.gd`. `GraphicsDebug` is inert under the headless display server; tests call `GraphicsPanel.activate()` with their own settings path.
 - A test that changes `GraphicsProfile` calls `GraphicsProfile.reset()` in `after_each`.
 - A conditional expression between two array literals gives an untyped array, which a typed variable refuses at run time. Assign the literals in an `if`.
 - Godot stores mesh normals packed; they come back changed in the fifth decimal place.

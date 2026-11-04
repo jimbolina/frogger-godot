@@ -1,6 +1,6 @@
 extends GutTest
 ## The port's page transitions agree with the independent frozen-C request table in
-## tests/golden/synthetic/frontend_flow.json (tools/make_golden_frontend.py).
+## tests/golden/synthetic/frontend_flow.json (tools/golden/make_golden_frontend.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_flow.json"
 const PAGE_ALIASES: Dictionary = {

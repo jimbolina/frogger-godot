@@ -1,6 +1,6 @@
 extends GutTest
 ## The committed angular vector font (content/fonts/angular/frogger_angular.ttf,
-## written by tools/make_angular_font.py) imports as an MSDF [FontFile] that
+## written by tools/content/make_angular_font.py) imports as an MSDF [FontFile] that
 ## holds every capital, digit and derived character with a positive advance
 ## and no lowercase. The character list here is independent of the generator:
 ## it must equal the SVG sources' names plus derived.json's keys, both read

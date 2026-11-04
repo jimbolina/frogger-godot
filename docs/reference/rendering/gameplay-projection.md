@@ -21,10 +21,10 @@ through shake; deriving a new look-at basis from shaken position is incorrect.
 Native Camera3D orthonormalization and float32 arithmetic require pixel bounds,
 whereas camera integer state and source projection facts compare exactly.
 
-`tools/gameplay_projection_oracle.c` calls existing frozen MRPointMatrixAtVector,
+`tools/oracles/gameplay_projection_oracle.c` calls existing frozen MRPointMatrixAtVector,
 MRChangeViewport, MRUpdateViewportRenderMatrices, MRApplyMatrix and GTE RTPS.
 It supplies only caller-owned scalar fixtures, no replacement renderer.
-`tools/make_golden_gameplay_projection.py` independently computes all 40 samples
+`tools/golden/make_golden_gameplay_projection.py` independently computes all 40 samples
 and verifies all 40 integer fields against that executable. Fixtures include
 follow, quarter-turn, death-offset and reset camera poses, terrain corners,
 frog-height landmarks and adjacent 256-unit cells. The corpus is
@@ -52,9 +52,9 @@ from this numeric test. Silhouette comparison requires identical
 frog action/cel, matrices, loaded mesh and source draw ownership; no image-wide
 pixel tolerance is established here. Source images alone do not close that gate.
 
-Build externally with `tools/build_gameplay_projection_oracle.ps1
+Build externally with `tools/oracles/build_gameplay_projection_oracle.ps1
 -OutputDirectory <external-directory> -Run`; generate with
-`python tools/make_golden_gameplay_projection.py
+`python tools/golden/make_golden_gameplay_projection.py
  tests/golden/synthetic/gameplay_projection.csv --c-oracle <external-exe>`.
 The builder rejects repository/frozen-tree destinations, links only existing
 reference objects and records hashes externally. It never rebuilds froggy.

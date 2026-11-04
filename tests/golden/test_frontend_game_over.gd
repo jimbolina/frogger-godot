@@ -1,6 +1,6 @@
 extends GutTest
 ## GameOverPage agrees with the independent retail game-over facts in
-## tests/golden/synthetic/frontend_game_over.json (tools/make_golden_game_over.py).
+## tests/golden/synthetic/frontend_game_over.json (tools/golden/make_golden_game_over.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_game_over.json"
 

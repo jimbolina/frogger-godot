@@ -13,5 +13,5 @@ if ! "$GODOT" --headless --disable-crash-handler --path . --import >/dev/null 2>
     echo "asset_report: class-name cache refresh failed; run godot --headless --path . --import to see why" >&2
     exit 2
 fi
-"$GODOT" --headless --disable-crash-handler --path . -s res://tools/asset_report.gd -- "$@"
+"$GODOT" --headless --disable-crash-handler --path . -s res://tools/inspection/asset_report.gd -- "$@"
 exit $?

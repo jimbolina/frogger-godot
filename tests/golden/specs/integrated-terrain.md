@@ -39,12 +39,12 @@ from the source's two ShakeCamera macro expressions and one idle IF expression.
 MRrand is a macro, so these are source-expression counts constrained by the C
 seed records rather than intercepted C function-call counters.
 
-Build `tools/build_integrated_terrain_oracle.ps1` into an external directory,
-then run `tools/make_golden_integrated_terrain.py --c-oracle EXE`. `--verify`
+Build `tools/oracles/build_integrated_terrain_oracle.ps1` into an external directory,
+then run `tools/golden/make_golden_integrated_terrain.py --c-oracle EXE`. `--verify`
 checks existing golden facts. Link inputs and hashes are saved in external
 provenance JSON. Both source repositories remain untouched by linking.
 
-`tools/compare_integrated_terrain.py REFERENCE_CSV CANDIDATE_JSONL --scenario N`
+`tools/inspection/compare_integrated_terrain.py REFERENCE_CSV CANDIDATE_JSONL --scenario N`
 compares this explicit numeric scope with the five public game trace phases.
 It validates ordered rows, exact integers, authored seed/action metadata and
 command masks, rejecting missing/extra phases. Other JSONL fields are outside

@@ -1,7 +1,7 @@
 class_name NewfontPage
 extends RefCounted
 ## Builds the page of the [code]newfont[/code] bitmap font from an image of
-## texture 310 at runtime, the way [code]tools/make_font_newfont.py[/code]
+## texture 310 at runtime, the way [code]tools/content/make_font_newfont.py[/code]
 ## builds its golden page, so a texture pack that redraws the font is drawn
 ## by the font too.
 ##

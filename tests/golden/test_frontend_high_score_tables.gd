@@ -1,6 +1,6 @@
 extends GutTest
 ## HighScoreBoard and HighScoreText agree with the independent frozen-C high-score rules in
-## tests/golden/synthetic/frontend_high_score_tables.json (tools/make_golden_high_score_tables.py).
+## tests/golden/synthetic/frontend_high_score_tables.json (tools/golden/make_golden_high_score_tables.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_high_score_tables.json"
 const STARTUP_NAMES: Dictionary = {

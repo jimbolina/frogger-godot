@@ -1,7 +1,7 @@
 class_name NewfontFont
 extends RefCounted
 ## Builds the [code]newfont[/code] bitmap font at runtime around a page from
-## [NewfontPage], with the glyph layout that [code]tools/make_font_newfont.py[/code]
+## [NewfontPage], with the glyph layout that [code]tools/content/make_font_newfont.py[/code]
 ## writes into its golden [code]newfont.fnt[/code] and Godot's BMFont
 ## importer reads from it.
 ##

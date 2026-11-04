@@ -1,7 +1,7 @@
 class_name LetteringTile
 extends RefCounted
 ## Builds the opaque lettering tiles at runtime from their committed masks and
-## the player's retail images, the way [code]tools/make_lettering.py --composite[/code]
+## the player's retail images, the way [code]tools/content/make_lettering.py --composite[/code]
 ## draws them, so no retail pixel is committed.
 ##
 ## A tile's mask ([method TextureSet.lettering_mask_path]) is the 8-bit

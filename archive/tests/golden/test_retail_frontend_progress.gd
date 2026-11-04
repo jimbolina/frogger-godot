@@ -1,7 +1,7 @@
 extends RetailTest
 ## Needs the retail files: unlock rules over the stack read from FROGGER.EXE match the
 ## independent facts in tests/golden/pc-retail-v3.0e/frontend_progress.tsv
-## (tools/make_golden_frontend.py, see tests/golden/specs/frontend.md).
+## (tools/golden/make_golden_frontend.py, see tests/golden/specs/frontend.md).
 
 var _data: GameData
 var _stack: LevelStack

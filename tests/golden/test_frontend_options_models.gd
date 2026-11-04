@@ -1,6 +1,6 @@
 extends GutTest
 ## OptionsScene agrees with the independent frozen-C options page model facts in
-## tests/golden/synthetic/frontend_options_models.json (tools/make_golden_options_models.py).
+## tests/golden/synthetic/frontend_options_models.json (tools/golden/make_golden_options_models.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_options_models.json"
 const HELD_BUTTONS: Dictionary = {"up": OptionsMenu.Buttons.UP, "down": OptionsMenu.Buttons.DOWN}

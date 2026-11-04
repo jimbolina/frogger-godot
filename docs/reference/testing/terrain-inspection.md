@@ -48,19 +48,19 @@ overlay shows destination, layer flags, source identity, camera, death and
 ordered outcomes. Projection scaling reaches terrain, frog and animated texture
 frame materials after resize; see [gameplay projection](../rendering/gameplay-projection.md).
 
-`tools/run_terrain.py` runs either driver with an isolated profile, hidden awaited
+`tools/inspection/run_terrain.py` runs either driver with an isolated profile, hidden awaited
 processes and external logs. `--viewer --render-rate=30|60|144|200|240` uses explicit
 scheduled presentation deltas with one awaited draw per frame. These are render
 schedule tests, not measurements of host FPS. JSONL records initial start/camera metadata, complete typed commands and every
 represented phase/snapshot, ordered outcome and RNG consumer. Full trace equality checks
 headless/render parity; the independent C comparator checks its explicitly
-defined field scope. `tools/verify_terrain_schedules.py` runs the four independent
+defined field scope. `tools/inspection/verify_terrain_schedules.py` runs the four independent
 fixtures against all three render schedules sequentially.
 
 Captures and traces must be outside this checkout and frozen `froggy`.
 Generated resources are released on reset/replacement rather than accumulated.
 
-For actual host frame pacing, use `python tools/run_terrain_performance.py
+For actual host frame pacing, use `python tools/inspection/run_terrain_performance.py
 --godot <executable> --output-directory <external-folder>`.
 The launcher strictly compiles scripts, isolates user data, and runs both complete
 ORG1 routes three times at 2560×1440 with VSync disabled and no frame cap. Each run
@@ -112,7 +112,7 @@ tracing remains deliberately more expensive than ordinary LIVE/REPLAY.
 
 ## Whole-map keyboard playthrough
 
-Run `python tools/run_org1_playthrough.py --godot <executable> --output-directory <external-folder>` to exercise all five ORG1
+Run `python tools/inspection/run_org1_playthrough.py --godot <executable> --output-directory <external-folder>` to exercise all five ORG1
 checkpoints through the viewer's keyboard event handling. The launcher imports
 and strictly compiles in an isolated profile, then runs an awaited rendered probe.
 
@@ -161,8 +161,8 @@ The terrain-only `terrain-run-v1` and fixed-probe `entity-contact-v1` modes rema
 available. Render interpolation never changes contact decisions.
 
 ```powershell
-python tools/verify_entity_reaction_schedules.py --godot <godot-executable> --level DES2 --output-directory <external-output>
-python tools/verify_entity_reaction_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/integrated_entities.json --case-index 0 --output-directory <external-output>
+python tools/inspection/verify_entity_reaction_schedules.py --godot <godot-executable> --level DES2 --output-directory <external-output>
+python tools/inspection/verify_entity_reaction_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/integrated_entities.json --case-index 0 --output-directory <external-output>
 ```
 
 The verifier runs headless and rendered 30/60/144 schedules serially through
@@ -188,8 +188,8 @@ camera modification/correction state. The HUD shows attachment and carry state;
 the existing play, step, reset, interpolation, live input and turn controls apply.
 
 ```powershell
-python tools/verify_platform_schedules.py --godot <godot-executable> --output-directory <external-output>
-python tools/verify_platform_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/platforms.json --case-index 0 --output-directory <external-output>
+python tools/inspection/verify_platform_schedules.py --godot <godot-executable> --output-directory <external-output>
+python tools/inspection/verify_platform_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/platforms.json --case-index 0 --output-directory <external-output>
 ```
 
 The verifier runs headless and rendered 30/60/144 schedules serially, checks
@@ -221,7 +221,7 @@ contact, camera, animation, RNG consumer and outcome across schedules, and
 checks the independently defined frozen-C movement/contact/camera fields.
 
 ```powershell
-python tools/verify_platform_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/jun1_log_bank.json --exploration jun1-log-bank --output-directory <external-output>
+python tools/inspection/verify_platform_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/jun1_log_bank.json --exploration jun1-log-bank --output-directory <external-output>
 ```
 
 Inspect safe start, airborne approach, attachment, centring, carry and safe
@@ -248,8 +248,8 @@ The two fixtures exercise the connected round trip through full dive/rise
 cycles and a separate attached-diver drowning case. Run each complete fixture:
 
 ```powershell
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_turtle_log_bank.json --output-directory <external-output>
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_attached_diver.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_turtle_log_bank.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank --scenario-file tests/golden/fixtures/org1_attached_diver.json --output-directory <external-output>
 ```
 
 The verifier streams complete six-phase records externally, checks independent
@@ -264,7 +264,7 @@ transfer, bank return and visible attached dive/death at 640×480. Audio playbac
 remains deferred; the terrain viewer draws no effects. Entity action/cel, colour and ambient
 state come from committed snapshots; materials are instance-local.
 
-`tools/probe_org1_keyboard.gd` dispatches `InputEventKey` through Godot's input
+`tools/inspection/probe_org1_keyboard.gd` dispatches `InputEventKey` through Godot's input
 system and checks the round trip, Space/Period, camera-relative controls,
 boundary rollback, R, mode retention and unlimited live ticks. Run it rendered
 with the same level/exploration/data arguments and an external screenshot
@@ -279,10 +279,10 @@ pickup/riding. Bounds and other exclusions remain; see the
 [contract](../gameplay/entities.md#pink-frog-behavior).
 
 ```sh
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_round_trip.json --output-directory <external-output>
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_diver.json --output-directory <external-output>
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup.json --output-directory <external-output>
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup_death.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_round_trip.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_diver.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-turtle-log-bank-visibility --scenario-file tests/golden/fixtures/org1_visibility_pickup_death.json --output-directory <external-output>
 ```
 
 These compare headless state and 30/60/144 Hz rendered schedules. The existing
@@ -301,8 +301,8 @@ include ordered primitive diagnostics and the stored collision-pose cache.
 Run the successful crossing and deliberate vehicle-death fixtures separately:
 
 ```powershell
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_river.json --output-directory <external-output>
-python -B tools/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_vehicle_death.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_river.json --output-directory <external-output>
+python -B tools/inspection/verify_platform_schedules.py --godot <godot-executable> --level ORG1 --exploration org1-road-river --scenario-file tests/golden/fixtures/org1_road_vehicle_death.json --output-directory <external-output>
 ```
 
 Both use the six scheduled render cadences and complete source comparisons
@@ -329,10 +329,10 @@ the live set. Existing contact/POP/platform schemas and all-attached behavior
 remain available.
 
 ```powershell
-python tools/run_terrain.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility --viewer --output-directory <external-output>
-python tools/verify_lifecycle_schedules.py --godot <godot-executable> --output-directory <external-output>
-python tools/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_moving.json --output-directory <external-output>
-python tools/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_static.json --output-directory <external-output>
+python tools/inspection/run_terrain.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_integrated.json --entity-lifecycle visibility --viewer --output-directory <external-output>
+python tools/inspection/verify_lifecycle_schedules.py --godot <godot-executable> --output-directory <external-output>
+python tools/inspection/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_moving.json --output-directory <external-output>
+python tools/inspection/verify_lifecycle_schedules.py --godot <godot-executable> --scenario-file tests/golden/fixtures/lifecycle_safe_static.json --output-directory <external-output>
 ```
 
 The synthetic fixture follows the ordinary camera as the frog walks east and
@@ -349,12 +349,12 @@ is component-only. Retail runtime coverage must retain that distinction.
 ## Reproducing schedule comparisons
 
 Generate the independent integrated fixtures with
-`tools/make_golden_integrated_terrain.py --scenario-dir <external-scenarios>`;
+`tools/golden/make_golden_integrated_terrain.py --scenario-dir <external-scenarios>`;
 see the [integrated corpus specification](../../../tests/golden/specs/integrated-terrain.md)
 for the full generator invocation and C reference requirement. Then run:
 
 ```powershell
-python tools/verify_terrain_schedules.py --godot <godot-executable> --scenario-directory <external-scenarios> --reference tests/golden/synthetic/integrated_terrain.csv --output-directory <external-output>
+python tools/inspection/verify_terrain_schedules.py --godot <godot-executable> --scenario-directory <external-scenarios> --reference tests/golden/synthetic/integrated_terrain.csv --output-directory <external-output>
 ```
 
 The complete-trace comparator requires ticks starting at zero and Control,
@@ -381,8 +381,8 @@ below terrain. The overlay distinguishes frog zone/region, camera-consumed zone,
 offset timer and twist counter/quadrants. Both sequences together contain 320 source updates.
 
 ```powershell
-python tools/run_terrain.py --godot <executable> --camera-inspection jun1-camera-zones --viewer --output-directory <external-folder>
-python tools/verify_camera_zone_schedules.py --godot <executable> --output-directory <external-folder>
+python tools/inspection/run_terrain.py --godot <executable> --camera-inspection jun1-camera-zones --viewer --output-directory <external-folder>
+python tools/inspection/verify_camera_zone_schedules.py --godot <executable> --output-directory <external-folder>
 ```
 
 The verifier requires complete JSONL traces, checks independent reference fields
@@ -417,9 +417,9 @@ and markers disappear/reappear according to committed generations. Metadata
 lists every omitted authored entity. No frog movement or contact runs here.
 
 ```powershell
-python tools/run_terrain.py --godot <executable> --scenario-file tests/golden/fixtures/lifecycle_zones.json --entity-lifecycle visibility --viewer --output-directory <external-folder>
-python tools/run_terrain.py --godot <executable> --camera-inspection jun1-camera-zones --entity-lifecycle visibility --viewer --output-directory <external-folder>
-python tools/verify_zone_lifecycle_schedules.py --godot <executable> --output-directory <external-folder>
+python tools/inspection/run_terrain.py --godot <executable> --scenario-file tests/golden/fixtures/lifecycle_zones.json --entity-lifecycle visibility --viewer --output-directory <external-folder>
+python tools/inspection/run_terrain.py --godot <executable> --camera-inspection jun1-camera-zones --entity-lifecycle visibility --viewer --output-directory <external-folder>
+python tools/inspection/verify_zone_lifecycle_schedules.py --godot <executable> --output-directory <external-folder>
 ```
 
 The verifier checks independent facts and complete headless/30/60/144 Hz

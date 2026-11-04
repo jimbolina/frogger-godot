@@ -1,7 +1,7 @@
 extends GutTest
 ## Architecture checks use synthetic sources, independent of retail files.
 
-const Scanner = preload("res://tools/support/architecture_scanner.gd")
+const Scanner = preload("res://tools/check/architecture_scanner.gd")
 const SOURCE: String = "res://src/source/example.gd"
 const GAME: String = "res://src/game/example.gd"
 

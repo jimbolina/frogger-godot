@@ -1,7 +1,7 @@
 extends GutTest
 ## StackLayout and StackSelector agree with the independent frozen-C stack facts in
 ## tests/golden/synthetic/frontend_stack_layout.json and frontend_stack_motion.json
-## (tools/make_golden_stack.py).
+## (tools/golden/make_golden_stack.py).
 
 const LAYOUT_GOLDEN: String = "res://tests/golden/synthetic/frontend_stack_layout.json"
 const MOTION_GOLDEN: String = "res://tests/golden/synthetic/frontend_stack_motion.json"

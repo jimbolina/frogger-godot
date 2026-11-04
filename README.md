@@ -135,9 +135,9 @@ Unsupported levels retain their explicit inspection fixtures. Animated lighting 
 [documented renderer limitation](docs/reference/rendering/gameplay-projection.md).
 For real frame-time measurements and the machine-specific 1440p target, use the
 [ORG1 performance launcher](docs/reference/testing/terrain-inspection.md).
-The game runs in GDScript. C files under `tools/` are offline reference
+The game runs in GDScript. C files under `tools/oracles/` are offline reference
 validation adapters; playing or loading data does not require C code or a compiler.
-For isolated headless or rendered evidence, use `python tools/run_terrain.py
+For isolated headless or rendered evidence, use `python tools/inspection/run_terrain.py
 --godot <executable> --scenario buffer --output-directory <external-folder>`;
 add `--viewer` for a captured scene and `--frog-assets` for the real frog model.
 Use `--scenario-file <file>` for a typed JSON fixture, `--seed <integer>` and
@@ -148,7 +148,7 @@ defines scenario fields and omitted level systems.
 Recorded demo inspection uses the imported high-detail demo table:
 
 ```text
-python tools/run_demo.py --godot <executable> --level ORG1 --output-directory <external-folder>
+python tools/inspection/run_demo.py --godot <executable> --level ORG1 --output-directory <external-folder>
 ```
 
 Add `--viewer` for rendered playback and a capture, `--render-rate
@@ -402,7 +402,7 @@ reason. This query does not move or kill the frog. The panel counts omitted
 records; hover over the count for source diagnostics. The axes start hidden.
 
 For reproducible path traces and an optional rendered capture, run
-`python tools/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
+`python tools/inspection/run_paths.py --godot <executable> --scenario line --output-directory <external-folder>`.
 Add `--viewer` for the map overlay, `--scenario arc` or `--scenario spline`
 for other built-in paths, or `--scenario-file <JSON-file>` for a custom case.
 With an imported map, use `--level SUB1 --path-index 0`;
@@ -412,16 +412,16 @@ outside the repository. With `--viewer` it also writes a world-only path image
 and a full window image of the inspection controls, framing the selected path
 for that capture. To compare the complete
 headless trace against rendered runs at 30, 60 and 144 frames per second, use
-`python tools/verify_path_schedules.py --godot <executable> --scenario line
+`python tools/inspection/verify_path_schedules.py --godot <executable> --scenario line
 --output-directory <external-folder>`. See the
 [path verification specification](tests/golden/specs/paths.md).
 
-For source-ordered entity transforms, run `python tools/run_entities.py --godot
+For source-ordered entity transforms, run `python tools/inspection/run_entities.py --godot
 <executable> --scenario shared-path --output-directory <external-folder>`.
 Use `--viewer` to capture world and full-window images, or `--level ORG1`
 to inspect an imported map. `--tick-limit` and
 `--render-rate 30|60|144` control the trace duration and render schedule.
-`python tools/verify_entity_schedules.py --godot <executable> --scenario
+`python tools/inspection/verify_entity_schedules.py --godot <executable> --scenario
 shared-path --output-directory <external-folder>` compares schedules, including
 the fixed contact probe. Traces,
 logs and captures stay outside the repository.
@@ -429,11 +429,11 @@ logs and captures stay outside the repository.
 For repeatable captures on Windows, set `GODOT`, then:
 
 ```powershell
-tools/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Tick 0 -Linear -Benchmark
+tools/inspection/capture_map.ps1 -OutputDirectory C:\captures\frogger -Level SUB1 -Tick 0 -Linear -Benchmark
 ```
 
 Captures use a fixed 640×480 viewport and write PNG plus metadata outside the
-repository (`python3 tools/capture_map.py` is the cross-platform equivalent).
+repository (`python3 tools/inspection/capture_map.py` is the cross-platform equivalent).
 Use `-Linear` for linear filtering; omit it for nearest.
 Add `-LowDetail` to inspect the matching low-detail map and textures. The viewer also accepts
 `-- --level=SUB1 --low-poly=false --tick=0 --linear=false
@@ -498,7 +498,7 @@ result-validation status.
 | 1 | a test failed or skipped, or a script does not compile |
 | 2 | runner setup failed (for example, Godot was not found, or the checkout holds unfetched Git LFS pointers) |
 
-Every script is compiled before the tests run (`tools/check_scripts.gd`),
+Every script is compiled before the tests run (`tools/check/check_scripts.gd`),
 with the project's strict typing warnings treated as errors. The wrappers also
 check architecture dependencies, including that nothing in the game depends on
 `archive/`, and validate the complete test report. A supplied but invalid
@@ -577,7 +577,7 @@ to `build/`. The script stops when a build would carry any file under
 `assets/`, or any file of `content/` other than the angular font, the
 glowing-image table, the lettering images and the tile masks. The icon is a
 placeholder drawn for the port, `icon/frogger_icon.svg`; after editing it,
-run `godot --headless --path . -s res://tools/make_icons.gd`. See
+run `godot --headless --path . -s res://tools/content/make_icons.gd`. See
 [packaging](docs/reference/setup.md#packaging).
 
 ## Licence

@@ -2,7 +2,7 @@ extends RetailTest
 ## Needs the retail files: every model's collision primitives and decoded
 ## matrices, and the animated primitive parts detached for gameplay, match
 ## tests/golden/pc-retail-v3.0e/mof_collprims.tsv and
-## animation_primitive_poses.tsv from tools/make_golden_collprims.py.
+## animation_primitive_poses.tsv from tools/golden/make_golden_collprims.py.
 
 var _data: GameData
 

@@ -2,7 +2,7 @@ extends RetailTest
 ## Needs the retail files: map light inputs and per-part lit polygon colours of
 ## posed animated and flipbook models match
 ## tests/golden/pc-retail-v3.0e/animated_lighting.tsv from
-## tools/make_golden_animated_lighting.py, each channel within one step.
+## tools/golden/make_golden_animated_lighting.py, each channel within one step.
 
 const FILE_NAME: String = "animated_lighting.tsv"
 const CUSTOM_AMBIENT: int = 1

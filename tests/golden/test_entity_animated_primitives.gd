@@ -1,6 +1,6 @@
 extends GutTest
 ## Invented animated-part cuboid contacts and source rotation-cache sequences
-## from tools/make_golden_entity_animated_primitives.py.
+## from tools/golden/make_golden_entity_animated_primitives.py.
 
 const IDENTITY_ROTATION: PackedInt32Array = [4096, 0, 0, 0, 4096, 0, 0, 0, 4096]
 

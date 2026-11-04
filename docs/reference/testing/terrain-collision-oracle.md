@@ -1,9 +1,9 @@
 # Terrain height and collision component facts
 
-`tools/terrain_collision_oracle.c` links the frozen `ControlFrog`, `MoveFrog`
+`tools/oracles/terrain_collision_oracle.c` links the frozen `ControlFrog`, `MoveFrog`
 and, with `--collision`, `CollideFrog`. It initializes explicit synthetic grid,
 theme, fade bounds, input and frog state. No retail bytes are saved.
-`tools/build_terrain_collision_oracle.ps1 -OutputDirectory <external-folder>
+`tools/oracles/build_terrain_collision_oracle.ps1 -OutputDirectory <external-folder>
 -Collision -Run` builds and runs hidden, awaited transport outside both repos.
 Its provenance records linked inputs and wrapper boundaries.
 

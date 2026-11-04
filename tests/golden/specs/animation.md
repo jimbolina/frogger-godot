@@ -1,6 +1,6 @@
 # Animation facts
 
-Generate with `python tools/make_golden_animation.py <retail-folder>
+Generate with `python tools/golden/make_golden_animation.py <retail-folder>
 tests/golden/pc-retail-v3.0e`. It uses the existing Python archive readers,
 FrogLord's animation format definitions and the C engine's fixed-point
 matrix and playback formulas. It shares no animation code with GDScript.
@@ -30,7 +30,7 @@ The separate frog hash test uses the reference driver's FNV-1a over a
 
 ## Animated part lighting
 
-`python3 -I tools/make_golden_animated_lighting.py <retail-folder>
+`python3 -I tools/golden/make_golden_animated_lighting.py <retail-folder>
 tests/golden/pc-retail-v3.0e` verifies `animated_lighting.tsv` against an
 independent regeneration and exits non-zero on any difference; `--write`
 regenerates it. It reuses the Python archive, model, XAR, map and

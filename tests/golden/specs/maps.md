@@ -1,11 +1,11 @@
 # Maps and SkyLand
 
-Run `C:\Python313\python.exe tools/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e`.
+Run `C:\Python313\python.exe tools/golden/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e`.
 The generator independently reads the executable MWI and decompresses standalone
 MAP entries in the owner's archive. It imports only existing independent Python
 archive/configuration utilities. It never reads Godot results.
 
-For a compiled C cross-check, `tools/map_oracle_adapter.c` links the existing
+For a compiled C cross-check, `tools/oracles/map_oracle_adapter.c` links the existing
 frozen `../froggy/engine/build/asset_pipeline/libasset_pipeline.a`, with headers
 from `../froggy/engine/asset_pipeline/include`. Do not rebuild or modify that
 tree. A compatible compiler is required; on this desktop its configured MinGW
@@ -15,8 +15,8 @@ Build only the adapter, with its executable outside the repository:
 ```powershell
 $env:PATH = 'C:\msys64\mingw64\bin;' + $env:PATH
 $mapOracleExe = Join-Path $env:TEMP 'frogger-map-oracle-adapter.exe'
-& C:/msys64/mingw64/bin/gcc.exe -std=c11 -Wall -Wextra -Werror '-I../froggy/engine/asset_pipeline/include' tools/map_oracle_adapter.c ../froggy/engine/build/asset_pipeline/libasset_pipeline.a -o $mapOracleExe
-python -B tools/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e --c-oracle $mapOracleExe
+& C:/msys64/mingw64/bin/gcc.exe -std=c11 -Wall -Wextra -Werror '-I../froggy/engine/asset_pipeline/include' tools/oracles/map_oracle_adapter.c ../froggy/engine/build/asset_pipeline/libasset_pipeline.a -o $mapOracleExe
+python -B tools/golden/make_golden_map.py RETAIL_DIR tests/golden/pc-retail-v3.0e --c-oracle $mapOracleExe
 ```
 
 The adapter receives each decompressed map on stdin and emits only decimal
@@ -113,7 +113,7 @@ restore the generated row before acceptance.
 ## Depth ordering biases
 
 `synthetic/depth_biases.json` is written by
-`python3 tools/make_golden_depth_biases.py --write`; without `--write` the
+`python3 tools/golden/make_golden_depth_biases.py --write`; without `--write` the
 generator verifies the file. It transcribes the frozen C constants and shares
 no GDScript. `test_depth_biases.gd` runs in both modes and compares
 `MapShaders.TERRAIN_DEPTH_BIAS`, `GameplayWorldView.FROG_DEPTH_BIAS` (applied

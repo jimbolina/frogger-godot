@@ -108,7 +108,7 @@ Follow the frozen C engine for behavior:
 
 ## Geometry check
 
-`godot --path . --script tools/probe_model_morph.gd -- --output=<external-folder>`
+`godot --path . --script tools/inspection/probe_model_morph.gd -- --output=<external-folder>`
 compares native blend-shape and cel-shader captures at five interpolation
 fractions through both shader families, the lit pass under a directional
 light so cel normals are exercised. It requires a rendered window and writes

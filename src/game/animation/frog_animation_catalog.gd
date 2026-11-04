@@ -1,7 +1,7 @@
 class_name FrogAnimationCatalog
 extends RefCounted
 ## Named action/script facts transcribed independently from frozen froganim.c and gen_frog.h.
-## Regenerate with tools/make_golden_frog_animation.py --runtime-catalog; no retail bytes.
+## Regenerate with tools/golden/make_golden_frog_animation.py --runtime-catalog; no retail bytes.
 
 const AUTOHOP: int = 0
 const BACKFLIP: int = 1

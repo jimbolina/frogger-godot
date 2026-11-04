@@ -1,5 +1,5 @@
 extends GutTest
-## The lettering (written by tools/make_lettering.py from
+## The lettering (written by tools/content/make_lettering.py from
 ## content/fonts/angular/lettering.tsv) replaces its retail textures: every
 ## transparent row has one image content/lettering/tNNNN.png, imported with
 ## mipmaps, and every tile row one grey mask

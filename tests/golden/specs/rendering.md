@@ -3,7 +3,7 @@
 ## Scene lighting
 
 `synthetic/scene_lighting.json` is written by
-`python3 tools/make_golden_scene_lighting.py tests/golden/synthetic/scene_lighting.json --write`;
+`python3 tools/golden/make_golden_scene_lighting.py tests/golden/synthetic/scene_lighting.json --write`;
 without `--write` the generator verifies the file and exits non-zero on any
 difference. It implements the C viewport reduction (`API.SRC/MR_LIGHT.C`,
 `MR_VIEW.C`, `mapload.C`, as summarised in
@@ -47,7 +47,7 @@ generator refuses the file and the golden test fails, then restore with
 ## Map UVs
 
 `synthetic/map_uv.json` is written by
-`python3 tools/make_golden_map_uv.py tests/golden/synthetic/map_uv.json --write`.
+`python3 tools/golden/make_golden_map_uv.py tests/golden/synthetic/map_uv.json --write`.
 Without `--write` the generator checks the file and exits non-zero on any
 difference. It implements in Python, sharing no GDScript: `mapload.C`
 `ResolveMapPolys`, `mapdisp.c` `MapUpdateAnimatedPolys`, the ENVMAP branch of
@@ -98,7 +98,7 @@ expected `uv`, confirm the generator refuses and the test fails, restore with
 ## Cave light
 
 `synthetic/cave_light.json` is written by
-`python3 tools/make_golden_cave_light.py tests/golden/synthetic/cave_light.json --write`;
+`python3 tools/golden/make_golden_cave_light.py tests/golden/synthetic/cave_light.json --write`;
 without `--write` the generator verifies the file and exits non-zero on any
 difference. It implements the retail cave grey ramp (`mapdisp.c`, as
 [maps](../../../archive/docs/formats/maps.md) describes it), Godot's omni

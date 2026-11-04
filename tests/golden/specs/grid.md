@@ -17,7 +17,7 @@ stored C order; `queries` is XYZ. Expected rows are:
 * Q, query index, selected height, selected square index, first-layer height,
   first-layer X slope XYZ, first-layer Z slope XYZ. Empty rows stop at index.
 
-`tools/make_golden_grid.py` independently implements the frozen C formulas in
+`tools/golden/make_golden_grid.py` independently implements the frozen C formulas in
 Python. Every generation or verification must compare all answers with a thin
 external adapter calling the already compiled frozen GRID.C object and its
 compiled math dependency. The adapter neither replaces grid functions nor
@@ -29,8 +29,8 @@ never makes an out-of-grid C query.
 Reproduce on Windows, supplying an output folder outside any repository:
 
 ```powershell
-tools/build_grid_oracle.ps1 -OutputDirectory <external-folder>
-python tools/make_golden_grid.py --c-oracle <external-folder>/grid_oracle.exe --verify
+tools/oracles/build_grid_oracle.ps1 -OutputDirectory <external-folder>
+python tools/golden/make_golden_grid.py --c-oracle <external-folder>/grid_oracle.exe --verify
 ```
 
 The build reads `../froggy/engine/build/compile_commands.json` for the existing

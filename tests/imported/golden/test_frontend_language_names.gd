@@ -2,7 +2,7 @@ extends GutTest
 ## GameLanguage's localised family and front-end image names, resolved against
 ## the imported FrogLord image names, agree with the independent language
 ## facts in tests/golden/synthetic/frontend_language.json
-## (tools/make_golden_language.py).
+## (tools/golden/make_golden_language.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_language.json"
 

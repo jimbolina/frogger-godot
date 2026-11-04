@@ -3,7 +3,7 @@
 This is offline validation tooling. The game runs in GDScript; these C adapters
 are not runtime dependencies and end users do not need a C compiler.
 
-`tools/terrain_oracle_adapter.c` supplies independent movement comparisons.
+`tools/oracles/terrain_oracle_adapter.c` supplies independent movement comparisons.
 It calls the existing frozen engine's real `ControlFrog` and then `MoveFrog`,
 recording a row after each call. Its component calls have no wall clock.
 The owner's selected source-port timing is
@@ -55,7 +55,7 @@ and camera conformance. They are not substitutes for retail timing measurement.
 Reproduce with an external output folder:
 
 ```powershell
-tools/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run
+tools/oracles/build_terrain_oracle.ps1 -OutputDirectory <external-folder> -Run
 ```
 
 The script compiles only this transport, copies the frozen SDL runtime DLL to
@@ -72,7 +72,7 @@ Pad fields are normalized through the frozen control mapping to logical
 N/E/S/W bits 1/2/4/8; `input` remains the frozen direction enum (N=0, E=1,
 no input=128). `mode` uses stationary=0 and jumping=1.
 
-`tools/compare_terrain_trace.py <reference.csv> <candidate.csv>` requires the
+`tools/inspection/compare_terrain_trace.py <reference.csv> <candidate.csv>` requires the
 exact represented schema and all 96 records in scenario/tick/component order.
 Every numeric field compares as an integer. It fails at the first differing
 field with row, scenario, tick and component context; missing, extra or
@@ -84,7 +84,7 @@ wall-clock schedule. A matching file proves only these represented fields.
 family and requires the candidate to contain exactly that scenario; other
 candidate scenarios fail rather than being silently discarded.
 
-`tools/make_golden_terrain.py` independently implements the three declared
+`tools/golden/make_golden_terrain.py` independently implements the three declared
 flat-fixture scenarios in Python, including integer gravity, six-call hopping,
 cell recomputation, snap/flags, input buffering and counted omitted calls.
 It cross-checks every expected field with the actual frozen C component trace
@@ -96,7 +96,7 @@ generate, or add `--verify` to require the committed text facts to match.
 ## Separate default camera fixtures
 
 The adapter's `--camera` route calls real `ResetCamera` and `UpdateCamera`
-on separate authored fixtures. `tools/make_golden_camera.py` independently
+on separate authored fixtures. `tools/golden/make_golden_camera.py` independently
 calculates and cross-checks 327 camera records before saving text facts.
 See the [camera specification](../../../tests/golden/specs/camera-components.md)
 for scenario inputs, field ordering and the narrow world-target reconstruction.

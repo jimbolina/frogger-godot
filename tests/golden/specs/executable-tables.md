@@ -21,7 +21,7 @@ id**, its position in the texture pointer list (-1 when it is not in it).
 ### How it was generated
 
 ```
-python3 tools/make_golden_exe_tables.py <folder with FROGGER.EXE> tests/golden/pc-retail-v3.0e \
+python3 tools/golden/make_golden_exe_tables.py <folder with FROGGER.EXE> tests/golden/pc-retail-v3.0e \
     --c-reference <froggy repository>/engine
 ```
 

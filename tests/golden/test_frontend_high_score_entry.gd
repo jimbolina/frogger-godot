@@ -1,6 +1,6 @@
 extends GutTest
 ## HighScoreEntry agrees with the independent frozen-C high-score name-entry facts in
-## tests/golden/synthetic/frontend_high_score_entry.json (tools/make_golden_high_score_entry.py).
+## tests/golden/synthetic/frontend_high_score_entry.json (tools/golden/make_golden_high_score_entry.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_high_score_entry.json"
 const EVENT_NAMES: PackedStringArray = ["hop", "splash", "letter", "rub", "end", "entered", "no_high_score", "game_quit"]

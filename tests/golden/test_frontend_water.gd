@@ -1,6 +1,6 @@
 extends GutTest
 ## MenuWater, MenuWaterMesh and MenuWaterView agree with the independent frozen-C water facts
-## in tests/golden/synthetic/frontend_water.json (tools/make_golden_water.py).
+## in tests/golden/synthetic/frontend_water.json (tools/golden/make_golden_water.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_water.json"
 

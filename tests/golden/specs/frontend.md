@@ -8,8 +8,8 @@ transcribes the page requests. Every rule and request is checked against the C
 source. It never reads Godot output.
 
 ```sh
-python3 tools/make_golden_frontend.py           # write both files
-python3 tools/make_golden_frontend.py --check   # diff against the committed files, exit 1 on change
+python3 tools/golden/make_golden_frontend.py           # write both files
+python3 tools/golden/make_golden_frontend.py --check   # diff against the committed files, exit 1 on change
 ```
 
 The generator needs Python 3's standard library only. It reads
@@ -119,8 +119,8 @@ options back-outs onto BACK_TO_OPTIONS.
 A second generator replays the `SELECT.C` stack for the 3D level select:
 
 ```sh
-python3 tools/make_golden_stack.py           # write both files
-python3 tools/make_golden_stack.py --check   # diff against the committed files, exit 1 on change
+python3 tools/golden/make_golden_stack.py           # write both files
+python3 tools/golden/make_golden_stack.py --check   # diff against the committed files, exit 1 on change
 ```
 
 It reads the arcade rows (with `local_level` and `levels_in_world`) from
@@ -283,8 +283,8 @@ front-end pages draw behind their menus (`HSInitialiseWater`,
 `HSUpdateWater`, `HSView.c:1972-2237`) and the options camera presets:
 
 ```sh
-python3 tools/make_golden_water.py           # write synthetic/frontend_water.json
-python3 tools/make_golden_water.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_water.py           # write synthetic/frontend_water.json
+python3 tools/golden/make_golden_water.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data; texture
@@ -415,8 +415,8 @@ change `HIGH_SCORE_VIEW_WAVE_AMP_Z` in `HSView.h` and pass the copy as
 the localized `FrontEndAssets` lookup:
 
 ```sh
-python3 tools/make_golden_language.py           # write both files
-python3 tools/make_golden_language.py --check   # diff against the committed files, exit 1 on change
+python3 tools/golden/make_golden_language.py           # write both files
+python3 tools/golden/make_golden_language.py --check   # diff against the committed files, exit 1 on change
 ```
 
 It reads FrogLord's retail image list and VLO configuration, and the committed
@@ -483,8 +483,8 @@ A generator transcribes the options page (`OptionsStartup`, `OptionsUpdate`,
 over the port's rows:
 
 ```sh
-python3 tools/make_golden_options.py           # write synthetic/frontend_options.json
-python3 tools/make_golden_options.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_options.py           # write synthetic/frontend_options.json
+python3 tools/golden/make_golden_options.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data.
@@ -610,8 +610,8 @@ options viewport lights, `options.c:446-454`) and replays scripted input
 through the [options page](#options-page) model over the port's rows:
 
 ```sh
-python3 tools/make_golden_options_models.py           # write synthetic/frontend_options_models.json
-python3 tools/make_golden_options_models.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_options_models.py           # write synthetic/frontend_options_models.json
+python3 tools/golden/make_golden_options_models.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data.
@@ -721,8 +721,8 @@ retail tables and page (`engine/asset_pipeline/include/frogger_page25_tables.h`,
 `engine/mr_stub/src/glue/mr_stub_page25.c`):
 
 ```sh
-python3 tools/make_golden_controls.py           # write synthetic/frontend_controls.json
-python3 tools/make_golden_controls.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_controls.py           # write synthetic/frontend_controls.json
+python3 tools/golden/make_golden_controls.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data.
@@ -825,8 +825,8 @@ Godot reader (`HighScoreTable`) and cross-checks them with the
 `HSView.c:153-610` initialisers:
 
 ```sh
-python3 tools/make_golden_high_scores.py "$FROGGER_DATA_DIR"           # write pc-retail-v3.0e/exe_high_scores.tsv
-python3 tools/make_golden_high_scores.py "$FROGGER_DATA_DIR" --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_high_scores.py "$FROGGER_DATA_DIR"           # write pc-retail-v3.0e/exe_high_scores.tsv
+python3 tools/golden/make_golden_high_scores.py "$FROGGER_DATA_DIR" --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only. It takes `Exe`, `parse_cfg` and
@@ -929,8 +929,8 @@ seconds (`FROG.C:2833-2842`) and `HighScoreBuildArcadeTimeTable`
 replays the rules over small synthetic tables:
 
 ```sh
-python3 tools/make_golden_high_score_tables.py           # write synthetic/frontend_high_score_tables.json
-python3 tools/make_golden_high_score_tables.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_high_score_tables.py           # write synthetic/frontend_high_score_tables.json
+python3 tools/golden/make_golden_high_score_tables.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data; the
@@ -1057,8 +1057,8 @@ pop timer, `FROG.C` `FrogStartPolyPiecePop` and `EFFECTS.C`
 `UpdatePolyPiecePop`) and replays scripted input for player 0:
 
 ```sh
-python3 tools/make_golden_high_score_entry.py           # write synthetic/frontend_high_score_entry.json
-python3 tools/make_golden_high_score_entry.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_high_score_entry.py           # write synthetic/frontend_high_score_entry.json
+python3 tools/golden/make_golden_high_score_entry.py --check   # diff against the committed file, exit 1 on change
 ```
 
 It needs Python 3's standard library only and reads no retail data.
@@ -1189,8 +1189,8 @@ high-score set from the frozen C. It reuses the level-stack model of
 Godot output.
 
 ```sh
-python3 tools/make_golden_high_score_view.py           # write the file
-python3 tools/make_golden_high_score_view.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_high_score_view.py           # write the file
+python3 tools/golden/make_golden_high_score_view.py --check   # diff against the committed file, exit 1 on change
 ```
 
 Standard library only. `--c-reference <dir>` names the frozen C `source/`
@@ -1343,9 +1343,9 @@ frozen C at the PC's 640x480 display, with the music from the retail
 executable. It never reads Godot output.
 
 ```sh
-python3 tools/make_golden_level_complete.py           # write the file
-python3 tools/make_golden_level_complete.py --check   # diff against the committed file, exit 1 on change
-FROGGER_DATA_DIR=<retail folder> python3 tools/make_golden_level_complete.py --check   # also pin FROGGER.EXE
+python3 tools/golden/make_golden_level_complete.py           # write the file
+python3 tools/golden/make_golden_level_complete.py --check   # diff against the committed file, exit 1 on change
+FROGGER_DATA_DIR=<retail folder> python3 tools/golden/make_golden_level_complete.py --check   # also pin FROGGER.EXE
 ```
 
 Standard library only. It checks the two sound ids against FrogLord's retail
@@ -1485,8 +1485,8 @@ C: the high-score dwell, the demo load, play and fade-out, and the
 `Demo_level_table` search. It never reads Godot output.
 
 ```sh
-python3 tools/make_golden_attract.py           # write the file
-python3 tools/make_golden_attract.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_attract.py           # write the file
+python3 tools/golden/make_golden_attract.py --check   # diff against the committed file, exit 1 on change
 ```
 
 Standard library only. It keeps its own copy of `Demo_level_table` and checks
@@ -1599,8 +1599,8 @@ cross-check skipped the Godot test fails. Restore it and rewrite (exit 0).
 640x480 display. It never reads Godot output.
 
 ```sh
-python3 tools/make_golden_pause.py           # write the file
-python3 tools/make_golden_pause.py --check   # diff against the committed file, exit 1 on change
+python3 tools/golden/make_golden_pause.py           # write the file
+python3 tools/golden/make_golden_pause.py --check   # diff against the committed file, exit 1 on change
 ```
 
 Standard library only. It checks the two sound ids against FrogLord's retail
@@ -1813,9 +1813,9 @@ display from the frozen C and the retail executable. It never reads Godot
 output.
 
 ```sh
-python3 tools/make_golden_game_over.py           # write the file
-python3 tools/make_golden_game_over.py --check   # diff against the committed file, exit 1 on change
-FROGGER_DATA_DIR=<retail folder> python3 tools/make_golden_game_over.py --check   # also pin FROGGER.EXE
+python3 tools/golden/make_golden_game_over.py           # write the file
+python3 tools/golden/make_golden_game_over.py --check   # diff against the committed file, exit 1 on change
+FROGGER_DATA_DIR=<retail folder> python3 tools/golden/make_golden_game_over.py --check   # also pin FROGGER.EXE
 ```
 
 Standard library only. It checks the croak id against FrogLord's retail sound

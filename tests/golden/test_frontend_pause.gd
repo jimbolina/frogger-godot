@@ -1,6 +1,6 @@
 extends GutTest
 ## PausePage, PauseCheats and LevelProgress agree with the independent frozen-C and retail-exe
-## pause facts in tests/golden/synthetic/frontend_pause.json (tools/make_golden_pause.py).
+## pause facts in tests/golden/synthetic/frontend_pause.json (tools/golden/make_golden_pause.py).
 
 const GOLDEN: String = "res://tests/golden/synthetic/frontend_pause.json"
 

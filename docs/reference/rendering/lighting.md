@@ -39,7 +39,7 @@ into a node-free `SceneLightingSpec`. With stored fractions `a = ambient / 4096`
   Both the ambient-only face and a fully lit face then show the byte the C
   recipe gave; its stop at full brightness becomes saturation of the same
   mapping.
-  Forward+ measured `LAMBERT_SCALE = 1` exact (`tools/probe_scene_lighting.gd`).
+  Forward+ measured `LAMBERT_SCALE = 1` exact (`tools/inspection/probe_scene_lighting.gd`).
 - direction: the light node's −Z is the slot direction. C lights a face when
   the stored direction and its normal agree, and the source models store
   normals pointing inward (every corner of the committed `GEN_FROG` and
@@ -121,7 +121,7 @@ front-end water and the gold-frog quads. It shows the stored result decoded
 to linear light. Views that need a variant edit the unlit text from
 `ModelShaders.shader_code`: effect sprites and pop pieces drawn in front add
 `depth_test_disabled`, the menu water a fixed `background_depth`.
-`tools/probe_model_morph.gd` checks that cel-shader geometry matches native
+`tools/inspection/probe_model_morph.gd` checks that cel-shader geometry matches native
 blend shapes through both families.
 
 ## Terrain
@@ -425,9 +425,9 @@ and keep what reads best. None affects gameplay.
 ## Verification
 
 The headless suites never compile shaders, so verification is by eye and by
-windowed tools: `tools/probe_scene_lighting.gd` measures the energy mapping
+windowed tools: `tools/inspection/probe_scene_lighting.gd` measures the energy mapping
 on Forward+ through `SceneLighting` with the profile's bloom (`LAMBERT_SCALE`
-is exact at 1), `tools/probe_model_morph.gd`
+is exact at 1), `tools/inspection/probe_model_morph.gd`
 checks cel geometry through both shader families, and the capture tools fail
 on any `SHADER ERROR` or a single-colour map capture
 ([testing](../testing/README.md#tools-and-visual-verification)). The goldens

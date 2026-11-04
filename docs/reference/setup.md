@@ -237,7 +237,7 @@ root without lettering draws every retail image, silently.
 
 The app icon is a placeholder: `icon/frogger_icon.svg`, an original frog on
 a lily pad, until an artist replaces it. `godot --headless --path . -s
-res://tools/make_icons.gd` renders it into `icon/frogger_icon.png` (256 px:
+res://tools/content/make_icons.gd` renders it into `icon/frogger_icon.png` (256 px:
 `config/icon`, the window icon and the Linux icon), `icon/frogger.ico` (16
 to 256 px) and `icon/frogger.icns` (16 to 1024 px), PNG images in both;
 `-- --check` compares instead, and `test_app_icons` checks the files against

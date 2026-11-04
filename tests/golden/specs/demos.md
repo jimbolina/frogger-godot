@@ -7,7 +7,7 @@ summarizes their decoded inputs. It shares the independent EXE/archive Python
 readers, never Godot output. Only text facts are committed.
 
 ```sh
-python3 tools/make_golden_demos.py <player-data-directory> tests/golden/pc-retail-v3.0e
+python3 tools/golden/make_golden_demos.py <player-data-directory> tests/golden/pc-retail-v3.0e
 ```
 
 Columns are detail (`low` or `high`), level, resource id, duration, starting

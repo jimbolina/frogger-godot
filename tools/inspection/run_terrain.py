@@ -1,0 +1,118 @@
+"""Run one terrain scenario with an isolated Godot profile and external evidence."""
+import argparse
+import os
+from pathlib import Path
+import subprocess
+import sys
+import uuid
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from tools import REPO_ROOT
+from tools.check.godot_project import isolated_project
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--godot', default=os.environ.get('GODOT', 'godot'))
+    parser.add_argument('--scenario', choices=('normal', 'blocked', 'buffer'), default='normal')
+    parser.add_argument('--scenario-file', type=Path)
+    parser.add_argument('--camera-inspection', choices=('jun1-camera-zones',), help='Prescribed retail camera probe, without a gameplay route preset')
+    parser.add_argument('--frog-assets', action='store_true', help='Render the imported frog in a synthetic scenario')
+    parser.add_argument('--seed', type=int)
+    parser.add_argument('--tick-limit', type=int)
+    parser.add_argument('--render-rate', type=int, choices=(30, 60, 144, 200, 240), default=60)
+    parser.add_argument('--frame-schedule', choices=('regular', 'irregular'), default='regular')
+    parser.add_argument('--smoothing', choices=('true', 'false'), default='false', help='Reference captures default to exact committed poses')
+    parser.add_argument('--motion-capture', action='store_true', help='Save every rendered frame externally; diagnostic only')
+    parser.add_argument('--level', help='Optional single-player map code from the imported assets')
+    parser.add_argument('--entity-reactions', choices=('pop', 'platforms'), help='Enable integrated FORM reactions')
+    parser.add_argument('--entity-lifecycle', choices=('all-attached', 'visibility'),
+                        help='Select entity lifetime for an integrated FORM scenario')
+    parser.add_argument('--exploration', choices=('jun1-log-bank','org1-turtle-log-bank','org1-road-river','org1-turtle-log-bank-visibility'), help='Select an audited guarded retail preset')
+    parser.add_argument('--output-directory', type=Path, required=True)
+    parser.add_argument('--viewer', action='store_true', help='Use the rendered scene and save a screenshot')
+    args = parser.parse_args()
+    if args.camera_inspection and (args.scenario != 'normal' or args.scenario_file or args.exploration or args.entity_reactions or args.tick_limit is not None or args.seed is not None or args.motion_capture or args.smoothing != 'false' or args.frame_schedule != 'regular' or args.level not in (None, 'JUN1')):
+        parser.error('Camera inspection excludes gameplay scenario, entity, tick-limit and motion-capture options')
+    repo = REPO_ROOT
+    output = args.output_directory.resolve()
+    for protected in (repo, (repo.parent / 'froggy').resolve()):
+        if output == protected or protected in output.parents:
+            parser.error('Output must be outside this repository and frozen froggy')
+    output.mkdir(parents=True, exist_ok=True)
+    evidence = output / ('terrain-' + uuid.uuid4().hex)
+    profile = evidence / 'profile'
+    temporary = evidence / 'temp'
+    profile.mkdir(parents=True)
+    temporary.mkdir()
+    project = isolated_project(repo, profile)
+    env = os.environ.copy()
+    env.update(APPDATA=str(profile), XDG_DATA_HOME=str(profile), TEMP=str(temporary), TMP=str(temporary))
+    startup = None
+    if os.name == 'nt':
+        startup = subprocess.STARTUPINFO()
+        startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startup.wShowWindow = 0
+    print('Terrain evidence: ' + str(evidence), flush=True)
+
+    def stage(name, arguments, headless=True):
+        log = evidence / (name + '.log')
+        command = [args.godot, '--disable-crash-handler', '--path', str(project), '--log-file', str(log)]
+        if headless:
+            command.append('--headless')
+        command += arguments
+        with (evidence / (name + '-process.log')).open('w', encoding='utf-8') as stream:
+            result = subprocess.run(command, cwd=repo, env=env, startupinfo=startup,
+                                    stdout=stream, stderr=subprocess.STDOUT, timeout=1200)
+        text = log.read_text(encoding='utf-8') if log.exists() else ''
+        if result.returncode or not text or any(marker in text for marker in (
+                'SCRIPT ERROR', 'Parse Error', 'Failed to load script', 'CHECK FAILED')):
+            raise RuntimeError(f'{name} failed ({result.returncode}); see {log}')
+
+    stage('import', ['--import'])
+    stage('check', ['-s', 'res://tools/check/check_scripts.gd'])
+    selected = ['--scenario-file=' + str(args.scenario_file.resolve())] if args.scenario_file else ['--scenario=' + args.scenario]
+    selected += ['--trace-csv=' + str(evidence / 'trace.csv')]
+    selected += ['--trace-jsonl=' + str(evidence / 'trace.jsonl')]
+    for key, value in (('seed', args.seed), ('tick-limit', args.tick_limit)):
+        if value is not None:
+            selected.append('--' + key + '=' + str(value))
+    selected.append('--render-rate=' + str(args.render_rate))
+    selected += ['--smoothing=' + args.smoothing, '--frame-schedule=' + args.frame_schedule]
+    if args.motion_capture:
+        if not args.viewer:
+            parser.error('--motion-capture requires --viewer')
+        selected.append('--motion-capture')
+    if args.frog_assets:
+        selected.append('--frog-assets')
+    if args.level:
+        selected += ['--level=' + args.level]
+    if args.entity_reactions:
+        selected += ['--entity-reactions=' + args.entity_reactions]
+    if args.entity_lifecycle:
+        selected += ['--entity-lifecycle=' + args.entity_lifecycle]
+    if args.exploration:
+        selected += ['--exploration=' + args.exploration]
+    if args.camera_inspection:
+        capture = ['--screenshot-dir=' + str(evidence)] if args.viewer else []
+        stage('camera-zones', ['res://scenes/tools/camera_zone_viewer.tscn', '--', '--run-scenario', *capture, *selected], headless=not args.viewer)
+        if not (evidence / 'trace.jsonl').is_file():
+            raise RuntimeError('Camera inspection did not produce its trace')
+        print('Camera inspection succeeded: ' + str(evidence / 'trace.jsonl'))
+        return
+    if args.viewer:
+        stage('viewer', ['res://scenes/tools/terrain_viewer.tscn', '--', '--run-scenario',
+                         '--screenshot-dir=' + str(evidence), *selected], headless=False)
+    else:
+        stage('driver', ['-s', 'res://tools/inspection/run_terrain_scenario.gd', '--', *selected])
+    if not (evidence / 'trace.csv').is_file():
+        raise RuntimeError('Scenario did not produce its trace: ' + str(evidence))
+    print('Terrain run succeeded: ' + str(evidence / 'trace.csv'))
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+        print(error, file=sys.stderr)
+        sys.exit(1)

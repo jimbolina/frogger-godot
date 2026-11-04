@@ -56,18 +56,23 @@ if [ -d content/fonts/angular ]; then
         echo "run_tests: uv not found; install uv or set UV=/path/to/uv" >&2
         exit 2
     fi
-    if ! "$UV" run --locked --quiet tools/make_angular_font.py --check --quiet; then
+    if ! "$UV" run --locked --quiet tools/content/make_angular_font.py --check --quiet; then
         echo "run_tests: the committed angular font differs from its generator" >&2
         exit 2
     fi
-    if ! "$UV" run --locked --quiet tools/make_lettering.py --check --quiet; then
+    if ! "$UV" run --locked --quiet tools/content/make_lettering.py --check --quiet; then
         echo "run_tests: the committed lettering images differ from their generator" >&2
         exit 2
     fi
 fi
 
-if ! "${PYTHON:-python3}" tools/test_capture_tools.py >/dev/null 2>&1; then
+if ! "${PYTHON:-python3}" tools/inspection/test_capture_tools.py >/dev/null 2>&1; then
     echo "run_tests: capture tool self-test failed" >&2
+    exit 2
+fi
+
+if ! "${PYTHON:-python3}" tools/check/test_tool_imports.py >/dev/null 2>&1; then
+    echo "run_tests: tool import self-test failed" >&2
     exit 2
 fi
 
@@ -93,7 +98,7 @@ export TMP="$run_directory/temp"
 project_directory="$PWD"
 case "$(uname -s)" in
     Darwin)
-        project_directory="$("${PYTHON:-python3}" tools/godot_project.py "$PWD" "$run_directory/data")" || exit 2
+        project_directory="$("${PYTHON:-python3}" tools/check/godot_project.py "$PWD" "$run_directory/data")" || exit 2
         ;;
     MINGW*|MSYS*|CYGWIN*)
         if command -v cygpath >/dev/null 2>&1; then
@@ -108,11 +113,11 @@ echo "run_tests: logs and isolated profile: $run_directory"
 generated=""
 if [ "$data_requested" -eq 1 ]; then
     generated="$run_directory/generated"
-    if ! "${PYTHON:-python3}" tools/make_font_newfont.py --out "$generated/newfont" --quiet; then
+    if ! "${PYTHON:-python3}" tools/content/make_font_newfont.py --out "$generated/newfont" --quiet; then
         echo "run_tests: the newfont generator failed" >&2
         exit 2
     fi
-    if ! "$UV" run --locked --quiet tools/make_lettering.py --composite assets --out "$generated/lettering" --quiet; then
+    if ! "$UV" run --locked --quiet tools/content/make_lettering.py --composite assets --out "$generated/lettering" --quiet; then
         echo "run_tests: the lettering tile generator failed" >&2
         exit 2
     fi
@@ -133,7 +138,7 @@ if [ "$import_rc" -ne 0 ] || [ ! -s "$run_directory/import.log" ] || grep -Eq "$
     exit 1
 fi
 
-run_stage check -s res://tools/check_scripts.gd
+run_stage check -s res://tools/check/check_scripts.gd
 check_rc=$?
 grep -E 'SCRIPT ERROR|at: GDScript|CHECK FAILED|check_scripts:' "$run_directory/check.log" 2>/dev/null
 if [ "$check_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/check.log" || ! grep -Eq '^check_scripts: [0-9]+ scripts, 0 failed[[:space:]]*$' "$run_directory/check.log"; then
@@ -149,7 +154,7 @@ else
     echo "run_tests: checkout class-name cache refreshed for direct launches"
 fi
 
-run_stage architecture -s res://tools/check_architecture.gd
+run_stage architecture -s res://tools/check/check_architecture.gd
 architecture_rc=$?
 grep -E 'ARCHITECTURE|architecture_check:' "$run_directory/architecture.log" 2>/dev/null
 if [ "$architecture_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/architecture.log" || ! grep -Eq '^architecture_check: [0-9]+ scripts, 0 failed[[:space:]]*$' "$run_directory/architecture.log"; then
@@ -178,7 +183,7 @@ check_suite() {
     if [ "$tests_rc" -ne 0 ]; then
         rc=1
     fi
-    run_stage "$suite-results" -s res://tools/check_test_results.gd -- "$run_directory/$suite.log" "$tests_rc" "--suite=$suite"
+    run_stage "$suite-results" -s res://tools/check/check_test_results.gd -- "$run_directory/$suite.log" "$tests_rc" "--suite=$suite"
     local results_rc=$?
     grep -E 'RESULT ERROR|test_results:' "$run_directory/$suite-results.log" 2>/dev/null
     if [ "$results_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/$suite-results.log" || ! grep -Eq "^test_results: valid $suite suite, exit [01][[:space:]]*\$" "$run_directory/$suite-results.log"; then
@@ -203,7 +208,7 @@ check_suite game ${game_arguments[@]+"${game_arguments[@]}"}
 
 if [ "$data_requested" -eq 1 ]; then
     export FROGGER_DATA_DIR="$data_dir"
-    run_stage input -s res://tools/check_test_results.gd -- --input
+    run_stage input -s res://tools/check/check_test_results.gd -- --input
     input_rc=$?
     if [ "$input_rc" -ne 0 ] || grep -Eq "$script_errors" "$run_directory/input.log" || ! grep -Eq '^test_input: valid[[:space:]]*$' "$run_directory/input.log"; then
         cat "$run_directory/input.log" "$run_directory/input.console.log" 2>/dev/null
