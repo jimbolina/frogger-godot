@@ -42,7 +42,7 @@ the host does not consume or arbitrate them.
 grid and FORM queries, movement/reactions, gameplay camera, animation control
 and source RNG. Supported entity scripts run in the same transaction. `src/mod/` remains future work
 for watching files and reporting unmapped behavior. See the
-[README layout](../../../README.md#layout) and [path contract](paths.md).
+[layout](../developer-setup.md#layout) and [path contract](paths.md).
 
 ## Tick notifications and named source values
 

@@ -24,7 +24,7 @@ that one dependency and rejects any other script, scene or resource under
 ## Regenerating the assets
 
 `assets/` is never committed: each developer fills it from their own copy with
-`tools/setup_dev.sh --import` ([developer setup](../README.md#developer-setup)),
+`tools/setup_dev.sh --import` ([developer setup](../docs/reference/developer-setup.md)),
 which runs
 
 ```bash
